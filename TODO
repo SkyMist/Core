@@ -4,7 +4,13 @@ SkyMist Project ToDo List.
 - Make server workable on (Fix critical stuff).
 
 ToDO:
-- Insert stuff here.
+- Spells + Auras + Port 4.3.4 Movement system. - !Note: w/ SMSG_POWER_UPDATE / SMSG_ADD_RUNE_POWER opcodes.
+- Movement system implementation.
+- Quests - !Note: w/ SMSG_SET_PHASE_SHIFT.
+- Speeds.
+- Achievements.
+- Vehicles.
+- Guilds.
 
 == Milestone 2 ==
 - Make server playable on (Fix big stuff).
