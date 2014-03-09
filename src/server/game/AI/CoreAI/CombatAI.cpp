@@ -340,7 +340,7 @@ void VehicleAI::CheckConditions(const uint32 diff)
                             if (!sConditionMgr->IsObjectMeetToConditions(player, me, conditions))
                             {
                                 player->ExitVehicle();
-                                return;//check other pessanger in next tick
+                                return;//check other passenger in next tick
                             }
                         }
                     }

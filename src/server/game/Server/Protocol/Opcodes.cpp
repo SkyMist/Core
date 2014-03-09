@@ -561,7 +561,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_WORLD_STATE_UI_TIMER_UPDATE,             STATUS_LOGGEDIN,     PROCESS_INPLACE,      &WorldSession::HandleWorldStateUITimerUpdate   );
     DEFINE_OPCODE_HANDLER(CMSG_WORLD_TELEPORT,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleWorldTeleportOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_WRAP_ITEM,                               STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleWrapItemOpcode            );
-    DEFINE_OPCODE_HANDLER(CMSG_ZONEUPDATE,                              STATUS_UNHANDLED,    PROCESS_THREADSAFE,   &WorldSession::HandleZoneUpdateOpcode          );
+    DEFINE_OPCODE_HANDLER(CMSG_ZONEUPDATE,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleZoneUpdateOpcode          );
     DEFINE_OPCODE_HANDLER(MSG_CHANNEL_START,                            STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(MSG_CHANNEL_UPDATE,                           STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(MSG_CORPSE_QUERY,                             STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCorpseQueryOpcode         );

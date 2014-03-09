@@ -2682,8 +2682,8 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
         DiminishingReturnsType type = GetDiminishingReturnsGroupType(m_diminishGroup);
         // Increase Diminishing on unit, current informations for actually casts will use values above
         if ((type == DRTYPE_PLAYER &&
-            (unit->GetCharmerOrOwnerPlayerOrPlayerItself() || (unit->GetTypeId() == TYPEID_UNIT && unit->ToCreature()->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_ALL_DIMINISH))) ||
-            type == DRTYPE_ALL)
+            (unit->GetCharmerOrOwnerPlayerOrPlayerItself() || (unit->GetTypeId() == TYPEID_UNIT && 
+			unit->ToCreature()->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_ALL_DIMINISH))) || type == DRTYPE_ALL)
             unit->IncrDiminishing(m_diminishGroup);
     }
 
@@ -5452,6 +5452,10 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
     }
 
+    // check if we are using a potion in combat for the 2nd+ time. Cooldown is added only after caster gets out of combat
+    if (m_caster->ToPlayer()->GetLastPotionId() && m_CastItem && (m_CastItem->IsPotion() || m_spellInfo->IsCooldownStartedOnEvent()))
+        return SPELL_FAILED_NOT_READY;
+
     if (m_spellInfo->AttributesEx7 & SPELL_ATTR7_IS_CHEAT_SPELL && !m_caster->HasFlag(UNIT_FIELD_FLAGS2, UNIT_FLAG2_ALLOW_CHEAT_SPELLS))
     {
         m_customError = SPELL_CUSTOM_ERROR_GM_ONLY;
@@ -6826,19 +6830,39 @@ SpellCastResult Spell::CheckItems()
                     }
                 }
 
-                SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(m_spellInfo->Effects[i].MiscValue);
+                SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(m_spellInfo->Effects[i].MiscValue);
                 // do not allow adding usable enchantments to items that have use effect already
-                if (pEnchant && isItemUsable)
+                if (enchantEntry)
+                {
                     for (uint8 s = 0; s < MAX_ITEM_ENCHANTMENT_EFFECTS; ++s)
-                        if (pEnchant->type[s] == ITEM_ENCHANTMENT_TYPE_USE_SPELL)
-                            return SPELL_FAILED_ON_USE_ENCHANT;
+                    {
+                        switch (enchantEntry->type[s])
+                        {
+                            case ITEM_ENCHANTMENT_TYPE_USE_SPELL:
+                                if (isItemUsable)
+                                    return SPELL_FAILED_ON_USE_ENCHANT;
+                                break;
+                            case ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET:
+                            {
+                                uint32 numSockets = 0;
+                                for (uint32 socket = 0; socket < MAX_ITEM_PROTO_SOCKETS; ++socket)
+                                    if (targetItem->GetTemplate()->Socket[socket].Color)
+                                        ++numSockets;
+                
+                                if (numSockets == MAX_ITEM_PROTO_SOCKETS || targetItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT))
+                                    return SPELL_FAILED_MAX_SOCKETS;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 // Not allow enchant in trade slot for some enchant type
                 if (targetItem->GetOwner() != m_caster)
                 {
-                    if (!pEnchant)
+                    if (!enchantEntry)
                         return SPELL_FAILED_ERROR;
-                    if (pEnchant->slot & ENCHANTMENT_CAN_SOULBOUND)
+                    if (enchantEntry->slot & ENCHANTMENT_CAN_SOULBOUND)
                         return SPELL_FAILED_NOT_TRADEABLE;
                 }
                 break;

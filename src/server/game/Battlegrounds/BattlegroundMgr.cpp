@@ -378,6 +378,8 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
     }
 
     data->WriteBits(bg->GetPlayerScoresSize(), 21);
+    Battleground::BattlegroundPlayerMap const& bgPlayers = bg->GetPlayers();
+
     for (Battleground::BattlegroundScoreMap::const_iterator itr = bg->GetPlayerScoresBegin(); itr != bg->GetPlayerScoresEnd(); ++itr)
     {
         if (!bg->IsPlayerInBattleground(itr->first))
@@ -386,7 +388,26 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
             continue;
         }
 
-        Player* player = ObjectAccessor::FindPlayer(itr->first);
+        uint32 team;
+        int32 primaryTree;
+        if (Player* player = ObjectAccessor::FindPlayer(itr->first))
+        {
+            team = player->GetBGTeam();
+            primaryTree = player->GetTalentSpecialization(player->GetActiveSpec());
+        }
+        else
+        {
+            Battleground::BattlegroundPlayerMap::const_iterator itr2 = bgPlayers.find(itr->first);
+            if (itr2 == bgPlayers.end())
+            {
+                TC_LOG_ERROR("bg.battleground", "Player " UI64FMTD " has scoreboard entry for battleground %u but do not have battleground data!", itr->first, bg->GetTypeID(true));
+                continue;
+            }
+
+            team = itr2->second.Team;
+            primaryTree = itr2->second.PrimaryTree;
+        }
+
         ObjectGuid playerGUID = itr->first;
         BattlegroundScore* score = itr->second;
 
@@ -402,7 +423,7 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         data->WriteBit(playerGUID[5]);
         data->WriteBit(playerGUID[1]);
         data->WriteBit(playerGUID[6]);
-        data->WriteBit(player->GetBGTeam() == HORDE ? 0 : 1);
+        data->WriteBit(team == HORDE ? 0 : 1);
         data->WriteBit(playerGUID[7]);
 
         buff << uint32(score->HealingDone);             // healing done
@@ -424,7 +445,7 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         buff.WriteByteSeq(playerGUID[1]);
         buff.WriteByteSeq(playerGUID[6]);
 
-        buff << int32(player->GetTalentSpecialization(player->GetActiveSpec()));
+        buff << int32(primaryTree);
 
         switch (bg->GetTypeID(true))                             // Custom values
         {

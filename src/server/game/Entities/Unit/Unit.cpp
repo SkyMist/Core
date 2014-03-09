@@ -1015,7 +1015,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                 damage -= damageInfo->blocked;
             }
 
-            ApplyResilience(victim, &damage, crit);
+            ApplyResilience(victim, &damage);
             break;
         }
         // Magical Attacks
@@ -1029,7 +1029,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                 damage = SpellCriticalDamageBonus(spellInfo, damage, victim);
             }
 
-            ApplyResilience(victim, &damage, crit);
+            ApplyResilience(victim, &damage);
             break;
         }
         default:
@@ -1241,7 +1241,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
         damageInfo->HitInfo |= HITINFO_AFFECTS_VICTIM;
 
     int32 resilienceReduction = damageInfo->damage;
-    ApplyResilience(victim, &resilienceReduction, damageInfo->hitOutCome == MELEE_HIT_CRIT);
+    ApplyResilience(victim, &resilienceReduction);
     resilienceReduction = damageInfo->damage - resilienceReduction;
     damageInfo->damage      -= resilienceReduction;
     damageInfo->cleanDamage += resilienceReduction;
@@ -10090,7 +10090,7 @@ bool Unit::IsServiceProvider() const
 void Unit::SetInCombatWith(Unit* enemy)
 {
     Unit* eOwner = enemy->GetCharmerOrOwnerOrSelf();
-    if (eOwner->IsPvP())
+    if (eOwner->IsPvP() || eOwner->IsFFAPvP())
     {
         SetInCombatState(true, enemy);
         return;
@@ -10795,6 +10795,9 @@ void Unit::SetSpeed(UnitMoveType mtype, float rate, bool forced)
 
 void Unit::setDeathState(DeathState s)
 {
+    // Death state needs to be updated before RemoveAllAurasOnDeath() is called, to prevent entering combat
+    m_deathState = s;
+
     if (s != ALIVE && s != JUST_RESPAWNED)
     {
         CombatStop();
@@ -10843,8 +10846,6 @@ void Unit::setDeathState(DeathState s)
     }
     else if (s == JUST_RESPAWNED)
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)
-
-    m_deathState = s;
 }
 
 /*########################################
@@ -10852,14 +10853,14 @@ void Unit::setDeathState(DeathState s)
 ########       AGGRO SYSTEM       ########
 ########                          ########
 ########################################*/
-bool Unit::CanHaveThreatList() const
+bool Unit::CanHaveThreatList(bool skipAliveCheck) const
 {
     // only creatures can have threat list
     if (GetTypeId() != TYPEID_UNIT)
         return false;
 
     // only alive units can have threat list
-    if (!IsAlive() || isDying())
+    if (!skipAliveCheck && !IsAlive())
         return false;
 
     // totems can not have threat list
@@ -10902,7 +10903,7 @@ void Unit::AddThreat(Unit* victim, float fThreat, SpellSchoolMask schoolMask, Sp
 
 void Unit::DeleteThreatList()
 {
-    if (CanHaveThreatList() && !m_ThreatManager.isThreatListEmpty())
+    if (CanHaveThreatList(true) && !m_ThreatManager.isThreatListEmpty())
         SendClearThreatListOpcode();
     m_ThreatManager.clearReferences();
 }
@@ -14597,7 +14598,7 @@ void Unit::SendPlaySpellVisualKit(uint32 id, uint32 unkParam)
     SendMessageToSet(&data, true);
 }
 
-void Unit::ApplyResilience(Unit const* victim, int32* damage, bool isCrit) const
+void Unit::ApplyResilience(Unit const* victim, int32* damage) const
 {
     // player mounted on multi-passenger mount is also classified as vehicle
     if (IsVehicle() || (victim->IsVehicle() && victim->GetTypeId() != TYPEID_PLAYER))
@@ -14616,8 +14617,6 @@ void Unit::ApplyResilience(Unit const* victim, int32* damage, bool isCrit) const
     if (!target)
         return;
 
-    if (isCrit)
-        *damage -= target->GetCritDamageReduction(*damage);
     *damage -= target->GetDamageReduction(*damage);
 }
 
