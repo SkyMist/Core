@@ -48,7 +48,7 @@ enum OBJECT_UPDATE_FLAGS
     UPDATEFLAG_ROTATION              = 0x0200,
     UPDATEFLAG_UNK3                  = 0x0400,
     UPDATEFLAG_ANIMKITS              = 0x0800,
-    UPDATEFLAG_UNK5                  = 0x1000,
+    UPDATEFLAG_TRANSPORT_ARR         = 0x1000,
     UPDATEFLAG_UNK6                  = 0x2000,
 };
 
