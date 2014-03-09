@@ -368,6 +368,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasLiving = flags & UPDATEFLAG_LIVING;
     bool hasStacionaryPostion = flags & UPDATEFLAG_STATIONARY_POSITION;
     bool hasGobjectRotation = flags & UPDATEFLAG_ROTATION;
+    bool hasVehicle = flags & UPDATEFLAG_VEHICLE;
+    bool hasTarget = flags & UPDATEFLAG_HAS_TARGET;
+    bool hasAnimKits = flags & UPDATEFLAG_HAS_TARGET;
 
     bool hasFallData;
     bool hasFallDirection;
@@ -375,7 +378,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     uint32 movementFlagsExtra;
 
     data->WriteBit(0);
-    data->WriteBit(0);
+    data->WriteBit(hasVehicle);
     data->WriteBit(0);
     data->WriteBit(hasGobjectRotation);
     data->WriteBit(0);
