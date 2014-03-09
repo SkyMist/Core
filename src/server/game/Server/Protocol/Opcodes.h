@@ -461,7 +461,7 @@ enum Opcodes
    CMSG_REDIRECTION_AUTH_PROOF                              = 0x0,
    CMSG_REFORGE_ITEM                                        = 0x0,
    CMSG_REORDER_CHARACTERS                                  = 0x0,
-   CMSG_REPAIR_ITEM                                         = 0x0,
+   CMSG_REPAIR_ITEM                                         = 0x0577, // 5.4.7 17956
    CMSG_REPLACE_ACCOUNT_DATA                                = 0x0,
    CMSG_REPOP_REQUEST                                       = 0x0,
    CMSG_REPORT_PVP_AFK                                      = 0x0,
@@ -563,7 +563,7 @@ enum Opcodes
    CMSG_TOGGLE_PVP                                          = 0x0,
    CMSG_TOTEM_DESTROYED                                     = 0x0,
    CMSG_TRAINER_BUY_SPELL                                   = 0x0274, // 5.4.7 17956
-   CMSG_TRAINER_LIST                                        = 0x0,
+   CMSG_TRAINER_LIST                                        = 0x075E, // 5.4.7 17956
    CMSG_TRANSMOGRIFY_ITEMS                                  = 0x0,
    CMSG_TRIGGER_CINEMATIC_CHEAT                             = 0x0,
    CMSG_TURN_IN_PETITION                                    = 0x0,
@@ -578,7 +578,7 @@ enum Opcodes
    CMSG_UPDATE_MISSILE_TRAJECTORY                           = 0x0,
    CMSG_UPDATE_PROJECTILE_POSITION                          = 0x0,
    CMSG_USED_FOLLOW                                         = 0x0,
-   CMSG_USE_ITEM                                            = 0x0,
+   CMSG_USE_ITEM                                            = 0x15E3, // 5.4.7 17956
    CMSG_VIOLENCE_LEVEL                                      = 0x05A0, // 5.4.7 17956
    CMSG_VOICE_SESSION_ENABLE                                = 0x0,
    CMSG_VOID_STORAGE_QUERY                                  = 0x0,
@@ -976,7 +976,7 @@ enum Opcodes
    SMSG_INVALIDATE_DANCE                                    = 0x0,
    SMSG_INVALIDATE_PLAYER                                   = 0x0,
    SMSG_INVALID_PROMOTION_CODE                              = 0x0,
-   SMSG_INVENTORY_CHANGE_FAILURE                            = 0x0,
+   SMSG_INVENTORY_CHANGE_FAILURE                            = 0x0F49, // 5.4.7 17956
    SMSG_ITEM_ADD_PASSIVE                                    = 0x0,
    SMSG_ITEM_COOLDOWN                                       = 0x0,
    SMSG_ITEM_ENCHANT_TIME_UPDATE                            = 0x0,

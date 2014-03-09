@@ -532,11 +532,11 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_TOGGLE_PVP,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTogglePvP                 );
     DEFINE_OPCODE_HANDLER(CMSG_TOTEM_DESTROYED,                         STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTotemDestroyed            );
     DEFINE_OPCODE_HANDLER(CMSG_TRAINER_BUY_SPELL,                       STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleTrainerBuySpellOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_TRAINER_LIST,                            STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTrainerListOpcode         );
+    DEFINE_OPCODE_HANDLER(CMSG_TRAINER_LIST,                            STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleTrainerListOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_TRANSMOGRIFY_ITEMS,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTransmogrifyItems         );
     DEFINE_OPCODE_HANDLER(CMSG_TURN_IN_PETITION,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTurnInPetitionOpcode      );
     DEFINE_OPCODE_HANDLER(CMSG_TUTORIAL_CLEAR,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTutorialClear             );
-    DEFINE_OPCODE_HANDLER(CMSG_TUTORIAL_FLAG,                           STATUS_NEVER,    PROCESS_THREADUNSAFE, &WorldSession::HandleTutorialFlag              );
+    DEFINE_OPCODE_HANDLER(CMSG_TUTORIAL_FLAG,                           STATUS_NEVER,        PROCESS_THREADUNSAFE, &WorldSession::HandleTutorialFlag              );
     DEFINE_OPCODE_HANDLER(CMSG_TUTORIAL_RESET,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleTutorialReset             );
     DEFINE_OPCODE_HANDLER(CMSG_UNACCEPT_TRADE,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleUnacceptTradeOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_UNLEARN_SKILL,                           STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleUnlearnSkillOpcode        );
@@ -546,7 +546,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_UPDATE_MISSILE_TRAJECTORY,               STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleUpdateMissileTrajectory   );
     DEFINE_OPCODE_HANDLER(CMSG_UPDATE_PROJECTILE_POSITION,              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleUpdateProjectilePosition  );
     DEFINE_OPCODE_HANDLER(CMSG_USED_FOLLOW,                             STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
-    DEFINE_OPCODE_HANDLER(CMSG_USE_ITEM,                                STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleUseItemOpcode             );
+    DEFINE_OPCODE_HANDLER(CMSG_USE_ITEM,                                STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleUseItemOpcode             );
     DEFINE_OPCODE_HANDLER(CMSG_VIOLENCE_LEVEL,                          STATUS_LOGGEDIN,     PROCESS_INPLACE,      &WorldSession::HandleViolenceLevel             );
     DEFINE_OPCODE_HANDLER(CMSG_VOICE_SESSION_ENABLE,                    STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleVoiceSessionEnableOpcode  );
     DEFINE_OPCODE_HANDLER(CMSG_VOID_STORAGE_QUERY,                      STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::HandleVoidStorageQuery          );

@@ -143,23 +143,23 @@ void WorldSession::HandleTrainerListOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
 
+    guid[2] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
-    guid[0] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
-    guid[3] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
-    guid[2] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
 
-    recvData.ReadByteSeq(guid[5]);
-    recvData.ReadByteSeq(guid[0]);
-    recvData.ReadByteSeq(guid[1]);
-    recvData.ReadByteSeq(guid[4]);
-    recvData.ReadByteSeq(guid[6]);
-    recvData.ReadByteSeq(guid[7]);
     recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[0]);
     recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[5]);
 
     SendTrainerList(guid);
 }
@@ -980,46 +980,43 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_REPAIR_ITEM");
 
-    ObjectGuid npcGUID;
-    ObjectGuid itemGUID;
-    uint8 guildBank;                                        // new in 2.3.2, bool that means from guild bank money
+    ObjectGuid npcGUID, itemGUID;
+    bool guildBank; // new in 2.3.2, bool that means from guild bank money
 
-    npcGUID[7] = recvData.ReadBit();
-    itemGUID[4] = recvData.ReadBit();
-    itemGUID[1] = recvData.ReadBit();
-    npcGUID[4] = recvData.ReadBit();
-    itemGUID[3] = recvData.ReadBit();
-    itemGUID[0] = recvData.ReadBit();
-    itemGUID[6] = recvData.ReadBit();
-    npcGUID[6] = recvData.ReadBit();
-    itemGUID[5] = recvData.ReadBit();
     npcGUID[3] = recvData.ReadBit();
+    itemGUID[3] = recvData.ReadBit();
+    itemGUID[6] = recvData.ReadBit();
+    guildBank = recvData.ReadBit();
     npcGUID[2] = recvData.ReadBit();
+    itemGUID[0] = recvData.ReadBit();
+    npcGUID[7] = recvData.ReadBit();
+    npcGUID[6] = recvData.ReadBit();
     npcGUID[0] = recvData.ReadBit();
-
-    recvData >> guildBank;
-
     itemGUID[7] = recvData.ReadBit();
-    npcGUID[1] = recvData.ReadBit();
+    itemGUID[4] = recvData.ReadBit();
     npcGUID[5] = recvData.ReadBit();
+    itemGUID[5] = recvData.ReadBit();
+    npcGUID[4] = recvData.ReadBit();
     itemGUID[2] = recvData.ReadBit();
+    npcGUID[1] = recvData.ReadBit();
+    itemGUID[1] = recvData.ReadBit();
 
-    recvData.ReadByteSeq(itemGUID[3]);
-    recvData.ReadByteSeq(npcGUID[1]);
-    recvData.ReadByteSeq(npcGUID[7]);
     recvData.ReadByteSeq(itemGUID[6]);
-    recvData.ReadByteSeq(itemGUID[7]);
-    recvData.ReadByteSeq(itemGUID[0]);
-    recvData.ReadByteSeq(itemGUID[1]);
-    recvData.ReadByteSeq(itemGUID[2]);
-    recvData.ReadByteSeq(npcGUID[6]);
-    recvData.ReadByteSeq(npcGUID[2]);
-    recvData.ReadByteSeq(npcGUID[5]);
+    recvData.ReadByteSeq(npcGUID[1]);
     recvData.ReadByteSeq(npcGUID[0]);
-    recvData.ReadByteSeq(npcGUID[3]);
-    recvData.ReadByteSeq(itemGUID[4]);
-    recvData.ReadByteSeq(npcGUID[4]);
+    recvData.ReadByteSeq(npcGUID[2]);
+    recvData.ReadByteSeq(itemGUID[2]);
     recvData.ReadByteSeq(itemGUID[5]);
+    recvData.ReadByteSeq(itemGUID[1]);
+    recvData.ReadByteSeq(npcGUID[6]);
+    recvData.ReadByteSeq(npcGUID[7]);
+    recvData.ReadByteSeq(itemGUID[3]);
+    recvData.ReadByteSeq(itemGUID[7]);
+    recvData.ReadByteSeq(npcGUID[3]);
+    recvData.ReadByteSeq(npcGUID[4]);
+    recvData.ReadByteSeq(npcGUID[5]);
+    recvData.ReadByteSeq(itemGUID[0]);
+    recvData.ReadByteSeq(itemGUID[4]);
 
     Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(npcGUID, UNIT_NPC_FLAG_REPAIR);
     if (!unit)
