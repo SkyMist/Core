@@ -1628,6 +1628,7 @@ class Unit : public WorldObject
         bool SetWaterWalking(bool enable, bool packetOnly = false);
         bool SetFeatherFall(bool enable, bool packetOnly = false);
         bool SetHover(bool enable, bool packetOnly = false);
+        uint32 GetMovementCounter() const { return m_movementCounter; } 
 
         void SetInFront(WorldObject const* target);
         void SetFacingTo(float ori);
