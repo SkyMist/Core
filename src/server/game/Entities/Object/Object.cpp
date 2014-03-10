@@ -409,7 +409,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->WriteBit(0);                                              //has Unk dword676
     data->WriteBit(hasVehicle);
-    data->WriteBit(hasTransport);
+    data->WriteBit(0);                                              //has unk dword1044
     data->WriteBit(hasGobjectRotation);
     data->WriteBit(self);
     data->WriteBit(hasLiving);
@@ -420,7 +420,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(0);                                              //unk byte681
     data->WriteBit(0);                                              //unk byte1
     data->WriteBit(hasGoTransportPos);
-    data->WriteBit(0);                                              //has unk dword476
+    data->WriteBit(hasTransport);
     data->WriteBit(hasAnimKits);
     data->WriteBit(hasStationaryPosition);
     data->WriteBit(hasTarget);
@@ -698,6 +698,14 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << uint32(self->GetTransTime());   
     }
 
+    if (hasTransport)
+    {
+        if (hasTransportFrames)
+            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
+        else
+            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
+    }
+
     if (hasGobjectRotation)
         *data << uint64(ToGameObject()->GetRotation());
 
@@ -708,14 +716,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             *data << float(ToUnit()->GetTransOffsetO());
         else
             *data << float(ToUnit()->GetOrientation());
-    }
-
-    if (hasTransport)
-    {
-        if (hasTransportFrames)
-            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
-        else
-            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
     }
 
     if (hasAnimKits)
