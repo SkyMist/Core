@@ -249,7 +249,6 @@ DBCStorage <TotemCategoryEntry> sTotemCategoryStore(TotemCategoryEntryfmt);
 TransportAnimationsByEntry sTransportAnimationsByEntry;
 DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationfmt);
 
-DBCStorage <TransportRotationEntry> sTransportRotationStore(TransportRotationfmt);
 DBCStorage <UnitPowerBarEntry> sUnitPowerBarStore(UnitPowerBarfmt);
 DBCStorage <VehicleEntry> sVehicleStore(VehicleEntryfmt);
 DBCStorage <VehicleSeatEntry> sVehicleSeatStore(VehicleSeatEntryfmt);
@@ -812,28 +811,11 @@ void LoadDBCStores(const std::string& dataPath)
     //LoadDBC(availableDbcLocales, bad_dbc_files, sTeamContributionPointsStore, dbcPath, "TeamContributionPoints.dbc");
     LoadDBC(availableDbcLocales, bad_dbc_files, sTotemCategoryStore,          dbcPath, "TotemCategory.dbc");//15595
 
-    // TODO: Check and deprecate failed "attempt" in TransportMgr to get these solved.
+    // Load GameObject Transports
     LoadDBC(availableDbcLocales, bad_dbc_files, sTransportAnimationStore,     dbcPath, "TransportAnimation.dbc");
     for (uint32 i = 0; i < sTransportAnimationStore.GetNumRows(); ++i)
-    {
-        TransportAnimationEntry const* anim = sTransportAnimationStore.LookupEntry(i);
-        if (!anim)
-            continue;
-
-        sTransportAnimationsByEntry[anim->TransportEntry][anim->TimeSeg] = anim;
-        // sTransportMgr->AddPathNodeToTransport(anim->TransportEntry, anim->TimeSeg, anim);
-    }
-
-    // TODO: Maybe properly use these rotations in building the transport animations (though, normally, these are just "read" by auto-moving GO's, not voluntarily used).
-    LoadDBC(availableDbcLocales, bad_dbc_files, sTransportRotationStore,     dbcPath, "TransportRotation.dbc");
-    for (uint32 i = 0; i < sTransportRotationStore.GetNumRows(); ++i)
-    {
-        TransportRotationEntry const* rot = sTransportRotationStore.LookupEntry(i);
-        if (!rot)
-            continue;
-
-        sTransportMgr->AddPathRotationToTransport(rot->TransportEntry, rot->TimeSeg, rot);
-    }
+        if (TransportAnimationEntry const* anim = sTransportAnimationStore.LookupEntry(i))
+            sTransportAnimationsByEntry[anim->TransportEntry][anim->TimeSeg] = anim;
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sUnitPowerBarStore,           dbcPath, "UnitPowerBar.dbc");//15595
 

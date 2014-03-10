@@ -81,21 +81,6 @@ struct TransportTemplate
     uint32 entry;
 };
 
-typedef std::map<uint32, TransportAnimationEntry const*> TransportPathContainer;
-typedef std::map<uint32, TransportRotationEntry const*> TransportPathRotationContainer;
-
-struct TransportAnimation
-{
-    TransportPathContainer Path;
-    TransportPathRotationContainer Rotations;
-    uint32 TotalTime;
-
-    TransportAnimationEntry const* GetAnimNode(uint32 time) const;
-    G3D::Quat GetAnimRotation(uint32 time) const;
-};
-
-typedef std::map<uint32, TransportAnimation> TransportAnimationContainer;
-
 class TransportMgr
 {
         friend class ACE_Singleton<TransportMgr, ACE_Thread_Mutex>;
@@ -123,15 +108,6 @@ class TransportMgr
             return NULL;
         }
 
-        TransportAnimation const* GetTransportAnimInfo(uint32 entry) const
-        {
-            TransportAnimationContainer::const_iterator itr = _transportAnimations.find(entry);
-            if (itr != _transportAnimations.end())
-                return &itr->second;
-
-            return NULL;
-        }
-
     private:
         TransportMgr();
         ~TransportMgr();
@@ -141,20 +117,11 @@ class TransportMgr
         // Generates and precaches a path for transport to avoid generation each time transport instance is created
         void GeneratePath(GameObjectTemplate const* goInfo, TransportTemplate* transport);
 
-        void AddPathNodeToTransport(uint32 transportEntry, uint32 timeSeg, TransportAnimationEntry const* node);
-
-        void AddPathRotationToTransport(uint32 transportEntry, uint32 timeSeg, TransportRotationEntry const* node)
-        {
-            _transportAnimations[transportEntry].Rotations[timeSeg] = node;
-        }
-
         // Container storing transport templates
         TransportTemplates _transportTemplates;
 
         // Container storing transport entries to create for instanced maps
         TransportInstanceMap _instanceTransports;
-
-        TransportAnimationContainer _transportAnimations;
 };
 
 #define sTransportMgr ACE_Singleton<TransportMgr, ACE_Thread_Mutex>::instance()

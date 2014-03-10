@@ -562,17 +562,9 @@ struct GameObjectTemplate
 typedef UNORDERED_MAP<uint32, GameObjectTemplate> GameObjectTemplateContainer;
 
 class OPvPCapturePoint;
-struct TransportAnimation;
 
 union GameObjectValue
 {
-    //11 GAMEOBJECT_TYPE_TRANSPORT
-    struct
-    {
-        uint32 PathProgress;
-        TransportAnimation const* AnimationInfo;
-        uint32 CurrentSeg;
-    } Transport;
     //25 GAMEOBJECT_TYPE_FISHINGHOLE
     struct
     {

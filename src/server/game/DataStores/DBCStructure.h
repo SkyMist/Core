@@ -2276,6 +2276,7 @@ struct TransportAnimationEntry
     //uint32  MovementId;
 };
 
+/*
 struct TransportRotationEntry
 {
     //uint32  Id;
@@ -2286,6 +2287,7 @@ struct TransportRotationEntry
     float   Z;
     float   W;
 };
+*/
 
 #define MAX_VEHICLE_SEATS 8
 
@@ -2546,6 +2548,7 @@ struct TaxiPathNodePtr
 typedef Path<TaxiPathNodePtr, TaxiPathNodeEntry const> TaxiPathNodeList;
 typedef std::vector<TaxiPathNodeList> TaxiPathNodesByPath;
 
+// Elevators and other types of transports not included in TaxiPathNode.dbc, but in TransportAnimation.dbc.
 typedef UNORDERED_MAP<uint32 /*frame*/, TransportAnimationEntry const*> TransportAnimationEntryMap;
 typedef UNORDERED_MAP<uint32, TransportAnimationEntryMap> TransportAnimationsByEntry;
 

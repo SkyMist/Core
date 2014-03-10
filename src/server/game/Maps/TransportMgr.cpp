@@ -335,15 +335,6 @@ void TransportMgr::GeneratePath(GameObjectTemplate const* goInfo, TransportTempl
     transport->pathTime = keyFrames.back().DepartureTime;
 }
 
-void TransportMgr::AddPathNodeToTransport(uint32 transportEntry, uint32 timeSeg, TransportAnimationEntry const* node)
-{
-    TransportAnimation& animNode = _transportAnimations[transportEntry];
-    if (animNode.TotalTime < timeSeg)
-        animNode.TotalTime = timeSeg;
-
-    animNode.Path[timeSeg] = node;
-}
-
 Transport* TransportMgr::CreateTransport(uint32 entry, uint32 guid /*= 0*/, Map* map /*= NULL*/)
 {
     // instance case, execute GetGameObjectEntry hook
@@ -445,34 +436,4 @@ void TransportMgr::CreateInstanceTransports(Map* map)
     // create transports
     for (std::set<uint32>::const_iterator itr = mapTransports->second.begin(); itr != mapTransports->second.end(); ++itr)
         CreateTransport(*itr, 0, map);
-}
-
-TransportAnimationEntry const* TransportAnimation::GetAnimNode(uint32 time) const
-{
-    if (Path.empty())
-        return NULL;
-
-    for (TransportPathContainer::const_reverse_iterator itr2 = Path.rbegin(); itr2 != Path.rend(); ++itr2)
-        if (time >= itr2->first)
-            return itr2->second;
-
-    return Path.begin()->second;
-}
-
-G3D::Quat TransportAnimation::GetAnimRotation(uint32 time) const
-{
-    if (Rotations.empty())
-        return G3D::Quat(0.0f, 0.0f, 0.0f, 1.0f);
-
-    TransportRotationEntry const* rot = Rotations.begin()->second;
-    for (TransportPathRotationContainer::const_reverse_iterator itr2 = Rotations.rbegin(); itr2 != Rotations.rend(); ++itr2)
-    {
-        if (time >= itr2->first)
-        {
-            rot = itr2->second;
-            break;
-        }
-    }
-
-    return G3D::Quat(rot->X, rot->Y, rot->Z, rot->W);
 }
