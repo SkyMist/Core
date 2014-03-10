@@ -425,14 +425,14 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(hasStationaryPostion);
     data->WriteBit(0);
     data->WriteBit(0);
-    data->WriteBits(transportFrames.size(), 22);
+    data->WriteBits(0, 22);
     data->WriteBit(0);
     data->WriteBit(hasTransportFrames);
 
-    /*if(hasTransportFrames)
+    if(hasTransportFrames)
     {
         data->WriteBits(transportFrames.size(), 22);
-    }*/
+    }
 
     if (hasGoTransportPos)
     {
@@ -546,13 +546,13 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    if (transportFrames.size() > 0) // Write the GO transport frames.
+    /*if (transportFrames.size() > 0) // Write the GO transport frames.
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
         {
             *data << uint32(*itr);
         }
-    }
+    }*/
 
     if (hasLiving)
     {
@@ -679,9 +679,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     }
 
     if (hasTransport)
-        *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
-    else if (hasTransportFrames)
-        *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
+    {
+        if (hasTransportFrames)
+            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
+        else
+            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
+    }
 
     if (hasAnimKits)
     {
@@ -693,13 +696,13 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         //    *data << uint16(hasAnimKit3);
     }
 
-    /*if (hasTransportFrames)
+    if (hasTransportFrames)
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
         {
             *data << uint32(*itr);
         }
-    }*/
+    }
 
     if (hasLiving)
     {
