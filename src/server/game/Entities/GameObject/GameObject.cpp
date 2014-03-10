@@ -2021,7 +2021,11 @@ void GameObject::SetGoState(GOState state)
 {
     GOState oldState = GetGoState();
 
-    SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state);
+    if (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR)
+        SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state | GO_STATE_TRANSPORT_SPEC);
+    else
+        SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state);
+
     sScriptMgr->OnGameObjectStateChanged(this, state);
 
     if (oldState != state && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
@@ -2218,14 +2222,6 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
                 if (GetGoType() == GAMEOBJECT_TYPE_CHEST)
                     if (GetGOInfo()->chest.groupLootRules && !IsLootAllowedFor(target))
                         flags |= GO_FLAG_LOCKED | GO_FLAG_NOT_SELECTABLE;
-
-                fieldBuffer << flags;
-            }
-            else if (index == GAMEOBJECT_FIELD_STATE_SPELL_VISUAL_ID)
-            {
-                uint32 flags = m_uint32Values[GAMEOBJECT_FIELD_STATE_SPELL_VISUAL_ID];
-                if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT)
-                    flags |= GO_STATE_TRANSPORT_SPEC;
 
                 fieldBuffer << flags;
             }
