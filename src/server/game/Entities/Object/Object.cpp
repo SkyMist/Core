@@ -371,7 +371,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 {
     bool self = flags & UPDATEFLAG_SELF;
     bool hasLiving = flags & UPDATEFLAG_LIVING;
-    bool hasStationaryPostion = flags & UPDATEFLAG_STATIONARY_POSITION;
+    bool hasStationaryPosition = flags & UPDATEFLAG_STATIONARY_POSITION;
     bool hasGobjectRotation = flags & UPDATEFLAG_ROTATION;
     bool hasVehicle = flags & UPDATEFLAG_VEHICLE;
     bool hasTarget = flags & UPDATEFLAG_HAS_TARGET;
@@ -422,8 +422,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(0);
     data->WriteBit(0);
     data->WriteBit(hasAnimKits);
-    data->WriteBit(hasStationaryPostion);
-    data->WriteBit(0);
+    data->WriteBit(hasStationaryPosition);
+    data->WriteBit(hasTarget);
     data->WriteBit(0);
     data->WriteBits(0, 22);
     data->WriteBit(0);
@@ -624,7 +624,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteByteSeq(victimGuid[7]);
     }
     
-    if (hasStationaryPostion)
+    if (hasStationaryPosition)
     {
         WorldObject const* self = static_cast<WorldObject const*>(this);
         *data << float(Position::NormalizeOrientation(self->GetOrientation()));
