@@ -403,6 +403,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasTransportTime2;
     bool hasTransportTime3;
     bool hasSplineFinalTarget;
+    bool hasTimestamp;
+    bool hasMovementCounter;
     uint32 movementFlags;
     uint32 movementFlagsExtra;
     ByteBuffer SplineFinalTargetGUID(9);
@@ -461,6 +463,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         hasTransportData = self->m_movementInfo.transport.guid != 0;
         hasTransportTime2 = self->m_movementInfo.transport.time2 != 0;
         hasTransportTime3 = self->m_movementInfo.transport.time3 != 0;
+        hasTimestamp = self->m_movementInfo.time != 0;
+        hasMovementCounter = self->GetMovementCounter() != 0;
         movementFlags = self->GetUnitMovementFlags();
         movementFlagsExtra = self->GetExtraUnitMovementFlags();
         
@@ -498,9 +502,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
         data->WriteBit(G3D::fuzzyEq(self->GetOrientation(), 0.0f)); //!G3D::fuzzyEq(self->GetOrientation(), 0.0f)
 
-        data->WriteBit(0); // read uint32
+        data->WriteBit(!hasTimestamp);                                          // hasTimestamp
         data->WriteBit(!movementFlags);
-        data->WriteBit(1); // skip uint32
+        data->WriteBit(!hasMovementCounter);                                    // hasMovementCounter
         data->WriteBit(guid[2]);
         data->WriteBit(guid[6]);
         data->WriteBit(hasFallData);
@@ -629,13 +633,17 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         if (movementFlags & MOVEMENTFLAG_SPLINE_ELEVATION)
             *data << float(self->m_movementInfo.splineElevation);
 
-        //here we have dword160 it's read with a bit
+        if(hasMovementCounter)
+            *data << uint32(self->GetMovementCounter());
 
         *data << float(self->GetSpeed(MOVE_RUN));
         data->WriteByteSeq(guid[7]);
         *data << float(self->GetSpeed(MOVE_WALK));
         *data << float(self->GetSpeed(MOVE_PITCH_RATE));
-        *data << uint32(0);
+
+        if(hasTimestamp)
+            *data << uint32(self->m_movementInfo.time);
+
         data->WriteByteSeq(guid[4]);
         data->WriteByteSeq(guid[0]);
 
