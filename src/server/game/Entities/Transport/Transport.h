@@ -79,7 +79,7 @@ class Transport : public GameObject, public TransportBase
     private:
         void MoveToNextWaypoint();
         float CalculateSegmentPos(float perc);
-        bool TeleportTransport(uint32 newMapid, float x, float y, float z);
+        bool TeleportTransport(uint32 newMapid, float x, float y, float z, float o);
         void UpdatePassengerPositions(std::set<WorldObject*>& passengers);
         void DoEventIfAny(KeyFrame const& node, bool departure);
 
@@ -91,7 +91,6 @@ class Transport : public GameObject, public TransportBase
 
         KeyFrameVec::const_iterator _currentFrame;
         KeyFrameVec::const_iterator _nextFrame;
-        uint32 _moveTimer;
         TimeTrackerSmall _positionChangeTimer;
         bool _isMoving;
         bool _pendingStop;

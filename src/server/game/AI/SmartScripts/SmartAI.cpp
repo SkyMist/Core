@@ -70,6 +70,8 @@ SmartAI::SmartAI(Creature* c) : CreatureAI(c)
     mFollowArrivedEntry = 0;
     mFollowCreditType = 0;
     mInvincibilityHpLevel = 0;
+
+    mJustReset = false;
 }
 
 void SmartAI::UpdateDespawn(const uint32 diff)
@@ -88,13 +90,6 @@ void SmartAI::UpdateDespawn(const uint32 diff)
         else
             me->DespawnOrUnsummon();
     } else mDespawnTime -= diff;
-}
-
-void SmartAI::Reset()
-{
-    if (!HasEscortState(SMART_ESCORT_ESCORTING))//dont mess up escort movement after combat
-        SetRun(mRun);
-    GetScript()->OnReset();
 }
 
 WayPoint* SmartAI::GetNextWayPoint()
@@ -477,9 +472,13 @@ void SmartAI::EnterEvadeMode()
             me->GetMotionMaster()->MoveFollow(target, mFollowDist, mFollowAngle);
     }
     else
+    {
+        mCanCombatMove = true;
         me->GetMotionMaster()->MoveTargetedHome();
+    }
 
-    Reset();
+    if (!HasEscortState(SMART_ESCORT_ESCORTING)) // Don't mess up escort movement after combat.
+        SetRun(mRun);
 }
 
 void SmartAI::MoveInLineOfSight(Unit* who)
@@ -570,7 +569,8 @@ void SmartAI::JustRespawned()
     if (me->getFaction() != me->GetCreatureTemplate()->faction_A)
         me->RestoreFaction();
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
-    Reset();
+    mJustReset = true;
+    JustReachedHome();
     mFollowGuid = 0;//do not reset follower on Reset(), we need it after combat evade
     mFollowDist = 0;
     mFollowAngle = 0;
@@ -589,7 +589,17 @@ int SmartAI::Permissible(const Creature* creature)
 
 void SmartAI::JustReachedHome()
 {
-    GetScript()->ProcessEventsFor(SMART_EVENT_REACHED_HOME);
+    GetScript()->OnReset();
+
+    if (!mJustReset)
+    {
+        GetScript()->ProcessEventsFor(SMART_EVENT_REACHED_HOME);
+
+        if (!UpdateVictim() && me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE && me->GetWaypointPath())
+            me->ToCreature()->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+    }
+
+    mJustReset = false;
 }
 
 void SmartAI::EnterCombat(Unit* enemy)
@@ -618,7 +628,7 @@ void SmartAI::JustSummoned(Creature* creature)
 
 void SmartAI::AttackStart(Unit* who)
 {
-    if (who && me->Attack(who, true))
+    if (who && me->Attack(who, me->IsWithinMeleeRange(who)))
     {
         SetRun(mRun);
         if (me->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == POINT_MOTION_TYPE)
@@ -692,7 +702,8 @@ void SmartAI::InitializeAI()
 {
     GetScript()->OnInitialize(me);
     if (!me->isDead())
-        Reset();
+    mJustReset = true;
+    JustReachedHome();
     GetScript()->ProcessEventsFor(SMART_EVENT_RESPAWN);
 }
 
@@ -789,6 +800,8 @@ void SmartAI::SetCombatMove(bool on)
         }
         else
         {
+            me->GetMotionMaster()->MovementExpired();
+            me->GetMotionMaster()->Clear(true);
             me->StopMoving();
             me->GetMotionMaster()->MoveIdle();
         }

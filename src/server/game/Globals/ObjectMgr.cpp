@@ -1632,7 +1632,8 @@ void ObjectMgr::LoadCreatures()
             continue;
         }
 
-        if (data.spawnMask & ~spawnMasks[data.mapid])
+        // Skip spawnMask check for transport maps
+        if (!_transportMaps.count(data.mapid) && data.spawnMask & ~spawnMasks[data.mapid])
             TC_LOG_ERROR("sql.sql", "Table `creature` have creature (GUID: %u) that have wrong spawn mask %u including not supported difficulty modes for map (Id: %u) spawnMasks[data.mapid]: %u.", guid, data.spawnMask, data.mapid, spawnMasks[data.mapid]);
 
         bool ok = true;
@@ -1967,7 +1968,7 @@ void ObjectMgr::LoadGameobjects()
 
         data.spawnMask      = fields[14].GetUInt8();
 
-        if (data.spawnMask & ~spawnMasks[data.mapid])
+        if (!_transportMaps.count(data.mapid) && data.spawnMask & ~spawnMasks[data.mapid])
             TC_LOG_ERROR("sql.sql", "Table `gameobject` has gameobject (GUID: %u Entry: %u) that has wrong spawn mask %u including not supported difficulty modes for map (Id: %u), skip", guid, data.id, data.spawnMask, data.mapid);
 
         data.phaseMask      = fields[15].GetUInt32();
@@ -6474,6 +6475,53 @@ void ObjectMgr::LoadGameObjectTemplate()
                     CheckGOLinkedTrapId(&got, got.goober.linkedTrapId, 12);
                 break;
             }
+            case GAMEOBJECT_TYPE_TRANSPORT:                 // 11
+            {
+                TransportAnimationsByEntry::const_iterator itr = sTransportAnimationsByEntry.find(entry);
+                if (itr == sTransportAnimationsByEntry.end())
+                {
+                    TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) is a transport but does not have entries in TransportAnimation.dbc! Gameobject is obsolete.",
+                        entry, got.type);
+                    break;
+                }
+
+                if (uint32 frame = got.transport.startFrame)
+                {
+                    if (itr->second.find(frame) == itr->second.end())
+                    {
+                        TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) has data0 = %u but this frame is not in TransportAnimation.dbc!",
+                            entry, got.type, frame);
+                    }
+                }
+
+                if (uint32 frame = got.transport.nextFrame1)
+                {
+                    if (itr->second.find(frame) == itr->second.end())
+                    {
+                        TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) has data6 = %u but this frame is not in TransportAnimation.dbc!",
+                            entry, got.type, frame);
+                    }
+                }
+
+                if (uint32 frame = got.transport.nextFrame2)
+                {
+                    if (itr->second.find(frame) == itr->second.end())
+                    {
+                        TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) has data8 = %u but this frame is not in TransportAnimation.dbc!",
+                            entry, got.type, frame);
+                    }
+                }
+
+                if (uint32 frame = got.transport.nextFrame3)
+                {
+                    if (itr->second.find(frame) == itr->second.end())
+                    {
+                        TC_LOG_ERROR("sql.sql", "Gameobject (Entry: %u GoType: %u) has data10 = %u but this frame is not in TransportAnimation.dbc!",
+                            entry, got.type, frame);
+                    }
+                }
+                break;
+            }
             case GAMEOBJECT_TYPE_AREADAMAGE:                //12
             {
                 if (got.areadamage.lockId)
@@ -6494,6 +6542,8 @@ void ObjectMgr::LoadGameObjectTemplate()
                         TC_LOG_ERROR("sql.sql", "GameObject (Entry: %u GoType: %u) have data0=%u but TaxiPath (Id: %u) not exist.",
                         entry, got.type, got.moTransport.taxiPathId, got.moTransport.taxiPathId);
                 }
+                if (uint32 transportMap = got.moTransport.mapID)
+                    _transportMaps.insert(transportMap);
                 break;
             }
             case GAMEOBJECT_TYPE_SUMMONING_RITUAL:          //18

@@ -66,6 +66,7 @@ uint32 GuidHigh2TypeId(uint32 guid_hi)
         case HIGHGUID_DYNAMICOBJECT:return TYPEID_DYNAMICOBJECT;
         case HIGHGUID_CORPSE:       return TYPEID_CORPSE;
         case HIGHGUID_AREATRIGGER:  return TYPEID_AREATRIGGER;
+        case HIGHGUID_TRANSPORT:    return TYPEID_GAMEOBJECT;
         case HIGHGUID_MO_TRANSPORT: return TYPEID_GAMEOBJECT;
         case HIGHGUID_VEHICLE:      return TYPEID_UNIT;
     }
@@ -422,11 +423,11 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(0);
     data->WriteBits(transportFrames.size(), 22);
     data->WriteBit(0);
-    data->WriteBit(0);              //hasTransportFrames
+    data->WriteBit(hasTransportFrames);
 
     /*if(hasTransportFrames)
     {
-        data->WriteBits(transportFrames.size(),22);
+        data->WriteBits(transportFrames.size(), 22);
     }*/
 
     if (hasGoTransportPos)
@@ -464,7 +465,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
         data->WriteBit(hasTransportData);       // HasTransport
 
-        if(hasTransportData)
+        if (hasTransportData)
         {
             ObjectGuid transGuid = self->m_movementInfo.transport.guid;
             data->WriteBit(transGuid[4]);
@@ -519,7 +520,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             Movement::PacketBuilder::WriteCreateBits(*self->movespline, *data);
     }
 
-    if(hasTarget)
+    if (hasTarget)
     {
         ObjectGuid victimGuid = ToUnit()->GetVictim()->GetGUID();   // checked in BuildCreateUpdateBlockForPlayer
         data->WriteBit(victimGuid[4]);
@@ -532,7 +533,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(victimGuid[1]);
     }
 
-    if(hasAnimKits)
+    if (hasAnimKits)
     {
         data->WriteBit(1);                                  //hasAnimKit2, negated
         data->WriteBit(1);                                  //hasAnimKit3, negated
@@ -541,7 +542,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    if(transportFrames.size() > 0)
+    if (transportFrames.size() > 0) // Write the GO transport frames.
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
         {
@@ -665,9 +666,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << uint64(ToGameObject()->GetRotation());
 
     if (hasVehicle)
-    {       
+    {
         *data << uint32(ToUnit()->GetVehicleKit()->GetVehicleInfo()->m_ID);
-        *data << float(ToUnit()->GetOrientation());
+        if (ToUnit()->GetTransGUID())
+            *data << float(ToUnit()->GetTransOffsetO());
+        else
+            *data << float(ToUnit()->GetOrientation());
     }
 
     if (hasTransport)
@@ -688,7 +692,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         //    *data << uint16(hasAnimKit3);
     }
 
-    /*if(hasTransportFrames)
+    /*if (hasTransportFrames)
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
         {
@@ -696,7 +700,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         }
     }*/
 
-    if(hasLiving)
+    if (hasLiving)
     {
         if(ToUnit()->IsSplineEnabled() && hasSplineFinalTarget)
             data->append(SplineFinalTargetGUID);
@@ -1780,6 +1784,10 @@ void WorldObject::UpdateGroundPositionZ(float x, float y, float &z) const
 
 void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
 {
+    // TODO: Allow transports to be part of dynamic vmap tree
+    if (GetTransport())
+        return;
+
     switch (GetTypeId())
     {
         case TYPEID_UNIT:
