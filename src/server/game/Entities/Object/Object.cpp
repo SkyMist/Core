@@ -559,9 +559,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         Unit const* self = ToUnit();
         ObjectGuid guid = GetGUID();
 
-        if (self->IsSplineEnabled())
-            Movement::PacketBuilder::WriteCreateData(*self->movespline, *data, &hasSplineFinalTarget, &SplineFinalTargetGUID);
-
         if (hasFallData)
         {
             if (hasFallDirection)
@@ -575,11 +572,46 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             *data << uint32(self->m_movementInfo.jump.fallTime);
         }
 
+        if (self->IsSplineEnabled())
+            Movement::PacketBuilder::WriteCreateData(*self->movespline, *data, &hasSplineFinalTarget, &SplineFinalTargetGUID);
+
         *data << float(self->GetPositionZMinusOffset());
+
+        //here is a skipped loop, controlled by the writebits(19) in the bit section
+
         *data << float(self->GetPositionY());
         *data << float(self->GetSpeed(MOVE_FLIGHT));
         data->WriteByteSeq(guid[6]);
         *data << float(self->GetSpeed(MOVE_FLIGHT_BACK));
+
+        if(hasTransportData)
+        {
+            ObjectGuid transGuid = self->m_movementInfo.transport.guid;
+
+            data->WriteByteSeq(transGuid[7]);
+            data->WriteByteSeq(transGuid[4]);
+
+            if (hasTransportTime3)
+                *data << uint32(self->m_movementInfo.transport.time3);
+	
+            *data << uint32(self->GetTransTime());
+
+            if (hasTransportTime2)
+                *data << uint32(self->m_movementInfo.transport.time2);
+	
+            *data << float(self->GetTransOffsetO());
+            *data << float(self->GetTransOffsetX());
+            data->WriteByteSeq(transGuid[6]);
+            data->WriteByteSeq(transGuid[3]);
+            data->WriteByteSeq(transGuid[2]);
+            *data << float(self->GetTransOffsetZ());
+            *data << float(self->GetTransOffsetY());
+            *data << int8(self->GetTransSeat());
+            data->WriteByteSeq(transGuid[1]);
+            data->WriteByteSeq(transGuid[0]);
+            data->WriteByteSeq(transGuid[5]);
+        }
+
         *data << float(self->GetPositionX());
         data->WriteByteSeq(guid[2]);
 
