@@ -245,7 +245,10 @@ TaxiPathNodesByPath sTaxiPathNodesByPath;
 static DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
 
 DBCStorage <TotemCategoryEntry> sTotemCategoryStore(TotemCategoryEntryfmt);
+
+TransportAnimationsByEntry sTransportAnimationsByEntry;
 DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationfmt);
+
 DBCStorage <TransportRotationEntry> sTransportRotationStore(TransportRotationfmt);
 DBCStorage <UnitPowerBarEntry> sUnitPowerBarStore(UnitPowerBarfmt);
 DBCStorage <VehicleEntry> sVehicleStore(VehicleEntryfmt);
@@ -808,6 +811,8 @@ void LoadDBCStores(const std::string& dataPath)
 
     //LoadDBC(availableDbcLocales, bad_dbc_files, sTeamContributionPointsStore, dbcPath, "TeamContributionPoints.dbc");
     LoadDBC(availableDbcLocales, bad_dbc_files, sTotemCategoryStore,          dbcPath, "TotemCategory.dbc");//15595
+
+    // TODO: Check and deprecate failed "attempt" in TransportMgr to get these solved.
     LoadDBC(availableDbcLocales, bad_dbc_files, sTransportAnimationStore,     dbcPath, "TransportAnimation.dbc");
     for (uint32 i = 0; i < sTransportAnimationStore.GetNumRows(); ++i)
     {
@@ -815,9 +820,11 @@ void LoadDBCStores(const std::string& dataPath)
         if (!anim)
             continue;
 
-        sTransportMgr->AddPathNodeToTransport(anim->TransportEntry, anim->TimeSeg, anim);
+        sTransportAnimationsByEntry[anim->TransportEntry][anim->TimeSeg] = anim;
+        // sTransportMgr->AddPathNodeToTransport(anim->TransportEntry, anim->TimeSeg, anim);
     }
 
+    // TODO: Maybe properly use these rotations in building the transport animations (though, normally, these are just "read" by auto-moving GO's, not voluntarily used).
     LoadDBC(availableDbcLocales, bad_dbc_files, sTransportRotationStore,     dbcPath, "TransportRotation.dbc");
     for (uint32 i = 0; i < sTransportRotationStore.GetNumRows(); ++i)
     {

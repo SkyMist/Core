@@ -2328,13 +2328,14 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (!GetSession()->PlayerLogout())
             {
                 // send transfer packets
-                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4);              
+                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4);       
+
                 data << uint32(mapid);
+                data.WriteBit(0);       // Unknown.
 
-                data.WriteBit(0);       // unknown
-                data.WriteBit(m_transport != NULL);
-
-                if (m_transport)
+                bool currentlyHasTransport = (m_transport && m_transport->GetGOInfo()->type == GAMEOBJECT_TYPE_MO_TRANSPORT) ? true : false;
+                data.WriteBit(currentlyHasTransport);
+                if (currentlyHasTransport)
                 {
                     // Might be in wrong order
                     data << GetMapId();
@@ -5260,7 +5261,7 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 void Player::KillPlayer()
 {
     if (IsFlying() && !GetTransport())
-        i_motionMaster.MoveFall();
+        GetMotionMaster()->MoveFall();
 
     SetRooted(true);
 
@@ -9939,13 +9940,7 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
             if (bg && bg->GetTypeID(true) == BATTLEGROUND_BFG)
                 bg->FillInitialWorldStates(data);
             break;
-        // Wintergrasp
-        case 4197:
-            if (bf && bf->GetTypeId() == BATTLEFIELD_WG)
-            {
-                bf->FillInitialWorldStates(data);
-                break;
-            }
+        // Halls of Refection
         case 4820:
             if (instance && mapid == 668)
                 instance->FillInitialWorldStates(data);
@@ -9955,6 +9950,13 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 data << uint32(4882) << uint32(0);              // 10 WORLD_STATE_HOR_WAVE_COUNT
             }
             break;
+        // Wintergrasp
+        case 4197:
+            if (bf && bf->GetTypeId() == BATTLEFIELD_WG)
+            {
+                bf->FillInitialWorldStates(data);
+                break;
+            }
 
             // No break here, intended.
         default:
@@ -17286,7 +17288,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     InitPrimaryProfessions();                               // to max set before any spell loaded
 
     // init saved position, and fix it later if problematic
-    uint32 transGUID = uint32(fields[31].GetUInt32());
+    uint32 transLowGUID = uint32(fields[31].GetUInt32());
 
     Relocate(fields[12].GetFloat(), fields[13].GetFloat(), fields[14].GetFloat(), fields[16].GetFloat());
 
@@ -17390,40 +17392,48 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         }
     }
     // currently we do not support transport in bg
-    else if (transGUID)
+    else if (transLowGUID)
     {
-        m_movementInfo.transport.guid = MAKE_NEW_GUID(transGUID, 0, HIGHGUID_MO_TRANSPORT);
-        m_movementInfo.transport.pos.Relocate(fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), fields[30].GetFloat());
+        uint64 transGUID = MAKE_NEW_GUID(transLowGUID, 0, HIGHGUID_MO_TRANSPORT);
 
-        if (!Trinity::IsValidMapCoord(
-            GetPositionX()+m_movementInfo.transport.pos.GetPositionX(), GetPositionY()+m_movementInfo.transport.pos.GetPositionY(),
-            GetPositionZ()+m_movementInfo.transport.pos.GetPositionZ(), GetOrientation()+m_movementInfo.transport.pos.GetOrientation()) ||
-            // transport size limited
-            m_movementInfo.transport.pos.m_positionX > 250 || m_movementInfo.transport.pos.m_positionY > 250 || m_movementInfo.transport.pos.m_positionZ > 250)
+        if (GameObject* go = HashMapHolder<GameObject>::Find(transGUID))
+            m_transport = go->ToTransport();
+
+        if (m_transport)
         {
-            TC_LOG_ERROR("entities.player", "Player (guidlow %d) have invalid transport coordinates (X: %f Y: %f Z: %f O: %f). Teleport to bind location.",
-                guid, GetPositionX()+m_movementInfo.transport.pos.GetPositionX(), GetPositionY()+m_movementInfo.transport.pos.GetPositionY(),
-                GetPositionZ()+m_movementInfo.transport.pos.GetPositionZ(), GetOrientation()+m_movementInfo.transport.pos.GetOrientation());
+            m_movementInfo.transport.guid = transGUID;
+            float x = fields[26].GetFloat(), y = fields[27].GetFloat(), z = fields[28].GetFloat(), o = fields[29].GetFloat();
+            m_movementInfo.transport.pos.Relocate(x, y, z, o);
+            m_transport->CalculatePassengerPosition(x, y, z, &o);
 
-            RelocateToHomebind();
-        }
-        else
-        {
-            if (GameObject* go = HashMapHolder<GameObject>::Find(m_movementInfo.transport.guid))
-                m_transport = go->ToTransport();
+            if (!Trinity::IsValidMapCoord(x, y, z, o) ||
+                // transport size limited
+                std::fabs(m_movementInfo.transport.pos.GetPositionX()) > 250.0f ||
+                std::fabs(m_movementInfo.transport.pos.GetPositionY()) > 250.0f ||
+                std::fabs(m_movementInfo.transport.pos.GetPositionZ()) > 250.0f)
+            {
+                TC_LOG_ERROR("entities.player", "Player (guidlow %d) have invalid transport coordinates (X: %f Y: %f Z: %f O: %f). Teleport to bind location.",
+                    guid, x, y, z, o);
 
-            if (m_transport)
-            {
-                m_transport->AddPassenger(this);
-                mapId = m_transport->GetMapId();
-            }
-            else
-            {
-                TC_LOG_ERROR("entities.player", "Player (guidlow %d) have problems with transport guid (%u). Teleport to bind location.",
-                    guid, transGUID);
+                m_transport = NULL;
+                m_movementInfo.transport.Reset();
 
                 RelocateToHomebind();
             }
+            else
+            {
+                Relocate(x, y, z, o);
+                mapId = m_transport->GetMapId();
+
+                m_transport->AddPassenger(this);
+            }
+        }
+        else
+        {
+            TC_LOG_ERROR("entities.player", "Player (guidlow %d) have problems with transport guid (%u). Teleport to bind location.",
+                guid, transLowGUID);
+
+            RelocateToHomebind();
         }
     }
     // currently we do not support taxi in instance
@@ -19334,6 +19344,14 @@ void Player::SaveToDB(bool create /*=false*/)
         stmt->setFloat(index++, finiteAlways(GetPositionY()));
         stmt->setFloat(index++, finiteAlways(GetPositionZ()));
         stmt->setFloat(index++, finiteAlways(GetOrientation()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetX()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetY()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetZ()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetO()));
+        uint32 transLowGUID = 0;
+        if (GetTransport())
+            transLowGUID = GetTransport()->GetGUIDLow();
+        stmt->setUInt32(index++, transLowGUID);
 
         std::ostringstream ss;
         ss << m_taxi;
@@ -19454,6 +19472,15 @@ void Player::SaveToDB(bool create /*=false*/)
             stmt->setFloat(index++, finiteAlways(GetTeleportDest().GetPositionZ()));
             stmt->setFloat(index++, finiteAlways(GetTeleportDest().GetOrientation()));
         }
+
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetX()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetY()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetZ()));
+        stmt->setFloat(index++, finiteAlways(GetTransOffsetO()));
+        uint32 transLowGUID = 0;
+        if (GetTransport())
+            transLowGUID = GetTransport()->GetGUIDLow();
+        stmt->setUInt32(index++, transLowGUID);
 
         std::ostringstream ss;
         ss << m_taxi;
