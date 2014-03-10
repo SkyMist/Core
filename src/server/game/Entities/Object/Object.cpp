@@ -411,12 +411,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(hasVehicle);
     data->WriteBit(0);                                              //has unk dword1044
     data->WriteBit(hasGobjectRotation);
-    data->WriteBit(self);
+    data->WriteBit(0);                                              //unk byte0
     data->WriteBit(hasLiving);
     data->WriteBit(0);                                              //has Unk Large Block
     data->WriteBit(0);                                              //unk byte2
     data->WriteBit(0);                                              //has Unk Large Block2
-    data->WriteBit(0);                                              //unk byte680
+    data->WriteBit(self);                                           
     data->WriteBit(0);                                              //unk byte681
     data->WriteBit(0);                                              //unk byte1
     data->WriteBit(hasGoTransportPos);
