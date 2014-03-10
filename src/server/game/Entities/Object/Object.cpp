@@ -376,8 +376,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasVehicle = flags & UPDATEFLAG_VEHICLE;
     bool hasTarget = flags & UPDATEFLAG_HAS_TARGET;
     bool hasAnimKits = flags & UPDATEFLAG_ANIMKITS;
-    bool hasTransport = flags & UPDATEFLAG_TRANSPORT;
     bool hasTransportFrames = flags & UPDATEFLAG_TRANSPORT_ARR;
+    bool hasTransport = (flags & UPDATEFLAG_TRANSPORT) || hasTransportFrames;
     bool hasGoTransportPos = flags & UPDATEFLAG_GO_TRANSPORT_POSITION;          //proper update block for transports, sends transport data used for generating a smooth path, conversation with sebastian 09.03.2014 about transports
 
     std::vector<uint32> transportFrames;
