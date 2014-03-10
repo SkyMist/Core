@@ -366,6 +366,7 @@ uint16 Object::GetUInt16Value(uint16 index, uint8 offset) const
 
 void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 {
+    bool self = flags & UPDATEFLAG_SELF;
     bool hasLiving = flags & UPDATEFLAG_LIVING;
     bool hasStationaryPostion = flags & UPDATEFLAG_STATIONARY_POSITION;
     bool hasGobjectRotation = flags & UPDATEFLAG_ROTATION;
@@ -412,7 +413,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(0);
     data->WriteBit(0);
     data->WriteBit(0);
-    data->WriteBit(flags & UPDATEFLAG_SELF);
+    data->WriteBit(self);
     data->WriteBit(0);
     data->WriteBit(hasGoTransportPos);
     data->WriteBit(0);
@@ -675,12 +676,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     }
 
     if (hasTransport)
-    {
-        if (flags & UPDATEFLAG_TRANSPORT)
-            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
-        else if (flags & UPDATEFLAG_TRANSPORT_ARR)
-            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
-    }
+        *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
+    else if (hasTransportFrames)
+        *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
 
     if (hasAnimKits)
     {
