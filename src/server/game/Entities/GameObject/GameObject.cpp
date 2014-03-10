@@ -2223,7 +2223,7 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
             }
             else if (index == GAMEOBJECT_FIELD_STATE_SPELL_VISUAL_ID)
             {
-                uint32 flags = m_uint32Values[GAMEOBJECT_FIELD_FLAGS];
+                uint32 flags = m_uint32Values[GAMEOBJECT_FIELD_STATE_SPELL_VISUAL_ID];
                 if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT)
                     flags |= GO_STATE_TRANSPORT_SPEC;
 
