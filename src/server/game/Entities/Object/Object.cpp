@@ -407,26 +407,26 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     uint32 movementFlagsExtra;
     ByteBuffer SplineFinalTargetGUID(9);
 
-    data->WriteBit(0);
+    data->WriteBit(0);                                              //has Unk dword676
     data->WriteBit(hasVehicle);
-    data->WriteBit(hasTransport);
+    data->WriteBit(0);                                              //has unk dword1044
     data->WriteBit(hasGobjectRotation);
-    data->WriteBit(0);
-    data->WriteBit(hasLiving);
-    data->WriteBit(0);
-    data->WriteBit(0);
-    data->WriteBit(0);
     data->WriteBit(self);
-    data->WriteBit(0);
+    data->WriteBit(hasLiving);
+    data->WriteBit(0);                                              //has Unk Large Block
+    data->WriteBit(0);                                              //unk byte2
+    data->WriteBit(0);                                              //has Unk Large Block2
+    data->WriteBit(0);                                              //unk byte680
+    data->WriteBit(0);                                              //unk byte681
+    data->WriteBit(0);                                              //unk byte1
     data->WriteBit(hasGoTransportPos);
-    data->WriteBit(0);
-    data->WriteBit(0);
+    data->WriteBit(hasTransport);
     data->WriteBit(hasAnimKits);
     data->WriteBit(hasStationaryPosition);
     data->WriteBit(hasTarget);
-    data->WriteBit(0);
+    data->WriteBit(0);                                              //unk byte3
     data->WriteBits(0, 22);
-    data->WriteBit(0);
+    data->WriteBit(0);                                              //has Unk string
     data->WriteBit(hasTransportFrames);
 
     if(hasTransportFrames)
@@ -698,6 +698,14 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << uint32(self->GetTransTime());   
     }
 
+    if (hasTransport)
+    {
+        if (hasTransportFrames)
+            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
+        else
+            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
+    }
+
     if (hasGobjectRotation)
         *data << uint64(ToGameObject()->GetRotation());
 
@@ -708,14 +716,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             *data << float(ToUnit()->GetTransOffsetO());
         else
             *data << float(ToUnit()->GetOrientation());
-    }
-
-    if (hasTransport)
-    {
-        if (hasTransportFrames)
-            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
-        else
-            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
     }
 
     if (hasAnimKits)
