@@ -258,6 +258,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         case GAMEOBJECT_TYPE_TRANSPORT:
             // SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, goinfo->transport.pause);
             SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, getMSTime());
+            // BWD Nef platform / HOO elevator / Deathwhisper elevator manual settings.
             if (goinfo->entry == 207834 || goinfo->entry == 207547 || goinfo->entry == 202220 || goinfo->entry == 193182 || goinfo->entry == 193183 || goinfo->entry == 193184 || goinfo->entry == 193185)
                 SetManualAnim(true); // Set manual commands
             SetGoState(goinfo->transport.startOpen ? GO_STATE_ACTIVE : GO_STATE_READY);
@@ -1986,10 +1987,7 @@ void GameObject::SetGoState(GOState state)
 {
     GOState oldState = GetGoState();
 
-    if (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR)
-        SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state | GO_STATE_TRANSPORT_SPEC);
-    else
-        SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state);
+    SetByteValue(GAMEOBJECT_FIELD_PERCENT_HEALTH, 0, state);
 
     sScriptMgr->OnGameObjectStateChanged(this, state);
 
@@ -2150,7 +2148,7 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
     {
         if ((_fieldNotifyFlags & flags[index] ||
             ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag)) ||
-            (index == GAMEOBJECT_FIELD_FLAGS && forcedFlags)))
+            (index == GAMEOBJECT_FIELD_FLAGS && forcedFlags)) || (index == GAMEOBJECT_FIELD_PERCENT_HEALTH))
         {
             updateMask.SetBit(index);
 
@@ -2187,6 +2185,14 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
                 if (GetGoType() == GAMEOBJECT_TYPE_CHEST)
                     if (GetGOInfo()->chest.groupLootRules && !IsLootAllowedFor(target))
                         flags |= GO_FLAG_LOCKED | GO_FLAG_NOT_SELECTABLE;
+
+                fieldBuffer << flags;
+            }
+            else if (index == GAMEOBJECT_FIELD_PERCENT_HEALTH)
+            {
+                uint32 flags = m_uint32Values[GAMEOBJECT_FIELD_PERCENT_HEALTH];
+                if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && !IsDynTransport() && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
+                    flags |= GO_STATE_TRANSPORT_SPEC;
 
                 fieldBuffer << flags;
             }
