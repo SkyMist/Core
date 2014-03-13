@@ -376,24 +376,24 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasVehicle = flags & UPDATEFLAG_VEHICLE;
     bool hasTarget = flags & UPDATEFLAG_HAS_TARGET;
     bool hasAnimKits = flags & UPDATEFLAG_ANIMKITS;
-    bool hasTransportFrames = flags & UPDATEFLAG_TRANSPORT_ARR;
-    bool hasTransport = (flags & UPDATEFLAG_TRANSPORT) || hasTransportFrames;
+    bool hasGOTransportFrames = flags & UPDATEFLAG_TRANSPORT_ARR;
+    bool hasTransport = (flags & UPDATEFLAG_TRANSPORT) || hasGOTransportFrames;
     bool hasGoTransportPos = flags & UPDATEFLAG_GO_TRANSPORT_POSITION;          //proper update block for transports, sends transport data used for generating a smooth path, conversation with sebastian 09.03.2014 about transports
 
-    std::vector<uint32> transportFrames;
-    if (hasTransportFrames)
+    std::vector<uint32> GOTransportFrames;
+    if (hasGOTransportFrames)
     {
         const GameObjectTemplate* goInfo = ToGameObject()->GetGOInfo();
         if (goInfo->type == GAMEOBJECT_TYPE_TRANSPORT)
         {
             if (goInfo->transport.startFrame)
-                transportFrames.push_back(goInfo->transport.startFrame);
+                GOTransportFrames.push_back(goInfo->transport.startFrame);
             if (goInfo->transport.nextFrame1)
-                transportFrames.push_back(goInfo->transport.nextFrame1);
+                GOTransportFrames.push_back(goInfo->transport.nextFrame1);
             //if (goInfo->transport.nextFrame2)
-            //    transportFrames.push_back(goInfo->transport.nextFrame2);
+            //    GOTransportFrames.push_back(goInfo->transport.nextFrame2);
             //if (goInfo->transport.nextFrame3)
-            //    transportFrames.push_back(goInfo->transport.nextFrame3);
+            //    GOTransportFrames.push_back(goInfo->transport.nextFrame3);
         }
     }
 
@@ -427,7 +427,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(hasStationaryPosition);
     data->WriteBit(hasTarget);
     data->WriteBit(0);                                              //unk byte3
-    data->WriteBits(transportFrames.size(), 22);
+    data->WriteBits(GOTransportFrames.size(), 22);
     data->WriteBit(0);                                              //has Unk string
     data->WriteBit(0);                                              //hasTaxiPathNodeRecord?
 
@@ -548,9 +548,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    if (hasTransportFrames)
+    if (hasGOTransportFrames)
     {
-        for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
+        for (std::vector<uint32>::iterator itr = GOTransportFrames.begin(); itr != GOTransportFrames.end(); ++itr)
             *data << uint32(*itr);
     }
 
@@ -663,14 +663,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     if (hasStationaryPosition)
     {
         WorldObject const* self = static_cast<WorldObject const*>(this);
-        *data << float(Position::NormalizeOrientation(self->GetOrientation()));
-        *data << float(self->GetPositionX());
-        *data << float(self->GetPositionY());
-
-        if (Unit const* unit = ToUnit())
-            *data << float(unit->GetPositionZMinusOffset());
-        else
-            *data << float(self->GetPositionZ());
+        *data << float(self->GetStationaryO());
+        *data << float(self->GetStationaryX());
+        *data << float(self->GetStationaryY());
+        *data << float(self->GetStationaryZ());
     }
 
     if (hasGoTransportPos)
@@ -709,9 +705,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         {
             if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_MO_TRANSPORT)
                 *data << uint32(go->GetGOValue()->Transport.PathProgress); // Transport path timer.
-            else if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT && hasTransportFrames)
+            else if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT && hasGOTransportFrames)
                 *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL)); // Animation timer (calculated).
-            else // !hasTransportFrames.
+            else // !hasGOTransportFrames.
                 *data << uint32(getMSTime());
         }
         else
