@@ -451,7 +451,7 @@ CREATE TABLE `realmlist` (
 
 LOCK TABLES `realmlist` WRITE;
 /*!40000 ALTER TABLE `realmlist` DISABLE KEYS */;
-INSERT INTO `realmlist` VALUES (1,'SkyMist MoP','127.0.0.1','127.0.0.1','255.255.255.0',8085,1,0,1,0,0,17956);
+INSERT INTO `realmlist` VALUES (1,'SkyMist MoP','127.0.0.1','127.0.0.1','255.255.255.0',8085,1,0,1,0,0,18019);
 /*!40000 ALTER TABLE `realmlist` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -4850,45 +4850,133 @@ void Unit::ProcDamageAndSpell(Unit* victim, uint32 procAttacker, uint32 procVict
 void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* pInfo)
 {
     AuraEffect const* aura = pInfo->auraEff;
+    ObjectGuid casterGuid = aura->GetCasterGUID();
+    ObjectGuid victimGuid = GetGUID();
 
     WorldPacket data(SMSG_PERIODICAURALOG, 30);
-    data.append(GetPackGUID());
-    data.appendPackGUID(aura->GetCasterGUID());
-    data << uint32(aura->GetId());                          // spellId
-    data << uint32(1);                                      // count
-    data << uint32(aura->GetAuraType());                    // auraId
+
+    data.WriteBit(victimGuid[5]);
+    data.WriteBit(victimGuid[6]);
+    data.WriteBit(casterGuid[6]);
+    data.WriteBit(casterGuid[1]);
+    data.WriteBit(victimGuid[3]);
+    data.WriteBit(victimGuid[0]);
+    data.WriteBit(casterGuid[3]);
+    data.WriteBit(victimGuid[2]);
+    data.WriteBit(casterGuid[7]);
+    data.WriteBit(casterGuid[4]);
+    data.WriteBit(casterGuid[5]);
+    data.WriteBit(victimGuid[4]);
+
+    data.WriteBits(1, 21); // Count
+
+    // Count loop here
+    data.WriteBit(pInfo->critical);
+    size_t pos = data.bitwpos();
+
+    // All sent for now, will mess with it l8 ^^
     switch (aura->GetAuraType())
     {
+
         case SPELL_AURA_PERIODIC_DAMAGE:
         case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
-            data << uint32(pInfo->damage);                  // damage
-            data << uint32(pInfo->overDamage);              // overkill?
-            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
-            data << uint32(pInfo->absorb);                  // absorb
-            data << uint32(pInfo->resist);                  // resist
-            data << uint8(pInfo->critical);                 // new 3.1.2 critical tick
+            data.WriteBit(0); // Int 4 -- Absorb
+            data.WriteBit(0); // Int 3 -- SchoolMask
+            data.WriteBit(0); // Int 2 -- OverKill
+            data.WriteBit(0); // Int 5 -- Resist
             break;
         case SPELL_AURA_PERIODIC_HEAL:
         case SPELL_AURA_OBS_MOD_HEALTH:
-            data << uint32(pInfo->damage);                  // damage
-            data << uint32(pInfo->overDamage);              // overheal
-            data << uint32(pInfo->absorb);                  // absorb
-            data << uint8(pInfo->critical);                 // new 3.1.2 critical tick
+            data.WriteBit(0); // Int 4 -- Absorb
+            data.WriteBit(0); // Int 3 -- SchoolMask
+            data.WriteBit(0); // Int 2 -- OverHeal
+            data.WriteBit(1); // Int 5
             break;
         case SPELL_AURA_OBS_MOD_POWER:
         case SPELL_AURA_PERIODIC_ENERGIZE:
-            data << uint32(aura->GetMiscValue());           // power type
-            data << uint32(pInfo->damage);                  // damage
+            data.WriteBit(1); // Int 4
+            data.WriteBit(0); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+        case SPELL_AURA_PERIODIC_MANA_LEECH:
+            data.WriteBit(1); // Int 4
+            data.WriteBit(0); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+            break;
+        default:
+            data.WriteBit(1); // Int 4
+            data.WriteBit(1); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+            break;
+    }
+
+    data.WriteBit(victimGuid[7]);
+
+    data.WriteBit(0); // Some data
+
+    data.WriteBit(casterGuid[2]);
+    data.WriteBit(casterGuid[0]);
+    data.WriteBit(victimGuid[1]);
+    data.FlushBits();
+
+    data.WriteByteSeq(victimGuid[3]);
+
+    // Switch Loop
+    data << uint32(aura->GetAuraType()); // auraId
+    switch (aura->GetAuraType())
+    {
+
+        case SPELL_AURA_PERIODIC_DAMAGE:
+        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
+            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
+            data << uint32(pInfo->damage); // damage
+            data << uint32(pInfo->overDamage); // overkill
+            data << uint32(pInfo->absorb); // absorb
+            data << uint32(pInfo->resist); // resist
+            break;
+        case SPELL_AURA_PERIODIC_HEAL:
+        case SPELL_AURA_OBS_MOD_HEALTH:
+            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
+            data << uint32(pInfo->damage); // damage
+            data << uint32(pInfo->overDamage); // overheal
+            data << uint32(pInfo->absorb); // absorb
+            break;
+        case SPELL_AURA_OBS_MOD_POWER:
+        case SPELL_AURA_PERIODIC_ENERGIZE:
+            data << uint32(aura->GetMiscValue()); // power type
+            data << uint32(pInfo->damage); // damage
             break;
         case SPELL_AURA_PERIODIC_MANA_LEECH:
-            data << uint32(aura->GetMiscValue());           // power type
-            data << uint32(pInfo->damage);                  // amount
-            data << float(pInfo->multiplier);               // gain multiplier
+            data << uint32(aura->GetMiscValue()); // power type
+            data << uint32(pInfo->damage); // amount
+            //data << float(pInfo->multiplier); // gain multiplier
             break;
         default:
             TC_LOG_ERROR("entities.unit", "Unit::SendPeriodicAuraLog: unknown aura %u", uint32(aura->GetAuraType()));
-            return;
+            data << uint32(0); // Mask
+            break;
     }
+
+    data.WriteByteSeq(casterGuid[4]);
+    data.WriteByteSeq(casterGuid[3]);
+    data.WriteByteSeq(casterGuid[0]);
+    data.WriteByteSeq(casterGuid[5]);
+    data.WriteByteSeq(casterGuid[1]);
+
+    data << uint32(aura->GetId()); // spellId
+
+    data.WriteByteSeq(victimGuid[7]);
+    data.WriteByteSeq(victimGuid[4]);
+    data.WriteByteSeq(victimGuid[1]);
+    data.WriteByteSeq(casterGuid[2]);
+    data.WriteByteSeq(victimGuid[5]);
+    data.WriteByteSeq(casterGuid[7]);
+    data.WriteByteSeq(victimGuid[2]);
+    data.WriteByteSeq(casterGuid[6]);
+    data.WriteByteSeq(victimGuid[0]);
+    data.WriteByteSeq(victimGuid[6]);
 
     SendMessageToSet(&data, true);
 }
@@ -8497,16 +8585,53 @@ void Unit::UnsummonAllTotems()
 
 void Unit::SendHealSpellLog(Unit* victim, uint32 SpellID, uint32 Damage, uint32 OverHeal, uint32 Absorb, bool critical)
 {
+    ObjectGuid victimGuid = victim->GetGUID();
+    ObjectGuid casterGuid = GetGUID();
+
     // we guess size
     WorldPacket data(SMSG_SPELLHEALLOG, 8 + 8 + 4 + 4 + 4 + 4 + 1 + 1);
-    data.append(victim->GetPackGUID());
-    data.append(GetPackGUID());
+    data.WriteBit(casterGuid[0]);
+    data.WriteBit(casterGuid[7]);
+    data.WriteBit(victimGuid[6]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[5]);
+    data.WriteBit(victimGuid[1]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[4]);
+    data.WriteBit(victimGuid[0]);
+    data.WriteBit(casterGuid[3]);
+    data.WriteBit(casterGuid[1]);
+    data.WriteBit(casterGuid[5]);
+    data.WriteBit(victimGuid[2]);
+    data.WriteBit(casterGuid[2]);
+    data.WriteBit(victimGuid[3]);
+    data.WriteBit(critical);
+    data.WriteBit(casterGuid[6]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[7]);
+    data.WriteBit(casterGuid[4]);
+
+    data.WriteByteSeq(casterGuid[5]);
+    data.WriteByteSeq(victimGuid[7]);
+    data.WriteByteSeq(casterGuid[2]);
+    data.WriteByteSeq(victimGuid[1]);
+    data.WriteByteSeq(victimGuid[5]);
+    data.WriteByteSeq(victimGuid[2]);
     data << uint32(SpellID);
-    data << uint32(Damage);
+    data.WriteByteSeq(victimGuid[6]);
+    data << uint32(Absorb);
     data << uint32(OverHeal);
-    data << uint32(Absorb); // Absorb amount
-    data << uint8(critical ? 1 : 0);
-    data << uint8(0); // unused
+    data.WriteByteSeq(casterGuid[6]);
+    data.WriteByteSeq(victimGuid[0]);
+    data.WriteByteSeq(casterGuid[7]);
+    data.WriteByteSeq(casterGuid[1]);
+    data.WriteByteSeq(victimGuid[3]);
+    data.WriteByteSeq(casterGuid[0]);
+    data.WriteByteSeq(victimGuid[4]);
+    data.WriteByteSeq(casterGuid[3]);
+    data << uint32(Damage);
+    data.WriteByteSeq(casterGuid[4]);
+
     SendMessageToSet(&data, true);
 }
 
