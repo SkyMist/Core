@@ -2191,7 +2191,7 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
             else if (index == GAMEOBJECT_FIELD_PERCENT_HEALTH)
             {
                 uint32 flags = m_uint32Values[GAMEOBJECT_FIELD_PERCENT_HEALTH];
-                if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && !((GameObject*)this)->IsDynTransport() && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
+                if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && !IsDynTransport() && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
                     flags |= GO_STATE_TRANSPORT_SPEC;
 
                 fieldBuffer << flags;

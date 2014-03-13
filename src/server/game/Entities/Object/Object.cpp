@@ -427,14 +427,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(hasStationaryPosition);
     data->WriteBit(hasTarget);
     data->WriteBit(0);                                              //unk byte3
-    data->WriteBits(0, 22);
+    data->WriteBits(transportFrames.size(), 22);
     data->WriteBit(0);                                              //has Unk string
-    data->WriteBit(hasTransportFrames);
+    data->WriteBit(0);                                              //hasTaxiPathNodeRecord?
 
-    if(hasTransportFrames)
-    {
-        data->WriteBits(transportFrames.size(), 22);
-    }
+    // if (hasTaxiPathNodeRecord)
+    //     data->WriteBits(MOtransportFrames.size(), 22);
 
     if (hasGoTransportPos)
     {
@@ -550,13 +548,11 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    /*if (transportFrames.size() > 0) // Write the GO transport frames.
+    if (hasTransportFrames)
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
-        {
             *data << uint32(*itr);
-        }
-    }*/
+    }
 
     if (hasLiving)
     {
@@ -588,7 +584,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteByteSeq(guid[6]);
         *data << float(self->GetSpeed(MOVE_FLIGHT_BACK));
 
-        if(hasTransportData)
+        if (hasTransportData)
         {
             ObjectGuid transGuid = self->m_movementInfo.transport.guid;
 
@@ -633,7 +629,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         if (movementFlags & MOVEMENTFLAG_SPLINE_ELEVATION)
             *data << float(self->m_movementInfo.splineElevation);
 
-        if(hasMovementCounter)
+        if (hasMovementCounter)
             *data << uint32(self->GetMovementCounter());
 
         *data << float(self->GetSpeed(MOVE_RUN));
@@ -641,7 +637,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << float(self->GetSpeed(MOVE_WALK));
         *data << float(self->GetSpeed(MOVE_PITCH_RATE));
 
-        if(hasTimestamp)
+        if (hasTimestamp)
             *data << uint32(self->m_movementInfo.time);
 
         data->WriteByteSeq(guid[4]);
@@ -708,10 +704,18 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     if (hasTransport)
     {
-        if (hasTransportFrames)
-            *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL));
+        GameObject const* go = ToGameObject();
+        if (go && go->IsTransport())
+        {
+            if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                *data << uint32(go->GetGOValue()->Transport.PathProgress); // Transport path timer.
+            else if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT && hasTransportFrames)
+                *data << uint32(GetUInt32Value(GAMEOBJECT_FIELD_LEVEL)); // Animation timer (calculated).
+            else // !hasTransportFrames.
+                *data << uint32(getMSTime());
+        }
         else
-            *data << uint32(getMSTime());                       // Transport path timer - getMSTime is wrong.
+            *data << uint32(getMSTime());
     }
 
     if (hasGobjectRotation)
@@ -728,21 +732,21 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     if (hasAnimKits)
     {
-        //if (hasAnimKit1)
-        //    *data << uint16(hasAnimKit1);
-        //if (hasAnimKit2)
-        //    *data << uint16(hasAnimKit2);
-        //if (hasAnimKit3)
-        //    *data << uint16(hasAnimKit3);
+    /*
+        if (hasAnimKit1)
+            *data << uint16(hasAnimKit1);
+        if (hasAnimKit2)
+            *data << uint16(hasAnimKit2);
+        if (hasAnimKit3)
+            *data << uint16(hasAnimKit3);
+    */
     }
 
-    if (hasTransportFrames)
+    /*if (hasTaxiPathNodeRecord)
     {
-        for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
-        {
+        for (std::vector<uint32>::iterator itr = MOtransportFrames.begin(); itr != MOtransportFrames.end(); ++itr)
             *data << uint32(*itr);
-        }
-    }
+    } */
 
     if (hasLiving)
     {
