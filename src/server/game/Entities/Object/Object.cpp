@@ -548,7 +548,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    if (hasTransportFrames)
+    if (transportFrames.size() > 0)
     {
         for (std::vector<uint32>::iterator itr = transportFrames.begin(); itr != transportFrames.end(); ++itr)
             *data << uint32(*itr);
