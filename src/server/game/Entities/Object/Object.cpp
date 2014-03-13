@@ -666,7 +666,11 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << float(self->GetStationaryO());
         *data << float(self->GetStationaryX());
         *data << float(self->GetStationaryY());
-        *data << float(self->GetStationaryZ());
+
+        if (Unit const* unit = ToUnit())
+            *data << float(unit->GetPositionZMinusOffset());
+        else
+            *data << float(self->GetStationaryZ());
     }
 
     if (hasGoTransportPos)
