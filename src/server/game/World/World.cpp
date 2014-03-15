@@ -458,7 +458,6 @@ void World::LoadConfigSettings(bool reload)
     }
     rate_values[RATE_POWER_FOCUS]  = sConfigMgr->GetFloatDefault("Rate.Focus", 1.0f);
     rate_values[RATE_POWER_ENERGY] = sConfigMgr->GetFloatDefault("Rate.Energy", 1.0f);
-    rate_values[RATE_POWER_CHI]    = sConfigMgr->GetFloatDefault("Rate.Chi", 1.0f);
 
     rate_values[RATE_SKILL_DISCOVERY]      = sConfigMgr->GetFloatDefault("Rate.Skill.Discovery", 1.0f);
 

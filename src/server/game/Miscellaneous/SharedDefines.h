@@ -200,6 +200,7 @@ enum Stats
 
 enum Powers
 {
+    // ! Note: Dark / Light Force was the planned main resource to be used by the monk class, but dropped for Energy in MOP Beta stage.
     POWER_MANA                          = 0,
     POWER_RAGE                          = 1,
     POWER_FOCUS                         = 2,

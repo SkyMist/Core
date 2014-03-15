@@ -7469,6 +7469,52 @@ void Unit::setPowerType(Powers new_powertype)
         case POWER_ENERGY:
             SetMaxPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
             break;
+        // POWER_LIGHT_FORCE - Deprecated.
+        case POWER_RUNES:
+            SetMaxPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            SetPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            break;
+        case POWER_RUNIC_POWER:
+            SetMaxPower(POWER_RUNIC_POWER, GetCreatePowers(POWER_RUNIC_POWER));
+            SetPower(POWER_RUNIC_POWER, 0);
+            break;
+        case POWER_SOUL_SHARDS:
+            SetMaxPower(POWER_SOUL_SHARDS, GetCreatePowers(POWER_SOUL_SHARDS));
+            SetPower(POWER_SOUL_SHARDS, 100);
+            break;
+        case POWER_ECLIPSE:
+            SetMaxPower(POWER_ECLIPSE, GetCreatePowers(POWER_ECLIPSE));
+            SetPower(POWER_ECLIPSE, 0);
+            break;
+        case POWER_HOLY_POWER:
+            SetMaxPower(POWER_HOLY_POWER, GetCreatePowers(POWER_HOLY_POWER));
+            SetPower(POWER_HOLY_POWER, 0);
+            break;
+        case POWER_ALTERNATE_POWER: // Differs after this based on aura.
+            SetMaxPower(POWER_ALTERNATE_POWER, GetCreatePowers(POWER_ALTERNATE_POWER));
+            SetPower(POWER_ALTERNATE_POWER, 0);
+            break;
+        // POWER_DARK_FORCE - Deprecated.
+        case POWER_CHI:
+            SetMaxPower(POWER_HOLY_POWER, GetCreatePowers(POWER_HOLY_POWER));
+            SetPower(POWER_HOLY_POWER, 0);
+            break;
+        case POWER_SHADOW_ORBS:
+            SetMaxPower(POWER_SHADOW_ORBS, GetCreatePowers(POWER_SHADOW_ORBS));
+            SetPower(POWER_SHADOW_ORBS, 0);
+            break;
+        case POWER_BURNING_EMBERS:
+            SetMaxPower(POWER_BURNING_EMBERS, GetCreatePowers(POWER_BURNING_EMBERS));
+            SetPower(POWER_BURNING_EMBERS, 10);
+            break;
+        case POWER_DEMONIC_FURY:
+            SetMaxPower(POWER_DEMONIC_FURY, GetCreatePowers(POWER_DEMONIC_FURY));
+            SetPower(POWER_DEMONIC_FURY, 200);
+            break;
+        case POWER_ARCANE_CHARGES:
+            SetMaxPower(POWER_ARCANE_CHARGES, GetCreatePowers(POWER_ARCANE_CHARGES));
+            SetPower(POWER_ARCANE_CHARGES, 0);
+            break;
     }
 }
 
@@ -11624,15 +11670,26 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_RUNE:
-        case UNIT_MOD_RUNIC_POWER:          UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod));          break;
+        case UNIT_MOD_LIGHT_FORCE:
+        case UNIT_MOD_RUNES:
+        case UNIT_MOD_RUNIC_POWER:
+        case UNIT_MOD_SOUL_SHARDS:
+        case UNIT_MOD_ECLIPSE:
+        case UNIT_MOD_HOLY_POWER:
+        case UNIT_MOD_ALTERNATIVE:
+        case UNIT_MOD_DARK_FORCE:
+        case UNIT_MOD_CHI:
+        case UNIT_MOD_SHADOW_ORBS:
+        case UNIT_MOD_BURNING_EMBERS:
+        case UNIT_MOD_DEMONIC_FURY:
+        case UNIT_MOD_ARCANE_CHARGES:      UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod));          break;
 
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
         case UNIT_MOD_RESISTANCE_NATURE:
         case UNIT_MOD_RESISTANCE_FROST:
         case UNIT_MOD_RESISTANCE_SHADOW:
-        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod));      break;
+        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod));     break;
 
         case UNIT_MOD_ATTACK_POWER:        UpdateAttackPowerAndDamage();         break;
         case UNIT_MOD_ATTACK_POWER_RANGED: UpdateAttackPowerAndDamage(true);     break;
@@ -11641,8 +11698,7 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_DAMAGE_OFFHAND:      UpdateDamagePhysical(OFF_ATTACK);     break;
         case UNIT_MOD_DAMAGE_RANGED:       UpdateDamagePhysical(RANGED_ATTACK);  break;
 
-        default:
-            break;
+        default: break;
     }
 
     return true;
@@ -11740,11 +11796,23 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
 {
     switch (unitMod)
     {
-        case UNIT_MOD_RAGE:        return POWER_RAGE;
-        case UNIT_MOD_FOCUS:       return POWER_FOCUS;
-        case UNIT_MOD_ENERGY:      return POWER_ENERGY;
-        case UNIT_MOD_RUNE:        return POWER_RUNES;
-        case UNIT_MOD_RUNIC_POWER: return POWER_RUNIC_POWER;
+        case UNIT_MOD_RAGE:           return POWER_RAGE;
+        case UNIT_MOD_FOCUS:          return POWER_FOCUS;
+        case UNIT_MOD_ENERGY:         return POWER_ENERGY;
+        case UNIT_MOD_LIGHT_FORCE:    return POWER_LIGHT_FORCE;
+        case UNIT_MOD_RUNES:          return POWER_RUNES;
+        case UNIT_MOD_RUNIC_POWER:    return POWER_RUNIC_POWER;
+        case UNIT_MOD_SOUL_SHARDS:    return POWER_SOUL_SHARDS;
+        case UNIT_MOD_ECLIPSE:        return POWER_ECLIPSE;
+        case UNIT_MOD_HOLY_POWER:     return POWER_HOLY_POWER;
+        case UNIT_MOD_ALTERNATIVE:    return POWER_ALTERNATE_POWER;
+        case UNIT_MOD_DARK_FORCE:     return POWER_DARK_FORCE;
+        case UNIT_MOD_CHI:            return POWER_CHI;
+        case UNIT_MOD_SHADOW_ORBS:    return POWER_SHADOW_ORB;
+        case UNIT_MOD_BURNING_EMBERS: return POWER_BURNING_EMBERS;
+        case UNIT_MOD_DEMONIC_FURY:   return POWER_DEMONIC_FURY;
+        case UNIT_MOD_ARCANE_CHARGES: return POWER_ARCANE_CHARGES;
+
         default:
         case UNIT_MOD_MANA:        return POWER_MANA;
     }
@@ -11860,7 +11928,7 @@ int32 Unit::GetPower(Powers power) const
     if (powerIndex == MAX_POWERS)
         return 0;
 
-    return GetUInt32Value(UNIT_FIELD_POWER + powerIndex);
+    return GetInt32Value(UNIT_FIELD_POWER + powerIndex);
 }
 
 int32 Unit::GetMaxPower(Powers power) const
@@ -11892,7 +11960,9 @@ void Unit::SetPower(Powers power, int32 val)
         data.WriteBit(guid[3]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[4]);
+
         data.WriteBits(1, 21); // 1 update
+
         data.WriteBit(guid[2]);
         data.WriteBit(guid[1]);
         data.WriteBit(guid[7]);
@@ -11903,14 +11973,78 @@ void Unit::SetPower(Powers power, int32 val)
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[1]);
+
         data << uint8(powerIndex);
         data << int32(val);
+
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[2]);
 
         SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER);
+    }
+
+    if (power == POWER_ALTERNATE_POWER)
+    {
+        if (HasAura(93103)) // Corruption Cho'gall. - Finished.
+        {
+            if (val >= 25 && !HasAura(81836)) AddAura(81836, ToPlayer());
+            if (val >= 50 && !HasAura(81829)) AddAura(81829, ToPlayer());
+            if (val >= 75 && !HasAura(82125))
+            {
+               AddAura(82125, ToPlayer());
+               AddAura(82167, ToPlayer());
+               Creature* malformation = ToPlayer()->SummonCreature(43888, ToPlayer()->GetPositionX(), ToPlayer()->GetPositionY(), ToPlayer()->GetPositionZ(), ToPlayer()->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+               malformation->CastSpell(ToPlayer(), 46598, true);
+            }
+            if (val >= 100 && !HasAura(82193))
+            {
+                AddAura(82193, ToPlayer());
+                AddAura(82170, ToPlayer());
+            }
+        }
+        else if (HasAura(78949)) // Electricity Onyxia. - Finished.
+        {
+            if (val >= 100) CastSpell(ToUnit(), 78999, true);
+        }
+        else if (HasAura(88824)) // Sound Atramedes. - Finished.
+        {
+            if (val >= 100)
+            {
+                CastSpell(ToPlayer(), 78897, true); // Noisy.
+                if (Creature* atramedes = ToPlayer()->FindNearestCreature(41442, 200.0f, true)) // Find Atramedes.
+                    atramedes->CastSpell(ToPlayer(), 78875, true); // Devastation.
+            }
+        }
+        else if (HasAura(98229)) // Concentration Majordomo HC. - LOADING BAR NOT DONE.
+        {
+            if (val >= 25 && !HasAura(98254)) AddAura(98254, ToPlayer());
+            if (val >= 50 && !HasAura(98253))
+            {
+               AddAura(98253, ToPlayer());
+               ToPlayer()->RemoveAurasDueToSpell(98254, true);
+            }
+            if (val >= 75 && !HasAura(98252))
+            {
+               AddAura(98252, ToPlayer());
+               RemoveAurasDueToSpell(98253, true);
+            }
+            if (val >= 100 && !HasAura(98245))
+            {
+               AddAura(98245, ToPlayer());
+               ToPlayer()->RemoveAurasDueToSpell(98252, true);
+            }
+        }
+        else if (HasAura(101410)) // Molten Feathers Alysrazor. - Finished.
+        {
+            if (val >= 3)
+            {
+               CastSpell(ToUnit(), 98624, true);
+               ToUnit()->SetPower(POWER_ALTERNATE_POWER, 0);
+               AddAura(101410, ToPlayer());
+            }
+        }
     }
 
     // group update
@@ -11976,31 +12110,26 @@ int32 Unit::GetCreatePowers(Powers power) const
 {
     switch (power)
     {
-        case POWER_MANA:
-            return GetCreateMana();
-        case POWER_RAGE:
-            return 1000;
-        case POWER_FOCUS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER)
-                return 100;
-            return (GetTypeId() == TYPEID_PLAYER || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : 100);
-        case POWER_ENERGY:
-            return 100;
-        case POWER_RUNIC_POWER:
-            return 1000;
-        case POWER_RUNES:
-            return 0;
-        case POWER_SOUL_SHARDS:
-            return 3;
-        case POWER_ECLIPSE:
-            return 100;
-        case POWER_HOLY_POWER:
-            return 3;
-        case POWER_HEALTH:
-            return 0;
-        case POWER_CHI:         return GetTypeId() == TYPEID_PLAYER && ((Player const*)this)->getClass() == CLASS_MONK ? 1000 : 0;
-        default:
-            break;
+        case POWER_MANA:            return GetCreateMana();
+        case POWER_RAGE:            return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARRIOR || GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DRUID && ToPlayer()->GetShapeshiftForm() == FORM_BEAR) ? 1000 : 0;
+        case POWER_FOCUS:           return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER || GetTypeId() == TYPEID_UNIT && ToCreature()->IsPet() && ToPet()->getPetType() == HUNTER_PET) ? 100 : 0;
+        case POWER_ENERGY:          return 100;
+        case POWER_LIGHT_FORCE:     return 0; // Should be 100 but the power is deprecated since MOP Beta.
+        case POWER_RUNES:           return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 8 : 0; // Normally 6 but Death Runes count as two more (4 types x 2).
+        case POWER_RUNIC_POWER:     return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 1000 : 0;
+        case POWER_SOUL_SHARDS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_AFFLICTION && ToPlayer()->getLevel() >= 19) ? 400 : 0;
+        case POWER_ECLIPSE:         return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID   && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_DRUID_BALANCE) ? 100 : 0; // Goes -100 Lunar to 100 Solar Eclipse.
+        case POWER_HOLY_POWER:      return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN) ? 3 : 0; // 5 max after learning Boundless Conviction at 85, otherwise 3.
+        case POWER_ALTERNATE_POWER: return 100;
+        case POWER_DARK_FORCE:      return 0; // Should be 100 but the power is deprecated since MOP Beta.
+        case POWER_CHI:             return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MONK) ? 4 : 0; // 5 max after learning Ascension at 45, else 4.
+        case POWER_SHADOW_ORBS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST  && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_PRIEST_SHADOW && ToPlayer()->getLevel() >= 21) ? 3 : 0;
+        case POWER_BURNING_EMBERS:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DESTRUCTION && ToPlayer()->getLevel() >= 42) ? 40 : 0; // 4 full x 10 minor.
+        case POWER_DEMONIC_FURY:    return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DEMONOLOGY) ? 1000 : 0;
+        case POWER_ARCANE_CHARGES:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MAGE    && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_MAGE_ARCANE) ? 4 : 0;
+        case POWER_HEALTH:          return 0;
+
+        default: break;
     }
 
     return 0;

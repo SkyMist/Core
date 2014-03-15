@@ -1732,24 +1732,43 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
 
     switch (form)
     {
+        // Monk
+        case FORM_FIERCE_TIGER:                             // 0x18
+        case FORM_STURDY_OX:                                // 0x17
+        // Druid
         case FORM_CAT:                                      // 0x01
+        // DK Ghoul
         case FORM_GHOUL:                                    // 0x07
             PowerType = POWER_ENERGY;
             break;
 
+        // Druid
         case FORM_BEAR:                                     // 0x05
-
+        // Warrior
         case FORM_BATTLESTANCE:                             // 0x11
         case FORM_DEFENSIVESTANCE:                          // 0x12
         case FORM_BERSERKERSTANCE:                          // 0x13
             PowerType = POWER_RAGE;
             break;
 
+        // Monk
+        case FORM_WISE_SERPENT:                             // 0x14
+        // Warlock
+        case FORM_METAMORPHOSIS:                            // 0x16
+        // DK
+        case FORM_UNDEAD:                                   // 0x19
+        // Priest
+        case FORM_SHADOW:                                   // 0x1C
+        case FORM_SPIRITOFREDEMPTION:                       // 0x20
+        // Druid
+        case FORM_MOONKIN:                                  // 0x1F
         case FORM_TREE:                                     // 0x02
         case FORM_TRAVEL:                                   // 0x03
         case FORM_AQUA:                                     // 0x04
+        case FORM_FLIGHT_EPIC:                              // 0x1B
+        case FORM_FLIGHT:                                   // 0x1D
+        // Misc
         case FORM_AMBIENT:                                  // 0x06
-
         case FORM_STEVES_GHOUL:                             // 0x09
         case FORM_THARONJA_SKELETON:                        // 0x0A
         case FORM_TEST_OF_STRENGTH:                         // 0x0B
@@ -1758,18 +1777,9 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
         case FORM_CREATUREBEAR:                             // 0x0E
         case FORM_CREATURECAT:                              // 0x0F
         case FORM_GHOSTWOLF:                                // 0x10
-
-        case FORM_WISE_SERPENT:                             // 0x14
         case FORM_ZOMBIE:                                   // 0x15
-        case FORM_METAMORPHOSIS:                            // 0x16
-        case FORM_UNDEAD:                                   // 0x19
         case FORM_MASTER_ANGLER:                            // 0x1A
-        case FORM_FLIGHT_EPIC:                              // 0x1B
-        case FORM_SHADOW:                                   // 0x1C
-        case FORM_FLIGHT:                                   // 0x1D
         case FORM_STEALTH:                                  // 0x1E
-        case FORM_MOONKIN:                                  // 0x1F
-        case FORM_SPIRITOFREDEMPTION:                       // 0x20
             break;
         default:
             TC_LOG_ERROR("spells", "Auras: Unknown Shapeshift Type: %u", GetMiscValue());

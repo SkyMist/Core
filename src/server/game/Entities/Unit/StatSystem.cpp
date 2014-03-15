@@ -267,7 +267,7 @@ void Player::UpdateMaxPower(Powers power)
     value += GetModifierValue(unitMod, TOTAL_VALUE) +  bonusPower;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Player::UpdateAttackPowerAndDamage(bool ranged)
@@ -853,7 +853,7 @@ void Creature::UpdateMaxPower(Powers power)
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float value  = GetTotalAuraModValue(unitMod);
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Creature::UpdateAttackPowerAndDamage(bool ranged)
@@ -1130,7 +1130,7 @@ void Guardian::UpdateMaxPower(Powers power)
     value += GetModifierValue(unitMod, TOTAL_VALUE) + addValue * multiplicator;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Guardian::UpdateAttackPowerAndDamage(bool ranged)

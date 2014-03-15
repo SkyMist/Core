@@ -34,9 +34,9 @@ MovementStatusElements const PlayerMove[] =
     MSEHasGuidByte4,           // 20
     MSEHasGuidByte0,           // 16
     MSEHasOrientation,         // 48
-    MSEMovementFlags2,         // 28
-    MSEHasPitch,               // 112
     MSEHasMovementFlags2,      // 28
+    MSEHasPitch,               // 112
+    MSEMovementFlags2,         // 28
     MSEHasGuidByte7,           // 23
     MSECounterCount,           // 152
     MSEHasGuidByte2,           // 18

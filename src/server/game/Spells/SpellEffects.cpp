@@ -1686,7 +1686,7 @@ void Spell::EffectEnergize(SpellEffIndex effIndex)
     if (level_diff > 0)
         damage -= level_multiplier * level_diff;
 
-    if (damage < 0 && power != POWER_ECLIPSE)
+    if (damage < 0 && power != POWER_ENERGY && power != POWER_ECLIPSE && power != POWER_ALTERNATE_POWER) // Excluded POWER_ENERGY, POWER_ECLIPSE and POWER_ALTERNATE_POWER, may decrease.
         return;
 
     if (unitTarget->GetMaxPower(power) == 0)
