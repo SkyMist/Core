@@ -703,8 +703,15 @@ void Group::ChangeLeader(uint64 newLeaderGuid)
     m_leaderName = newLeader->GetName();
     ToggleGroupMemberFlag(slot, MEMBER_FLAG_ASSISTANT, false);
 
-    WorldPacket data(SMSG_GROUP_SET_LEADER, m_leaderName.size()+1);
-    data << slot->name;
+    uint8 leaderNameLen = m_leaderName.size();
+
+    WorldPacket data(SMSG_GROUP_SET_LEADER, 1 + 1 + leaderNameLen);
+    data.WriteBits(leaderNameLen, 6);
+    data.FlushBits();
+
+    data << uint8(0); // The skipped uint8 in the CMSG.
+    data.WriteString(m_leaderName);
+
     BroadcastPacket(&data, true);
 }
 
@@ -2371,6 +2378,15 @@ void Group::SetLfgRoles(uint64 guid, const uint8 roles)
 
     slot->roles = roles;
     SendUpdate();
+}
+
+uint8 Group::GetLfgRoles(uint64 guid);
+{
+    member_witerator slot = _getMemberWSlot(guid);
+    if (slot == m_memberSlots.end())
+        return;
+
+    return slot->roles;
 }
 
 bool Group::IsFull() const

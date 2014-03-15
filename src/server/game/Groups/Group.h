@@ -204,6 +204,7 @@ class Group
         void   SetLootThreshold(ItemQualities threshold);
         void   Disband(bool hideDestroy=false);
         void   SetLfgRoles(uint64 guid, const uint8 roles);
+        uint8  GetLfgRoles(uint64 guid);
 
         // properties accessories
         bool IsFull() const;
