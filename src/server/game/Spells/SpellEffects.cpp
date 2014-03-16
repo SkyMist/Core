@@ -4556,9 +4556,21 @@ void Spell::EffectSelfResurrect(SpellEffIndex effIndex)
 
     player->SetHealth(health);
     player->SetPower(POWER_MANA, mana);
+
     player->SetPower(POWER_RAGE, 0);
     player->SetPower(POWER_ENERGY, player->GetMaxPower(POWER_ENERGY));
-    player->SetPower(POWER_FOCUS, 0);
+    player->SetPower(POWER_FOCUS, player->GetMaxPower(POWER_FOCUS));
+    player->SetPower(POWER_RUNES, player->GetMaxPower(POWER_RUNES));
+    player->SetPower(POWER_RUNIC_POWER, 0);
+    player->SetPower(POWER_SOUL_SHARDS, 100);
+    player->SetPower(POWER_ECLIPSE, 0);
+    player->SetPower(POWER_HOLY_POWER, 0);
+    player->SetPower(POWER_ALTERNATE_POWER, 0);
+    player->SetPower(POWER_CHI, 0);
+    player->SetPower(POWER_SHADOW_ORBS, 0);
+    player->SetPower(POWER_BURNING_EMBERS, 10);
+    player->SetPower(POWER_DEMONIC_FURY, 200);
+    player->SetPower(POWER_ARCANE_CHARGES, 0);
 
     player->SpawnCorpseBones();
 }

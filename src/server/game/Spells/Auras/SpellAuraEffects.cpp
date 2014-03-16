@@ -1201,36 +1201,36 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
     switch (GetMiscValue())
     {
         case FORM_CAT:
-            spellId = 3025;
+            spellId  = 3025;
             break;
         case FORM_TREE:
-            spellId = 34123;
+            spellId  = 34123;
             break;
         case FORM_TRAVEL:
-            spellId = 5419;
+            spellId  = 5419;
             break;
         case FORM_AQUA:
-            spellId = 5421;
+            spellId  = 5421;
             break;
         case FORM_BEAR:
-            spellId = 1178;
+            spellId  = 1178;
             spellId2 = 21178;
             break;
         case FORM_BATTLESTANCE:
-            spellId = 21156;
+            spellId  = 21156;
             break;
         case FORM_DEFENSIVESTANCE:
-            spellId = 7376;
+            spellId  = 7376;
             break;
         case FORM_BERSERKERSTANCE:
-            spellId = 7381;
+            spellId  = 7381;
             break;
         case FORM_MOONKIN:
-            spellId = 24905;
+            spellId  = 24905;
             spellId2 = 24907;
             break;
         case FORM_FLIGHT:
-            spellId = 33948;
+            spellId  = 33948;
             spellId2 = 34764;
             break;
         case FORM_FLIGHT_EPIC:
@@ -1246,10 +1246,19 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
             spellId2 = 27795;                               // must be second, this important at aura remove to prevent to early iterator invalidation.
             break;
         case FORM_SHADOW:
-            spellId = 49868;
+            spellId  = 49868;
             break;
         case FORM_GHOSTWOLF:
-            spellId = 67116;
+            spellId  = 67116;
+            break;
+        case FORM_WISE_SERPENT:
+            spellId  = 115070;
+            break;
+        case FORM_STURDY_OX:
+            spellId  = 115069;
+            break;
+        case FORM_FIERCE_TIGER:
+            spellId  = 103985;
             break;
         case FORM_GHOUL:
         case FORM_AMBIENT:
@@ -1257,8 +1266,8 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
         case FORM_CREATURECAT:
         case FORM_CREATUREBEAR:
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     if (apply)

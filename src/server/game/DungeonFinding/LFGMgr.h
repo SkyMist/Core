@@ -68,7 +68,8 @@ enum LfgType
     LFG_TYPE_DUNGEON                             = 1,
     LFG_TYPE_RAID                                = 2,
     LFG_TYPE_HEROIC                              = 5,
-    LFG_TYPE_RANDOM                              = 6
+    LFG_TYPE_RANDOM                              = 6,
+    LFG_TYPE_SCENARIO                            = 7
 };
 
 /// Proposal states

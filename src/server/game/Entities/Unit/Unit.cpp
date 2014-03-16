@@ -5351,6 +5351,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                             cooldown_spell_id = 39511;
                             break;
                         case CLASS_ROGUE:                   // 39511, 40997, 40998, 41002, 41005, 41011
+                        case CLASS_MONK:                    // 39511,40997,40998,41002,41005,41011
                         case CLASS_WARRIOR:                 // 39511, 40997, 40998, 41002, 41005, 41011
                         case CLASS_DEATH_KNIGHT:
                             triggered_spell_id = RAND(39511, 40997, 40998, 41002, 41005, 41011);
@@ -6028,6 +6029,9 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         case CLASS_ROGUE:
                             triggered_spell_id = 28791;     // Increases the friendly target's attack power by $s1 for $d.
                             break;
+                        case CLASS_MONK:
+                            triggered_spell_id = 28791;     // Increases the friendly target's attack power by $s1 for $d.
+                            break;
                         case CLASS_WARRIOR:
                             triggered_spell_id = 28790;     // Increases the friendly target's armor
                             break;
@@ -6195,6 +6199,9 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                             break;
                         case CLASS_HUNTER:
                         case CLASS_ROGUE:
+                            triggered_spell_id = 28826;     // Increases the friendly target's attack power by $s1 for $d.
+                            break;
+                        case CLASS_MONK:
                             triggered_spell_id = 28826;     // Increases the friendly target's attack power by $s1 for $d.
                             break;
                         case CLASS_WARRIOR:

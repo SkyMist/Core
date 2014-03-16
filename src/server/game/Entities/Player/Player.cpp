@@ -2845,6 +2845,7 @@ void Player::Regenerate(Powers power)
     }
 
     // Mana regen calculated in Player::UpdateManaRegen()
+    // Exists only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras.
     if (power != POWER_MANA && power != POWER_CHI && power != POWER_HOLY_POWER && power != POWER_SOUL_SHARDS && power != POWER_BURNING_EMBERS && power != POWER_DEMONIC_FURY)
     {
         AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
@@ -6056,32 +6057,33 @@ void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
     // Table for base dodge values
     const float dodge_base[MAX_CLASSES] =
     {
-         0.037580f, // Warrior
-         0.036520f, // Paladin
-        -0.054500f, // Hunter
-        -0.005900f, // Rogue
-         0.031830f, // Priest
-         0.036640f, // DK
-         0.016750f, // Shaman
-         0.034575f, // Mage
-         0.020350f, // Warlock
-         0.0f,      // ??
-         0.049510f  // Druid
+        0.037580f, // Warrior
+        0.036520f, // Paladin
+       -0.054500f, // Hunter
+       -0.005900f, // Rogue
+        0.031830f, // Priest
+        0.036640f, // DK
+        0.016750f, // Shaman
+        0.034575f, // Mage
+        0.020350f, // Warlock
+        0.056097f, // Monk
+        0.049510f  // Druid
     };
+
     // Crit/agility to dodge/agility coefficient multipliers; 3.2.0 increased required agility by 15%
     const float crit_to_dodge[MAX_CLASSES] =
     {
-         0.85f/1.15f,    // Warrior
-         1.00f/1.15f,    // Paladin
-         1.11f/1.15f,    // Hunter
-         2.00f/1.15f,    // Rogue
-         1.00f/1.15f,    // Priest
-         0.85f/1.15f,    // DK
-         1.60f/1.15f,    // Shaman
-         1.00f/1.15f,    // Mage
-         0.97f/1.15f,    // Warlock (?)
-         0.0f,           // ??
-         2.00f/1.15f     // Druid
+        0.85f / 1.15f,    // Warrior
+        1.00f / 1.15f,    // Paladin
+        1.11f / 1.15f,    // Hunter
+        2.00f / 1.15f,    // Rogue
+        1.00f / 1.15f,    // Priest
+        0.85f / 1.15f,    // DK
+        1.60f / 1.15f,    // Shaman
+        1.00f / 1.15f,    // Mage
+        0.97f / 1.15f,    // Warlock (?)
+        2.00f / 1.15f,    // Monk
+        2.00f / 1.15f     // Druid
     };
 
     uint8 level = getLevel();
