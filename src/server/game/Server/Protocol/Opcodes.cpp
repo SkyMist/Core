@@ -425,7 +425,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_GUILD_XP,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGuildQueryXPOpcode        ); // STATUS_UNHANDLED
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_INSPECT_ACHIEVEMENTS,              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQueryInspectAchievements  );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_QUESTS_COMPLETED,                  STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQueryQuestsCompleted      );
-    DEFINE_OPCODE_HANDLER(CMSG_QUERY_TIME,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQueryTimeOpcode           );
+    DEFINE_OPCODE_HANDLER(CMSG_QUERY_TIME,                              STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleQueryTimeOpcode           );
     DEFINE_OPCODE_HANDLER(CMSG_QUESTGIVER_ACCEPT_QUEST,                 STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQuestgiverAcceptQuestOpcode);
     DEFINE_OPCODE_HANDLER(CMSG_QUESTGIVER_CHOOSE_REWARD,                STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQuestgiverChooseRewardOpcode);
     DEFINE_OPCODE_HANDLER(CMSG_QUESTGIVER_COMPLETE_QUEST,               STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQuestgiverCompleteQuest   );
