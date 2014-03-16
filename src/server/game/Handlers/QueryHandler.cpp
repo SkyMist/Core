@@ -462,7 +462,7 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
     data.WriteByteSeq(corpseGuid[4]);
     data.WriteByteSeq(corpseGuid[5]);
 
-    data << uint32(corpsemapid); // Corpse Map Id
+    data << uint32(corpseMapId); // Corpse Map Id
 
     data.WriteByteSeq(corpseGuid[7]);
 
