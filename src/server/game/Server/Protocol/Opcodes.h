@@ -391,15 +391,9 @@ enum Opcodes
    CMSG_NAME_QUERY                                          = 0x0DB3, // 5.4.7 18019
    CMSG_NEW_SPELL_SLOT                                      = 0x0,
    CMSG_NEXT_CINEMATIC_CAMERA                               = 0x0,
-<<<<<<< HEAD
-   CMSG_NPC_TEXT_QUERY                                      = 0x12FA, // 5.4.7 17956
-   CMSG_OBJECT_UPDATE_FAILED                                = 0x0882, // 5.4.7 17956
-   CMSG_OBJECT_UPDATE_RESCUED                               = 0x042E, // 5.4.7 17956
-=======
    CMSG_NPC_TEXT_QUERY                                      = 0x12FA, // 5.4.7 18019
    CMSG_OBJECT_UPDATE_FAILED                                = 0x0882, // 5.4.7 18019
-   CMSG_OBJECT_UPDATE_RESCUED                               = 0x0,
->>>>>>> 025fe80dad0d2c08f144a528653d4b2697170d01
+   CMSG_OBJECT_UPDATE_RESCUED                               = 0x042E, // 5.4.7 18019
    CMSG_OFFER_PETITION                                      = 0x0,
    CMSG_OPENING_CINEMATIC                                   = 0x0,
    CMSG_OPEN_BROWSER                                        = 0x0,
