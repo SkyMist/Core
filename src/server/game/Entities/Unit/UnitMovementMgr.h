@@ -14,6 +14,7 @@
 #include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
+#include "ObjectMovementMgr.h"
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"

@@ -31,6 +31,8 @@
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
+#include "UnitMovementMgr.h"
+#include "ObjectMovementMgr.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
 

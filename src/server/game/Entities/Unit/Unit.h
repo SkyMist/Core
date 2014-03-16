@@ -28,6 +28,7 @@
 #include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
+#include "ObjectMovementMgr.h"
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
@@ -362,6 +363,7 @@ class Vehicle;
 class VehicleJoinEvent;
 class TransportBase;
 class SpellCastTargets;
+
 namespace Movement
 {
     class ExtraMovementStatusElement;
@@ -1228,7 +1230,7 @@ class Unit : public WorldObject
         float GetMeleeReach() const;
         bool IsWithinCombatRange(const Unit* obj, float dist2compare) const;
         bool IsWithinMeleeRange(const Unit* obj, float dist = MELEE_RANGE) const;
-        void GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const;
+
         uint32 m_extraAttacks;
         bool m_canDualWield;
 
@@ -1507,8 +1509,6 @@ class Unit : public WorldObject
         void SendSpellDamageImmune(Unit* target, uint32 spellId);
 
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
-
-        void SendSetPlayHoverAnim(bool enable);
 
         void SendChangeCurrentVictimOpcode(HostileReference* pHostileReference);
         void SendClearThreatListOpcode();
@@ -1896,6 +1896,8 @@ class Unit : public WorldObject
         static Player* GetPlayer(WorldObject& object, uint64 guid);
         static Creature* GetCreature(WorldObject& object, uint64 guid);
 
+        void SetControlled(bool apply, UnitState state);
+
         void AddComboPointHolder(uint32 lowguid) { m_ComboPointHolders.insert(lowguid); }
         void RemoveComboPointHolder(uint32 lowguid) { m_ComboPointHolders.erase(lowguid); }
         void ClearComboPointHolders();
@@ -1978,9 +1980,6 @@ class Unit : public WorldObject
         uint64 GetTarget() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
         virtual void SetTarget(uint64 /*guid*/) = 0;
 
-        // Movement info
-        Movement::MoveSpline * movespline;
-
         // Part of Evade mechanics
         time_t GetLastDamagedTime() const { return _lastDamagedTime; }
         void SetLastDamagedTime(time_t val) { _lastDamagedTime = val; }
@@ -2058,7 +2057,6 @@ class Unit : public WorldObject
         bool IsAlwaysVisibleFor(WorldObject const* seer) const;
         bool IsAlwaysDetectableFor(WorldObject const* seer) const;
 
-        void DisableSpline();
     private:
         bool IsTriggeredAtSpellProcEvent(Unit* victim, Aura* aura, SpellInfo const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const* & spellProcEvent);
         bool HandleAuraProcOnPowerAmount(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
@@ -2069,9 +2067,6 @@ class Unit : public WorldObject
         bool HandleAuraRaidProcFromChargeWithValue(AuraEffect* triggeredByAura);
         bool HandleAuraRaidProcFromCharge(AuraEffect* triggeredByAura);
 
-        void UpdateSplineMovement(uint32 t_diff);
-        void UpdateSplinePosition();
-
         // player or player's pet
         float GetCombatRatingReduction(CombatRating cr) const;
         uint32 GetCombatRatingDamageReduction(CombatRating cr, float rate, float cap, uint32 damage) const;
@@ -2080,7 +2075,6 @@ class Unit : public WorldObject
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
-        TimeTrackerSmall m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units that are threatened by us
@@ -2101,10 +2095,10 @@ class Unit : public WorldObject
 
         /*** Movement functions - Handled by UnitMovementMgr or locally. ***/
     public:
-        void  UpdateSpeed(UnitMoveType mtype, bool forced);
         float GetSpeed(UnitMoveType mtype) const;
         float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
         void SetSpeed(UnitMoveType mtype, float rate, bool forced = false);
+        void UpdateSpeed(UnitMoveType mtype, bool forced);
         void propagateSpeedChange() { GetMotionMaster()->propagateSpeedChange(); }
 
         MotionMaster* GetMotionMaster() { return i_motionMaster; }
@@ -2125,7 +2119,7 @@ class Unit : public WorldObject
         uint16 GetExtraUnitMovementFlags() const { return m_movementInfo.GetExtraMovementFlags(); }
         void SetExtraUnitMovementFlags(uint16 f) { m_movementInfo.SetExtraMovementFlags(f); }
         bool IsSplineEnabled() const;
-		
+
         void WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusElement* extras = NULL);
 
         void MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath = false, bool forceDestination = false);
@@ -2135,6 +2129,7 @@ class Unit : public WorldObject
         void JumpTo(float speedXY, float speedZ, bool forward = true);
         void JumpTo(WorldObject* obj, float speedZ);
 		void SendMovementSetSplineAnim(Movement::AnimType anim);
+        void SendSetPlayHoverAnim(bool enable);
 
         bool isMoving() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
         bool isTurning() const  { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
@@ -2152,20 +2147,29 @@ class Unit : public WorldObject
         bool SetFeatherFall(bool enable, bool packetOnly = false);
         bool SetHover(bool enable, bool packetOnly = false);
 
+        // Movement info
+        Movement::MoveSpline * movespline;
+
         uint32 GetMovementCounter() const { return m_movementCounter; } 
 
-        void SetControlled(bool apply, UnitState state);
     protected:
         void SetFeared(bool apply);
         void SetConfused(bool apply);
         void SetStunned(bool apply);
         void SetRooted(bool apply, bool packetOnly = false);
 
+        void DisableSpline();
+
         MotionMaster* i_motionMaster;
         uint32 m_movementCounter;       ///< Incrementing counter used in movement packets
 
     private:
         bool _isWalkingBeforeCharm; // Are we walking before we were charmed?
+
+        void UpdateSplineMovement(uint32 t_diff);
+        void UpdateSplinePosition();
+
+        TimeTrackerSmall m_movesplineTimer;
 
         /*** Positions functions - Handled by UnitMovementMgr or locally. ***/
     public:
@@ -2185,6 +2189,9 @@ class Unit : public WorldObject
 
         float GetPositionZMinusOffset() const;
         virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }
+
+    protected:
+        void GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const;
 };
 
 namespace Trinity

@@ -9,6 +9,8 @@
 
 #include "Common.h"
 #include "Unit.h"
+#include "UnitMovementMgr.h"
+#include "ObjectMovementMgr.h"
 #include "UpdateMask.h"
 #include "ItemPrototype.h"
 #include "LootMgr.h"
