@@ -18,6 +18,7 @@
  */
 
 #include "Creature.h"
+#include "CreatureMovementMgr.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
 #include "Common.h"

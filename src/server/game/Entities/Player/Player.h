@@ -24,6 +24,7 @@
 #include "GroupReference.h"
 #include "MapReference.h"
 
+#include "PlayerMovementMgr.h"
 #include "Item.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"

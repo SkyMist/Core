@@ -20,6 +20,7 @@
 #ifndef TRINITYCORE_CREATURE_H
 #define TRINITYCORE_CREATURE_H
 
+#include "CreatureMovementMgr.h"
 #include "Common.h"
 #include "Unit.h"
 #include "UpdateMask.h"

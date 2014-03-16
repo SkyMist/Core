@@ -18,6 +18,7 @@
  */
 
 #include "Unit.h"
+#include "UnitMovementMgr.h"
 #include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -16686,7 +16687,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
         if ((_fieldNotifyFlags & flags[index] ||
             ((flags[index] & visibleFlag) & UF_FLAG_SPECIAL_INFO) ||
             ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag)) ||
-            (index == UNIT_FIELD_AURA_STATE && HasFlag(UNIT_FIELD_AURA_STATE, PER_CASTER_AURA_STATE_MASK))) && !(flags[index] & UF_FLAG_TEMP_DISABLED))
+            (index == UNIT_FIELD_AURA_STATE && HasFlag(UNIT_FIELD_AURA_STATE, PER_CASTER_AURA_STATE_MASK))))
         {
             updateMask.SetBit(index);
 

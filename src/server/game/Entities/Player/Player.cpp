@@ -18,6 +18,7 @@
  */
 
 #include "Player.h"
+#include "PlayerMovementMgr.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
