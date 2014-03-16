@@ -443,7 +443,7 @@ enum Opcodes
    CMSG_QUERY_GUILD_XP                                      = 0x0,
    CMSG_QUERY_INSPECT_ACHIEVEMENTS                          = 0x0,
    CMSG_QUERY_QUESTS_COMPLETED                              = 0x0,
-   CMSG_QUERY_TIME                                          = 0x03FD, // 5.4.7 17898
+   CMSG_QUERY_TIME                                          = 0x03FD, // 5.4.7 18019
    CMSG_QUESTGIVER_ACCEPT_QUEST                             = 0x0,
    CMSG_QUESTGIVER_CANCEL                                   = 0x0,
    CMSG_QUESTGIVER_CHOOSE_REWARD                            = 0x0,
@@ -1184,7 +1184,7 @@ enum Opcodes
    SMSG_PVP_LOG_DATA                                        = 0x0,
    SMSG_PVP_OPTIONS_ENABLED                                 = 0x0,
    SMSG_QUERY_QUESTS_COMPLETED_RESPONSE                     = 0x0,
-   SMSG_QUERY_TIME_RESPONSE                                 = 0x0C30, // 5.4.7.17898
+   SMSG_QUERY_TIME_RESPONSE                                 = 0x0C30, // 5.4.7.18019
    SMSG_QUESTGIVER_OFFER_REWARD                             = 0x0,
    SMSG_QUESTGIVER_QUEST_COMPLETE                           = 0x0,
    SMSG_QUESTGIVER_QUEST_DETAILS                            = 0x0,
