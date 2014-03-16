@@ -2528,11 +2528,14 @@ void Player::RegenerateAll()
 {
     m_regenTimerCount += m_regenTimer;
 
+    if (getClass() == CLASS_HUNTER)
+        m_focusRegenTimerCount += m_regenTimer;
+
     if (getClass() == CLASS_PALADIN)
         m_holyPowerRegenTimerCount += m_regenTimer;
 
-    if (getClass() == CLASS_HUNTER)
-        m_focusRegenTimerCount += m_regenTimer;
+    if (getClass() == CLASS_MONK)
+        m_chiPowerRegenTimerCount += m_regenTimer;
 
     if (getClass() == CLASS_WARLOCK)
     {

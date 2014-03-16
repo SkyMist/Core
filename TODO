@@ -4,39 +4,50 @@ SkyMist Project ToDo List.
 - Make server workable on (Fix critical stuff).
 
 ToDO:
-- Spells + Auras + Port 4.3.4 Movement system. - !Note: w/ SMSG_POWER_UPDATE / SMSG_ADD_RUNE_POWER opcodes.
-- Movement system implementation.
-- Quests - !Note: w/ SMSG_SET_PHASE_SHIFT.
-- Speeds.
-- Achievements.
-- Vehicles.
-- Guilds.
+- Finish spell and movement system, add SMSG_ADD_RUNE_POWER opcode.
+- Finish Speeds changing.
 
 == Milestone 2 ==
 - Make server playable on (Fix big stuff).
 
 ToDO:
-- Insert stuff here.
+- Finish Groups system and Difficulty opcodes.
+- Currency.
+- Quests - !Note: w/ SMSG_SET_PHASE_SHIFT.
+- Achievements.
+- Vehicles.
+- Guilds.
+- Battlegrounds.
+- Black Market, Transmog, Reforge, Void Storage etc.
+- Pet System.
 
-== Milestone 3 ==
-- Finish stuff - Beta Stage - Not advisable to use yet as still under heavy work.
-! Beta testing private bug-discovery help is and should be used here.
+== Milestone 3 == !! 30 April Deadline to get here. !!
+- Finish stuff - Beta Stage - Launchable after DB update. Not perfectly functionable yet as still under heavy work, but needed.
+! Beta testing bug-discovery help is and should be used here.
 
 ToDO:
 
 In order of importance HIGH -> LOW:
  
 CORE Work
+- Archaeology and any new profession stuff.
+- Battlefields.
+- Rated BG's.
+- Wargames.
+- Battle Pets.
+- Script raids and dungeons and fix + add scripts we have.
+- Script spells and abilities, guild perks etc.
+
 - Insert stuff here.
 
 DB Work:
+- Adapt, upgrade and use 4.3.4 DB.
+- Script and finish what's left (Quests, Spells, Events, Map + Terrain Phasing).
+
 - Insert stuff here.
 
 * NOTE: !! means it's important we do it asap!
 
 == Milestone 4 ==
-- GM-s, site, staff completion etc.
-- Official testing pre-release, public.
-
-== Milestone 5 ==
-- Server opening. Here begins the fun part :D. 
+- GM-s, staff completion, site & forum structural improvements etc.
+- Final touches and release. Here begins the all-fun, no-work part :D.
