@@ -7497,8 +7497,8 @@ void Unit::setPowerType(Powers new_powertype)
             break;
         // POWER_DARK_FORCE - Deprecated.
         case POWER_CHI:
-            SetMaxPower(POWER_HOLY_POWER, GetCreatePowers(POWER_HOLY_POWER));
-            SetPower(POWER_HOLY_POWER, 0);
+            SetMaxPower(POWER_CHI, GetCreatePowers(POWER_CHI));
+            SetPower(POWER_CHI, 0);
             break;
         case POWER_SHADOW_ORBS:
             SetMaxPower(POWER_SHADOW_ORBS, GetCreatePowers(POWER_SHADOW_ORBS));
