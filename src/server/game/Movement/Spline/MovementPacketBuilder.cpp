@@ -34,58 +34,18 @@ namespace Movement
         b >> v.x >> v.y >> v.z;
     }
 
-    enum MonsterMoveType
+    MonsterMoveType PacketBuilder::GetMonsterMoveType(MoveSpline const& moveSpline)
     {
-        MonsterMoveNormal       = 0,
-        MonsterMoveStop         = 1,
-        MonsterMoveFacingSpot   = 2,
-        MonsterMoveFacingTarget = 3,
-        MonsterMoveFacingAngle  = 4
-    };
-
-    void PacketBuilder::WriteCommonMonsterMovePart(const MoveSpline& move_spline, WorldPacket& data)
-    {
-        MoveSplineFlag splineflags = move_spline.splineflags;
-
-        data << uint8(0);                                       // sets/unsets MOVEMENTFLAG2_UNK7 (0x40)
-        data << move_spline.spline.getPoint(move_spline.spline.first());
-        data << move_spline.GetId();
-
-        switch (splineflags & MoveSplineFlag::Mask_Final_Facing)
+        switch (moveSpline.splineflags & MoveSplineFlag::Mask_Final_Facing)
         {
             case MoveSplineFlag::Final_Target:
-                data << uint8(MonsterMoveFacingTarget);
-                data << move_spline.facing.target;
-                break;
+                return MonsterMoveFacingTarget;
             case MoveSplineFlag::Final_Angle:
-                data << uint8(MonsterMoveFacingAngle);
-                data << move_spline.facing.angle;
-                break;
+                return MonsterMoveFacingAngle;
             case MoveSplineFlag::Final_Point:
-                data << uint8(MonsterMoveFacingSpot);
-                data << move_spline.facing.f.x << move_spline.facing.f.y << move_spline.facing.f.z;
-                break;
+                return MonsterMoveFacingPoint;
             default:
-                data << uint8(MonsterMoveNormal);
-                break;
-        }
-
-        // add fake Enter_Cycle flag - needed for client-side cyclic movement (client will erase first spline vertex after first cycle done)
-        splineflags.enter_cycle = move_spline.isCyclic();
-        data << uint32(splineflags & uint32(~MoveSplineFlag::Mask_No_Monster_Move));
-
-        if (splineflags.animation)
-        {
-            data << splineflags.getAnimationId();
-            data << move_spline.effect_start_time;
-        }
-
-        data << move_spline.Duration();
-
-        if (splineflags.parabolic)
-        {
-            data << move_spline.vertical_acceleration;
-            data << move_spline.effect_start_time;
+                return MonsterMoveNormal;
         }
     }
 
@@ -96,7 +56,7 @@ namespace Movement
         ObjectGuid transport = unit->GetTransGUID();
 
         data << float(0.f); // Most likely transport Y
-        data << uint32(getMSTime());
+        data << uint32(splineId);
         data << float(0.f); // Most likely transport Z
         data << float(0.f); // Most likely transport X
         data << float(pos.x);
@@ -110,7 +70,7 @@ namespace Movement
         data.WriteBit(1);
         data.WriteBit(1);
 
-        data.WriteBits(0, 3);
+        data.WriteBits(MonsterMoveStop, 3);
         data.WriteBit(1);
         data.WriteBit(guid[2]);
         data.WriteBit(guid[7]);
@@ -161,7 +121,7 @@ namespace Movement
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
-}
+    }
 
     void WriteLinearPath(Spline<int32> const& spline, ByteBuffer& data)
     {
@@ -183,60 +143,33 @@ namespace Movement
 
     void WriteUncompressedPath(Spline<int32> const& spline, ByteBuffer& data)
     {
-        uint32 count = spline.getPointCount() - 3;
-        data.append<Vector3>(&spline.getPoint(2), count);
+        data.append<Vector3>(&spline.getPoint(2), spline.getPointCount() - 3);
     }
 
     void WriteUncompressedCyclicPath(Spline<int32> const& spline, ByteBuffer& data)
     {
-        uint32 count = spline.getPointCount() - 3;
-        data << spline.getPoint(1); // fake point, client will erase it from the spline after first cycle done
-        data.append<Vector3>(&spline.getPoint(1), count);
+        data << spline.getPoint(1); // Fake point, client will erase it from the spline after first cycle done
+        data.append<Vector3>(&spline.getPoint(1), spline.getPointCount() - 3);
     }
 
-    void PacketBuilder::WriteMonsterMove(const MoveSpline& move_spline, WorldPacket& data, Unit* unit)
+    void PacketBuilder::WriteMonsterMove(const MoveSpline& moveSpline, WorldPacket& data, Unit* unit)
     {
         ObjectGuid guid = unit->GetGUID();
         ObjectGuid transport = unit->GetTransGUID();
-        uint32 type;
+        MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
         data << float(0.f); // Most likely transport Y
-        data << uint32(getMSTime());
+        data << uint32(moveSpline.GetId());
         data << float(0.f); // Most likely transport Z
         data << float(0.f); // Most likely transport X
-
-        if (!move_spline.isCyclic())
-        {
-            Vector3 dest = move_spline.FinalDestination();
-            data << float(dest.x);
-            data << float(dest.y);
-            data << float(dest.z);
-        }
-        else
-            data << Vector3::zero();
+        data << moveSpline.spline.getPoint(moveSpline.spline.first());
         
         data.WriteBit(guid[3]);
-        data.WriteBit(!move_spline.splineflags.raw());
+        data.WriteBit(!moveSpline.splineflags.raw());
         data.WriteBit(guid[6]);
 
         data.WriteBit(1);
         data.WriteBit(1);
-
-        switch (move_spline.splineflags & MoveSplineFlag::Mask_Final_Facing)
-        {
-            case MoveSplineFlag::Final_Target:
-                type = 3;
-                break;
-            case MoveSplineFlag::Final_Angle:
-                type = 4;
-                break;
-            case MoveSplineFlag::Final_Point:
-                type = 2;
-                break;
-            default:
-                type = 0;
-                break;
-        }
 
         data.WriteBits(type, 3);
         data.WriteBit(1);
@@ -244,9 +177,9 @@ namespace Movement
         data.WriteBit(guid[7]);
         data.WriteBit(guid[5]);
 
-        if (type == 3)
+        if (type == MonsterMoveFacingTarget)
         {
-            ObjectGuid targetGuid = move_spline.facing.target;
+            ObjectGuid targetGuid = moveSpline.facing.target;
             data.WriteBit(targetGuid[6]);
             data.WriteBit(targetGuid[7]);
             data.WriteBit(targetGuid[0]);
@@ -260,9 +193,8 @@ namespace Movement
         data.WriteBit(1);
         data.WriteBit(guid[4]);
         
-        int32 splineWpCount = move_spline.splineflags & MoveSplineFlag::UncompressedPath ? 0 : move_spline.spline.getPointCount() - 3;
-        //int32 splineWpCount = move_spline.splineflags & MoveSplineFlag::UncompressedPath ? 1 : move_spline.spline.getPointCount() - 3;
-        data.WriteBits(splineWpCount, 22); // WP count
+        int32 compressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? 0 : moveSpline.spline.getPointCount() - 3;
+        data.WriteBits(compressedSplineCount, 22); // WP count
         data.WriteBit(1);
         data.WriteBit(0);
 
@@ -280,19 +212,19 @@ namespace Movement
         data.WriteBit(1); // Parabolic speed // esi+4Ch
         data.WriteBit(1);
 
-        //data.WriteBits(!splineWpCount ? move_spline.spline.getPointCount() - 2 : 1, 20);
-        data.WriteBits(!splineWpCount ? move_spline.spline.getPointCount() - (move_spline.splineflags.cyclic ? 2 : 3) : 1, 20);
+        uint32 uncompressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? moveSpline.splineflags.cyclic ? moveSpline.spline.getPointCount() - 2 : moveSpline.spline.getPointCount() - 3 : 1;
+        data.WriteBits(uncompressedSplineCount,  20);
 
         data.WriteBit(guid[1]);
         data.WriteBit(0); // Send no block
         data.WriteBit(0);
-        data.WriteBit(!move_spline.Duration());
+        data.WriteBit(!moveSpline.Duration());
 
         data.FlushBits();
 
-        if (type == 3)
+        if (type == MonsterMoveFacingTarget)
         {
-            ObjectGuid targetGuid = move_spline.facing.target;
+            ObjectGuid targetGuid = moveSpline.facing.target;
             data.WriteByteSeq(targetGuid[5]);
             data.WriteByteSeq(targetGuid[3]);
             data.WriteByteSeq(targetGuid[6]);
@@ -313,42 +245,38 @@ namespace Movement
         data.WriteByteSeq(transport[5]);
         data.WriteByteSeq(transport[1]);
 
-        if (type == 4)
-            data << float(move_spline.facing.angle);
+        if (type == MonsterMoveFacingAngle)
+            data << float(moveSpline.facing.angle);
 
-        if (move_spline.splineflags.raw())
-            data << uint32(move_spline.splineflags.raw());
+        if (moveSpline.splineflags.raw())
+            data << uint32(moveSpline.splineflags.raw());
 
         data.WriteByteSeq(guid[7]);
 
-        if (!(move_spline.splineflags & MoveSplineFlag::UncompressedPath))
-            WriteLinearPath(move_spline.spline, data);
+        if (compressedSplineCount)
+            WriteLinearPath(moveSpline.spline, data);
 
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[1]);
         data.WriteByteSeq(guid[2]);
 
-        if (move_spline.splineflags & MoveSplineFlag::UncompressedPath)
+        if (moveSpline.splineflags & MoveSplineFlag::UncompressedPath)
         {
-            if (move_spline.splineflags.cyclic)
-                WriteUncompressedCyclicPath(move_spline.spline, data);
+            if (moveSpline.splineflags.cyclic)
+                WriteUncompressedCyclicPath(moveSpline.spline, data);
             else
-                WriteUncompressedPath(move_spline.spline, data);
+                WriteUncompressedPath(moveSpline.spline, data);
         }
         else
-        {
-            uint32 last_idx = move_spline.spline.getPointCount() - 2;
-            const Vector3 * real_path = &move_spline.spline.getPoint(1);
-            data << real_path[last_idx].x << real_path[last_idx].y << real_path[last_idx].z; // destination
-        }
+            data << moveSpline.spline.getPoint(moveSpline.spline.getPointCount() - 2);
 
         data.WriteByteSeq(guid[6]);
 
-        if (move_spline.Duration())
-            data << uint32(move_spline.Duration());
+        if (moveSpline.Duration())
+            data << uint32(moveSpline.Duration());
 
-        if (type == 2)
-            data << move_spline.facing.f.x << move_spline.facing.f.y << move_spline.facing.f.z;
+        if (type == MonsterMoveFacingPoint)
+            data << moveSpline.facing.f.x << moveSpline.facing.f.y << moveSpline.facing.f.z;
 
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
@@ -360,9 +288,9 @@ namespace Movement
         if (!data.WriteBit(!moveSpline.Finalized()))
             return;
 
-        data.WriteBits(0, 2);                               //unk byte280
         data.WriteBit(moveSpline.splineflags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation));
-        data.WriteBits(moveSpline.getPath().size(), 22);
+        data.WriteBits(moveSpline.spline.mode(), 2);
+        data.WriteBits(moveSpline.getPath().size(), 20);
         data.WriteBits(moveSpline.splineflags.raw(), 25);
         data.WriteBit((moveSpline.splineflags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration());
 
@@ -370,10 +298,10 @@ namespace Movement
         
         data.WriteBit(hasUnkPart);
 
-        if(hasUnkPart)
+        if (hasUnkPart)
         {
-            data.WriteBits(0,2);                            //unk word300
-            data.WriteBits(0,21);                           //unk dword284
+            data.WriteBits(0, 2);                            //unk word300
+            data.WriteBits(0, 21);                           //unk dword284
         }
     }
 
@@ -384,6 +312,7 @@ namespace Movement
         if (!moveSpline.Finalized())
         {
             MoveSplineFlag const& splineFlags = moveSpline.splineflags;
+            MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
             data << float(1.f);                             // splineInfo.duration_mod_next; added in 3.1
 
@@ -391,46 +320,8 @@ namespace Movement
             for (uint32 i = 0; i < nodes; ++i)
             {
                 data << float(moveSpline.getPath()[i].z);
-                data << float(moveSpline.getPath()[i].x);
                 data << float(moveSpline.getPath()[i].y);
-            }
-
-            uint8 type;
-
-            switch (splineFlags & MoveSplineFlag::Mask_Final_Facing)
-            {
-                case MoveSplineFlag::Final_Target:
-                {
-                    type = MonsterMoveFacingTarget;
-                    ObjectGuid facingGuid = moveSpline.facing.target;
-                    targetGUID->WriteBit(facingGuid[6]);
-                    targetGUID->WriteBit(facingGuid[7]);
-                    targetGUID->WriteBit(facingGuid[3]);
-                    targetGUID->WriteBit(facingGuid[0]);
-                    targetGUID->WriteBit(facingGuid[5]);
-                    targetGUID->WriteBit(facingGuid[1]);
-                    targetGUID->WriteBit(facingGuid[4]);
-                    targetGUID->WriteBit(facingGuid[2]);
-                    targetGUID->FlushBits();
-                    targetGUID->WriteByteSeq(facingGuid[4]);
-                    targetGUID->WriteByteSeq(facingGuid[2]);
-                    targetGUID->WriteByteSeq(facingGuid[5]);
-                    targetGUID->WriteByteSeq(facingGuid[6]);
-                    targetGUID->WriteByteSeq(facingGuid[0]);
-                    targetGUID->WriteByteSeq(facingGuid[7]);
-                    targetGUID->WriteByteSeq(facingGuid[1]);
-                    targetGUID->WriteByteSeq(facingGuid[3]);
-                    break;
-                }
-                case MoveSplineFlag::Final_Angle:
-                    type = MonsterMoveFacingAngle;
-                    break;
-                case MoveSplineFlag::Final_Point:
-                    type = MonsterMoveFacingSpot;
-                    break;
-                default:
-                    type = MonsterMoveNormal;
-                    break;
+                data << float(moveSpline.getPath()[i].x);
             }
 
             data << uint8(type);
@@ -439,18 +330,14 @@ namespace Movement
 
             //unk part goes here
 
-            if(type == MonsterMoveFacingSpot)
-            {
-                data << moveSpline.facing.f.x << moveSpline.facing.f.z << moveSpline.facing.f.y;
-            }
+            if(type == MonsterMoveFacingPoint)
+                data << moveSpline.facing.f.x << moveSpline.facing.f.y << moveSpline.facing.f.z;
 
             if ((splineFlags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration())
                 data << moveSpline.vertical_acceleration;   // added in 3.1
 
-            if(type = MonsterMoveFacingAngle)
-            {
+            if (type = MonsterMoveFacingAngle)
                 data << moveSpline.facing.angle;
-            }
 
             data << moveSpline.Duration();
 
@@ -458,19 +345,35 @@ namespace Movement
                 data << moveSpline.effect_start_time;       // added in 3.1
 
             data << moveSpline.timePassed();
-
         }
 
         data << moveSpline.GetId();
 
-        if (!moveSpline.isCyclic())
+        Vector3 destination = moveSpline.isCyclic() ? Vector3::zero() : moveSpline.FinalDestination();
+        data << destination;
+    }
+
+    void PacketBuilder::WriteFacingTargetPart(MoveSpline const& moveSpline, ByteBuffer& data)
+    {
+        if (GetMonsterMoveType(moveSpline) == MonsterMoveFacingTarget && !moveSpline.Finalized())
         {
-            Vector3 dest = moveSpline.FinalDestination();
-            data << float(dest.z);
-            data << float(dest.x);
-            data << float(dest.y);
+            ObjectGuid facingGuid = moveSpline.facing.target;
+            data.WriteBit(facingGuid[6]);
+            data.WriteBit(facingGuid[7]);
+            data.WriteBit(facingGuid[3]);
+            data.WriteBit(facingGuid[0]);
+            data.WriteBit(facingGuid[5]);
+            data.WriteBit(facingGuid[1]);
+            data.WriteBit(facingGuid[4]);
+            data.WriteBit(facingGuid[2]);
+            data.WriteByteSeq(facingGuid[4]);
+            data.WriteByteSeq(facingGuid[2]);
+            data.WriteByteSeq(facingGuid[5]);
+            data.WriteByteSeq(facingGuid[6]);
+            data.WriteByteSeq(facingGuid[0]);
+            data.WriteByteSeq(facingGuid[7]);
+            data.WriteByteSeq(facingGuid[1]);
+            data.WriteByteSeq(facingGuid[3]);
         }
-        else
-            data << Vector3::zero();   
     }
 }

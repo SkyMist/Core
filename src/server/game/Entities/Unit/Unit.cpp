@@ -18,6 +18,8 @@
  */
 
 #include "Unit.h"
+#include "UnitMovementMgr.h"
+#include "ObjectMovementMgr.h"
 #include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -28,6 +30,7 @@
 #include "CreatureAIImpl.h"
 #include "CreatureGroups.h"
 #include "Creature.h"
+#include "CreatureMovementMgr.h"
 #include "Formulas.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -44,6 +47,7 @@
 #include "PetAI.h"
 #include "Pet.h"
 #include "Player.h"
+#include "PlayerMovementMgr.h"
 #include "QuestDef.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"
@@ -376,61 +380,6 @@ bool Unit::haveOffhandWeapon() const
         return m_canDualWield;
 }
 
-void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath, bool forceDestination)
-{
-    Movement::MoveSplineInit init(this);
-    init.MoveTo(x, y, z, generatePath, forceDestination);
-    init.SetVelocity(speed);
-    init.Launch();
-}
-
-void Unit::UpdateSplineMovement(uint32 t_diff)
-{
-    if (movespline->Finalized())
-        return;
-
-    movespline->updateState(t_diff);
-    bool arrived = movespline->Finalized();
-
-    if (arrived)
-        DisableSpline();
-
-    m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed() || arrived)
-        UpdateSplinePosition();
-}
-
-void Unit::UpdateSplinePosition()
-{
-    uint32 const positionUpdateDelay = 400;
-
-    m_movesplineTimer.Reset(positionUpdateDelay);
-    Movement::Location loc = movespline->ComputePosition();
-
-    if (GetTransGUID())
-    {
-        Position& pos = m_movementInfo.transport.pos;
-        pos.m_positionX = loc.x;
-        pos.m_positionY = loc.y;
-        pos.m_positionZ = loc.z;
-        pos.SetOrientation(loc.orientation);
-
-        if (TransportBase* transport = GetDirectTransport())
-            transport->CalculatePassengerPosition(loc.x, loc.y, loc.z, &loc.orientation);
-    }
-
-    if (HasUnitState(UNIT_STATE_CANNOT_TURN))
-        loc.orientation = GetOrientation();
-
-    UpdatePosition(loc.x, loc.y, loc.z, loc.orientation);
-}
-
-void Unit::DisableSpline()
-{
-    m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
-    movespline->_Interrupt();
-}
-
 void Unit::resetAttackTimer(WeaponAttackType type)
 {
     m_attackTimer[type] = uint32(GetAttackTime(type) * m_modAttackSpeedPct[type]);
@@ -472,19 +421,6 @@ bool Unit::IsWithinMeleeRange(const Unit* obj, float dist) const
     float maxdist = dist + sizefactor;
 
     return distsq < maxdist * maxdist;
-}
-
-void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const
-{
-    float combat_reach = GetCombatReach();
-    if (combat_reach < 0.1f) // sometimes bugged for players
-        combat_reach = DEFAULT_COMBAT_REACH;
-
-    uint32 attacker_number = getAttackers().size();
-    if (attacker_number > 0)
-        --attacker_number;
-    GetNearPoint(obj, x, y, z, obj->GetCombatReach(), distance2dMin+(distance2dMax-distance2dMin) * (float)rand_norm()
-        , GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI/2) - static_cast<float>(M_PI) * (float)rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
 }
 
 AuraApplication * Unit::GetVisibleAura(uint8 slot) const
@@ -2974,16 +2910,6 @@ int32 Unit::GetCurrentSpellCastTime(uint32 spell_id) const
     return 0;
 }
 
-bool Unit::isInFrontInMap(Unit const* target, float distance,  float arc) const
-{
-    return IsWithinDistInMap(target, distance) && HasInArc(arc, target);
-}
-
-bool Unit::isInBackInMap(Unit const* target, float distance, float arc) const
-{
-    return IsWithinDistInMap(target, distance) && !HasInArc(2 * M_PI - arc, target);
-}
-
 bool Unit::isInAccessiblePlaceFor(Creature const* c) const
 {
     if (IsInWater())
@@ -4850,45 +4776,133 @@ void Unit::ProcDamageAndSpell(Unit* victim, uint32 procAttacker, uint32 procVict
 void Unit::SendPeriodicAuraLog(SpellPeriodicAuraLogInfo* pInfo)
 {
     AuraEffect const* aura = pInfo->auraEff;
+    ObjectGuid casterGuid = aura->GetCasterGUID();
+    ObjectGuid victimGuid = GetGUID();
 
     WorldPacket data(SMSG_PERIODICAURALOG, 30);
-    data.append(GetPackGUID());
-    data.appendPackGUID(aura->GetCasterGUID());
-    data << uint32(aura->GetId());                          // spellId
-    data << uint32(1);                                      // count
-    data << uint32(aura->GetAuraType());                    // auraId
+
+    data.WriteBit(victimGuid[5]);
+    data.WriteBit(victimGuid[6]);
+    data.WriteBit(casterGuid[6]);
+    data.WriteBit(casterGuid[1]);
+    data.WriteBit(victimGuid[3]);
+    data.WriteBit(victimGuid[0]);
+    data.WriteBit(casterGuid[3]);
+    data.WriteBit(victimGuid[2]);
+    data.WriteBit(casterGuid[7]);
+    data.WriteBit(casterGuid[4]);
+    data.WriteBit(casterGuid[5]);
+    data.WriteBit(victimGuid[4]);
+
+    data.WriteBits(1, 21); // Count
+
+    // Count loop here
+    data.WriteBit(pInfo->critical);
+    size_t pos = data.bitwpos();
+
+    // All sent for now, will mess with it l8 ^^
     switch (aura->GetAuraType())
     {
+
         case SPELL_AURA_PERIODIC_DAMAGE:
         case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
-            data << uint32(pInfo->damage);                  // damage
-            data << uint32(pInfo->overDamage);              // overkill?
-            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
-            data << uint32(pInfo->absorb);                  // absorb
-            data << uint32(pInfo->resist);                  // resist
-            data << uint8(pInfo->critical);                 // new 3.1.2 critical tick
+            data.WriteBit(0); // Int 4 -- Absorb
+            data.WriteBit(0); // Int 3 -- SchoolMask
+            data.WriteBit(0); // Int 2 -- OverKill
+            data.WriteBit(0); // Int 5 -- Resist
             break;
         case SPELL_AURA_PERIODIC_HEAL:
         case SPELL_AURA_OBS_MOD_HEALTH:
-            data << uint32(pInfo->damage);                  // damage
-            data << uint32(pInfo->overDamage);              // overheal
-            data << uint32(pInfo->absorb);                  // absorb
-            data << uint8(pInfo->critical);                 // new 3.1.2 critical tick
+            data.WriteBit(0); // Int 4 -- Absorb
+            data.WriteBit(0); // Int 3 -- SchoolMask
+            data.WriteBit(0); // Int 2 -- OverHeal
+            data.WriteBit(1); // Int 5
             break;
         case SPELL_AURA_OBS_MOD_POWER:
         case SPELL_AURA_PERIODIC_ENERGIZE:
-            data << uint32(aura->GetMiscValue());           // power type
-            data << uint32(pInfo->damage);                  // damage
+            data.WriteBit(1); // Int 4
+            data.WriteBit(0); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+        case SPELL_AURA_PERIODIC_MANA_LEECH:
+            data.WriteBit(1); // Int 4
+            data.WriteBit(0); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+            break;
+        default:
+            data.WriteBit(1); // Int 4
+            data.WriteBit(1); // Int 3
+            data.WriteBit(1); // Int 2
+            data.WriteBit(1); // Int 5
+            break;
+    }
+
+    data.WriteBit(victimGuid[7]);
+
+    data.WriteBit(0); // Some data
+
+    data.WriteBit(casterGuid[2]);
+    data.WriteBit(casterGuid[0]);
+    data.WriteBit(victimGuid[1]);
+    data.FlushBits();
+
+    data.WriteByteSeq(victimGuid[3]);
+
+    // Switch Loop
+    data << uint32(aura->GetAuraType()); // auraId
+    switch (aura->GetAuraType())
+    {
+
+        case SPELL_AURA_PERIODIC_DAMAGE:
+        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
+            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
+            data << uint32(pInfo->damage); // damage
+            data << uint32(pInfo->overDamage); // overkill
+            data << uint32(pInfo->absorb); // absorb
+            data << uint32(pInfo->resist); // resist
+            break;
+        case SPELL_AURA_PERIODIC_HEAL:
+        case SPELL_AURA_OBS_MOD_HEALTH:
+            data << uint32(aura->GetSpellInfo()->GetSchoolMask());
+            data << uint32(pInfo->damage); // damage
+            data << uint32(pInfo->overDamage); // overheal
+            data << uint32(pInfo->absorb); // absorb
+            break;
+        case SPELL_AURA_OBS_MOD_POWER:
+        case SPELL_AURA_PERIODIC_ENERGIZE:
+            data << uint32(aura->GetMiscValue()); // power type
+            data << uint32(pInfo->damage); // damage
             break;
         case SPELL_AURA_PERIODIC_MANA_LEECH:
-            data << uint32(aura->GetMiscValue());           // power type
-            data << uint32(pInfo->damage);                  // amount
-            data << float(pInfo->multiplier);               // gain multiplier
+            data << uint32(aura->GetMiscValue()); // power type
+            data << uint32(pInfo->damage); // amount
+            //data << float(pInfo->multiplier); // gain multiplier
             break;
         default:
             TC_LOG_ERROR("entities.unit", "Unit::SendPeriodicAuraLog: unknown aura %u", uint32(aura->GetAuraType()));
-            return;
+            data << uint32(0); // Mask
+            break;
     }
+
+    data.WriteByteSeq(casterGuid[4]);
+    data.WriteByteSeq(casterGuid[3]);
+    data.WriteByteSeq(casterGuid[0]);
+    data.WriteByteSeq(casterGuid[5]);
+    data.WriteByteSeq(casterGuid[1]);
+
+    data << uint32(aura->GetId()); // spellId
+
+    data.WriteByteSeq(victimGuid[7]);
+    data.WriteByteSeq(victimGuid[4]);
+    data.WriteByteSeq(victimGuid[1]);
+    data.WriteByteSeq(casterGuid[2]);
+    data.WriteByteSeq(victimGuid[5]);
+    data.WriteByteSeq(casterGuid[7]);
+    data.WriteByteSeq(victimGuid[2]);
+    data.WriteByteSeq(casterGuid[6]);
+    data.WriteByteSeq(victimGuid[0]);
+    data.WriteByteSeq(victimGuid[6]);
 
     SendMessageToSet(&data, true);
 }
@@ -5262,6 +5276,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                             cooldown_spell_id = 39511;
                             break;
                         case CLASS_ROGUE:                   // 39511, 40997, 40998, 41002, 41005, 41011
+                        case CLASS_MONK:                    // 39511,40997,40998,41002,41005,41011
                         case CLASS_WARRIOR:                 // 39511, 40997, 40998, 41002, 41005, 41011
                         case CLASS_DEATH_KNIGHT:
                             triggered_spell_id = RAND(39511, 40997, 40998, 41002, 41005, 41011);
@@ -5939,6 +5954,9 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         case CLASS_ROGUE:
                             triggered_spell_id = 28791;     // Increases the friendly target's attack power by $s1 for $d.
                             break;
+                        case CLASS_MONK:
+                            triggered_spell_id = 28791;     // Increases the friendly target's attack power by $s1 for $d.
+                            break;
                         case CLASS_WARRIOR:
                             triggered_spell_id = 28790;     // Increases the friendly target's armor
                             break;
@@ -6106,6 +6124,9 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                             break;
                         case CLASS_HUNTER:
                         case CLASS_ROGUE:
+                            triggered_spell_id = 28826;     // Increases the friendly target's attack power by $s1 for $d.
+                            break;
+                        case CLASS_MONK:
                             triggered_spell_id = 28826;     // Increases the friendly target's attack power by $s1 for $d.
                             break;
                         case CLASS_WARRIOR:
@@ -7381,6 +7402,52 @@ void Unit::setPowerType(Powers new_powertype)
         case POWER_ENERGY:
             SetMaxPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
             break;
+        // POWER_LIGHT_FORCE - Deprecated.
+        case POWER_RUNES:
+            SetMaxPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            SetPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            break;
+        case POWER_RUNIC_POWER:
+            SetMaxPower(POWER_RUNIC_POWER, GetCreatePowers(POWER_RUNIC_POWER));
+            SetPower(POWER_RUNIC_POWER, 0);
+            break;
+        case POWER_SOUL_SHARDS:
+            SetMaxPower(POWER_SOUL_SHARDS, GetCreatePowers(POWER_SOUL_SHARDS));
+            SetPower(POWER_SOUL_SHARDS, 100);
+            break;
+        case POWER_ECLIPSE:
+            SetMaxPower(POWER_ECLIPSE, GetCreatePowers(POWER_ECLIPSE));
+            SetPower(POWER_ECLIPSE, 0);
+            break;
+        case POWER_HOLY_POWER:
+            SetMaxPower(POWER_HOLY_POWER, GetCreatePowers(POWER_HOLY_POWER));
+            SetPower(POWER_HOLY_POWER, 0);
+            break;
+        case POWER_ALTERNATE_POWER: // Differs after this based on aura.
+            SetMaxPower(POWER_ALTERNATE_POWER, GetCreatePowers(POWER_ALTERNATE_POWER));
+            SetPower(POWER_ALTERNATE_POWER, 0);
+            break;
+        // POWER_DARK_FORCE - Deprecated.
+        case POWER_CHI:
+            SetMaxPower(POWER_CHI, GetCreatePowers(POWER_CHI));
+            SetPower(POWER_CHI, 0);
+            break;
+        case POWER_SHADOW_ORBS:
+            SetMaxPower(POWER_SHADOW_ORBS, GetCreatePowers(POWER_SHADOW_ORBS));
+            SetPower(POWER_SHADOW_ORBS, 0);
+            break;
+        case POWER_BURNING_EMBERS:
+            SetMaxPower(POWER_BURNING_EMBERS, GetCreatePowers(POWER_BURNING_EMBERS));
+            SetPower(POWER_BURNING_EMBERS, 10);
+            break;
+        case POWER_DEMONIC_FURY:
+            SetMaxPower(POWER_DEMONIC_FURY, GetCreatePowers(POWER_DEMONIC_FURY));
+            SetPower(POWER_DEMONIC_FURY, 200);
+            break;
+        case POWER_ARCANE_CHARGES:
+            SetMaxPower(POWER_ARCANE_CHARGES, GetCreatePowers(POWER_ARCANE_CHARGES));
+            SetPower(POWER_ARCANE_CHARGES, 0);
+            break;
     }
 }
 
@@ -8497,16 +8564,53 @@ void Unit::UnsummonAllTotems()
 
 void Unit::SendHealSpellLog(Unit* victim, uint32 SpellID, uint32 Damage, uint32 OverHeal, uint32 Absorb, bool critical)
 {
+    ObjectGuid victimGuid = victim->GetGUID();
+    ObjectGuid casterGuid = GetGUID();
+
     // we guess size
     WorldPacket data(SMSG_SPELLHEALLOG, 8 + 8 + 4 + 4 + 4 + 4 + 1 + 1);
-    data.append(victim->GetPackGUID());
-    data.append(GetPackGUID());
+    data.WriteBit(casterGuid[0]);
+    data.WriteBit(casterGuid[7]);
+    data.WriteBit(victimGuid[6]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[5]);
+    data.WriteBit(victimGuid[1]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[4]);
+    data.WriteBit(victimGuid[0]);
+    data.WriteBit(casterGuid[3]);
+    data.WriteBit(casterGuid[1]);
+    data.WriteBit(casterGuid[5]);
+    data.WriteBit(victimGuid[2]);
+    data.WriteBit(casterGuid[2]);
+    data.WriteBit(victimGuid[3]);
+    data.WriteBit(critical);
+    data.WriteBit(casterGuid[6]);
+    data.WriteBit(0);
+    data.WriteBit(victimGuid[7]);
+    data.WriteBit(casterGuid[4]);
+
+    data.WriteByteSeq(casterGuid[5]);
+    data.WriteByteSeq(victimGuid[7]);
+    data.WriteByteSeq(casterGuid[2]);
+    data.WriteByteSeq(victimGuid[1]);
+    data.WriteByteSeq(victimGuid[5]);
+    data.WriteByteSeq(victimGuid[2]);
     data << uint32(SpellID);
-    data << uint32(Damage);
+    data.WriteByteSeq(victimGuid[6]);
+    data << uint32(Absorb);
     data << uint32(OverHeal);
-    data << uint32(Absorb); // Absorb amount
-    data << uint8(critical ? 1 : 0);
-    data << uint8(0); // unused
+    data.WriteByteSeq(casterGuid[6]);
+    data.WriteByteSeq(victimGuid[0]);
+    data.WriteByteSeq(casterGuid[7]);
+    data.WriteByteSeq(casterGuid[1]);
+    data.WriteByteSeq(victimGuid[3]);
+    data.WriteByteSeq(casterGuid[0]);
+    data.WriteByteSeq(victimGuid[4]);
+    data.WriteByteSeq(casterGuid[3]);
+    data << uint32(Damage);
+    data.WriteByteSeq(casterGuid[4]);
+
     SendMessageToSet(&data, true);
 }
 
@@ -10605,196 +10709,6 @@ void Unit::SetVisible(bool x)
     UpdateObjectVisibility();
 }
 
-void Unit::UpdateSpeed(UnitMoveType mtype, bool forced)
-{
-    int32 main_speed_mod  = 0;
-    float stack_bonus     = 1.0f;
-    float non_stack_bonus = 1.0f;
-
-    switch (mtype)
-    {
-        // Only apply debuffs
-        case MOVE_FLIGHT_BACK:
-        case MOVE_RUN_BACK:
-        case MOVE_SWIM_BACK:
-            break;
-        case MOVE_WALK:
-            return;
-        case MOVE_RUN:
-        {
-            if (IsMounted()) // Use on mount auras
-            {
-                main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED);
-                stack_bonus     = GetTotalAuraMultiplier(SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS);
-                non_stack_bonus += GetMaxPositiveAuraModifier(SPELL_AURA_MOD_MOUNTED_SPEED_NOT_STACK) / 100.0f;
-            }
-            else
-            {
-                main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_SPEED);
-                stack_bonus     = GetTotalAuraMultiplier(SPELL_AURA_MOD_SPEED_ALWAYS);
-                non_stack_bonus += GetMaxPositiveAuraModifier(SPELL_AURA_MOD_SPEED_NOT_STACK) / 100.0f;
-            }
-            break;
-        }
-        case MOVE_SWIM:
-        {
-            main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_SWIM_SPEED);
-            break;
-        }
-        case MOVE_FLIGHT:
-        {
-            if (GetTypeId() == TYPEID_UNIT && IsControlledByPlayer()) // not sure if good for pet
-            {
-                main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_VEHICLE_FLIGHT_SPEED);
-                stack_bonus     = GetTotalAuraMultiplier(SPELL_AURA_MOD_VEHICLE_SPEED_ALWAYS);
-
-                // for some spells this mod is applied on vehicle owner
-                int32 owner_speed_mod = 0;
-
-                if (Unit* owner = GetCharmer())
-                    owner_speed_mod = owner->GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_VEHICLE_FLIGHT_SPEED);
-
-                main_speed_mod = std::max(main_speed_mod, owner_speed_mod);
-            }
-            else if (IsMounted())
-            {
-                main_speed_mod  = GetMaxPositiveAuraModifier(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
-                stack_bonus     = GetTotalAuraMultiplier(SPELL_AURA_MOD_MOUNTED_FLIGHT_SPEED_ALWAYS);
-            }
-            else             // Use not mount (shapeshift for example) auras (should stack)
-                main_speed_mod  = GetTotalAuraModifier(SPELL_AURA_MOD_INCREASE_FLIGHT_SPEED) + GetTotalAuraModifier(SPELL_AURA_MOD_INCREASE_VEHICLE_FLIGHT_SPEED);
-
-            non_stack_bonus += GetMaxPositiveAuraModifier(SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACK) / 100.0f;
-
-            // Update speed for vehicle if available
-            if (GetTypeId() == TYPEID_PLAYER && GetVehicle())
-                GetVehicleBase()->UpdateSpeed(MOVE_FLIGHT, true);
-            break;
-        }
-        default:
-            TC_LOG_ERROR("entities.unit", "Unit::UpdateSpeed: Unsupported move type (%d)", mtype);
-            return;
-    }
-
-    // now we ready for speed calculation
-    float speed = std::max(non_stack_bonus, stack_bonus);
-    if (main_speed_mod)
-        AddPct(speed, main_speed_mod);
-
-    switch (mtype)
-    {
-        case MOVE_RUN:
-        case MOVE_SWIM:
-        case MOVE_FLIGHT:
-        {
-            // Set creature speed rate
-            if (GetTypeId() == TYPEID_UNIT)
-            {
-                Unit* pOwner = GetCharmerOrOwner();
-                if ((IsPet() || IsGuardian()) && !IsInCombat() && pOwner) // Must check for owner or crash on "Tame Beast"
-                {
-                    // For every yard over 5, increase speed by 0.01
-                    //  to help prevent pet from lagging behind and despawning
-                    float dist = GetDistance(pOwner);
-                    float base_rate = 1.00f; // base speed is 100% of owner speed
-
-                    if (dist < 5)
-                        dist = 5;
-
-                    float mult = base_rate + ((dist - 5) * 0.01f);
-
-                    speed *= pOwner->GetSpeedRate(mtype) * mult; // pets derive speed from owner when not in combat
-                }
-                else
-                    speed *= ToCreature()->GetCreatureTemplate()->speed_run;    // at this point, MOVE_WALK is never reached
-            }
-
-            // Normalize speed by 191 aura SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED if need
-            /// @todo possible affect only on MOVE_RUN
-            if (int32 normalization = GetMaxPositiveAuraModifier(SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED))
-            {
-                // Use speed from aura
-                float max_speed = normalization / (IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]);
-                if (speed > max_speed)
-                    speed = max_speed;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    // for creature case, we check explicit if mob searched for assistance
-    if (GetTypeId() == TYPEID_UNIT)
-    {
-        if (ToCreature()->HasSearchedAssistance())
-            speed *= 0.66f;                                 // best guessed value, so this will be 33% reduction. Based off initial speed, mob can then "run", "walk fast" or "walk".
-    }
-
-    // Apply strongest slow aura mod to speed
-    int32 slow = GetMaxNegativeAuraModifier(SPELL_AURA_MOD_DECREASE_SPEED);
-    if (slow)
-    {
-        AddPct(speed, slow);
-        if (float minSpeedMod = (float)GetMaxPositiveAuraModifier(SPELL_AURA_MOD_MINIMUM_SPEED))
-        {
-            float min_speed = minSpeedMod / 100.0f;
-            if (speed < min_speed)
-                speed = min_speed;
-        }
-    }
-    SetSpeed(mtype, speed, forced);
-}
-
-float Unit::GetSpeed(UnitMoveType mtype) const
-{
-    return m_speed_rate[mtype]*(IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]);
-}
-
-void Unit::SetSpeed(UnitMoveType mtype, float rate, bool forced)
-{
-    if (rate < 0)
-        rate = 0.0f;
-
-    // Update speed only on change
-    if (m_speed_rate[mtype] == rate)
-        return;
-
-    m_speed_rate[mtype] = rate;
-
-    propagateSpeedChange();
-
-    static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3] =
-    {
-        {SMSG_SPLINE_MOVE_SET_WALK_SPEED,        SMSG_MOVE_SET_WALK_SPEED,        SMSG_MOVE_UPDATE_WALK_SPEED       },
-        {SMSG_SPLINE_MOVE_SET_RUN_SPEED,         SMSG_MOVE_SET_RUN_SPEED,         SMSG_MOVE_UPDATE_RUN_SPEED        },
-        {SMSG_SPLINE_MOVE_SET_RUN_BACK_SPEED,    SMSG_MOVE_SET_RUN_BACK_SPEED,    SMSG_MOVE_UPDATE_RUN_BACK_SPEED   },
-        {SMSG_SPLINE_MOVE_SET_SWIM_SPEED,        SMSG_MOVE_SET_SWIM_SPEED,        SMSG_MOVE_UPDATE_SWIM_SPEED       },
-        {SMSG_SPLINE_MOVE_SET_SWIM_BACK_SPEED,   SMSG_MOVE_SET_SWIM_BACK_SPEED,   SMSG_MOVE_UPDATE_SWIM_BACK_SPEED  },
-        {SMSG_SPLINE_MOVE_SET_TURN_RATE,         SMSG_MOVE_SET_TURN_RATE,         SMSG_MOVE_UPDATE_TURN_RATE        },
-        {SMSG_SPLINE_MOVE_SET_FLIGHT_SPEED,      SMSG_MOVE_SET_FLIGHT_SPEED,      SMSG_MOVE_UPDATE_FLIGHT_SPEED     },
-        {SMSG_SPLINE_MOVE_SET_FLIGHT_BACK_SPEED, SMSG_MOVE_SET_FLIGHT_BACK_SPEED, SMSG_MOVE_UPDATE_FLIGHT_BACK_SPEED},
-        {SMSG_SPLINE_MOVE_SET_PITCH_RATE,        SMSG_MOVE_SET_PITCH_RATE,        SMSG_MOVE_UPDATE_PITCH_RATE       },
-    };
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        // register forced speed changes for WorldSession::HandleForceSpeedChangeAck
-        // and do it only for real sent packets and use run for run/mounted as client expected
-        ++ToPlayer()->m_forced_speed_changes[mtype];
-
-        if (!IsInCombat())
-            if (Pet* pet = ToPlayer()->GetPet())
-                pet->SetSpeed(mtype, m_speed_rate[mtype], forced);
-    }
-
-    static MovementStatusElements const speedVal = MSEExtraFloat;
-    Movement::ExtraMovementStatusElement extra(&speedVal);
-    extra.Data.floatData = GetSpeed(mtype);
-
-    Movement::PacketSender(this, moveTypeToOpcode[mtype][0], moveTypeToOpcode[mtype][1], moveTypeToOpcode[mtype][2], &extra).Send();
-}
-
 void Unit::setDeathState(DeathState s)
 {
     // Death state needs to be updated before RemoveAllAurasOnDeath() is called, to prevent entering combat
@@ -10805,7 +10719,7 @@ void Unit::setDeathState(DeathState s)
         CombatStop();
         DeleteThreatList();
         getHostileRefManager().deleteReferences();
-        ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
+        // ClearComboPointHolders(); // Any combo points lost at unit death. - Not since Cataclysm!! Now dead target combo points usable (for spells like Recuperate - Rogue).
 
         if (IsNonMeleeSpellCasted(false))
             InterruptNonMeleeSpells(false);
@@ -11499,15 +11413,26 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_RUNE:
-        case UNIT_MOD_RUNIC_POWER:          UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod));          break;
+        case UNIT_MOD_LIGHT_FORCE:
+        case UNIT_MOD_RUNES:
+        case UNIT_MOD_RUNIC_POWER:
+        case UNIT_MOD_SOUL_SHARDS:
+        case UNIT_MOD_ECLIPSE:
+        case UNIT_MOD_HOLY_POWER:
+        case UNIT_MOD_ALTERNATIVE:
+        case UNIT_MOD_DARK_FORCE:
+        case UNIT_MOD_CHI:
+        case UNIT_MOD_SHADOW_ORBS:
+        case UNIT_MOD_BURNING_EMBERS:
+        case UNIT_MOD_DEMONIC_FURY:
+        case UNIT_MOD_ARCANE_CHARGES:      UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod));          break;
 
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
         case UNIT_MOD_RESISTANCE_NATURE:
         case UNIT_MOD_RESISTANCE_FROST:
         case UNIT_MOD_RESISTANCE_SHADOW:
-        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod));      break;
+        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod));     break;
 
         case UNIT_MOD_ATTACK_POWER:        UpdateAttackPowerAndDamage();         break;
         case UNIT_MOD_ATTACK_POWER_RANGED: UpdateAttackPowerAndDamage(true);     break;
@@ -11516,8 +11441,7 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_DAMAGE_OFFHAND:      UpdateDamagePhysical(OFF_ATTACK);     break;
         case UNIT_MOD_DAMAGE_RANGED:       UpdateDamagePhysical(RANGED_ATTACK);  break;
 
-        default:
-            break;
+        default: break;
     }
 
     return true;
@@ -11615,11 +11539,23 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
 {
     switch (unitMod)
     {
-        case UNIT_MOD_RAGE:        return POWER_RAGE;
-        case UNIT_MOD_FOCUS:       return POWER_FOCUS;
-        case UNIT_MOD_ENERGY:      return POWER_ENERGY;
-        case UNIT_MOD_RUNE:        return POWER_RUNES;
-        case UNIT_MOD_RUNIC_POWER: return POWER_RUNIC_POWER;
+        case UNIT_MOD_RAGE:           return POWER_RAGE;
+        case UNIT_MOD_FOCUS:          return POWER_FOCUS;
+        case UNIT_MOD_ENERGY:         return POWER_ENERGY;
+        case UNIT_MOD_LIGHT_FORCE:    return POWER_LIGHT_FORCE;
+        case UNIT_MOD_RUNES:          return POWER_RUNES;
+        case UNIT_MOD_RUNIC_POWER:    return POWER_RUNIC_POWER;
+        case UNIT_MOD_SOUL_SHARDS:    return POWER_SOUL_SHARDS;
+        case UNIT_MOD_ECLIPSE:        return POWER_ECLIPSE;
+        case UNIT_MOD_HOLY_POWER:     return POWER_HOLY_POWER;
+        case UNIT_MOD_ALTERNATIVE:    return POWER_ALTERNATE_POWER;
+        case UNIT_MOD_DARK_FORCE:     return POWER_DARK_FORCE;
+        case UNIT_MOD_CHI:            return POWER_CHI;
+        case UNIT_MOD_SHADOW_ORBS:    return POWER_SHADOW_ORBS;
+        case UNIT_MOD_BURNING_EMBERS: return POWER_BURNING_EMBERS;
+        case UNIT_MOD_DEMONIC_FURY:   return POWER_DEMONIC_FURY;
+        case UNIT_MOD_ARCANE_CHARGES: return POWER_ARCANE_CHARGES;
+
         default:
         case UNIT_MOD_MANA:        return POWER_MANA;
     }
@@ -11735,7 +11671,7 @@ int32 Unit::GetPower(Powers power) const
     if (powerIndex == MAX_POWERS)
         return 0;
 
-    return GetUInt32Value(UNIT_FIELD_POWER + powerIndex);
+    return GetInt32Value(UNIT_FIELD_POWER + powerIndex);
 }
 
 int32 Unit::GetMaxPower(Powers power) const
@@ -11767,7 +11703,9 @@ void Unit::SetPower(Powers power, int32 val)
         data.WriteBit(guid[3]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[4]);
+
         data.WriteBits(1, 21); // 1 update
+
         data.WriteBit(guid[2]);
         data.WriteBit(guid[1]);
         data.WriteBit(guid[7]);
@@ -11778,14 +11716,78 @@ void Unit::SetPower(Powers power, int32 val)
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[1]);
+
         data << uint8(powerIndex);
         data << int32(val);
+
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[2]);
 
         SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER);
+    }
+
+    if (power == POWER_ALTERNATE_POWER)
+    {
+        if (HasAura(93103)) // Corruption Cho'gall. - Finished.
+        {
+            if (val >= 25 && !HasAura(81836)) AddAura(81836, ToPlayer());
+            if (val >= 50 && !HasAura(81829)) AddAura(81829, ToPlayer());
+            if (val >= 75 && !HasAura(82125))
+            {
+               AddAura(82125, ToPlayer());
+               AddAura(82167, ToPlayer());
+               Creature* malformation = ToPlayer()->SummonCreature(43888, ToPlayer()->GetPositionX(), ToPlayer()->GetPositionY(), ToPlayer()->GetPositionZ(), ToPlayer()->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+               malformation->CastSpell(ToPlayer(), 46598, true);
+            }
+            if (val >= 100 && !HasAura(82193))
+            {
+                AddAura(82193, ToPlayer());
+                AddAura(82170, ToPlayer());
+            }
+        }
+        else if (HasAura(78949)) // Electricity Onyxia. - Finished.
+        {
+            if (val >= 100) CastSpell(ToUnit(), 78999, true);
+        }
+        else if (HasAura(88824)) // Sound Atramedes. - Finished.
+        {
+            if (val >= 100)
+            {
+                CastSpell(ToPlayer(), 78897, true); // Noisy.
+                if (Creature* atramedes = ToPlayer()->FindNearestCreature(41442, 200.0f, true)) // Find Atramedes.
+                    atramedes->CastSpell(ToPlayer(), 78875, true); // Devastation.
+            }
+        }
+        else if (HasAura(98229)) // Concentration Majordomo HC. - LOADING BAR NOT DONE.
+        {
+            if (val >= 25 && !HasAura(98254)) AddAura(98254, ToPlayer());
+            if (val >= 50 && !HasAura(98253))
+            {
+               AddAura(98253, ToPlayer());
+               ToPlayer()->RemoveAurasDueToSpell(98254, true);
+            }
+            if (val >= 75 && !HasAura(98252))
+            {
+               AddAura(98252, ToPlayer());
+               RemoveAurasDueToSpell(98253, true);
+            }
+            if (val >= 100 && !HasAura(98245))
+            {
+               AddAura(98245, ToPlayer());
+               ToPlayer()->RemoveAurasDueToSpell(98252, true);
+            }
+        }
+        else if (HasAura(101410)) // Molten Feathers Alysrazor. - Finished.
+        {
+            if (val >= 3)
+            {
+               CastSpell(ToUnit(), 98624, true);
+               ToUnit()->SetPower(POWER_ALTERNATE_POWER, 0);
+               AddAura(101410, ToPlayer());
+            }
+        }
     }
 
     // group update
@@ -11851,31 +11853,26 @@ int32 Unit::GetCreatePowers(Powers power) const
 {
     switch (power)
     {
-        case POWER_MANA:
-            return GetCreateMana();
-        case POWER_RAGE:
-            return 1000;
-        case POWER_FOCUS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER)
-                return 100;
-            return (GetTypeId() == TYPEID_PLAYER || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : 100);
-        case POWER_ENERGY:
-            return 100;
-        case POWER_RUNIC_POWER:
-            return 1000;
-        case POWER_RUNES:
-            return 0;
-        case POWER_SOUL_SHARDS:
-            return 3;
-        case POWER_ECLIPSE:
-            return 100;
-        case POWER_HOLY_POWER:
-            return 3;
-        case POWER_HEALTH:
-            return 0;
-        case POWER_CHI:         return GetTypeId() == TYPEID_PLAYER && ((Player const*)this)->getClass() == CLASS_MONK ? 1000 : 0;
-        default:
-            break;
+        case POWER_MANA:            return GetCreateMana();
+        case POWER_RAGE:            return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARRIOR || GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DRUID && ToPlayer()->GetShapeshiftForm() == FORM_BEAR) ? 1000 : 0;
+        case POWER_FOCUS:           return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER || GetTypeId() == TYPEID_UNIT && ToCreature()->IsPet() && ToPet()->getPetType() == HUNTER_PET) ? 100 : 0;
+        case POWER_ENERGY:          return 100;
+        case POWER_LIGHT_FORCE:     return 0; // Should be 100 but the power is deprecated since MOP Beta.
+        case POWER_RUNES:           return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 8 : 0; // Normally 6 but Death Runes count as two more (4 types x 2).
+        case POWER_RUNIC_POWER:     return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 1000 : 0;
+        case POWER_SOUL_SHARDS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_AFFLICTION && ToPlayer()->getLevel() >= 19) ? 400 : 0;
+        case POWER_ECLIPSE:         return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID   && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_DRUID_BALANCE) ? 100 : 0; // Goes -100 Lunar to 100 Solar Eclipse.
+        case POWER_HOLY_POWER:      return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN) ? 3 : 0; // 5 max after learning Boundless Conviction at 85, otherwise 3.
+        case POWER_ALTERNATE_POWER: return 100;
+        case POWER_DARK_FORCE:      return 0; // Should be 100 but the power is deprecated since MOP Beta.
+        case POWER_CHI:             return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MONK) ? 4 : 0; // 5 max after learning Ascension at 45, else 4.
+        case POWER_SHADOW_ORBS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST  && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_PRIEST_SHADOW && ToPlayer()->getLevel() >= 21) ? 3 : 0;
+        case POWER_BURNING_EMBERS:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DESTRUCTION && ToPlayer()->getLevel() >= 42) ? 40 : 0; // 4 full x 10 minor.
+        case POWER_DEMONIC_FURY:    return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DEMONOLOGY) ? 1000 : 0;
+        case POWER_ARCANE_CHARGES:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MAGE    && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_MAGE_ARCANE) ? 4 : 0;
+        case POWER_HEALTH:          return 0;
+
+        default: break;
     }
 
     return 0;
@@ -12869,18 +12866,6 @@ void Unit::SendPetAIReaction(uint64 guid)
 }
 
 ///----------End of Pet responses methods----------
-
-void Unit::StopMoving()
-{
-    ClearUnitState(UNIT_STATE_MOVING);
-
-    // not need send any packets if not in world or not moving
-    if (!IsInWorld() || movespline->Finalized())
-        return;
-
-    Movement::MoveSplineInit init(this);
-    init.Stop();
-}
 
 bool Unit::IsSitState() const
 {
@@ -13877,15 +13862,6 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
     }
 }
 
-float Unit::GetPositionZMinusOffset() const
-{
-    float offset = 0.0f;
-    if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        offset = GetFloatValue(UNIT_FIELD_HOVER_HEIGHT);
-
-    return GetPositionZ() - offset;
-}
-
 void Unit::SetControlled(bool apply, UnitState state)
 {
     if (apply)
@@ -13976,111 +13952,6 @@ void Unit::SetControlled(bool apply, UnitState state)
                 SetFeared(true);
         }
     }
-}
-
-void Unit::SetStunned(bool apply)
-{
-    if (apply)
-    {
-        SetTarget(0);
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
-
-        // Creature specific
-        if (GetTypeId() != TYPEID_PLAYER)
-            StopMoving();
-        else
-            SetStandState(UNIT_STAND_STATE_STAND);
-
-        SetRooted(true);
-
-        CastStop();
-    }
-    else
-    {
-        if (IsAlive() && GetVictim())
-            SetTarget(GetVictim()->GetGUID());
-
-        // don't remove UNIT_FLAG_STUNNED for pet when owner is mounted (disabled pet's interface)
-        Unit* owner = GetOwner();
-        if (!owner || (owner->GetTypeId() == TYPEID_PLAYER && !owner->ToPlayer()->IsMounted()))
-            RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
-
-        if (!HasUnitState(UNIT_STATE_ROOT))         // prevent moving if it also has root effect
-            SetRooted(false);
-    }
-}
-
-void Unit::SetRooted(bool apply, bool packetOnly /*= false*/)
-{
-    if (!packetOnly)
-    {
-        if (apply)
-        {
-            // MOVEMENTFLAG_ROOT cannot be used in conjunction with MOVEMENTFLAG_MASK_MOVING (tested 3.3.5a)
-            // this will freeze clients. That's why we remove MOVEMENTFLAG_MASK_MOVING before
-            // setting MOVEMENTFLAG_ROOT
-            RemoveUnitMovementFlag(MOVEMENTFLAG_MASK_MOVING);
-            AddUnitMovementFlag(MOVEMENTFLAG_ROOT);
-        }
-        else
-            RemoveUnitMovementFlag(MOVEMENTFLAG_ROOT);
-    }
-
-    if (apply)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_ROOT, SMSG_MOVE_ROOT, SMSG_MOVE_ROOT).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_UNROOT, SMSG_MOVE_UNROOT, SMSG_MOVE_UNROOT).Send();
-}
-
-void Unit::SetFeared(bool apply)
-{
-    if (apply)
-    {
-        SetTarget(0);
-
-        Unit* caster = NULL;
-        Unit::AuraEffectList const& fearAuras = GetAuraEffectsByType(SPELL_AURA_MOD_FEAR);
-        if (!fearAuras.empty())
-            caster = ObjectAccessor::GetUnit(*this, fearAuras.front()->GetCasterGUID());
-        if (!caster)
-            caster = getAttackerForHelper();
-        GetMotionMaster()->MoveFleeing(caster, fearAuras.empty() ? sWorld->getIntConfig(CONFIG_CREATURE_FAMILY_FLEE_DELAY) : 0);             // caster == NULL processed in MoveFleeing
-    }
-    else
-    {
-        if (IsAlive())
-        {
-            if (GetMotionMaster()->GetCurrentMovementGeneratorType() == FLEEING_MOTION_TYPE)
-                GetMotionMaster()->MovementExpired();
-            if (GetVictim())
-                SetTarget(GetVictim()->GetGUID());
-        }
-    }
-
-    if (GetTypeId() == TYPEID_PLAYER)
-        ToPlayer()->SetClientControl(this, !apply);
-}
-
-void Unit::SetConfused(bool apply)
-{
-    if (apply)
-    {
-        SetTarget(0);
-        GetMotionMaster()->MoveConfused();
-    }
-    else
-    {
-        if (IsAlive())
-        {
-            if (GetMotionMaster()->GetCurrentMovementGeneratorType() == CONFUSED_MOTION_TYPE)
-                GetMotionMaster()->MovementExpired();
-            if (GetVictim())
-                SetTarget(GetVictim()->GetGUID());
-        }
-    }
-
-    if (GetTypeId() == TYPEID_PLAYER)
-        ToPlayer()->SetClientControl(this, !apply);
 }
 
 bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* aurApp)
@@ -14727,65 +14598,6 @@ void Unit::UpdateObjectVisibility(bool forced)
     }
 }
 
-void Unit::SendMoveKnockBack(Player* player, float speedXY, float speedZ, float vcos, float vsin)
-{
-    ObjectGuid guid = GetGUID();
-    WorldPacket data(SMSG_MOVE_KNOCK_BACK, (1+8+4+4+4+4+4));
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[6]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[2]);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[1]);
-    data.WriteBit(guid[4]);
-
-    data.WriteByteSeq(guid[1]);
-
-    data << float(vsin);
-    data << uint32(0);
-
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[7]);
-
-    data << float(speedXY);
-
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[3]);
-
-    data << float(speedZ);
-    data << float(vcos);
-
-    data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[0]);
-
-    player->GetSession()->SendPacket(&data);
-}
-
-void Unit::KnockbackFrom(float x, float y, float speedXY, float speedZ)
-{
-    Player* player = ToPlayer();
-    if (!player)
-    {
-        if (Unit* charmer = GetCharmer())
-        {
-            player = charmer->ToPlayer();
-            if (player && player->m_mover != this)
-                player = NULL;
-        }
-    }
-
-    if (!player)
-        GetMotionMaster()->MoveKnockbackFrom(x, y, speedXY, speedZ);
-    else
-    {
-        float vcos, vsin;
-        GetSinCos(x, y, vsin, vcos);
-        SendMoveKnockBack(player, speedXY, -speedZ, vcos, vsin);
-    }
-}
-
 float Unit::GetCombatRatingReduction(CombatRating cr) const
 {
     if (Player const* player = ToPlayer())
@@ -15250,27 +15062,6 @@ uint32 Unit::GetModelForTotem(PlayerTotemType totemType)
     return 0;
 }
 
-void Unit::JumpTo(float speedXY, float speedZ, bool forward)
-{
-    float angle = forward ? 0 : M_PI;
-    if (GetTypeId() == TYPEID_UNIT)
-        GetMotionMaster()->MoveJumpTo(angle, speedXY, speedZ);
-    else
-    {
-        float vcos = std::cos(angle+GetOrientation());
-        float vsin = std::sin(angle+GetOrientation());
-        SendMoveKnockBack(ToPlayer(), speedXY, -speedZ, vcos, vsin);
-    }
-}
-
-void Unit::JumpTo(WorldObject* obj, float speedZ)
-{
-    float x, y, z;
-    obj->GetContactPoint(this, x, y, z);
-    float speedXY = GetExactDist2d(x, y) * 10.0f / speedZ;
-    GetMotionMaster()->MoveJump(x, y, z, speedXY, speedZ);
-}
-
 bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
 {
     bool result = false;
@@ -15498,11 +15289,6 @@ void Unit::_ExitVehicle(Position const* exitPosition)
     }
 }
 
-bool Unit::IsFalling() const
-{
-    return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR) || movespline->isFalling();
-}
-
 void Unit::NearTeleportTo(float x, float y, float z, float orientation, bool casting /*= false*/)
 {
     DisableSpline();
@@ -15515,372 +15301,6 @@ void Unit::NearTeleportTo(float x, float y, float z, float orientation, bool cas
         UpdatePosition(x, y, z, orientation, true);
         UpdateObjectVisibility();
     }
-}
-
-void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusElement* extras /*= NULL*/)
-{
-    MovementInfo const& mi = m_movementInfo;
-
-    bool hasMovementFlags = GetUnitMovementFlags() != 0;
-    bool hasMovementFlags2 = GetExtraUnitMovementFlags() != 0;
-    bool hasTimestamp = true;
-    bool hasOrientation = !G3D::fuzzyEq(GetOrientation(), 0.0f);
-    bool hasTransportData = GetTransGUID() != 0;
-    bool hasSpline = IsSplineEnabled();
-
-    bool hasTransportTime2 = hasTransportData && m_movementInfo.transport.time2 != 0;
-    bool hasTransportTime3 = false;
-    bool hasPitch = HasUnitMovementFlag(MovementFlags(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING)) || HasExtraUnitMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING);
-    bool hasFallDirection = HasUnitMovementFlag(MOVEMENTFLAG_FALLING);
-    bool hasFallData = hasFallDirection || m_movementInfo.jump.fallTime != 0;
-    bool hasSplineElevation = HasUnitMovementFlag(MOVEMENTFLAG_SPLINE_ELEVATION);
-
-    MovementStatusElements const* sequence = GetMovementStatusElementsSequence(data.GetOpcode());
-    if (!sequence)
-    {
-        TC_LOG_ERROR("network", "Unit::WriteMovementInfo: No movement sequence found for opcode %s", GetOpcodeNameForLogging(data.GetOpcode(), true).c_str());
-        return;
-    }
-
-    ObjectGuid guid = GetGUID();
-    ObjectGuid tguid = hasTransportData ? GetTransGUID() : 0;
-
-    for (; *sequence != MSEEnd; ++sequence)
-    {
-        MovementStatusElements const& element = *sequence;
-
-        switch (element)
-        {
-        case MSEHasGuidByte0:
-        case MSEHasGuidByte1:
-        case MSEHasGuidByte2:
-        case MSEHasGuidByte3:
-        case MSEHasGuidByte4:
-        case MSEHasGuidByte5:
-        case MSEHasGuidByte6:
-        case MSEHasGuidByte7:
-            data.WriteBit(guid[element - MSEHasGuidByte0]);
-            break;
-        case MSEHasTransportGuidByte0:
-        case MSEHasTransportGuidByte1:
-        case MSEHasTransportGuidByte2:
-        case MSEHasTransportGuidByte3:
-        case MSEHasTransportGuidByte4:
-        case MSEHasTransportGuidByte5:
-        case MSEHasTransportGuidByte6:
-        case MSEHasTransportGuidByte7:
-            if (hasTransportData)
-                data.WriteBit(tguid[element - MSEHasTransportGuidByte0]);
-            break;
-        case MSEGuidByte0:
-        case MSEGuidByte1:
-        case MSEGuidByte2:
-        case MSEGuidByte3:
-        case MSEGuidByte4:
-        case MSEGuidByte5:
-        case MSEGuidByte6:
-        case MSEGuidByte7:
-            data.WriteByteSeq(guid[element - MSEGuidByte0]);
-            break;
-        case MSETransportGuidByte0:
-        case MSETransportGuidByte1:
-        case MSETransportGuidByte2:
-        case MSETransportGuidByte3:
-        case MSETransportGuidByte4:
-        case MSETransportGuidByte5:
-        case MSETransportGuidByte6:
-        case MSETransportGuidByte7:
-            if (hasTransportData)
-                data.WriteByteSeq(tguid[element - MSETransportGuidByte0]);
-            break;
-        case MSEHasMovementFlags:
-            data.WriteBit(!hasMovementFlags);
-            break;
-        case MSEHasMovementFlags2:
-            data.WriteBit(!hasMovementFlags2);
-            break;
-        case MSEHasTimestamp:
-            data.WriteBit(!hasTimestamp);
-            break;
-        case MSEHasOrientation:
-            data.WriteBit(!hasOrientation);
-            break;
-        case MSEHasTransportData:
-            data.WriteBit(hasTransportData);
-            break;
-        case MSEHasTransportTime2:
-            if (hasTransportData)
-                data.WriteBit(hasTransportTime2);
-            break;
-        case MSEHasTransportTime3:
-            if (hasTransportData)
-                data.WriteBit(hasTransportTime3);
-            break;
-        case MSEHasPitch:
-            data.WriteBit(!hasPitch);
-            break;
-        case MSEHasFallData:
-            data.WriteBit(hasFallData);
-            break;
-        case MSEHasFallDirection:
-            if (hasFallData)
-                data.WriteBit(hasFallDirection);
-            break;
-        case MSEHasSplineElevation:
-            data.WriteBit(!hasSplineElevation);
-            break;
-        case MSEHasSpline:
-            data.WriteBit(hasSpline);
-            break;
-        case MSEMovementFlags:
-            if (hasMovementFlags)
-                data.WriteBits(GetUnitMovementFlags(), 30);
-            break;
-        case MSEMovementFlags2:
-            if (hasMovementFlags2)
-                data.WriteBits(GetExtraUnitMovementFlags(), 13);
-            break;
-        case MSETimestamp:
-            if (hasTimestamp)
-                data << getMSTime();
-            break;
-        case MSEPositionX:
-            data << GetPositionX();
-            break;
-        case MSEPositionY:
-            data << GetPositionY();
-            break;
-        case MSEPositionZ:
-            data << GetPositionZ();
-            break;
-        case MSEOrientation:
-            if (hasOrientation)
-                data << GetOrientation();
-            break;
-        case MSETransportPositionX:
-            if (hasTransportData)
-                data << GetTransOffsetX();
-            break;
-        case MSETransportPositionY:
-            if (hasTransportData)
-                data << GetTransOffsetY();
-            break;
-        case MSETransportPositionZ:
-            if (hasTransportData)
-                data << GetTransOffsetZ();
-            break;
-        case MSETransportOrientation:
-            if (hasTransportData)
-                data << GetTransOffsetO();
-            break;
-        case MSETransportSeat:
-            if (hasTransportData)
-                data << GetTransSeat();
-            break;
-        case MSETransportTime:
-            if (hasTransportData)
-                data << GetTransTime();
-            break;
-        case MSETransportTime2:
-            if (hasTransportData && hasTransportTime2)
-                data << mi.transport.time2;
-            break;
-        case MSETransportTime3:
-            if (hasTransportData && hasTransportTime3)
-                data << mi.transport.time3;
-            break;
-        case MSEPitch:
-            if (hasPitch)
-                data << mi.pitch;
-            break;
-        case MSEFallTime:
-            if (hasFallData)
-                data << mi.jump.fallTime;
-            break;
-        case MSEFallVerticalSpeed:
-            if (hasFallData)
-                data << mi.jump.zspeed;
-            break;
-        case MSEFallCosAngle:
-            if (hasFallData && hasFallDirection)
-                data << mi.jump.cosAngle;
-            break;
-        case MSEFallSinAngle:
-            if (hasFallData && hasFallDirection)
-                data << mi.jump.sinAngle;
-            break;
-        case MSEFallHorizontalSpeed:
-            if (hasFallData && hasFallDirection)
-                data << mi.jump.xyspeed;
-            break;
-        case MSESplineElevation:
-            if (hasSplineElevation)
-                data << mi.splineElevation;
-            break;
-        case MSECounterCount:
-            data.WriteBits(0, 22);
-            break;
-        case MSECounter:
-            data << m_movementCounter++;
-            break;
-        case MSEZeroBit:
-            data.WriteBit(0);
-            break;
-        case MSEOneBit:
-            data.WriteBit(1);
-            break;
-        case MSEExtraElement:
-            extras->WriteNextElement(data);
-            break;
-        case MSEUintCount:
-            data << uint32(0);
-            break;
-        default:
-            ASSERT(Movement::PrintInvalidSequenceElement(element, __FUNCTION__));
-            break;
-        }
-    }
-}
-
-void Unit::SendTeleportPacket(Position& pos)
-{
-    // SMSG_MOVE_UPDATE_TELEPORT is sent to nearby players to signal the teleport
-    // MSG_MOVE_TELEPORT is sent to self in order to trigger MSG_MOVE_TELEPORT_ACK and update the position server side
-
-    // This oldPos actually contains the destination position if the Unit is a Player.
-    Position oldPos = {GetPositionX(), GetPositionY(), GetPositionZMinusOffset(), GetOrientation()};
-
-    if (GetTypeId() == TYPEID_UNIT)
-        Relocate(&pos); // Relocate the unit to its new position in order to build the packets correctly.
-
-    ObjectGuid guid = GetGUID();
-    ObjectGuid transGuid = GetTransGUID();
-
-    WorldPacket data(SMSG_MOVE_UPDATE_TELEPORT, 38);
-    WriteMovementInfo(data);
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        WorldPacket data2(MSG_MOVE_TELEPORT, 38);
-        data2 << float(GetPositionX());
-        data2 << float(GetPositionZMinusOffset());
-        data2 << float(GetPositionY());
-        data2 << uint32(0); // counter
-        data2 << float(GetOrientation());
-
-        data2.WriteBit(guid[5]);
-        data2.WriteBit(guid[4]);
-        data2.WriteBit(guid[6]);
-        data2.WriteBit(guid[7]);
-        data2.WriteBit(guid[3]);
-        data2.WriteBit(guid[0]);
-        data2.WriteBit(uint64(transGuid));
-
-        if (transGuid)
-        {
-            data2.WriteBit(transGuid[6]);
-            data2.WriteBit(transGuid[4]);
-            data2.WriteBit(transGuid[2]);
-            data2.WriteBit(transGuid[5]);
-            data2.WriteBit(transGuid[3]);
-            data2.WriteBit(transGuid[0]);
-            data2.WriteBit(transGuid[7]);
-            data2.WriteBit(transGuid[1]);
-        }
-
-        data2.WriteBit(0);
-        data2.WriteBit(guid[1]);
-        data2.WriteBit(guid[2]);
-        data2.FlushBits();
-
-        data2.WriteByteSeq(guid[2]);
-        data2.WriteByteSeq(guid[5]);
-
-        if (transGuid)
-        {
-            data2.WriteByteSeq(transGuid[2]);
-            data2.WriteByteSeq(transGuid[1]);
-            data2.WriteByteSeq(transGuid[4]);
-            data2.WriteByteSeq(transGuid[0]);
-            data2.WriteByteSeq(transGuid[6]);
-            data2.WriteByteSeq(transGuid[5]);
-            data2.WriteByteSeq(transGuid[7]);
-            data2.WriteByteSeq(transGuid[3]);
-        }
-
-        data2.WriteByteSeq(guid[0]);
-        data2.WriteByteSeq(guid[4]);
-        data2.WriteByteSeq(guid[3]);
-        data2.WriteByteSeq(guid[6]);
-        data2.WriteByteSeq(guid[1]);
-        data2.WriteByteSeq(guid[7]);
-
-        ToPlayer()->SendDirectMessage(&data2); // Send the MSG_MOVE_TELEPORT packet to self.
-    }
-
-    // Relocate the player/creature to its old position, so we can broadcast to nearby players correctly
-    if (GetTypeId() == TYPEID_PLAYER)
-        Relocate(&pos);
-    else
-        Relocate(&oldPos);
-
-    // Broadcast the packet to everyone except self.
-    SendMessageToSet(&data, false);
-}
-
-bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
-{
-    // prevent crash when a bad coord is sent by the client
-    if (!Trinity::IsValidMapCoord(x, y, z, orientation))
-    {
-        TC_LOG_DEBUG("entities.unit", "Unit::UpdatePosition(%f, %f, %f) .. bad coordinates!", x, y, z);
-        return false;
-    }
-
-    bool turn = (GetOrientation() != orientation);
-    bool relocated = (teleport || GetPositionX() != x || GetPositionY() != y || GetPositionZ() != z);
-
-    if (turn)
-        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
-
-    if (relocated)
-    {
-        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
-
-        // move and update visible state if need
-        if (GetTypeId() == TYPEID_PLAYER)
-            GetMap()->PlayerRelocation(ToPlayer(), x, y, z, orientation);
-        else
-            GetMap()->CreatureRelocation(ToCreature(), x, y, z, orientation);
-    }
-    else if (turn)
-        UpdateOrientation(orientation);
-
-    // code block for underwater state update
-    UpdateUnderwaterState(GetMap(), x, y, z);
-
-    return (relocated || turn);
-}
-
-bool Unit::UpdatePosition(const Position &pos, bool teleport)
-{
-    return UpdatePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), teleport);
-}
-
-//! Only server-side orientation update, does not broadcast to client
-void Unit::UpdateOrientation(float orientation)
-{
-    SetOrientation(orientation);
-    if (IsVehicle())
-        GetVehicleKit()->RelocatePassengers();
-}
-
-//! Only server-side height update, does not broadcast to client
-void Unit::UpdateHeight(float newZ)
-{
-    Relocate(GetPositionX(), GetPositionY(), newZ);
-    if (IsVehicle())
-        GetVehicleKit()->RelocatePassengers();
 }
 
 void Unit::SendThreatListUpdate()
@@ -16142,259 +15562,6 @@ bool CharmInfo::IsReturning()
     return _isReturning;
 }
 
-void Unit::SetInFront(WorldObject const* target)
-{
-    if (!HasUnitState(UNIT_STATE_CANNOT_TURN))
-        SetOrientation(GetAngle(target));
-}
-
-void Unit::SetFacingTo(float ori)
-{
-    Movement::MoveSplineInit init(this);
-    init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset(), false);
-    if (GetTransport())
-        init.DisableTransportPathTransformations(); // It makes no sense to target global orientation
-    init.SetFacing(ori);
-    init.Launch();
-}
-
-void Unit::SetFacingToObject(WorldObject* object)
-{
-    // never face when already moving
-    if (!IsStopped())
-        return;
-
-    /// @todo figure out under what conditions creature will move towards object instead of facing it where it currently is.
-    Movement::MoveSplineInit init(this);
-    init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
-    init.SetFacing(GetAngle(object));   // when on transport, GetAngle will still return global coordinates (and angle) that needs transforming
-    init.Launch();
-}
-
-bool Unit::SetWalk(bool enable)
-{
-    if (enable == IsWalking())
-        return false;
-
-    if (enable)
-        AddUnitMovementFlag(MOVEMENTFLAG_WALKING);
-    else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_WALKING);
-
-    ///@ TODO: Find proper opcode for walk mode setting in player mind controlling a player case
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_WALK_MODE, SMSG_SPLINE_MOVE_SET_WALK_MODE).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_RUN_MODE, SMSG_SPLINE_MOVE_SET_RUN_MODE).Send();
-
-    return true;
-}
-
-bool Unit::SetDisableGravity(bool disable, bool packetOnly /*= false*/)
-{
-    if (!packetOnly)
-    {
-        if (disable == IsLevitating())
-            return false;
-
-        if (disable)
-        {
-            AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-            RemoveUnitMovementFlag(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_SPLINE_ELEVATION);
-            SetFall(false);
-        }
-        else
-        {
-            RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-            if (!HasUnitMovementFlag(MOVEMENTFLAG_CAN_FLY))
-                SetFall(true);
-        }
-    }
-
-    if (disable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_GRAVITY_DISABLE, SMSG_MOVE_GRAVITY_DISABLE).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_GRAVITY_ENABLE, SMSG_MOVE_GRAVITY_ENABLE).Send();
-
-    return true;
-}
-
-bool Unit::SetFall(bool enable)
-{
-    if (enable == HasUnitMovementFlag(MOVEMENTFLAG_FALLING))
-        return false;
-
-    if (enable)
-    {
-        AddUnitMovementFlag(MOVEMENTFLAG_FALLING);
-        m_movementInfo.SetFallTime(0);
-    }
-    else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR);
-
-    return true;
-}
-
-bool Unit::SetSwim(bool enable)
-{
-    if (enable == HasUnitMovementFlag(MOVEMENTFLAG_SWIMMING))
-        return false;
-
-    if (enable)
-        AddUnitMovementFlag(MOVEMENTFLAG_SWIMMING);
-    else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_SWIMMING);
-
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_START_SWIM, NULL_OPCODE).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_STOP_SWIM, NULL_OPCODE).Send();
-
-    return true;
-}
-
-bool Unit::SetCanFly(bool enable)
-{
-    if (enable == HasUnitMovementFlag(MOVEMENTFLAG_CAN_FLY))
-        return false;
-
-    if (enable)
-    {
-        AddUnitMovementFlag(MOVEMENTFLAG_CAN_FLY);
-        RemoveUnitMovementFlag(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_SPLINE_ELEVATION);
-        SetFall(false);
-    }
-    else
-    {
-        RemoveUnitMovementFlag(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_MASK_MOVING_FLY);
-        if (!IsLevitating())
-            SetFall(true);
-    }
-
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_FLYING, SMSG_MOVE_SET_CAN_FLY).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_UNSET_FLYING, SMSG_MOVE_UNSET_CAN_FLY).Send();
-
-    return true;
-}
-
-bool Unit::SetWaterWalking(bool enable, bool packetOnly /*= false */)
-{
-    if (!packetOnly)
-    {
-        if (enable == HasUnitMovementFlag(MOVEMENTFLAG_WATERWALKING))
-            return false;
-
-        if (enable)
-            AddUnitMovementFlag(MOVEMENTFLAG_WATERWALKING);
-        else
-            RemoveUnitMovementFlag(MOVEMENTFLAG_WATERWALKING);
-    }
-
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_WATER_WALK, SMSG_MOVE_WATER_WALK).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_LAND_WALK, SMSG_MOVE_LAND_WALK).Send();
-
-    return true;
-}
-
-bool Unit::SetFeatherFall(bool enable, bool packetOnly /*= false */)
-{
-    if (!packetOnly)
-    {
-        if (enable == HasUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW))
-            return false;
-
-        if (enable)
-            AddUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
-        else
-            RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
-    }
-
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_FEATHER_FALL, SMSG_MOVE_FEATHER_FALL).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_NORMAL_FALL, SMSG_MOVE_NORMAL_FALL).Send();
-
-    return true;
-}
-
-bool Unit::SetHover(bool enable, bool packetOnly /*= false*/)
-{
-    if (!packetOnly)
-    {
-        if (enable == HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-            return false;
-
-        if (enable)
-        {
-            //! No need to check height on ascent
-            AddUnitMovementFlag(MOVEMENTFLAG_HOVER);
-            if (float hh = GetFloatValue(UNIT_FIELD_HOVER_HEIGHT))
-                UpdateHeight(GetPositionZ() + hh);
-        }
-        else
-        {
-            RemoveUnitMovementFlag(MOVEMENTFLAG_HOVER);
-            if (float hh = GetFloatValue(UNIT_FIELD_HOVER_HEIGHT))
-            {
-                float newZ = GetPositionZ() - hh;
-                UpdateAllowedPositionZ(GetPositionX(), GetPositionY(), newZ);
-                UpdateHeight(newZ);
-            }
-        }
-    }
-
-    if (enable)
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_SET_HOVER, SMSG_MOVE_SET_HOVER).Send();
-    else
-        Movement::PacketSender(this, SMSG_SPLINE_MOVE_UNSET_HOVER, SMSG_MOVE_UNSET_HOVER).Send();
-
-    return true;
-}
-
-void Unit::SendSetPlayHoverAnim(bool enable)
-{
-    ObjectGuid guid = GetGUID();
-    WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 10);
-    data.WriteBit(guid[4]);
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[1]);
-    data.WriteBit(enable);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[2]);
-    data.WriteBit(guid[6]);
-
-    data.WriteByteSeq(guid[3]);
-    data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[1]);
-    data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[6]);
-
-    SendMessageToSet(&data, true);
-}
-
-void Unit::SendMovementSetSplineAnim(Movement::AnimType anim)
-{
-    WorldPacket data(SMSG_SPLINE_MOVE_SET_ANIM, 8 + 4);
-    data.append(GetPackGUID());
-    data << uint32(anim);
-    SendMessageToSet(&data, false);
-}
-
-bool Unit::IsSplineEnabled() const
-{
-    return movespline->Initialized() && !movespline->Finalized();
-}
-
-
 void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
 {
     if (!target)
@@ -16432,7 +15599,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
         if ((_fieldNotifyFlags & flags[index] ||
             ((flags[index] & visibleFlag) & UF_FLAG_SPECIAL_INFO) ||
             ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag)) ||
-            (index == UNIT_FIELD_AURA_STATE && HasFlag(UNIT_FIELD_AURA_STATE, PER_CASTER_AURA_STATE_MASK))) && !(flags[index] & UF_FLAG_TEMP_DISABLED))
+            (index == UNIT_FIELD_AURA_STATE && HasFlag(UNIT_FIELD_AURA_STATE, PER_CASTER_AURA_STATE_MASK))))
         {
             updateMask.SetBit(index);
 

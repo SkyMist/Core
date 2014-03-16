@@ -267,7 +267,7 @@ void Player::UpdateMaxPower(Powers power)
     value += GetModifierValue(unitMod, TOTAL_VALUE) +  bonusPower;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Player::UpdateAttackPowerAndDamage(bool ranged)
@@ -561,12 +561,12 @@ void Player::UpdateParryPercentage()
 {
     const float parry_cap[MAX_CLASSES] =
     {
-        65.631440f,     // Warrior
-        65.631440f,     // Paladin
+        47.003525f,     // Warrior
+        47.003525f,     // Paladin
         145.560408f,    // Hunter
         145.560408f,    // Rogue
         0.0f,           // Priest
-        65.631440f,     // DK
+        47.003525f,     // DK
         145.560408f,    // Shaman
         0.0f,           // Mage
         0.0f,           // Warlock
@@ -599,12 +599,12 @@ void Player::UpdateDodgePercentage()
 {
     const float dodge_cap[MAX_CLASSES] =
     {
-        65.631440f,     // Warrior
-        65.631440f,     // Paladin
+        88.129021f,     // Warrior
+        88.129021f,     // Paladin
         145.560408f,    // Hunter
         145.560408f,    // Rogue
         150.375940f,    // Priest
-        65.631440f,     // DK
+        88.129021f,     // DK
         145.560408f,    // Shaman
         150.375940f,    // Mage
         150.375940f,    // Warlock
@@ -853,7 +853,7 @@ void Creature::UpdateMaxPower(Powers power)
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + power);
 
     float value  = GetTotalAuraModValue(unitMod);
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Creature::UpdateAttackPowerAndDamage(bool ranged)
@@ -1130,7 +1130,7 @@ void Guardian::UpdateMaxPower(Powers power)
     value += GetModifierValue(unitMod, TOTAL_VALUE) + addValue * multiplicator;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
-    SetMaxPower(power, uint32(value));
+    SetMaxPower(power, int32(value));
 }
 
 void Guardian::UpdateAttackPowerAndDamage(bool ranged)

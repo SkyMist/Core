@@ -18,6 +18,7 @@
  */
 
 #include "Player.h"
+#include "PlayerMovementMgr.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
@@ -705,6 +706,10 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_regenTimerCount = 0;
     m_holyPowerRegenTimerCount = 0;
     m_focusRegenTimerCount = 0;
+    m_chiPowerRegenTimerCount = 0;
+    m_demonicFuryPowerRegenTimerCount = 0;
+    m_soulShardsRegenTimerCount = 0;
+    m_burningEmbersRegenTimerCount = 0;
     m_weaponChangeTimer = 0;
 
     m_zoneUpdateId = uint32(-1);
@@ -1114,21 +1119,21 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     InitTalentForLevel();
     InitPrimaryProfessions();                               // to max set before any spell added
 
-    // apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
-    UpdateMaxHealth();                                      // Update max Health (for add bonus from stamina)
+    // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
+
+    UpdateMaxHealth();                                      // Update max Health (for adding bonus from stamina)
     SetFullHealth();
+
     if (getPowerType() == POWER_MANA)
     {
-        UpdateMaxPower(POWER_MANA);                         // Update max Mana (for add bonus from intellect)
+        UpdateMaxPower(POWER_MANA);                         // Update max Mana (for adding bonus from intellect)
         SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
     }
 
-    if (getPowerType() == POWER_RUNIC_POWER)
+    if (getPowerType() == POWER_RUNIC_POWER)                // Set DK Rune Power.
     {
-        SetPower(POWER_RUNES, 8);
-        SetMaxPower(POWER_RUNES, 8);
-        SetPower(POWER_RUNIC_POWER, 0);
-        SetMaxPower(POWER_RUNIC_POWER, 1000);
+        SetMaxPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+        SetPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
     }
 
     // original spells
@@ -2016,14 +2021,14 @@ bool Player::BuildEnumData(PreparedQueryResult result, ByteBuffer* dataBuffer, B
     dataBuffer->WriteByteSeq(guildGuid[2]);
     dataBuffer->WriteByteSeq(guid[6]);
    
-    *dataBuffer << uint32(0);                                   // UNK00 new field - might be swaped with either of the 2 flags
+    *dataBuffer << uint32(charFlags);                           // Character flags
     *dataBuffer << uint32(zone);                                // Zone id
     
     dataBuffer->WriteByteSeq(guildGuid[3]);
     
     *dataBuffer << uint32(petLevel);                            // Pet level
     *dataBuffer << uint32(petDisplayId);                        // Pet DisplayID
-    *dataBuffer << uint32(customizationFlag);                   // Character customization flags - might be swapped with UNK00 or first flags
+    *dataBuffer << uint32(0);                                   // UNK00 new field - Boost field
     *dataBuffer << uint32(0);                                   // UNK02 - might be swaped with UNK03 and the pet fields 
     
     dataBuffer->WriteByteSeq(guid[3]);
@@ -2090,12 +2095,12 @@ bool Player::BuildEnumData(PreparedQueryResult result, ByteBuffer* dataBuffer, B
     *dataBuffer << uint32(petFamily);                           // Pet family
     
     *dataBuffer << uint8(hairColor);                            // Hair color
-    *dataBuffer << uint8(playerClass);                             // Class
+    *dataBuffer << uint8(playerClass);                          // Class
     
     dataBuffer->WriteByteSeq(guildGuid[4]);
     dataBuffer->WriteByteSeq(guid[2]);
     
-    *dataBuffer << uint32(charFlags);                           // Character flags
+    *dataBuffer << uint32(customizationFlag);                   // Character customization flags
     
     dataBuffer->WriteByteSeq(guid[7]);
     dataBuffer->WriteByteSeq(guildGuid[6]);
@@ -2413,7 +2418,18 @@ void Player::ProcessDelayedOperations()
 
         SetPower(POWER_RAGE, 0);
         SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
+        SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
+        SetPower(POWER_RUNES, GetMaxPower(POWER_RUNES));
+        SetPower(POWER_RUNIC_POWER, 0);
+        SetPower(POWER_SOUL_SHARDS, 100);
         SetPower(POWER_ECLIPSE, 0);
+        SetPower(POWER_HOLY_POWER, 0);
+        SetPower(POWER_ALTERNATE_POWER, 0);
+        SetPower(POWER_CHI, 0);
+        SetPower(POWER_SHADOW_ORBS, 0);
+        SetPower(POWER_BURNING_EMBERS, 10);
+        SetPower(POWER_DEMONIC_FURY, 200);
+        SetPower(POWER_ARCANE_CHARGES, 0);
 
         if (uint32 aura = _resurrectionData->Aura)
             CastSpell(this, aura, true, NULL, NULL, _resurrectionData->GUID);
@@ -2510,16 +2526,34 @@ void Player::RemoveFromWorld()
 
 void Player::RegenerateAll()
 {
-    //if (m_regenTimer <= 500)
-    //    return;
-
     m_regenTimerCount += m_regenTimer;
+
+    if (getClass() == CLASS_HUNTER)
+        m_focusRegenTimerCount += m_regenTimer;
 
     if (getClass() == CLASS_PALADIN)
         m_holyPowerRegenTimerCount += m_regenTimer;
 
-    if (getClass() == CLASS_HUNTER)
-        m_focusRegenTimerCount += m_regenTimer;
+    if (getClass() == CLASS_MONK)
+        m_chiPowerRegenTimerCount += m_regenTimer;
+
+    if (getClass() == CLASS_WARLOCK)
+    {
+        switch (GetTalentSpecialization(GetActiveSpec()))
+        {
+            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+                m_demonicFuryPowerRegenTimerCount += m_regenTimer;
+                break;
+            case TALENT_TREE_WARLOCK_DESTRUCTION:
+                m_burningEmbersRegenTimerCount += m_regenTimer;
+                break;
+            case TALENT_TREE_WARLOCK_AFFLICTION:
+                m_soulShardsRegenTimerCount += m_regenTimer;
+                break;
+
+            default: break;
+        }
+    }
 
     Regenerate(POWER_ENERGY);
     Regenerate(POWER_MANA);
@@ -2564,9 +2598,6 @@ void Player::RegenerateAll()
         if (getClass() == CLASS_DEATH_KNIGHT)
             Regenerate(POWER_RUNIC_POWER);
 
-        if (getClass() == CLASS_MONK)
-            Regenerate(POWER_CHI);
-
         m_regenTimerCount -= 2000;
     }
 
@@ -2576,22 +2607,57 @@ void Player::RegenerateAll()
         m_holyPowerRegenTimerCount -= 10000;
     }
 
+    if (m_chiPowerRegenTimerCount >= 10000 && getClass() == CLASS_MONK)
+    {
+        Regenerate(POWER_CHI);
+        m_chiPowerRegenTimerCount -= 10000;
+    }
+
+    if (getClass() == CLASS_WARLOCK)
+    {
+        switch (GetTalentSpecialization(GetActiveSpec()))
+        {
+            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+                if (m_demonicFuryPowerRegenTimerCount >= 100)
+                {
+                    Regenerate(POWER_DEMONIC_FURY);
+                    m_demonicFuryPowerRegenTimerCount -= 100;
+                }
+                break;
+            case TALENT_TREE_WARLOCK_DESTRUCTION:
+                if (m_burningEmbersRegenTimerCount >= 15000)
+                {
+                    Regenerate(POWER_BURNING_EMBERS);
+                    m_burningEmbersRegenTimerCount -= 15000;
+                }
+                break;
+            case TALENT_TREE_WARLOCK_AFFLICTION:
+                if (m_soulShardsRegenTimerCount >= 20000)
+                {
+                    Regenerate(POWER_SOUL_SHARDS);
+                    m_soulShardsRegenTimerCount -= 20000;
+                }
+                break;
+
+            default: break;
+        }
+    }
+
     m_regenTimer = 0;
 }
 
 void Player::Regenerate(Powers power)
 {
-    uint32 maxValue = GetMaxPower(power);
+    int32 maxValue = GetMaxPower(power);
     if (!maxValue)
         return;
 
-    uint32 curValue = GetPower(power);
+    int32 curValue = GetPower(power);
 
-    /// @todo possible use of miscvalueb instead of amount
     if (HasAuraTypeWithValue(SPELL_AURA_PREVENT_REGENERATE_POWER, power))
         return;
 
-    // Skip regeneration for power type we cannot have
+    // Skip regeneration for power types the player can't have.
     uint32 powerIndex = GetPowerIndex(power);
     if (powerIndex == MAX_POWERS)
         return;
@@ -2605,62 +2671,182 @@ void Player::Regenerate(Powers power)
 
     switch (power)
     {
-        case POWER_MANA:
+        case POWER_MANA:                                                // Regenerate Mana
         {
             float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
-
-            if (IsInCombat()) // Trinity Updates Mana in intervals of 2s, which is correct
+            if (IsInCombat())
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
             else
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
         }
         break;
-        case POWER_RAGE:                                                // Regenerate rage
+        case POWER_RAGE:                                                // Regenerate Rage
         {
+            float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
             if (!IsInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
-            {
-                float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
-                addvalue += -25 * RageDecreaseRate / meleeHaste;                // 2.5 rage by tick (= 2 seconds => 1.25 rage/sec)
-            }
+                addvalue += -25 * RageDecreaseRate / meleeHaste;                // Remove 2.5 rage by tick (= 2 seconds => 1.25 rage/sec).
         }
         break;
         case POWER_FOCUS:
-            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * sWorld->getRate(RATE_POWER_FOCUS);
-            break;
-        case POWER_ENERGY:                                              // Regenerate energy (rogue)
-            addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste)) * sWorld->getRate(RATE_POWER_ENERGY);
-            break;
-        case POWER_RUNIC_POWER:
         {
+            float FocusRegenRate = sWorld->getRate(RATE_POWER_FOCUS);
+            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * FocusRegenRate;
+        }
+        break;
+        case POWER_ENERGY:                                              // Regenerate energy (Rogue, Feral Druid, Monk)
+        {
+            float EnergyRegenRate = sWorld->getRate(RATE_POWER_ENERGY);
+            addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste)) * EnergyRegenRate;
+        }
+        break;
+        // POWER_LIGHT_FORCE - No need, deprecated.
+        // POWER_RUNES - No need.
+        case POWER_RUNIC_POWER:                                         // Regenerate Runic Power
+        {
+            float RunicPowerDecreaseRate = sWorld->getRate(RATE_POWER_RUNICPOWER_LOSS);
             if (!IsInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
+                addvalue += -30 * RunicPowerDecreaseRate;                       // Remove 3 RunicPower by tick.
+        }
+        break;
+        case POWER_SOUL_SHARDS:                                         // Regenerate Soul Shards
+        {
+            if (!IsInCombat()) // If not in combat, gain 1 shard every 20s.
+                addvalue += 100.0f;
+
+            // Handle Verdant Spheres Glyph.
+            if (HasAura(SPELL_GLYPH_VERDANT_SPHERES))
             {
-                float RunicPowerDecreaseRate = sWorld->getRate(RATE_POWER_RUNICPOWER_LOSS);
-                addvalue += -30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
+                if (GetPower(POWER_SOUL_SHARDS) < 100 && HasAura(SPELL_VERDANT_SPHERE_AFFL))
+                    RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_AFFL);
+
+                if (GetPower(POWER_SOUL_SHARDS) >= 100 && !HasAura(SPELL_VERDANT_SPHERE_AFFL))
+                    CastSpell(this, SPELL_VERDANT_SPHERE_AFFL, true);
+
+                if (GetPower(POWER_SOUL_SHARDS) < 300 && GetPower(POWER_SOUL_SHARDS) >= 200)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 2);
+                else if (GetPower(POWER_SOUL_SHARDS) < 400 && GetPower(POWER_SOUL_SHARDS) >= 300)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 3);
+                else if (GetPower(POWER_SOUL_SHARDS) == 400)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 4);
             }
         }
         break;
-        case POWER_HOLY_POWER:                                          // Regenerate holy power
+        // POWER_ECLIPSE, POWER_ALTERNATE_POWER - No need.
+        // POWER_DARK_FORCE - No need, deprecated.
+        case POWER_HOLY_POWER:                                          // Regenerate Holy Power
+        case POWER_CHI:                                                 // Regenerate Chi
         {
             if (!IsInCombat())
-                addvalue += -1.0f;      // remove 1 each 10 sec
+                addvalue += -1.0f;                                              // Remove 1 each 10 secs.
         }
         break;
-        case POWER_RUNES:
-            break;
-        case POWER_CHI:                                  // Regenerate chi (monk)
+        // POWER_SHADOW_ORBS - No need.
+        case POWER_BURNING_EMBERS:                                      // Regenerate Burning Embers
+        {
+            // After 15 seconds return to one Embers if none / less or return to one by removing one at a time if more.
+            if (!IsInCombat())
             {
-                float ChiRate = sWorld->getRate(RATE_POWER_CHI);
-                addvalue = 20 * ChiRate;
-                break;
-            } 
+                if (GetPower(POWER_BURNING_EMBERS) < 10)
+                    addvalue += float(10 - GetPower(POWER_BURNING_EMBERS));
+                else if (GetPower(POWER_BURNING_EMBERS) > 10)
+                    addvalue += (GetPower(POWER_BURNING_EMBERS) < 20) ? float(10 - GetPower(POWER_BURNING_EMBERS)) : -10.0f;
+            }
+
+            // Handle Verdant Spheres Glyph.
+            if (HasAura(SPELL_GLYPH_VERDANT_SPHERES))
+            {
+                if (GetPower(POWER_BURNING_EMBERS) < 10 && HasAura(SPELL_VERDANT_SPHERE_DESTRO))
+                    RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_DESTRO);
+
+                if (GetPower(POWER_BURNING_EMBERS) >= 10 && !HasAura(SPELL_VERDANT_SPHERE_DESTRO))
+                    CastSpell(this, SPELL_VERDANT_SPHERE_DESTRO, true);
+
+
+                if (GetPower(POWER_BURNING_EMBERS) < 30 && GetPower(POWER_BURNING_EMBERS) >= 20)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 2);
+                else if (GetPower(POWER_BURNING_EMBERS) < 40 && GetPower(POWER_BURNING_EMBERS) >= 30)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 3);
+                else if (GetPower(POWER_BURNING_EMBERS) == 40)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 4);
+            }
+            else
+            {
+                if (GetPower(POWER_BURNING_EMBERS) < 10)
+                {
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
+                }
+                if (GetPower(POWER_BURNING_EMBERS) >= 10 && GetPower(POWER_BURNING_EMBERS) < 20)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_10))
+                        CastSpell(this, SPELL_BURNING_EMBERS_10, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
+                }
+                else if (GetPower(POWER_BURNING_EMBERS) >= 20 && GetPower(POWER_BURNING_EMBERS) < 30)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_20))
+                        CastSpell(this, SPELL_BURNING_EMBERS_20, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
+                }
+                else if (GetPower(POWER_BURNING_EMBERS) >= 30)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_30))
+                        CastSpell(this, SPELL_BURNING_EMBERS_30, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                }
+            }
+        }
+        break;
+        case POWER_DEMONIC_FURY:                                            // Regenerate Demonic Fury - Note: Cannot go under 200.
+            if (!IsInCombat() && GetShapeshiftForm() != FORM_METAMORPHOSIS)
+            {
+                if (GetPower(POWER_DEMONIC_FURY) > 200)
+                    addvalue += -1.0f;    // Remove 1 each 100ms
+                else if (GetPower(POWER_DEMONIC_FURY) < 200)
+                    addvalue += 1.0f;     // Give 1 each 100ms while player has less than 200.
+            }
+
+            if (GetPower(POWER_DEMONIC_FURY) <= 50) // 6 drained per sec, means can stay in Meta form for 25 seconds after getting below 200.
+            {
+                if (HasAura(SPELL_METAMORPHOSIS))  RemoveAurasDueToSpell(SPELL_METAMORPHOSIS);
+                if (HasAura(SPELL_METAMORPHOSIS2)) RemoveAurasDueToSpell(SPELL_METAMORPHOSIS2);
+            }
+
+            // Demonic Fury visuals
+            if (GetPower(POWER_DEMONIC_FURY) == 1000)
+            {
+                if (!HasAura(SPELL_DEMONIC_FURY_MAXIMUM))
+                    CastSpell(this, SPELL_DEMONIC_FURY_MAXIMUM, true);
+            }
+            else if (GetPower(POWER_DEMONIC_FURY) >= 500 && GetPower(POWER_DEMONIC_FURY) < 1000)
+            {
+                if (!HasAura(SPELL_DEMONIC_FURY_HALF))
+                    CastSpell(this, SPELL_DEMONIC_FURY_HALF, true);
+                if (HasAura(SPELL_DEMONIC_FURY_MAXIMUM)) RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_MAXIMUM);
+            }
+            else
+            {
+                if (HasAura(SPELL_DEMONIC_FURY_HALF))    RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_HALF);
+                if (HasAura(SPELL_DEMONIC_FURY_MAXIMUM)) RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_MAXIMUM);
+            }
+            break;
+        // POWER_ARCANE_CHARGES - Not needed.
         case POWER_HEALTH:
             return;
-        default:
-            break;
+
+        default: break;
     }
 
     // Mana regen calculated in Player::UpdateManaRegen()
-    if (power != POWER_MANA)
+    // Exists only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras.
+    if (power != POWER_MANA && power != POWER_CHI && power != POWER_HOLY_POWER && power != POWER_SOUL_SHARDS && power != POWER_BURNING_EMBERS && power != POWER_DEMONIC_FURY)
     {
         AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
         for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
@@ -2686,7 +2872,7 @@ void Player::Regenerate(Powers power)
         return;
 
     addvalue += m_powerFraction[powerIndex];
-    uint32 integerValue = uint32(fabs(addvalue));
+    int32 integerValue = int32(fabs(addvalue));
 
     if (addvalue < 0.0f)
     {
@@ -2714,10 +2900,7 @@ void Player::Regenerate(Powers power)
             m_powerFraction[powerIndex] = addvalue - integerValue;
     }
 
-    if (m_regenTimerCount >= 2000)
-        SetPower(power, curValue);
-    else
-        UpdateUInt32Value(UNIT_FIELD_POWER + powerIndex, curValue);
+    SetPower(power, curValue);
 }
 
 void Player::RegenerateHealth()
@@ -2770,7 +2953,8 @@ void Player::RegenerateHealth()
 
 void Player::ResetAllPowers()
 {
-    SetHealth(GetMaxHealth());
+    SetFullHealth();
+
     switch (getPowerType())
     {
         case POWER_MANA:
@@ -2779,17 +2963,47 @@ void Player::ResetAllPowers()
         case POWER_RAGE:
             SetPower(POWER_RAGE, 0);
             break;
+        case POWER_FOCUS:
+            SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
+            break;
         case POWER_ENERGY:
             SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
+            break;
+        case POWER_RUNES:
+            SetPower(POWER_RUNES, GetMaxPower(POWER_RUNES));
             break;
         case POWER_RUNIC_POWER:
             SetPower(POWER_RUNIC_POWER, 0);
             break;
+        case POWER_SOUL_SHARDS:
+            SetPower(POWER_SOUL_SHARDS, 100);
+            break;
         case POWER_ECLIPSE:
             SetPower(POWER_ECLIPSE, 0);
             break;
-        default:
+        case POWER_HOLY_POWER:
+            SetPower(POWER_HOLY_POWER, 0);
             break;
+        case POWER_ALTERNATE_POWER:
+            SetPower(POWER_ALTERNATE_POWER, 0);
+            break;
+        case POWER_CHI:
+            SetPower(POWER_CHI, 0);
+            break;
+        case POWER_SHADOW_ORBS:
+            SetPower(POWER_SHADOW_ORBS, 0);
+            break;
+        case POWER_BURNING_EMBERS:
+            SetPower(POWER_BURNING_EMBERS, 10);
+            break;
+        case POWER_DEMONIC_FURY:
+            SetPower(POWER_DEMONIC_FURY, 200);
+            break;
+        case POWER_ARCANE_CHARGES:
+            SetPower(POWER_ARCANE_CHARGES, 0);
+            break;
+
+        default: break;
     }
 }
 
@@ -3160,29 +3374,31 @@ void Player::GiveLevel(uint8 level)
     uint32 basehp = 0, basemana = 0;
     sObjectMgr->GetPlayerClassLevelInfo(getClass(), level, basehp, basemana);
 
-    // send levelup info to client
+    // Check talent gain for levelup info opcode usage - could use as a bool.
+    // TP calculation still affects oldLevel, so we compare it to the one for the new level, as it wasn't set yet.
+    uint32 gainedTalent = (CalculateTalentsPoints() < uint32(floor(level / 15.f))) ? 1 : 0;
+
+    // Send levelup info to client
     WorldPacket data(SMSG_LEVELUP_INFO, ((MAX_POWERS_PER_CLASS * 4) + 4 + 4 + (MAX_STATS * 4) + 4));
 
     data << uint32(level);
-    data << uint32(0);
+    data << uint32(gainedTalent);
     data << uint32(int32(basehp) - int32(GetCreateHealth()));
 
     for (uint8 i = STAT_STRENGTH; i < MAX_STATS; ++i)       // Stats loop (0-4)
         data << uint32(int32(info.stats[i]) - GetCreateStat(Stats(i)));
 
-    // for (int i = 0; i < MAX_STORED_POWERS; ++i)          // Powers loop (0-10)
+    // Powers loop (0 - 16 - only MAX_POWERS_PER_CLASS (5) are updated. ToDo: properly finish this).
     data << uint32(int32(basemana) - int32(GetCreateMana()));
 
-    for (int i = 0; i < 4; i++)
+    for (uint8 i = 0; i < MAX_POWERS_PER_CLASS - 1; i++)
         data << uint32(0);
-
-    // end for
 
     GetSession()->SendPacket(&data);
 
     SetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(level));
 
-    //update level, max level of skills
+    // update level, max level of skills
     m_Played_time[PLAYED_TIME_LEVEL] = 0;                   // Level Played Time reset
 
     _ApplyAllLevelScaleItemMods(false);
@@ -3191,7 +3407,7 @@ void Player::GiveLevel(uint8 level)
 
     UpdateSkillsForLevel();
 
-    // save base values (bonuses already included in stored stats
+    // Save base values (bonuses already included in stored stats
     for (uint8 i = STAT_STRENGTH; i < MAX_STATS; ++i)
         SetCreateStat(Stats(i), info.stats[i]);
 
@@ -3209,15 +3425,10 @@ void Player::GiveLevel(uint8 level)
 
     _ApplyAllLevelScaleItemMods(true); // Moved to above SetFullHealth so player will have full health from Heirlooms
 
-    // set current level health and mana/energy to maximum after applying all mods.
-    SetFullHealth();
-    SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    if (GetPower(POWER_RAGE) > GetMaxPower(POWER_RAGE))
-        SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
-    SetPower(POWER_FOCUS, 0);
+    // Reset powers.
+    ResetAllPowers();
 
-    // update level to hunter/summon pet
+    // Update level to hunter/summon pet
     if (Pet* pet = GetPet())
         pet->SynchronizeLevelWithOwner();
 
@@ -3373,14 +3584,13 @@ void Player::InitStatsForLevel(bool reapplyMods)
     for (uint8 i = 0; i < 7; ++i)
         SetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE+i, 0.0f);
 
+    // Parry, Block, Dodge.
     SetFloatValue(PLAYER_FIELD_PARRY_PERCENTAGE, 0.0f);
-    SetFloatValue(PLAYER_FIELD_PLAYER_FLAGS, 0.0f);
+    SetFloatValue(PLAYER_FIELD_BLOCK_PERCENTAGE, 0.0f);
+    SetFloatValue(PLAYER_FIELD_DODGE_PERCENTAGE, 0.0f);
 
     // Static 30% damage blocked
     SetUInt32Value(PLAYER_FIELD_SHIELD_BLOCK, 30);
-
-    // Dodge percentage
-    SetFloatValue(PLAYER_FIELD_DODGE_PERCENTAGE, 0.0f);
 
     // set armor (resistance 0) to original value (create_agility*2)
     SetArmor(int32(m_createStats[STAT_AGILITY]*2));
@@ -3408,7 +3618,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     InitDataForForm(reapplyMods);
 
     // save new stats
-    for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
+    for (uint32 i = POWER_MANA; i < MAX_POWERS; ++i)
         SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
 
     SetMaxHealth(basehp);                     // stamina bonus will applied later
@@ -3440,14 +3650,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
     if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
         _ApplyAllStatBonuses();
 
-    // set current level health and mana/energy to maximum after applying all mods.
-    SetFullHealth();
-    SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    if (GetPower(POWER_RAGE) > GetMaxPower(POWER_RAGE))
-        SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
-    SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
-    SetPower(POWER_RUNIC_POWER, 0);
+    // Reset all powers.
+    ResetAllPowers();
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -4593,6 +4797,36 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     return true;
 }
 
+bool Player::RemoveTalent(uint32 talentId)
+{
+    TalentEntry const* talent = sTalentStore.LookupEntry(talentId);
+    if (!talent)
+        return false;
+
+    uint32 spellId = talent->SpellId;
+
+    SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(spellId);
+
+    removeSpell(spellId, true);
+
+    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
+            removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
+
+    PlayerTalentMap::iterator itr = GetTalentMap(GetActiveSpec())->find(spellId);
+    if (itr != GetTalentMap(GetActiveSpec())->end())
+        itr->second->state = PLAYERSPELL_REMOVED;
+
+    // Needs to be executed orthewise the talents will be screwedsx
+    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    _SaveTalents(trans);
+    _SaveSpells(trans);
+    CharacterDatabase.CommitTransaction(trans);
+
+    SendTalentsInfoData();
+    return true;
+}
+
 Mail* Player::GetMail(uint32 id)
 {
     for (PlayerMails::iterator itr = m_mail.begin(); itr != m_mail.end(); ++itr)
@@ -5179,11 +5413,11 @@ void Player::BuildPlayerRepop()
 
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
-    WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4*4);          // remove spirit healer position
+    WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4 * 4);          // remove spirit healer position
+    data << float(0);
+    data << float(0);
+    data << float(0);
     data << uint32(-1);
-    data << float(0);
-    data << float(0);
-    data << float(0);
     GetSession()->SendPacket(&data);
 
     // speed change, land walk
@@ -5208,12 +5442,22 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     // set health/powers (0- will be set in caller)
     if (restore_percent > 0.0f)
     {
-        SetHealth(uint32(GetMaxHealth()*restore_percent));
-        SetPower(POWER_MANA, uint32(GetMaxPower(POWER_MANA)*restore_percent));
-        SetPower(POWER_RAGE, 0);
-        SetPower(POWER_ENERGY, uint32(GetMaxPower(POWER_ENERGY)*restore_percent));
-        SetPower(POWER_FOCUS, uint32(GetMaxPower(POWER_FOCUS)*restore_percent));
+        SetHealth(uint32(GetMaxHealth() * restore_percent));
+        SetPower(POWER_MANA, uint32(GetMaxPower(POWER_MANA) * restore_percent));
+        SetPower(POWER_RAGE, uint32(GetMaxPower(POWER_RAGE) * restore_percent));
+        SetPower(POWER_FOCUS, uint32(GetMaxPower(POWER_FOCUS) * restore_percent));
+        SetPower(POWER_ENERGY, uint32(GetMaxPower(POWER_ENERGY) * restore_percent));
+        SetPower(POWER_RUNES, GetMaxPower(POWER_RUNES));
+        SetPower(POWER_RUNIC_POWER, uint32(GetMaxPower(POWER_RUNIC_POWER) * restore_percent));
+        SetPower(POWER_SOUL_SHARDS, 100);
         SetPower(POWER_ECLIPSE, 0);
+        SetPower(POWER_HOLY_POWER, 0);
+        SetPower(POWER_ALTERNATE_POWER, 0);
+        SetPower(POWER_CHI, 0);
+        SetPower(POWER_SHADOW_ORBS, 0);
+        SetPower(POWER_BURNING_EMBERS, 10);
+        SetPower(POWER_DEMONIC_FURY, 200);
+        SetPower(POWER_ARCANE_CHARGES, 0);
     }
 
     // trigger update zone for alive state zone updates
@@ -5248,12 +5492,10 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
         // not full duration
         if (int32(getLevel()) < startLevel+9)
         {
-            int32 delta = (int32(getLevel()) - startLevel + 1)*MINUTE;
+            int32 delta = (int32(getLevel()) - startLevel + 1) * MINUTE;
 
             if (Aura* aur = GetAura(15007, GetGUID()))
-            {
                 aur->SetDuration(delta*IN_MILLISECONDS);
-            }
         }
     }
 }
@@ -5277,7 +5519,7 @@ void Player::KillPlayer()
     m_deathTimer = 6 * MINUTE * IN_MILLISECONDS;
 
     UpdateCorpseReclaimDelay();                             // dependent at use SetDeathPvP() call before kill
-    SendCorpseReclaimDelay();
+    // SendCorpseReclaimDelay();
 
     // don't create corpse at this moment, player might be falling
 
@@ -5597,11 +5839,11 @@ void Player::RepopAtGraveyard()
         TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, orientation ? *orientation : GetOrientation());
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
-            WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4*4);  // show spirit healer position on minimap
-            data << ClosestGrave->map_id;
-            data << ClosestGrave->x;
+            WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4 * 4);  // show spirit healer position on minimap
             data << ClosestGrave->y;
             data << ClosestGrave->z;
+            data << ClosestGrave->x;
+            data << ClosestGrave->map_id;
             GetSession()->SendPacket(&data);
         }
     }
@@ -5802,13 +6044,12 @@ float Player::GetMeleeCritFromAgility()
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
 
-    GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry(pclass-1);
+    GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
     GtChanceToMeleeCritEntry     const* critRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
     if (critBase == NULL || critRatio == NULL)
         return 0.0f;
 
-    float crit = critBase->base + GetStat(STAT_AGILITY)*critRatio->ratio;
-    return crit*100.0f;
+    return ((critBase->base * 100.0f) + GetStat(STAT_AGILITY) / critRatio->ratio);
 }
 
 void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
@@ -5816,32 +6057,33 @@ void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
     // Table for base dodge values
     const float dodge_base[MAX_CLASSES] =
     {
-         0.037580f, // Warrior
-         0.036520f, // Paladin
-        -0.054500f, // Hunter
-        -0.005900f, // Rogue
-         0.031830f, // Priest
-         0.036640f, // DK
-         0.016750f, // Shaman
-         0.034575f, // Mage
-         0.020350f, // Warlock
-         0.0f,      // ??
-         0.049510f  // Druid
+        0.037580f, // Warrior
+        0.036520f, // Paladin
+       -0.054500f, // Hunter
+       -0.005900f, // Rogue
+        0.031830f, // Priest
+        0.036640f, // DK
+        0.016750f, // Shaman
+        0.034575f, // Mage
+        0.020350f, // Warlock
+        0.056097f, // Monk
+        0.049510f  // Druid
     };
+
     // Crit/agility to dodge/agility coefficient multipliers; 3.2.0 increased required agility by 15%
     const float crit_to_dodge[MAX_CLASSES] =
     {
-         0.85f/1.15f,    // Warrior
-         1.00f/1.15f,    // Paladin
-         1.11f/1.15f,    // Hunter
-         2.00f/1.15f,    // Rogue
-         1.00f/1.15f,    // Priest
-         0.85f/1.15f,    // DK
-         1.60f/1.15f,    // Shaman
-         1.00f/1.15f,    // Mage
-         0.97f/1.15f,    // Warlock (?)
-         0.0f,           // ??
-         2.00f/1.15f     // Druid
+        0.85f / 1.15f,    // Warrior
+        1.00f / 1.15f,    // Paladin
+        1.11f / 1.15f,    // Hunter
+        2.00f / 1.15f,    // Rogue
+        1.00f / 1.15f,    // Priest
+        0.85f / 1.15f,    // DK
+        1.60f / 1.15f,    // Shaman
+        1.00f / 1.15f,    // Mage
+        0.97f / 1.15f,    // Warlock (?)
+        2.00f / 1.15f,    // Monk
+        2.00f / 1.15f     // Druid
     };
 
     uint8 level = getLevel();
@@ -5872,13 +6114,12 @@ float Player::GetSpellCritFromIntellect()
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
 
-    GtChanceToSpellCritBaseEntry const* critBase = sGtChanceToSpellCritBaseStore.LookupEntry(pclass - 1);
+    GtChanceToSpellCritBaseEntry const* critBase = sGtChanceToSpellCritBaseStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
     GtChanceToSpellCritEntry const* critRatio = sGtChanceToSpellCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
     if (critBase == NULL || critRatio == NULL)
         return 0.0f;
 
-    float crit = critBase->base + GetStat(STAT_INTELLECT) * critRatio->ratio;
-    return crit * 100.0f;
+    return ((critBase->base * 100.0f) + GetStat(STAT_INTELLECT) / critRatio->ratio);
 }
 
 float Player::GetRatingMultiplier(CombatRating cr) const
@@ -17769,8 +18010,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     {
         if (GetPowerIndex(i) != MAX_POWERS)
         {
-            uint32 savedPower = fields[47+loadedPowers].GetUInt32();
-            uint32 maxPower = GetUInt32Value(UNIT_FIELD_MAX_POWER + loadedPowers);
+            int32 savedPower = fields[47+loadedPowers].GetInt32();
+            int32 maxPower = GetInt32Value(UNIT_FIELD_MAX_POWER + loadedPowers);
             SetPower(Powers(i), (savedPower > maxPower) ? maxPower : savedPower);
             if (++loadedPowers >= MAX_POWERS_PER_CLASS)
                 break;
@@ -17778,7 +18019,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     }
 
     for (; loadedPowers < MAX_POWERS_PER_CLASS; ++loadedPowers)
-        SetUInt32Value(UNIT_FIELD_POWER + loadedPowers, 0);
+        SetInt32Value(UNIT_FIELD_POWER + loadedPowers, 0);
 
     SetPower(POWER_ECLIPSE, 0);
 
@@ -17859,13 +18100,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS));
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
-
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
-    {
-        if (!HasSpell(*iter))
-            learnSpell(*iter, true);
-    }
 
     return true;
 }
@@ -18787,6 +19021,13 @@ void Player::_LoadSpells(PreparedQueryResult result)
             addSpell((*result)[0].GetUInt32(), (*result)[1].GetBool(), false, false, (*result)[2].GetBool(), true);
         while (result->NextRow());
     }
+
+    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
+    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    {
+        if (!HasSpell(*iter))
+            learnSpell(*iter, true);
+    }
 }
 
 void Player::_LoadGroup(PreparedQueryResult result)
@@ -19394,14 +19635,14 @@ void Player::SaveToDB(bool create /*=false*/)
         {
             if (GetPowerIndex(i) != MAX_POWERS)
             {
-                stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_POWER + storedPowers));
+                stmt->setInt32(index++, GetInt32Value(UNIT_FIELD_POWER + storedPowers));
                 if (++storedPowers >= MAX_POWERS_PER_CLASS)
                     break;
             }
         }
 
         for (; storedPowers < MAX_POWERS_PER_CLASS; ++storedPowers)
-            stmt->setUInt32(index++, 0);
+            stmt->setInt32(index++, 0);
 
         stmt->setUInt32(index++, GetSession()->GetLatency());
 
@@ -19523,14 +19764,14 @@ void Player::SaveToDB(bool create /*=false*/)
         {
             if (GetPowerIndex(i) != MAX_POWERS)
             {
-                stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_POWER + storedPowers));
+                stmt->setInt32(index++, GetInt32Value(UNIT_FIELD_POWER + storedPowers));
                 if (++storedPowers >= MAX_POWERS_PER_CLASS)
                     break;
             }
         }
 
         for (; storedPowers < MAX_POWERS_PER_CLASS; ++storedPowers)
-            stmt->setUInt32(index++, 0);
+            stmt->setInt32(index++, 0);
 
         stmt->setUInt32(index++, GetSession()->GetLatency());
 
@@ -20297,7 +20538,7 @@ void Player::_SaveStats(SQLTransaction& trans)
     stmt->setUInt32(index++, GetMaxHealth());
 
     for (uint8 i = 0; i < MAX_POWERS_PER_CLASS; ++i)
-        stmt->setUInt32(index++, GetMaxPower(Powers(i)));
+        stmt->setInt32(index++, GetMaxPower(Powers(i)));
 
     for (uint8 i = 0; i < MAX_STATS; ++i)
         stmt->setUInt32(index++, GetStat(Stats(i)));
@@ -20328,7 +20569,7 @@ void Player::outDebugValues() const
     TC_LOG_DEBUG("entities.unit", "AGILITY is: \t\t%f\t\tSTRENGTH is: \t\t%f", GetStat(STAT_AGILITY), GetStat(STAT_STRENGTH));
     TC_LOG_DEBUG("entities.unit", "INTELLECT is: \t\t%f\t\tSPIRIT is: \t\t%f", GetStat(STAT_INTELLECT), GetStat(STAT_SPIRIT));
     TC_LOG_DEBUG("entities.unit", "STAMINA is: \t\t%f", GetStat(STAT_STAMINA));
-    TC_LOG_DEBUG("entities.unit", "Armor is: \t\t%u\t\tBlock is: \t\t%f", GetArmor(), GetFloatValue(PLAYER_FIELD_PLAYER_FLAGS));
+    TC_LOG_DEBUG("entities.unit", "Armor is: \t\t%u\t\tBlock is: \t\t%f", GetArmor(), GetFloatValue(PLAYER_FIELD_BLOCK_PERCENTAGE));
     TC_LOG_DEBUG("entities.unit", "HolyRes is: \t\t%u\t\tFireRes is: \t\t%u", GetResistance(SPELL_SCHOOL_HOLY), GetResistance(SPELL_SCHOOL_FIRE));
     TC_LOG_DEBUG("entities.unit", "NatureRes is: \t\t%u\t\tFrostRes is: \t\t%u", GetResistance(SPELL_SCHOOL_NATURE), GetResistance(SPELL_SCHOOL_FROST));
     TC_LOG_DEBUG("entities.unit", "ShadowRes is: \t\t%u\t\tArcaneRes is: \t\t%u", GetResistance(SPELL_SCHOOL_SHADOW), GetResistance(SPELL_SCHOOL_ARCANE));
@@ -21898,6 +22139,8 @@ void Player::InitDataForForm(bool reapplyMods)
 
     switch (form)
     {
+        case FORM_FIERCE_TIGER:
+        case FORM_STURDY_OX:
         case FORM_GHOUL:
         case FORM_CAT:
         {
@@ -21909,6 +22152,12 @@ void Player::InitDataForForm(bool reapplyMods)
         {
             if (getPowerType() != POWER_RAGE)
                 setPowerType(POWER_RAGE);
+            break;
+        }
+        case FORM_WISE_SERPENT:
+        {
+            if (getPowerType() != POWER_MANA)
+                setPowerType(POWER_MANA);
             break;
         }
         default:                                            // 0, for example
@@ -23098,8 +23347,8 @@ inline void UpdateVisibilityOf_helper(std::set<uint64>& s64, T* target, std::set
 template<>
 inline void UpdateVisibilityOf_helper(std::set<uint64>& s64, GameObject* target, std::set<Unit*>& /*v*/)
 {
-    // @HACK: This is to prevent objects like deeprun tram from disappearing when player moves far from its spawn point while riding it
-    if ((target->GetGOInfo()->type != GAMEOBJECT_TYPE_TRANSPORT))
+    // Limited updates done in UpdateVisibilityOf for GAMEOBJECT_TYPE_TRANSPORT (should it be all transports and destructible buildings?) - SOTA, Deeprun tram, tram in Ulduar.
+    if (target->GetGOInfo()->entry != 193182 && target->GetGOInfo()->entry != 193183 && target->GetGOInfo()->entry != 193184 && target->GetGOInfo()->entry != 193185 && target->GetGOInfo()->entry != 19080 && target->GetGOInfo()->entry != 194675)
         s64.insert(target->GetGUID());
 }
 
@@ -23133,15 +23382,18 @@ void Player::UpdateVisibilityOf(WorldObject* target)
     {
         if (!CanSeeOrDetect(target, false, true))
         {
-            if (target->GetTypeId() == TYPEID_UNIT)
-                BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
+            if (!(target->GetTypeId() == TYPEID_GAMEOBJECT && target->ToGameObject()->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT))
+            {
+                if (target->GetTypeId() == TYPEID_UNIT)
+                    BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
 
-            target->DestroyForPlayer(this);
-            m_clientGUIDs.erase(target->GetGUID());
+                target->DestroyForPlayer(this);
+                m_clientGUIDs.erase(target->GetGUID());
 
-            #ifdef TRINITY_DEBUG
-                TC_LOG_DEBUG("maps", "Object %u (Type: %u) out of range for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
-            #endif
+                #ifdef TRINITY_DEBUG
+                    TC_LOG_DEBUG("maps", "Object %u (Type: %u) out of range for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
+                #endif
+            }
         }
     }
     else
@@ -23149,16 +23401,20 @@ void Player::UpdateVisibilityOf(WorldObject* target)
         if (CanSeeOrDetect(target, false, true))
         {
             target->SendUpdateToPlayer(this);
-            m_clientGUIDs.insert(target->GetGUID());
 
-            #ifdef TRINITY_DEBUG
-                TC_LOG_DEBUG("maps", "Object %u (Type: %u) is visible now for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
-            #endif
+            if (!(target->GetTypeId() == TYPEID_GAMEOBJECT && target->ToGameObject()->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT))
+            {
+                m_clientGUIDs.insert(target->GetGUID());
 
-            // target aura duration for caster show only if target exist at caster client
-            // send data at target visibility change (adding to client)
-            if (target->isType(TYPEMASK_UNIT))
-                SendInitialVisiblePackets((Unit*)target);
+                #ifdef TRINITY_DEBUG
+                    TC_LOG_DEBUG("maps", "Object %u (Type: %u) is visible now for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
+                #endif
+
+                // target aura duration for caster show only if target exist at caster client
+                // send data at target visibility change (adding to client)
+                if (target->isType(TYPEMASK_UNIT))
+                    SendInitialVisiblePackets((Unit*)target);
+            }
         }
     }
 }
@@ -24708,7 +24964,17 @@ void Player::ResurectUsingRequestData()
     SetPower(POWER_RAGE, 0);
     SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
     SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
+    SetPower(POWER_RUNES, GetMaxPower(POWER_RUNES));
+    SetPower(POWER_RUNIC_POWER, 0);
+    SetPower(POWER_SOUL_SHARDS, 100);
     SetPower(POWER_ECLIPSE, 0);
+    SetPower(POWER_HOLY_POWER, 0);
+    SetPower(POWER_ALTERNATE_POWER, 0);
+    SetPower(POWER_CHI, 0);
+    SetPower(POWER_SHADOW_ORBS, 0);
+    SetPower(POWER_BURNING_EMBERS, 10);
+    SetPower(POWER_DEMONIC_FURY, 200);
+    SetPower(POWER_ARCANE_CHARGES, 0);
 
     if (uint32 aura = _resurrectionData->Aura)
         CastSpell(this, aura, true, NULL, NULL, _resurrectionData->GUID);
@@ -24882,7 +25148,8 @@ void Player::SendCorpseReclaimDelay(bool load)
 
     //! corpse reclaim delay 30 * 1000ms or longer at often deaths
     WorldPacket data(SMSG_CORPSE_RECLAIM_DELAY, 4);
-    data << uint32(delay*IN_MILLISECONDS);
+    data.WriteBit(delay == 0);
+    if (delay) data << uint32(delay * IN_MILLISECONDS);
     GetSession()->SendPacket(&data);
 }
 
@@ -25242,9 +25509,11 @@ void Player::InitGlyphsForLevel()
     uint32 slotMask = 0;
 
     if (level >= 25)
-        slotMask |= 0x01 | 0x02 | 0x40;
+        slotMask |= 0x01 | 0x02;
     if (level >= 50)
-        slotMask |= 0x04 | 0x08 | 0x80;
+        slotMask |= 0x04 | 0x08;
+    if (level >= 75)
+        slotMask |= 0x10 | 0x20;
 
     SetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS_ENABLED, slotMask);
 }

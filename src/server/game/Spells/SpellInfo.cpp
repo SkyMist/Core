@@ -1263,6 +1263,8 @@ bool SpellInfo::IsStackableWithRanks() const
                     Effects[i].ApplyAuraName == SPELL_AURA_MOD_SHAPESHIFT)
                     return false;
                 break;
+
+            default: break;
         }
     }
     return true;
@@ -2081,8 +2083,8 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
                         case SPELL_AURA_OBS_MOD_POWER:
                             drink = true;
                             break;
-                        default:
-                            break;
+
+                        default: break;
                     }
                 }
 
@@ -2109,6 +2111,8 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
                     case 12880: // Enrage (Enrage)
                     case 57518: // Enrage (Wrecking Crew)
                         return SPELL_SPECIFIC_WARRIOR_ENRAGE;
+
+                    default: break;
                 }
             }
             break;
@@ -2152,6 +2156,7 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
             //seed of corruption and corruption
             if (SpellFamilyFlags[1] & 0x10 || SpellFamilyFlags[0] & 0x2)
                 return SPELL_SPECIFIC_WARLOCK_CORRUPTION;
+
             break;
         }
         case SPELLFAMILY_PRIEST:
@@ -2207,7 +2212,10 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
         case SPELLFAMILY_DEATHKNIGHT:
             if (Id == 48266 || Id == 48263 || Id == 48265)
                 return SPELL_SPECIFIC_PRESENCE;
+
             break;
+
+        default: break;
     }
 
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
@@ -2228,6 +2236,8 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
                 case SPELL_AURA_TRACK_RESOURCES:
                 case SPELL_AURA_TRACK_STEALTHED:
                     return SPELL_SPECIFIC_TRACKER;
+
+                default: break;
             }
         }
     }
@@ -2585,8 +2595,8 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                 case 61734: // Noblegarden Bunny
                 case 62344: // Fists of Stone
                     return true;
-                default:
-                    break;
+
+                default: break;
             }
             break;
         case SPELLFAMILY_MAGE:
@@ -2601,8 +2611,8 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                 case 64904: // Hymn of Hope
                 case 47585: // Dispersion
                     return true;
-                default:
-                    break;
+
+                default: break;
             }
             break;
         case SPELLFAMILY_ROGUE:
@@ -2611,20 +2621,20 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                 // Envenom must be considered as a positive effect even though it deals damage
                 case 32645: // Envenom
                     return true;
-                default:
-                    break;
+
+                default: break;
             }
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     switch (Mechanic)
     {
         case MECHANIC_IMMUNE_SHIELD:
             return true;
-        default:
-            break;
+
+        default: break;
     }
 
     // Special case: effects which determine positivity of whole spell
@@ -2642,8 +2652,8 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
             {
                 case 28441:
                     return false; // AB Effect 000
-                default:
-                    break;
+
+                default: break;
             }
             break;
         // always positive effects (check before target checks that provided non-positive result in some case for positive effects)
@@ -2743,8 +2753,8 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                         case MECHANIC_MOUNT:
                         case MECHANIC_INVULNERABILITY:
                             return false;
-                        default:
-                            break;
+
+                        default: break;
                     }
                     break;
                 }
@@ -2774,18 +2784,18 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                                 }
                             }
                             break;
-                        default:
-                            break;
+
+                        default: break;
                     }
                     break;
                 }
-                default:
-                    break;
+
+                default: break;
             }
             break;
         }
-        default:
-            break;
+
+        default: break;
     }
 
     // non-positive targets
@@ -2828,8 +2838,8 @@ bool SpellInfo::_IsPositiveTarget(uint32 targetA, uint32 targetB)
         case TARGET_DEST_DYNOBJ_ENEMY:
         case TARGET_DEST_TARGET_ENEMY:
             return false;
-        default:
-            break;
+
+        default: break;
     }
     if (targetB)
         return _IsPositiveTarget(targetB, 0);

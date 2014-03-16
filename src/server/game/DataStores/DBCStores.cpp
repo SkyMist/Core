@@ -350,7 +350,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sArmorLocationStore,          dbcPath, "ArmorLocation.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sBankBagSlotPricesStore,      dbcPath, "BankBagSlotPrices.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sBannedAddOnsStore,           dbcPath, "BannedAddOns.dbc");
-    LoadDBC(availableDbcLocales, bad_dbc_files, sBattlemasterListStore,       dbcPath, "BattlemasterList.dbc");//15595
+    LoadDBC(availableDbcLocales, bad_dbc_files, sBattlemasterListStore,       dbcPath, "BattleMasterList.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sBarberShopStyleStore,        dbcPath, "BarberShopStyle.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sCharStartOutfitStore,        dbcPath, "CharStartOutfit.dbc");//15595
     for (uint32 i = 0; i < sCharStartOutfitStore.GetNumRows(); ++i)
@@ -466,7 +466,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sItemDamageWandStore,         dbcPath, "ItemDamageWand.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sItemDisenchantLootStore,     dbcPath, "ItemDisenchantLoot.dbc");
 
-    LoadDBC(availableDbcLocales, bad_dbc_files, sLFGDungeonStore,             dbcPath, "LFGDungeons.dbc");//15595
+    LoadDBC(availableDbcLocales, bad_dbc_files, sLFGDungeonStore,             dbcPath, "LfgDungeons.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sLiquidTypeStore,             dbcPath, "LiquidType.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sLockStore,                   dbcPath, "Lock.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sPhaseStores,                 dbcPath, "Phase.dbc");//15595
@@ -847,13 +847,13 @@ void LoadDBCStores(const std::string& dataPath)
     }
 
     // Check loaded DBC files proper version
-    if (!sAreaStore.LookupEntry(5491)          ||     // last area (areaflag) added in 5.4.7 (17956)
-        !sCharTitlesStore.LookupEntry(389)     ||     // last char title added in 5.4.7 (17956)
-        !sGemPropertiesStore.LookupEntry(2467) ||     // last gem property added in 5.4.7 (17956)
-        !sMapStore.LookupEntry(1173)           ||     // last map added in 5.4.7 (17956)
-        !sSpellStore.LookupEntry(155748)       )      // last spell added in 5.4.7 (17956)
+    if (!sAreaStore.LookupEntry(5491)          ||     // last area (areaflag) added in 5.4.7 (18019)
+        !sCharTitlesStore.LookupEntry(389)     ||     // last char title added in 5.4.7 (18019)
+        !sGemPropertiesStore.LookupEntry(2467) ||     // last gem property added in 5.4.7 (18019)
+        !sMapStore.LookupEntry(1173)           ||     // last map added in 5.4.7 (18019)
+        !sSpellStore.LookupEntry(155748)       )      // last spell added in 5.4.7 (18019)
     {
-        TC_LOG_ERROR("misc", "You have _outdated_ DBC files. Please extract correct dbc files from client 5.4.7 17956.");
+        TC_LOG_ERROR("misc", "You have _outdated_ DBC files. Please extract correct dbc files from client 5.4.7 18019.");
         exit(1);
     }
 

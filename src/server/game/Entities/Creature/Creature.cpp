@@ -18,6 +18,7 @@
  */
 
 #include "Creature.h"
+#include "CreatureMovementMgr.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
 #include "Common.h"
@@ -42,6 +43,9 @@
 #include "Opcodes.h"
 #include "OutdoorPvPMgr.h"
 #include "Player.h"
+#include "PlayerMovementMgr.h"
+#include "UnitMovementMgr.h"
+#include "ObjectMovementMgr.h"
 #include "PoolMgr.h"
 #include "QuestDef.h"
 #include "SpellAuraEffects.h"

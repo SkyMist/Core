@@ -21,12 +21,14 @@
 #define __UNIT_H
 
 #include "DBCStructure.h"
+#include "UnitMovementMgr.h"
 #include "EventProcessor.h"
 #include "FollowerReference.h"
 #include "FollowerRefManager.h"
 #include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
+#include "ObjectMovementMgr.h"
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
@@ -361,6 +363,7 @@ class Vehicle;
 class VehicleJoinEvent;
 class TransportBase;
 class SpellCastTargets;
+
 namespace Movement
 {
     class ExtraMovementStatusElement;
@@ -442,17 +445,23 @@ enum UnitMods
     UNIT_MOD_STAT_INTELLECT,
     UNIT_MOD_STAT_SPIRIT,
     UNIT_MOD_HEALTH,
-    UNIT_MOD_MANA,                                          // UNIT_MOD_MANA..UNIT_MOD_RUNIC_POWER must be in existed order, it's accessed by index values of Powers enum.
+    UNIT_MOD_MANA,                                          // UNIT_MOD_MANA..UNIT_MOD_ARCANE_CHARGES must be in existed order, it's accessed by index values of Powers enum.
     UNIT_MOD_RAGE,
     UNIT_MOD_FOCUS,
     UNIT_MOD_ENERGY,
-    UNIT_MOD_UNUSED,                                        // Old UNIT_MOD_HAPPINESS
-    UNIT_MOD_RUNE,
+    UNIT_MOD_LIGHT_FORCE,
+    UNIT_MOD_RUNES,
     UNIT_MOD_RUNIC_POWER,
     UNIT_MOD_SOUL_SHARDS,
     UNIT_MOD_ECLIPSE,
     UNIT_MOD_HOLY_POWER,
     UNIT_MOD_ALTERNATIVE,
+    UNIT_MOD_DARK_FORCE,
+    UNIT_MOD_CHI,
+    UNIT_MOD_SHADOW_ORBS,
+    UNIT_MOD_BURNING_EMBERS,
+    UNIT_MOD_DEMONIC_FURY,
+    UNIT_MOD_ARCANE_CHARGES,
     UNIT_MOD_ARMOR,                                         // UNIT_MOD_ARMOR..UNIT_MOD_RESISTANCE_ARCANE must be in existed order, it's accessed by index values of SpellSchools enum.
     UNIT_MOD_RESISTANCE_HOLY,
     UNIT_MOD_RESISTANCE_FIRE,
@@ -472,7 +481,7 @@ enum UnitMods
     UNIT_MOD_RESISTANCE_START = UNIT_MOD_ARMOR,
     UNIT_MOD_RESISTANCE_END = UNIT_MOD_RESISTANCE_ARCANE + 1,
     UNIT_MOD_POWER_START = UNIT_MOD_MANA,
-    UNIT_MOD_POWER_END = UNIT_MOD_ALTERNATIVE + 1
+    UNIT_MOD_POWER_END = UNIT_MOD_ARCANE_CHARGES + 1
 };
 
 enum BaseModGroup
@@ -542,24 +551,6 @@ enum UnitState
     UNIT_STATE_NOT_MOVE        = UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DIED | UNIT_STATE_DISTRACTED,
     UNIT_STATE_ALL_STATE       = 0xffffffff                      //(UNIT_STATE_STOPPED | UNIT_STATE_MOVING | UNIT_STATE_IN_COMBAT | UNIT_STATE_IN_FLIGHT)
 };
-
-enum UnitMoveType
-{
-    MOVE_WALK           = 0,
-    MOVE_RUN            = 1,
-    MOVE_RUN_BACK       = 2,
-    MOVE_SWIM           = 3,
-    MOVE_SWIM_BACK      = 4,
-    MOVE_TURN_RATE      = 5,
-    MOVE_FLIGHT         = 6,
-    MOVE_FLIGHT_BACK    = 7,
-    MOVE_PITCH_RATE     = 8
-};
-
-#define MAX_MOVE_TYPE     9
-
-extern float baseMoveSpeed[MAX_MOVE_TYPE];
-extern float playerBaseMoveSpeed[MAX_MOVE_TYPE];
 
 enum WeaponAttackType
 {
@@ -706,88 +697,6 @@ enum NPCFlags
     UNIT_NPC_FLAG_REFORGER              = 0x08000000,       // reforging
     UNIT_NPC_FLAG_TRANSMOGRIFIER        = 0x10000000,       // transmogrification
     UNIT_NPC_FLAG_VAULTKEEPER           = 0x20000000        // void storage
-};
-
-enum MovementFlags
-{
-    MOVEMENTFLAG_NONE                  = 0x00000000,
-    MOVEMENTFLAG_FORWARD               = 0x00000001,
-    MOVEMENTFLAG_BACKWARD              = 0x00000002,
-    MOVEMENTFLAG_STRAFE_LEFT           = 0x00000004,
-    MOVEMENTFLAG_STRAFE_RIGHT          = 0x00000008,
-    MOVEMENTFLAG_LEFT                  = 0x00000010,
-    MOVEMENTFLAG_RIGHT                 = 0x00000020,
-    MOVEMENTFLAG_PITCH_UP              = 0x00000040,
-    MOVEMENTFLAG_PITCH_DOWN            = 0x00000080,
-    MOVEMENTFLAG_WALKING               = 0x00000100,               // Walking
-    MOVEMENTFLAG_DISABLE_GRAVITY       = 0x00000200,               // Former MOVEMENTFLAG_LEVITATING. This is used when walking is not possible.
-    MOVEMENTFLAG_ROOT                  = 0x00000400,               // Must not be set along with MOVEMENTFLAG_MASK_MOVING
-    MOVEMENTFLAG_FALLING               = 0x00000800,               // damage dealt on that type of falling
-    MOVEMENTFLAG_FALLING_FAR           = 0x00001000,
-    MOVEMENTFLAG_PENDING_STOP          = 0x00002000,
-    MOVEMENTFLAG_PENDING_STRAFE_STOP   = 0x00004000,
-    MOVEMENTFLAG_PENDING_FORWARD       = 0x00008000,
-    MOVEMENTFLAG_PENDING_BACKWARD      = 0x00010000,
-    MOVEMENTFLAG_PENDING_STRAFE_LEFT   = 0x00020000,
-    MOVEMENTFLAG_PENDING_STRAFE_RIGHT  = 0x00040000,
-    MOVEMENTFLAG_PENDING_ROOT          = 0x00080000,
-    MOVEMENTFLAG_SWIMMING              = 0x00100000,               // appears with fly flag also
-    MOVEMENTFLAG_ASCENDING             = 0x00200000,               // press "space" when flying
-    MOVEMENTFLAG_DESCENDING            = 0x00400000,
-    MOVEMENTFLAG_CAN_FLY               = 0x00800000,               // Appears when unit can fly AND also walk
-    MOVEMENTFLAG_FLYING                = 0x01000000,               // unit is actually flying. pretty sure this is only used for players. creatures use disable_gravity
-    MOVEMENTFLAG_SPLINE_ELEVATION      = 0x02000000,               // used for flight paths
-    MOVEMENTFLAG_WATERWALKING          = 0x04000000,               // prevent unit from falling through water
-    MOVEMENTFLAG_FALLING_SLOW          = 0x08000000,               // active rogue safe fall spell (passive)
-    MOVEMENTFLAG_HOVER                 = 0x10000000,               // hover, cannot jump
-    MOVEMENTFLAG_DISABLE_COLLISION     = 0x20000000,
-
-    /// @todo Check if PITCH_UP and PITCH_DOWN really belong here..
-    MOVEMENTFLAG_MASK_MOVING =
-        MOVEMENTFLAG_FORWARD | MOVEMENTFLAG_BACKWARD | MOVEMENTFLAG_STRAFE_LEFT | MOVEMENTFLAG_STRAFE_RIGHT |
-        MOVEMENTFLAG_PITCH_UP | MOVEMENTFLAG_PITCH_DOWN | MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR | MOVEMENTFLAG_ASCENDING | MOVEMENTFLAG_DESCENDING |
-        MOVEMENTFLAG_SPLINE_ELEVATION,
-
-    MOVEMENTFLAG_MASK_TURNING =
-        MOVEMENTFLAG_LEFT | MOVEMENTFLAG_RIGHT,
-
-    MOVEMENTFLAG_MASK_MOVING_FLY =
-        MOVEMENTFLAG_FLYING | MOVEMENTFLAG_ASCENDING | MOVEMENTFLAG_DESCENDING,
-
-    // Movement flags allowed for creature in CreateObject - we need to keep all other enabled serverside
-    // to properly calculate all movement
-    MOVEMENTFLAG_MASK_CREATURE_ALLOWED =
-        MOVEMENTFLAG_FORWARD | MOVEMENTFLAG_DISABLE_GRAVITY | MOVEMENTFLAG_ROOT | MOVEMENTFLAG_SWIMMING |
-        MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_WATERWALKING | MOVEMENTFLAG_FALLING_SLOW | MOVEMENTFLAG_HOVER,
-
-    /// @todo if needed: add more flags to this masks that are exclusive to players
-    MOVEMENTFLAG_MASK_PLAYER_ONLY =
-        MOVEMENTFLAG_FLYING,
-
-    /// Movement flags that have change status opcodes associated for players
-    MOVEMENTFLAG_MASK_HAS_PLAYER_STATUS_OPCODE = MOVEMENTFLAG_DISABLE_GRAVITY | MOVEMENTFLAG_ROOT |
-        MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_WATERWALKING | MOVEMENTFLAG_FALLING_SLOW | MOVEMENTFLAG_HOVER
-};
-
-enum MovementFlags2
-{
-    MOVEMENTFLAG2_NONE                     = 0x00000000,
-    MOVEMENTFLAG2_NO_STRAFE                = 0x00000001,
-    MOVEMENTFLAG2_NO_JUMPING               = 0x00000002,
-    MOVEMENTFLAG2_FULL_SPEED_TURNING       = 0x00000004,
-    MOVEMENTFLAG2_FULL_SPEED_PITCHING      = 0x00000008,
-    MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING    = 0x00000010,
-    MOVEMENTFLAG2_UNK5                     = 0x00000020,
-    MOVEMENTFLAG2_UNK6                     = 0x00000040,
-    MOVEMENTFLAG2_UNK7                     = 0x00000080,
-    MOVEMENTFLAG2_UNK8                     = 0x00000100,
-    MOVEMENTFLAG2_UNK9                     = 0x00000200,
-    MOVEMENTFLAG2_CAN_SWIM_TO_FLY_TRANS    = 0x00000400,
-    MOVEMENTFLAG2_UNK11                    = 0x00000800,
-    MOVEMENTFLAG2_UNK12                    = 0x00001000,
-    MOVEMENTFLAG2_INTERPOLATED_MOVEMENT    = 0x00002000,
-    MOVEMENTFLAG2_INTERPOLATED_TURNING     = 0x00004000,
-    MOVEMENTFLAG2_INTERPOLATED_PITCHING    = 0x00008000
 };
 
 enum UnitTypeMask
@@ -1321,7 +1230,7 @@ class Unit : public WorldObject
         float GetMeleeReach() const;
         bool IsWithinCombatRange(const Unit* obj, float dist2compare) const;
         bool IsWithinMeleeRange(const Unit* obj, float dist = MELEE_RANGE) const;
-        void GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const;
+
         uint32 m_extraAttacks;
         bool m_canDualWield;
 
@@ -1600,39 +1509,6 @@ class Unit : public WorldObject
         void SendSpellDamageImmune(Unit* target, uint32 spellId);
 
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
-        void SendTeleportPacket(Position& pos);
-        virtual bool UpdatePosition(float x, float y, float z, float ang, bool teleport = false);
-        // returns true if unit's position really changed
-        bool UpdatePosition(const Position &pos, bool teleport = false);
-        void UpdateOrientation(float orientation);
-        void UpdateHeight(float newZ);
-
-        void SendMoveKnockBack(Player* player, float speedXY, float speedZ, float vcos, float vsin);
-        void KnockbackFrom(float x, float y, float speedXY, float speedZ);
-        void JumpTo(float speedXY, float speedZ, bool forward = true);
-        void JumpTo(WorldObject* obj, float speedZ);
-
-        void MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath = false, bool forceDestination = false);
-
-
-        void SendSetPlayHoverAnim(bool enable);
-        void SendMovementSetSplineAnim(Movement::AnimType anim);
-
-        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY); }
-        bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING); }
-        bool SetWalk(bool enable);
-        bool SetDisableGravity(bool disable, bool packetOnly = false);
-        bool SetFall(bool enable);
-        bool SetSwim(bool enable);
-        bool SetCanFly(bool enable);
-        bool SetWaterWalking(bool enable, bool packetOnly = false);
-        bool SetFeatherFall(bool enable, bool packetOnly = false);
-        bool SetHover(bool enable, bool packetOnly = false);
-        uint32 GetMovementCounter() const { return m_movementCounter; } 
-
-        void SetInFront(WorldObject const* target);
-        void SetFacingTo(float ori);
-        void SetFacingToObject(WorldObject* object);
 
         void SendChangeCurrentVictimOpcode(HostileReference* pHostileReference);
         void SendClearThreatListOpcode();
@@ -1906,9 +1782,6 @@ class Unit : public WorldObject
         float GetWeaponDamageRange(WeaponAttackType attType, WeaponDamageRange type) const;
         void SetBaseWeaponDamage(WeaponAttackType attType, WeaponDamageRange damageRange, float value) { m_weaponDamage[attType][damageRange] = value; }
 
-        bool isInFrontInMap(Unit const* target, float distance, float arc = M_PI) const;
-        bool isInBackInMap(Unit const* target, float distance, float arc = M_PI) const;
-
         // Visibility system
         bool IsVisible() const;
         void SetVisible(bool x);
@@ -1983,7 +1856,6 @@ class Unit : public WorldObject
         uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);
         uint32 MeleeDamageBonusTaken(Unit* attacker, uint32 pdamage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);
 
-
         bool   isSpellBlocked(Unit* victim, SpellInfo const* spellProto, WeaponAttackType attackType = BASE_ATTACK);
         bool   isBlockCritical();
         bool   isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType = BASE_ATTACK) const;
@@ -2011,11 +1883,6 @@ class Unit : public WorldObject
         void CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffectType damagetype, uint32 const damage, uint32* absorb, uint32* resist, SpellInfo const* spellInfo = NULL);
         void CalcHealAbsorb(Unit* victim, SpellInfo const* spellInfo, uint32& healAmount, uint32& absorb);
 
-        void  UpdateSpeed(UnitMoveType mtype, bool forced);
-        float GetSpeed(UnitMoveType mtype) const;
-        float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
-        void SetSpeed(UnitMoveType mtype, float rate, bool forced = false);
-
         float ApplyEffectModifiers(SpellInfo const* spellProto, uint8 effect_index, float value) const;
         int32 CalculateSpellDamage(Unit const* target, SpellInfo const* spellProto, uint8 effect_index, int32 const* basePoints = NULL) const;
         int32 CalcSpellDuration(SpellInfo const* spellProto);
@@ -2029,27 +1896,6 @@ class Unit : public WorldObject
         static Player* GetPlayer(WorldObject& object, uint64 guid);
         static Creature* GetCreature(WorldObject& object, uint64 guid);
 
-        MotionMaster* GetMotionMaster() { return i_motionMaster; }
-        const MotionMaster* GetMotionMaster() const { return i_motionMaster; }
-
-        bool IsStopped() const { return !(HasUnitState(UNIT_STATE_MOVING)); }
-        void StopMoving();
-
-        void AddUnitMovementFlag(uint32 f) { m_movementInfo.AddMovementFlag(f); }
-        void RemoveUnitMovementFlag(uint32 f) { m_movementInfo.RemoveMovementFlag(f); }
-        bool HasUnitMovementFlag(uint32 f) const { return m_movementInfo.HasMovementFlag(f); }
-        uint32 GetUnitMovementFlags() const { return m_movementInfo.GetMovementFlags(); }
-        void SetUnitMovementFlags(uint32 f) { m_movementInfo.SetMovementFlags(f); }
-
-        void AddExtraUnitMovementFlag(uint16 f) { m_movementInfo.AddExtraMovementFlag(f); }
-        void RemoveExtraUnitMovementFlag(uint16 f) { m_movementInfo.RemoveExtraMovementFlag(f); }
-        uint16 HasExtraUnitMovementFlag(uint16 f) const { return m_movementInfo.HasExtraMovementFlag(f); }
-        uint16 GetExtraUnitMovementFlags() const { return m_movementInfo.GetExtraMovementFlags(); }
-        void SetExtraUnitMovementFlags(uint16 f) { m_movementInfo.SetExtraMovementFlags(f); }
-        bool IsSplineEnabled() const;
-
-        float GetPositionZMinusOffset() const;
-
         void SetControlled(bool apply, UnitState state);
 
         void AddComboPointHolder(uint32 lowguid) { m_ComboPointHolders.insert(lowguid); }
@@ -2061,8 +1907,6 @@ class Unit : public WorldObject
         void SendPetTalk (uint32 pettalk);
         void SendPetAIReaction(uint64 guid);
         ///----------End of Pet responses methods----------
-
-        void propagateSpeedChange() { GetMotionMaster()->propagateSpeedChange(); }
 
         // reactive attacks
         void ClearAllReactives();
@@ -2118,17 +1962,7 @@ class Unit : public WorldObject
         void _ExitVehicle(Position const* exitPosition = NULL);
         void _EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* aurApp = NULL);
 
-        void WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusElement* extras = NULL);
-
-        bool isMoving() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
-        bool isTurning() const  { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
-        virtual bool CanFly() const = 0;
-        bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
-        bool IsFalling() const;
-
         void RewardRage(uint32 baseRage, bool attacker);
-
-        virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }
 
         void OutDebugInfo() const;
         virtual bool isBeingLoaded() const { return false;}
@@ -2145,9 +1979,6 @@ class Unit : public WorldObject
 
         uint64 GetTarget() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
         virtual void SetTarget(uint64 /*guid*/) = 0;
-
-        // Movement info
-        Movement::MoveSpline * movespline;
 
         // Part of Evade mechanics
         time_t GetLastDamagedTime() const { return _lastDamagedTime; }
@@ -2212,8 +2043,6 @@ class Unit : public WorldObject
 
         virtual SpellSchoolMask GetMeleeDamageSchoolMask() const;
 
-        MotionMaster* i_motionMaster;
-
         uint32 m_reactiveTimer[MAX_REACTIVE];
         uint32 m_regenTimer;
 
@@ -2228,7 +2057,6 @@ class Unit : public WorldObject
         bool IsAlwaysVisibleFor(WorldObject const* seer) const;
         bool IsAlwaysDetectableFor(WorldObject const* seer) const;
 
-        void DisableSpline();
     private:
         bool IsTriggeredAtSpellProcEvent(Unit* victim, Aura* aura, SpellInfo const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const* & spellProcEvent);
         bool HandleAuraProcOnPowerAmount(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
@@ -2239,26 +2067,14 @@ class Unit : public WorldObject
         bool HandleAuraRaidProcFromChargeWithValue(AuraEffect* triggeredByAura);
         bool HandleAuraRaidProcFromCharge(AuraEffect* triggeredByAura);
 
-        void UpdateSplineMovement(uint32 t_diff);
-        void UpdateSplinePosition();
-
         // player or player's pet
         float GetCombatRatingReduction(CombatRating cr) const;
         uint32 GetCombatRatingDamageReduction(CombatRating cr, float rate, float cap, uint32 damage) const;
-
-    protected:
-        void SetFeared(bool apply);
-        void SetConfused(bool apply);
-        void SetStunned(bool apply);
-        void SetRooted(bool apply, bool packetOnly = false);
-
-        uint32 m_movementCounter;       ///< Incrementing counter used in movement packets
 
     private:
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
-        TimeTrackerSmall m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units that are threatened by us
@@ -2273,9 +2089,109 @@ class Unit : public WorldObject
         bool m_cleanupDone; // lock made to not add stuff after cleanup before delete
         bool m_duringRemoveFromWorld; // lock made to not add stuff after begining removing from world
 
+        time_t _lastDamagedTime; // Part of Evade mechanics
+
+    // =================================================================================== //
+
+        /*** Movement functions - Handled by UnitMovementMgr or locally. ***/
+    public:
+        float GetSpeed(UnitMoveType mtype) const;
+        float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
+        void SetSpeed(UnitMoveType mtype, float rate, bool forced = false);
+        void UpdateSpeed(UnitMoveType mtype, bool forced);
+        void propagateSpeedChange() { GetMotionMaster()->propagateSpeedChange(); }
+
+        MotionMaster* GetMotionMaster() { return i_motionMaster; }
+        const MotionMaster* GetMotionMaster() const { return i_motionMaster; }
+
+        bool IsStopped() const { return !(HasUnitState(UNIT_STATE_MOVING)); }
+        void StopMoving();
+
+        void AddUnitMovementFlag(uint32 f) { m_movementInfo.AddMovementFlag(f); }
+        void RemoveUnitMovementFlag(uint32 f) { m_movementInfo.RemoveMovementFlag(f); }
+        bool HasUnitMovementFlag(uint32 f) const { return m_movementInfo.HasMovementFlag(f); }
+        uint32 GetUnitMovementFlags() const { return m_movementInfo.GetMovementFlags(); }
+        void SetUnitMovementFlags(uint32 f) { m_movementInfo.SetMovementFlags(f); }
+
+        void AddExtraUnitMovementFlag(uint16 f) { m_movementInfo.AddExtraMovementFlag(f); }
+        void RemoveExtraUnitMovementFlag(uint16 f) { m_movementInfo.RemoveExtraMovementFlag(f); }
+        uint16 HasExtraUnitMovementFlag(uint16 f) const { return m_movementInfo.HasExtraMovementFlag(f); }
+        uint16 GetExtraUnitMovementFlags() const { return m_movementInfo.GetExtraMovementFlags(); }
+        void SetExtraUnitMovementFlags(uint16 f) { m_movementInfo.SetExtraMovementFlags(f); }
+        bool IsSplineEnabled() const;
+
+        void WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusElement* extras = NULL);
+
+        void MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath = false, bool forceDestination = false);
+
+        void SendMoveKnockBack(Player* player, float speedXY, float speedZ, float vcos, float vsin);
+        void KnockbackFrom(float x, float y, float speedXY, float speedZ);
+        void JumpTo(float speedXY, float speedZ, bool forward = true);
+        void JumpTo(WorldObject* obj, float speedZ);
+		void SendMovementSetSplineAnim(Movement::AnimType anim);
+        void SendSetPlayHoverAnim(bool enable);
+
+        bool isMoving() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
+        bool isTurning() const  { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
+        virtual bool CanFly() const = 0;
+        bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
+        bool IsFalling() const;
+        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY); }
+        bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING); }
+        bool SetWalk(bool enable);
+        bool SetDisableGravity(bool disable, bool packetOnly = false);
+        bool SetFall(bool enable);
+        bool SetSwim(bool enable);
+        bool SetCanFly(bool enable);
+        bool SetWaterWalking(bool enable, bool packetOnly = false);
+        bool SetFeatherFall(bool enable, bool packetOnly = false);
+        bool SetHover(bool enable, bool packetOnly = false);
+
+        // Movement info
+        Movement::MoveSpline * movespline;
+
+        uint32 GetMovementCounter() const { return m_movementCounter; } 
+
+    protected:
+        void SetFeared(bool apply);
+        void SetConfused(bool apply);
+        void SetStunned(bool apply);
+        void SetRooted(bool apply, bool packetOnly = false);
+
+        void DisableSpline();
+
+        MotionMaster* i_motionMaster;
+        uint32 m_movementCounter;       ///< Incrementing counter used in movement packets
+
+    private:
         bool _isWalkingBeforeCharm; // Are we walking before we were charmed?
 
-        time_t _lastDamagedTime; // Part of Evade mechanics
+        void UpdateSplineMovement(uint32 t_diff);
+        void UpdateSplinePosition();
+
+        TimeTrackerSmall m_movesplineTimer;
+
+        /*** Positions functions - Handled by UnitMovementMgr or locally. ***/
+    public:
+        void SendTeleportPacket(Position& pos);
+
+        virtual bool UpdatePosition(float x, float y, float z, float ang, bool teleport = false);
+        bool UpdatePosition(const Position &pos, bool teleport = false); // Returns true if unit's position really changed
+        void UpdateOrientation(float orientation);
+        void UpdateHeight(float newZ);
+
+        void SetInFront(WorldObject const* target);
+        void SetFacingTo(float ori);
+        void SetFacingToObject(WorldObject* object);
+
+        bool isInFrontInMap(Unit const* target, float distance, float arc = M_PI) const;
+        bool isInBackInMap(Unit const* target, float distance, float arc = M_PI) const;
+
+        float GetPositionZMinusOffset() const;
+        virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }
+
+    protected:
+        void GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const;
 };
 
 namespace Trinity
