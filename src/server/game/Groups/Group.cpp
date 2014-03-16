@@ -2380,11 +2380,11 @@ void Group::SetLfgRoles(uint64 guid, const uint8 roles)
     SendUpdate();
 }
 
-uint8 Group::GetLfgRoles(uint64 guid);
+uint8 Group::GetLfgRoles(uint64 guid)
 {
     member_witerator slot = _getMemberWSlot(guid);
     if (slot == m_memberSlots.end())
-        return;
+        return 0;
 
     return slot->roles;
 }

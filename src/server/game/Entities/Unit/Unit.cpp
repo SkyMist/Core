@@ -11809,7 +11809,7 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
         case UNIT_MOD_ALTERNATIVE:    return POWER_ALTERNATE_POWER;
         case UNIT_MOD_DARK_FORCE:     return POWER_DARK_FORCE;
         case UNIT_MOD_CHI:            return POWER_CHI;
-        case UNIT_MOD_SHADOW_ORBS:    return POWER_SHADOW_ORB;
+        case UNIT_MOD_SHADOW_ORBS:    return POWER_SHADOW_ORBS;
         case UNIT_MOD_BURNING_EMBERS: return POWER_BURNING_EMBERS;
         case UNIT_MOD_DEMONIC_FURY:   return POWER_DEMONIC_FURY;
         case UNIT_MOD_ARCANE_CHARGES: return POWER_ARCANE_CHARGES;

@@ -2707,7 +2707,7 @@ void Player::Regenerate(Powers power)
         break;
         case POWER_SOUL_SHARDS:                                         // Regenerate Soul Shards
         {
-            if (!isInCombat()) // If not in combat, gain 1 shard every 20s.
+            if (!IsInCombat()) // If not in combat, gain 1 shard every 20s.
                 addvalue += 100.0f;
 
             // Handle Verdant Spheres Glyph.
@@ -2741,7 +2741,7 @@ void Player::Regenerate(Powers power)
         case POWER_BURNING_EMBERS:                                      // Regenerate Burning Embers
         {
             // After 15 seconds return to one Embers if none / less or return to one by removing one at a time if more.
-            if (!isInCombat())
+            if (!IsInCombat())
             {
                 if (GetPower(POWER_BURNING_EMBERS) < 10)
                     addvalue += float(10 - GetPower(POWER_BURNING_EMBERS));
@@ -2802,7 +2802,7 @@ void Player::Regenerate(Powers power)
         }
         break;
         case POWER_DEMONIC_FURY:                                            // Regenerate Demonic Fury - Note: Cannot go under 200.
-            if (!isInCombat() && GetShapeshiftForm() != FORM_METAMORPHOSIS)
+            if (!IsInCombat() && GetShapeshiftForm() != FORM_METAMORPHOSIS)
             {
                 if (GetPower(POWER_DEMONIC_FURY) > 200)
                     addvalue += -1.0f;    // Remove 1 each 100ms
