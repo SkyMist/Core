@@ -288,9 +288,6 @@ namespace Movement
         if (!data.WriteBit(!moveSpline.Finalized()))
             return;
 
-        if (!data.WriteBit(!moveSpline.Finalized()))
-            return;
-
         data.WriteBit(moveSpline.splineflags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation));
         data.WriteBits(moveSpline.spline.mode(), 2);
         data.WriteBits(moveSpline.getPath().size(), 20);
