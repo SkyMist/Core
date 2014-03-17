@@ -3584,13 +3584,15 @@ void Player::InitStatsForLevel(bool reapplyMods)
     for (uint8 i = 0; i < 7; ++i)
         SetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE+i, 0.0f);
 
-    // Parry, Block, Dodge.
+    // Parry, Block.
     SetFloatValue(PLAYER_FIELD_PARRY_PERCENTAGE, 0.0f);
     SetFloatValue(PLAYER_FIELD_BLOCK_PERCENTAGE, 0.0f);
-    SetFloatValue(PLAYER_FIELD_DODGE_PERCENTAGE, 0.0f);
 
     // Static 30% damage blocked
     SetUInt32Value(PLAYER_FIELD_SHIELD_BLOCK, 30);
+
+    // Dodge percentage
+    SetFloatValue(PLAYER_FIELD_DODGE_PERCENTAGE, 0.0f);
 
     // set armor (resistance 0) to original value (create_agility*2)
     SetArmor(int32(m_createStats[STAT_AGILITY]*2));
@@ -20546,7 +20548,7 @@ void Player::_SaveStats(SQLTransaction& trans)
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
         stmt->setUInt32(index++, GetResistance(SpellSchools(i)));
 
-    stmt->setFloat(index++, GetFloatValue(PLAYER_FIELD_PLAYER_FLAGS));
+    stmt->setFloat(index++, GetFloatValue(PLAYER_FIELD_BLOCK_PERCENTAGE));
     stmt->setFloat(index++, GetFloatValue(PLAYER_FIELD_DODGE_PERCENTAGE));
     stmt->setFloat(index++, GetFloatValue(PLAYER_FIELD_PARRY_PERCENTAGE));
     stmt->setFloat(index++, GetFloatValue(PLAYER_FIELD_CRIT_PERCENTAGE));
