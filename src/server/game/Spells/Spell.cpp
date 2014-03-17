@@ -6175,7 +6175,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_AURA_MOUNTED:
             {
-                if (m_caster->IsInWater())
+                if (m_caster->IsInWater() && !(m_spellInfo->AttributesEx8 & SPELL_ATTR8_WATER_MOUNT)) // Except for water mounts, this fixes Vashj'ir and older ones.
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells

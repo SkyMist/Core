@@ -1764,6 +1764,14 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
         && dz < info->maxZ + radius && dz > info->minZ - radius;
 }
 
+void GameObject::Rebuild()
+{
+    RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
+    SetUInt32Value(GAMEOBJECT_DISPLAYID, m_goInfo->displayId);
+    m_goValue->Building.Health = m_goInfo->building.intactNumHits + m_goInfo->building.damagedNumHits;
+    EventInform(m_goInfo->building.rebuildingEvent);
+}
+
 void GameObject::EventInform(uint32 eventId)
 {
     if (!eventId)

@@ -820,6 +820,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         void CastSpell(Unit* target, uint32 spell);
         void SendCustomAnim(uint32 anim);
         bool IsInRange(float x, float y, float z, float radius) const;
+        void Rebuild();
 
         void ModifyHealth(int32 change, Unit* attackerOrHealer = NULL, uint32 spellId = 0);
         // sets GameObject type 33 destruction flags and optionally default health for that state
