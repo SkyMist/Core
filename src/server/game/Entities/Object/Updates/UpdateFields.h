@@ -30,7 +30,13 @@ enum EObjectFields
     OBJECT_FIELD_ENTRY_ID                                    = 0x5, // Size: 1, Flags: UF_FLAG_VIEWER_DEPENDENT
     OBJECT_FIELD_DYNAMIC_FLAGS                               = 0x6, // Size: 1, Flags: UF_FLAG_VIEWER_DEPENDENT, UF_FLAG_URGENT
     OBJECT_FIELD_SCALE                                       = 0x7, // Size: 1, Flags: UF_FLAG_PUBLIC
-    OBJECT_END                                               = 0x8,
+    OBJECT_END                                               = 0x8
+};
+
+enum EObjectDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    OBJECT_DYNAMIC_END                                       = OBJECT_END + 0x00
 };
 
 enum EItemFields
@@ -50,7 +56,13 @@ enum EItemFields
     ITEM_FIELD_MAX_DURABILITY                                = OBJECT_END + 0x3A, // Size: 1, Flags: UF_FLAG_OWNER
     ITEM_FIELD_CREATE_PLAYED_TIME                            = OBJECT_END + 0x3B, // Size: 1, Flags: UF_FLAG_PUBLIC
     ITEM_FIELD_MODIFIERS_MASK                                = OBJECT_END + 0x3C, // Size: 1, Flags: UF_FLAG_OWNER
-    ITEM_END                                                 = OBJECT_END + 0x3D,
+    ITEM_END                                                 = OBJECT_END + 0x3D
+};
+
+enum EItemDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    ITEM_DYNAMIC_END                                         = OBJECT_DYNAMIC_END
 };
 
 enum EContainerFields
@@ -58,6 +70,12 @@ enum EContainerFields
     CONTAINER_FIELD_SLOTS                                    = ITEM_END + 0x00, // Size: 72, Flags: UF_FLAG_PUBLIC
     CONTAINER_FIELD_NUM_SLOTS                                = ITEM_END + 0x48, // Size: 1, Flags: UF_FLAG_PUBLIC
     CONTAINER_END                                            = ITEM_END + 0x49
+};
+
+enum EContainerDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    CONTAINER_DYNAMIC_END                                    = ITEM_DYNAMIC_END
 };
 
 enum EUnitFields
@@ -144,6 +162,13 @@ enum EUnitFields
     UNIT_FIELD_INTERACT_SPELL_ID                             = OBJECT_END + 0x97, // Size: 1, Flags: UF_FLAG_PUBLIC
     UNIT_END                                                 = OBJECT_END + 0x98
 };
+
+enum EUnitDynamicArrays // New Dynamic Flag Update System.
+{
+    UNIT_DYNAMIC_PASSIVE_SPELLS                              = OBJECT_DYNAMIC_END + 0x0,
+    UNIT_DYNAMIC_WORLD_EFFECTS                               = OBJECT_DYNAMIC_END + 0x101,
+    UNIT_DYNAMIC_END                                         = OBJECT_DYNAMIC_END + 0x202
+}
 
 enum EPlayerFields
 {
@@ -252,6 +277,13 @@ enum EPlayerFields
     PLAYER_END                                               = UNIT_END + 0x723
 };
 
+enum EPlayerDynamicArrays // New Dynamic Flag Update system.
+{
+    PLAYER_DYNAMIC_RESEARCH_SITES                            = UNIT_DYNAMIC_END + 0x0,
+    PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED                    = UNIT_DYNAMIC_END + 0x2,
+    PLAYER_DYNAMIC_END                                       = UNIT_DYNAMIC_END + 0x4
+};
+
 enum EGameObjectFields
 {
     GAMEOBJECT_FIELD_CREATED_BY                              = OBJECT_END + 0x0, // Size: 2, Flags: UF_FLAG_PUBLIC
@@ -265,6 +297,12 @@ enum EGameObjectFields
     GAMEOBJECT_END                                           = OBJECT_END + 0xC
 };
 
+enum EGameObjectDynamicArrays // New Dynamic Flag Update system.
+{
+    GAMEOBJECT_DYNAMIC_UNK                                   = OBJECT_DYNAMIC_END + 0x0, // Unknown field.
+    GAMEOBJECT_DYNAMIC_END                                   = OBJECT_DYNAMIC_END + 0x1
+};
+
 enum EDynamicObjectFields
 {
     DYNAMICOBJECT_FIELD_CASTER                               = OBJECT_END + 0x0, // Size: 2, Flags: UF_FLAGý_PUBLIC
@@ -273,6 +311,12 @@ enum EDynamicObjectFields
     DYNAMICOBJECT_FIELD_RADIUS                               = OBJECT_END + 0x4, // Size: 1, Flags: UF_FLAG_PUBLIC
     DYNAMICOBJECT_FIELD_CAST_TIME                            = OBJECT_END + 0x5, // Size: 1, Flags: UF_FLAG_PUBLIC
     DYNAMICOBJECT_END                                        = OBJECT_END + 0x6
+};
+
+enum EDynamicObjectDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    DYNAMICOBJECT_DYNAMIC_END                                = OBJECT_DYNAMIC_END
 };
 
 enum ECorpseFields
@@ -288,6 +332,12 @@ enum ECorpseFields
     CORPSE_END                                               = OBJECT_END + 0x1C
 };
 
+enum ECorpseDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    CORPSE_DYNAMIC_END                                       = OBJECT_DYNAMIC_END
+};
+
 enum EAreaTriggerFields
 {
     AREATRIGGER_FIELD_CASTER                                 = OBJECT_END + 0x0, // Size: 2, Flags: UF_FLAG_PUBLIC
@@ -298,6 +348,12 @@ enum EAreaTriggerFields
     AREATRIGGER_END                                          = OBJECT_END + 0x6
 };
 
+enum EAreaTriggerDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    AREATRIGGER_DYNAMIC_END                                  = OBJECT_DYNAMIC_END
+};
+
 enum ESceneObjectFields
 {
     SCENEOBJECT_FIELD_SCRIPT_PACKAGE_ID                      = OBJECT_END + 0x0, // Size: 1, Flags: UF_FLAG_PUBLIC
@@ -305,6 +361,12 @@ enum ESceneObjectFields
     SCENEOBJECT_FIELD_CREATED_BY                             = OBJECT_END + 0x2, // Size: 2, Flags: UF_FLAG_PUBLIC
     SCENEOBJECT_FIELD_SCENE_TYPE                             = OBJECT_END + 0x4, // Size: 1, Flags: UF_FLAG_PUBLIC
     SCENEOBJECT_FIELD_END                                    = OBJECT_END + 0x5
+};
+
+enum ESceneObjectDynamicArrays // New Dynamic Flag Update system.
+{
+    // Empty.
+    SCENEOBJECT_DYNAMIC_END                                  = OBJECT_DYNAMIC_END
 };
 
 #endif // _UPDATEFIELDS_H

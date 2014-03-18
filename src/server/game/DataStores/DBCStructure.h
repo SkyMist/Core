@@ -933,21 +933,21 @@ struct DestructibleModelDataEntry
     uint32 IntactDisplayId;                                 // 1
     // uint32 unk2;                                         // 2
     // uint32 unk3;                                         // 3
-    // uint32 unk4;                                         // 4
+    // float unk4;                                          // 4
     uint32 DamagedDisplayId;                                // 5
     // uint32 unk6;                                         // 6
     // uint32 unk7;                                         // 7
     // uint32 unk8;                                         // 8
-    // uint32 unk9;                                         // 9
+    // float unk9;                                          // 9
     uint32 DestroyedDisplayId;                              // 10
     // uint32 unk11;                                        // 11
     // uint32 unk12;                                        // 12
-    // uint32 unk13;                                        // 13
-    // uint32 unk14;                                        // 14
+    // float  unk13;                                        // 13
+    // float unk14;                                         // 14
     uint32 RebuildingDisplayId;                             // 15
     // uint32 unk16;                                        // 16
     // uint32 unk17;                                        // 17
-    // uint32 unk18;                                        // 18
+    // float unk18;                                         // 18
     // uint32 unk19;                                        // 19
     uint32 SmokeDisplayId;                                  // 20
     // uint32 unk21;                                        // 21
