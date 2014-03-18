@@ -1146,21 +1146,33 @@ MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, Difficulty &di
     MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
     if (!mapDiff)
     {
-        if (tmpDiff > RAID_DIFFICULTY_25MAN_NORMAL) // heroic, downscale to normal
-            tmpDiff -= 2;
-        else
-            tmpDiff -= 1;   // any non-normal mode for raids like tbc (only one mode)
+        switch (tmpDiff)
+        {
+            case DUNGEON_DIFFICULTY_HEROIC:
+                tmpDiff = DUNGEON_DIFFICULTY_NORMAL;
+                break;
+
+            case RAID_DIFFICULTY_10MAN_HEROIC:
+                tmpDiff = RAID_DIFFICULTY_10MAN_NORMAL;
+                break;
+
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                tmpDiff = RAID_DIFFICULTY_25MAN_NORMAL;
+                break;
+
+            case SCENARIO_DIFFICULTY_HEROIC:
+                tmpDiff = SCENARIO_DIFFICULTY_NORMAL;
+                break;
+
+            default: break;
+        }
 
         // pull new data
-        mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff)); // we are 10 normal or 25 normal
-        if (!mapDiff)
-        {
-            tmpDiff -= 1;
-            mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff)); // 10 normal
-        }
+        mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
     }
 
     difficulty = Difficulty(tmpDiff);
+
     return mapDiff;
 }
 

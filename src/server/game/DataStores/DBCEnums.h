@@ -327,27 +327,33 @@ enum Difficulty
 {
     REGULAR_DIFFICULTY           = 0,
 
-    DUNGEON_DIFFICULTY_NORMAL    = 0,
-    DUNGEON_DIFFICULTY_HEROIC    = 1,
-    DUNGEON_DIFFICULTY_CHALLENGE = 2,
+    DUNGEON_DIFFICULTY_NORMAL    = 1,
+    DUNGEON_DIFFICULTY_HEROIC    = 2,
+    DUNGEON_DIFFICULTY_CHALLENGE = 8,
 
-    RAID_DIFFICULTY_10MAN_NORMAL = 0,
-    RAID_DIFFICULTY_25MAN_NORMAL = 1,
-    RAID_DIFFICULTY_10MAN_HEROIC = 2,
-    RAID_DIFFICULTY_25MAN_HEROIC = 3,
-    RAID_DIFFICULTY_10MAN_FLEX   = 4,
-    RAID_DIFFICULTY_25MAN_LFR    = 5,
-    
-    SCENARIO_DIFFICULTY_NORMAL   = 0,
-    SCENARIO_DIFFICULTY_HEROIC   = 1
+    RAID_DIFFICULTY_10MAN_NORMAL = 3,
+    RAID_DIFFICULTY_25MAN_NORMAL = 4,
+    RAID_DIFFICULTY_10MAN_HEROIC = 5,
+    RAID_DIFFICULTY_25MAN_HEROIC = 6,
+    RAID_DIFFICULTY_25MAN_LFR    = 7,
+    RAID_DIFFICULTY_1025MAN_FLEX = 14, // This is from the new Raid Flex system. Only Siege of Ogrimmar (Map 1136) has it.
+
+    RAID_DIFFICULTY_40MAN        = 9,  // Seems used for: 1) Guild group checking - 10 / 40 (ex. : Guild achievs in BG's); 2) Raids - maps 169, 409, 469, 531.
+
+    SCENARIO_DIFFICULTY_NORMAL   = 12, // MOP new, 1-3 players. Depends on scenario, many solo.
+    SCENARIO_DIFFICULTY_HEROIC   = 11  // MOP 5.3, 3 players to start, minimum iLvl 480.
 };
 
-#define RAID_DIFFICULTY_MASK_25MAN 1    // since 25man difficulties are 1 and 3, we can check them like that
+#define MAX_DUNGEON_DIFFICULTY     DUNGEON_DIFFICULTY_CHALLENGE + 1
+#define MAX_RAID_DIFFICULTY        RAID_DIFFICULTY_1025MAN_FLEX + 1
+#define MAX_SCENARIO_DIFFICULTY    SCENARIO_DIFFICULTY_HEROIC + 1
+#define MAX_DIFFICULTY             RAID_DIFFICULTY_1025MAN_FLEX + 1
 
-#define MAX_DUNGEON_DIFFICULTY     3
-#define MAX_RAID_DIFFICULTY        6
-#define MAX_SCENARIO_DIFFICULTY    2
-#define MAX_DIFFICULTY             4 // temp hack Should be 6 but need to finish the DB side.
+// Used for DB creature_template selections and other stuff.
+// Creatures for Dungeons are template selected entry(5N), difficulty_entry_1(5H), difficulty_entry_2(5C).
+// Creatures for Raids are template selected entry (10N), difficulty_entry_1(25N), difficulty_entry_2(10H), difficulty_entry_3(25H), difficulty_entry_4 (LFR), difficulty_entry_5 (Flex).
+// Creatures for Scenarios are template selected entry(3N), difficulty_entry_1(3H).
+#define MAX_TEMPLATE_DIFFICULTY    RAID_DIFFICULTY_25MAN_HEROIC // Actually it's 6, because we have 6 raid types.
 
 enum SpawnMask
 {

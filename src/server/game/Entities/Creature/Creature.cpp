@@ -271,10 +271,47 @@ bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data
         return false;
     }
 
-    // get difficulty 1 mode entry
+    // Get difficulty 1 mode entry
     CreatureTemplate const* cinfo = normalInfo;
-    for (uint8 diff = uint8(GetMap()->GetSpawnMode()); diff > 0;)
+
+    for (uint8 diff = GetMap()->GetSpawnMode(); diff > 0;)
     {
+        // Adjust template selection based on difficulty type.
+        switch (Difficulty(diff)
+        {
+            case DUNGEON_DIFFICULTY_NORMAL:
+            case RAID_DIFFICULTY_10MAN_NORMAL:
+            case RAID_DIFFICULTY_40MAN:
+            case SCENARIO_DIFFICULTY_NORMAL:
+                diff = 1;
+                break;
+        
+            case DUNGEON_DIFFICULTY_HEROIC:
+            case RAID_DIFFICULTY_25MAN_NORMAL:
+            case SCENARIO_DIFFICULTY_HEROIC:
+                diff = 2;
+                break;
+        
+            case DUNGEON_DIFFICULTY_CHALLENGE:
+            case RAID_DIFFICULTY_10MAN_HEROIC:
+                diff = 3;
+                break;
+        
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                diff = 4;
+                break;
+        
+            case RAID_DIFFICULTY_25MAN_LFR:
+                diff = 5;
+                break;
+        
+            case RAID_DIFFICULTY_1025MAN_FLEX:
+                diff = 6;
+                break;
+        
+            default: break;
+        }
+
         // we already have valid Map pointer for current creature!
         if (normalInfo->DifficultyEntry[diff - 1])
         {
@@ -286,11 +323,7 @@ bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data
             cinfo = normalInfo;
         }
 
-        // for instances heroic to normal, other cases attempt to retrieve previous difficulty
-        if (diff >= RAID_DIFFICULTY_10MAN_HEROIC && GetMap()->IsRaid())
-            diff -= 2;                                      // to normal raid difficulty cases
-        else
-            --diff;
+        --diff;
     }
 
     // Initialize loot duplicate count depending on raid difficulty

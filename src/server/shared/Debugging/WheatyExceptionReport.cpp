@@ -749,7 +749,7 @@ ULONG         /*SymbolSize*/,
 PVOID         UserContext)
 {
 
-    char szBuffer[4092];
+    char szBuffer[8192];
 
     __try
     {
@@ -1030,7 +1030,7 @@ WheatyExceptionReport::GetBasicType(DWORD typeIndex, DWORD64 modBase)
 //============================================================================
 int __cdecl WheatyExceptionReport::_tprintf(const TCHAR * format, ...)
 {
-    TCHAR szBuff[4092];
+    TCHAR szBuff[8192];
     int retValue;
     DWORD cbWritten;
     va_list argptr;
