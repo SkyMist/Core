@@ -627,44 +627,8 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
         return;
 
     bool ok = true;                                     // bool to allow continue outside this loop
-    for (uint32 diff = 0; diff < MAX_DIFFICULTY - 1 && ok; ++diff)
+    for (uint32 diff = 0; diff < MAX_TEMPLATE_DIFFICULTY - 1 && ok; ++diff)
     {
-        // Adjust template selection based on difficulty type.
-        switch (Difficulty(diff))
-        {
-            case DUNGEON_DIFFICULTY_NORMAL:
-            case RAID_DIFFICULTY_10MAN_NORMAL:
-            case RAID_DIFFICULTY_40MAN:
-            case SCENARIO_DIFFICULTY_NORMAL:
-                diff = 0;
-                break;
-
-            case DUNGEON_DIFFICULTY_HEROIC:
-            case RAID_DIFFICULTY_25MAN_NORMAL:
-            case SCENARIO_DIFFICULTY_HEROIC:
-                diff = 1;
-                break;
-
-            case DUNGEON_DIFFICULTY_CHALLENGE:
-            case RAID_DIFFICULTY_10MAN_HEROIC:
-                diff = 2;
-                break;
-
-            case RAID_DIFFICULTY_25MAN_HEROIC:
-                diff = 3;
-                break;
-
-            case RAID_DIFFICULTY_25MAN_LFR:
-                diff = 4;
-                break;
-
-            case RAID_DIFFICULTY_1025MAN_FLEX:
-                diff = 5;
-                break;
-
-            default: break;
-        }
-
         if (!cInfo->DifficultyEntry[diff])
             continue;
 

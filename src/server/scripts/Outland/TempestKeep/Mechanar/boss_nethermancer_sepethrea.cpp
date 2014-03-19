@@ -172,7 +172,7 @@ class npc_ragin_flames : public CreatureScript
                     onlyonce = false;
                     me->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_MAGIC, true);
                     me->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, true);
-                    me->SetSpeed(MOVE_RUN, DUNGEON_MODE(0.5f, 0.7f));
+                    me->SetSpeed(MOVE_RUN, DUNGEON_MODE(0.5f, 0.7f, 0.5f));
                 }
 
                 void EnterCombat(Unit* /*who*/) OVERRIDE

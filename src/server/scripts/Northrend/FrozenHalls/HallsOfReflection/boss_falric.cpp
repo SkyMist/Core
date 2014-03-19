@@ -134,7 +134,7 @@ public:
                 || (uiHopelessnessCount < 3 && HealthBelowPct(10)))
             {
                 uiHopelessnessCount++;
-                DoCast(DUNGEON_MODE(SPELL_HOPELESSNESS, H_SPELL_HOPELESSNESS));
+                DoCast(SPELL_HOPELESSNESS);
             }
 
             DoMeleeAttackIfReady();

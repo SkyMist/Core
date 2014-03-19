@@ -243,7 +243,7 @@ public:
                 me->SummonCreature(NPC_STASIS_CONTROLLER, moveLocs[5].x, moveLocs[5].y, moveLocs[5].z, 0, TEMPSUMMON_CORPSE_DESPAWN);
             }
             Phase move = PHASE_NONE;
-            if (AddCount >= DUNGEON_MODE(2, 4))
+            if (AddCount >= DUNGEON_MODE(2, 4, 2))
                 move = PHASE_GORTOK_PALEHOOF;
             else
                 move = Sequence[AddCount++];

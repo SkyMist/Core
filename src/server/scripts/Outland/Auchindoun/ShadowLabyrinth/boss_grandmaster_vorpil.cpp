@@ -247,7 +247,7 @@ class npc_voidtraveler : public CreatureScript
 
                     if (_sacrificed)
                     {
-                        DoCastAOE(DUNGEON_MODE(SPELL_EMPOWERING_SHADOWS, H_SPELL_EMPOWERING_SHADOWS), true);
+                        DoCastAOE(SPELL_EMPOWERING_SHADOWS, true);
                         DoCast(me, SPELL_SHADOW_NOVA, true);
                         me->Kill(me);
                         return;

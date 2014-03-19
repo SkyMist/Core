@@ -277,45 +277,44 @@ bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data
     for (uint8 diff = GetMap()->GetSpawnMode(); diff > 0;)
     {
         // Adjust template selection based on difficulty type.
-        switch (Difficulty(diff)
+        switch (Difficulty(diff))
         {
             case DUNGEON_DIFFICULTY_NORMAL:
             case RAID_DIFFICULTY_10MAN_NORMAL:
             case RAID_DIFFICULTY_40MAN:
             case SCENARIO_DIFFICULTY_NORMAL:
-                diff = 1;
-                break;
-        
+                continue;
+
             case DUNGEON_DIFFICULTY_HEROIC:
             case RAID_DIFFICULTY_25MAN_NORMAL:
             case SCENARIO_DIFFICULTY_HEROIC:
-                diff = 2;
+                diff = 0;
                 break;
-        
+
             case DUNGEON_DIFFICULTY_CHALLENGE:
             case RAID_DIFFICULTY_10MAN_HEROIC:
+                diff = 1;
+                break;
+
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                diff = 2;
+                break;
+
+            case RAID_DIFFICULTY_25MAN_LFR:
                 diff = 3;
                 break;
-        
-            case RAID_DIFFICULTY_25MAN_HEROIC:
+
+            case RAID_DIFFICULTY_1025MAN_FLEX:
                 diff = 4;
                 break;
-        
-            case RAID_DIFFICULTY_25MAN_LFR:
-                diff = 5;
-                break;
-        
-            case RAID_DIFFICULTY_1025MAN_FLEX:
-                diff = 6;
-                break;
-        
+
             default: break;
         }
 
         // we already have valid Map pointer for current creature!
-        if (normalInfo->DifficultyEntry[diff - 1])
+        if (normalInfo->DifficultyEntry[diff])
         {
-            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[diff - 1]);
+            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[diff]);
             if (cinfo)
                 break;                                      // template found
 

@@ -198,7 +198,7 @@ public:
             {
                 lSparkList.Summon(summoned);
 
-                summoned->CastSpell(summoned, DUNGEON_MODE(SPELL_SPARK_VISUAL_TRIGGER, H_SPELL_SPARK_VISUAL_TRIGGER), true);
+                summoned->CastSpell(summoned, SPELL_SPARK_VISUAL_TRIGGER, true);
 
                 if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                 {

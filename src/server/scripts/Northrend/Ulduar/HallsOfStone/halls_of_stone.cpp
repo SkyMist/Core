@@ -220,7 +220,7 @@ public:
                                 if (Creature* pKaddrak = Unit::GetCreature(*me, *itr))
                                 {
                                     if (pKaddrak->IsAlive())
-                                        pKaddrak->CastSpell(target, DUNGEON_MODE(SPELL_GLARE_OF_THE_TRIBUNAL, H_SPELL_GLARE_OF_THE_TRIBUNAL), true);
+                                        pKaddrak->CastSpell(target, SPELL_GLARE_OF_THE_TRIBUNAL, true);
                                 }
                             }
                     uiKaddrakEncounterTimer = 1500;
@@ -236,7 +236,7 @@ public:
                         {
                             summon->SetDisplayId(11686);
                             summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            summon->CastSpell(target, DUNGEON_MODE(SPELL_DARK_MATTER, H_SPELL_DARK_MATTER), true);
+                            summon->CastSpell(target, SPELL_DARK_MATTER, true);
                         }
                     }
                     uiMarnakEncounterTimer = urand(30000, 31000);
@@ -252,7 +252,7 @@ public:
                         {
                             summon->SetDisplayId(11686);
                             summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            summon->CastSpell(target, DUNGEON_MODE(SPELL_SEARING_GAZE, H_SPELL_SEARING_GAZE), true);
+                            summon->CastSpell(target, SPELL_SEARING_GAZE, true);
                         }
                     }
                     uiAbedneumEncounterTimer = urand(30000, 31000);
@@ -383,7 +383,7 @@ public:
            {
                case 1:
                {
-                   uint32 uiSpawnNumber = DUNGEON_MODE(2, 3);
+                   uint32 uiSpawnNumber = DUNGEON_MODE(2, 3, 2);
                    for (uint8 i = 0; i < uiSpawnNumber; ++i)
                        me->SummonCreature(NPC_DARK_RUNE_PROTECTOR, SpawnLocations[0], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000);
                    me->SummonCreature(NPC_DARK_RUNE_STORMCALLER, SpawnLocations[0], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000);

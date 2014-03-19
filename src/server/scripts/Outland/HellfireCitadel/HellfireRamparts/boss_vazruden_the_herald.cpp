@@ -99,7 +99,7 @@ class boss_nazan : public CreatureScript
                 {
                     summoned->SetLevel(me->getLevel());
                     summoned->setFaction(me->getFaction());
-                    summoned->CastSpell(summoned, DUNGEON_MODE(SPELL_SUMMON_LIQUID_FIRE, SPELL_SUMMON_LIQUID_FIRE_H), true);
+                    summoned->CastSpell(summoned, SPELL_SUMMON_LIQUID_FIRE, true);
                     summoned->CastSpell(summoned, SPELL_FIRE_NOVA_VISUAL, true);
                 }
             }
@@ -118,7 +118,7 @@ class boss_nazan : public CreatureScript
                 if (Fireball_Timer <= diff)
                 {
                     if (Unit* victim = SelectTarget(SELECT_TARGET_RANDOM, 0))
-                        DoCast(victim, DUNGEON_MODE(SPELL_FIREBALL, SPELL_FIREBALL_H), true);
+                        DoCast(victim, SPELL_FIREBALL, true);
                     Fireball_Timer = urand(4000, 7000);
                 }
                 else
@@ -158,7 +158,7 @@ class boss_nazan : public CreatureScript
                 {
                     if (ConeOfFire_Timer <= diff)
                     {
-                        DoCast(me, DUNGEON_MODE(SPELL_CONE_OF_FIRE, SPELL_CONE_OF_FIRE_H));
+                        DoCast(me, SPELL_CONE_OF_FIRE);
                         ConeOfFire_Timer = 12000;
                         Fireball_Timer = 4000;
                     }
@@ -253,7 +253,7 @@ class boss_vazruden : public CreatureScript
                 if (Revenge_Timer <= diff)
                 {
                     if (Unit* victim = me->GetVictim())
-                        DoCast(victim, DUNGEON_MODE(SPELL_REVENGE, SPELL_REVENGE_H));
+                        DoCast(victim, SPELL_REVENGE);
                     Revenge_Timer = 5000;
                 }
                 else
@@ -421,7 +421,7 @@ class boss_vazruden_the_herald : public CreatureScript
                         }
                         else if (!lootSpawned)
                         {
-                            me->SummonGameObject(DUNGEON_MODE(GO_FEL_IRON_CHEST_NORMAL, GO_FEL_IRON_CHECT_HEROIC), VazrudenMiddle[0], VazrudenMiddle[1], VazrudenMiddle[2], 0, 0, 0, 0, 0, 0);
+                            me->SummonGameObject(DUNGEON_MODE(GO_FEL_IRON_CHEST_NORMAL, GO_FEL_IRON_CHECT_HEROIC, GO_FEL_IRON_CHEST_NORMAL), VazrudenMiddle[0], VazrudenMiddle[1], VazrudenMiddle[2], 0, 0, 0, 0, 0, 0);
                             me->SetLootRecipient(NULL); // don't think this is necessary..
                             //me->Kill(me);
                             lootSpawned = true;
