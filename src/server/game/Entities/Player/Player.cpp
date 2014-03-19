@@ -9258,10 +9258,45 @@ void Player::RemovedInsignia(Player* looterPlr)
     looterPlr->SendLoot(bones->GetGUID(), LOOT_INSIGNIA);
 }
 
-void Player::SendLootRelease(uint64 guid)
+void Player::SendLootRelease(ObjectGuid guid)
 {
-    WorldPacket data(SMSG_LOOT_RELEASE_RESPONSE, (8+1));
-    data << uint64(guid) << uint8(1);
+    ObjectGuid lootGuid = guid;
+
+    WorldPacket data(SMSG_LOOT_RELEASE_RESPONSE, 20);
+
+    data.WriteBit(guid[2]);
+    data.WriteBit(lootGuid[4]);
+    data.WriteBit(lootGuid[3]);
+    data.WriteBit(lootGuid[6]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(lootGuid[5]);
+    data.WriteBit(lootGuid[1]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(lootGuid[7]);
+    data.WriteBit(lootGuid[0]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(lootGuid[2]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[5]);
+    data.WriteByteSeq(lootGuid[6]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(lootGuid[0]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(lootGuid[2]);
+    data.WriteByteSeq(lootGuid[4]);
+    data.WriteByteSeq(lootGuid[7]);
+    data.WriteByteSeq(lootGuid[5]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(lootGuid[1]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(lootGuid[3]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+
     SendDirectMessage(&data);
 }
 
@@ -9568,9 +9603,7 @@ void Player::SendLoot(uint64 guid, LootType loot_type)
     loot->loot_type = loot_type;
 
     WorldPacket data(SMSG_LOOT_RESPONSE, 8 + 1 + 50 + 1 + 1);           // we guess size
-    data << uint64(guid);
-    data << uint8(loot_type);
-    data << LootView(*loot, this, permission);
+    LootView(*loot, this, permission).WriteData(guid, loot_type, &data);
 
     SendDirectMessage(&data);
 
@@ -9584,14 +9617,73 @@ void Player::SendLoot(uint64 guid, LootType loot_type)
 
 void Player::SendNotifyLootMoneyRemoved()
 {
-    WorldPacket data(SMSG_LOOT_CLEAR_MONEY, 0);
+    ObjectGuid guid = GetLootGUID();
+
+    WorldPacket data(SMSG_LOOT_CLEAR_MONEY, 9);
+
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[5]);
+
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[5]);
+
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendNotifyLootItemRemoved(uint8 lootSlot)
+void Player::SendNotifyLootItemRemoved(uint8 lootSlot, ObjectGuid guid)
 {
-    WorldPacket data(SMSG_LOOT_REMOVED, 1);
+    ObjectGuid lootGuid = guid;
+
+    WorldPacket data(SMSG_LOOT_REMOVED, 19);
+    data.WriteBit(lootGuid[1]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(lootGuid[0]);
+    data.WriteBit(lootGuid[6]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(lootGuid[3]);
+    data.WriteBit(lootGuid[7]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(lootGuid[2]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(lootGuid[5]);
+    data.WriteBit(lootGuid[4]);
+
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(lootGuid[0]);
+    data.WriteByteSeq(lootGuid[6]);
+    data.WriteByteSeq(lootGuid[1]);
+    data.WriteByteSeq(lootGuid[4]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(lootGuid[7]);
+    data.WriteByteSeq(lootGuid[3]);
+
     data << uint8(lootSlot);
+
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(lootGuid[5]);
+    data.WriteByteSeq(lootGuid[2]);
+
     GetSession()->SendPacket(&data);
 }
 
@@ -12223,7 +12315,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
     {
         if (_class == CLASS_WARRIOR || _class == CLASS_PALADIN || _class == CLASS_DEATH_KNIGHT)
         {
-            if (getLevel() < 40)
+            if (getLevel() < 40) //Need confirmation in 5.x
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_MAIL)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -12233,7 +12325,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
         }
         else if (_class == CLASS_HUNTER || _class == CLASS_SHAMAN)
         {
-            if (getLevel() < 40)
+            if (getLevel() < 40) //Need confirmation in 5.x
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_LEATHER)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -12249,6 +12341,10 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
         if (_class == CLASS_MAGE || _class == CLASS_PRIEST || _class == CLASS_WARLOCK)
             if (proto->SubClass != ITEM_SUBCLASS_ARMOR_CLOTH)
                 return EQUIP_ERR_CLIENT_LOCKED_OUT;
+
+		if (_class == CLASS_MONK)
+			if((proto->SubClass != ITEM_SUBCLASS_ARMOR_CLOTH) || (proto->SubClass != ITEM_SUBCLASS_ARMOR_LEATHER))
+				return EQUIP_ERR_CLIENT_LOCKED_OUT;
     }
 
     return EQUIP_ERR_OK;
@@ -14662,11 +14758,86 @@ void Player::SendItemDurations()
 
 void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast)
 {
-    if (!item)                                               // prevent crash
+    if (!item)                                              // prevent crash
         return;
 
-                                                            // last check 2.0.10
-    WorldPacket data(SMSG_ITEM_PUSH_RESULT, (8+4+4+4+1+4+4+4+4+4));
+    ObjectGuid playerGuid = GetGUID();
+    ObjectGuid unknownGuid = uint64(0);
+
+    WorldPacket data(SMSG_ITEM_PUSH_RESULT, 1 + 8 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4);
+
+    data.WriteBit(1);                                       // display in chat
+    data.WriteBit(created);                                 // 0 = received, 1 = created
+
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[4]);
+    data.WriteBit(unknownGuid[3]);
+    data.WriteBit(unknownGuid[7]);
+    data.WriteBit(unknownGuid[1]);
+    data.WriteBit(unknownGuid[4]);
+    data.WriteBit(unknownGuid[6]);
+
+    data.WriteBit(0);                                       // 1 = bonus item - "You received bonus loot"
+
+    data.WriteBit(playerGuid[5]);
+    data.WriteBit(playerGuid[1]);
+    data.WriteBit(unknownGuid[5]);
+    data.WriteBit(playerGuid[6]);
+    data.WriteBit(unknownGuid[2]);
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(unknownGuid[0]);
+    data.WriteBit(playerGuid[3]);
+
+    data.WriteBit(received);                                // 0 = looted, 1 = from npc
+
+    data.FlushBits();
+
+    // ! uint32 values order needs to be rechecked.
+    data.WriteByteSeq(unknownGuid[6]);
+
+    data << uint32(item->GetItemSuffixFactor());            // SuffixFactor
+
+    data.WriteByteSeq(playerGuid[1]);
+
+    data << uint32(0);
+    data << uint32(count);                                  // count of items
+    data << uint32(0);
+    data << uint32(item->GetItemRandomPropertyId());        // random item property id
+
+    data.WriteByteSeq(playerGuid[3]);
+    data.WriteByteSeq(unknownGuid[7]);
+    data.WriteByteSeq(playerGuid[5]);
+
+    data << uint32(0);
+
+    data.WriteByteSeq(playerGuid[2]);
+    data.WriteByteSeq(unknownGuid[0]);
+    data.WriteByteSeq(unknownGuid[1]);
+    data.WriteByteSeq(playerGuid[7]);
+
+    data << uint8(item->GetBagSlot());                      // bagslot
+    data << uint32(item->GetEntry());                       // item id
+    data << uint32(0);
+
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(unknownGuid[5]);
+    data.WriteByteSeq(unknownGuid[2]);
+
+    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory                          
+    data << uint32((item->GetCount() == count) ? item->GetSlot() : -1);// item slot, but when added to stack: 0xFFFFFFFF
+
+    data.WriteByteSeq(playerGuid[6]);
+    data.WriteByteSeq(unknownGuid[3]);
+    data.WriteByteSeq(unknownGuid[4]);
+
+    if (broadcast && GetGroup())
+        GetGroup()->BroadcastPacket(&data, true);
+    else
+        GetSession()->SendPacket(&data);
+
+    /*WorldPacket data(SMSG_ITEM_PUSH_RESULT, (8+4+4+4+1+4+4+4+4+4));
     data << uint64(GetGUID());                              // player GUID
     data << uint32(received);                               // 0=looted, 1=from npc
     data << uint32(created);                                // 0=received, 1=created
@@ -14678,12 +14849,7 @@ void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, 
     data << uint32(item->GetItemSuffixFactor());            // SuffixFactor
     data << int32(item->GetItemRandomPropertyId());         // random item property id
     data << uint32(count);                                  // count of items
-    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory
-
-    if (broadcast && GetGroup())
-        GetGroup()->BroadcastPacket(&data, true);
-    else
-        GetSession()->SendPacket(&data);
+    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory*/
 }
 
 /*********************************************************/
@@ -22241,12 +22407,30 @@ inline bool Player::_StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 c
     if (it)
     {
         uint32 new_count = pVendor->UpdateVendorItemCurrentCount(crItem, count);
+        ObjectGuid vGuid = pVendor->GetGUID();
 
-        WorldPacket data(SMSG_BUY_ITEM, (8+4+4+4));
-        data << uint64(pVendor->GetGUID());
-        data << uint32(vendorslot + 1);                   // numbered from 1 at client
-        data << int32(crItem->maxcount > 0 ? new_count : 0xFFFFFFFF);
+        WorldPacket data(SMSG_BUY_ITEM, 1 + 8 + 4 + 4 + 4);
+        data.WriteBit(vGuid[7]);
+        data.WriteBit(vGuid[0]);
+        data.WriteBit(vGuid[6]);
+        data.WriteBit(vGuid[1]);
+        data.WriteBit(vGuid[5]);
+        data.WriteBit(vGuid[2]);
+        data.WriteBit(vGuid[4]);
+        data.WriteBit(vGuid[3]);
+
+        data.WriteByteSeq(vGuid[1]);
+        data.WriteByteSeq(vGuid[5]);
+        data.WriteByteSeq(vGuid[2]);
+        data.WriteByteSeq(vGuid[3]);
+        data << uint32(vendorslot + 1); // numbered from 1 at client
+        data.WriteByteSeq(vGuid[0]);
+        data.WriteByteSeq(vGuid[6]);
         data << uint32(count);
+        data.WriteByteSeq(vGuid[7]);
+        data << int32(crItem->maxcount > 0 ? new_count : 0xFFFFFFFF);
+        data.WriteByteSeq(vGuid[4]);
+
         GetSession()->SendPacket(&data);
         SendNewItem(it, count, true, false, false);
 
@@ -25809,6 +25993,12 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
         return;
     }
 
+    if (!item->AllowedForPlayer(this))
+    {
+        SendLootRelease(GetLootGUID());
+        return;
+    }
+
     // questitems use the blocked field for other purposes
     if (!qitem && item->is_blocked)
     {
@@ -25828,7 +26018,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             qitem->is_looted = true;
             //freeforall is 1 if everyone's supposed to get the quest item.
             if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
-                SendNotifyLootItemRemoved(lootSlot);
+                SendNotifyLootItemRemoved(lootSlot, GetLootGUID());
             else
                 loot->NotifyQuestItemRemoved(qitem->index);
         }
@@ -25838,7 +26028,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             {
                 //freeforall case, notify only one player of the removal
                 ffaitem->is_looted = true;
-                SendNotifyLootItemRemoved(lootSlot);
+                SendNotifyLootItemRemoved(lootSlot, GetLootGUID());
             }
             else
             {
