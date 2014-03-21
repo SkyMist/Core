@@ -116,7 +116,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_BINDER_ACTIVATE,                         STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBinderActivateOpcode      );
     DEFINE_OPCODE_HANDLER(CMSG_BUG,                                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBugOpcode                 );
     DEFINE_OPCODE_HANDLER(CMSG_BUSY_TRADE,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBusyTradeOpcode           );
-    DEFINE_OPCODE_HANDLER(CMSG_BUYBACK_ITEM,                            STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBuybackItem               );
+    DEFINE_OPCODE_HANDLER(CMSG_BUYBACK_ITEM,                            STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBuybackItem               );
     DEFINE_OPCODE_HANDLER(CMSG_BUY_BANK_SLOT,                           STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBuyBankSlotOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_BUY_ITEM,                                STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBuyItemOpcode             );
     DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_ADD_EVENT,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarAddEvent          );
@@ -217,7 +217,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_FORCE_MOVE_ROOT_ACK,                     STATUS_UNHANDLED,    PROCESS_THREADSAFE,   &WorldSession::HandleMoveRootAck               );
     DEFINE_OPCODE_HANDLER(CMSG_FORCE_MOVE_UNROOT_ACK,                   STATUS_UNHANDLED,    PROCESS_THREADSAFE,   &WorldSession::HandleMoveUnRootAck             );
     DEFINE_OPCODE_HANDLER(CMSG_GAMEOBJECT_QUERY,                        STATUS_LOGGEDIN,     PROCESS_INPLACE,      &WorldSession::HandleGameObjectQueryOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_GAMEOBJ_REPORT_USE,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGameobjectReportUse       );
+    DEFINE_OPCODE_HANDLER(CMSG_GAMEOBJ_REPORT_USE,                      STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleGameobjectReportUse       );
     DEFINE_OPCODE_HANDLER(CMSG_GAMEOBJ_USE,                             STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGameObjectUseOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_GET_MAIL_LIST,                           STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGetMailList               );
     DEFINE_OPCODE_HANDLER(CMSG_GET_MIRRORIMAGE_DATA,                    STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleMirrorImageDataRequest    );
@@ -290,7 +290,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_IGNORE_TRADE,                            STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleIgnoreTradeOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_INITIATE_TRADE,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleInitiateTradeOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_INSPECT,                                 STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleInspectOpcode             );
-    DEFINE_OPCODE_HANDLER(CMSG_INSPECT_HONOR_STATS,                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleInspectHonorStatsOpcode   ); 
+    DEFINE_OPCODE_HANDLER(CMSG_INSPECT_HONOR_STATS,                     STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleInspectHonorStatsOpcode   ); 
     DEFINE_OPCODE_HANDLER(CMSG_INSTANCE_LOCK_WARNING_RESPONSE,          STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_ITEM_REFUND,                             STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleItemRefund                );
     DEFINE_OPCODE_HANDLER(CMSG_ITEM_REFUND_INFO,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleItemRefundInfoRequest     );

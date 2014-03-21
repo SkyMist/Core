@@ -97,7 +97,7 @@ enum Opcodes
    CMSG_BOT_DETECTED2                                       = 0x0,
    CMSG_BUG                                                 = 0x0,
    CMSG_BUSY_TRADE                                          = 0x0,
-   CMSG_BUYBACK_ITEM                                        = 0x0,
+   CMSG_BUYBACK_ITEM                                        = 0x07D7, // 5.4.7 18019
    CMSG_BUY_BANK_SLOT                                       = 0x00FE, // 5.4.7 18019
    CMSG_BUY_ITEM                                            = 0x1077, // 5.4.7 18019
    CMSG_CALENDAR_ADD_EVENT                                  = 0x0,
@@ -204,7 +204,7 @@ enum Opcodes
    CMSG_FORCE_MOVE_ROOT_ACK                                 = 0x0,
    CMSG_FORCE_MOVE_UNROOT_ACK                               = 0x0,
    CMSG_GAMEOBJECT_QUERY                                    = 0x14EA, // 5.4.7 18019
-   CMSG_GAMEOBJ_REPORT_USE                                  = 0x0,
+   CMSG_GAMEOBJ_REPORT_USE                                  = 0x06DF, // 5.4.7 18019
    CMSG_GAMEOBJ_USE                                         = 0x0,
    CMSG_GAMESPEED_SET                                       = 0x0,
    CMSG_GAME_STORE_BUY                                      = 0x1A83, // 5.4.7 18019
@@ -289,8 +289,8 @@ enum Opcodes
    CMSG_HEARTH_AND_RESURRECT                                = 0x0,
    CMSG_IGNORE_TRADE                                        = 0x0,
    CMSG_INITIATE_TRADE                                      = 0x0,
-   CMSG_INSPECT                                             = 0x0,
-   CMSG_INSPECT_HONOR_STATS                                 = 0x0,
+   CMSG_INSPECT                                             = 0x01D4, // 5.4.7 18019
+   CMSG_INSPECT_HONOR_STATS                                 = 0x047E, // 5.4.7 18019
    CMSG_INSTANCE_LOCK_WARNING_RESPONSE                      = 0x0,
    CMSG_ITEM_REFUND                                         = 0x0,
    CMSG_ITEM_REFUND_INFO                                    = 0x0,

@@ -10148,9 +10148,9 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
             if (!(mountCapability->Flags & MOUNT_FLAG_CAN_SWIM))
                 continue;
         }
-        else if (!(mountCapability->Flags & 0x1))   // unknown flags, checked in 4.2.2 14545 client
+        else if (!(mountCapability->Flags & MOUNT_FLAG_CAN_WALK))   // Mount can walk / fly.
         {
-            if (!(mountCapability->Flags & 0x2))
+            if (!(mountCapability->Flags & MOUNT_FLAG_CAN_FLY))
                 continue;
         }
 
@@ -11352,7 +11352,8 @@ bool Unit::IsInDisallowedMountForm() const
 {
     ShapeshiftForm form = GetShapeshiftForm();
     return form != FORM_NONE && form != FORM_BATTLESTANCE && form != FORM_BERSERKERSTANCE && form != FORM_DEFENSIVESTANCE &&
-        form != FORM_SHADOW && form != FORM_STEALTH && form != FORM_UNDEAD;
+        form != FORM_SHADOW && form != FORM_STEALTH && form != FORM_UNDEAD && form != FORM_WISE_SERPENT &&
+        form != FORM_STURDY_OX && form != FORM_FIERCE_TIGER && form != FORM_MOONKIN;
 }
 
 /*#######################################
