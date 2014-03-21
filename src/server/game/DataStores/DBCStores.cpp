@@ -1142,30 +1142,18 @@ MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty)
 
 MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, Difficulty &difficulty)
 {
-    uint32 tmpDiff = difficulty;
+    uint32 tmpDiff = uint32(difficulty);
     MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
     if (!mapDiff)
     {
-        switch (tmpDiff)
-        {
-            case DUNGEON_DIFFICULTY_HEROIC:
-                tmpDiff = DUNGEON_DIFFICULTY_NORMAL;
-                break;
-
-            case RAID_DIFFICULTY_10MAN_HEROIC:
-                tmpDiff = RAID_DIFFICULTY_10MAN_NORMAL;
-                break;
-
-            case RAID_DIFFICULTY_25MAN_HEROIC:
-                tmpDiff = RAID_DIFFICULTY_25MAN_NORMAL;
-                break;
-
-            case SCENARIO_DIFFICULTY_HEROIC:
-                tmpDiff = SCENARIO_DIFFICULTY_NORMAL;
-                break;
-
-            default: break;
-        }
+        if (Difficulty(tmpDiff) == DUNGEON_DIFFICULTY_HEROIC || Difficulty(tmpDiff) == DUNGEON_DIFFICULTY_CHALLENGE)
+            tmpDiff = DUNGEON_DIFFICULTY_NORMAL;
+        else if (Difficulty(tmpDiff) == RAID_DIFFICULTY_10MAN_HEROIC || Difficulty(tmpDiff) == RAID_DIFFICULTY_40MAN)
+            tmpDiff = RAID_DIFFICULTY_10MAN_NORMAL;
+        else if (Difficulty(tmpDiff) == RAID_DIFFICULTY_25MAN_HEROIC || Difficulty(tmpDiff) == RAID_DIFFICULTY_25MAN_LFR || Difficulty(tmpDiff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            tmpDiff = RAID_DIFFICULTY_25MAN_NORMAL;
+        else if (Difficulty(tmpDiff) == SCENARIO_DIFFICULTY_HEROIC)
+            tmpDiff = SCENARIO_DIFFICULTY_NORMAL;
 
         // pull new data
         mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
