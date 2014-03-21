@@ -40,8 +40,8 @@ enum Opcodes
    CMSG_ACTIVATETAXI                                        = 0x0,
    CMSG_ACTIVATETAXIEXPRESS                                 = 0x0,
    CMSG_ADDON_REGISTERED_PREFIXES                           = 0x0,
-   CMSG_ADD_FRIEND                                          = 0x0,
-   CMSG_ADD_IGNORE                                          = 0x0,
+   CMSG_ADD_FRIEND                                          = 0x064F, // 5.4.7 18019
+   CMSG_ADD_IGNORE                                          = 0x126D, // 5.4.7 18019
    CMSG_ADD_VOICE_IGNORE                                    = 0x0,
    CMSG_ALTER_APPEARANCE                                    = 0x0,
    CMSG_AREATRIGGER                                         = 0x155A, // 5.4.7 18019
@@ -207,6 +207,8 @@ enum Opcodes
    CMSG_GAMEOBJ_REPORT_USE                                  = 0x0,
    CMSG_GAMEOBJ_USE                                         = 0x0,
    CMSG_GAMESPEED_SET                                       = 0x0,
+   CMSG_GAME_STORE_BUY                                      = 0x1A83, // 5.4.7 18019
+   CMSG_GAME_STORE_LIST                                     = 0x1993, // 5.4.7 18019
    CMSG_GAMETIME_SET                                        = 0x0,
    CMSG_GETDEATHBINDZONE                                    = 0x0,
    CMSG_GET_MAIL_LIST                                       = 0x0,
@@ -879,6 +881,10 @@ enum Opcodes
    SMSG_GAMEOBJECT_QUERY_RESPONSE                           = 0x066A, // 5.4.7 18019
    SMSG_GAMEOBJECT_RESET_STATE                              = 0x0,
    SMSG_GAMESPEED_SET                                       = 0x0,
+   SMSG_GAME_STORE_AUTH_BUY_FAILED                          = 0x0C40, // 5.4.7 18019
+   SMSG_GAME_STORE_BUY_RESULT                               = 0x12AB, // 5.4.7 18019
+   SMSG_GAME_STORE_INGAME_BUY_FAILED                        = 0x145A, // 5.4.7 18019
+   SMSG_GAME_STORE_LIST                                     = 0x1C29, // 5.4.7 18019
    SMSG_GAMETIME_SET                                        = 0x0,
    SMSG_GAMETIME_UPDATE                                     = 0x0,
    SMSG_GAME_EVENT_DEBUG_LOG                                = 0x0,
