@@ -480,7 +480,7 @@ enum Opcodes
    CMSG_REQUEST_PET_INFO                                    = 0x0,
    CMSG_REQUEST_PVP_OPTIONS_ENABLED                         = 0x0,
    CMSG_REQUEST_PVP_REWARDS                                 = 0x0,
-   CMSG_REQUEST_RAID_INFO                                   = 0x0,
+   CMSG_REQUEST_RAID_INFO                                   = 0x1980, // 5.4.7 18019
    CMSG_REQUEST_RATED_BG_INFO                               = 0x0,
    CMSG_REQUEST_RATED_BG_STATS                              = 0x0,
    CMSG_REQUEST_RESEARCH_HISTORY                            = 0x0,
@@ -737,7 +737,7 @@ enum Opcodes
    SMSG_BATTLEGROUND_PLAYER_JOINED                          = 0x0,
    SMSG_BATTLEGROUND_PLAYER_LEFT                            = 0x0,
    SMSG_BINDER_CONFIRM                                      = 0x0,
-   SMSG_BINDPOINTUPDATE                                     = 0x0,
+   SMSG_BINDPOINTUPDATE                                     = 0x11E2, // 5.4.7 18019
    SMSG_BINDZONEREPLY                                       = 0x0,
    SMSG_BREAK_TARGET                                        = 0x0,
    SMSG_BUY_BANK_SLOT_RESULT                                = 0x0,
@@ -1207,7 +1207,7 @@ enum Opcodes
    SMSG_QUEST_POI_QUERY_RESPONSE                            = 0x0,
    SMSG_QUEST_QUERY_RESPONSE                                = 0x0,
    SMSG_RAID_GROUP_ONLY                                     = 0x0,
-   SMSG_RAID_INSTANCE_INFO                                  = 0x0,
+   SMSG_RAID_INSTANCE_INFO                                  = 0x0831, // 5.4.7 18019
    SMSG_RAID_INSTANCE_MESSAGE                               = 0x0,
    SMSG_RAID_MARKERS_CHANGED                                = 0x0,
    SMSG_RAID_READY_CHECK                                    = 0x072A, // 5.4.7 18019

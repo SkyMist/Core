@@ -2334,7 +2334,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (!GetSession()->PlayerLogout())
             {
                 // send transfer packets
-                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4);       
+                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4 + 1);       
 
                 data << uint32(mapid);
                 data.WriteBit(0);       // Unknown.
@@ -19425,13 +19425,12 @@ void Player::SendRaidInfo()
 {
     uint32 counter = 0;
 
-    WorldPacket data(SMSG_RAID_INSTANCE_INFO, 4);
-
-    size_t p_counter = data.wpos();
-    data << uint32(counter);                                // placeholder
-
+    WorldPacket data(SMSG_RAID_INSTANCE_INFO);
     time_t now = time(NULL);
 
+    ByteBuffer BitData;
+    ByteBuffer BodyData;
+    
     for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
@@ -19445,21 +19444,43 @@ void Player::SendRaidInfo()
                     if (InstanceScript* instanceScript = ((InstanceMap*)map)->GetInstanceScript())
                         completedEncounters = instanceScript->GetCompletedEncounterMask();
 
-                data << uint32(save->GetMapId());           // map id
-                data << uint32(save->GetDifficulty());      // difficulty
-                data << uint32(isHeroic);                   // heroic
-                data << uint64(save->GetInstanceId());      // instance id
-                data << uint8(1);                           // expired = 0
-                data << uint8(0);                           // extended = 1
-                data << uint32(save->GetResetTime() - now); // reset time
-                data << uint32(completedEncounters);        // completed encounters mask
+                ObjectGuid InstanceID = save->GetInstanceId();
+
+                BitData.WriteBit(InstanceID[1]);
+                BitData.WriteBit(0);                                // expired
+                BitData.WriteBit(InstanceID[0]);
+                BitData.WriteBit(InstanceID[4]);
+                BitData.WriteBit(InstanceID[2]);
+                BitData.WriteBit(InstanceID[3]);
+                BitData.WriteBit(InstanceID[5]);
+                BitData.WriteBit(InstanceID[6]);
+                BitData.WriteBit(InstanceID[7]);
+                BitData.WriteBit(0);                                // extended
+
+                BodyData << uint32(save->GetResetTime() - now);     // reset time
+                BodyData.WriteByteSeq(InstanceID[0]);
+                BodyData.WriteByteSeq(InstanceID[3]);
+                BodyData << uint32(save->GetMapId());               // map id
+                BodyData.WriteByteSeq(InstanceID[2]);
+                BodyData.WriteByteSeq(InstanceID[4]);
+                BodyData << uint32(save->GetDifficulty());          // difficulty
+                BodyData.WriteByteSeq(InstanceID[7]);
+                BodyData << uint32(completedEncounters);            // completed encounters mask
+                BodyData.WriteByteSeq(InstanceID[6]);
+                BodyData.WriteByteSeq(InstanceID[2]);
+                BodyData.WriteByteSeq(InstanceID[1]);
+                
                 ++counter;
             }
         }
     }
 
-    data.put<uint32>(p_counter, counter);
-    GetSession()->SendPacket(&data);
+    data.WriteBits(counter,20);
+    data.append(BitData);
+    data.FlushBits();
+    data.append(BodyData);
+
+    SendDirectMessage(&data);
 }
 
 /*
@@ -23880,11 +23901,11 @@ void Player::SendInitialPacketsBeforeAddToMap()
 
     // Homebind
     WorldPacket data(SMSG_BINDPOINTUPDATE, 5*4);
-    data << m_homebindZ;
-    data << m_homebindX;
-    data << (uint32) m_homebindMapId;
-    data << m_homebindY;
     data << (uint32) m_homebindAreaId;
+    data << m_homebindX;
+    data << m_homebindZ;
+    data << m_homebindY;
+    data << m_homebindMapId;
     GetSession()->SendPacket(&data);
 
     // SMSG_SET_PROFICIENCY
@@ -24019,10 +24040,17 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg)
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data << uint32(mapid);
-    data << uint8(reason); // transfer abort reason
-    data << uint8(arg);
+    WorldPacket data(SMSG_TRANSFER_ABORTED);
+    
+    data.WriteBit(arg != 0);
+    data.WriteBits(reason,5); // transfer abort reason
+
+    data.FlushBits();
+
+    if(arg != 0)
+        data << arg;
+
+    data << mapid;
     GetSession()->SendPacket(&data);
 }
 
