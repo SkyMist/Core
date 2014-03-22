@@ -145,7 +145,7 @@ enum AchievementCriteriaAdditionalCondition
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_GUILD_REPUTATION            = 62, // NYI
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_RATED_BATTLEGROUND          = 63, // NYI
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RARITY              = 65,
-    ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RACE                = 66,
+    ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RACE                = 66
 };
 
 enum AchievementCriteriaFlags
@@ -166,7 +166,7 @@ enum AchievementCriteriaTimedTypes
     ACHIEVEMENT_TIMED_TYPE_SPELL_TARGET     = 6,    // Timer is started by being target of spell with entry in timerStartEvent
     ACHIEVEMENT_TIMED_TYPE_CREATURE         = 7,    // Timer is started by killing creature with entry in timerStartEvent
     ACHIEVEMENT_TIMED_TYPE_ITEM             = 9,    // Timer is started by using item with entry in timerStartEvent
-    ACHIEVEMENT_TIMED_TYPE_UNK              = 10,   // Unknown
+    ACHIEVEMENT_TIMED_TYPE_UNK              = 10    // Unknown
 
     ACHIEVEMENT_TIMED_TYPE_MAX
 };
@@ -320,7 +320,7 @@ enum AreaFlags
     AREA_FLAG_OUTSIDE          = 0x04000000,                // used for determinating spell related inside/outside questions in Map::IsOutdoors
     AREA_FLAG_WINTERGRASP_2    = 0x08000000,                // Can Hearth And Resurrect From Area
     AREA_FLAG_NO_FLY_ZONE      = 0x20000000,                // Marks zones where you cannot fly
-    AREA_FLAG_UNK9             = 0x40000000,
+    AREA_FLAG_UNK9             = 0x40000000
 };
 
 enum Difficulty
@@ -433,7 +433,7 @@ enum ItemExtendedCostFlags
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_2   = 0x04,
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_3   = 0x08,
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_4   = 0x10,
-    ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_5   = 0x20,
+    ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_5   = 0x20
 };
 
 enum ItemLimitCategoryMode
@@ -444,8 +444,10 @@ enum ItemLimitCategoryMode
 
 enum MountFlags
 {
+    MOUNT_FLAG_CAN_WALK                 = 0x1,                    // Checked in 4.2.2 14545 client.
+    MOUNT_FLAG_CAN_FLY                  = 0x2,                    // Checked in 4.2.2 14545 client.
     MOUNT_FLAG_CAN_PITCH                = 0x4,                    // client checks MOVEMENTFLAG2_FULL_SPEED_PITCHING
-    MOUNT_FLAG_CAN_SWIM                 = 0x8,                    // client checks MOVEMENTFLAG_SWIMMING
+    MOUNT_FLAG_CAN_SWIM                 = 0x8                     // client checks MOVEMENTFLAG_SWIMMING
 };
 
 enum SpellCategoryFlags
@@ -608,7 +610,7 @@ enum CurrencyTypes
     CURRENCY_TYPE_MANTID_ARCHAEOLOGY_FRAGMENT     = 754,
     CURRENCY_TYPE_WARFORGED_SEAL                  = 776,
     CURRENCY_TYPE_TIMELESS_COIN                   = 777,
-    CURRENCY_TYPE_BLOODY_COIN                     = 789,
+    CURRENCY_TYPE_BLOODY_COIN                     = 789
 };
 
 #endif

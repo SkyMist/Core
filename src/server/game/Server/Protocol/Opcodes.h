@@ -97,7 +97,7 @@ enum Opcodes
    CMSG_BOT_DETECTED2                                       = 0x0,
    CMSG_BUG                                                 = 0x0,
    CMSG_BUSY_TRADE                                          = 0x0,
-   CMSG_BUYBACK_ITEM                                        = 0x0,
+   CMSG_BUYBACK_ITEM                                        = 0x07D7, // 5.4.7 18019
    CMSG_BUY_BANK_SLOT                                       = 0x00FE, // 5.4.7 18019
    CMSG_BUY_ITEM                                            = 0x1077, // 5.4.7 18019
    CMSG_CALENDAR_ADD_EVENT                                  = 0x0,
@@ -204,7 +204,7 @@ enum Opcodes
    CMSG_FORCE_MOVE_ROOT_ACK                                 = 0x0,
    CMSG_FORCE_MOVE_UNROOT_ACK                               = 0x0,
    CMSG_GAMEOBJECT_QUERY                                    = 0x14EA, // 5.4.7 18019
-   CMSG_GAMEOBJ_REPORT_USE                                  = 0x0,
+   CMSG_GAMEOBJ_REPORT_USE                                  = 0x06DF, // 5.4.7 18019
    CMSG_GAMEOBJ_USE                                         = 0x0,
    CMSG_GAMESPEED_SET                                       = 0x0,
    CMSG_GAME_STORE_BUY                                      = 0x1A83, // 5.4.7 18019
@@ -289,8 +289,8 @@ enum Opcodes
    CMSG_HEARTH_AND_RESURRECT                                = 0x0,
    CMSG_IGNORE_TRADE                                        = 0x0,
    CMSG_INITIATE_TRADE                                      = 0x0,
-   CMSG_INSPECT                                             = 0x0,
-   CMSG_INSPECT_HONOR_STATS                                 = 0x0,
+   CMSG_INSPECT                                             = 0x01D4, // 5.4.7 18019
+   CMSG_INSPECT_HONOR_STATS                                 = 0x047E, // 5.4.7 18019
    CMSG_INSTANCE_LOCK_WARNING_RESPONSE                      = 0x0,
    CMSG_ITEM_REFUND                                         = 0x0,
    CMSG_ITEM_REFUND_INFO                                    = 0x0,
@@ -515,7 +515,7 @@ enum Opcodes
    CMSG_SET_CHANNEL_WATCH                                   = 0x0,
    CMSG_SET_CONTACT_NOTES                                   = 0x0,
    CMSG_SET_CURRENCY_FLAGS                                  = 0x0,
-   CMSG_SET_DUNGEON_DIFFICULTY                              = 0x0,
+   CMSG_SET_DUNGEON_DIFFICULTY                              = 0x1898, // 5.4.7 18019
    CMSG_SET_EVERYONE_IS_ASSISTANT                           = 0x0,
    CMSG_SET_FACTION_ATWAR                                   = 0x0,
    CMSG_SET_FACTION_CHEAT                                   = 0x0,
@@ -526,6 +526,7 @@ enum Opcodes
    CMSG_SET_PLAYER_DECLINED_NAMES                           = 0x0,
    CMSG_SET_PREFERED_CEMETERY                               = 0x0,
    CMSG_SET_PRIMARY_TALENT_TREE                             = 0x04AA, // 5.4.7 18019
+   CMSG_SET_RAID_DIFFICULTY                                 = 0x16A6, // 5.4.7 18019
    CMSG_SET_RELATIVE_POSITION                               = 0x0,
    CMSG_SET_SAVED_INSTANCE_EXTEND                           = 0x0,
    CMSG_SET_SELECTION                                       = 0x10D5, // 5.4.7 18019
@@ -662,8 +663,6 @@ enum Opcodes
    MSG_RAID_READY_CHECK_FINISHED                            = 0x0,
    MSG_RAID_TARGET_UPDATE                                   = 0x0,
    MSG_SAVE_GUILD_EMBLEM                                    = 0x0,
-   MSG_SET_DUNGEON_DIFFICULTY                               = 0x0,
-   MSG_SET_RAID_DIFFICULTY                                  = 0x0,
    MSG_START_MOVE_FORWARD                                   = 0x0,
    MSG_TABARDVENDOR_ACTIVATE                                = 0x0,
    MSG_TALENT_WIPE_CONFIRM                                  = 0x0,
@@ -1251,7 +1250,7 @@ enum Opcodes
    SMSG_SERVER_PERF                                         = 0x0,
    SMSG_SET_AI_ANIM_KIT                                     = 0x0,
    SMSG_SET_DF_FAST_LAUNCH_RESULT                           = 0x0,
-   SMSG_SET_DUNGEON_DIFFICULTY                              = 0x0,
+   SMSG_SET_DUNGEON_DIFFICULTY                              = 0x1500, // 5.4.7 18019
    SMSG_SET_FACTION_ATWAR                                   = 0x0,
    SMSG_SET_FACTION_STANDING                                = 0x0,
    SMSG_SET_FACTION_VISIBLE                                 = 0x0,
@@ -1265,6 +1264,7 @@ enum Opcodes
    SMSG_SET_PLAY_HOVER_ANIM                                 = 0x0,
    SMSG_SET_PROFICIENCY                                     = 0x1E3B, // 5.4.7 18019
    SMSG_SET_PROJECTILE_POSITION                             = 0x0,
+   SMSG_SET_RAID_DIFFICULTY                                 = 0x16A6, // 5.4.7 18019
    SMSG_SHOP_BUY                                            = 0x0,
    SMSG_SHOP_BUY_ERROR                                      = 0x0,
    SMSG_SHOP_ITEM                                           = 0x0,

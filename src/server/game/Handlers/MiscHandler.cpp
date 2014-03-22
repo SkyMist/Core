@@ -1412,23 +1412,23 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
 
-    guid[2] = recvData.ReadBit();
-    guid[1] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
-    guid[4] = recvData.ReadBit();
-    guid[3] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
     guid[6] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
 
-    recvData.ReadByteSeq(guid[1]);
-    recvData.ReadByteSeq(guid[2]);
-    recvData.ReadByteSeq(guid[3]);
-    recvData.ReadByteSeq(guid[7]);
     recvData.ReadByteSeq(guid[5]);
     recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[4]);
     recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[2]);
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_INSPECT");
 
@@ -1466,23 +1466,25 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recvData)
 void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
-    guid[1] = recvData.ReadBit();
+
+    guid[2] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
-    guid[2] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
-    guid[0] = recvData.ReadBit();
     guid[6] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
 
-    recvData.ReadByteSeq(guid[4]);
-    recvData.ReadByteSeq(guid[7]);
-    recvData.ReadByteSeq(guid[0]);
-    recvData.ReadByteSeq(guid[5]);
-    recvData.ReadByteSeq(guid[1]);
-    recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[7]);
+
     Player* player = ObjectAccessor::FindPlayer(guid);
 
     if (!player)
@@ -1752,7 +1754,7 @@ void WorldSession::HandleResetInstancesOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
 {
-    TC_LOG_DEBUG("network", "MSG_SET_DUNGEON_DIFFICULTY");
+    TC_LOG_DEBUG("network", "CMSG_SET_DUNGEON_DIFFICULTY");
 
     uint32 mode;
     recvData >> mode;
@@ -1796,8 +1798,8 @@ void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
                     return;
                 }
             }
-            // the difficulty is set even if the instances can't be reset
-            //_player->SendDungeonDifficulty(true);
+
+            // The difficulty is set even if the instances can't be reset
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false, _player);
             group->SetDungeonDifficulty(Difficulty(mode));
         }
@@ -1806,12 +1808,13 @@ void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false);
         _player->SetDungeonDifficulty(Difficulty(mode));
+        _player->SendDungeonDifficulty();
     }
 }
 
 void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
 {
-    TC_LOG_DEBUG("network", "MSG_SET_RAID_DIFFICULTY");
+    TC_LOG_DEBUG("network", "CMSG_SET_RAID_DIFFICULTY");
 
     uint32 mode;
     recvData >> mode;
@@ -1853,8 +1856,8 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
                     return;
                 }
             }
-            // the difficulty is set even if the instances can't be reset
-            //_player->SendDungeonDifficulty(true);
+
+            // The difficulty is set even if the instances can't be reset
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true, _player);
             group->SetRaidDifficulty(Difficulty(mode));
         }
@@ -1863,6 +1866,7 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true);
         _player->SetRaidDifficulty(Difficulty(mode));
+        _player->SendRaidDifficulty();
     }
 }
 

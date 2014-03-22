@@ -896,7 +896,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     pCurrChar->GetMotionMaster()->Initialize();
-    pCurrChar->SendDungeonDifficulty(false);
+
+    // Send difficulties on login.
+    pCurrChar->SendDungeonDifficulty();
+    pCurrChar->SendRaidDifficulty();
 
     WorldPacket data(SMSG_LOGIN_VERIFY_WORLD, 20);
     data << pCurrChar->GetOrientation();
