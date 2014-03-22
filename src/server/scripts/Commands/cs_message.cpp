@@ -136,7 +136,7 @@ public:
         if (!*args)
             return false;
 
-        char buff[2048];
+        char buff[1024];
         sprintf(buff, handler->GetTrinityString(LANG_SYSTEMMESSAGE), args);
         sWorld->SendServerMessage(SERVER_MSG_STRING, buff);
         return true;

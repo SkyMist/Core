@@ -166,7 +166,7 @@ enum Opcodes
    CMSG_CLEAR_RAID_MARKER                                   = 0x0,
    CMSG_CLEAR_TRADE_ITEM                                    = 0x0,
    CMSG_CLOSE_BROWSER                                       = 0x0,
-   CMSG_COMMENTATOR_ENABLE                                  = 0x0,
+   CMSG_COMMENTATOR_ENABLE                                  = 0x169A, // 5.4.7
    CMSG_COMMENTATOR_ENTER_INSTANCE                          = 0x0,
    CMSG_COMMENTATOR_EXIT_INSTANCE                           = 0x0,
    CMSG_COMMENTATOR_GET_MAP_INFO                            = 0x0,
@@ -1246,7 +1246,7 @@ enum Opcodes
    SMSG_SERVERTIME                                          = 0x0,
    SMSG_SERVER_FIRST_ACHIEVEMENT                            = 0x0,
    SMSG_SERVER_INFO_RESPONSE                                = 0x0,
-   SMSG_SERVER_MESSAGE                                      = 0x0,
+   SMSG_SERVER_MESSAGE                                      = 0x026E, // 5.4.7 18019
    SMSG_SERVER_PERF                                         = 0x0,
    SMSG_SET_AI_ANIM_KIT                                     = 0x0,
    SMSG_SET_DF_FAST_LAUNCH_RESULT                           = 0x0,
@@ -1259,7 +1259,7 @@ enum Opcodes
    SMSG_SET_MELEE_ANIM_KIT                                  = 0x0,
    SMSG_SET_MOVEMENT_ANIM_KIT                               = 0x0,
    SMSG_SET_PCT_SPELL_MODIFIER                              = 0x0,
-   SMSG_SET_PHASE_SHIFT                                     = 0x0,
+   SMSG_SET_PHASE_SHIFT                                     = 0x1D52, // 5.4.7 18019
    SMSG_SET_PLAYER_DECLINED_NAMES_RESULT                    = 0x0,
    SMSG_SET_PLAY_HOVER_ANIM                                 = 0x0,
    SMSG_SET_PROFICIENCY                                     = 0x1E3B, // 5.4.7 18019
