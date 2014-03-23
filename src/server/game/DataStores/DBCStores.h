@@ -26,6 +26,8 @@
 
 #include <list>
 
+typedef std::map<uint32, uint32> SpecializationOverrideSpellsMap;
+
 typedef std::list<uint32> SimpleFactionsList;
 SimpleFactionsList const* GetFactionTeamList(uint32 faction);
 
@@ -200,6 +202,7 @@ extern SpellsPerClassStore                       sSpellsPerClassStore;
 extern ClassBySkillIdStore                       sClassBySkillIdStore;
 extern SpellEffectScallingByEffectId             sSpellEffectScallingByEffectId;
 extern DBCStorage <SpecializationSpellsEntry>    sSpecializationSpellsStore;
+extern SpecializationOverrideSpellsMap sSpecializationOverrideSpellMap;
 extern DBCStorage <SpellRadiusEntry>             sSpellRadiusStore;
 extern DBCStorage <SpellRangeEntry>              sSpellRangeStore;
 extern DBCStorage <SpellRuneCostEntry>           sSpellRuneCostStore;

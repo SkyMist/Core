@@ -11,15 +11,18 @@ ToDO:
 - Make server playable on (Fix big stuff).
 
 ToDO:
-- Finish Groups system and Difficulty opcodes.
 - Currency.
-- Quests - !Note: w/ SMSG_SET_PHASE_SHIFT.
+- Quests.
 - Achievements.
 - Vehicles.
 - Guilds.
 - Battlegrounds.
 - Black Market, Transmog, Reforge, Void Storage etc.
 - Pet System.
+
+DONE:
+- Finish Groups system and Difficulty opcodes.
+- Map, Spawn, Phasing systems.
 
 == Milestone 3 == !! 30 April Deadline to get here. !!
 - Finish stuff - Beta Stage - Launchable after DB update. Not perfectly functionable yet as still under heavy work, but needed.

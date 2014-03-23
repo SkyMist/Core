@@ -205,7 +205,7 @@ enum Opcodes
    CMSG_FORCE_MOVE_UNROOT_ACK                               = 0x0,
    CMSG_GAMEOBJECT_QUERY                                    = 0x14EA, // 5.4.7 18019
    CMSG_GAMEOBJ_REPORT_USE                                  = 0x06DF, // 5.4.7 18019
-   CMSG_GAMEOBJ_USE                                         = 0x0,
+   CMSG_GAMEOBJ_USE                                         = 0x055F, // 5.4.7 18019
    CMSG_GAMESPEED_SET                                       = 0x0,
    CMSG_GAME_STORE_BUY                                      = 0x1A83, // 5.4.7 18019
    CMSG_GAME_STORE_LIST                                     = 0x1993, // 5.4.7 18019
@@ -234,7 +234,7 @@ enum Opcodes
    CMSG_GROUP_DISBAND                                       = 0x0DB2, // 5.4.7 18019
    CMSG_GROUP_INVITE                                        = 0x1990, // 5.4.7 18019
    CMSG_GROUP_INVITE_RESPONSE                               = 0x1C51, // 5.4.7 18019
-   CMSG_GROUP_RAID_CONVERT                                  = 0x0,
+   CMSG_GROUP_RAID_CONVERT                                  = 0x19A0, // 5.4.7 18019
    CMSG_GROUP_REQUEST_JOIN_UPDATES                          = 0x0,
    CMSG_GROUP_SET_LEADER                                    = 0x1383, // 5.4.7 18019
    CMSG_GROUP_SET_ROLES                                     = 0x1C93, // 5.4.7 18019
@@ -246,7 +246,7 @@ enum Opcodes
    CMSG_GUILD_ACHIEVEMENT_PROGRESS_QUERY                    = 0x0,
    CMSG_GUILD_ADD_RANK                                      = 0x0,
    CMSG_GUILD_ASSIGN_MEMBER_RANK                            = 0x0,
-   CMSG_GUILD_BANKER_ACTIVATE                               = 0x0,
+   CMSG_GUILD_BANKER_ACTIVATE                               = 0x02F6, // 5.4.7 18019
    CMSG_GUILD_BANK_BUY_TAB                                  = 0x0,
    CMSG_GUILD_BANK_DEPOSIT_MONEY                            = 0x0,
    CMSG_GUILD_BANK_LOG_QUERY                                = 0x0,
@@ -345,16 +345,16 @@ enum Opcodes
    CMSG_MESSAGECHAT_ADDON_PARTY                             = 0x0,
    CMSG_MESSAGECHAT_ADDON_RAID                              = 0x0,
    CMSG_MESSAGECHAT_ADDON_WHISPER                           = 0x0,
-   CMSG_MESSAGECHAT_AFK                                     = 0x0,
+   CMSG_MESSAGECHAT_AFK                                     = 0x0422, // 5.4.7 18019
    CMSG_MESSAGECHAT_BATTLEGROUND                            = 0x0,
-   CMSG_MESSAGECHAT_CHANNEL                                 = 0x0,
-   CMSG_MESSAGECHAT_DND                                     = 0x0,
-   CMSG_MESSAGECHAT_EMOTE                                   = 0x0,
+   CMSG_MESSAGECHAT_CHANNEL                                 = 0x0904, // 5.4.7 18019
+   CMSG_MESSAGECHAT_DND                                     = 0x1E21, // 5.4.7 18019
+   CMSG_MESSAGECHAT_EMOTE                                   = 0x0520, // 5.4.7 18019
    CMSG_MESSAGECHAT_GUILD                                   = 0x070B, // 5.4.7 18019
-   CMSG_MESSAGECHAT_OFFICER                                 = 0x0,
-   CMSG_MESSAGECHAT_PARTY                                   = 0x0,
-   CMSG_MESSAGECHAT_RAID                                    = 0x0,
-   CMSG_MESSAGECHAT_RAID_WARNING                            = 0x0,
+   CMSG_MESSAGECHAT_OFFICER                                 = 0x1F69, // 5.4.7 18019
+   CMSG_MESSAGECHAT_PARTY                                   = 0x0F02, // 5.4.7 18019
+   CMSG_MESSAGECHAT_RAID                                    = 0x054B, // 5.4.7 18019
+   CMSG_MESSAGECHAT_RAID_WARNING                            = 0x0423, // 5.4.7 18019
    CMSG_MESSAGECHAT_SAY                                     = 0x0C41, // 5.4.7 18019
    CMSG_MESSAGECHAT_WHISPER                                 = 0x0D60, // 5.4.7 18019
    CMSG_MESSAGECHAT_YELL                                    = 0x0C43, // 5.4.7 18019
@@ -423,7 +423,7 @@ enum Opcodes
    CMSG_PET_SPELL_AUTOCAST                                  = 0x0,
    CMSG_PET_STOP_ATTACK                                     = 0x0,
    CMSG_PING                                                = 0x1070, // 5.4.7 18019
-   CMSG_PLAYED_TIME                                         = 0x0,
+   CMSG_PLAYED_TIME                                         = 0x173A, // 5.4.7 18019
    CMSG_PLAYER_DIFFICULTY_CHANGE                            = 0x0,
    CMSG_PLAYER_LOGIN                                        = 0x17D3, // 5.4.7 18019
    CMSG_PLAYER_LOGOUT                                       = 0x0,
@@ -437,7 +437,7 @@ enum Opcodes
    CMSG_QUERY_GUILD_RECIPES                                 = 0x0,
    CMSG_QUERY_GUILD_REWARDS                                 = 0x0,
    CMSG_QUERY_GUILD_XP                                      = 0x0,
-   CMSG_QUERY_INSPECT_ACHIEVEMENTS                          = 0x0,
+   CMSG_QUERY_INSPECT_ACHIEVEMENTS                          = 0x047E, // 5.4.7 18019
    CMSG_QUERY_QUESTS_COMPLETED                              = 0x0,
    CMSG_QUERY_TIME                                          = 0x03FD, // 5.4.7 18019
    CMSG_QUESTGIVER_ACCEPT_QUEST                             = 0x0,
@@ -457,6 +457,7 @@ enum Opcodes
    CMSG_QUEST_POI_QUERY                                     = 0x0,
    CMSG_QUEST_QUERY                                         = 0x0,
    CMSG_RAID_READY_CHECK                                    = 0x0D88, // 5.4.7 18019
+   CMSG_RAID_READY_CHECK_CONFIRM                            = 0x13D9, // 5.4.7 18019
    CMSG_RANDOM_ROLL                                         = 0x1891, // 5.4.7 18019
    CMSG_RANDOMIZE_CHAR_NAME                                 = 0x0,
    CMSG_READY_FOR_ACCOUNT_DATA_TIMES                        = 0x13CB, // 5.4.7 18019
@@ -595,7 +596,7 @@ enum Opcodes
    CMSG_WARDEN_DATA                                         = 0x1681, // 5.4.7 18019
    CMSG_WARGAME_ACCEPT                                      = 0x0,
    CMSG_WARGAME_START                                       = 0x0,
-   CMSG_WHO                                                 = 0x0,
+   CMSG_WHO                                                 = 0x13C1, // 5.4.7 18019
    CMSG_WHOIS                                               = 0x0,
    CMSG_WORLD_STATE_UI_TIMER_UPDATE                         = 0x0,
    CMSG_WORLD_TELEPORT                                      = 0x0,
@@ -659,7 +660,6 @@ enum Opcodes
    MSG_PVP_LOG_DATA                                         = 0x0,
    MSG_QUERY_NEXT_MAIL_TIME                                 = 0x0,
    MSG_QUEST_PUSH_RESULT                                    = 0x0,
-   MSG_RAID_READY_CHECK_CONFIRM                             = 0x0,
    MSG_RAID_READY_CHECK_FINISHED                            = 0x0,
    MSG_RAID_TARGET_UPDATE                                   = 0x0,
    MSG_SAVE_GUILD_EMBLEM                                    = 0x0,
@@ -916,7 +916,7 @@ enum Opcodes
    SMSG_GUILD_ACHIEVEMENT_DELETED                           = 0x0,
    SMSG_GUILD_ACHIEVEMENT_EARNED                            = 0x0,
    SMSG_GUILD_ACHIEVEMENT_MEMBERS                           = 0x0,
-   SMSG_GUILD_BANK_LIST                                     = 0x0,
+   SMSG_GUILD_BANK_LIST                                     = 0x1B7B, // 5.4.7 18019
    SMSG_GUILD_BANK_LOG_QUERY_RESULT                         = 0x0,
    SMSG_GUILD_BANK_MONEY_WITHDRAWN                          = 0x0,
    SMSG_GUILD_BANK_QUERY_TEXT_RESULT                        = 0x0,
@@ -1157,7 +1157,7 @@ enum Opcodes
    SMSG_PET_SPELLS                                          = 0x0,
    SMSG_PET_TAME_FAILURE                                    = 0x0,
    SMSG_PET_UPDATE_COMBO_POINTS                             = 0x0,
-   SMSG_PLAYED_TIME                                         = 0x0,
+   SMSG_PLAYED_TIME                                         = 0x1C69, // 5.4.7 18019
    SMSG_PLAYERBINDERROR                                     = 0x0,
    SMSG_PLAYERBOUND                                         = 0x0,
    SMSG_PLAYER_DIFFICULTY_CHANGE                            = 0x0,
@@ -1210,6 +1210,7 @@ enum Opcodes
    SMSG_RAID_INSTANCE_MESSAGE                               = 0x0,
    SMSG_RAID_MARKERS_CHANGED                                = 0x0,
    SMSG_RAID_READY_CHECK                                    = 0x072A, // 5.4.7 18019
+   SMSG_RAID_READY_CHECK_CONFIRM                            = 0x1641, // 5.4.7 18019
    SMSG_RAID_READY_CHECK_THROTTLED_ERROR                    = 0x0,
    SMSG_RAID_SUMMON_FAILED                                  = 0x0,
    SMSG_RANDOM_ROLL                                         = 0x0529, // 5.4.7 18019
@@ -1399,7 +1400,7 @@ enum Opcodes
    SMSG_WEEKLY_RESET_CURRENCY                               = 0x0,
    SMSG_WEEKLY_SPELL_USAGE                                  = 0x0,
    SMSG_WEEKLY_SPELL_USAGE_UPDATE                           = 0x0,
-   SMSG_WHO                                                 = 0x0,
+   SMSG_WHO                                                 = 0x0460, // 5.4.7 18019
    SMSG_WHOIS                                               = 0x0,
    SMSG_WORLD_SERVER_INFO                                   = 0x0,
    SMSG_WORLD_STATE_UI_TIMER_UPDATE                         = 0x0,
