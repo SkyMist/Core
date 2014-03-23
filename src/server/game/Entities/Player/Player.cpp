@@ -19438,10 +19438,39 @@ void Player::SendRaidInfo()
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
-                bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
+                uint32 Difficulty = 0;
                 uint32 completedEncounters = 0;
+
+                switch(save->GetDifficulty())
+                {
+                    case RAID_DIFFICULTY_10MAN_NORMAL:
+                    case DUNGEON_DIFFICULTY_NORMAL:
+                    case RAID_DIFFICULTY_40MAN:
+                    {
+                        Difficulty = 1;
+                        break;
+                    }
+                    case DUNGEON_DIFFICULTY_HEROIC:
+                    case RAID_DIFFICULTY_25MAN_NORMAL:
+                    {
+                        Difficulty = 2;
+                        break;
+                    }
+                    case RAID_DIFFICULTY_10MAN_HEROIC:
+                    {
+                        Difficulty = 3;
+                        break;
+                    }
+                    case RAID_DIFFICULTY_25MAN_HEROIC:
+                    {
+                        Difficulty = 4;
+                        break;
+                    }
+                }
+
+                
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
-                    if (InstanceScript* instanceScript = ((InstanceMap*)map)->GetInstanceScript())
+                    if (InstanceScript* instanceScript = static_cast<InstanceMap*>(map)->GetInstanceScript())
                         completedEncounters = instanceScript->GetCompletedEncounterMask();
 
                 ObjectGuid InstanceID = save->GetInstanceId();
@@ -19460,12 +19489,12 @@ void Player::SendRaidInfo()
                 BodyData << uint32(save->GetResetTime() - now);     // reset time
                 BodyData.WriteByteSeq(InstanceID[0]);
                 BodyData.WriteByteSeq(InstanceID[3]);
-                BodyData << uint32(save->GetMapId());               // map id
+                BodyData << save->GetMapId()        ;               // map id
                 BodyData.WriteByteSeq(InstanceID[2]);
                 BodyData.WriteByteSeq(InstanceID[4]);
-                BodyData << uint32(save->GetDifficulty());          // difficulty
+                BodyData << Difficulty;                             // difficulty
                 BodyData.WriteByteSeq(InstanceID[7]);
-                BodyData << uint32(completedEncounters);            // completed encounters mask
+                BodyData << completedEncounters;                    // completed encounters mask
                 BodyData.WriteByteSeq(InstanceID[6]);
                 BodyData.WriteByteSeq(InstanceID[2]);
                 BodyData.WriteByteSeq(InstanceID[1]);
