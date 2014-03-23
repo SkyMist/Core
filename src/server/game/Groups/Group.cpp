@@ -441,18 +441,16 @@ bool Group::AddMember(Player* player)
         player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, false);
         player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, true);
 
-        if (player->getLevel() >= LEVELREQUIREMENT_HEROIC)
+        if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
         {
-            if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
-            {
-                player->SetDungeonDifficulty(GetDungeonDifficulty());
-                player->SendDungeonDifficulty(GetDungeonDifficulty());
-            }
-            if (player->GetRaidDifficulty() != GetRaidDifficulty())
-            {
-                player->SetRaidDifficulty(GetRaidDifficulty());
-                player->SendRaidDifficulty(GetRaidDifficulty());
-            }
+            player->SetDungeonDifficulty(GetDungeonDifficulty());
+            player->SendDungeonDifficulty(GetDungeonDifficulty());
+        }
+
+        if (player->GetRaidDifficulty() != GetRaidDifficulty())
+        {
+            player->SetRaidDifficulty(GetRaidDifficulty());
+            player->SendRaidDifficulty(GetRaidDifficulty());
         }
     }
 

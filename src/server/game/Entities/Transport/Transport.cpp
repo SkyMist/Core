@@ -95,7 +95,24 @@ bool Transport::Create(uint32 guidlow, uint32 entry, uint32 mapid, float x, floa
     SetGoAnimProgress(animprogress);
     SetName(goinfo->name);
     UpdateRotationFields(0.0f, 1.0f);
+
+    m_model = GameObjectModel::Create(*this);
     return true;
+}
+
+void Transport::CleanupsBeforeDelete(bool finalCleanup /*= true*/)
+{
+    UnloadStaticPassengers();
+    while (!_passengers.empty())
+    {
+        WorldObject* obj = *_passengers.begin();
+        obj->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
+        obj->m_movementInfo.transport.Reset();
+        obj->SetTransport(NULL);
+        RemovePassenger(obj);
+    }
+
+    GameObject::CleanupsBeforeDelete(finalCleanup);
 }
 
 void Transport::Update(uint32 diff)
@@ -202,6 +219,9 @@ void Transport::Update(uint32 diff)
 
 void Transport::AddPassenger(WorldObject* passenger)
 {
+    if (!IsInWorld())
+        return;
+
     if (_passengers.insert(passenger).second)
     {
         TC_LOG_DEBUG("entities.transport", "Object %s boarded transport %s.", passenger->GetName().c_str(), GetName().c_str());
@@ -312,6 +332,7 @@ void Transport::UpdatePosition(float x, float y, float z, float o)
     bool newActive = GetMap()->IsGridLoaded(x, y);
 
     Relocate(x, y, z, o);
+    UpdateModelPosition();
 
     UpdatePassengerPositions(_passengers);
 
@@ -449,12 +470,16 @@ bool Transport::TeleportTransport(uint32 newMapid, float x, float y, float z, fl
                     if (!obj->ToPlayer()->TeleportTo(newMapid, destX, destY, destZ, destO, TELE_TO_NOT_LEAVE_TRANSPORT))
                         _passengers.erase(obj);
                     break;
+                case TYPEID_DYNAMICOBJECT:
+                    obj->AddObjectToRemoveList();
+                    break;
                 default:
                     break;
             }
         }
 
         Relocate(x, y, z, o);
+        UpdateModelPosition();
         GetMap()->AddToMap<Transport>(this);
         return true;
     }
@@ -516,6 +541,9 @@ void Transport::UpdatePassengerPositions(std::set<WorldObject*>& passengers)
                 break;
             case TYPEID_GAMEOBJECT:
                 GetMap()->GameObjectRelocation(passenger->ToGameObject(), x, y, z, o, false);
+                break;
+            case TYPEID_DYNAMICOBJECT:
+                GetMap()->DynamicObjectRelocation(passenger->ToDynObject(), x, y, z, o);
                 break;
             default:
                 break;
