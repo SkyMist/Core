@@ -20925,17 +20925,17 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendDungeonDifficulty()
+void Player::SendDungeonDifficulty(uint32 difficulty)
 {
     WorldPacket data(SMSG_SET_DUNGEON_DIFFICULTY, 4);
-    data << uint32(GetDungeonDifficulty());
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendRaidDifficulty()
+void Player::SendRaidDifficulty(uint32 difficulty)
 {
     WorldPacket data(SMSG_SET_RAID_DIFFICULTY, 4);
-    data << uint32(forcedDifficulty == -1 ? GetRaidDifficulty() : forcedDifficulty);
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
@@ -24006,17 +24006,20 @@ void Player::SendInitialPacketsAfterAddToMap()
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
-    // raid downscaling - send difficulty to player
+    // Send difficulties on login.
+    SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
+
+    // Raid downscaling.
     if (GetMap()->IsRaid())
     {
         if (GetMap()->GetDifficulty() != GetRaidDifficulty())
         {
             StoreRaidMapDifficulty();
-            SendRaidDifficulty(GetGroup() != NULL, GetStoredRaidDifficulty());
+            SendRaidDifficulty(GetStoredRaidDifficulty());
         }
     }
     else if (GetRaidDifficulty() != GetStoredRaidDifficulty())
-        SendRaidDifficulty(GetGroup() != NULL);
+        SendRaidDifficulty(GetRaidDifficulty() < RAID_DIFFICULTY_10MAN_NORMAL ? RAID_DIFFICULTY_10MAN_NORMAL : GetRaidDifficulty());
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()

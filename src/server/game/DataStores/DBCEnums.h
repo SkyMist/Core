@@ -166,9 +166,9 @@ enum AchievementCriteriaTimedTypes
     ACHIEVEMENT_TIMED_TYPE_SPELL_TARGET     = 6,    // Timer is started by being target of spell with entry in timerStartEvent
     ACHIEVEMENT_TIMED_TYPE_CREATURE         = 7,    // Timer is started by killing creature with entry in timerStartEvent
     ACHIEVEMENT_TIMED_TYPE_ITEM             = 9,    // Timer is started by using item with entry in timerStartEvent
-    ACHIEVEMENT_TIMED_TYPE_UNK              = 10    // Unknown
+    ACHIEVEMENT_TIMED_TYPE_UNK              = 10,   // Unknown
 
-    ACHIEVEMENT_TIMED_TYPE_MAX
+    ACHIEVEMENT_TIMED_TYPE_MAX              = 11
 };
 
 enum AchievementCriteriaTypes
