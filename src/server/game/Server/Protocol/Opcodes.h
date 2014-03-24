@@ -1061,7 +1061,6 @@ enum Opcodes
    SMSG_MODIFY_COOLDOWN                                     = 0x0,
    SMSG_MONEY_NOTIFY                                        = 0x05E2, // 5.4.7 18019
    SMSG_MONSTER_MOVE                                        = 0x12D8, // 5.4.7 18019
-   SMSG_MONSTER_MOVE_TRANSPORT                              = 0x0, // Obsolute
    SMSG_MOTD                                                = 0x0E20, // 5.4.7 18019
    SMSG_MOUNTRESULT                                         = 0x0,
    SMSG_MOUNTSPECIAL_ANIM                                   = 0x0,

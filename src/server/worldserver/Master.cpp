@@ -137,7 +137,7 @@ int Master::Run()
     TC_LOG_INFO("server.worldserver", "       ###     ##  ##     ##    ##  ##  ##  ##           ###         ##");
     TC_LOG_INFO("server.worldserver", "##########     ##   ##    ##    ##  ##  ##  ##    ##########         ##");
     TC_LOG_INFO("server.worldserver", "     v. 5.4.7                         C O R E ");
-    TC_LOG_INFO("server.worldserver", "  Project SkyMist 2014(c) Game Emulation <http://www.sky-mist.org/> \n");
+    TC_LOG_INFO("server.worldserver", "  Project SkyMist 2014(c) Game Emulation <http://www.sky-mist.net/> \n");
 
     /// worldserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");

@@ -280,7 +280,6 @@ namespace Movement
 
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
-
     }
 
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)
@@ -350,6 +349,7 @@ namespace Movement
         data << moveSpline.GetId();
 
         Vector3 destination = moveSpline.isCyclic() ? Vector3::zero() : moveSpline.FinalDestination();
+
         data << destination;
     }
 
