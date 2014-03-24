@@ -30,7 +30,8 @@ enum DynamicObjectType
 {
     DYNAMIC_OBJECT_PORTAL           = 0x0,      // unused
     DYNAMIC_OBJECT_AREA_SPELL       = 0x1,
-    DYNAMIC_OBJECT_FARSIGHT_FOCUS   = 0x2
+    DYNAMIC_OBJECT_FARSIGHT_FOCUS   = 0x2,
+    DYNAMIC_OBJECT_RAID_MARKER      = 0x3
 };
 
 class DynamicObject : public WorldObject, public GridObject<DynamicObject>, public MapObject
@@ -59,6 +60,7 @@ class DynamicObject : public WorldObject, public GridObject<DynamicObject>, publ
         void UnbindFromCaster();
         uint32 GetSpellId() const {  return GetUInt32Value(DYNAMICOBJECT_FIELD_SPELL_ID); }
         uint64 GetCasterGUID() const { return GetUInt64Value(DYNAMICOBJECT_FIELD_CASTER); }
+        DynamicObjectType GetType() const { return DynamicObjectType(GetByteValue(DYNAMICOBJECT_FIELD_TYPE_AND_VISUAL_ID, 3) >> 4); }
         float GetRadius() const { return GetFloatValue(DYNAMICOBJECT_FIELD_RADIUS); }
 
         void Say(int32 textId, uint32 language, uint64 targetGuid) { MonsterSay(textId, language, targetGuid); }

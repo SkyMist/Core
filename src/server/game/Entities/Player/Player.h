@@ -503,7 +503,16 @@ enum PlayerPowerSpells
 
     SPELL_BURNING_EMBERS_10     = 116854,
     SPELL_BURNING_EMBERS_20     = 116855,
-    SPELL_BURNING_EMBERS_30     = 116920
+    SPELL_BURNING_EMBERS_30     = 116920,
+
+    // Glyphs / Talents
+    SPELL_VANISHING_POWDER      = 89964,
+    SPELL_DUST_OF_DISAPPEARENCE = 90647,
+    SPELL_TOME_OF_CLEAR_MIND    = 111621,
+
+    SPELL_REM_TALENT_VANISHING  = 127650,
+    SPELL_REM_TALENT_DUST       = 127649,
+    SPELL_REM_TALENT_TOME       = 113873
 };
 
 enum WarlockPets
@@ -1647,6 +1656,7 @@ class Player : public Unit, public GridObject<Player>
         bool HasQuestForItem(uint32 itemId) const;
         bool HasQuestForGO(int32 goId) const;
         void UpdateForQuestWorldObjects();
+        void UpdateForRaidMarkers(Group* group);
         bool CanShareQuest(uint32 questId) const;
 
         void SendQuestComplete(Quest const* quest);
@@ -2252,6 +2262,8 @@ class Player : public Unit, public GridObject<Player>
         void SendLootRelease(ObjectGuid guid);
         void SendNotifyLootItemRemoved(uint8 lootSlot, ObjectGuid guid);
         void SendNotifyLootMoneyRemoved();
+        void SendNotifyCurrencyLootRemoved(uint8 lootSlot);
+        void SendNotifyCurrencyLootRestored(uint8 lootSlot);
 
         /*********************************************************/
         /***               BATTLEGROUND SYSTEM                 ***/

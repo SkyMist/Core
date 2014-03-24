@@ -2911,13 +2911,6 @@ void AuraEffect::HandleModPossess(AuraApplication const* aurApp, uint8 mode, boo
 
     Unit* caster = GetCaster();
 
-    // no support for posession AI yet
-    if (caster && caster->GetTypeId() == TYPEID_UNIT)
-    {
-        HandleModCharm(aurApp, mode, apply);
-        return;
-    }
-
     if (apply)
         target->SetCharmedBy(caster, CHARM_TYPE_POSSESS, aurApp);
     else

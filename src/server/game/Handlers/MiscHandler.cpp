@@ -1880,6 +1880,129 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
     }
 }
 
+void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "Received CMSG_CHANGEPLAYER_DIFFICULTY");
+
+    uint32 difficulty;
+    recvData >> difficulty;
+
+    Player* player = GetPlayer();
+    Map* map = _player->FindMap();
+    Group* group = _player->GetGroup();
+
+    if (!group || !group->isRaidGroup()) // You must be in a raid group to enter a raid.
+        return;
+
+    uint32 result = DIFF_CHANGE_SUCCESS; // Default result: Success.
+    // ! DIFF_CHANGE_SET_CHANGE_TIME and DIFF_CHANGE_SUCCESS cause the sending of CMSG_LOADING_SCREEN. 
+    // ! It has the mapID and a uint32 which is actually disabled screen. It is 0 for CHANGE_SUCCESS and 1 for SET_CHANGE_TIME.
+
+    /*** Now do the checks here for every other possible result. ***/
+
+    // if (!passed 5 minutes)
+    //    result = ERR_DIFFICULTY_CHANGE_COOLDOWN_S; // If recently changed diff, 5 min cooldown.
+
+    // Group is already on Heroic.
+    if (Difficulty(difficulty) == map->GetDifficulty() && (map->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || map->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC))
+        result = DIFF_CHANGE_FAIL_ALREADY_HEROIC;
+
+    // Check the per-player conditions.
+    bool groupInCombat = false;
+    bool groupBusy = false;
+    bool inEncounter = false;
+    bool diffLocked = false;
+    uint64 lockedGuid = 0;
+
+    if (group->IsLeader(_player->GetGUID()))
+    {
+        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+            if (Player* groupGuy = itr->getSource())
+            {
+                if (groupGuy->GetMap()->IsRaid() && groupGuy->GetInstanceScript() && !groupGuy->GetInstanceScript()->IsEncounterInProgress() && groupGuy->isInCombat())
+                    groupInCombat = true; // Someone is in combat with mobs or something.
+                else if (groupGuy->GetMap()->IsRaid() && groupGuy->GetInstanceScript() && groupGuy->GetInstanceScript()->IsEncounterInProgress())
+                    inEncounter = true; // A Boss encounter is in progress.
+                else if (groupGuy->GetSession()->isLogingOut() || groupGuy->IsNonMeleeSpellCasted(false))
+                    groupBusy = true; // Someone is busy.
+                else if (groupGuy->GetMap()->IsRaid() && (difficulty == RAID_DIFFICULTY_10MAN_HEROIC || difficulty == RAID_DIFFICULTY_25MAN_HEROIC) && 
+                groupGuy->GetBoundInstance(groupGuy->GetMapId(), Difficulty(difficulty)) && _player->GetBoundInstance(groupGuy->GetMapId(), Difficulty(difficulty)) && 
+                groupGuy->GetBoundInstance(groupGuy->GetMapId(), Difficulty(difficulty))->save != _player->GetBoundInstance(groupGuy->GetMapId(), Difficulty(difficulty))->save)
+                {
+                    diffLocked = true;
+                    lockedGuid = groupGuy->GetGUID(); // Get first player found with the instance bound on the diff and use his guid.
+                    break;
+                }
+            }
+
+        if (groupInCombat)
+            result = DIFF_CHANGE_FAIL_SOMEONE_IN_COMBAT;
+        else if (inEncounter)
+            result = DIFF_CHANGE_FAIL_ENCOUNTER_IN_PROGRESS;
+        else if (groupBusy)
+            result = DIFF_CHANGE_FAIL_SOMEONE_BUSY;
+        else if (diffLocked)
+            result = DIFF_CHANGE_FAIL_SOMEONE_LOCKED;
+    }
+
+    // Send the result and the corresponding values.
+    switch(result)
+    {
+        case DIFF_CHANGE_FAIL_EVENT_IN_PROGRESS:
+        case DIFF_CHANGE_FAIL_ENCOUNTER_IN_PROGRESS:
+        case DIFF_CHANGE_FAIL_SOMEONE_IN_COMBAT:
+        case DIFF_CHANGE_FAIL_SOMEONE_BUSY:
+        case DIFF_CHANGE_FAIL_CHANGE_STARTED:
+        case DIFF_CHANGE_FAIL_ALREADY_HEROIC:
+        case DIFF_CHANGE_FAIL_IN_LFR:
+        {
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE, 4);
+            data << result;
+            SendPacket(&data);
+            break;
+        }
+        case DIFF_CHANGE_FAIL_SOMEONE_LOCKED:
+        {
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE, 4);
+            data << result;
+            data.appendPackGUID(lockedGuid); //guid of the player which is locked.
+            break;
+        }
+        // DIFF_CHANGE_FAIL_RAID_RECENTLY_IN_COMBAT
+        // DIFF_CHANGE_SET_CHANGE_TIME
+        // DIFF_CHANGE_SHOW_AREA_TRIGGER_TEXT
+        case DIFF_CHANGE_SUCCESS: // It finally worked!
+        {
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE, 12);
+            data << result;
+            data << uint32(map->GetId());
+            data << uint32(difficulty);
+            SendPacket(&data);
+            break;
+        }
+        default:
+        {
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE, 4);
+            data << result;
+            SendPacket(&data);
+            break;
+        }
+    }
+
+    if (result == DIFF_CHANGE_SUCCESS)
+    {
+        if (group->IsLeader(_player->GetGUID()))
+        {
+            group->SetRaidDifficulty(Difficulty(difficulty));
+            map->SetSpawnMode(difficulty);
+
+            for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Update the zone for all players here
+            if (Player* groupGuy = itr->getSource())
+                groupGuy->TeleportTo(map->GetId(), groupGuy->GetPositionX(), groupGuy->GetPositionY(), groupGuy->GetPositionZ(), groupGuy->GetOrientation(), TELE_TO_NOT_UNSUMMON_PET, true);
+        }
+    }
+}
+
 void WorldSession::HandleCancelMountAuraOpcode(WorldPacket& /*recvData*/)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_CANCEL_MOUNT_AURA");
@@ -1992,6 +2115,8 @@ void WorldSession::HandleReadyForAccountDataTimes(WorldPacket& /*recvData*/)
 {
     // empty opcode
     TC_LOG_DEBUG("network", "WORLD: CMSG_READY_FOR_ACCOUNT_DATA_TIMES");
+
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
 
     SendAccountDataTimes(GLOBAL_CACHE_MASK);
 }
@@ -2443,5 +2568,77 @@ void WorldSession::SendLoadCUFProfiles()
 
     data.FlushBits();
     data.append(byteBuffer);
+    SendPacket(&data);
+}
+
+void WorldSession::HandleSetAllowLowLevelRaid1(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID1 Message");
+
+    bool allowLowLevelRaid1;
+    recvData >> allowLowLevelRaid1;
+
+   // What do we do here?
+}
+
+void WorldSession::HandleSetAllowLowLevelRaid2(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID2 Message");
+
+    bool allowLowLevelRaid2;
+    recvData >> allowLowLevelRaid2;
+
+   // What do we do here?
+}
+
+void WorldSession::HandleResetFactionCheat(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_RESET_FACTION_CHEAT Message");
+
+    uint32 factionId;
+    recvData >> factionId;
+
+   // What do we do here?
+}
+
+void WorldSession::HandleRolePollBegin(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_ROLE_POLL_BEGIN Message");
+
+    // Seems like empty opcode, so just send response.
+
+    ObjectGuid playerGuid = _player->GetGUID();
+    WorldPacket data(SMSG_ROLE_POLL_BEGIN, 8);
+
+    data.WriteBit(playerGuid[1]);
+    data.WriteBit(playerGuid[5]);
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(playerGuid[3]);
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(playerGuid[4]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[6]);
+
+    data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(playerGuid[7]);
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[5]);
+    data.WriteByteSeq(playerGuid[1]);
+    data.WriteByteSeq(playerGuid[6]);
+    data.WriteByteSeq(playerGuid[2]);
+    data.WriteByteSeq(playerGuid[3]);
+
+    SendPacket(&data);
+}
+
+void WorldSession::SendStreamingMovie()
+{
+    uint8 count = 0; // Count of movies to stream.
+    WorldPacket data(SMSG_STREAMING_MOVIE, 4 + (2 * count));
+
+    data.WriteBits(count, 25);
+    for(uint8 i = 0; i < count; ++i)
+        data << uint16(0);          //File Data ID.
+
     SendPacket(&data);
 }

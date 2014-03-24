@@ -1652,6 +1652,22 @@ struct QuestFactionRewEntry
   int32       QuestRewFactionValue[10];
 };
 
+struct QuestPOIBlobEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    uint32      type;                                       // 1 m_Type
+    uint32      mapId;                                      // 2 m_mapId
+    uint32      unk;                                        // 3 m_unk
+};
+
+struct QuestPOIPointEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    int32       x;                                          // 1 m_zoneX
+    int32       y;                                          // 2 m_zoneY
+    uint32      blobId;                                     // 3 m_Id
+};
+
 struct RandomPropertiesPointsEntry
 {
     //uint32  Id;                                           // 0 hidden key

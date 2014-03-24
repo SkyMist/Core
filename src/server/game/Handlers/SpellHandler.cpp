@@ -1060,11 +1060,18 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         caster = _player;
     }
 
-    if (caster->GetTypeId() == TYPEID_PLAYER && !caster->ToPlayer()->HasActiveSpell(spellId))
+    bool IsNonPlayerSpellCastNeeded = false; // Some spells are acquired in instances or used in systems like Raid Markers, so we must not exclude them from being castable.
+    if (caster->GetTypeId() == TYPEID_PLAYER)
     {
-        // not have spell in spellbook
-        recvPacket.rfinish(); // prevent spam at ignore packet
-        return;
+        if (spellId == 101603 && caster->ToPlayer()->HasAura(101601) || spellId >= 84996 && spellId <= 85000)
+            IsNonPlayerSpellCastNeeded = true;
+
+        if (!caster->ToPlayer()->HasActiveSpell(spellId) && !IsNonPlayerSpellCastNeeded)
+        {
+            // not have spell in spellbook
+            recvPacket.rfinish(); // prevent spam at ignore packet
+            return;
+        }
     }
 
     if (sSpecializationOverrideSpellMap.find(spellId) != sSpecializationOverrideSpellMap.end())

@@ -128,7 +128,6 @@ enum Opcodes
    CMSG_CANCEL_TRADE                                        = 0x1D32, // 5.4.7 18019
    CMSG_CAST_SPELL                                          = 0x1E5B, // 5.4.7 18019
    CMSG_CHALLANGES_INFO                                     = 0x0,
-   CMSG_CHANGEPLAYER_DIFFICULTY                             = 0x0,
    CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE                  = 0x0,
    CMSG_CHANNEL_ANNOUNCEMENTS                               = 0x0,
    CMSG_CHANNEL_BAN                                         = 0x0,

@@ -3596,7 +3596,7 @@ enum SkillType
     SKILL_DK_UNHOLY                = 772,
     SKILL_INSCRIPTION              = 773,
     SKILL_PET_MOTH                 = 775,
-    SKILL_RUNEFORGING              = 776,
+    SKILL_RUNEFORGING              = 776, // Now 960???
     SKILL_MOUNTS                   = 777,
     SKILL_COMPANIONS               = 778,
     SKILL_PET_EXOTIC_CHIMAERA      = 780,

@@ -36,6 +36,7 @@
 #include "Util.h"
 #include "LFGMgr.h"
 #include "UpdateFieldFlags.h"
+#include "DynamicObject.h"
 
 Roll::Roll(uint64 _guid, LootItem const& li) : itemGUID(_guid), itemid(li.itemid),
 itemRandomPropId(li.randomPropertyId), itemRandomSuffix(li.randomSuffix), itemCount(li.count),
@@ -59,8 +60,13 @@ m_dungeonDifficulty(DUNGEON_DIFFICULTY_NORMAL), m_raidDifficulty(RAID_DIFFICULTY
 m_bgGroup(NULL), m_bfGroup(NULL), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_looterGuid(0),
 m_subGroupsCounts(NULL), m_guid(0), m_counter(0), m_maxEnchantingLevel(0), m_dbStoreId(0)
 {
+    // Remove all target icons
     for (uint8 i = 0; i < TARGETICONCOUNT; ++i)
         m_targetIcons[i] = 0;
+
+    // Remove all raid markers
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+        m_raidMarkers[i] = 0;
 }
 
 Group::~Group()
@@ -154,6 +160,10 @@ bool Group::Create(Player* leader)
         ASSERT(AddMember(leader)); // If the leader can't be added to a new group because it appears full, something is clearly wrong.
 
         Player::ConvertInstancesToGroup(leader, this, false);
+
+        // Remove all raid markers
+        for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+            ClearRaidMarker(i);
     }
     else if (!AddMember(leader))
         return false;
@@ -461,6 +471,8 @@ bool Group::AddMember(Player* player)
     if (isRaidGroup())
         player->UpdateForQuestWorldObjects();
 
+        player->UpdateForRaidMarkers(this);
+
     {
         // Broadcast new player group member fields to rest of the group
         player->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
@@ -541,6 +553,8 @@ bool Group::RemoveMember(uint64 guid, const RemoveMethod& method /*= GROUP_REMOV
 
                 // quest related GO state dependent from raid membership
                 player->UpdateForQuestWorldObjects();
+
+                player->UpdateForRaidMarkers(this);
             }
 
             WorldPacket data;
@@ -725,6 +739,10 @@ void Group::Disband(bool hideDestroy /* = false */)
         if (!player)
             continue;
 
+        // Remove all raid markers.
+        for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+            ClearRaidMarker(i);
+
         //we cannot call _removeMember because it would invalidate member iterator
         //if we are removing player from battleground raid
         if (isBGGroup() || isBFGroup())
@@ -845,7 +863,7 @@ void Group::SendLootStartRollToPlayer(uint32 countDown, uint32 mapId, Player* p,
     p->GetSession()->SendPacket(&data);
 }
 
-void Group::SendLootRoll(uint64 sourceGuid, uint64 targetGuid, uint8 rollNumber, uint8 rollType, Roll const& roll)
+void Group::SendLootRoll(uint64 sourceGuid, uint64 targetGuid, uint32 rollNumber, uint8 rollType, Roll const& roll)
 {
     WorldPacket data(SMSG_LOOT_ROLL, (8+4+8+4+4+4+1+1+1));
     data << uint64(sourceGuid);                             // guid of the item rolled
@@ -854,7 +872,7 @@ void Group::SendLootRoll(uint64 sourceGuid, uint64 targetGuid, uint8 rollNumber,
     data << uint32(roll.itemid);                            // the itemEntryId for the item that shall be rolled for
     data << uint32(roll.itemRandomSuffix);                  // randomSuffix
     data << uint32(roll.itemRandomPropId);                  // Item random property ID
-    data << uint32(rollNumber);                             // 0: "Need for: [item name]" > 127: "you passed on: [item name]"      Roll number
+    data << uint32(rollNumber);                             // 0: "Need for: [item name]", -1: "you passed on: [item name]"      Roll number
     data << uint8(rollType);                                // 0: "Need for: [item name]" 0: "You have selected need for [item name] 1: need roll 2: greed roll
     data << uint8(0);                                       // 1: "You automatically passed on: %s because you cannot loot that item." - Possibly used in need befor greed
 
@@ -869,7 +887,7 @@ void Group::SendLootRoll(uint64 sourceGuid, uint64 targetGuid, uint8 rollNumber,
     }
 }
 
-void Group::SendLootRollWon(uint64 sourceGuid, uint64 targetGuid, uint8 rollNumber, uint8 rollType, Roll const& roll)
+void Group::SendLootRollWon(uint64 sourceGuid, uint64 targetGuid, uint32 rollNumber, uint8 rollType, Roll const& roll)
 {
     WorldPacket data(SMSG_LOOT_ROLL_WON, (8+4+4+4+4+8+1+1));
     data << uint64(sourceGuid);                             // guid of the item rolled
@@ -996,7 +1014,7 @@ void Group::GroupLoot(Loot* loot, WorldObject* pLootedObject)
                             continue;
 
                         if (itr->second == PASS)
-                            SendLootRoll(newitemGUID, p->GetGUID(), 128, ROLL_PASS, *r);
+                            SendLootRoll(newitemGUID, p->GetGUID(), uint32(-1), ROLL_PASS, *r);
                     }
                 }
 
@@ -1139,7 +1157,7 @@ void Group::NeedBeforeGreed(Loot* loot, WorldObject* lootedObject)
                         continue;
 
                     if (itr->second == PASS)
-                        SendLootRoll(newitemGUID, p->GetGUID(), 128, ROLL_PASS, *r);
+                        SendLootRoll(newitemGUID, p->GetGUID(), uint32(-1), ROLL_PASS, *r);
                     else
                         SendLootStartRollToPlayer(60000, lootedObject->GetMapId(), p, p->CanRollForItemInLFG(item, lootedObject) == EQUIP_ERR_OK, *r);
                 }
@@ -1202,7 +1220,7 @@ void Group::NeedBeforeGreed(Loot* loot, WorldObject* lootedObject)
                     continue;
 
                 if (itr->second == PASS)
-                    SendLootRoll(newitemGUID, p->GetGUID(), 128, ROLL_PASS, *r);
+                    SendLootRoll(newitemGUID, p->GetGUID(), uint32(-1), ROLL_PASS, *r);
                 else
                     SendLootStartRollToPlayer(60000, lootedObject->GetMapId(), p, p->CanRollForItemInLFG(item, lootedObject) == EQUIP_ERR_OK, *r);
             }
@@ -1276,7 +1294,7 @@ void Group::CountRollVote(uint64 playerGUID, uint64 Guid, uint8 Choice)
     switch (Choice)
     {
         case ROLL_PASS:                                     // Player choose pass
-            SendLootRoll(0, playerGUID, 128, ROLL_PASS, *roll);
+            SendLootRoll(0, playerGUID, uint32(-1), ROLL_PASS, *roll);
             ++roll->totalPass;
             itr->second = PASS;
             break;
@@ -1286,12 +1304,12 @@ void Group::CountRollVote(uint64 playerGUID, uint64 Guid, uint8 Choice)
             itr->second = NEED;
             break;
         case ROLL_GREED:                                    // player choose Greed
-            SendLootRoll(0, playerGUID, 128, ROLL_GREED, *roll);
+            SendLootRoll(0, playerGUID, uint32(-1), ROLL_GREED, *roll);
             ++roll->totalGreed;
             itr->second = GREED;
             break;
         case ROLL_DISENCHANT:                               // player choose Disenchant
-            SendLootRoll(0, playerGUID, 128, ROLL_DISENCHANT, *roll);
+            SendLootRoll(0, playerGUID, uint32(-1), ROLL_DISENCHANT, *roll);
             ++roll->totalGreed;
             itr->second = DISENCHANT;
             break;
@@ -1330,7 +1348,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
     {
         if (!roll->playerVote.empty())
         {
-            uint8 maxresul = 0;
+            uint32 maxresul = 0;
             uint64 maxguid  = (*roll->playerVote.begin()).first;
             Player* player;
 
@@ -1339,7 +1357,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                 if (itr->second != NEED)
                     continue;
 
-                uint8 randomN = urand(1, 100);
+                uint32 randomN = urand(1, 100);
                 SendLootRoll(0, itr->first, randomN, ROLL_NEED, *roll);
                 if (maxresul < randomN)
                 {
@@ -1376,7 +1394,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
     {
         if (!roll->playerVote.empty())
         {
-            uint8 maxresul = 0;
+            uint32 maxresul = 0;
             uint64 maxguid = (*roll->playerVote.begin()).first;
             Player* player;
             RollVote rollvote = NOT_VALID;
@@ -1387,7 +1405,7 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                 if (itr->second != GREED && itr->second != DISENCHANT)
                     continue;
 
-                uint8 randomN = urand(1, 100);
+                uint32 randomN = urand(1, 100);
                 SendLootRoll(0, itr->first, randomN, itr->second, *roll);
                 if (maxresul < randomN)
                 {
@@ -1487,6 +1505,61 @@ void Group::SendTargetIconList(WorldSession* session)
     }
 
     session->SendPacket(&data);
+}
+
+void Group::SetRaidMarker(uint8 id, Player* who, uint64 targetGuid, bool update /*=true*/)
+{
+    if (!who)
+        return;
+
+    if (id >= RAID_MARKER_COUNT)
+    {
+        // remove all markers
+        for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+            m_raidMarkers[i] = 0;
+    }
+    else
+        m_raidMarkers[id] = targetGuid;
+
+    if (update)
+        SendRaidMarkerUpdate();
+}
+
+void Group::SendRaidMarkerUpdate()
+{
+    WorldPacket data(SMSG_RAID_MARKERS_CHANGED, 4);
+
+    uint32 mask = 0;
+
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+        if (m_raidMarkers[i])
+            mask |= 1 << i;
+
+    data << uint32(mask);
+
+    BroadcastPacket(&data, false);
+}
+
+void Group::ClearRaidMarker(uint64 guid)
+{
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+    {
+        if (m_raidMarkers[i] == guid)
+        {
+            m_raidMarkers[i] = 0;
+            SendRaidMarkerUpdate();
+            break;
+        }
+    }
+}
+
+bool Group::HasRaidMarker(uint64 guid)
+{
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+        if (m_raidMarkers[i] == guid)
+            return true;
+
+    return false;
 }
 
 void Group::SendUpdate()

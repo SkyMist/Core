@@ -1414,21 +1414,21 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
 
 void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const &name, uint64 targetGuid) const
 {
-    *data << (uint8)msgtype;
-    *data << (uint32)language;
-    *data << (uint64)GetGUID();
-    *data << (uint32)0;                                     // 2.1.0
-    *data << (uint32)(name.size()+1);
+    *data << uint8(msgtype);
+    *data << uint32(language);
+    *data << uint64(GetGUID());
+    *data << uint32(0);                                     // 2.1.0
+    *data << uint32(name.size() + 1);
     *data << name;
-    *data << (uint64)targetGuid;                            // Unit Target
+    *data << uint64(targetGuid);                            // Unit Target
     if (targetGuid && !IS_PLAYER_GUID(targetGuid))
     {
-        *data << (uint32)1;                                 // target name length
-        *data << (uint8)0;                                  // target name
+        *data << uint32(1);                                 // target name length
+        *data << uint8(0);                                  // target name
     }
-    *data << (uint32)(strlen(text)+1);
+    *data << uint32(strlen(text)+1);
     *data << text;
-    *data << (uint8)0;                                      // ChatTag
+    *data << uint8(0);                                      // ChatTag
     if (msgtype == CHAT_MSG_RAID_BOSS_EMOTE || msgtype == CHAT_MSG_RAID_BOSS_WHISPER)
     {
         *data << float(0);

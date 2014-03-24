@@ -674,6 +674,16 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket& recvData)
         TC_LOG_DEBUG("network", "WORLD: received wrong itemType (%u) in HandleBuyItemOpcode", itemType);
 }
 
+void WorldSession::HandleSetCurrencyFlags(WorldPacket& recvData)
+{
+    sLog->outDebug("network", "WORLD: Received CMSG_SET_CURRENCY_FLAGS");
+
+    uint32 flags, currencyid;
+
+    recvData >> uint32(flags);
+    recvData >> uint32(currencyid);
+}
+
 void WorldSession::HandleListInventoryOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;

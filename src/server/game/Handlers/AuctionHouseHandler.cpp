@@ -174,7 +174,7 @@ void WorldSession::SendAuctionRemovedNotification(uint32 auctionId, uint32 itemE
     WorldPacket data(SMSG_AUCTION_REMOVED_NOTIFICATION, (4+4+4));
     data << uint32(auctionId);
     data << uint32(itemEntry);
-    data << uint32(randomPropertyId);
+    data << int32(randomPropertyId);
     SendPacket(&data);
 }
 

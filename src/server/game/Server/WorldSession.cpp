@@ -321,7 +321,10 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
             _recvQueue.next(packet, updater))
     {
         if (!AntiDOS.EvaluateOpcode(*packet))
+        {
+            TC_LOG_ERROR("network", "A Player (Account: %u) was kicked / banned due to possible Spoof / DOS attempt on CMSG_CHAR_ENUM!", GetAccountId());
             KickPlayer();
+        }
 
         OpcodeHandler const* opHandle = clientOpcodeTable[packet->GetOpcode()];
         try

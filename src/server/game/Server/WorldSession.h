@@ -104,6 +104,23 @@ enum PartyOperation
     PARTY_OP_SWAP = 4
 };
 
+enum ChangeDynamicDifficultyResult
+{
+    ERR_DIFFICULTY_CHANGE_COOLDOWN_S                            = 0, // sends the remaining time in seconds to the client
+    ERR_DIFFICULTY_CHANGE_WORLDSTATE                            = 1,
+    ERR_DIFFICULTY_CHANGE_ENCOUNTER                             = 2,
+    ERR_DIFFICULTY_CHANGE_COMBAT                                = 3,
+    ERR_DIFFICULTY_CHANGE_PLAYER_BUSY                           = 4,
+    ERR_DIFFICULTY_CHANGE_ALREADY_STARTED                       = 6,
+    ERR_DIFFICULTY_CHANGE_OTHER_HEROIC_S                        = 8, // sends it when someone is locked for the encounter on heroic, sends the locked player packed guid
+    ERR_DIFFICULTY_CHANGE_HEROIC_INSTANCE_ALREADY_RUNNING       = 9,
+    ERR_DIFFICULTY_DISABLED_IN_LFG                              = 10,
+    ERR_DIFFICULTY_CHANGE_UPDATE_TIME                           = 5, // sends the remaining time in time_t
+    ERR_DIFFICULTY_CHANGE_UPDATE_MAP_DIFFICULTY_ENTRY           = 7, // sends the ID of MapDifficulty
+    ERR_DIFFICULTY_CHANGE_SUCCESS                               = 11 // sends remaining time in time_t and mapId
+
+};
+
 enum BFLeaveReason
 {
     BF_LEAVE_REASON_CLOSE     = 0x00000001,
@@ -227,6 +244,8 @@ class WorldSession
         void SendQueryTimeResponse();
         void SendGroupInviteNotification(const std::string& inviterName, bool inGroup);
 
+        void SendNewWorld(WorldLocation const &location);
+
         void SendAuthResponse(uint8 code, bool queued, uint32 queuePos = 0);
         void SendClientCacheVersion(uint32 version);
 
@@ -276,13 +295,16 @@ class WorldSession
         /// Handle the authentication waiting queue (to be completed)
         void SendAuthWaitQue(uint32 position);
 
-        //void SendTestCreatureQueryOpcode(uint32 entry, uint64 guid, uint32 testvalue);
         void SendNameQueryOpcode(ObjectGuid guid);
 
         void SendRealmNameQueryOpcode(uint32 realmId);
 
         void SendTrainerList(uint64 guid);
         void SendTrainerList(uint64 guid, std::string const& strTitle);
+
+        // Currency
+        void HandleSetCurrencyFlags(WorldPacket& recvData);
+
         void SendListInventory(uint64 guid);
         void SendShowBank(ObjectGuid guid);
         void SendTabardVendorActivate(uint64 guid);
@@ -447,6 +469,7 @@ class WorldSession
         void HandleRepopRequestOpcode(WorldPacket& recvPacket);
         void HandleAutostoreLootItemOpcode(WorldPacket& recvPacket);
         void HandleLootMoneyOpcode(WorldPacket& recvPacket);
+        void HandleLootCurrencyOpcode(WorldPacket& recvPacket);
         void HandleLootOpcode(WorldPacket& recvPacket);
         void HandleLootReleaseOpcode(WorldPacket& recvPacket);
         void HandleLootMasterGiveOpcode(WorldPacket& recvPacket);
@@ -541,6 +564,7 @@ class WorldSession
         void HandleGroupChangeSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupSwapSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupAssistantLeaderOpcode(WorldPacket& recvData);
+        void HandleClearRaidMarkerOpcode(WorldPacket& recvData);
         void HandlePartyAssignmentOpcode(WorldPacket& recvData);
 
         void HandlePetitionBuyOpcode(WorldPacket& recvData);
@@ -799,6 +823,7 @@ class WorldSession
         void HandleFarSightOpcode(WorldPacket& recvData);
         void HandleSetDungeonDifficultyOpcode(WorldPacket& recvData);
         void HandleSetRaidDifficultyOpcode(WorldPacket& recvData);
+        void HandleChangePlayerDifficulty(WorldPacket& recvData);
         void HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData);
         void HandleSetTitleOpcode(WorldPacket& recvData);
         void HandleRealmSplitOpcode(WorldPacket& recvData);
@@ -953,11 +978,16 @@ class WorldSession
         void HandleEjectPassenger(WorldPacket& data);
         void HandleEnterPlayerVehicle(WorldPacket& data);
         void HandleUpdateProjectilePosition(WorldPacket& recvPacket);
-        void HandleRequestHotfix(WorldPacket& recvPacket);
         void HandleUpdateMissileTrajectory(WorldPacket& recvPacket);
+        void HandleRequestHotfix(WorldPacket& recvPacket);
         void HandleViolenceLevel(WorldPacket& recvPacket);
         void HandleObjectUpdateFailedOpcode(WorldPacket& recvPacket);
         void HandleRequestCategoryCooldowns(WorldPacket& recvPacket);
+        void HandleSetAllowLowLevelRaid1(WorldPacket& recvData);
+        void HandleSetAllowLowLevelRaid2(WorldPacket& recvData);
+        void HandleResetFactionCheat(WorldPacket& recvData);
+        void HandleRolePollBegin(WorldPacket& recvData);
+        void SendStreamingMovie();
 
         void SendBroadcastText(uint32 entry);
 

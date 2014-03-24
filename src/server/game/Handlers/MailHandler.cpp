@@ -703,8 +703,8 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
             data << uint32((item ? item->GetCount() : 0));
             // charges
             data << uint32((item ? item->GetSpellCharges() : 0));
-            // durability
-            data << uint32((item ? item->GetUInt32Value(ITEM_FIELD_MAX_DURABILITY) : 0));
+            // max durability
+            data << uint32(0); // Don't put max durability here, breaks sending or receiving mail as causes the 0 durability bug.
             // durability
             data << uint32((item ? item->GetUInt32Value(ITEM_FIELD_DURABILITY) : 0));
             // unknown wotlk

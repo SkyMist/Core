@@ -398,51 +398,6 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recvData)
     SendPartyResult(PARTY_OP_UNINVITE, "", ERR_TARGET_NOT_IN_GROUP_S);
 }
 
-void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recvData)
-{
-    TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_UNINVITE");
-
-    std::string membername;
-    recvData >> membername;
-
-    // player not found
-    if (!normalizePlayerName(membername))
-        return;
-
-    // can't uninvite yourself
-    if (GetPlayer()->GetName() == membername)
-    {
-        TC_LOG_ERROR("network", "WorldSession::HandleGroupUninviteOpcode: leader %s(%d) tried to uninvite himself from the group.",
-            GetPlayer()->GetName().c_str(), GetPlayer()->GetGUIDLow());
-        return;
-    }
-
-    PartyResult res = GetPlayer()->CanUninviteFromGroup();
-    if (res != ERR_PARTY_RESULT_OK)
-    {
-        SendPartyResult(PARTY_OP_UNINVITE, "", res);
-        return;
-    }
-
-    Group* grp = GetPlayer()->GetGroup();
-    if (!grp)
-        return;
-
-    if (uint64 guid = grp->GetMemberGUID(membername))
-    {
-        Player::RemoveFromGroup(grp, guid, GROUP_REMOVEMETHOD_KICK, GetPlayer()->GetGUID());
-        return;
-    }
-
-    if (Player* player = grp->GetInvited(membername))
-    {
-        player->UninviteFromGroup();
-        return;
-    }
-
-    SendPartyResult(PARTY_OP_UNINVITE, membername, ERR_TARGET_NOT_IN_GROUP_S);
-}
-
 void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_SET_LEADER");
@@ -481,6 +436,38 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
     // Everything's fine, accepted.
     group->ChangeLeader(guid);
     group->SendUpdate();
+}
+
+void WorldSession::HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData)
+{
+    sLog->outDebug("network", "WORLD: Received CMSG_SET_EVERYONE_IS_ASSISTANT");
+
+    Group* group = GetPlayer()->GetGroup();
+
+    if (!group)
+        return;
+
+    if (!group->IsLeader(GetPlayer()->GetGUID()))
+        return;
+
+    bool active = recvData.ReadBit();      // 0 == inactive, 1 == active
+
+    if (active)
+    {
+        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
+            if (Player *player = itr->getSource())
+                group->SetGroupMemberFlag(player->GetGUID(), active, MEMBER_FLAG_ASSISTANT);
+
+        group->SendUpdate();
+    }
+    else
+    {
+        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
+            if (Player *player = itr->getSource())
+                group->SetGroupMemberFlag(player->GetGUID(), !active, MEMBER_FLAG_ASSISTANT);
+
+        group->SendUpdate();
+    }
 }
 
 void WorldSession::HandleGroupSetRolesOpcode(WorldPacket& recvData)
@@ -593,6 +580,21 @@ void WorldSession::HandleGroupDisbandOpcode(WorldPacket& /*recvData*/)
     SendPartyResult(PARTY_OP_LEAVE, GetPlayer()->GetName(), ERR_PARTY_RESULT_OK);
 
     GetPlayer()->RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE);
+}
+
+void WorldSession::HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData)
+{
+    int8 id;
+    recvData >> id;
+
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_CLEAR_RAID_MARKER from %s (%u) id: %i", GetPlayerName(), GetAccountId(), id);
+
+    Group* group = _player->GetGroup();
+    if (!group)
+        return;
+
+    if (group->IsAssistant(_player->GetGUID()) || group->IsLeader(_player->GetGUID()))
+        group->SetRaidMarker(id, _player, group->GetGUID());
 }
 
 void WorldSession::HandleLootMethodOpcode(WorldPacket& recvData)
