@@ -915,21 +915,27 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     LoadAccountData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA), PER_CHARACTER_CACHE_MASK);
     SendAccountDataTimes(PER_CHARACTER_CACHE_MASK);
 
-    bool featureBit4 = true;
-    data.Initialize(SMSG_FEATURE_SYSTEM_STATUS, 7);         // checked in 4.2.2
-    data << uint8(2);                                       // unknown value
-    data << uint32(1);
-    data << uint32(1);
-    data << uint32(2);
-    data << uint32(0);
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.WriteBit(0);
-    data.WriteBit(featureBit4);
-    data.WriteBit(0);
-    data.WriteBit(0);
+    bool IsGMQuickTicketSystemEnabled = true;
+    bool IsSessionTimeAlertEnabled = false;
+    data.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
+    data << uint8(2);                                       // Complain System Status
+    data << uint32(1);                                      // NumSoRRemaining
+    data << uint32(1);                                      // Is lua function LoadURL enabled
+    data << uint32(2);                                      // unk dword10
+    data << uint32(0);                                      // unk dword1C
+    data.WriteBit(0);                                       // GMItemRestorationButtonEnabled
+    data.WriteBit(IsSessionTimeAlertEnabled);               // IsSessionTimeAlertEnabled
+    data.WriteBit(0);                                       // IsInGameStoreEnabled
+    data.WriteBit(0);                                       // CanSendSoRRequest
+    data.WriteBit(IsGMQuickTicketSystemEnabled);            // GMQuickTicketSystemEnabled
+    data.WriteBit(0);                                       // byte21
+    data.WriteBit(0);                                       // IsVoiceChatEnabled
+    data.WriteBit(0);                                       // IsInGameStoreAPIAvailable
+    data.WriteBit(0);                                       // CanSendSoRByText
+    data.WriteBit(0);                                       // IsInGameStoreDisabledByParentalControl
     data.FlushBits();
-    if (featureBit4)
+
+    if (IsGMQuickTicketSystemEnabled)
     {
         data << uint32(1);
         data << uint32(0);
@@ -937,12 +943,13 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         data << uint32(60);
     }
 
-    //if (featureBit5)
-    //{
-    //    data << uint32(0);
-    //    data << uint32(0);
-    //    data << uint32(0);
-    //}
+    if (IsSessionTimeAlertEnabled)
+    {
+        data << uint32(0);
+        data << uint32(0);
+        data << uint32(0);
+    }
+
     SendPacket(&data);
 
     // Send MOTD
