@@ -377,6 +377,7 @@ class Map : public GridRefManager<NGridType>
 
         uint32 GetInstanceId() const { return i_InstanceId; }
         uint8 GetSpawnMode() const { return (i_spawnMode); }
+        void SetSpawnMode(uint8 mode) { i_spawnMode = mode; }
         virtual bool CanEnter(Player* /*player*/) { return true; }
         const char* GetMapName() const;
 

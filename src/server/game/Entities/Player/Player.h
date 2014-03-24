@@ -1285,9 +1285,11 @@ class Player : public Unit, public GridObject<Player>
             SetFloatValue(UNIT_FIELD_COMBAT_REACH, scale * DEFAULT_COMBAT_REACH);
         }
 
-        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0);
+        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool raidDifficultyChange = false);
         bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
         bool TeleportToBGEntryPoint();
+
+        void PlayHoverAnimation();
 
         void SetSummonPoint(uint32 mapid, float x, float y, float z);
         void SummonIfPossible(bool agree);

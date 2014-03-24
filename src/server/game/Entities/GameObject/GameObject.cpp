@@ -1738,7 +1738,7 @@ void GameObject::SendCustomAnim(uint32 anim)
     SendMessageToSet(&data, true);
 }
 
-void GameObject:ActivateAnimation(uint32 anim) // Used in GO animations related to Movement or Opening/Looting. ToDo.
+void GameObject::ActivateAnimation(uint32 anim) // Used in GO animations related to Movement or Opening/Looting. ToDo.
 {
     ObjectGuid guid = GetGUID();
 
@@ -1765,7 +1765,7 @@ void GameObject:ActivateAnimation(uint32 anim) // Used in GO animations related 
 
     data << uint32(anim);
 
-    GetSession()->SendPacket(&data);
+    SendMessageToSet(&data, true);
 }
 
 bool GameObject::IsInRange(float x, float y, float z, float radius) const

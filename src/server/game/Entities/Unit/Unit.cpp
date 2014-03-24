@@ -967,7 +967,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
         {
             // If crit add critical bonus - Mobs can't crit and have bonus damage with spells. Player Totems / Pets can.
             if (crit) 
-            if (!IS_CREATURE_GUID(GetGUID()) && (isPet() && IS_PLAYER_GUID(GetOwnerGUID())) && (isTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() == 15438)
+            if (!IS_CREATURE_GUID(GetGUID()) && (IsPet() && IS_PLAYER_GUID(GetOwnerGUID())) && (IsTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() == 15438)
             {
                 damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
                 damage = SpellCriticalDamageBonus(spellInfo, damage, victim);
@@ -9071,7 +9071,7 @@ bool Unit::isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMas
 {
     //! Mobs can't crit with spells. Player Totems / Pets can.
     //! Fire Elemental (from totem) can too - but this part is a hack and needs more research
-    if (IS_CREATURE_GUID(GetGUID()) && !(isPet() && IS_PLAYER_GUID(GetOwnerGUID())) && !(isTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() != 15438)
+    if (IS_CREATURE_GUID(GetGUID()) && !(IsPet() && IS_PLAYER_GUID(GetOwnerGUID())) && !(IsTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() != 15438)
         return false;
 
     // not critting spell
@@ -14261,7 +14261,7 @@ void Unit::RemoveCharmedBy(Unit* charmer)
                     CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate();
                     if (cinfo && cinfo->type == CREATURE_TYPE_DEMON)
                     {
-                        SetByteValue(UNIT_FIELD_BYTES_0, 1, uint8(cinfo->unit_class));
+                        SetClass(cinfo->unit_class);
                         if (GetCharmInfo())
                             GetCharmInfo()->SetPetNumber(0, true);
                         else

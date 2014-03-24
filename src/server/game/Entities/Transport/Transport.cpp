@@ -106,7 +106,6 @@ void Transport::CleanupsBeforeDelete(bool finalCleanup /*= true*/)
     while (!_passengers.empty())
     {
         WorldObject* obj = *_passengers.begin();
-        obj->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
         obj->m_movementInfo.transport.Reset();
         obj->SetTransport(NULL);
         RemovePassenger(obj);

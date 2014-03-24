@@ -440,7 +440,7 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData)
 {
-    sLog->outDebug("network", "WORLD: Received CMSG_SET_EVERYONE_IS_ASSISTANT");
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_SET_EVERYONE_IS_ASSISTANT");
 
     Group* group = GetPlayer()->GetGroup();
 
@@ -455,7 +455,7 @@ void WorldSession::HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData)
     if (active)
     {
         for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
-            if (Player *player = itr->getSource())
+            if (Player *player = itr->GetSource())
                 group->SetGroupMemberFlag(player->GetGUID(), active, MEMBER_FLAG_ASSISTANT);
 
         group->SendUpdate();
@@ -463,7 +463,7 @@ void WorldSession::HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData)
     else
     {
         for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
-            if (Player *player = itr->getSource())
+            if (Player* player = itr->GetSource())
                 group->SetGroupMemberFlag(player->GetGUID(), !active, MEMBER_FLAG_ASSISTANT);
 
         group->SendUpdate();
@@ -587,7 +587,7 @@ void WorldSession::HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData)
     int8 id;
     recvData >> id;
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_CLEAR_RAID_MARKER from %s (%u) id: %i", GetPlayerName(), GetAccountId(), id);
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_CLEAR_RAID_MARKER from %s (%u) id: %i", GetPlayerName(), GetAccountId(), id);
 
     Group* group = _player->GetGroup();
     if (!group)

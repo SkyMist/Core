@@ -722,7 +722,7 @@ class boss_the_lich_king : public CreatureScript
                         summon->CastSpell((Unit*)NULL, SPELL_BROKEN_FROSTMOURNE, true);
 
                         me->GetMap()->SetZoneOverrideLight(AREA_THE_FROZEN_THRONE, LIGHT_SOULSTORM, 10000);
-                        me->GetMap()->SetZoneWeather(AREA_THE_FROZEN_THRONE, WEATHER_STATE_BLACKSNOW);
+                        me->GetMap()->SetZoneWeather(AREA_THE_FROZEN_THRONE, WEATHER_STATE_BLACKSNOW, 0.5f);
 
                         events.ScheduleEvent(EVENT_OUTRO_SOUL_BARRAGE, 5000, 0, PHASE_OUTRO);
                         return;
@@ -775,7 +775,7 @@ class boss_the_lich_king : public CreatureScript
                 if (spell->Id == REMORSELESS_WINTER_1 || spell->Id == REMORSELESS_WINTER_2)
                 {
                     me->GetMap()->SetZoneOverrideLight(AREA_THE_FROZEN_THRONE, LIGHT_SNOWSTORM, 5000);
-                    me->GetMap()->SetZoneWeather(AREA_THE_FROZEN_THRONE, WEATHER_STATE_LIGHT_SNOW);
+                    me->GetMap()->SetZoneWeather(AREA_THE_FROZEN_THRONE, WEATHER_STATE_LIGHT_SNOW, 0.5f);
                 }
             }
 

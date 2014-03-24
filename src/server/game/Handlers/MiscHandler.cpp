@@ -1882,7 +1882,7 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "Received CMSG_CHANGEPLAYER_DIFFICULTY");
+    TC_LOG_DEBUG("network", "Received CMSG_PLAYER_DIFFICULTY_CHANGE");
 
     uint32 difficulty;
     recvData >> difficulty;
@@ -1917,9 +1917,9 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
     if (group->IsLeader(_player->GetGUID()))
     {
         for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            if (Player* groupGuy = itr->getSource())
+            if (Player* groupGuy = itr->GetSource())
             {
-                if (groupGuy->GetMap()->IsRaid() && groupGuy->GetInstanceScript() && !groupGuy->GetInstanceScript()->IsEncounterInProgress() && groupGuy->isInCombat())
+                if (groupGuy->GetMap()->IsRaid() && groupGuy->GetInstanceScript() && !groupGuy->GetInstanceScript()->IsEncounterInProgress() && groupGuy->IsInCombat())
                     groupInCombat = true; // Someone is in combat with mobs or something.
                 else if (groupGuy->GetMap()->IsRaid() && groupGuy->GetInstanceScript() && groupGuy->GetInstanceScript()->IsEncounterInProgress())
                     inEncounter = true; // A Boss encounter is in progress.
@@ -1997,7 +1997,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
             map->SetSpawnMode(difficulty);
 
             for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Update the zone for all players here
-            if (Player* groupGuy = itr->getSource())
+            if (Player* groupGuy = itr->GetSource())
                 groupGuy->TeleportTo(map->GetId(), groupGuy->GetPositionX(), groupGuy->GetPositionY(), groupGuy->GetPositionZ(), groupGuy->GetOrientation(), TELE_TO_NOT_UNSUMMON_PET, true);
         }
     }
@@ -2573,7 +2573,7 @@ void WorldSession::SendLoadCUFProfiles()
 
 void WorldSession::HandleSetAllowLowLevelRaid1(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID1 Message");
+    TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID1 Message");
 
     bool allowLowLevelRaid1;
     recvData >> allowLowLevelRaid1;
@@ -2583,7 +2583,7 @@ void WorldSession::HandleSetAllowLowLevelRaid1(WorldPacket& recvData)
 
 void WorldSession::HandleSetAllowLowLevelRaid2(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID2 Message");
+    TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_SET_ALLOW_LOW_LEVEL_RAID2 Message");
 
     bool allowLowLevelRaid2;
     recvData >> allowLowLevelRaid2;
@@ -2593,7 +2593,7 @@ void WorldSession::HandleSetAllowLowLevelRaid2(WorldPacket& recvData)
 
 void WorldSession::HandleResetFactionCheat(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_RESET_FACTION_CHEAT Message");
+    TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_RESET_FACTION_CHEAT Message");
 
     uint32 factionId;
     recvData >> factionId;
@@ -2603,7 +2603,7 @@ void WorldSession::HandleResetFactionCheat(WorldPacket& recvData)
 
 void WorldSession::HandleRolePollBegin(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_ROLE_POLL_BEGIN Message");
+    TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_ROLE_POLL_BEGIN Message");
 
     // Seems like empty opcode, so just send response.
 

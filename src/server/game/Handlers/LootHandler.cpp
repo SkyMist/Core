@@ -137,7 +137,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleLootCurrencyOpcode(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_LOOT_CURRENCY");
+    TC_LOG_DEBUG("network", "WORLD: CMSG_LOOT_CURRENCY");
 
 	Player* player = GetPlayer();
     uint64 lguid = player->GetLootGUID();
@@ -152,7 +152,7 @@ void WorldSession::HandleLootCurrencyOpcode(WorldPacket& recvData)
         case HIGHGUID_VEHICLE:
         {
             Creature* creature = player->GetMap()->GetCreature(lguid);
-            bool lootAllowed = creature && !creature->isAlive();
+            bool lootAllowed = creature && !creature->IsAlive();
 
             if (lootAllowed)
                 loot = &creature->loot;

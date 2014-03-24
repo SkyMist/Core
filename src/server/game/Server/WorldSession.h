@@ -106,18 +106,18 @@ enum PartyOperation
 
 enum ChangeDynamicDifficultyResult
 {
-    ERR_DIFFICULTY_CHANGE_COOLDOWN_S                            = 0, // sends the remaining time in seconds to the client
-    ERR_DIFFICULTY_CHANGE_WORLDSTATE                            = 1,
-    ERR_DIFFICULTY_CHANGE_ENCOUNTER                             = 2,
-    ERR_DIFFICULTY_CHANGE_COMBAT                                = 3,
-    ERR_DIFFICULTY_CHANGE_PLAYER_BUSY                           = 4,
-    ERR_DIFFICULTY_CHANGE_ALREADY_STARTED                       = 6,
-    ERR_DIFFICULTY_CHANGE_OTHER_HEROIC_S                        = 8, // sends it when someone is locked for the encounter on heroic, sends the locked player packed guid
-    ERR_DIFFICULTY_CHANGE_HEROIC_INSTANCE_ALREADY_RUNNING       = 9,
-    ERR_DIFFICULTY_DISABLED_IN_LFG                              = 10,
-    ERR_DIFFICULTY_CHANGE_UPDATE_TIME                           = 5, // sends the remaining time in time_t
-    ERR_DIFFICULTY_CHANGE_UPDATE_MAP_DIFFICULTY_ENTRY           = 7, // sends the ID of MapDifficulty
-    ERR_DIFFICULTY_CHANGE_SUCCESS                               = 11 // sends remaining time in time_t and mapId
+    DIFF_CHANGE_FAIL_RAID_RECENTLY_IN_COMBAT                    =  0, // "Raid was in combat recently and may not change difficulty again for %s.", where %s is time. Send the time in seconds as a uint32
+    DIFF_CHANGE_FAIL_EVENT_IN_PROGRESS                          =  1, // "Raid difficulty cannot be changed at this time. An event is in progress."
+    DIFF_CHANGE_FAIL_ENCOUNTER_IN_PROGRESS                      =  2, // "Raid difficulty cannot be changed at this time. An encounter is in progress."
+    DIFF_CHANGE_FAIL_SOMEONE_IN_COMBAT                          =  3, // "Raid difficulty cannot be changed at this time. A player is in combat."
+    DIFF_CHANGE_FAIL_SOMEONE_BUSY                               =  4, // "Raid difficulty cannot be changed at this time. A player is busy."
+    DIFF_CHANGE_SET_CHANGE_TIME                                 =  5, // Sets the time(in secs, uint32 sent) until the raid can't change difficulty
+    DIFF_CHANGE_FAIL_CHANGE_STARTED                             =  6, // "A raid difficulty change is currently in progress."
+    DIFF_CHANGE_SHOW_AREA_TRIGGER_TEXT                          =  7, // Shows the area trigger text in the chat box. Send MapDifficultyID as a uint32
+    DIFF_CHANGE_FAIL_SOMEONE_LOCKED                             =  8, // "Raid difficulty cannot be changed. %s is already locked to a different Heroic instance." where %s is the name of the player. Send a packed guid of the locked player
+    DIFF_CHANGE_FAIL_ALREADY_HEROIC                             =  9, // "Your heroic instance is already in running and in use by another party"
+    DIFF_CHANGE_FAIL_IN_LFR                                     = 10, // "Using Raid Finder to enter this instance disables dynamic difficulty selection"
+    DIFF_CHANGE_SUCCESS                                         = 11, // This is sent where the change is successful. Send the mapID(uint32) and the DifficultyID(uint32) 
 
 };
 
@@ -550,6 +550,7 @@ class WorldSession
         void HandleGroupUninviteOpcode(WorldPacket& recvPacket);
         void HandleGroupUninviteGuidOpcode(WorldPacket& recvPacket);
         void HandleGroupSetLeaderOpcode(WorldPacket& recvPacket);
+        void HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData);
         void HandleGroupSetRolesOpcode(WorldPacket& recvData);
         void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
         void HandleOptOutOfLootOpcode(WorldPacket& recvData);
@@ -564,7 +565,7 @@ class WorldSession
         void HandleGroupChangeSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupSwapSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupAssistantLeaderOpcode(WorldPacket& recvData);
-        void HandleClearRaidMarkerOpcode(WorldPacket& recvData);
+        void HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData);
         void HandlePartyAssignmentOpcode(WorldPacket& recvData);
 
         void HandlePetitionBuyOpcode(WorldPacket& recvData);

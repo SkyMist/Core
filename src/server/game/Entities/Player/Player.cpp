@@ -2140,7 +2140,7 @@ uint8 Player::GetChatTag() const
     return tag;
 }
 
-bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options)
+bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options, bool raidDifficultyChange)
 {
     if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))
     {
@@ -2210,7 +2210,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (duel && GetMapId() != mapid && GetMap()->GetGameObject(GetUInt64Value(PLAYER_FIELD_DUEL_ARBITER)))
         DuelComplete(DUEL_FLED);
 
-    if (GetMapId() == mapid)
+    if (GetMapId() == mapid && !raidDifficultyChange)
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -2392,31 +2392,31 @@ bool Player::TeleportToBGEntryPoint()
     return TeleportTo(m_bgData.joinPos);
 }
 
-void Player::PlayHoverAnimation(); // Player Hover animations.
+void Player::PlayHoverAnimation() // Player Hover animation.
 {
     ObjectGuid guid = GetGUID();
 
     WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 8 + 1);
-    data->WriteBit(guid[4]);
-    data->WriteBit(guid[0]);
-    data->WriteBit(guid[1]);
-    data->WriteBit(guid[3]);
-    data->WriteBit(0); // unk bit.
-    data->WriteBit(guid[7]);
-    data->WriteBit(guid[5]);
-    data->WriteBit(guid[2]);
-    data->WriteBit(guid[6]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(0); // unk bit.
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[6]);
 
-    data->FlushBits();
+    data.FlushBits();
 
-    data->WriteByteSeq(guid[3]);
-    data->WriteByteSeq(guid[2]);
-    data->WriteByteSeq(guid[1]);
-    data->WriteByteSeq(guid[7]);
-    data->WriteByteSeq(guid[0]);
-    data->WriteByteSeq(guid[5]);
-    data->WriteByteSeq(guid[4]);
-    data->WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
 
     GetSession()->SendPacket(&data);
 }
@@ -19597,7 +19597,7 @@ void Player::SendRaidInfo()
                 BodyData << save->GetMapId()        ;               // map id
                 BodyData.WriteByteSeq(InstanceID[2]);
                 BodyData.WriteByteSeq(InstanceID[4]);
-                BodyData << save->GetDifficulty()                   // difficulty
+                BodyData << save->GetDifficulty();                   // difficulty
                 BodyData.WriteByteSeq(InstanceID[7]);
                 BodyData << completedEncounters;                    // completed encounters mask
                 BodyData.WriteByteSeq(InstanceID[6]);
