@@ -1252,14 +1252,8 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
             spellId  = 67116;
             break;
         case FORM_WISE_SERPENT:
-            spellId  = 115070;
-            break;
         case FORM_STURDY_OX:
-            spellId  = 115069;
-            break;
         case FORM_FIERCE_TIGER:
-            spellId  = 103985;
-            break;
         case FORM_GHOUL:
         case FORM_AMBIENT:
         case FORM_STEALTH:
@@ -2910,13 +2904,6 @@ void AuraEffect::HandleModPossess(AuraApplication const* aurApp, uint8 mode, boo
     Unit* target = aurApp->GetTarget();
 
     Unit* caster = GetCaster();
-
-    // no support for posession AI yet
-    if (caster && caster->GetTypeId() == TYPEID_UNIT)
-    {
-        HandleModCharm(aurApp, mode, apply);
-        return;
-    }
 
     if (apply)
         target->SetCharmedBy(caster, CHARM_TYPE_POSSESS, aurApp);

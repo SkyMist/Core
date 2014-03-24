@@ -27,6 +27,9 @@
 #include "CellImpl.h"
 #include "GridNotifiersImpl.h"
 #include "ScriptMgr.h"
+#include "Transport.h"
+#include "Group.h"
+#include "GroupMgr.h"
 
 DynamicObject::DynamicObject(bool isWorldObject) : WorldObject(isWorldObject),
     _aura(NULL), _removedAura(NULL), _caster(NULL), _duration(0), _isViewpoint(false)
@@ -48,6 +51,18 @@ DynamicObject::~DynamicObject()
     delete _removedAura;
 }
 
+void DynamicObject::CleanupsBeforeDelete(bool finalCleanup /* = true */)
+{
+    WorldObject::CleanupsBeforeDelete(finalCleanup);
+
+    if (Transport* transport = GetTransport())
+    {
+        transport->RemovePassenger(this);
+        SetTransport(NULL);
+        m_movementInfo.transport.Reset();
+    }
+}
+
 void DynamicObject::AddToWorld()
 {
     ///- Register the dynamicObject for guid lookup and for caster
@@ -55,7 +70,8 @@ void DynamicObject::AddToWorld()
     {
         sObjectAccessor->AddObject(this);
         WorldObject::AddToWorld();
-        BindToCaster();
+        if(GetType() != DYNAMIC_OBJECT_RAID_MARKER)
+            BindToCaster();
     }
 }
 
@@ -74,7 +90,8 @@ void DynamicObject::RemoveFromWorld()
         if (!IsInWorld())
             return;
 
-        UnbindFromCaster();
+        if(GetType() != DYNAMIC_OBJECT_RAID_MARKER)
+            UnbindFromCaster();
         WorldObject::RemoveFromWorld();
         sObjectAccessor->RemoveObject(this);
     }
@@ -94,6 +111,16 @@ bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, SpellInfo 
 
     SetEntry(spell->Id);
     SetObjectScale(1);
+
+    if (type == DYNAMIC_OBJECT_RAID_MARKER) // The group is considered the caster.
+    {
+        ASSERT(caster->GetTypeId() == TYPEID_PLAYER && caster->ToPlayer()->GetGroup()
+            && "DYNAMIC_OBJECT_RAID_MARKER must only be casted by players which are in the group.");
+        SetUInt64Value(DYNAMICOBJECT_FIELD_CASTER, caster->ToPlayer()->GetGroup()->GetGUID());
+    }
+    else
+        SetUInt64Value(DYNAMICOBJECT_FIELD_CASTER, caster->GetGUID());
+
     SetUInt64Value(DYNAMICOBJECT_FIELD_CASTER, caster->GetGUID());
     SetUInt32Value(DYNAMICOBJECT_FIELD_TYPE_AND_VISUAL_ID, spell->SpellVisual[0] | (type << 28));
     SetUInt32Value(DYNAMICOBJECT_FIELD_SPELL_ID, spell->Id);
@@ -103,17 +130,57 @@ bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, SpellInfo 
     if (IsWorldObject())
         setActive(true);    //must before add to map to be put in world container
 
+    Transport* transport = caster->GetTransport();
+    if (transport)
+    {
+        m_movementInfo.transport.guid = GetGUID();
+
+        float x, y, z, o;
+        pos.GetPosition(x, y, z, o);
+        transport->CalculatePassengerOffset(x, y, z, &o);
+        m_movementInfo.transport.pos.Relocate(x, y, z, o);
+
+        SetTransport(transport);
+        // This object must be added to transport before adding to map for the client to properly display it
+        transport->AddPassenger(this);
+    }
+
     if (!GetMap()->AddToMap(this))
+    {
+        // Returning false will cause the object to be deleted - remove from transport
+        if (transport)
+            transport->RemovePassenger(this);
+
         return false;
+    }
 
     return true;
 }
 
 void DynamicObject::Update(uint32 p_time)
 {
-    // caster has to be always available and in the same map
-    ASSERT(_caster);
-    ASSERT(_caster->GetMap() == GetMap());
+    // Caster has to be always available and in the same map, except for raid markers.
+    Unit* caster = NULL;
+
+    if (GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group* group = sGroupMgr->GetGroupByGUID(GetCasterGUID());
+        if (!group || !group->HasRaidMarker(GetGUID()))
+        {
+            Remove();
+            return;
+        }
+    }
+    else
+    {
+        caster = GetCaster();
+        // Caster can be 'not in world' at the time dynamic objects update, but are not yet deleted in Unit destructor.
+        if (!caster || _caster->GetMap() != GetMap())
+        {
+            Remove();
+            return;
+        }
+    }
 
     bool expired = false;
 
@@ -135,7 +202,13 @@ void DynamicObject::Update(uint32 p_time)
     }
 
     if (expired)
+    {
+        if (GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+            if (Group* group = sGroupMgr->GetGroupByGUID(GetCasterGUID()))
+                group->ClearRaidMarker(GetGUID());
+
         Remove();
+    }
     else
         sScriptMgr->OnDynamicObjectUpdate(this, p_time);
 }

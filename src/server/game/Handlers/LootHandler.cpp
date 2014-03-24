@@ -135,6 +135,45 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
     delete[] guids;
 }
 
+void WorldSession::HandleLootCurrencyOpcode(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "WORLD: CMSG_LOOT_CURRENCY");
+
+	Player* player = GetPlayer();
+    uint64 lguid = player->GetLootGUID();
+    Loot* loot = NULL;
+    uint8 lootSlot = 0;
+
+    recvData >> lootSlot;
+	
+	switch (GUID_HIPART(lguid))
+    {
+	    case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        {
+            Creature* creature = player->GetMap()->GetCreature(lguid);
+            bool lootAllowed = creature && !creature->IsAlive();
+
+            if (lootAllowed)
+                loot = &creature->loot;
+            break;
+        }
+        case HIGHGUID_GAMEOBJECT:
+        {
+            GameObject* go = GetPlayer()->GetMap()->GetGameObject(lguid);
+
+            // do not check distance for GO if player is the owner of it.
+            if (go && ((go->GetOwnerGUID() == player->GetGUID() || go->IsWithinDistInMap(player, INTERACTION_DISTANCE))))
+                loot = &go->loot;
+            break;
+        }
+        default:
+            return;
+    }
+
+    loot->NotifyCurrencyRemoved(lootSlot);	
+}
+
 void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_LOOT_MONEY");

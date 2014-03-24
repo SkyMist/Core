@@ -1446,6 +1446,24 @@ struct LFGDungeonEntry
     uint32 Entry() const { return ID + (type << 24); }
 };
 
+struct LightEntry
+{
+    uint32 Id;
+    uint32 MapId;
+    float X;
+    float Y;
+    float Z;
+    //float FalloffStart;
+    //float FalloffEnd;
+    //uint32 SkyAndFog;
+    //uint32 WaterSettings;
+    //uint32 SunsetParams;
+    //uint32 OtherParams;
+    //uint32 DeathParams;
+    //uint32 Unknown;
+    //float  Unknown;
+    //uint32 Unknown;
+};
 
 struct LiquidTypeEntry
 {
@@ -1632,6 +1650,22 @@ struct QuestFactionRewEntry
 {
   uint32      id;
   int32       QuestRewFactionValue[10];
+};
+
+struct QuestPOIBlobEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    uint32      type;                                       // 1 m_Type
+    uint32      mapId;                                      // 2 m_mapId
+    uint32      unk;                                        // 3 m_unk
+};
+
+struct QuestPOIPointEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    int32       x;                                          // 1 m_zoneX
+    int32       y;                                          // 2 m_zoneY
+    uint32      blobId;                                     // 3 m_Id
 };
 
 struct RandomPropertiesPointsEntry

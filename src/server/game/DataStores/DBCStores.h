@@ -26,6 +26,8 @@
 
 #include <list>
 
+typedef std::map<uint32, uint32> SpecializationOverrideSpellsMap;
+
 typedef std::list<uint32> SimpleFactionsList;
 SimpleFactionsList const* GetFactionTeamList(uint32 faction);
 
@@ -84,6 +86,8 @@ CharStartOutfitEntry const* GetCharStartOutfitEntry(uint8 race, uint8 class_, ui
 
 uint32 GetPowerIndexByClass(uint32 powerType, uint32 classId);
 LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, Difficulty difficulty);
+
+uint32 GetDefaultMapLight(uint32 mapId);
 
 extern DBCStorage <AchievementEntry>             sAchievementStore;
 extern DBCStorage <AchievementCriteriaEntry>     sAchievementCriteriaStore;
@@ -181,6 +185,8 @@ extern DBCStorage <OverrideSpellDataEntry>       sOverrideSpellDataStore;
 extern DBCStorage <QuestSortEntry>               sQuestSortStore;
 extern DBCStorage <QuestXPEntry>                 sQuestXPStore;
 extern DBCStorage <QuestFactionRewEntry>         sQuestFactionRewardStore;
+extern DBCStorage <QuestPOIPointEntry>           sQuestPOIPointStore;
+extern DBCStorage <QuestPOIBlobEntry>            sQuestPOIBlobStore;
 extern DBCStorage <RandomPropertiesPointsEntry>  sRandomPropertiesPointsStore;
 extern DBCStorage <ScalingStatDistributionEntry> sScalingStatDistributionStore;
 extern DBCStorage <ScalingStatValuesEntry>       sScalingStatValuesStore;
@@ -200,6 +206,7 @@ extern SpellsPerClassStore                       sSpellsPerClassStore;
 extern ClassBySkillIdStore                       sClassBySkillIdStore;
 extern SpellEffectScallingByEffectId             sSpellEffectScallingByEffectId;
 extern DBCStorage <SpecializationSpellsEntry>    sSpecializationSpellsStore;
+extern SpecializationOverrideSpellsMap sSpecializationOverrideSpellMap;
 extern DBCStorage <SpellRadiusEntry>             sSpellRadiusStore;
 extern DBCStorage <SpellRangeEntry>              sSpellRangeStore;
 extern DBCStorage <SpellRuneCostEntry>           sSpellRuneCostStore;

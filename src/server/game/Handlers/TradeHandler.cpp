@@ -136,7 +136,7 @@ void WorldSession::SendUpdateTrade(bool trader_data /*= true*/)
             itemData << uint32(item->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
             for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS /*3*/; ++enchant_slot)
                 itemData << uint32(item->GetEnchantmentId(EnchantmentSlot(enchant_slot)));
-            itemData << uint32(item->GetUInt32Value(ITEM_FIELD_MAX_DURABILITY));
+            itemData << uint32(item->GetUInt32Value(0)); // Don't put max durability here, breaks trade as causes the 0 durability bug.
 
             itemData.WriteByteSeq(creatorGuid[6]);
             itemData.WriteByteSeq(creatorGuid[2]);

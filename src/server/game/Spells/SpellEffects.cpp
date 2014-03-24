@@ -67,6 +67,7 @@
 #include "GuildMgr.h"
 #include "ReputationMgr.h"
 #include "AreaTrigger.h"
+#include "UpdateFieldFlags.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
 {
@@ -2476,6 +2477,10 @@ void Spell::EffectAddFarsight(SpellEffIndex effIndex)
     }
 
     dynObj->SetDuration(duration);
+    m_caster->_RegisterDynObject(dynObj);
+
+    dynObj->setActive(true);       // must add it to the map and container
+    dynObj->GetMap()->AddToMap(dynObj); // load grid
     dynObj->SetCasterViewpoint();
 }
 
@@ -4344,7 +4349,99 @@ void Spell::EffectSummonObject(SpellEffIndex effIndex)
         return;
 
     uint32 go_id = m_spellInfo->Effects[effIndex].MiscValue;
-    uint8 slot = m_spellInfo->Effects[effIndex].Effect - SPELL_EFFECT_SUMMON_OBJECT_SLOT1;
+    uint8 slot = 0; // Checked in switch.
+
+    // Archaeo - Later.
+    // if (m_spellInfo->Id == 80451) // Survey spell
+    // {
+    //     go_id = m_caster->ToPlayer()->GetArcheologyMgr().OnSurveyBotActivated();
+    // 
+    //     if (go_id == 0) // If location is not valid, returns 0, and we must stop it.
+    //         return;
+    // }
+
+    switch (m_spellInfo->Effects[effIndex].Effect)
+    {
+        case SPELL_EFFECT_SUMMON_OBJECT_SLOT1: slot = 0; break;
+        case SPELL_EFFECT_SUMMON_OBJECT_SLOT2: slot = 1; break;
+        case SPELL_EFFECT_SUMMON_OBJECT_SLOT3: slot = 2; break;
+        case SPELL_EFFECT_SUMMON_OBJECT_SLOT4: slot = 3; break;
+        default: return;
+    }
+
+    if (m_spellInfo->Effects[effIndex].Effect == SPELL_EFFECT_SUMMON_OBJECT_SLOT3) // Raid Markers.
+    {
+        Unit* caster = GetCaster();
+
+        if (!caster) // in case wild GO will be used with wrong caster (target in fact) as dynobject owner
+            caster = m_caster;
+        
+        if (caster->GetTypeId() != TYPEID_PLAYER)
+            return;
+        
+        Player* pCaster = caster->ToPlayer();
+        Group* group = pCaster->GetGroup();
+
+        if (!group)
+            return;
+        
+        if (!group->IsAssistant(pCaster->GetGUID()) && !group->IsLeader(pCaster->GetGUID()))
+            return;
+        
+        go_id = m_spellInfo->Effects[effIndex].MiscValue;
+        
+        slot = m_spellInfo->Effects[effIndex].BasePoints;
+        
+        float radius = m_spellInfo->Effects[effIndex].CalcRadius();
+        
+        if (Player* modOwner = pCaster->GetSpellModOwner())
+            modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RADIUS, radius);
+        
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(m_spellInfo->Id);
+        
+        DynamicObject* dynObj = new DynamicObject(false);
+        if (!dynObj->CreateDynamicObject(sObjectMgr->GenerateLowGuid(HIGHGUID_DYNAMICOBJECT), pCaster, m_spellInfo, *destTarget, radius, DYNAMIC_OBJECT_RAID_MARKER))
+        {
+            delete dynObj;
+            return;
+        }
+
+        dynObj->UpdateObjectVisibility(false);
+
+        int32 duration = 14400000; // Seems like getting it from spellinfo fails miserably, maybe too large?.
+        dynObj->SetDuration(duration);
+        dynObj->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
+
+        group->SetRaidMarker(slot, pCaster, dynObj->GetGUID());
+        pCaster->GetMap()->AddToMap(dynObj);
+        return;
+    }
+
+    // Archaeo - Later.
+    // uint32 branchId = 0;
+    // switch (go_id)
+    // {
+    //     // Dwarf
+    //     case 204282: branchId = 1; break;
+    //     // Draenei
+    //     case 207188: branchId = 2; break;
+    //     // Fossil
+    //     case 206836: branchId = 3; break;
+    //     // Nerubian
+    //     case 203078: branchId = 5; break;
+    //     // Night Elf
+    //     case 203071: branchId = 4; break;
+    //     // Orc
+    //     case 207187: branchId = 6; break;
+    //     // Tol'vir
+    //     case 207190: branchId = 7; break;
+    //     // Troll
+    //     case 202655: branchId = 8; break;
+    //     // Vrykul
+    //     case 207189: branchId = 27; break;
+    // }
+    // if (branchId > 0 && m_caster->ToPlayer()->GetArcheologyMgr().m_researchProject[branchId] == 0)
+    //     m_caster->ToPlayer()->GetArcheologyMgr().GenerateResearchProject(branchId, false, 0);
 
     if (uint64 guid = m_caster->m_ObjectSlot[slot])
     {
@@ -4366,19 +4463,42 @@ void Spell::EffectSummonObject(SpellEffIndex effIndex)
         destTarget->GetPosition(x, y, z);
     // Summon in random point all other units if location present
     else
-        m_caster->GetClosePoint(x, y, z, DEFAULT_WORLD_OBJECT_SIZE);
+	{
+        // Demonic Circle: Summon
+        if (m_spellInfo->Id == 48018)
+        {
+            x = m_caster->GetPositionX();
+            y = m_caster->GetPositionY();
+            z = m_caster->GetPositionZ();
+        }
+        else
+            m_caster->GetClosePoint(x, y, z, DEFAULT_WORLD_OBJECT_SIZE);
+	}
 
     Map* map = m_caster->GetMap();
-    if (!go->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
-        m_caster->GetPhaseMask(), x, y, z, m_caster->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
-    {
-        delete go;
-        return;
-    }
+    // Archaeo - Later.
+    // if (m_spellInfo->Id == 80451)
+    // {
+    //     if (!pGameObj->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
+    //         m_caster->GetPhaseMask(), x, y, z, m_caster->ToPlayer()->GetArcheologyMgr().SetNearestFindOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+    //     {
+    //         delete go;
+    //         return;
+    //     }
+    // }
+    // else
+    // {
+        if (!go->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_GAMEOBJECT), go_id, map,
+            m_caster->GetPhaseMask(), x, y, z, m_caster->GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, 0, GO_STATE_READY))
+        {
+            delete go;
+            return;
+        }
+    //}
 
-    //pGameObj->SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, m_caster->getLevel());
     int32 duration = m_spellInfo->GetDuration();
     go->SetRespawnTime(duration > 0 ? duration/IN_MILLISECONDS : 0);
+
     go->SetSpellId(m_spellInfo->Id);
     m_caster->AddGameObject(go);
 

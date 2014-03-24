@@ -647,6 +647,21 @@ void Loot::NotifyMoneyRemoved()
     }
 }
 
+void Loot::NotifyCurrencyRemoved(uint8 lootIndex)
+{
+    // notify all players that are looting this that the currency was removed
+    std::set<uint64>::iterator i_next;
+    for (std::set<uint64>::iterator i = PlayersLooting.begin(); i != PlayersLooting.end(); i = i_next)
+    {
+        i_next = i;
+        ++i_next;
+        if (Player* player = ObjectAccessor::FindPlayer(*i))
+            player->SendNotifyCurrencyLootRemoved(lootIndex);
+        else
+            PlayersLooting.erase(i);
+    }
+}
+
 void Loot::NotifyQuestItemRemoved(uint8 questIndex)
 {
     // when a free for all questitem is looted
@@ -860,7 +875,7 @@ void LootItem::WriteBasicDataPart(uint8 slot, ByteBuffer* buff)
 {
     *buff << uint32(4); // Send situ size
     *buff << uint32(0); // Blizz always send 0 uint32 as situ (read in packet handler)
-    *buff << uint32(randomPropertyId);
+    *buff << int32(randomPropertyId);
     *buff << uint32(randomSuffix);
     *buff << uint32(sObjectMgr->GetItemTemplate(itemid)->DisplayInfoID);
     *buff << uint32(count);

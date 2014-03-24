@@ -345,6 +345,7 @@ struct Loot
 
     void NotifyItemRemoved(uint8 lootIndex);
     void NotifyQuestItemRemoved(uint8 questIndex);
+    void NotifyCurrencyRemoved(uint8 lootIndex);
     void NotifyMoneyRemoved();
     void AddLooter(uint64 GUID) { PlayersLooting.insert(GUID); }
     void RemoveLooter(uint64 GUID) { PlayersLooting.erase(GUID); } 

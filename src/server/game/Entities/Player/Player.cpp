@@ -2140,7 +2140,7 @@ uint8 Player::GetChatTag() const
     return tag;
 }
 
-bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options)
+bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options, bool raidDifficultyChange)
 {
     if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))
     {
@@ -2210,7 +2210,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (duel && GetMapId() != mapid && GetMap()->GetGameObject(GetUInt64Value(PLAYER_FIELD_DUEL_ARBITER)))
         DuelComplete(DUEL_FLED);
 
-    if (GetMapId() == mapid)
+    if (GetMapId() == mapid && !raidDifficultyChange)
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -2362,13 +2362,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
             if (!GetSession()->PlayerLogout())
             {
-                WorldPacket data(SMSG_NEW_WORLD, 4 + 4 + 4 + 4 + 4);
-                data << uint32(mapid);
-                data << float(m_teleport_dest.GetPositionY());
-                data << float(m_teleport_dest.GetPositionZ());
-                data << float(m_teleport_dest.GetOrientation());
-                data << float(m_teleport_dest.GetPositionX());
-                GetSession()->SendPacket(&data);
+                GetSession()->SendNewWorld(m_teleport_dest);
                 SendSavedInstances();
             }
 
@@ -2396,6 +2390,35 @@ bool Player::TeleportToBGEntryPoint()
     ScheduleDelayedOperation(DELAYED_BG_TAXI_RESTORE);
     ScheduleDelayedOperation(DELAYED_BG_GROUP_RESTORE);
     return TeleportTo(m_bgData.joinPos);
+}
+
+void Player::PlayHoverAnimation() // Player Hover animation.
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 8 + 1);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(0); // unk bit.
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[6]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
+
+    GetSession()->SendPacket(&data);
 }
 
 void Player::ProcessDelayedOperations()
@@ -3415,6 +3438,59 @@ void Player::GiveLevel(uint8 level)
     SetCreateHealth(basehp);
     SetCreateMana(basemana);
 
+    // Add Glyph Removal Spells - before glyph and talent update, to ensure it showing after learn.
+    if (level >= 25 && level < 81)
+    {
+        if (!HasSpell(SPELL_VANISHING_POWDER))
+        {
+            if (HasSpell(SPELL_DUST_OF_DISAPPEARENCE)) removeSpell(SPELL_DUST_OF_DISAPPEARENCE);
+            if (HasSpell(SPELL_TOME_OF_CLEAR_MIND)) removeSpell(SPELL_TOME_OF_CLEAR_MIND);
+
+            learnSpell(SPELL_VANISHING_POWDER, false); // Clear Glyph - Vanishing Powder.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_VANISHING))
+        {
+            if (HasSpell(SPELL_REM_TALENT_DUST)) removeSpell(SPELL_REM_TALENT_DUST);
+            if (HasSpell(SPELL_REM_TALENT_TOME)) removeSpell(SPELL_REM_TALENT_TOME);
+
+            learnSpell(SPELL_REM_TALENT_VANISHING, false); // Clear Glyph - Vanishing Powder.
+        }
+    }
+    else if (level >= 81 && level < 86)
+    {
+        if (!HasSpell(SPELL_DUST_OF_DISAPPEARENCE))
+        {
+            if (HasSpell(SPELL_VANISHING_POWDER)) removeSpell(SPELL_VANISHING_POWDER);
+            if (HasSpell(SPELL_TOME_OF_CLEAR_MIND)) removeSpell(SPELL_TOME_OF_CLEAR_MIND);
+
+            learnSpell(SPELL_DUST_OF_DISAPPEARENCE, false); // Clear Glyph - Dust of Disappearence.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_DUST))
+        {
+            if (HasSpell(SPELL_REM_TALENT_VANISHING)) removeSpell(SPELL_REM_TALENT_VANISHING);
+            if (HasSpell(SPELL_REM_TALENT_TOME)) removeSpell(SPELL_REM_TALENT_TOME);
+
+            learnSpell(SPELL_REM_TALENT_DUST, false); // Clear Glyph - Vanishing Powder.
+        }
+    }
+    else if (level >= 86)
+    {
+        if (!HasSpell(SPELL_TOME_OF_CLEAR_MIND))
+        {
+            if (HasSpell(SPELL_VANISHING_POWDER)) removeSpell(SPELL_VANISHING_POWDER);
+            if (HasSpell(SPELL_DUST_OF_DISAPPEARENCE)) removeSpell(SPELL_DUST_OF_DISAPPEARENCE);
+
+            learnSpell(SPELL_TOME_OF_CLEAR_MIND, false); // Clear Glyph - Tome of the Clear Mind.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_TOME))
+        {
+            if (HasSpell(SPELL_REM_TALENT_VANISHING)) removeSpell(SPELL_REM_TALENT_VANISHING);
+            if (HasSpell(SPELL_REM_TALENT_DUST)) removeSpell(SPELL_REM_TALENT_DUST);
+
+            learnSpell(SPELL_REM_TALENT_TOME, false); // Clear Glyph - Tome of the Clear Mind.
+        }
+    }
+
     InitTalentForLevel();
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
@@ -3969,8 +4045,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                 {
                     // update spell ranks in spellbook and action bar
                     WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                    data << uint32(spellId);
                     data << uint32(next_active_spell_id);
+                    data << uint32(spellId);
                     GetSession()->SendPacket(&data);
                 }
                 else
@@ -4056,8 +4132,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                             if (IsInWorld())                 // not send spell (re-/over-)learn packets at loading
                             {
                                 WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                                data << uint32(itr2->first);
                                 data << uint32(spellId);
+                                data << uint32(itr2->first);
                                 GetSession()->SendPacket(&data);
                             }
 
@@ -4072,8 +4148,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                             if (IsInWorld())                 // not send spell (re-/over-)learn packets at loading
                             {
                                 WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                                data << uint32(spellId);
                                 data << uint32(itr2->first);
+                                data << uint32(spellId);
                                 GetSession()->SendPacket(&data);
                             }
 
@@ -4172,7 +4248,10 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                         SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, GetMaxSkillValueForLevel());
                         break;
                     case SKILL_RANGE_MONO:
-                        SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, 1);
+                        if (pSkill->id == SKILL_RUNEFORGING)
+                            SetSkill(pSkill->id, GetSkillStep(pSkill->id), 500, 500); // DK starts at 500 RF in MOP.
+                        else
+                            SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, 1);
                         break;
                     default:
                         break;
@@ -4480,8 +4559,8 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
                     {
                         // downgrade spell ranks in spellbook and action bar
                         WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                        data << uint32(spell_id);
                         data << uint32(prev_id);
+                        data << uint32(spell_id);
                         GetSession()->SendPacket(&data);
                         prev_activate = true;
                     }
@@ -5202,7 +5281,19 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_DAILY);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_SEASONAL_CHAR);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_WEEKLY_CHAR);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -5279,15 +5370,43 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_DAILY);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
-
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_TALENT);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SKILLS);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_REP);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_CURRENCY);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_SITES);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_PROJECT);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_COMPLETED_PROJECT);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            //
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_VOID_STORAGE_ITEMS);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_CORPSES);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -9687,6 +9806,20 @@ void Player::SendNotifyLootItemRemoved(uint8 lootSlot, ObjectGuid guid)
     GetSession()->SendPacket(&data);
 }
 
+void Player::SendNotifyCurrencyLootRemoved(uint8 lootSlot)
+{
+    WorldPacket data(SMSG_CURRENCY_LOOT_REMOVED, 1);
+    data << uint8(lootSlot);
+    GetSession()->SendPacket(&data);
+}
+
+void Player::SendNotifyCurrencyLootRestored(uint8 lootSlot)
+{
+    WorldPacket data(SMSG_CURRENCY_LOOT_RESTORED, 1);
+    data << uint8(lootSlot);
+    GetSession()->SendPacket(&data);
+}
+
 void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 {
     WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
@@ -9723,6 +9856,8 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     data << uint32(0xC77) << uint32(sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS));
                                                             // 8 Arena season id
     data << uint32(0xF3D) << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
+
+    data << uint32(0x1584) << uint32(0x1); // Show Rated BG's Interface - WS 5508.
 
     if (mapid == 530)                                       // Outland
     {
@@ -19205,12 +19340,10 @@ void Player::_LoadGroup(PreparedQueryResult result)
 
             uint8 subgroup = group->GetMemberGroup(GetGUID());
             SetGroup(group, subgroup);
-            if (getLevel() >= LEVELREQUIREMENT_HEROIC)
-            {
-                // the group leader may change the instance difficulty while the player is offline
-                SetDungeonDifficulty(group->GetDungeonDifficulty());
-                SetRaidDifficulty(group->GetRaidDifficulty());
-            }
+
+            // the group leader may change the instance difficulty while the player is offline
+            SetDungeonDifficulty(group->GetDungeonDifficulty());
+            SetRaidDifficulty(group->GetRaidDifficulty());
         }
     }
 
@@ -19438,37 +19571,9 @@ void Player::SendRaidInfo()
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
-                uint32 Difficulty = 0;
+                bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 uint32 completedEncounters = 0;
 
-                switch(save->GetDifficulty())
-                {
-                    case RAID_DIFFICULTY_10MAN_NORMAL:
-                    case DUNGEON_DIFFICULTY_NORMAL:
-                    case RAID_DIFFICULTY_40MAN:
-                    {
-                        Difficulty = 1;
-                        break;
-                    }
-                    case DUNGEON_DIFFICULTY_HEROIC:
-                    case RAID_DIFFICULTY_25MAN_NORMAL:
-                    {
-                        Difficulty = 2;
-                        break;
-                    }
-                    case RAID_DIFFICULTY_10MAN_HEROIC:
-                    {
-                        Difficulty = 3;
-                        break;
-                    }
-                    case RAID_DIFFICULTY_25MAN_HEROIC:
-                    {
-                        Difficulty = 4;
-                        break;
-                    }
-                }
-
-                
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
                     if (InstanceScript* instanceScript = static_cast<InstanceMap*>(map)->GetInstanceScript())
                         completedEncounters = instanceScript->GetCompletedEncounterMask();
@@ -19492,7 +19597,7 @@ void Player::SendRaidInfo()
                 BodyData << save->GetMapId()        ;               // map id
                 BodyData.WriteByteSeq(InstanceID[2]);
                 BodyData.WriteByteSeq(InstanceID[4]);
-                BodyData << Difficulty;                             // difficulty
+                BodyData << save->GetDifficulty();                   // difficulty
                 BodyData.WriteByteSeq(InstanceID[7]);
                 BodyData << completedEncounters;                    // completed encounters mask
                 BodyData.WriteByteSeq(InstanceID[6]);
@@ -19664,6 +19769,15 @@ bool Player::CheckInstanceLoginValid()
         // cannot be in raid instance without a group
         if (!GetGroup())
             return false;
+        else
+        {
+            uint32 maxPlayers = ((InstanceMap*)GetMap())->GetMaxPlayers();
+            if (GetMap()->GetPlayersCountExceptGMs() >= maxPlayers)
+            {
+                SendTransferAborted(GetMap()->GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                return false;
+            }
+        }
     }
     else
     {
@@ -20331,7 +20445,7 @@ void Player::_SaveVoidStorage(SQLTransaction& trans)
             stmt->setUInt32(2, _voidStorageItems[i]->ItemEntry);
             stmt->setUInt8(3, i);
             stmt->setUInt32(4, _voidStorageItems[i]->CreatorGuid);
-            stmt->setUInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
+            stmt->setInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
             stmt->setUInt32(6, _voidStorageItems[i]->ItemSuffixFactor);
         }
 
@@ -20954,17 +21068,17 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendDungeonDifficulty()
+void Player::SendDungeonDifficulty(uint32 difficulty)
 {
     WorldPacket data(SMSG_SET_DUNGEON_DIFFICULTY, 4);
-    data << uint32(GetDungeonDifficulty());
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendRaidDifficulty()
+void Player::SendRaidDifficulty(uint32 difficulty)
 {
     WorldPacket data(SMSG_SET_RAID_DIFFICULTY, 4);
-    data << uint32(forcedDifficulty == -1 ? GetRaidDifficulty() : forcedDifficulty);
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
@@ -22074,6 +22188,8 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
 
         if (IsInDisallowedMountForm())
             RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
+
+        RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
 
         if (Spell* spell = GetCurrentSpell(CURRENT_GENERIC_SPELL))
             if (spell->m_spellInfo->Id != spellid)
@@ -23603,6 +23719,26 @@ inline void BeforeVisibilityDestroy<Creature>(Creature* t, Player* p)
 
 void Player::UpdateVisibilityOf(WorldObject* target)
 {
+    if (!target)
+        return;
+
+    if (target->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
+    if (((DynamicObject*)target)->GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group const* group = GetGroup();
+    
+        if (!group || ((DynamicObject*)target)->GetCasterGUID() != group->GetGUID())
+    	{
+            target->DestroyForPlayer(this);
+            m_clientGUIDs.erase(target->GetGUID());
+    	}
+    	else
+    	{
+            target->SendUpdateToPlayer(this);
+            m_clientGUIDs.insert(target->GetGUID());
+    	}
+    }
+
     if (HaveAtClient(target))
     {
         if (!CanSeeOrDetect(target, false, true))
@@ -23699,6 +23835,26 @@ void Player::SendInitialVisiblePackets(Unit* target)
 template<class T>
 void Player::UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow)
 {
+    if (!target)
+        return;
+
+    if (target->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
+    if (((DynamicObject*)target)->GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group const* group = GetGroup();
+    
+        if (!group || ((DynamicObject*)target)->GetCasterGUID() != group->GetGUID())
+    	{
+            target->BuildOutOfRangeUpdateBlock(&data);
+            m_clientGUIDs.erase(target->GetGUID());
+    	}
+    	else
+    	{
+            target->SendUpdateToPlayer(this);
+            m_clientGUIDs.insert(target->GetGUID());
+    	}
+    }
+
     if (HaveAtClient(target))
     {
         if (!CanSeeOrDetect(target, false, true))
@@ -24035,17 +24191,20 @@ void Player::SendInitialPacketsAfterAddToMap()
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
-    // raid downscaling - send difficulty to player
+    // Send difficulties on login.
+    SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
+
+    // Raid downscaling.
     if (GetMap()->IsRaid())
     {
         if (GetMap()->GetDifficulty() != GetRaidDifficulty())
         {
             StoreRaidMapDifficulty();
-            SendRaidDifficulty(GetGroup() != NULL, GetStoredRaidDifficulty());
+            SendRaidDifficulty(GetStoredRaidDifficulty());
         }
     }
     else if (GetRaidDifficulty() != GetStoredRaidDifficulty())
-        SendRaidDifficulty(GetGroup() != NULL);
+        SendRaidDifficulty(GetRaidDifficulty() < RAID_DIFFICULTY_10MAN_NORMAL ? RAID_DIFFICULTY_10MAN_NORMAL : GetRaidDifficulty());
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()
@@ -24803,6 +24962,30 @@ void Player::UpdateForQuestWorldObjects()
             }
         }
     }
+    udata.BuildPacket(&packet);
+    GetSession()->SendPacket(&packet);
+}
+
+void Player::UpdateForRaidMarkers(Group* group)
+{
+    UpdateData udata(GetMapId());
+    WorldPacket packet;
+
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+    {
+        if (DynamicObject* obj = GetMap()->GetDynamicObject(group->GetRaidMarker(i)))
+            if (group == GetGroup())
+            {
+                if (obj->GetMapId() == GetMapId())
+                    obj->BuildCreateUpdateBlockForPlayer(&udata, this);
+            }
+            else
+                obj->BuildOutOfRangeUpdateBlock(&udata);
+    }
+
+    if (!udata.HasData())
+        return;
+
     udata.BuildPacket(&packet);
     GetSession()->SendPacket(&packet);
 }
@@ -26344,7 +26527,7 @@ void Player::HandleFall(MovementInfo const& movementInfo)
     // 14.57 can be calculated by resolving damageperc formula below to 0
     if (z_diff >= 14.57f && !isDead() && !IsGameMaster() &&
         !HasAuraType(SPELL_AURA_HOVER) && !HasAuraType(SPELL_AURA_FEATHER_FALL) &&
-        !HasAuraType(SPELL_AURA_FLY) && !IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL))
+        !HasAuraType(SPELL_AURA_FLY) && !IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL) && !IsInWater())
     {
         //Safe fall, fall height reduction
         int32 safe_fall = GetTotalAuraModifier(SPELL_AURA_SAFE_FALL);
@@ -27054,7 +27237,7 @@ void Player::SetMap(Map* map)
 
 void Player::_LoadGlyphs(PreparedQueryResult result)
 {
-    // SELECT spec, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6, glyph7, glyph8, glyph9 FROM character_glyphs WHERE guid = '%u'
+    // SELECT spec, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6 FROM character_glyphs WHERE guid = '%u'
     if (!result)
         return;
 
