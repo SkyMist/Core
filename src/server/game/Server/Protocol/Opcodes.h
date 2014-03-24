@@ -809,7 +809,7 @@ enum Opcodes
    SMSG_COMSAT_CONNECT_FAIL                                 = 0x0,
    SMSG_COMSAT_DISCONNECT                                   = 0x0,
    SMSG_COMSAT_RECONNECT_TRY                                = 0x0,
-   SMSG_CONTACT_LIST                                        = 0x0,
+   SMSG_CONTACT_LIST                                        = 0x15CF, // 5.4.7 18019
    SMSG_CONVERT_RUNE                                        = 0x0,
    SMSG_COOLDOWN_CHEAT                                      = 0x0,
    SMSG_COOLDOWN_EVENT                                      = 0x1C5B, // 5.4.7 18019
@@ -860,7 +860,7 @@ enum Opcodes
    SMSG_EXPECTED_SPAM_RECORDS                               = 0x0,
    SMSG_EXPLORATION_EXPERIENCE                              = 0x0,
    SMSG_FAILED_PLAYER_CONDITION                             = 0x0,
-   SMSG_FEATURE_SYSTEM_STATUS                               = 0x0,
+   SMSG_FEATURE_SYSTEM_STATUS                               = 0x1560, // 5.4.7 18019
    SMSG_FEIGN_DEATH_RESISTED                                = 0x0,
    SMSG_FISH_ESCAPED                                        = 0x0,
    SMSG_FISH_NOT_HOOKED                                     = 0x0,
