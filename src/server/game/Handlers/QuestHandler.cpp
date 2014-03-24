@@ -35,8 +35,26 @@
 
 void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
 {
-    uint64 guid;
-    recvData >> guid;
+    ObjectGuid guid;
+
+    guid[2] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[7]);
+
     uint32 questStatus = DIALOG_STATUS_NONE;
 
     Object* questgiver = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT|TYPEMASK_GAMEOBJECT);
@@ -82,8 +100,24 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleQuestgiverHelloOpcode(WorldPacket& recvData)
 {
-    uint64 guid;
-    recvData >> guid;
+    ObjectGuid guid;
+    guid[2] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[4]);
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_HELLO npc = %u", GUID_LOPART(guid));
 
@@ -112,10 +146,28 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
 {
-    uint64 guid;
     uint32 questId;
-    uint32 unk1;
-    recvData >> guid >> questId >> unk1;
+    recvData >> questId;
+
+    ObjectGuid guid;
+    guid[3] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    bool unk1 = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[0]);
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_ACCEPT_QUEST npc = %u, quest = %u, unk1 = %u", uint32(GUID_LOPART(guid)), questId, unk1);
 
@@ -258,10 +310,28 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleQuestgiverQueryQuestOpcode(WorldPacket& recvData)
 {
-    uint64 guid;
-    uint32 questId;
-    uint8 unk1;
-    recvData >> guid >> questId >> unk1;
+    uint32 questId = recvData.read<uint32>();
+    ObjectGuid guid;
+
+    guid[6] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    bool unk1 = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[7]);
+
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_QUERY_QUEST npc = %u, quest = %u, unk1 = %u", uint32(GUID_LOPART(guid)), questId, unk1);
 
     // Verify that the guid is valid and is a questgiver or involved in the requested quest
@@ -292,11 +362,28 @@ void WorldSession::HandleQuestgiverQueryQuestOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleQuestQueryOpcode(WorldPacket& recvData)
 {
-    if (!_player)
-        return;
-
     uint32 questId;
+    ObjectGuid guid;
     recvData >> questId;
+
+    guid[2] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[6]);
+
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUEST_QUERY quest = %u", questId);
 
     if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
@@ -306,8 +393,26 @@ void WorldSession::HandleQuestQueryOpcode(WorldPacket& recvData)
 void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
 {
     uint32 questId, reward;
-    uint64 guid;
-    recvData >> guid >> questId >> reward;
+    ObjectGuid guid;
+    recvData >> reward >> questId;
+
+    guid[2] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[0]);
 
     if (reward >= QUEST_REWARD_CHOICES_COUNT)
     {
@@ -394,9 +499,26 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleQuestgiverRequestRewardOpcode(WorldPacket& recvData)
 {
-    uint32 questId;
-    uint64 guid;
-    recvData >> guid >> questId;
+    uint32 questId = recvData.read<uint32>();
+    ObjectGuid guid;
+
+    guid[4] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[0]);
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_REQUEST_REWARD npc = %u, quest = %u", uint32(GUID_LOPART(guid)), questId);
 
@@ -506,10 +628,27 @@ void WorldSession::HandleQuestConfirmAccept(WorldPacket& recvData)
 
 void WorldSession::HandleQuestgiverCompleteQuest(WorldPacket& recvData)
 {
-    uint32 questId;
-    uint64 playerGuid;
-    bool autoCompleteMode;      // 0 - standart complete quest mode with npc, 1 - auto-complete mode
-    recvData >> playerGuid >> questId >> autoCompleteMode;
+    uint32 questId = recvData.read<uint32>();
+    ObjectGuid playerGuid;
+
+    playerGuid[6] = recvData.ReadBit();
+    playerGuid[5] = recvData.ReadBit();
+    playerGuid[7] = recvData.ReadBit();
+    playerGuid[4] = recvData.ReadBit();
+    playerGuid[3] = recvData.ReadBit();
+    playerGuid[0] = recvData.ReadBit();
+    bool autoCompleteMode = recvData.ReadBit();         // 0 - standart complete quest mode with npc, 1 - auto-complete mode
+    playerGuid[1] = recvData.ReadBit();
+    playerGuid[2] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(playerGuid[0]);
+    recvData.ReadByteSeq(playerGuid[5]);
+    recvData.ReadByteSeq(playerGuid[3]);
+    recvData.ReadByteSeq(playerGuid[2]);
+    recvData.ReadByteSeq(playerGuid[4]);
+    recvData.ReadByteSeq(playerGuid[6]);
+    recvData.ReadByteSeq(playerGuid[1]);
+    recvData.ReadByteSeq(playerGuid[7]);
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_COMPLETE_QUEST npc = %u, questId = %u", uint32(GUID_LOPART(playerGuid)), questId);
 
