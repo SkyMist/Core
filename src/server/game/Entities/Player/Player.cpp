@@ -24073,7 +24073,7 @@ void Player::SetGroup(Group* group, int8 subgroup)
 
 void Player::SendInitialPacketsBeforeAddToMap()
 {
-    /// Pass 'this' as argument because we're not stored in ObjectAccessor yet
+    // Pass 'this' as argument for the player, because it's not stored in ObjectAccessor yet.
     GetSocial()->SendSocialList(this);
 
     // guild bank list wtf?
@@ -24087,92 +24087,98 @@ void Player::SendInitialPacketsBeforeAddToMap()
     data << m_homebindMapId;
     GetSession()->SendPacket(&data);
 
+    // Time sync send and reset -  should they be sent after being added to the map?
+    ResetTimeSync();
+    SendTimeSync();
+
     // SMSG_SET_PROFICIENCY
     // SMSG_SET_PCT_SPELL_MODIFIER
     // SMSG_SET_FLAT_SPELL_MODIFIER
     // SMSG_UPDATE_AURA_DURATION
 
+    // Send Player Talent Data and Initial Spells.
     SendTalentsInfoData();
-
-    data.Initialize(SMSG_WORLD_SERVER_INFO, 4 + 4 + 1 + 1);
-    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);  // LastWeeklyReset (not instance reset)
-    data << uint32(GetMap()->GetDifficulty());
-    data << uint8(0);                                               // IsOnTournamentRealm
-
-    data.WriteBit(0);                                               // IneligibleForLoot
-    data.WriteBit(0);                                               // HasRestrictedLevel
-    data.WriteBit(0);                                               // HasRestrictedMoney
-    data.WriteBit(0);                                               // HasUnknown
-    data.FlushBits();
-
-    //if (HasUnknown)
-    //    data << uint32(0);
-    //if (HasRestrictedLevel)
-    //    data << uint32(20);                                       // RestrictedLevel (starter accounts)
-    //if (IneligibleForLoot)
-    //    data << uint32(0);                                        // EncounterMask
-    //if (HasRestrictedMoney)
-    //    data << uint32(100000);                                   // RestrictedMoney (starter accounts)
-
-    GetSession()->SendPacket(&data);
-
     SendInitialSpells();
 
+    // SMSG_SEND_UNLEARN_SPELLS
     data.Initialize(SMSG_SEND_UNLEARN_SPELLS, 4);
     data << uint32(0);                                      // count, for (count) uint32;
     GetSession()->SendPacket(&data);
 
+    // Send Action Buttons, Reputations.
     SendInitialActionButtons();
     m_reputationMgr->SendInitialReputations();
+
+    // SMSG_CORPSE_RECLAIM_DELAY
+    // SMSG_INIT_WORLD_STATES
+    // SMSG_SET_PHASE_SHIFT
+
+    // Send Currencies, Equipment, Achievements.
+    SendCurrencies();
+    SendEquipmentSetList();
     m_achievementMgr->SendAllAchievementData(this);
 
-    SendEquipmentSetList();
+    // SMSG_LOGIN_VERIFY_WORLD
+    data.Initialize(SMSG_LOGIN_VERIFY_WORLD, 20);
+    data << GetOrientation();
+    data << GetMapId();
+    data << GetPositionZ();
+    data << GetPositionX();
+    data << GetPositionY();
+    GetSession()->SendPacket(&data);
 
+    // SMSG_LOGIN_SETTIMESPEED
     data.Initialize(SMSG_LOGIN_SETTIMESPEED, 20);
     data.AppendPackedTime(sWorld->GetGameTime());
     data << float(0.01666667f);                             // game speed
     data << uint32(1);
     data << uint32(1);
     data.AppendPackedTime(sWorld->GetGameTime());
-
     GetSession()->SendPacket(&data);
 
-    GetReputationMgr().SendForceReactions();                // SMSG_SET_FORCED_REACTIONS
+    // SMSG_SET_FORCED_REACTIONS
+    GetReputationMgr().SendForceReactions();
+
+    // MSG_LIST_STABLED_PETS
+    // SMSG_WEEKLY_SPELL_USAGE
+
+    // SMSG_WORLD_SERVER_INFO
+    GetSession()->SendServerWorldInfo();
 
     // SMSG_TALENTS_INFO x 2 for pet (unspent points and talents in separate packets...)
     // SMSG_PET_GUIDS
     // SMSG_UPDATE_WORLD_STATE
     // SMSG_POWER_UPDATE
 
-    SendCurrencies();
     SetMover(this);
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
 {
+    // Update Player Visibility.
     UpdateVisibilityForPlayer();
 
-    // update zone
+    // Update Zone and Area.
     uint32 newzone, newarea;
     GetZoneAndAreaId(newzone, newarea);
     UpdateZone(newzone, newarea);                            // also call SendInitWorldStates();
 
-    ResetTimeSync();
-    SendTimeSync();
-
+    // Send Raid CUF profiles.
     GetSession()->SendLoadCUFProfiles();
 
-    CastSpell(this, 836, true);                             // LOGINEFFECT
+    // Cast Login Effect Spell.
+    CastSpell(this, 836, true);
 
-    // set some aura effects that send packet to player client after add player to map
-    // SendMessageToSet not send it to player not it map, only for aura that not changed anything at re-apply
-    // same auras state lost at far teleport, send it one more time in this case also
+    // Set some aura effects that send packet to player client after add player to map.
+    // SendMessageToSet not send it to player not it map, only for aura that not changed anything at re-apply.
+    // Same auras state lost at far teleport, send it one more time in this case also.
     static const AuraType auratypes[] =
     {
         SPELL_AURA_MOD_FEAR,     SPELL_AURA_TRANSFORM,                 SPELL_AURA_WATER_WALK,
         SPELL_AURA_FEATHER_FALL, SPELL_AURA_HOVER,                     SPELL_AURA_SAFE_FALL,
         SPELL_AURA_FLY,          SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED, SPELL_AURA_NONE
     };
+
     for (AuraType const* itr = &auratypes[0]; itr && itr[0] != SPELL_AURA_NONE; ++itr)
     {
         Unit::AuraEffectList const& auraList = GetAuraEffectsByType(*itr);
@@ -24187,14 +24193,17 @@ void Player::SendInitialPacketsAfterAddToMap()
     if (HasAuraType(SPELL_AURA_MOD_ROOT))
         SetRooted(true, true);
 
+    // Send Auras, Enchantment and Item Durations.
     SendAurasForTarget(this);
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
     // Send difficulties on login.
+
+    // Dungeons
     SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
 
-    // Raid downscaling.
+    // Raids + downscaling if needed.
     if (GetMap()->IsRaid())
     {
         if (GetMap()->GetDifficulty() != GetRaidDifficulty())

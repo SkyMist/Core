@@ -217,6 +217,33 @@ void WorldSession::SendQueryTimeResponse()
     SendPacket(&data);
 }
 
+void WorldSession::SendServerWorldInfo()
+{
+    WorldPacket data(SMSG_WORLD_SERVER_INFO);
+
+    data.WriteBit(IsTrialAccount());                                    // Has restriction on level.
+    data.WriteBit(IsTrialAccount());                                    // Has money restriction.             
+    data.WriteBit(IsTrialAccount());                                    // Is ineligible for loot.
+
+    data.FlushBits();
+
+    if (IsTrialAccount()) 
+        data << uint32(0);                                              // Is ineligible for loot - EncounterMask.
+
+    data << uint8(sWorld->getBoolConfig(CONFIG_IS_TOURNAMENT_REALM));   // IsOnTournamentRealm.
+
+    if (IsTrialAccount()) 
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_MONEY));   // Has money restriction - Max amount of money allowed.
+
+    if (IsTrialAccount()) 
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));   // Has restriction on level - Max level allowed.
+
+    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);      // LastWeeklyReset (quests, not instance reset).
+    data << uint32(GetPlayer()->GetMap()->GetDifficulty());             // Current Map Difficulty.
+
+    SendPacket(&data);
+}
+
 /// Only _static_ data is sent in this packet !!!
 void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
 {
