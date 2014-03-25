@@ -242,6 +242,7 @@ class WorldSession
         void SendAreaTriggerMessage(const char* Text, ...) ATTR_PRINTF(2, 3);
         void SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps);
         void SendQueryTimeResponse();
+        void SendServerWorldInfo();
         void SendGroupInviteNotification(const std::string& inviterName, bool inGroup);
 
         void SendNewWorld(WorldLocation const &location);
