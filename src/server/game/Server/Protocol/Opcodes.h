@@ -93,7 +93,7 @@ enum Opcodes
    CMSG_BATTLEMASTER_JOIN_ARENA                             = 0x0,
    CMSG_BATTLEMASTER_JOIN_RATED                             = 0x0,
    CMSG_BEGIN_TRADE                                         = 0x0,
-   CMSG_BINDER_ACTIVATE                                     = 0x0,
+   CMSG_BINDER_ACTIVATE                                     = 0x0477, // 5.4.7 18019
    CMSG_BOT_DETECTED2                                       = 0x0,
    CMSG_BUG                                                 = 0x0,
    CMSG_BUSY_TRADE                                          = 0x0,
@@ -122,7 +122,7 @@ enum Opcodes
    CMSG_CANCEL_CAST                                         = 0x12EB, // 5.4.7 18019
    CMSG_CANCEL_CHANNELLING                                  = 0x0,
    CMSG_CANCEL_GROWTH_AURA                                  = 0x0,
-   CMSG_CANCEL_MOUNT_AURA                                   = 0x0,
+   CMSG_CANCEL_MOUNT_AURA                                   = 0x1552, // 5.4.7 18019
    CMSG_CANCEL_QUEUED_SPELL                                 = 0x0,
    CMSG_CANCEL_TEMP_ENCHANTMENT                             = 0x0,
    CMSG_CANCEL_TRADE                                        = 0x1D32, // 5.4.7 18019
@@ -734,7 +734,7 @@ enum Opcodes
    SMSG_BATTLEGROUND_INFO_THROTTLED                         = 0x0,
    SMSG_BATTLEGROUND_PLAYER_JOINED                          = 0x0,
    SMSG_BATTLEGROUND_PLAYER_LEFT                            = 0x0,
-   SMSG_BINDER_CONFIRM                                      = 0x0,
+   SMSG_BINDER_CONFIRM                                      = 0x0F22, // 5.4.7 18019
    SMSG_BINDPOINTUPDATE                                     = 0x11E2, // 5.4.7 18019
    SMSG_BINDZONEREPLY                                       = 0x0,
    SMSG_BREAK_TARGET                                        = 0x0,
@@ -965,9 +965,9 @@ enum Opcodes
    SMSG_HIGHEST_THREAT_UPDATE                               = 0x0,
    SMSG_HOTFIX_INFO                                         = 0x0,
    SMSG_HOTFIX_NOTIFY                                       = 0x0,
-   SMSG_INITIALIZE_FACTIONS                                 = 0x0,
+   SMSG_INITIALIZE_FACTIONS                                 = 0x11E1, // 5.4.7 18019
    SMSG_INITIAL_SPELLS                                      = 0x1B05, // 5.4.7 18019
-   SMSG_INIT_CURRENCY                                       = 0x0,
+   SMSG_INIT_CURRENCY                                       = 0x1E3A, // 5.4.7 18019
    SMSG_INIT_WORLD_STATES                                   = 0x0F03, // 5.4.7 18019
    SMSG_INSPECT                                             = 0x0,
    SMSG_INSPECT_HONOR_STATS                                 = 0x0,
