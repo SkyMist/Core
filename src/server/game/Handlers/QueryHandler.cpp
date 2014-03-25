@@ -32,6 +32,7 @@
 #include "Pet.h"
 #include "MapManager.h"
 #include "Config.h"
+#include "Group.h"
 
 void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 {

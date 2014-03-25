@@ -417,7 +417,7 @@ void WorldSession::HandleGuildBankerActivate(WorldPacket& recvPacket)
     recvPacket.ReadByteSeq(guid[5]);
 
     TC_LOG_DEBUG("guild", "CMSG_GUILD_BANKER_ACTIVATE [%s]: Go: %u AllSlots: %u"
-        , GetPlayerInfo().c_str(), GUID_LOPART(guid), sendAllSlots);
+        , GetPlayerInfo().c_str(), GUID_LOPART(guid), SendAllSlots);
 
     GameObject const* const go = GetPlayer()->GetGameObjectIfCanInteractWith(guid, GAMEOBJECT_TYPE_GUILD_BANK);
     if (!go)

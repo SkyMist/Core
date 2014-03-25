@@ -2085,7 +2085,7 @@ struct SpellPowerEntry
     uint32    manaPerSecondPerLevel;                        // 7       m_manaPerSecondPerLevel
     //uint32  PowerDisplayId;                               // 8       m_powerDisplayID - id from PowerDisplay.dbc, new in 3.1
     float     ManaCostPercentageFloat;                      // 9       4.3.0
-    float     manaPerSecond;                                // 10
+    float     ManaPerSecond;                                // 10 - New Panda, not sure.
     // float  unk2                                          // 11 - Pandaria
     // float  unk3                                          // 12 - Pandaria
 };
