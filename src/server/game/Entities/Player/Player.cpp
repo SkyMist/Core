@@ -24200,7 +24200,7 @@ void Player::SendInitialPacketsAfterAddToMap()
 
     // Send difficulties on login.
 
-    // Dungeons
+    // Dungeons.
     SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
 
     // Raids + downscaling if needed.

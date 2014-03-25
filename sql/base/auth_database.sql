@@ -46,6 +46,8 @@ CREATE TABLE `account` (
   `locale` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `os` varchar(3) NOT NULL DEFAULT '',
   `recruiter` int(10) unsigned NOT NULL DEFAULT '0',
+  `on_trial` tinyint(1) UNSIGNED NOT NULL DEFAULT '0',
+  `trial_end` INT(10) UNSIGNED NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Account System';

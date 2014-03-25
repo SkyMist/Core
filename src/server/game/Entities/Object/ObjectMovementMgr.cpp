@@ -778,8 +778,8 @@ void WorldObject::UpdateGroundPositionZ(float x, float y, float &z) const
 
 void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
 {
-    // TODO: Fix this crap here.
-    if (GetTransport() || self->m_movementInfo.transport.guid != 0)
+    // Disable if MMaps not enabled.
+    if (!sWorld->getBoolConfig(CONFIG_ENABLE_MMAPS))
         return;
 
     switch (GetTypeId())
