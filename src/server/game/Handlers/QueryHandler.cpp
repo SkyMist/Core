@@ -221,25 +221,30 @@ void WorldSession::SendServerWorldInfo()
 {
     WorldPacket data(SMSG_WORLD_SERVER_INFO);
 
-    data.WriteBit(IsTrialAccount());                                    // Has restriction on level.
-    data.WriteBit(IsTrialAccount());                                    // Has money restriction.             
-    data.WriteBit(IsTrialAccount());                                    // Is ineligible for loot.
+    bool HasInstanceGroupSize = GetPlayer()->GetGroup() != NULL && GetPlayer()->GetGroup()->GetMembersCount() != 0;    
+                                                                                    // check if we need to send the instance group size
+    data.WriteBit(IsTrialAccount());                                                // Has restriction on level.
+    data.WriteBit(HasInstanceGroupSize);
+    data.WriteBit(IsTrialAccount());                                                // Has money restriction.             
+    data.WriteBit(IsTrialAccount());                                                // Is ineligible for loot.
 
     data.FlushBits();
 
     if (IsTrialAccount()) 
-        data << uint32(0);                                              // Is ineligible for loot - EncounterMask.
+        data << uint32(0);                                                          // Is ineligible for loot - EncounterMask of the creatures the player cannot loot
 
-    data << uint8(sWorld->getBoolConfig(CONFIG_IS_TOURNAMENT_REALM));   // IsOnTournamentRealm.
+    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);                  // LastWeeklyReset (quests, not instance reset).
+    data << uint32(GetPlayer()->GetMap()->GetDifficulty());                         // Current Map Difficulty.
+    data << uint8(sWorld->getBoolConfig(CONFIG_IS_TOURNAMENT_REALM));               // IsOnTournamentRealm.
 
     if (IsTrialAccount()) 
-        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_MONEY));   // Has money restriction - Max amount of money allowed.
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_MONEY));               // Has money restriction - Max amount of money allowed.
 
     if (IsTrialAccount()) 
-        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));   // Has restriction on level - Max level allowed.
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));               // Has restriction on level - Max level allowed.
 
-    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);      // LastWeeklyReset (quests, not instance reset).
-    data << uint32(GetPlayer()->GetMap()->GetDifficulty());             // Current Map Difficulty.
+    if(HasInstanceGroupSize)
+        data << uint32(GetPlayer()->GetGroup()->GetMembersCount());
 
     SendPacket(&data);
 }

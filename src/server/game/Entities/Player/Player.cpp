@@ -9840,12 +9840,8 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
 
     TC_LOG_DEBUG("network", "Sending SMSG_INIT_WORLD_STATES to Map: %u, Zone: %u", mapid, zoneid);
 
-    WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+4+2+(12*8)));
-    data << uint32(mapid);                                  // mapid
-    data << uint32(zoneid);                                 // zone id
-    data << uint32(areaid);                                 // area id, new 2.1.0
-    size_t countPos = data.wpos();
-    data << uint16(0);                                      // count of uint64 blocks
+    WorldPacket data;
+
     data << uint32(0x8d8) << uint32(0x0);                   // 1
     data << uint32(0x8d7) << uint32(0x0);                   // 2
     data << uint32(0x8d6) << uint32(0x0);                   // 3
@@ -10421,10 +10417,17 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
             break;
     }
 
-    uint16 length = (data.wpos() - countPos) / 8;
-    data.put<uint16>(countPos, length);
+    size_t StatesCount = data.size() / 8;
 
-    GetSession()->SendPacket(&data);
+    WorldPacket InitStates(SMSG_INIT_WORLD_STATES, (4+4+4+data.size()));
+    InitStates << uint32(mapid);                                  // mapid
+    InitStates << uint32(zoneid);                                 // zone id
+    InitStates << uint32(areaid);                                 // area id, new 2.1.0
+    InitStates.WriteBits(StatesCount,21);
+    InitStates.FlushBits();
+    InitStates.append(data);
+
+    GetSession()->SendPacket(&InitStates);
     SendBGWeekendWorldStates();
     SendBattlefieldWorldStates();
 }

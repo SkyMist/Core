@@ -676,7 +676,7 @@ enum Opcodes
    SMSG_ADDON_INFO                                          = 0x10E2, // 5.4.7 18019
    SMSG_ADD_RUNE_POWER                                      = 0x0,
    SMSG_AI_REACTION                                         = 0x0,
-   SMSG_ALL_ACHIEVEMENT_DATA                                = 0x0,
+   SMSG_ALL_ACHIEVEMENT_DATA                                = 0x072B, // 5.4.7 18019
    SMSG_AREA_SPIRIT_HEALER_TIME                             = 0x0,
    SMSG_AREA_TRIGGER_MESSAGE                                = 0x0,
    SMSG_AREA_TRIGGER_MOVEMENT_UPDATE                        = 0x0,
@@ -968,7 +968,7 @@ enum Opcodes
    SMSG_INITIALIZE_FACTIONS                                 = 0x0,
    SMSG_INITIAL_SPELLS                                      = 0x1B05, // 5.4.7 18019
    SMSG_INIT_CURRENCY                                       = 0x0,
-   SMSG_INIT_WORLD_STATES                                   = 0x0,
+   SMSG_INIT_WORLD_STATES                                   = 0x0F03, // 5.4.7 18019
    SMSG_INSPECT                                             = 0x0,
    SMSG_INSPECT_HONOR_STATS                                 = 0x0,
    SMSG_INSPECT_RATED_BG_STATS                              = 0x0,
@@ -1400,7 +1400,7 @@ enum Opcodes
    SMSG_WEEKLY_SPELL_USAGE_UPDATE                           = 0x0,
    SMSG_WHO                                                 = 0x0460, // 5.4.7 18019
    SMSG_WHOIS                                               = 0x0,
-   SMSG_WORLD_SERVER_INFO                                   = 0x0,
+   SMSG_WORLD_SERVER_INFO                                   = 0x1D01, // 5.4.7 18019
    SMSG_WORLD_STATE_UI_TIMER_UPDATE                         = 0x0,
    SMSG_XP_GAIN_ABORTED                                     = 0x0,
    SMSG_ZONE_UNDER_ATTACK                                   = 0x0,
