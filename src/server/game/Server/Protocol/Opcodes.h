@@ -165,7 +165,7 @@ enum Opcodes
    CMSG_CLEAR_RAID_MARKER                                   = 0x0,
    CMSG_CLEAR_TRADE_ITEM                                    = 0x0,
    CMSG_CLOSE_BROWSER                                       = 0x0,
-   CMSG_COMMENTATOR_ENABLE                                  = 0x169A, // 5.4.7
+   CMSG_COMMENTATOR_ENABLE                                  = 0x169A, // 5.4.7 18019
    CMSG_COMMENTATOR_ENTER_INSTANCE                          = 0x0,
    CMSG_COMMENTATOR_EXIT_INSTANCE                           = 0x0,
    CMSG_COMMENTATOR_GET_MAP_INFO                            = 0x0,

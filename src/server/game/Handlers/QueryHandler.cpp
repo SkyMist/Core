@@ -220,10 +220,51 @@ void WorldSession::SendQueryTimeResponse()
 
 void WorldSession::SendServerWorldInfo()
 {
+    bool HasGroup = GetPlayer()->GetGroup() != NULL;
+    uint32 InstanceGroupSize = GetPlayer()->GetGroup()->GetMembersCount();          // Check if we need to send the instance group size - for Flex Raids.
+    uint32 difficultyNumberToDisplay = 0;                                           // Number to display in minimap text.
+
+    switch(GetPlayer()->GetMap()->GetDifficulty())
+    {
+        case REGULAR_DIFFICULTY:
+            difficultyNumberToDisplay = 0;
+            break;
+
+        case DUNGEON_DIFFICULTY_NORMAL:
+        case DUNGEON_DIFFICULTY_HEROIC:
+        case DUNGEON_DIFFICULTY_CHALLENGE:
+            difficultyNumberToDisplay = 5;
+            break;
+
+        case RAID_DIFFICULTY_10MAN_NORMAL:
+        case RAID_DIFFICULTY_10MAN_HEROIC:
+            difficultyNumberToDisplay = 10;
+            break;
+
+        case RAID_DIFFICULTY_25MAN_NORMAL:
+        case RAID_DIFFICULTY_25MAN_HEROIC:
+        case RAID_DIFFICULTY_25MAN_LFR:
+            difficultyNumberToDisplay = 25;
+            break;
+
+        case RAID_DIFFICULTY_40MAN:
+            difficultyNumberToDisplay = 40;
+            break;
+
+        case SCENARIO_DIFFICULTY_NORMAL:
+        case SCENARIO_DIFFICULTY_HEROIC:
+            difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 1;
+            break;
+
+        case RAID_DIFFICULTY_1025MAN_FLEX:
+            difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 10;
+            break;
+
+        default: break;
+    }
+
     WorldPacket data(SMSG_WORLD_SERVER_INFO);
 
-    bool HasInstanceGroupSize = GetPlayer()->GetGroup() != NULL && GetPlayer()->GetGroup()->GetMembersCount() != 0;    
-                                                                                    // check if we need to send the instance group size
     data.WriteBit(IsTrialAccount());                                                // Has restriction on level.
     data.WriteBit(HasInstanceGroupSize);
     data.WriteBit(IsTrialAccount());                                                // Has money restriction.             
@@ -232,7 +273,7 @@ void WorldSession::SendServerWorldInfo()
     data.FlushBits();
 
     if (IsTrialAccount()) 
-        data << uint32(0);                                                          // Is ineligible for loot - EncounterMask of the creatures the player cannot loot
+        data << uint32(0);                                                          // Is ineligible for loot - EncounterMask of the creatures the player cannot loot.
 
     data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);                  // LastWeeklyReset (quests, not instance reset).
     data << uint32(GetPlayer()->GetMap()->GetDifficulty());                         // Current Map Difficulty.
@@ -244,8 +285,8 @@ void WorldSession::SendServerWorldInfo()
     if (IsTrialAccount()) 
         data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));               // Has restriction on level - Max level allowed.
 
-    if(HasInstanceGroupSize)
-        data << uint32(GetPlayer()->GetGroup()->GetMembersCount());
+    // As of MOP, all maps act as "instances", even continents. Thus, this should be sent anyway, just with 0.
+    data << uint32(difficultyNumberToDisplay);
 
     SendPacket(&data);
 }
