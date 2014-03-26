@@ -410,6 +410,12 @@ class WorldSession
 
         z_stream_s* GetCompressionStream() { return _compressionStream; }
 
+        // Trial Accounts
+        uint32 GetTrialLeftTime() { return m_trialTime; }
+        void SetTrialLeftTime(uint32 time) { m_trialTime = time; }
+        bool IsTrialAccount() const { return m_isTrialAccount; }
+        void SetTrialAccount(bool value) { m_isTrialAccount = value; }
+
     public:                                                 // opcodes handlers
 
         void Handle_NULL(WorldPacket& recvPacket);          // not used
@@ -1102,6 +1108,8 @@ class WorldSession
         time_t timeLastWhoCommand;
         z_stream_s* _compressionStream;
         rbac::RBACData* _RBACData;
+        bool m_isTrialAccount;
+        uint32 m_trialTime;
 };
 #endif
 /// @}
