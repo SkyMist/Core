@@ -220,7 +220,8 @@ void WorldSession::SendQueryTimeResponse()
 
 void WorldSession::SendServerWorldInfo()
 {
-    bool HasGroup = GetPlayer()->GetGroup() != NULL;
+    bool IsInInstance = GetPlayer()->GetMap()->IsRaidOrHeroicDungeon();             // Check being in raid / heroic dungeon map.
+    bool HasGroup = GetPlayer()->GetGroup() != NULL;                                // Check having a group.
     uint32 InstanceGroupSize = GetPlayer()->GetGroup()->GetMembersCount();          // Check if we need to send the instance group size - for Flex Raids.
     uint32 difficultyNumberToDisplay = 0;                                           // Number to display in minimap text.
 
@@ -266,7 +267,7 @@ void WorldSession::SendServerWorldInfo()
     WorldPacket data(SMSG_WORLD_SERVER_INFO);
 
     data.WriteBit(IsTrialAccount());                                                // Has restriction on level.
-    data.WriteBit(HasInstanceGroupSize);
+    data.WriteBit(IsInInstance);
     data.WriteBit(IsTrialAccount());                                                // Has money restriction.             
     data.WriteBit(IsTrialAccount());                                                // Is ineligible for loot.
 
@@ -285,8 +286,9 @@ void WorldSession::SendServerWorldInfo()
     if (IsTrialAccount()) 
         data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));               // Has restriction on level - Max level allowed.
 
-    // As of MOP, all maps act as "instances", even continents. Thus, this should be sent anyway, just with 0.
-    data << uint32(difficultyNumberToDisplay);
+    // This should be sent with the maximum player number as text, for raids & heroic dungeons, except for flex raids where they scale (that's why lua uses instanceGroupSize).
+    if (IsInInstance)
+        data << uint32(difficultyNumberToDisplay);
 
     SendPacket(&data);
 }
