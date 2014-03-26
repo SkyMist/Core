@@ -458,7 +458,7 @@ enum Opcodes
    CMSG_RAID_READY_CHECK                                    = 0x0D88, // 5.4.7 18019
    CMSG_RAID_READY_CHECK_CONFIRM                            = 0x13D9, // 5.4.7 18019
    CMSG_RANDOM_ROLL                                         = 0x1891, // 5.4.7 18019
-   CMSG_RANDOMIZE_CHAR_NAME                                 = 0x0,
+   CMSG_RANDOMIZE_CHAR_NAME                                 = 0x1DB9, // 5.4.7 18019
    CMSG_READY_FOR_ACCOUNT_DATA_TIMES                        = 0x13CB, // 5.4.7 18019
    CMSG_READ_ITEM                                           = 0x0,
    CMSG_REALM_SPLIT                                         = 0x1282, // 5.4.7 18019
@@ -1157,7 +1157,7 @@ enum Opcodes
    SMSG_PET_UPDATE_COMBO_POINTS                             = 0x0,
    SMSG_PLAYED_TIME                                         = 0x1C69, // 5.4.7 18019
    SMSG_PLAYERBINDERROR                                     = 0x0,
-   SMSG_PLAYERBOUND                                         = 0x0,
+   SMSG_PLAYERBOUND                                         = 0x00E8, // 5.4.7 18019
    SMSG_PLAYER_DIFFICULTY_CHANGE                            = 0x0,
    SMSG_PLAYER_MOVE                                         = 0x1CB2, // 5.4.7 18019
    SMSG_PLAYER_SKINNED                                      = 0x0,
@@ -1212,7 +1212,7 @@ enum Opcodes
    SMSG_RAID_READY_CHECK_THROTTLED_ERROR                    = 0x0,
    SMSG_RAID_SUMMON_FAILED                                  = 0x0,
    SMSG_RANDOM_ROLL                                         = 0x0529, // 5.4.7 18019
-   SMSG_RANDOMIZE_CHAR_NAME                                 = 0x0,
+   SMSG_RANDOMIZE_CHAR_NAME                                 = 0x074B, // 5.4.7 18019
    SMSG_RATED_BG_RATING                                     = 0x0,
    SMSG_RATED_BG_STATS                                      = 0x0,
    SMSG_READ_ITEM_FAILED                                    = 0x0,
@@ -1356,7 +1356,7 @@ enum Opcodes
    SMSG_TRAINER_LIST                                        = 0x1509, // 5.4.7 18019
    SMSG_TRANSFER_ABORTED                                    = 0x0,
    SMSG_TRANSFER_PENDING                                    = 0x0440, // 5.4.7 18019
-   SMSG_TRIGGER_CINEMATIC                                   = 0x0,
+   SMSG_TRIGGER_CINEMATIC                                   = 0x04CC, // 5.4.7 18019
    SMSG_TRIGGER_MOVIE                                       = 0x0,
    SMSG_TURN_IN_PETITION_RESULTS                            = 0x0,
    SMSG_TUTORIAL_FLAGS                                      = 0x10A7, // 5.4.7 18019

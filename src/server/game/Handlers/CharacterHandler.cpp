@@ -2386,8 +2386,8 @@ void WorldSession::HandleRandomizeCharNameOpcode(WorldPacket& recvData)
 {
     uint8 gender, race;
 
-    recvData >> race;
     recvData >> gender;
+    recvData >> race;
 
     if (!Player::IsValidRace(race))
     {

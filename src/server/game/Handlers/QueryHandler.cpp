@@ -227,13 +227,7 @@ void WorldSession::SendServerWorldInfo()
 
     switch(GetPlayer()->GetMap()->GetDifficulty())
     {
-        case REGULAR_DIFFICULTY:
-            difficultyNumberToDisplay = 0;
-            break;
-
-        case DUNGEON_DIFFICULTY_NORMAL:
         case DUNGEON_DIFFICULTY_HEROIC:
-        case DUNGEON_DIFFICULTY_CHALLENGE:
             difficultyNumberToDisplay = 5;
             break;
 
@@ -252,15 +246,18 @@ void WorldSession::SendServerWorldInfo()
             difficultyNumberToDisplay = 40;
             break;
 
-        case SCENARIO_DIFFICULTY_NORMAL:
         case SCENARIO_DIFFICULTY_HEROIC:
-            difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 1;
+            difficultyNumberToDisplay = 3;
             break;
 
         case RAID_DIFFICULTY_1025MAN_FLEX:
             difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 10;
             break;
 
+        case REGULAR_DIFFICULTY:
+        case DUNGEON_DIFFICULTY_NORMAL:
+        case DUNGEON_DIFFICULTY_CHALLENGE:
+        case SCENARIO_DIFFICULTY_NORMAL:
         default: break;
     }
 
