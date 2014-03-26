@@ -9823,9 +9823,9 @@ void Player::SendNotifyCurrencyLootRestored(uint8 lootSlot)
 void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 {
     WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
-    data << Field;
-    data << Value;
-    data << uint8(0);
+    data.WriteBit(0);                   //unk bit
+    data.FlushBits();
+    data << Value << Field;
     GetSession()->SendPacket(&data);
 }
 
@@ -17449,10 +17449,39 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
             if (const QuestLocale* pLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
                 ObjectMgr::GetLocaleString(pLocale->Title, loc_idx, strTitle);
 
-        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT, (4 + strTitle.size() + 8));
-        data << uint32(quest->GetQuestId());
-        data << strTitle;
-        data << uint64(GetGUID());
+        ObjectGuid PlayerGuid = GetGUID();
+        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT);
+        
+        data.WriteBit(PlayerGuid[3]);
+        data.WriteBit(PlayerGuid[2]);
+        data.WriteBit(PlayerGuid[7]);
+        data.WriteBit(PlayerGuid[0]);
+        data.WriteBit(PlayerGuid[1]);
+        data.WriteBit(strTitle.size() != 0);                    // hasQuestName
+        data.WriteBit(PlayerGuid[6]);
+
+        if(strTitle.size() != 0)
+            data.WriteBits(strTitle.size(),10);
+
+        data.WriteBit(PlayerGuid[5]);
+        data.WriteBit(PlayerGuid[4]);
+        
+        data.FlushBits();
+
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[0]);
+        data.WriteByteSeq(PlayerGuid[6]);
+
+        if(strTitle.size() != 0)
+            data.WriteString(strTitle);
+
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[0]);
+        data.WriteByteSeq(PlayerGuid[6]);
+
+        data << quest->GetQuestId();
         pReceiver->GetSession()->SendPacket(&data);
 
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_CONFIRM_ACCEPT");
