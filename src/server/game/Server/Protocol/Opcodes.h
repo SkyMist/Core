@@ -1188,7 +1188,7 @@ enum Opcodes
    SMSG_QUESTGIVER_QUEST_FAILED                             = 0x0,
    SMSG_QUESTGIVER_QUEST_INVALID                            = 0x0,
    SMSG_QUESTGIVER_QUEST_LIST                               = 0x0,
-   SMSG_QUESTGIVER_REQUEST_ITEMS                            = 0x0A32,
+   SMSG_QUESTGIVER_REQUEST_ITEMS                            = 0x0A32, // 5.4.7 18019
    SMSG_QUESTGIVER_STATUS                                   = 0x0D7E, // 5.4.7 18019
    SMSG_QUESTGIVER_STATUS_MULTIPLE                          = 0x0,
    SMSG_QUESTLOG_FULL                                       = 0x0,
@@ -1199,7 +1199,7 @@ enum Opcodes
    SMSG_QUESTUPDATE_FAILED                                  = 0x0,
    SMSG_QUESTUPDATE_FAILEDTIMER                             = 0x0,
    SMSG_QUEST_NPC_QUERY_RESPONSE                            = 0x0,
-   SMSG_QUEST_CONFIRM_ACCEPT                                = 0x0,
+   SMSG_QUEST_CONFIRM_ACCEPT                                = 0x0351, // 5.4.7 18019
    SMSG_QUEST_FORCE_REMOVE                                  = 0x0,
    SMSG_QUEST_POI_QUERY_RESPONSE                            = 0x0F5F, // 5.4.7 18019
    SMSG_QUEST_QUERY_RESPONSE                                = 0x0,
