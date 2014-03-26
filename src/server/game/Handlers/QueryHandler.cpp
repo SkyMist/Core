@@ -222,7 +222,7 @@ void WorldSession::SendServerWorldInfo()
 {
     bool IsInInstance = GetPlayer()->GetMap()->IsRaidOrHeroicDungeon();             // Check being in raid / heroic dungeon map.
     bool HasGroup = GetPlayer()->GetGroup() != NULL;                                // Check having a group.
-    uint32 InstanceGroupSize = GetPlayer()->GetGroup()->GetMembersCount();          // Check if we need to send the instance group size - for Flex Raids.
+    uint32 InstanceGroupSize = HasGroup ? GetPlayer()->GetGroup()->GetMembersCount() : 0; // Check if we need to send the instance group size - for Flex Raids.
     uint32 difficultyNumberToDisplay = 0;                                           // Number to display in minimap text.
 
     switch(GetPlayer()->GetMap()->GetDifficulty())

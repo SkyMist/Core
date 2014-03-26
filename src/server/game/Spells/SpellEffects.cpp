@@ -5920,6 +5920,8 @@ void Spell::EffectBind(SpellEffIndex effIndex)
     TC_LOG_DEBUG("spells", "EffectBind: New homebind X: %f, Y: %f, Z: %f, MapId: %u, AreaId: %u",
         homeLoc.GetPositionX(), homeLoc.GetPositionY(), homeLoc.GetPositionZ(), homeLoc.GetMapId(), areaId);
 
+    ObjectGuid guid = m_caster->GetGUID();
+
     // Zone update.
     data.Initialize(SMSG_PLAYERBOUND, 1 + 8 + 4);
     data.WriteBit(guid[5]);

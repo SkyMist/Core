@@ -3864,7 +3864,7 @@ enum WeatherType
     WEATHER_TYPE_BLACKRAIN  = 90
 };
 
-#define MAX_WEATHER_TYPE 6
+#define MAX_WEATHER_TYPE 4
 
 enum ChatMsg
 {
@@ -3914,8 +3914,8 @@ enum ChatMsg
     CHAT_MSG_RAID_BOSS_EMOTE        = 0x29,
     CHAT_MSG_RAID_BOSS_WHISPER      = 0x2A,
     CHAT_MSG_FILTERED               = 0x2B,
-    CHAT_MSG_BATTLEGROUND           = 0x2C,
-    CHAT_MSG_BATTLEGROUND_LEADER    = 0x2D,
+    CHAT_MSG_BATTLEGROUND           = 0x2C, // Now INSTANCE_CHAT.
+    CHAT_MSG_BATTLEGROUND_LEADER    = 0x2D, // Now INSTANCE_CHAT_LEADER.
     CHAT_MSG_RESTRICTED             = 0x2E,
     CHAT_MSG_BATTLENET              = 0x2F,
     CHAT_MSG_ACHIEVEMENT            = 0x30,

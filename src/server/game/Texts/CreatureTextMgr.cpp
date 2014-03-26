@@ -42,7 +42,7 @@ class CreatureTextBuilder
             *data << uint8(_msgType);
             *data << uint32(_language);
             *data << uint64(_source->GetGUID());
-            *data << uint32(1);                                      // 2.1.0
+            *data << uint32(0);                                      // 2.1.0
             *data << uint32(localizedName.size() + 1);
             *data << localizedName;
             size_t whisperGUIDpos = data->wpos();
@@ -54,7 +54,7 @@ class CreatureTextBuilder
             }
             *data << uint32(text.length() + 1);
             *data << text;
-            *data << uint8(0);                                       // ChatTag
+            *data << uint16(0);                                       // ChatTag
             if (_msgType == CHAT_MSG_RAID_BOSS_EMOTE || _msgType == CHAT_MSG_RAID_BOSS_WHISPER)
             {
                 *data << float(0);
@@ -87,7 +87,7 @@ class PlayerTextBuilder
             *data << uint8(_msgType);
             *data << uint32(_language);
             *data << uint64(_talker->GetGUID());
-            *data << uint32(1);                                      // 2.1.0
+            *data << uint32(0);                                      // 2.1.0
             *data << uint32(_talker->GetName().size() + 1);
             *data << _talker->GetName();
             size_t whisperGUIDpos = data->wpos();
@@ -99,7 +99,7 @@ class PlayerTextBuilder
             }
             *data << uint32(text.length() + 1);
             *data << text;
-            *data << uint8(0);                                       // ChatTag
+            *data << uint16(0);                                       // ChatTag
             if (_msgType == CHAT_MSG_RAID_BOSS_EMOTE || _msgType == CHAT_MSG_RAID_BOSS_WHISPER)
             {
                 *data << float(0);
