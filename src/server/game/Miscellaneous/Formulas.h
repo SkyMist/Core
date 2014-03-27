@@ -31,7 +31,7 @@ namespace Trinity
     {
         inline float hk_honor_at_level_f(uint8 level, float multiplier = 1.0f)
         {
-            float honor = multiplier * level * 1.55f;
+            float honor = multiplier * float(level / 10); // MOP: 9 Honor points per kill divided among all friendly players in range from group @ lvl 90.
             sScriptMgr->OnHonorCalculation(honor, level, multiplier);
             return honor;
         }

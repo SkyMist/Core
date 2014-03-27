@@ -148,7 +148,7 @@ void GameObject::AddToWorld()
         sObjectAccessor->AddObject(this);
 
         // The state can be changed after GameObject::Create but before GameObject::AddToWorld
-        bool toggledState = GetGoType() == GAMEOBJECT_TYPE_CHEST ? getLootState() == GO_READY : GetGoState() == GO_STATE_READY;
+        bool toggledState = GetGoType() == GAMEOBJECT_TYPE_CHEST ? getLootState() == GO_READY : (GetGoState() == GO_STATE_READY || GetGOInfo()->type == GAMEOBJECT_TYPE_MO_TRANSPORT);
         if (m_model)
             GetMap()->InsertGameObjectModel(*m_model);
 
@@ -1738,6 +1738,36 @@ void GameObject::SendCustomAnim(uint32 anim)
     SendMessageToSet(&data, true);
 }
 
+void GameObject::ActivateAnimation(uint32 anim) // Used in GO animations related to Movement or Opening/Looting. ToDo.
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_GAME_OBJECT_ACTIVATE_ANIM_KIT, 8+4);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[6]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[7]);
+
+    data << uint32(anim);
+
+    SendMessageToSet(&data, true);
+}
+
 bool GameObject::IsInRange(float x, float y, float z, float radius) const
 {
     GameObjectDisplayInfoEntry const* info = sGameObjectDisplayInfoStore.LookupEntry(m_goInfo->displayId);
@@ -1766,9 +1796,9 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
 
 void GameObject::Rebuild()
 {
-    RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
-    SetUInt32Value(GAMEOBJECT_DISPLAYID, m_goInfo->displayId);
-    m_goValue->Building.Health = m_goInfo->building.intactNumHits + m_goInfo->building.damagedNumHits;
+    RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
+    SetUInt32Value(GAMEOBJECT_FIELD_DISPLAY_ID, m_goInfo->displayId);
+    m_goValue.Building.Health = m_goInfo->building.intactNumHits + m_goInfo->building.damagedNumHits;
     EventInform(m_goInfo->building.rebuildingEvent);
 }
 
@@ -2002,7 +2032,7 @@ void GameObject::SetGoState(GOState state)
     if (oldState != state && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
         SetUInt32Value(GAMEOBJECT_FIELD_LEVEL, getMSTime() + CalculateAnimDuration(oldState, state));
 
-    if (m_model)
+    if (m_model && GetGOInfo()->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
     {
         if (!IsInWorld())
             return;
@@ -2235,4 +2265,17 @@ void GameObject::GetRespawnPosition(float &x, float &y, float &z, float* ori /* 
     z = GetPositionZ();
     if (ori)
         *ori = GetOrientation();
+}
+
+void GameObject::UpdateModelPosition()
+{
+    if (!m_model)
+        return;
+
+    if (GetMap()->ContainsGameObjectModel(*m_model))
+    {
+        GetMap()->RemoveGameObjectModel(*m_model);
+        m_model->Relocate(*this);
+        GetMap()->InsertGameObjectModel(*m_model);
+    }
 }

@@ -256,7 +256,7 @@ public:
 
         void Reset() OVERRIDE
         {
-            Apprentice_Timer = DUNGEON_MODE(20000, 10000);
+            Apprentice_Timer = DUNGEON_MODE(20000, 10000, 15000);
             ArcaneBolt_Timer = 1000;
             Check_Timer = 1000;
         }

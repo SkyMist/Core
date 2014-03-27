@@ -1446,6 +1446,24 @@ struct LFGDungeonEntry
     uint32 Entry() const { return ID + (type << 24); }
 };
 
+struct LightEntry
+{
+    uint32 Id;
+    uint32 MapId;
+    float X;
+    float Y;
+    float Z;
+    //float FalloffStart;
+    //float FalloffEnd;
+    //uint32 SkyAndFog;
+    //uint32 WaterSettings;
+    //uint32 SunsetParams;
+    //uint32 OtherParams;
+    //uint32 DeathParams;
+    //uint32 Unknown;
+    //float  Unknown;
+    //uint32 Unknown;
+};
 
 struct LiquidTypeEntry
 {
@@ -1632,6 +1650,22 @@ struct QuestFactionRewEntry
 {
   uint32      id;
   int32       QuestRewFactionValue[10];
+};
+
+struct QuestPOIBlobEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    uint32      type;                                       // 1 m_Type
+    uint32      mapId;                                      // 2 m_mapId
+    uint32      unk;                                        // 3 m_unk
+};
+
+struct QuestPOIPointEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    int32       x;                                          // 1 m_zoneX
+    int32       y;                                          // 2 m_zoneY
+    uint32      blobId;                                     // 3 m_Id
 };
 
 struct RandomPropertiesPointsEntry
@@ -2041,8 +2075,8 @@ struct SpellLevelsEntry
 // SpellPower.dbc
 struct SpellPowerEntry
 {
-    //uint32    Id;                                         // 0        m_ID
-    //uint32  spellId;                                      // 1  - Pandaria
+    uint32    Id;                                           // 0        m_ID
+    uint32  spellId;                                        // 1  - Pandaria
     //uint32  unk0;                                         // 2  - Pandaria always after spellId
     uint32    powerType;                                    // 3       m_powerType
     uint32    manaCost;                                     // 4       m_manaCost
@@ -2051,7 +2085,7 @@ struct SpellPowerEntry
     uint32    manaPerSecondPerLevel;                        // 7       m_manaPerSecondPerLevel
     //uint32  PowerDisplayId;                               // 8       m_powerDisplayID - id from PowerDisplay.dbc, new in 3.1
     float     ManaCostPercentageFloat;                      // 9       4.3.0
-    // float  unk1                                          // 10 - Pandaria
+    float     ManaPerSecond;                                // 10 - New Panda, not sure.
     // float  unk2                                          // 11 - Pandaria
     // float  unk3                                          // 12 - Pandaria
 };
@@ -2059,11 +2093,10 @@ struct SpellPowerEntry
 struct SpellRuneCostEntry
 {
     uint32  ID;                                             // 0
-    uint32  RuneCost[3];                                    // 1-3 (0=blood, 1=frost, 2=unholy)
-    //uint32 unk0                                           // 4 - 4th rune ??
+    uint32  RuneCost[4];                                    // 1-3 (0 = blood, 1 = frost, 2 = unholy, 3 = death)
     uint32  runePowerGain;                                  // 5
 
-    bool NoRuneCost() const { return RuneCost[0] == 0 && RuneCost[1] == 0 && RuneCost[2] == 0; }
+    bool NoRuneCost() const { return RuneCost[0] == 0 && RuneCost[1] == 0 && RuneCost[2] == 0 && RuneCost[3] == 0; }
     bool NoRunicPowerGain() const { return runePowerGain == 0; }
 };
 

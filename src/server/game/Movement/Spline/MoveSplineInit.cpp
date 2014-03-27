@@ -156,12 +156,6 @@ namespace Movement
 
         WorldPacket data(SMSG_MONSTER_MOVE, 64);
         data.append(unit->GetPackGUID());
-        if (transport)
-        {
-            data.SetOpcode(SMSG_MONSTER_MOVE_TRANSPORT);
-            data.appendPackGUID(unit->GetTransGUID());
-            data << int8(unit->GetTransSeat());
-        }
 
         PacketBuilder::WriteStopMovement(loc, args.splineId, data, unit);
         unit->SendMessageToSet(&data, true);
@@ -170,7 +164,7 @@ namespace Movement
     MoveSplineInit::MoveSplineInit(Unit* m) : unit(m)
     {
         args.splineId = splineIdGen.NewId();
-        // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes
+        // GAMEOBJECT_TYPE_TRANSPORT included here.
         args.TransformForTransport = unit->GetTransGUID();
         // mix existing state into new
         args.flags.walkmode = unit->m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);

@@ -168,7 +168,7 @@ enum EUnitDynamicArrays // New Dynamic Flag Update System.
     UNIT_DYNAMIC_PASSIVE_SPELLS                              = OBJECT_DYNAMIC_END + 0x0,
     UNIT_DYNAMIC_WORLD_EFFECTS                               = OBJECT_DYNAMIC_END + 0x101,
     UNIT_DYNAMIC_END                                         = OBJECT_DYNAMIC_END + 0x202
-}
+};
 
 enum EPlayerFields
 {

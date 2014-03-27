@@ -190,7 +190,7 @@ public:
                     // Only shatter brittle golems
                     if (temp->IsAlive() && temp->GetEntry() == NPC_BRITTLE_GOLEM)
                     {
-                        temp->CastSpell(temp, DUNGEON_MODE(SPELL_SHATTER_N, SPELL_SHATTER_H), false);
+                        temp->CastSpell(temp, SPELL_SHATTER_N, false);
                         GolemsShattered += 1;
                     }
                 }
@@ -207,7 +207,7 @@ public:
                     summoned->GetMotionMaster()->MoveFollow(target, 0.0f, 0.0f);
 
                 // Why healing when just summoned?
-                summoned->CastSpell(summoned, DUNGEON_MODE(SPELL_HEAT_N, SPELL_HEAT_H), false, NULL, NULL, me->GetGUID());
+                summoned->CastSpell(summoned, SPELL_HEAT_N, false, NULL, NULL, me->GetGUID());
             }
         }
 

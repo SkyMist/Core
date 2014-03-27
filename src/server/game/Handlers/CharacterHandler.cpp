@@ -277,6 +277,8 @@ void WorldSession::HandleCharEnum(PreparedQueryResult result)
 
 void WorldSession::HandleCharEnumOpcode(WorldPacket & /*recvData*/)
 {
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, false);
+
     // remove expired bans
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_EXPIRED_BANS);
     CharacterDatabase.Execute(stmt);
@@ -712,6 +714,8 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
             data << uint8(CHAR_CREATE_SUCCESS);
             SendPacket(&data);
 
+            AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
+
             std::string IP_str = GetRemoteAddress();
             TC_LOG_INFO("entities.player.character", "Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), createInfo->Name.c_str(), newChar.GetGUIDLow());
             sScriptMgr->OnPlayerCreate(&newChar);
@@ -777,6 +781,8 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_DATA_BY_GUID);
     stmt->setUInt32(0, GUID_LOPART(guid));
+
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
 
     if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
     {
@@ -896,7 +902,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     pCurrChar->GetMotionMaster()->Initialize();
-    pCurrChar->SendDungeonDifficulty(false);
 
     WorldPacket data(SMSG_LOGIN_VERIFY_WORLD, 20);
     data << pCurrChar->GetOrientation();
@@ -910,21 +915,27 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     LoadAccountData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA), PER_CHARACTER_CACHE_MASK);
     SendAccountDataTimes(PER_CHARACTER_CACHE_MASK);
 
-    bool featureBit4 = true;
-    data.Initialize(SMSG_FEATURE_SYSTEM_STATUS, 7);         // checked in 4.2.2
-    data << uint8(2);                                       // unknown value
-    data << uint32(1);
-    data << uint32(1);
-    data << uint32(2);
-    data << uint32(0);
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.WriteBit(0);
-    data.WriteBit(featureBit4);
-    data.WriteBit(0);
-    data.WriteBit(0);
+    bool IsGMQuickTicketSystemEnabled = true;
+    bool IsSessionTimeAlertEnabled = false;
+    data.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
+    data << uint8(2);                                       // Complain System Status
+    data << uint32(1);                                      // NumSoRRemaining
+    data << uint32(1);                                      // Is lua function LoadURL enabled
+    data << uint32(2);                                      // unk dword10
+    data << uint32(0);                                      // unk dword1C
+    data.WriteBit(0);                                       // GMItemRestorationButtonEnabled
+    data.WriteBit(IsSessionTimeAlertEnabled);               // IsSessionTimeAlertEnabled
+    data.WriteBit(0);                                       // IsInGameStoreEnabled
+    data.WriteBit(0);                                       // CanSendSoRRequest
+    data.WriteBit(IsGMQuickTicketSystemEnabled);            // GMQuickTicketSystemEnabled
+    data.WriteBit(0);                                       // byte21
+    data.WriteBit(0);                                       // IsVoiceChatEnabled
+    data.WriteBit(0);                                       // IsInGameStoreAPIAvailable
+    data.WriteBit(0);                                       // CanSendSoRByText
+    data.WriteBit(0);                                       // IsInGameStoreDisabledByParentalControl
     data.FlushBits();
-    if (featureBit4)
+
+    if (IsGMQuickTicketSystemEnabled)
     {
         data << uint32(1);
         data << uint32(0);
@@ -932,12 +943,13 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         data << uint32(60);
     }
 
-    //if (featureBit5)
-    //{
-    //    data << uint32(0);
-    //    data << uint32(0);
-    //    data << uint32(0);
-    //}
+    if (IsSessionTimeAlertEnabled)
+    {
+        data << uint32(0);
+        data << uint32(0);
+        data << uint32(0);
+    }
+
     SendPacket(&data);
 
     // Send MOTD
@@ -1312,6 +1324,8 @@ void WorldSession::HandleCharRenameOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleChangePlayerNameOpcodeCallBack(PreparedQueryResult result, std::string const& newName)
 {
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
+
     if (!result)
     {
         WorldPacket data(SMSG_CHAR_RENAME, 1);
@@ -1590,6 +1604,8 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_AT_LOGIN);
     stmt->setUInt32(0, GUID_LOPART(guid));
+    // TODO: Make async with callback, Allow opcode at end of callback.
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
     if (!result)
@@ -1844,6 +1860,8 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
     uint8 playerClass = nameData->m_class;
     uint8 level = nameData->m_level;
 
+    // TO Do: Make async and allow opcode on callback
+    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_AT_LOGIN_TITLES);
     stmt->setUInt32(0, lowGuid);
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
@@ -2368,8 +2386,8 @@ void WorldSession::HandleRandomizeCharNameOpcode(WorldPacket& recvData)
 {
     uint8 gender, race;
 
-    recvData >> race;
     recvData >> gender;
+    recvData >> race;
 
     if (!Player::IsValidRace(race))
     {
@@ -2394,37 +2412,37 @@ void WorldSession::HandleRandomizeCharNameOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleReorderCharacters(WorldPacket& recvData)
 {
-    uint32 charactersCount = recvData.ReadBits(10);
+    uint32 charactersCount = recvData.ReadBits(9);
 
     std::vector<ObjectGuid> guids(charactersCount);
     uint8 position;
 
     for (uint8 i = 0; i < charactersCount; ++i)
     {
-        guids[i][1] = recvData.ReadBit();
-        guids[i][4] = recvData.ReadBit();
-        guids[i][5] = recvData.ReadBit();
         guids[i][3] = recvData.ReadBit();
-        guids[i][0] = recvData.ReadBit();
         guids[i][7] = recvData.ReadBit();
-        guids[i][6] = recvData.ReadBit();
+        guids[i][4] = recvData.ReadBit();
+        guids[i][1] = recvData.ReadBit();
         guids[i][2] = recvData.ReadBit();
+        guids[i][5] = recvData.ReadBit();
+        guids[i][0] = recvData.ReadBit();
+        guids[i][6] = recvData.ReadBit();
     }
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
     for (uint8 i = 0; i < charactersCount; ++i)
     {
-        recvData.ReadByteSeq(guids[i][6]);
-        recvData.ReadByteSeq(guids[i][5]);
-        recvData.ReadByteSeq(guids[i][1]);
         recvData.ReadByteSeq(guids[i][4]);
+        recvData.ReadByteSeq(guids[i][7]);
         recvData.ReadByteSeq(guids[i][0]);
-        recvData.ReadByteSeq(guids[i][3]);
+        recvData.ReadByteSeq(guids[i][2]);
 
         recvData >> position;
 
-        recvData.ReadByteSeq(guids[i][2]);
-        recvData.ReadByteSeq(guids[i][7]);
+        recvData.ReadByteSeq(guids[i][6]);
+        recvData.ReadByteSeq(guids[i][3]);
+        recvData.ReadByteSeq(guids[i][1]);
+        recvData.ReadByteSeq(guids[i][5]);
 
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_LIST_SLOT);
         stmt->setUInt8(0, position);

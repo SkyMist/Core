@@ -135,7 +135,7 @@ public:
             {
                 if (uiShatterTimer <= diff)
                 {
-                    DoCast(me, DUNGEON_MODE(SPELL_SHATTER, H_SPELL_SHATTER));
+                    DoCast(me, SPELL_SHATTER);
                 } else uiShatterTimer -= diff;
             }
 

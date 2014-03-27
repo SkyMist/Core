@@ -315,7 +315,7 @@ public:
                 if (uiBoltTimer <= diff)
                 {
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
-                        me->CastSpell(target, DUNGEON_MODE(SPELL_LIGHTNING_BOLT, SPELL_LIGHTNING_BOLT_H), false);
+                        me->CastSpell(target, SPELL_LIGHTNING_BOLT, false);
 
                     uiBoltTimer = urand(15*IN_MILLISECONDS, 30*IN_MILLISECONDS);
                 } else uiBoltTimer -= diff;
@@ -323,7 +323,7 @@ public:
                 if (uiThunderTimer <= diff)
                 {
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
-                        me->CastSpell(target, DUNGEON_MODE(SPELL_THUNDERSHOCK, SPELL_THUNDERSHOCK_H), false);
+                        me->CastSpell(target, SPELL_THUNDERSHOCK, false);
 
                     uiThunderTimer = urand(15*IN_MILLISECONDS, 30*IN_MILLISECONDS);
                 } else uiThunderTimer -= diff;

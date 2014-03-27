@@ -146,6 +146,10 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8
     int32 z_res = deflateInit(_compressionStream, sWorld->getIntConfig(CONFIG_COMPRESSION));
     if (z_res != Z_OK)
         TC_LOG_ERROR("network", "Can't initialize packet compression (zlib: deflateInit) Error code: %i (%s)", z_res, zError(z_res));
+
+
+    m_isTrialAccount = false;
+    m_trialTime = NULL;
 }
 
 /// WorldSession destructor
@@ -321,7 +325,10 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
             _recvQueue.next(packet, updater))
     {
         if (!AntiDOS.EvaluateOpcode(*packet))
+        {
+            TC_LOG_ERROR("network", "A Player (Account: %u) was kicked / banned due to possible Spoof / DOS attempt on CMSG_CHAR_ENUM!", GetAccountId());
             KickPlayer();
+        }
 
         OpcodeHandler const* opHandle = clientOpcodeTable[packet->GetOpcode()];
         try
@@ -724,6 +731,16 @@ void WorldSession::LoadGlobalAccountData()
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_DATA);
     stmt->setUInt32(0, GetAccountId());
     LoadAccountData(CharacterDatabase.Query(stmt), GLOBAL_CACHE_MASK);
+
+    //Load the trial data for the account
+    PreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_TRIAL_DATA);
+    stmt2->setUInt32(0, GetAccountId());
+
+    PreparedQueryResult result = LoginDatabase.Query(stmt2);
+    Field* fields = result->Fetch();
+
+    SetTrialAccount(fields[0].GetBool());
+    SetTrialLeftTime(fields[1].GetUInt32());
 }
 
 void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)

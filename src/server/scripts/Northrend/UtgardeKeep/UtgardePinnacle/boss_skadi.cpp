@@ -425,7 +425,7 @@ public:
 
         void SpawnMobs()
         {
-            for (uint8 i = 0; i < DUNGEON_MODE(5, 6); ++i)
+            for (uint8 i = 0; i < DUNGEON_MODE(5, 6, 5); ++i)
             {
                 switch (urand(0, 2))
                 {

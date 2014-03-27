@@ -819,6 +819,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
 
         void CastSpell(Unit* target, uint32 spell);
         void SendCustomAnim(uint32 anim);
+        void ActivateAnimation(uint32 anim);
         bool IsInRange(float x, float y, float z, float radius) const;
         void Rebuild();
 
@@ -856,6 +857,8 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         float GetStationaryY() const { if (GetGOInfo()->type != GAMEOBJECT_TYPE_MO_TRANSPORT) return m_stationaryPosition.GetPositionY(); return GetPositionY(); }
         float GetStationaryZ() const { if (GetGOInfo()->type != GAMEOBJECT_TYPE_MO_TRANSPORT) return m_stationaryPosition.GetPositionZ(); return GetPositionZ(); }
         float GetStationaryO() const { if (GetGOInfo()->type != GAMEOBJECT_TYPE_MO_TRANSPORT) return m_stationaryPosition.GetOrientation(); return GetOrientation(); }
+
+        void UpdateModelPosition();
 
     protected:
         bool AIM_Initialize();

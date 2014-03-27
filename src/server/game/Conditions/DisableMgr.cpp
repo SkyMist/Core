@@ -137,16 +137,26 @@ void LoadDisables()
                     case MAP_RAID:
                         if (flags & DUNGEON_STATUSFLAG_HEROIC && !GetMapDifficultyData(entry, DUNGEON_DIFFICULTY_HEROIC))
                             flags -= DUNGEON_STATUSFLAG_HEROIC;
+                        if (flags & DUNGEON_STATUSFLAG_CHALLENGE && !GetMapDifficultyData(entry, DUNGEON_DIFFICULTY_CHALLENGE))
+                            flags -= DUNGEON_STATUSFLAG_CHALLENGE;
                         if (flags & RAID_STATUSFLAG_10MAN_HEROIC && !GetMapDifficultyData(entry, RAID_DIFFICULTY_10MAN_HEROIC))
                             flags -= RAID_STATUSFLAG_10MAN_HEROIC;
                         if (flags & RAID_STATUSFLAG_25MAN_HEROIC && !GetMapDifficultyData(entry, RAID_DIFFICULTY_25MAN_HEROIC))
                             flags -= RAID_STATUSFLAG_25MAN_HEROIC;
-                        if (flags & RAID_STATUSFLAG_10MAN_FLEX && !GetMapDifficultyData(entry, RAID_DIFFICULTY_10MAN_FLEX))
-                            flags -= RAID_STATUSFLAG_10MAN_FLEX;
+                        if (flags & RAID_STATUSFLAG_1025MAN_FLEX && !GetMapDifficultyData(entry, RAID_DIFFICULTY_1025MAN_FLEX))
+                            flags -= RAID_STATUSFLAG_1025MAN_FLEX;
                         if (flags & RAID_STATUSFLAG_25MAN_LFR && !GetMapDifficultyData(entry, RAID_DIFFICULTY_25MAN_LFR))
                             flags -= RAID_STATUSFLAG_25MAN_LFR;
+                        if (flags & RAID_STATUSFLAG_40MAN && !GetMapDifficultyData(entry, RAID_DIFFICULTY_40MAN))
+                            flags -= RAID_STATUSFLAG_40MAN;
                         if (!flags)
                             isFlagInvalid = true;
+                        break;
+                    case MAP_SCENARIO:
+                        if (flags & SCENARIO_STATUSFLAG_NORMAL && !GetMapDifficultyData(entry, SCENARIO_DIFFICULTY_NORMAL))
+                            flags -= SCENARIO_STATUSFLAG_NORMAL;
+                        if (flags & SCENARIO_STATUSFLAG_HEROIC && !GetMapDifficultyData(entry, SCENARIO_DIFFICULTY_HEROIC))
+                            flags -= SCENARIO_STATUSFLAG_HEROIC;
                         break;
                     case MAP_BATTLEGROUND:
                     case MAP_ARENA:
@@ -359,18 +369,29 @@ bool IsDisabledFor(DisableType type, uint32 entry, Unit const* unit, uint8 flags
                     GetDownscaledMapDifficultyData(entry, targetDifficulty);
                     switch (targetDifficulty)
                     {
+                        // Dungeons.
                         case DUNGEON_DIFFICULTY_NORMAL:
                             return disabledModes & DUNGEON_STATUSFLAG_NORMAL;
                         case DUNGEON_DIFFICULTY_HEROIC:
                             return disabledModes & DUNGEON_STATUSFLAG_HEROIC;
+                        case DUNGEON_DIFFICULTY_CHALLENGE:
+                            return disabledModes & DUNGEON_STATUSFLAG_CHALLENGE;
+                        // Raids.
                         case RAID_DIFFICULTY_10MAN_HEROIC:
                             return disabledModes & RAID_STATUSFLAG_10MAN_HEROIC;
                         case RAID_DIFFICULTY_25MAN_HEROIC:
                             return disabledModes & RAID_STATUSFLAG_25MAN_HEROIC;
-                        case RAID_DIFFICULTY_10MAN_FLEX:
-                            return disabledModes & RAID_STATUSFLAG_10MAN_FLEX;
+                        case RAID_DIFFICULTY_1025MAN_FLEX:
+                            return disabledModes & RAID_STATUSFLAG_1025MAN_FLEX;
                         case RAID_DIFFICULTY_25MAN_LFR:
                             return disabledModes & RAID_STATUSFLAG_25MAN_LFR;
+                        case RAID_DIFFICULTY_40MAN:
+                            return disabledModes & RAID_STATUSFLAG_40MAN;
+                        // Scenarios.
+                        case SCENARIO_DIFFICULTY_NORMAL:
+                            return disabledModes & SCENARIO_STATUSFLAG_NORMAL;
+                        case SCENARIO_DIFFICULTY_HEROIC:
+                            return disabledModes & SCENARIO_STATUSFLAG_HEROIC;
                     }
                 }
                 else if (mapEntry->map_type == MAP_COMMON)

@@ -1292,6 +1292,13 @@ void World::LoadConfigSettings(bool reload)
 
     m_int_configs[CONFIG_PACKET_SPOOF_BANDURATION] = sConfigMgr->GetIntDefault("PacketSpoof.BanDuration", 86400);
 
+    // Realm options and trial acc options
+    m_bool_configs[CONFIG_IS_TOURNAMENT_REALM] = sConfigMgr->GetBoolDefault("RealmServerInfo.IsTournament", false);
+    m_bool_configs[CONFIG_IS_TRIAL_ACCOUNTS] = sConfigMgr->GetBoolDefault("RealmServerInfo.TrialAccountsEnabled", true);
+    m_int_configs[CONFIG_TRIAL_MAX_LEVEL] = sConfigMgr->GetIntDefault("RealmServerInfo.TrialMaxLevel", 57);
+    m_int_configs[CONFIG_TRIAL_MAX_MONEY] = sConfigMgr->GetIntDefault("RealmServerInfo.TrialMaxMoney", 1000000);
+    m_int_configs[CONFIG_TRIAL_ACTIVATE_TIME] = sConfigMgr->GetIntDefault("RealmServerInfo.TrialActivateTime", 1209600);
+
     // call ScriptMgr if we're reloading the configuration
     if (reload)
         sScriptMgr->OnConfigLoad(reload);
@@ -2651,12 +2658,11 @@ void World::ShutdownCancel()
 }
 
 /// Send a server message to the user(s)
-void World::SendServerMessage(ServerMessageType type, const char *text, Player* player)
+void World::SendServerMessage(ServerMessageType type, const char* text, Player* player)
 {
-    WorldPacket data(SMSG_SERVER_MESSAGE, 50);              // guess size
+    WorldPacket data(SMSG_SERVER_MESSAGE);                  // guess size
     data << uint32(type);
-    if (type <= SERVER_MSG_STRING)
-        data << text;
+    data.append(text,1024);
 
     if (player)
         player->GetSession()->SendPacket(&data);

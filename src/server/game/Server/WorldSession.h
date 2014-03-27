@@ -104,6 +104,23 @@ enum PartyOperation
     PARTY_OP_SWAP = 4
 };
 
+enum ChangeDynamicDifficultyResult
+{
+    DIFF_CHANGE_FAIL_RAID_RECENTLY_IN_COMBAT                    =  0, // "Raid was in combat recently and may not change difficulty again for %s.", where %s is time. Send the time in seconds as a uint32
+    DIFF_CHANGE_FAIL_EVENT_IN_PROGRESS                          =  1, // "Raid difficulty cannot be changed at this time. An event is in progress."
+    DIFF_CHANGE_FAIL_ENCOUNTER_IN_PROGRESS                      =  2, // "Raid difficulty cannot be changed at this time. An encounter is in progress."
+    DIFF_CHANGE_FAIL_SOMEONE_IN_COMBAT                          =  3, // "Raid difficulty cannot be changed at this time. A player is in combat."
+    DIFF_CHANGE_FAIL_SOMEONE_BUSY                               =  4, // "Raid difficulty cannot be changed at this time. A player is busy."
+    DIFF_CHANGE_SET_CHANGE_TIME                                 =  5, // Sets the time(in secs, uint32 sent) until the raid can't change difficulty
+    DIFF_CHANGE_FAIL_CHANGE_STARTED                             =  6, // "A raid difficulty change is currently in progress."
+    DIFF_CHANGE_SHOW_AREA_TRIGGER_TEXT                          =  7, // Shows the area trigger text in the chat box. Send MapDifficultyID as a uint32
+    DIFF_CHANGE_FAIL_SOMEONE_LOCKED                             =  8, // "Raid difficulty cannot be changed. %s is already locked to a different Heroic instance." where %s is the name of the player. Send a packed guid of the locked player
+    DIFF_CHANGE_FAIL_ALREADY_HEROIC                             =  9, // "Your heroic instance is already in running and in use by another party"
+    DIFF_CHANGE_FAIL_IN_LFR                                     = 10, // "Using Raid Finder to enter this instance disables dynamic difficulty selection"
+    DIFF_CHANGE_SUCCESS                                         = 11, // This is sent where the change is successful. Send the mapID(uint32) and the DifficultyID(uint32) 
+
+};
+
 enum BFLeaveReason
 {
     BF_LEAVE_REASON_CLOSE     = 0x00000001,
@@ -225,7 +242,10 @@ class WorldSession
         void SendAreaTriggerMessage(const char* Text, ...) ATTR_PRINTF(2, 3);
         void SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps);
         void SendQueryTimeResponse();
+        void SendServerWorldInfo();
         void SendGroupInviteNotification(const std::string& inviterName, bool inGroup);
+
+        void SendNewWorld(WorldLocation const &location);
 
         void SendAuthResponse(uint8 code, bool queued, uint32 queuePos = 0);
         void SendClientCacheVersion(uint32 version);
@@ -276,13 +296,16 @@ class WorldSession
         /// Handle the authentication waiting queue (to be completed)
         void SendAuthWaitQue(uint32 position);
 
-        //void SendTestCreatureQueryOpcode(uint32 entry, uint64 guid, uint32 testvalue);
         void SendNameQueryOpcode(ObjectGuid guid);
 
         void SendRealmNameQueryOpcode(uint32 realmId);
 
         void SendTrainerList(uint64 guid);
         void SendTrainerList(uint64 guid, std::string const& strTitle);
+
+        // Currency
+        void HandleSetCurrencyFlags(WorldPacket& recvData);
+
         void SendListInventory(uint64 guid);
         void SendShowBank(ObjectGuid guid);
         void SendTabardVendorActivate(uint64 guid);
@@ -387,6 +410,12 @@ class WorldSession
 
         z_stream_s* GetCompressionStream() { return _compressionStream; }
 
+        // Trial Accounts
+        uint32 GetTrialLeftTime() { return m_trialTime; }
+        void SetTrialLeftTime(uint32 time) { m_trialTime = time; }
+        bool IsTrialAccount() const { return m_isTrialAccount; }
+        void SetTrialAccount(bool value) { m_isTrialAccount = value; }
+
     public:                                                 // opcodes handlers
 
         void Handle_NULL(WorldPacket& recvPacket);          // not used
@@ -447,6 +476,7 @@ class WorldSession
         void HandleRepopRequestOpcode(WorldPacket& recvPacket);
         void HandleAutostoreLootItemOpcode(WorldPacket& recvPacket);
         void HandleLootMoneyOpcode(WorldPacket& recvPacket);
+        void HandleLootCurrencyOpcode(WorldPacket& recvPacket);
         void HandleLootOpcode(WorldPacket& recvPacket);
         void HandleLootReleaseOpcode(WorldPacket& recvPacket);
         void HandleLootMasterGiveOpcode(WorldPacket& recvPacket);
@@ -527,6 +557,7 @@ class WorldSession
         void HandleGroupUninviteOpcode(WorldPacket& recvPacket);
         void HandleGroupUninviteGuidOpcode(WorldPacket& recvPacket);
         void HandleGroupSetLeaderOpcode(WorldPacket& recvPacket);
+        void HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData);
         void HandleGroupSetRolesOpcode(WorldPacket& recvData);
         void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
         void HandleOptOutOfLootOpcode(WorldPacket& recvData);
@@ -535,11 +566,13 @@ class WorldSession
         void HandleRequestPartyMemberStatsOpcode(WorldPacket& recvData);
         void HandleRaidTargetUpdateOpcode(WorldPacket& recvData);
         void HandleRaidReadyCheckOpcode(WorldPacket& recvData);
+        void HandleRaidReadyCheckConfirmOpcode(WorldPacket& recvData);
         void HandleRaidReadyCheckFinishedOpcode(WorldPacket& recvData);
         void HandleGroupRaidConvertOpcode(WorldPacket& recvData);
         void HandleGroupChangeSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupSwapSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupAssistantLeaderOpcode(WorldPacket& recvData);
+        void HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData);
         void HandlePartyAssignmentOpcode(WorldPacket& recvData);
 
         void HandlePetitionBuyOpcode(WorldPacket& recvData);
@@ -798,6 +831,7 @@ class WorldSession
         void HandleFarSightOpcode(WorldPacket& recvData);
         void HandleSetDungeonDifficultyOpcode(WorldPacket& recvData);
         void HandleSetRaidDifficultyOpcode(WorldPacket& recvData);
+        void HandleChangePlayerDifficulty(WorldPacket& recvData);
         void HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData);
         void HandleSetTitleOpcode(WorldPacket& recvData);
         void HandleRealmSplitOpcode(WorldPacket& recvData);
@@ -952,11 +986,16 @@ class WorldSession
         void HandleEjectPassenger(WorldPacket& data);
         void HandleEnterPlayerVehicle(WorldPacket& data);
         void HandleUpdateProjectilePosition(WorldPacket& recvPacket);
-        void HandleRequestHotfix(WorldPacket& recvPacket);
         void HandleUpdateMissileTrajectory(WorldPacket& recvPacket);
+        void HandleRequestHotfix(WorldPacket& recvPacket);
         void HandleViolenceLevel(WorldPacket& recvPacket);
         void HandleObjectUpdateFailedOpcode(WorldPacket& recvPacket);
         void HandleRequestCategoryCooldowns(WorldPacket& recvPacket);
+        void HandleSetAllowLowLevelRaid1(WorldPacket& recvData);
+        void HandleSetAllowLowLevelRaid2(WorldPacket& recvData);
+        void HandleResetFactionCheat(WorldPacket& recvData);
+        void HandleRolePollBegin(WorldPacket& recvData);
+        void SendStreamingMovie();
 
         void SendBroadcastText(uint32 entry);
 
@@ -1069,6 +1108,8 @@ class WorldSession
         time_t timeLastWhoCommand;
         z_stream_s* _compressionStream;
         rbac::RBACData* _RBACData;
+        bool m_isTrialAccount;
+        uint32 m_trialTime;
 };
 #endif
 /// @}

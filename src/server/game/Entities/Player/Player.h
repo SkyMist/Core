@@ -503,7 +503,16 @@ enum PlayerPowerSpells
 
     SPELL_BURNING_EMBERS_10     = 116854,
     SPELL_BURNING_EMBERS_20     = 116855,
-    SPELL_BURNING_EMBERS_30     = 116920
+    SPELL_BURNING_EMBERS_30     = 116920,
+
+    // Glyphs / Talents
+    SPELL_VANISHING_POWDER      = 89964,
+    SPELL_DUST_OF_DISAPPEARENCE = 90647,
+    SPELL_TOME_OF_CLEAR_MIND    = 111621,
+
+    SPELL_REM_TALENT_VANISHING  = 127650,
+    SPELL_REM_TALENT_DUST       = 127649,
+    SPELL_REM_TALENT_TOME       = 113873
 };
 
 enum WarlockPets
@@ -822,7 +831,7 @@ enum TransferAbortReason
     TRANSFER_ABORT_REALM_ONLY                   = 0x0F,         // All players on party must be from the same realm.
     TRANSFER_ABORT_MAP_NOT_ALLOWED              = 0x10,         // Map can't be entered at this time.
     TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE = 0x12,         // 4.2.2
-    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER  = 0x13         // 4.2.2
+    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER  = 0x13          // 4.2.2
 };
 
 enum InstanceResetWarningType
@@ -1276,9 +1285,11 @@ class Player : public Unit, public GridObject<Player>
             SetFloatValue(UNIT_FIELD_COMBAT_REACH, scale * DEFAULT_COMBAT_REACH);
         }
 
-        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0);
+        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool raidDifficultyChange = false);
         bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
         bool TeleportToBGEntryPoint();
+
+        void PlayHoverAnimation();
 
         void SetSummonPoint(uint32 mapid, float x, float y, float z);
         void SummonIfPossible(bool agree);
@@ -1647,6 +1658,7 @@ class Player : public Unit, public GridObject<Player>
         bool HasQuestForItem(uint32 itemId) const;
         bool HasQuestForGO(int32 goId) const;
         void UpdateForQuestWorldObjects();
+        void UpdateForRaidMarkers(Group* group);
         bool CanShareQuest(uint32 questId) const;
 
         void SendQuestComplete(Quest const* quest);
@@ -2001,7 +2013,6 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetSpellByProto(ItemTemplate* proto);
 
         float GetHealthBonusFromStamina();
-        float GetManaBonusFromIntellect();
 
         bool UpdateStats(Stats stat);
         bool UpdateAllStats();
@@ -2074,8 +2085,8 @@ class Player : public Unit, public GridObject<Player>
         void SendAutoRepeatCancel(Unit* target);
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
-        void SendDungeonDifficulty(bool IsInGroup);
-        void SendRaidDifficulty(bool IsInGroup, int32 forcedDifficulty = -1);
+        void SendDungeonDifficulty(uint32 difficulty);
+        void SendRaidDifficulty(uint32 difficulty);
         void ResetInstances(uint8 method, bool isRaid);
         void SendResetInstanceSuccess(uint32 MapId);
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
@@ -2249,9 +2260,11 @@ class Player : public Unit, public GridObject<Player>
         std::vector<ItemSetEffect*> ItemSetEff;
 
         void SendLoot(uint64 guid, LootType loot_type);
-        void SendLootRelease(uint64 guid);
-        void SendNotifyLootItemRemoved(uint8 lootSlot);
+        void SendLootRelease(ObjectGuid guid);
+        void SendNotifyLootItemRemoved(uint8 lootSlot, ObjectGuid guid);
         void SendNotifyLootMoneyRemoved();
+        void SendNotifyCurrencyLootRemoved(uint8 lootSlot);
+        void SendNotifyCurrencyLootRestored(uint8 lootSlot);
 
         /*********************************************************/
         /***               BATTLEGROUND SYSTEM                 ***/

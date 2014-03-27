@@ -280,9 +280,9 @@ public:
 
         // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells()
         // current "creature" variable is deleted and created fresh new, otherwise old values might trigger asserts or cause undefined behavior
-        creature->CleanupsBeforeDelete();
-        delete creature;
-        creature = new Creature();
+        // creature->CleanupsBeforeDelete();
+        // delete creature;
+        // creature = new Creature();
         if (!creature->LoadCreatureFromDB(db_guid, map))
         {
             delete creature;

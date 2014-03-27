@@ -44,6 +44,7 @@ struct MapEntry;
 #define MAXRAIDSIZE 40
 #define MAX_RAID_SUBGROUPS MAXRAIDSIZE/MAXGROUPSIZE
 #define TARGETICONCOUNT 8
+#define RAID_MARKER_COUNT 5
 
 enum RollVote
 {
@@ -258,6 +259,12 @@ class Group
         void SetGroupMemberFlag(uint64 guid, bool apply, GroupMemberFlags flag);
         void RemoveUniqueGroupMemberFlag(GroupMemberFlags flag);
 
+        void SetRaidMarker(uint8 id, Player* who, uint64 targetGuid, bool update = true);
+        void SendRaidMarkerUpdate();
+        void ClearRaidMarker(uint64 guid);
+        uint64 GetRaidMarker(uint8 id) const { return m_raidMarkers[id]; }
+        bool HasRaidMarker(uint64 guid);
+
         Difficulty GetDifficulty(bool isRaid) const;
         Difficulty GetDungeonDifficulty() const;
         Difficulty GetRaidDifficulty() const;
@@ -286,8 +293,8 @@ class Group
         bool isRollLootActive() const;
         void SendLootStartRoll(uint32 CountDown, uint32 mapid, const Roll &r);
         void SendLootStartRollToPlayer(uint32 countDown, uint32 mapId, Player* p, bool canNeed, Roll const& r);
-        void SendLootRoll(uint64 SourceGuid, uint64 TargetGuid, uint8 RollNumber, uint8 RollType, const Roll &r);
-        void SendLootRollWon(uint64 SourceGuid, uint64 TargetGuid, uint8 RollNumber, uint8 RollType, const Roll &r);
+        void SendLootRoll(uint64 SourceGuid, uint64 TargetGuid, uint32 RollNumber, uint8 RollType, const Roll &r);
+        void SendLootRollWon(uint64 SourceGuid, uint64 TargetGuid, uint32 RollNumber, uint8 RollType, const Roll &r);
         void SendLootAllPassed(Roll const& roll);
         void SendLooter(Creature* creature, Player* pLooter);
         void GroupLoot(Loot* loot, WorldObject* pLootedObject);
@@ -337,6 +344,7 @@ class Group
         Battleground*       m_bgGroup;
         Battlefield*        m_bfGroup;
         uint64              m_targetIcons[TARGETICONCOUNT];
+        uint64              m_raidMarkers[RAID_MARKER_COUNT];
         LootMethod          m_lootMethod;
         ItemQualities       m_lootThreshold;
         uint64              m_looterGuid;

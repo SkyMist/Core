@@ -173,7 +173,7 @@ public:
             m_uiFetidRot_Timer            = urand(8000, 13000);
             m_uiBane_Timer                = urand(18000, 23000);
             m_uiDarkSlash_Timer           = urand(28000, 33000);
-            m_uiAncestors_Vengeance_Timer = DUNGEON_MODE(60000, 45000);
+            m_uiAncestors_Vengeance_Timer = DUNGEON_MODE(60000, 45000, 50000);
             m_uiPause_Timer               = 0;
 
             m_uiAbility_BJORN_Timer  = 0;
@@ -183,7 +183,7 @@ public:
 
             m_uiActivedNumber        = 0;
             m_uiHealthAmountModifier = 1;
-            m_uiHealthAmountMultipler = DUNGEON_MODE(20, 25);
+            m_uiHealthAmountMultipler = DUNGEON_MODE(20, 25, 20);
 
             DespawnBoatGhosts(m_uiActivedCreatureGUID);
             DespawnBoatGhosts(m_uiOrbGUID);
@@ -286,7 +286,7 @@ public:
                 if (m_uiAncestors_Vengeance_Timer <= diff)
                 {
                     DoCast(me, SPELL_ANCESTORS_VENGEANCE);
-                    m_uiAncestors_Vengeance_Timer = DUNGEON_MODE(urand(60000, 65000), urand(45000, 50000));
+                    m_uiAncestors_Vengeance_Timer = DUNGEON_MODE(urand(60000, 65000), urand(45000, 50000), urand(45000, 50000));
                 } else m_uiAncestors_Vengeance_Timer -= diff;
 
                 // Abilities ------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ public:
                     if (Creature* temp = me->SummonCreature(NPC_SPIRIT_FOUNT, 385.0f + rand() % 10, -330.0f + rand() % 10, 104.756f, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 180000))
                     {
                         temp->SetSpeed(MOVE_RUN, 0.4f);
-                        temp->CastSpell(temp, DUNGEON_MODE(SPELL_SPIRIT_FOUNT, H_SPELL_SPIRIT_FOUNT), true);
+                        temp->CastSpell(temp, SPELL_SPIRIT_FOUNT, true);
                         temp->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                         temp->SetDisplayId(11686);
                         m_uiOrbGUID = temp->GetGUID();

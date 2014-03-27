@@ -271,26 +271,55 @@ bool Creature::InitEntry(uint32 entry, uint32 /*team*/, const CreatureData* data
         return false;
     }
 
-    // get difficulty 1 mode entry
+    // Get difficulty 1 mode entry
     CreatureTemplate const* cinfo = normalInfo;
+
+    uint32 difficultyNumber = 0; // Number it uses in difficulty entries.
+
     for (uint8 diff = uint8(GetMap()->GetSpawnMode()); diff > 0;)
     {
-        // we already have valid Map pointer for current creature!
-        if (normalInfo->DifficultyEntry[diff - 1])
-        {
-            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[diff - 1]);
-            if (cinfo)
-                break;                                      // template found
+        // Adjust template selection based on difficulty type.
 
-            // check and reported at startup, so just ignore (restore normalInfo)
-            cinfo = normalInfo;
+        //if (diff == DUNGEON_DIFFICULTY_HEROIC || diff == RAID_DIFFICULTY_25MAN_NORMAL || diff == SCENARIO_DIFFICULTY_HEROIC) - Not needed, already 0.
+        //    difficultyNumber = 0;
+
+        if (Difficulty(diff) == DUNGEON_DIFFICULTY_CHALLENGE || Difficulty(diff) == RAID_DIFFICULTY_10MAN_HEROIC)
+            difficultyNumber = 1;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_HEROIC)
+            difficultyNumber = 2;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_LFR)
+            difficultyNumber = 3;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            difficultyNumber = 4;
+
+        // we already have valid Map pointer for current creature!
+        if (Difficulty(diff) != DUNGEON_DIFFICULTY_NORMAL && Difficulty(diff) != RAID_DIFFICULTY_10MAN_NORMAL && Difficulty(diff) != RAID_DIFFICULTY_40MAN && Difficulty(diff) != SCENARIO_DIFFICULTY_NORMAL)
+        {
+            if (normalInfo->DifficultyEntry[difficultyNumber])
+            {
+                cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[difficultyNumber]);
+                if (cinfo)
+                    break;                                      // template found
+
+                // check and reported at startup, so just ignore (restore normalInfo)
+                cinfo = normalInfo;
+            }
         }
 
-        // for instances heroic to normal, other cases attempt to retrieve previous difficulty
-        if (diff >= RAID_DIFFICULTY_10MAN_HEROIC && GetMap()->IsRaid())
-            diff -= 2;                                      // to normal raid difficulty cases
-        else
-            --diff;
+        // Remove difficulty numbers to lower to normal entries.
+        if (Difficulty(diff) == DUNGEON_DIFFICULTY_HEROIC || Difficulty(diff) == RAID_DIFFICULTY_25MAN_NORMAL)
+            diff -= 1;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_10MAN_HEROIC || Difficulty(diff) == RAID_DIFFICULTY_25MAN_HEROIC)
+            diff -= 2;
+        else if (Difficulty(diff) == DUNGEON_DIFFICULTY_CHALLENGE || Difficulty(diff) == RAID_DIFFICULTY_40MAN)
+            diff -= 6;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_LFR)
+            diff -= 3;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            diff -= 10; // Go to 25 normal for now.
+        else if (Difficulty(diff) == SCENARIO_DIFFICULTY_HEROIC)
+            diff += 1;
+        else diff = 0; // break the loop.
     }
 
     // Initialize loot duplicate count depending on raid difficulty

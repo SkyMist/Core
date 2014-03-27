@@ -41,8 +41,6 @@ enum Spells
     SPELL_INVADER_TAUNT                 = 49405
 };
 
-#define SPELL_CONSUME_BUFF_HELPER DUNGEON_MODE<uint32>(SPELL_CONSUME_BUFF, SPELL_CONSUME_BUFF_H)
-
 enum Yells
 {
     SAY_AGGRO                           = 0,
@@ -142,7 +140,7 @@ class boss_trollgore : public CreatureScript
 
                 if (_consumptionJunction)
                 {
-                    Aura* ConsumeAura = me->GetAura(SPELL_CONSUME_BUFF_HELPER);
+                    Aura* ConsumeAura = me->GetAura(SPELL_CONSUME_BUFF);
                     if (ConsumeAura && ConsumeAura->GetStackAmount() > 9)
                         _consumptionJunction = false;
                 }

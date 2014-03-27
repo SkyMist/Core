@@ -567,6 +567,11 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
     if (cleanDamage && damagetype == DIRECT_DAMAGE && this != victim && getPowerType() == POWER_RAGE)
     {
         uint32 rage = uint32(GetAttackTime(cleanDamage->attackType) / 1000 * 8.125f);
+
+        // Critical hit rewards double rage
+        if (cleanDamage->hitOutCome == MELEE_HIT_CRIT)
+            rage *= 2;
+
         switch (cleanDamage->attackType)
         {
             case OFF_ATTACK:
@@ -960,8 +965,9 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
         case SPELL_DAMAGE_CLASS_NONE:
         case SPELL_DAMAGE_CLASS_MAGIC:
         {
-            // If crit add critical bonus
-            if (crit)
+            // If crit add critical bonus - Mobs can't crit and have bonus damage with spells. Player Totems / Pets can.
+            if (crit) 
+            if (!IS_CREATURE_GUID(GetGUID()) && (IsPet() && IS_PLAYER_GUID(GetOwnerGUID())) && (IsTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() == 15438)
             {
                 damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
                 damage = SpellCriticalDamageBonus(spellInfo, damage, victim);
@@ -1394,29 +1400,17 @@ uint32 Unit::CalcArmorReducedDamage(Unit* victim, const uint32 damage, SpellInfo
             armor = floor(AddPct(armor, -(*j)->GetAmount()));
     }
 
-    // Apply Player CR_ARMOR_PENETRATION rating
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        float maxArmorPen = 0;
-        if (victim->getLevel() < 60)
-            maxArmorPen = float(400 + 85 * victim->getLevel());
-        else
-            maxArmorPen = 400 + 85 * victim->getLevel() + 4.5f * 85 * (victim->getLevel() - 59);
-
-        // Cap armor penetration to this number
-        maxArmorPen = std::min((armor + maxArmorPen) / 3, armor);
-        // Figure out how much armor do we ignore
-        float armorPen = CalculatePct(maxArmorPen, ToPlayer()->GetRatingBonusValue(CR_ARMOR_PENETRATION));
-        // Got the value, apply it
-        armor -= std::min(armorPen, maxArmorPen);
-    }
-
     if (armor < 0.0f)
         armor = 0.0f;
 
     float levelModifier = getLevel();
-    if (levelModifier > 59)
-        levelModifier = levelModifier + 4.5f * (levelModifier - 59);
+
+    if (levelModifier > 85)
+        levelModifier = levelModifier + (4.5 * (levelModifier - 59)) + (20 * (levelModifier - 80)) + (22 * (levelModifier - 85));
+    else if (levelModifier > 80 && levelModifier <= 85)
+        levelModifier = levelModifier + (4.5 * (levelModifier - 59)) + (20 * (levelModifier - 80));
+    else if (levelModifier > 59 && levelModifier <= 80)
+        levelModifier = levelModifier + (4.5 * (levelModifier - 59));
 
     float tmpvalue = 0.1f * armor / (8.5f * levelModifier + 40);
     tmpvalue = tmpvalue / (1.0f + tmpvalue);
@@ -2753,7 +2747,9 @@ void Unit::SetCurrentCastedSpell(Spell* pSpell)
     {
         case CURRENT_GENERIC_SPELL:
         {
-            // generic spells always break channeled not delayed spells
+            // generic spells always break channeled not delayed spells (also fixed some bad boss spells here with conditions).
+            if (pSpell->m_spellInfo->Id != 93709 && pSpell->m_spellInfo->Id != 93727 && pSpell->m_spellInfo->Id != 83094 && pSpell->m_spellInfo->Id != 90031 
+             && pSpell->m_spellInfo->Id != 88963 && pSpell->m_spellInfo->Id != 92779 && pSpell->m_spellInfo->Id != 75722)
             InterruptSpell(CURRENT_CHANNELED_SPELL, false);
 
             // autorepeat breaking
@@ -2820,8 +2816,8 @@ void Unit::InterruptSpell(CurrentSpellTypes spellType, bool withDelayed, bool wi
         && (withDelayed || spell->getState() != SPELL_STATE_DELAYED)
         && (withInstant || spell->GetCastTime() > 0))
     {
-        // for example, do not let self-stun aura interrupt itself
-        if (!spell->IsInterruptable())
+        // for example, do not let self-stun aura interrupt itself - Add here spells with broken, interrupted Channeling.
+        if (!spell->IsInterruptable() || spell->GetSpellInfo()->Id == 85422 || spell->GetSpellInfo()->Id == 85425 || spell->GetSpellInfo()->Id == 43648 || spell->GetSpellInfo()->Id == 43658 || spell->GetSpellInfo()->Id == 83463)
             return;
 
         // send autorepeat cancel message for autorepeat spells
@@ -9073,9 +9069,9 @@ int32 Unit::SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask) const
 
 bool Unit::isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType) const
 {
-    //! Mobs can't crit with spells. Player Totems can
+    //! Mobs can't crit with spells. Player Totems / Pets can.
     //! Fire Elemental (from totem) can too - but this part is a hack and needs more research
-    if (IS_CREATURE_GUID(GetGUID()) && !(IsTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() != 15438)
+    if (IS_CREATURE_GUID(GetGUID()) && !(IsPet() && IS_PLAYER_GUID(GetOwnerGUID())) && !(IsTotem() && IS_PLAYER_GUID(GetOwnerGUID())) && GetEntry() != 15438)
         return false;
 
     // not critting spell
@@ -10160,9 +10156,9 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
             if (!(mountCapability->Flags & MOUNT_FLAG_CAN_SWIM))
                 continue;
         }
-        else if (!(mountCapability->Flags & 0x1))   // unknown flags, checked in 4.2.2 14545 client
+        else if (!(mountCapability->Flags & MOUNT_FLAG_CAN_WALK))   // Mount can walk / fly.
         {
-            if (!(mountCapability->Flags & 0x2))
+            if (!(mountCapability->Flags & MOUNT_FLAG_CAN_FLY))
                 continue;
         }
 
@@ -11364,7 +11360,8 @@ bool Unit::IsInDisallowedMountForm() const
 {
     ShapeshiftForm form = GetShapeshiftForm();
     return form != FORM_NONE && form != FORM_BATTLESTANCE && form != FORM_BERSERKERSTANCE && form != FORM_DEFENSIVESTANCE &&
-        form != FORM_SHADOW && form != FORM_STEALTH && form != FORM_UNDEAD;
+        form != FORM_SHADOW && form != FORM_STEALTH && form != FORM_UNDEAD && form != FORM_WISE_SERPENT &&
+        form != FORM_STURDY_OX && form != FORM_FIERCE_TIGER && form != FORM_MOONKIN;
 }
 
 /*#######################################
@@ -13961,13 +13958,24 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
 
     // dismount players when charmed
     if (GetTypeId() == TYPEID_PLAYER)
-        RemoveAurasByType(SPELL_AURA_MOUNTED);
+        Dismount();
 
     if (charmer->GetTypeId() == TYPEID_PLAYER)
         charmer->RemoveAurasByType(SPELL_AURA_MOUNTED);
 
-    ASSERT(type != CHARM_TYPE_POSSESS || charmer->GetTypeId() == TYPEID_PLAYER);
-    ASSERT((type == CHARM_TYPE_VEHICLE) == IsVehicle());
+    if (type == CHARM_TYPE_POSSESS && charmer->GetTypeId() != TYPEID_PLAYER)
+    {
+        AddUnitState(UNIT_STATE_POSSESSED);
+        if (GetTypeId() == TYPEID_PLAYER)
+            ToPlayer()->SetClientControl(this, 0);
+        charmer->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+    }
+
+    if ((type == CHARM_TYPE_CHARM || type == CHARM_TYPE_VEHICLE) && charmer->GetTypeId() != TYPEID_PLAYER)
+    {
+        if (GetTypeId() == TYPEID_PLAYER)
+            ToPlayer()->SetClientControl(this, 0);
+    }
 
     TC_LOG_DEBUG("entities.unit", "SetCharmedBy: charmer %u (GUID %u), charmed %u (GUID %u), type %u.", charmer->GetEntry(), charmer->GetGUIDLow(), GetEntry(), GetGUIDLow(), uint32(type));
 
@@ -13976,9 +13984,6 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
         TC_LOG_FATAL("entities.unit", "Unit::SetCharmedBy: Unit %u (GUID %u) is trying to charm itself!", GetEntry(), GetGUIDLow());
         return false;
     }
-
-    //if (HasUnitState(UNIT_STATE_UNATTACKABLE))
-    //    return false;
 
     if (GetTypeId() == TYPEID_PLAYER && ToPlayer()->GetTransport())
     {
@@ -13994,7 +13999,7 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
     }
 
     CastStop();
-    CombatStop(); /// @todo CombatStop(true) may cause crash (interrupt spells)
+    CombatStop(); // TODO: CombatStop(true) may cause crash (interrupt spells)
     DeleteThreatList();
 
     // Charmer stop charming
@@ -14004,12 +14009,12 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
         charmer->ToPlayer()->StopCastingBindSight();
     }
 
-    // Charmed stop charming
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        ToPlayer()->StopCastingCharm();
-        ToPlayer()->StopCastingBindSight();
-    }
+    // Charmed stop charming - TODO check this, might be needed.
+    // if (GetTypeId() == TYPEID_PLAYER)
+    // {
+    //     ToPlayer()->StopCastingCharm();
+    //     ToPlayer()->StopCastingBindSight();
+    // }
 
     // StopCastingCharm may remove a possessed pet?
     if (!IsInWorld())
@@ -14069,6 +14074,7 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                 charmer->ToPlayer()->SetViewpoint(this, true);
                 charmer->ToPlayer()->VehicleSpellInitialize();
                 break;
+
             case CHARM_TYPE_POSSESS:
                 AddUnitState(UNIT_STATE_POSSESSED);
                 SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
@@ -14078,8 +14084,9 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                 charmer->ToPlayer()->SetViewpoint(this, true);
                 charmer->ToPlayer()->PossessSpellInitialize();
                 break;
+
             case CHARM_TYPE_CHARM:
-                if (GetTypeId() == TYPEID_UNIT && charmer->getClass() == CLASS_WARLOCK)
+                if (GetTypeId() == TYPEID_UNIT && GetTypeId() != TYPEID_PLAYER && charmer->getClass() == CLASS_WARLOCK)
                 {
                     CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate();
                     if (cinfo && cinfo->type == CREATURE_TYPE_DEMON)
@@ -14095,8 +14102,17 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                         SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(NULL))); // cast can't be helped
                     }
                 }
+                else if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT && GetTypeId() != TYPEID_PLAYER && charmer->getClass() != CLASS_WARLOCK)
+                {
+                    SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+                    charmer->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+                    charmer->ToPlayer()->SetClientControl(this, 1);
+                    charmer->ToPlayer()->SetMover(this);
+                    charmer->ToPlayer()->SetViewpoint(this, true);
+                }
                 charmer->ToPlayer()->CharmSpellInitialize();
                 break;
+
             default:
             case CHARM_TYPE_CONVERT:
                 break;
@@ -14129,7 +14145,7 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         type = CHARM_TYPE_CHARM;
 
     CastStop();
-    CombatStop(); /// @todo CombatStop(true) may cause crash (interrupt spells)
+    CombatStop(); // TODO: CombatStop(true) may cause crash (interrupt spells)
     getHostileRefManager().deleteReferences();
     DeleteThreatList();
     Map* map = GetMap();
@@ -14137,10 +14153,30 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         RestoreFaction();
     GetMotionMaster()->InitDefault();
 
-    if (type == CHARM_TYPE_POSSESS)
+    if (type == CHARM_TYPE_POSSESS && charmer->GetTypeId() != TYPEID_PLAYER)
     {
         ClearUnitState(UNIT_STATE_POSSESSED);
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+        GetMotionMaster()->MovementExpired();
+        GetMotionMaster()->Clear();
+        SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            ToPlayer()->SetClientControl(this, 1);
+            ToPlayer()->SetMover(this);
+        }
+        charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+    }
+
+    if ((type == CHARM_TYPE_CHARM || type == CHARM_TYPE_VEHICLE) && charmer->GetTypeId() != TYPEID_PLAYER)
+    {
+        GetMotionMaster()->MovementExpired();
+        GetMotionMaster()->Clear();
+        SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            ToPlayer()->SetClientControl(this, 1);
+            ToPlayer()->SetMover(this);
+        }
     }
 
     if (Creature* creature = ToCreature())
@@ -14149,19 +14185,23 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         if (creature->AI())
             creature->AI()->OnCharmed(false);
 
+        if (creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
+        {
+            creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+            creature->SetSpeed(MOVE_WALK, 1.0f);
+            creature->SetSpeed(MOVE_RUN, 1.0f);
+            creature->SetSpeed(MOVE_SWIM, 1.0f);
+            creature->SetSpeed(MOVE_FLIGHT, 1.0f);
+        }
+
         // Vehicle should not attack its passenger after he exists the seat
         if (type != CHARM_TYPE_VEHICLE)
             LastCharmerGUID = charmer->GetGUID();
     }
-    else
-        ToPlayer()->SetClientControl(this, 1);
 
     // If charmer still exists
     if (!charmer)
         return;
-
-    ASSERT(type != CHARM_TYPE_POSSESS || charmer->GetTypeId() == TYPEID_PLAYER);
-    ASSERT(type != CHARM_TYPE_VEHICLE || (GetTypeId() == TYPEID_UNIT && IsVehicle()));
 
     charmer->SetCharm(this, false);
 
@@ -14170,34 +14210,93 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         switch (type)
         {
             case CHARM_TYPE_VEHICLE:
+                RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
                 charmer->ToPlayer()->SetClientControl(charmer, 1);
                 charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->ToPlayer()->SetClientControl(this, 0);
+                charmer->ToPlayer()->SetMover(charmer);
                 if (GetTypeId() == TYPEID_PLAYER)
+                {
+                    ToPlayer()->GetMotionMaster()->MovementExpired();
+                    ToPlayer()->GetMotionMaster()->Clear();
+                    ToPlayer()->SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+                    ToPlayer()->SetClientControl(this, 1);
                     ToPlayer()->SetMover(this);
+                }
                 break;
+
             case CHARM_TYPE_POSSESS:
-                charmer->ToPlayer()->SetClientControl(charmer, 1);
-                charmer->ToPlayer()->SetViewpoint(this, false);
-                charmer->ToPlayer()->SetClientControl(this, 0);
-                charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-                if (GetTypeId() == TYPEID_PLAYER)
+                if (GetTypeId() == TYPEID_UNIT && GetTypeId() != TYPEID_PLAYER)
+                {
+                    charmer->ToPlayer()->SetClientControl(charmer, 1);
+                    charmer->ToPlayer()->SetViewpoint(this, false);
+                    charmer->ToPlayer()->SetClientControl(this, 0);
+                    charmer->ToPlayer()->SetMover(charmer);
+                    GetMotionMaster()->MovementExpired();
+                    GetMotionMaster()->Clear();
+                    SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+                    if (ToCreature())
+                        ToCreature()->AI()->AttackStart(charmer);
+                }
+                else if (GetTypeId() == TYPEID_PLAYER)
+                {
+                    charmer->ToPlayer()->SetClientControl(charmer, 1);
+                    charmer->ToPlayer()->SetViewpoint(this, false);
+                    charmer->ToPlayer()->SetClientControl(this, 0);
+                    charmer->ToPlayer()->SetMover(charmer);
+                    ToPlayer()->GetMotionMaster()->MovementExpired();
+                    ToPlayer()->GetMotionMaster()->Clear();
+                    ToPlayer()->SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+                    ToPlayer()->SetClientControl(this, 1);
                     ToPlayer()->SetMover(this);
+                }
+                ClearUnitState(UNIT_STATE_POSSESSED);
+                RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+                charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 break;
+
             case CHARM_TYPE_CHARM:
-                if (GetTypeId() == TYPEID_UNIT && charmer->getClass() == CLASS_WARLOCK)
+                if (GetTypeId() == TYPEID_UNIT && GetTypeId() != TYPEID_PLAYER && charmer->getClass() == CLASS_WARLOCK)
                 {
                     CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate();
                     if (cinfo && cinfo->type == CREATURE_TYPE_DEMON)
                     {
-                        SetClass(uint8(cinfo->unit_class));
+                        SetClass(cinfo->unit_class);
                         if (GetCharmInfo())
                             GetCharmInfo()->SetPetNumber(0, true);
                         else
-                            TC_LOG_ERROR("entities.unit", "Aura::HandleModCharm: target=" UI64FMTD " with typeid=%d has a charm aura but no charm info!", GetGUID(), GetTypeId());
+                            TC_LOG_ERROR("entities.unit", "Aura::HandleModCharm: target="UI64FMTD" with typeid=%d has a charm aura but no charm info!", GetGUID(), GetTypeId());
                     }
                 }
+                else if (GetTypeId() == TYPEID_PLAYER)
+                {
+                    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+                    charmer->ToPlayer()->SetClientControl(charmer, 1);
+                    charmer->ToPlayer()->SetViewpoint(this, false);
+                    charmer->ToPlayer()->SetClientControl(this, 0);
+                    charmer->ToPlayer()->SetMover(charmer);
+                    charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+                    ToPlayer()->GetMotionMaster()->MovementExpired();
+                    ToPlayer()->GetMotionMaster()->Clear();
+                    ToPlayer()->SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+                    ToPlayer()->SetClientControl(this, 1);
+                    ToPlayer()->SetMover(this);
+                }
+                else if (GetTypeId() == TYPEID_UNIT && GetTypeId() != TYPEID_PLAYER && charmer->getClass() != CLASS_WARLOCK)
+                {
+                    RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
+                    charmer->ToPlayer()->SetClientControl(charmer, 1);
+                    charmer->ToPlayer()->SetViewpoint(this, false);
+                    charmer->ToPlayer()->SetClientControl(this, 0);
+                    charmer->ToPlayer()->SetMover(charmer);
+                    GetMotionMaster()->MovementExpired();
+                    GetMotionMaster()->Clear();
+                    SetUnitMovementFlags(MOVEMENTFLAG_NONE);
+                    if (ToCreature())
+                        ToCreature()->AI()->AttackStart(charmer);
+                }
                 break;
+
             default:
             case CHARM_TYPE_CONVERT:
                 break;
@@ -14450,7 +14549,7 @@ void Unit::SendPlaySpellVisualKit(uint32 id, uint32 unkParam)
     WorldPacket data(SMSG_PLAY_SPELL_VISUAL_KIT, 4 + 4+ 4 + 8);
     data << uint32(0);
     data << uint32(id);     // SpellVisualKit.dbc index
-    data << uint32(unkParam);
+    data << uint32(unkParam); // Impact (1/0).
     data.WriteBit(guid[4]);
     data.WriteBit(guid[7]);
     data.WriteBit(guid[5]);
@@ -15519,7 +15618,12 @@ bool CharmInfo::IsCommandFollow()
 void CharmInfo::SaveStayPosition()
 {
     //! At this point a new spline destination is enabled because of Unit::StopMoving()
-    G3D::Vector3 const stayPos = _unit->movespline->FinalDestination();
+    G3D::Vector3 stayPos = _unit->movespline->FinalDestination();
+
+    if (_unit->movespline->onTransport)
+        if (TransportBase* transport = _unit->GetDirectTransport())
+            transport->CalculatePassengerPosition(stayPos.x, stayPos.y, stayPos.z);
+
     _stayX = stayPos.x;
     _stayY = stayPos.y;
     _stayZ = stayPos.z;

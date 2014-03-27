@@ -389,8 +389,27 @@ void PlayerMenu::SendQuestGiverQuestList(QEmote const& eEmote, const std::string
 void PlayerMenu::SendQuestGiverStatus(uint32 questStatus, uint64 npcGUID) const
 {
     WorldPacket data(SMSG_QUESTGIVER_STATUS, 8 + 4);
-    data << uint64(npcGUID);
-    data << uint32(questStatus);
+    ObjectGuid guid = npcGUID;
+
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[6]);
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[4]);
+    data << questStatus;
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[5]);
 
     _session->SendPacket(&data);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_STATUS NPC Guid=%u, status=%u", GUID_LOPART(npcGUID), questStatus);
@@ -721,44 +740,45 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, uint64 npcGUID, 
     if (sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS))
         AddQuestLevelToTitle(questTitle, quest->GetQuestLevel());
 
-    WorldPacket data(SMSG_QUESTGIVER_REQUEST_ITEMS, 50);    // guess size
-    data << uint64(npcGUID);
-    data << uint32(quest->GetQuestId());
-    data << questTitle;
-    data << requestItemsText;
+    ObjectGuid QuestGiverGuid = npcGUID;
+    WorldPacket data(SMSG_QUESTGIVER_REQUEST_ITEMS);
 
-    data << uint32(0);                                   // unknown
+    data.WriteBits(questTitle.size(), 9);
+    data.WriteBits(requestItemsText.size(), 12);
+    data.WriteBit(QuestGiverGuid[6]);
+    data.WriteBit(QuestGiverGuid[3]);
+    data.WriteBit(QuestGiverGuid[7]);
+    data.WriteBits(quest->GetReqItemsCount(), 20);
+    data.WriteBits(quest->GetReqCurrencyCount(), 21);
+    data.WriteBit(QuestGiverGuid[4]);
+    data.WriteBit(QuestGiverGuid[2]);
+    data.WriteBit(QuestGiverGuid[1]);
+    data.WriteBit(QuestGiverGuid[0]);
+    data.WriteBit(closeOnCancel);
+    data.WriteBit(QuestGiverGuid[5]);
+    data.FlushBits();
 
-    if (canComplete)
-        data << quest->GetCompleteEmote();
-    else
-        data << quest->GetIncompleteEmote();
+    data.WriteByteSeq(QuestGiverGuid[0]);
+    data.WriteByteSeq(QuestGiverGuid[5]);
 
-    // Close Window after cancel
-    data << uint32(closeOnCancel);
+    data << uint32(0);                                                          //unk dword bdc
 
-    data << uint32(quest->GetFlags());                      // 3.3.3 questFlags
-    data << uint32(quest->GetSuggestedPlayers());           // SuggestedGroupNum
-
-    // Required Money
-    data << uint32(quest->GetRewOrReqMoney() < 0 ? -quest->GetRewOrReqMoney() : 0);
-
-    data << uint32(quest->GetReqItemsCount());
     for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
     {
         if (!quest->RequiredItemId[i])
             continue;
 
-        data << uint32(quest->RequiredItemId[i]);
-        data << uint32(quest->RequiredItemCount[i]);
-
         if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(quest->RequiredItemId[i]))
             data << uint32(itemTemplate->DisplayInfoID);
         else
             data << uint32(0);
+
+        data << uint32(quest->RequiredItemId[i]);
+        data << uint32(quest->RequiredItemCount[i]);    
     }
 
-    data << uint32(quest->GetReqCurrencyCount());
+    data.WriteString(requestItemsText);
+
     for (int i = 0; i < QUEST_REQUIRED_CURRENCY_COUNT; ++i)
     {
         if (!quest->RequiredCurrencyId[i])
@@ -768,15 +788,28 @@ void PlayerMenu::SendQuestGiverRequestItems(Quest const* quest, uint64 npcGUID, 
         data << uint32(quest->RequiredCurrencyCount[i]);
     }
 
-    if (!canComplete)            // Experimental; there are 6 similar flags, if any of them
-        data << uint32(0x00);    // of them is 0 player can't complete quest (still unknown meaning)
-    else
-        data << uint32(0x02);
+    data.WriteByteSeq(QuestGiverGuid[5]);
 
-    data << uint32(0x04);
-    data << uint32(0x08);
-    data << uint32(0x10);
-    data << uint32(0x40);
+    data << uint32(0);                                                          //unk dword bd8
+
+    data.WriteString(questTitle);
+
+    data << uint32(quest->GetRewOrReqMoney() < 0 ? -quest->GetRewOrReqMoney() : 0) 
+         << quest->GetQuestId();
+
+    data.WriteByteSeq(QuestGiverGuid[2]);
+    data.WriteByteSeq(QuestGiverGuid[4]);
+
+    data << uint32(0) << quest->GetSuggestedPlayers() << uint32(0x7F);          // the last unk is StrangeFlags
+
+    data.WriteByteSeq(QuestGiverGuid[6]);
+
+    data << uint32(0);                                                          // Secondary Flags ??
+
+    data.WriteByteSeq(QuestGiverGuid[3]);
+    data.WriteByteSeq(QuestGiverGuid[1]);
+
+    data << quest->GetFlags();
 
     _session->SendPacket(&data);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_REQUEST_ITEMS NPCGuid=%u, questid=%u", GUID_LOPART(npcGUID), quest->GetQuestId());

@@ -144,7 +144,10 @@ void CreatureAI::MoveInLineOfSight(Unit* who)
 void CreatureAI::EnterEvadeMode()
 {
     if (!_EnterEvadeMode())
+    {
+        if (me->IsAlive()) TC_LOG_ERROR("entities.unit", "Error: Creature %u can't enter evade mode!", me->GetEntry());
         return;
+    }
 
     TC_LOG_DEBUG("entities.unit", "Creature %u enters evade mode.", me->GetEntry());
 

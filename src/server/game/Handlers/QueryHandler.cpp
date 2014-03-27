@@ -32,6 +32,7 @@
 #include "Pet.h"
 #include "MapManager.h"
 #include "Config.h"
+#include "Group.h"
 
 void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 {
@@ -214,6 +215,78 @@ void WorldSession::SendQueryTimeResponse()
     WorldPacket data(SMSG_QUERY_TIME_RESPONSE, 4+4);
     data << uint32(time(NULL));
     data << uint32(sWorld->GetNextDailyQuestsResetTime() - time(NULL));
+    SendPacket(&data);
+}
+
+void WorldSession::SendServerWorldInfo()
+{
+    bool IsInInstance = GetPlayer()->GetMap()->IsRaidOrHeroicDungeon();             // Check being in raid / heroic dungeon map.
+    bool HasGroup = GetPlayer()->GetGroup() != NULL;                                // Check having a group.
+    uint32 InstanceGroupSize = HasGroup ? GetPlayer()->GetGroup()->GetMembersCount() : 0; // Check if we need to send the instance group size - for Flex Raids.
+    uint32 difficultyNumberToDisplay = 0;                                           // Number to display in minimap text.
+
+    switch(GetPlayer()->GetMap()->GetDifficulty())
+    {
+        case DUNGEON_DIFFICULTY_HEROIC:
+            difficultyNumberToDisplay = 5;
+            break;
+
+        case RAID_DIFFICULTY_10MAN_NORMAL:
+        case RAID_DIFFICULTY_10MAN_HEROIC:
+            difficultyNumberToDisplay = 10;
+            break;
+
+        case RAID_DIFFICULTY_25MAN_NORMAL:
+        case RAID_DIFFICULTY_25MAN_HEROIC:
+        case RAID_DIFFICULTY_25MAN_LFR:
+            difficultyNumberToDisplay = 25;
+            break;
+
+        case RAID_DIFFICULTY_40MAN:
+            difficultyNumberToDisplay = 40;
+            break;
+
+        case SCENARIO_DIFFICULTY_HEROIC:
+            difficultyNumberToDisplay = 3;
+            break;
+
+        case RAID_DIFFICULTY_1025MAN_FLEX:
+            difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 10;
+            break;
+
+        case REGULAR_DIFFICULTY:
+        case DUNGEON_DIFFICULTY_NORMAL:
+        case DUNGEON_DIFFICULTY_CHALLENGE:
+        case SCENARIO_DIFFICULTY_NORMAL:
+        default: break;
+    }
+
+    WorldPacket data(SMSG_WORLD_SERVER_INFO);
+
+    data.WriteBit(IsTrialAccount());                                                // Has restriction on level.
+    data.WriteBit(IsInInstance);
+    data.WriteBit(IsTrialAccount());                                                // Has money restriction.             
+    data.WriteBit(IsTrialAccount());                                                // Is ineligible for loot.
+
+    data.FlushBits();
+
+    if (IsTrialAccount()) 
+        data << uint32(0);                                                          // Is ineligible for loot - EncounterMask of the creatures the player cannot loot.
+
+    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);                  // LastWeeklyReset (quests, not instance reset).
+    data << uint32(GetPlayer()->GetMap()->GetDifficulty());                         // Current Map Difficulty.
+    data << uint8(sWorld->getBoolConfig(CONFIG_IS_TOURNAMENT_REALM));               // IsOnTournamentRealm.
+
+    if (IsTrialAccount()) 
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_MONEY));               // Has money restriction - Max amount of money allowed.
+
+    if (IsTrialAccount()) 
+        data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));               // Has restriction on level - Max level allowed.
+
+    // This should be sent with the maximum player number as text, for raids & heroic dungeons, except for flex raids where they scale (that's why lua uses instanceGroupSize).
+    if (IsInInstance)
+        data << uint32(difficultyNumberToDisplay);
+
     SendPacket(&data);
 }
 
@@ -584,69 +657,80 @@ void WorldSession::HandleCorpseMapPositionQuery(WorldPacket& recvData)
 
 void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
 {
-    uint32 count;
-    recvData >> count; // quest count, max=25
-
-    if (count >= MAX_QUEST_LOG_SIZE)
+    std::vector<uint32> RequestedQuests(50);
+    for(std::vector<uint32>::iterator itr = RequestedQuests.begin(); itr != RequestedQuests.end();++itr)
     {
-        recvData.rfinish();
-        return;
+        RequestedQuests.insert(itr, recvData.read<uint32>());
     }
+    RequestedQuests.resize(recvData.read<uint32>());
 
-    WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE, 4+(4+4)*count);
-    data << uint32(count); // count
+    WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE);
+    uint32 ResponseSize = 0;
+    ByteBuffer BitPart;
+    ByteBuffer BytePart;
 
-    for (uint32 i = 0; i < count; ++i)
+    for(std::vector<uint32>::iterator itr = RequestedQuests.begin(); itr != RequestedQuests.end();++itr)
     {
-        uint32 questId;
-        recvData >> questId; // quest id
+        uint32 questId = (*itr);
 
         bool questOk = false;
 
         uint16 questSlot = _player->FindQuestSlot(questId);
 
         if (questSlot != MAX_QUEST_LOG_SIZE)
-            questOk =_player->GetQuestSlotQuestId(questSlot) == questId;
+            questOk = _player->GetQuestSlotQuestId(questSlot) == questId;
 
-        if (questOk)
+        if(questOk)
         {
+            ++ResponseSize;
+
             QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questId);
 
             if (POI)
             {
-                data << uint32(questId); // quest ID
-                data << uint32(POI->size()); // POI count
+                BitPart.WriteBits(POI->size(), 18);
 
                 for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); ++itr)
                 {
-                    data << uint32(itr->Id);                // POI index
-                    data << int32(itr->ObjectiveIndex);     // objective index
-                    data << uint32(itr->MapId);             // mapid
-                    data << uint32(itr->AreaId);            // areaid
-                    data << uint32(itr->Unk2);              // unknown
-                    data << uint32(itr->Unk3);              // unknown
-                    data << uint32(itr->Unk4);              // unknown
-                    data << uint32(itr->points.size());     // POI points count
+                    BitPart.WriteBits(itr->points.size(), 21);
+
+                    BytePart << uint32(itr->Unk3);              // unknown
+                    BytePart << uint32(0);                      // another unk
+                    BytePart << uint32(0);                      // another unk
+                    BytePart << uint32(itr->MapId);             // mapid
 
                     for (std::vector<QuestPOIPoint>::const_iterator itr2 = itr->points.begin(); itr2 != itr->points.end(); ++itr2)
                     {
-                        data << int32(itr2->x); // POI point x
-                        data << int32(itr2->y); // POI point y
+                        BytePart << int32(itr2->x);             // POI point x
+                        BytePart << int32(itr2->y);             // POI point y
                     }
+
+                    BytePart << uint32(itr->AreaId);            // areaid
+                    BytePart << uint32(itr->Unk4);              // unknown
+                    BytePart << uint32(0);                      // another unk
+
+                    BytePart << uint32(itr->points.size());     // POI points count
+                    BytePart << uint32(itr->Unk2);              // FloorID
+                    BytePart << uint32(itr->Id);                // POI index
+                    BytePart << int32(itr->ObjectiveIndex);     // objective index
                 }
+                BytePart << uint32(POI->size());                // POI count
             }
             else
             {
-                data << uint32(questId); // quest ID
-                data << uint32(0); // POI count
+                BitPart.WriteBits(0, 18);
+                BytePart << uint32(0);                          // POI count
             }
-        }
-        else
-        {
-            data << uint32(questId); // quest ID
-            data << uint32(0); // POI count
+            BytePart << uint32(questId);                        // quest ID
         }
     }
+
+    BytePart << ResponseSize;
+
+    data.WriteBits(ResponseSize, 20);
+    data.append(BitPart);
+    data.FlushBits();
+    data.append(BytePart);
 
     SendPacket(&data);
 }

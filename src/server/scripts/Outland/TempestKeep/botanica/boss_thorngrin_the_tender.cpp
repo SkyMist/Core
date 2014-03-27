@@ -122,7 +122,7 @@ class boss_thorngrin_the_tender : public CreatureScript
                             break;
                         case EVENT_HELLFIRE:
                             Talk(SAY_CAST_HELLFIRE);
-                            DoCastVictim(DUNGEON_MODE(SPELL_HELLFIRE_NORMAL, SPELL_HELLFIRE_HEROIC), true);
+                            DoCastVictim(SPELL_HELLFIRE_NORMAL, true);
                             events.ScheduleEvent(EVENT_HELLFIRE, IsHeroic() ? urand(17400, 19300) : 18000);
                             break;
                         case EVENT_ENRAGE:

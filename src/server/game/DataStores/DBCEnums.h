@@ -78,7 +78,8 @@ enum AchievementFlags
     ACHIEVEMENT_FLAG_SHOW_IN_GUILD_HEADER  = 0x00002000,    // Shows in guild news header
     ACHIEVEMENT_FLAG_GUILD                 = 0x00004000,    //
     ACHIEVEMENT_FLAG_SHOW_GUILD_MEMBERS    = 0x00008000,    //
-    ACHIEVEMENT_FLAG_SHOW_CRITERIA_MEMBERS = 0x00010000     //
+    ACHIEVEMENT_FLAG_SHOW_CRITERIA_MEMBERS = 0x00010000,    //
+    ACHIEVEMENT_FLAG_ACCOUNT               = 0x00020000
 };
 
 enum AchievementCriteriaLimits
@@ -145,7 +146,7 @@ enum AchievementCriteriaAdditionalCondition
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_GUILD_REPUTATION            = 62, // NYI
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_RATED_BATTLEGROUND          = 63, // NYI
     ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RARITY              = 65,
-    ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RACE                = 66,
+    ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_PROJECT_RACE                = 66
 };
 
 enum AchievementCriteriaFlags
@@ -168,7 +169,7 @@ enum AchievementCriteriaTimedTypes
     ACHIEVEMENT_TIMED_TYPE_ITEM             = 9,    // Timer is started by using item with entry in timerStartEvent
     ACHIEVEMENT_TIMED_TYPE_UNK              = 10,   // Unknown
 
-    ACHIEVEMENT_TIMED_TYPE_MAX
+    ACHIEVEMENT_TIMED_TYPE_MAX              = 11
 };
 
 enum AchievementCriteriaTypes
@@ -320,34 +321,40 @@ enum AreaFlags
     AREA_FLAG_OUTSIDE          = 0x04000000,                // used for determinating spell related inside/outside questions in Map::IsOutdoors
     AREA_FLAG_WINTERGRASP_2    = 0x08000000,                // Can Hearth And Resurrect From Area
     AREA_FLAG_NO_FLY_ZONE      = 0x20000000,                // Marks zones where you cannot fly
-    AREA_FLAG_UNK9             = 0x40000000,
+    AREA_FLAG_UNK9             = 0x40000000
 };
 
 enum Difficulty
 {
     REGULAR_DIFFICULTY           = 0,
 
-    DUNGEON_DIFFICULTY_NORMAL    = 0,
-    DUNGEON_DIFFICULTY_HEROIC    = 1,
-    DUNGEON_DIFFICULTY_CHALLENGE = 2,
+    DUNGEON_DIFFICULTY_NORMAL    = 1,
+    DUNGEON_DIFFICULTY_HEROIC    = 2,
+    DUNGEON_DIFFICULTY_CHALLENGE = 8,
 
-    RAID_DIFFICULTY_10MAN_NORMAL = 0,
-    RAID_DIFFICULTY_25MAN_NORMAL = 1,
-    RAID_DIFFICULTY_10MAN_HEROIC = 2,
-    RAID_DIFFICULTY_25MAN_HEROIC = 3,
-    RAID_DIFFICULTY_10MAN_FLEX   = 4,
-    RAID_DIFFICULTY_25MAN_LFR    = 5,
-    
-    SCENARIO_DIFFICULTY_NORMAL   = 0,
-    SCENARIO_DIFFICULTY_HEROIC   = 1
+    RAID_DIFFICULTY_10MAN_NORMAL = 3,
+    RAID_DIFFICULTY_25MAN_NORMAL = 4,
+    RAID_DIFFICULTY_10MAN_HEROIC = 5,
+    RAID_DIFFICULTY_25MAN_HEROIC = 6,
+    RAID_DIFFICULTY_25MAN_LFR    = 7,
+    RAID_DIFFICULTY_1025MAN_FLEX = 14, // This is from the new Raid Flex system. Only Siege of Ogrimmar (Map 1136) has it.
+
+    RAID_DIFFICULTY_40MAN        = 9,  // Seems used for: 1) Guild group checking - 10 / 40 (ex. : Guild achievs in BG's); 2) Raids - maps 169, 409, 469, 531.
+
+    SCENARIO_DIFFICULTY_NORMAL   = 12, // MOP new, 1-3 players. Depends on scenario, many solo.
+    SCENARIO_DIFFICULTY_HEROIC   = 11  // MOP 5.3, 3 players to start, minimum iLvl 480.
 };
 
-#define RAID_DIFFICULTY_MASK_25MAN 1    // since 25man difficulties are 1 and 3, we can check them like that
+#define MAX_DUNGEON_DIFFICULTY     DUNGEON_DIFFICULTY_CHALLENGE + 1
+#define MAX_RAID_DIFFICULTY        RAID_DIFFICULTY_1025MAN_FLEX + 1
+#define MAX_SCENARIO_DIFFICULTY    SCENARIO_DIFFICULTY_NORMAL + 1
+#define MAX_DIFFICULTY             RAID_DIFFICULTY_1025MAN_FLEX + 1
 
-#define MAX_DUNGEON_DIFFICULTY     3
-#define MAX_RAID_DIFFICULTY        6
-#define MAX_SCENARIO_DIFFICULTY    2
-#define MAX_DIFFICULTY             4 // temp hack Should be 6 but need to finish the DB side.
+// Used for DB creature_template selections and other stuff.
+// Creatures for Dungeons are template selected entry(5N), difficulty_entry_1(5H), difficulty_entry_2(5C).
+// Creatures for Raids are template selected entry (10N), difficulty_entry_1(25N), difficulty_entry_2(10H), difficulty_entry_3(25H), difficulty_entry_4 (LFR), difficulty_entry_5 (Flex).
+// Creatures for Scenarios are template selected entry(3N), difficulty_entry_1(3H).
+#define MAX_TEMPLATE_DIFFICULTY    RAID_DIFFICULTY_25MAN_HEROIC // Actually it's 6, because we have 6 raid types.
 
 enum SpawnMask
 {
@@ -360,7 +367,7 @@ enum SpawnMask
 
     SPAWNMASK_RAID_10MAN_NORMAL     = (1 << RAID_DIFFICULTY_10MAN_NORMAL),
     SPAWNMASK_RAID_25MAN_NORMAL     = (1 << RAID_DIFFICULTY_25MAN_NORMAL),
-    SPAWNMASK_RAID_10MAN_FLEX       = (1 << RAID_DIFFICULTY_10MAN_FLEX),
+    SPAWNMASK_RAID_10MAN_FLEX       = (1 << RAID_DIFFICULTY_1025MAN_FLEX),
     SPAWNMASK_RAID_25MAN_LFR        = (1 << RAID_DIFFICULTY_25MAN_LFR),
     SPAWNMASK_RAID_NORMAL_ALL       = (SPAWNMASK_RAID_10MAN_NORMAL | SPAWNMASK_RAID_25MAN_NORMAL | SPAWNMASK_RAID_10MAN_FLEX | SPAWNMASK_RAID_25MAN_LFR),
 
@@ -427,7 +434,7 @@ enum ItemExtendedCostFlags
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_2   = 0x04,
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_3   = 0x08,
     ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_4   = 0x10,
-    ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_5   = 0x20,
+    ITEM_EXT_COST_CURRENCY_REQ_IS_SEASON_EARNED_5   = 0x20
 };
 
 enum ItemLimitCategoryMode
@@ -438,8 +445,10 @@ enum ItemLimitCategoryMode
 
 enum MountFlags
 {
+    MOUNT_FLAG_CAN_WALK                 = 0x1,                    // Checked in 4.2.2 14545 client.
+    MOUNT_FLAG_CAN_FLY                  = 0x2,                    // Checked in 4.2.2 14545 client.
     MOUNT_FLAG_CAN_PITCH                = 0x4,                    // client checks MOVEMENTFLAG2_FULL_SPEED_PITCHING
-    MOUNT_FLAG_CAN_SWIM                 = 0x8,                    // client checks MOVEMENTFLAG_SWIMMING
+    MOUNT_FLAG_CAN_SWIM                 = 0x8                     // client checks MOVEMENTFLAG_SWIMMING
 };
 
 enum SpellCategoryFlags
@@ -569,40 +578,47 @@ enum VehicleSeatFlagsB
 // CurrencyTypes.dbc
 enum CurrencyTypes
 {
+    // Instances and PVP.
+    CURRENCY_TYPE_CONQUEST_POINTS                 = 390,
+    CURRENCY_TYPE_HONOR_POINTS                    = 392,
+    CURRENCY_TYPE_JUSTICE_POINTS                  = 395,
+    CURRENCY_TYPE_VALOR_POINTS                    = 396,
+    CURRENCY_TYPE_CONQUEST_META_ARENA             = 483,
+    CURRENCY_TYPE_CONQUEST_META_RBG               = 484,
+
+    // Professions.
     CURRENCY_TYPE_DALARAN_JEWELCRAFTERS_TOKEN     = 61,
     CURRENCY_TYPE_EPICUREAN_AWARD                 = 81,
     CURRENCY_TYPE_CHAMPIONS_SEAL                  = 241,
     CURRENCY_TYPE_ILLUSTRIOUS_JEWELCRAFTERS_TOKEN = 361,
+    CURRENCY_TYPE_TOL_BARAD_COMMENDATION          = 391,
+
+    // Archaeology.
     CURRENCY_TYPE_DWARF_ARCHAEOLOGY_FRAGMENT      = 384,
     CURRENCY_TYPE_TROLL_ARCHAEOLOGY_FRAGMENT      = 385,
-    CURRENCY_TYPE_CONQUEST_POINTS                 = 390,
-    CURRENCY_TYPE_TOL_BARAD_COMMENDATION          = 391,
-    CURRENCY_TYPE_HONOR_POINTS                    = 392,
     CURRENCY_TYPE_FOSSIL_ARCHAEOLOGY_FRAGMENT     = 393,
     CURRENCY_TYPE_NIGHTELF_ARCHAEOLOGY_FRAGMENT   = 394,
-    CURRENCY_TYPE_JUSTICE_POINTS                  = 395,
-    CURRENCY_TYPE_VALOR_POINTS                    = 396,
     CURRENCY_TYPE_ORC_ARCHAEOLOGY_FRAGMENT        = 397,
     CURRENCY_TYPE_DRAENEI_ARCHAEOLOGY_FRAGMENT    = 398,
     CURRENCY_TYPE_VRYKUL_ARCHAEOLOGY_FRAGMENT     = 399,
     CURRENCY_TYPE_NERUBIAN_ARCHAEOLOGY_FRAGMENT   = 400,
     CURRENCY_TYPE_TOLVIR_ARCHAEOLOGY_FRAGMENT     = 401,
+    CURRENCY_TYPE_PANDAREN_ARCHAEOLOGY_FRAGMENT   = 676,
+    CURRENCY_TYPE_MOGU_ARCHAEOLOGY_FRAGMENT       = 677,
+    CURRENCY_TYPE_MANTID_ARCHAEOLOGY_FRAGMENT     = 754,
+
+    // Misc (Bosses, Tokens and Quests).
     CURRENCY_TYPE_IRONPAW_TOKEN                   = 402,
     CURRENCY_TYPE_MARK_OF_THE_WORLD_TREE          = 416,
-    CURRENCY_TYPE_CONQUEST_META_ARENA             = 483,
-    CURRENCY_TYPE_CONQUEST_META_RBG               = 484,
     CURRENCY_TYPE_DARKMOON_PRIZE_TICKET           = 515,
     CURRENCY_TYPE_MOTE_OF_DARKNESS                = 614,
     CURRENCY_TYPE_ESSENCE_OF_CORRUPTED_DEATHWING  = 615,
-    CURRENCY_TYPE_PANDAREN_ARCHAEOLOGY_FRAGMENT   = 676,
-    CURRENCY_TYPE_MOGU_ARCHAEOLOGY_FRAGMENT       = 677,
     CURRENCY_TYPE_ELDER_CHARM_OF_GOOD_FORTUNE     = 697,
     CURRENCY_TYPE_LESSER_CHARM_OF_GOOD_FORTUNE    = 738,
     CURRENCY_TYPE_MOGU_RUNE_OF_FATE               = 752,
-    CURRENCY_TYPE_MANTID_ARCHAEOLOGY_FRAGMENT     = 754,
     CURRENCY_TYPE_WARFORGED_SEAL                  = 776,
     CURRENCY_TYPE_TIMELESS_COIN                   = 777,
-    CURRENCY_TYPE_BLOODY_COIN                     = 789,
+    CURRENCY_TYPE_BLOODY_COIN                     = 789
 };
 
 #endif

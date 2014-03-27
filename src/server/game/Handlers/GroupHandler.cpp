@@ -398,51 +398,6 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recvData)
     SendPartyResult(PARTY_OP_UNINVITE, "", ERR_TARGET_NOT_IN_GROUP_S);
 }
 
-void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recvData)
-{
-    TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_UNINVITE");
-
-    std::string membername;
-    recvData >> membername;
-
-    // player not found
-    if (!normalizePlayerName(membername))
-        return;
-
-    // can't uninvite yourself
-    if (GetPlayer()->GetName() == membername)
-    {
-        TC_LOG_ERROR("network", "WorldSession::HandleGroupUninviteOpcode: leader %s(%d) tried to uninvite himself from the group.",
-            GetPlayer()->GetName().c_str(), GetPlayer()->GetGUIDLow());
-        return;
-    }
-
-    PartyResult res = GetPlayer()->CanUninviteFromGroup();
-    if (res != ERR_PARTY_RESULT_OK)
-    {
-        SendPartyResult(PARTY_OP_UNINVITE, "", res);
-        return;
-    }
-
-    Group* grp = GetPlayer()->GetGroup();
-    if (!grp)
-        return;
-
-    if (uint64 guid = grp->GetMemberGUID(membername))
-    {
-        Player::RemoveFromGroup(grp, guid, GROUP_REMOVEMETHOD_KICK, GetPlayer()->GetGUID());
-        return;
-    }
-
-    if (Player* player = grp->GetInvited(membername))
-    {
-        player->UninviteFromGroup();
-        return;
-    }
-
-    SendPartyResult(PARTY_OP_UNINVITE, membername, ERR_TARGET_NOT_IN_GROUP_S);
-}
-
 void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_SET_LEADER");
@@ -481,6 +436,38 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
     // Everything's fine, accepted.
     group->ChangeLeader(guid);
     group->SendUpdate();
+}
+
+void WorldSession::HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_SET_EVERYONE_IS_ASSISTANT");
+
+    Group* group = GetPlayer()->GetGroup();
+
+    if (!group)
+        return;
+
+    if (!group->IsLeader(GetPlayer()->GetGUID()))
+        return;
+
+    bool active = recvData.ReadBit();      // 0 == inactive, 1 == active
+
+    if (active)
+    {
+        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
+            if (Player *player = itr->GetSource())
+                group->SetGroupMemberFlag(player->GetGUID(), active, MEMBER_FLAG_ASSISTANT);
+
+        group->SendUpdate();
+    }
+    else
+    {
+        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Loop through all members
+            if (Player* player = itr->GetSource())
+                group->SetGroupMemberFlag(player->GetGUID(), !active, MEMBER_FLAG_ASSISTANT);
+
+        group->SendUpdate();
+    }
 }
 
 void WorldSession::HandleGroupSetRolesOpcode(WorldPacket& recvData)
@@ -593,6 +580,21 @@ void WorldSession::HandleGroupDisbandOpcode(WorldPacket& /*recvData*/)
     SendPartyResult(PARTY_OP_LEAVE, GetPlayer()->GetName(), ERR_PARTY_RESULT_OK);
 
     GetPlayer()->RemoveFromGroup(GROUP_REMOVEMETHOD_LEAVE);
+}
+
+void WorldSession::HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData)
+{
+    int8 id;
+    recvData >> id;
+
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_CLEAR_RAID_MARKER from %s (%u) id: %i", GetPlayerName(), GetAccountId(), id);
+
+    Group* group = _player->GetGroup();
+    if (!group)
+        return;
+
+    if (group->IsAssistant(_player->GetGUID()) || group->IsLeader(_player->GetGUID()))
+        group->SetRaidMarker(id, _player, group->GetGUID());
 }
 
 void WorldSession::HandleLootMethodOpcode(WorldPacket& recvData)
@@ -837,7 +839,7 @@ void WorldSession::HandleGroupRaidConvertOpcode(WorldPacket& recvData)
     // New 4.x: it is now possible to convert a raid to a group if member count is 5 or less
 
     bool toRaid;
-    recvData >> toRaid;
+    toRaid = recvData.ReadBit();
 
     if (toRaid)
         group->ConvertToRaid();
@@ -1012,6 +1014,80 @@ void WorldSession::HandleRaidReadyCheckOpcode(WorldPacket& recvData)
     group->BroadcastPacket(&data, false, -1);
 
     group->OfflineReadyCheck();
+}
+
+void WorldSession::HandleRaidReadyCheckConfirmOpcode(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_RAID_READY_CHECK_CONFIRM");
+
+    ObjectGuid unknownGuid;
+
+    Group* group = GetPlayer()->GetGroup();
+    if (!group)
+        return;
+
+    recvData.read_skip<uint8>();
+
+    bool status = recvData.ReadBit();
+    unknownGuid[0] = recvData.ReadBit();
+    unknownGuid[6] = recvData.ReadBit();
+    unknownGuid[5] = recvData.ReadBit();
+    unknownGuid[2] = recvData.ReadBit();
+    unknownGuid[4] = recvData.ReadBit();
+    unknownGuid[7] = recvData.ReadBit();
+    unknownGuid[3] = recvData.ReadBit();
+    unknownGuid[1] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(unknownGuid[2]);
+    recvData.ReadByteSeq(unknownGuid[0]);
+    recvData.ReadByteSeq(unknownGuid[7]);
+    recvData.ReadByteSeq(unknownGuid[6]);
+    recvData.ReadByteSeq(unknownGuid[5]);
+    recvData.ReadByteSeq(unknownGuid[3]);
+    recvData.ReadByteSeq(unknownGuid[1]);
+    recvData.ReadByteSeq(unknownGuid[4]);
+
+    ObjectGuid groupGuid = group->GetGUID();
+    ObjectGuid playerGuid = GetPlayer()->GetGUID();
+
+    WorldPacket data(SMSG_RAID_READY_CHECK_CONFIRM, 1 + 1 + 8 + 1 + 8);
+    data.WriteBit(groupGuid[0]);
+    data.WriteBit(groupGuid[2]);
+    data.WriteBit(status);
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(playerGuid[6]);
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(groupGuid[4]);
+    data.WriteBit(groupGuid[3]);
+    data.WriteBit(groupGuid[5]);
+    data.WriteBit(playerGuid[3]);
+    data.WriteBit(groupGuid[7]);
+    data.WriteBit(playerGuid[5]);
+    data.WriteBit(groupGuid[6]);
+    data.WriteBit(groupGuid[1]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[1]);
+    data.WriteBit(playerGuid[4]);
+    data.FlushBits();
+
+    data.WriteByteSeq(playerGuid[1]);
+    data.WriteByteSeq(groupGuid[5]);
+    data.WriteByteSeq(playerGuid[2]);
+    data.WriteByteSeq(groupGuid[7]);
+    data.WriteByteSeq(groupGuid[0]);
+    data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(playerGuid[3]);
+    data.WriteByteSeq(groupGuid[4]);
+    data.WriteByteSeq(playerGuid[7]);
+    data.WriteByteSeq(groupGuid[6]);
+    data.WriteByteSeq(playerGuid[5]);
+    data.WriteByteSeq(groupGuid[2]);
+    data.WriteByteSeq(groupGuid[1]);
+    data.WriteByteSeq(groupGuid[3]);
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[6]);
+
+    group->BroadcastPacket(&data, false, -1);
 }
 
 void WorldSession::HandleRaidReadyCheckFinishedOpcode(WorldPacket& /*recvData*/)

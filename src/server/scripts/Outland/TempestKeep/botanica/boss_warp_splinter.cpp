@@ -210,7 +210,7 @@ class boss_warp_splinter : public CreatureScript
                 //Check for Arcane Volley
                 if (Arcane_Volley_Timer <= diff)
                 {
-                    DoCastVictim(DUNGEON_MODE(ARCANE_VOLLEY, ARCANE_VOLLEY_H));
+                    DoCastVictim(ARCANE_VOLLEY);
                     Arcane_Volley_Timer = urand(20000, 35000);
                 }
                 else

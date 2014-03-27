@@ -238,7 +238,7 @@ class boss_taldaram : public CreatureScript
                 if (events.IsInPhase(PHASE_SPECIAL) && embraceTarget && embraceTarget->IsAlive())
                 {
                     _embraceTakenDamage += damage;
-                    if (_embraceTakenDamage > DUNGEON_MODE<uint32>(DATA_EMBRACE_DMG, H_DATA_EMBRACE_DMG))
+                    if (_embraceTakenDamage > DUNGEON_MODE<uint32>(DATA_EMBRACE_DMG, H_DATA_EMBRACE_DMG, DATA_EMBRACE_DMG))
                     {
                         _embraceTargetGUID = 0;
                         events.SetPhase(PHASE_NORMAL);

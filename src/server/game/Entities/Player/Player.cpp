@@ -819,6 +819,7 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_InstanceValid = true;
     m_dungeonDifficulty = DUNGEON_DIFFICULTY_NORMAL;
     m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
+    m_raidMapDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
 
     m_lastPotionId = 0;
     _talentMgr = new PlayerTalentInfo();
@@ -2139,7 +2140,7 @@ uint8 Player::GetChatTag() const
     return tag;
 }
 
-bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options)
+bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options, bool raidDifficultyChange)
 {
     if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))
     {
@@ -2209,7 +2210,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (duel && GetMapId() != mapid && GetMap()->GetGameObject(GetUInt64Value(PLAYER_FIELD_DUEL_ARBITER)))
         DuelComplete(DUEL_FLED);
 
-    if (GetMapId() == mapid)
+    if (GetMapId() == mapid && !raidDifficultyChange)
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -2333,7 +2334,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (!GetSession()->PlayerLogout())
             {
                 // send transfer packets
-                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4);       
+                WorldPacket data(SMSG_TRANSFER_PENDING, 4 + 4 + 4 + 1);       
 
                 data << uint32(mapid);
                 data.WriteBit(0);       // Unknown.
@@ -2361,13 +2362,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
             if (!GetSession()->PlayerLogout())
             {
-                WorldPacket data(SMSG_NEW_WORLD, 4 + 4 + 4 + 4 + 4);
-                data << uint32(mapid);
-                data << float(m_teleport_dest.GetPositionY());
-                data << float(m_teleport_dest.GetPositionZ());
-                data << float(m_teleport_dest.GetOrientation());
-                data << float(m_teleport_dest.GetPositionX());
-                GetSession()->SendPacket(&data);
+                GetSession()->SendNewWorld(m_teleport_dest);
                 SendSavedInstances();
             }
 
@@ -2395,6 +2390,35 @@ bool Player::TeleportToBGEntryPoint()
     ScheduleDelayedOperation(DELAYED_BG_TAXI_RESTORE);
     ScheduleDelayedOperation(DELAYED_BG_GROUP_RESTORE);
     return TeleportTo(m_bgData.joinPos);
+}
+
+void Player::PlayHoverAnimation() // Player Hover animation.
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 8 + 1);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(0); // unk bit.
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[6]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
+
+    GetSession()->SendPacket(&data);
 }
 
 void Player::ProcessDelayedOperations()
@@ -3414,6 +3438,59 @@ void Player::GiveLevel(uint8 level)
     SetCreateHealth(basehp);
     SetCreateMana(basemana);
 
+    // Add Glyph Removal Spells - before glyph and talent update, to ensure it showing after learn.
+    if (level >= 25 && level < 81)
+    {
+        if (!HasSpell(SPELL_VANISHING_POWDER))
+        {
+            if (HasSpell(SPELL_DUST_OF_DISAPPEARENCE)) removeSpell(SPELL_DUST_OF_DISAPPEARENCE);
+            if (HasSpell(SPELL_TOME_OF_CLEAR_MIND)) removeSpell(SPELL_TOME_OF_CLEAR_MIND);
+
+            learnSpell(SPELL_VANISHING_POWDER, false); // Clear Glyph - Vanishing Powder.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_VANISHING))
+        {
+            if (HasSpell(SPELL_REM_TALENT_DUST)) removeSpell(SPELL_REM_TALENT_DUST);
+            if (HasSpell(SPELL_REM_TALENT_TOME)) removeSpell(SPELL_REM_TALENT_TOME);
+
+            learnSpell(SPELL_REM_TALENT_VANISHING, false); // Clear Glyph - Vanishing Powder.
+        }
+    }
+    else if (level >= 81 && level < 86)
+    {
+        if (!HasSpell(SPELL_DUST_OF_DISAPPEARENCE))
+        {
+            if (HasSpell(SPELL_VANISHING_POWDER)) removeSpell(SPELL_VANISHING_POWDER);
+            if (HasSpell(SPELL_TOME_OF_CLEAR_MIND)) removeSpell(SPELL_TOME_OF_CLEAR_MIND);
+
+            learnSpell(SPELL_DUST_OF_DISAPPEARENCE, false); // Clear Glyph - Dust of Disappearence.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_DUST))
+        {
+            if (HasSpell(SPELL_REM_TALENT_VANISHING)) removeSpell(SPELL_REM_TALENT_VANISHING);
+            if (HasSpell(SPELL_REM_TALENT_TOME)) removeSpell(SPELL_REM_TALENT_TOME);
+
+            learnSpell(SPELL_REM_TALENT_DUST, false); // Clear Glyph - Vanishing Powder.
+        }
+    }
+    else if (level >= 86)
+    {
+        if (!HasSpell(SPELL_TOME_OF_CLEAR_MIND))
+        {
+            if (HasSpell(SPELL_VANISHING_POWDER)) removeSpell(SPELL_VANISHING_POWDER);
+            if (HasSpell(SPELL_DUST_OF_DISAPPEARENCE)) removeSpell(SPELL_DUST_OF_DISAPPEARENCE);
+
+            learnSpell(SPELL_TOME_OF_CLEAR_MIND, false); // Clear Glyph - Tome of the Clear Mind.
+        }
+        if (!HasSpell(SPELL_REM_TALENT_TOME))
+        {
+            if (HasSpell(SPELL_REM_TALENT_VANISHING)) removeSpell(SPELL_REM_TALENT_VANISHING);
+            if (HasSpell(SPELL_REM_TALENT_DUST)) removeSpell(SPELL_REM_TALENT_DUST);
+
+            learnSpell(SPELL_REM_TALENT_TOME, false); // Clear Glyph - Tome of the Clear Mind.
+        }
+    }
+
     InitTalentForLevel();
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
@@ -3968,8 +4045,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                 {
                     // update spell ranks in spellbook and action bar
                     WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                    data << uint32(spellId);
                     data << uint32(next_active_spell_id);
+                    data << uint32(spellId);
                     GetSession()->SendPacket(&data);
                 }
                 else
@@ -4055,8 +4132,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                             if (IsInWorld())                 // not send spell (re-/over-)learn packets at loading
                             {
                                 WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                                data << uint32(itr2->first);
                                 data << uint32(spellId);
+                                data << uint32(itr2->first);
                                 GetSession()->SendPacket(&data);
                             }
 
@@ -4071,8 +4148,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                             if (IsInWorld())                 // not send spell (re-/over-)learn packets at loading
                             {
                                 WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                                data << uint32(spellId);
                                 data << uint32(itr2->first);
+                                data << uint32(spellId);
                                 GetSession()->SendPacket(&data);
                             }
 
@@ -4171,7 +4248,10 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                         SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, GetMaxSkillValueForLevel());
                         break;
                     case SKILL_RANGE_MONO:
-                        SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, 1);
+                        if (pSkill->id == SKILL_RUNEFORGING)
+                            SetSkill(pSkill->id, GetSkillStep(pSkill->id), 500, 500); // DK starts at 500 RF in MOP.
+                        else
+                            SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, 1);
                         break;
                     default:
                         break;
@@ -4479,8 +4559,8 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
                     {
                         // downgrade spell ranks in spellbook and action bar
                         WorldPacket data(SMSG_SUPERCEDED_SPELL, 4 + 4);
-                        data << uint32(spell_id);
                         data << uint32(prev_id);
+                        data << uint32(spell_id);
                         GetSession()->SendPacket(&data);
                         prev_activate = true;
                     }
@@ -5201,7 +5281,19 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_DAILY);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_SEASONAL_CHAR);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_WEEKLY_CHAR);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -5278,15 +5370,43 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_DAILY);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
-
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_TALENT);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SKILLS);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_REP);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_CURRENCY);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_SITES);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_PROJECT);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            // 
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_COMPLETED_PROJECT);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+            //
+            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_VOID_STORAGE_ITEMS);
+            // stmt->setUInt32(0, guid);
+            // trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_CORPSES);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -7619,8 +7739,8 @@ void Player::SendNewCurrency(uint32 id) const
         return;
 
     ByteBuffer currencyData;
-    WorldPacket packet(SMSG_INIT_CURRENCY, 4 + (5*4 + 1));
-    packet.WriteBits(1, 23);
+    WorldPacket packet(SMSG_INIT_CURRENCY, 3 + 1 + 4 + 4 + 4 + 4);
+    packet.WriteBits(1, 21);
 
     CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(id);
     if (!entry) // should never happen
@@ -7630,19 +7750,20 @@ void Player::SendNewCurrency(uint32 id) const
     uint32 weekCount = itr->second.weekCount / precision;
     uint32 weekCap = GetCurrencyWeekCap(entry) / precision;
 
-    packet.WriteBit(weekCount);
-    packet.WriteBits(0, 4); // some flags
+    packet.WriteBits(0, 5); // some flags
     packet.WriteBit(weekCap);
+    packet.WriteBit(weekCount);
     packet.WriteBit(0);     // season total earned
 
     currencyData << uint32(itr->second.totalCount / precision);
+    currencyData << uint32(entry->ID);
+
     if (weekCap)
         currencyData << uint32(weekCap);
 
     //if (seasonTotal)
     //    currencyData << uint32(seasonTotal / precision);
 
-    currencyData << uint32(entry->ID);
     if (weekCount)
         currencyData << uint32(weekCount);
 
@@ -7654,9 +7775,9 @@ void Player::SendNewCurrency(uint32 id) const
 void Player::SendCurrencies() const
 {
     ByteBuffer currencyData;
-    WorldPacket packet(SMSG_INIT_CURRENCY, 4 + _currencyStorage.size()*(5*4 + 1));
+    WorldPacket packet(SMSG_INIT_CURRENCY, 3 + (_currencyStorage.size() * (1 + 4 + 4 + 4 + 4)));
     size_t count_pos = packet.bitwpos();
-    packet.WriteBits(_currencyStorage.size(), 23);
+    packet.WriteBits(_currencyStorage.size(), 21);
 
     size_t count = 0;
     for (PlayerCurrenciesMap::const_iterator itr = _currencyStorage.begin(); itr != _currencyStorage.end(); ++itr)
@@ -7671,19 +7792,20 @@ void Player::SendCurrencies() const
         uint32 weekCount = itr->second.weekCount / precision;
         uint32 weekCap = GetCurrencyWeekCap(entry) / precision;
 
-        packet.WriteBit(weekCount);
-        packet.WriteBits(0, 4); // some flags
+        packet.WriteBits(0, 5); // some flags
         packet.WriteBit(weekCap);
+        packet.WriteBit(weekCount);
         packet.WriteBit(0);     // season total earned
 
         currencyData << uint32(itr->second.totalCount / precision);
+        currencyData << uint32(entry->ID);
+
         if (weekCap)
             currencyData << uint32(weekCap);
 
         //if (seasonTotal)
         //    currencyData << uint32(seasonTotal / precision);
 
-        currencyData << uint32(entry->ID);
         if (weekCount)
             currencyData << uint32(weekCount);
 
@@ -7692,7 +7814,7 @@ void Player::SendCurrencies() const
 
     packet.FlushBits();
     packet.append(currencyData);
-    packet.PutBits(count_pos, count, 23);
+    packet.PutBits(count_pos, count, 21);
     GetSession()->SendPacket(&packet);
 }
 
@@ -9257,10 +9379,45 @@ void Player::RemovedInsignia(Player* looterPlr)
     looterPlr->SendLoot(bones->GetGUID(), LOOT_INSIGNIA);
 }
 
-void Player::SendLootRelease(uint64 guid)
+void Player::SendLootRelease(ObjectGuid guid)
 {
-    WorldPacket data(SMSG_LOOT_RELEASE_RESPONSE, (8+1));
-    data << uint64(guid) << uint8(1);
+    ObjectGuid lootGuid = guid;
+
+    WorldPacket data(SMSG_LOOT_RELEASE_RESPONSE, 20);
+
+    data.WriteBit(guid[2]);
+    data.WriteBit(lootGuid[4]);
+    data.WriteBit(lootGuid[3]);
+    data.WriteBit(lootGuid[6]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(lootGuid[5]);
+    data.WriteBit(lootGuid[1]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(lootGuid[7]);
+    data.WriteBit(lootGuid[0]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(lootGuid[2]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[5]);
+    data.WriteByteSeq(lootGuid[6]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(lootGuid[0]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(lootGuid[2]);
+    data.WriteByteSeq(lootGuid[4]);
+    data.WriteByteSeq(lootGuid[7]);
+    data.WriteByteSeq(lootGuid[5]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(lootGuid[1]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(lootGuid[3]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+
     SendDirectMessage(&data);
 }
 
@@ -9567,9 +9724,7 @@ void Player::SendLoot(uint64 guid, LootType loot_type)
     loot->loot_type = loot_type;
 
     WorldPacket data(SMSG_LOOT_RESPONSE, 8 + 1 + 50 + 1 + 1);           // we guess size
-    data << uint64(guid);
-    data << uint8(loot_type);
-    data << LootView(*loot, this, permission);
+    LootView(*loot, this, permission).WriteData(guid, loot_type, &data);
 
     SendDirectMessage(&data);
 
@@ -9583,13 +9738,86 @@ void Player::SendLoot(uint64 guid, LootType loot_type)
 
 void Player::SendNotifyLootMoneyRemoved()
 {
-    WorldPacket data(SMSG_LOOT_CLEAR_MONEY, 0);
+    ObjectGuid guid = GetLootGUID();
+
+    WorldPacket data(SMSG_LOOT_CLEAR_MONEY, 9);
+
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[5]);
+
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[5]);
+
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendNotifyLootItemRemoved(uint8 lootSlot)
+void Player::SendNotifyLootItemRemoved(uint8 lootSlot, ObjectGuid guid)
 {
-    WorldPacket data(SMSG_LOOT_REMOVED, 1);
+    ObjectGuid lootGuid = guid;
+
+    WorldPacket data(SMSG_LOOT_REMOVED, 19);
+    data.WriteBit(lootGuid[1]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(lootGuid[0]);
+    data.WriteBit(lootGuid[6]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(lootGuid[3]);
+    data.WriteBit(lootGuid[7]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(lootGuid[2]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(lootGuid[5]);
+    data.WriteBit(lootGuid[4]);
+
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(lootGuid[0]);
+    data.WriteByteSeq(lootGuid[6]);
+    data.WriteByteSeq(lootGuid[1]);
+    data.WriteByteSeq(lootGuid[4]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(lootGuid[7]);
+    data.WriteByteSeq(lootGuid[3]);
+
+    data << uint8(lootSlot);
+
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(lootGuid[5]);
+    data.WriteByteSeq(lootGuid[2]);
+
+    GetSession()->SendPacket(&data);
+}
+
+void Player::SendNotifyCurrencyLootRemoved(uint8 lootSlot)
+{
+    WorldPacket data(SMSG_CURRENCY_LOOT_REMOVED, 1);
+    data << uint8(lootSlot);
+    GetSession()->SendPacket(&data);
+}
+
+void Player::SendNotifyCurrencyLootRestored(uint8 lootSlot)
+{
+    WorldPacket data(SMSG_CURRENCY_LOOT_RESTORED, 1);
     data << uint8(lootSlot);
     GetSession()->SendPacket(&data);
 }
@@ -9597,9 +9825,9 @@ void Player::SendNotifyLootItemRemoved(uint8 lootSlot)
 void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 {
     WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
-    data << Field;
-    data << Value;
-    data << uint8(0);
+    data.WriteBit(0);                   //unk bit
+    data.FlushBits();
+    data << Value << Field;
     GetSession()->SendPacket(&data);
 }
 
@@ -9614,12 +9842,8 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
 
     TC_LOG_DEBUG("network", "Sending SMSG_INIT_WORLD_STATES to Map: %u, Zone: %u", mapid, zoneid);
 
-    WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+4+2+(12*8)));
-    data << uint32(mapid);                                  // mapid
-    data << uint32(zoneid);                                 // zone id
-    data << uint32(areaid);                                 // area id, new 2.1.0
-    size_t countPos = data.wpos();
-    data << uint16(0);                                      // count of uint64 blocks
+    WorldPacket data;
+
     data << uint32(0x8d8) << uint32(0x0);                   // 1
     data << uint32(0x8d7) << uint32(0x0);                   // 2
     data << uint32(0x8d6) << uint32(0x0);                   // 3
@@ -9630,6 +9854,8 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     data << uint32(0xC77) << uint32(sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS));
                                                             // 8 Arena season id
     data << uint32(0xF3D) << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
+
+    data << uint32(0x1584) << uint32(0x1); // Show Rated BG's Interface - WS 5508.
 
     if (mapid == 530)                                       // Outland
     {
@@ -10193,10 +10419,17 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
             break;
     }
 
-    uint16 length = (data.wpos() - countPos) / 8;
-    data.put<uint16>(countPos, length);
+    size_t StatesCount = data.size() / 8;
 
-    GetSession()->SendPacket(&data);
+    WorldPacket InitStates(SMSG_INIT_WORLD_STATES, (4+4+4+data.size()));
+    InitStates << uint32(mapid);                                  // mapid
+    InitStates << uint32(zoneid);                                 // zone id
+    InitStates << uint32(areaid);                                 // area id, new 2.1.0
+    InitStates.WriteBits(StatesCount,21);
+    InitStates.FlushBits();
+    InitStates.append(data);
+
+    GetSession()->SendPacket(&InitStates);
     SendBGWeekendWorldStates();
     SendBattlefieldWorldStates();
 }
@@ -10249,8 +10482,28 @@ uint32 Player::GetXPRestBonus(uint32 xp)
 
 void Player::SetBindPoint(uint64 guid)
 {
-    WorldPacket data(SMSG_BINDER_CONFIRM, 8);
-    data << uint64(guid);
+    ObjectGuid ikGuid = guid; // Innkeeper GUID.
+
+    WorldPacket data(SMSG_BINDER_CONFIRM, 1 + 8);
+
+    data.WriteBit(ikGuid[7]);
+    data.WriteBit(ikGuid[0]);
+    data.WriteBit(ikGuid[1]);
+    data.WriteBit(ikGuid[5]);
+    data.WriteBit(ikGuid[3]);
+    data.WriteBit(ikGuid[6]);
+    data.WriteBit(ikGuid[2]);
+    data.WriteBit(ikGuid[4]);
+
+    data.WriteByteSeq(ikGuid[3]);
+    data.WriteByteSeq(ikGuid[4]);
+    data.WriteByteSeq(ikGuid[6]);
+    data.WriteByteSeq(ikGuid[2]);
+    data.WriteByteSeq(ikGuid[1]);
+    data.WriteByteSeq(ikGuid[7]);
+    data.WriteByteSeq(ikGuid[5]);
+    data.WriteByteSeq(ikGuid[0]);
+
     GetSession()->SendPacket(&data);
 }
 
@@ -12222,7 +12475,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
     {
         if (_class == CLASS_WARRIOR || _class == CLASS_PALADIN || _class == CLASS_DEATH_KNIGHT)
         {
-            if (getLevel() < 40)
+            if (getLevel() < 40) //Need confirmation in 5.x
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_MAIL)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -12232,7 +12485,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
         }
         else if (_class == CLASS_HUNTER || _class == CLASS_SHAMAN)
         {
-            if (getLevel() < 40)
+            if (getLevel() < 40) //Need confirmation in 5.x
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_LEATHER)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -12248,6 +12501,10 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
         if (_class == CLASS_MAGE || _class == CLASS_PRIEST || _class == CLASS_WARLOCK)
             if (proto->SubClass != ITEM_SUBCLASS_ARMOR_CLOTH)
                 return EQUIP_ERR_CLIENT_LOCKED_OUT;
+
+		if (_class == CLASS_MONK)
+			if((proto->SubClass != ITEM_SUBCLASS_ARMOR_CLOTH) || (proto->SubClass != ITEM_SUBCLASS_ARMOR_LEATHER))
+				return EQUIP_ERR_CLIENT_LOCKED_OUT;
     }
 
     return EQUIP_ERR_OK;
@@ -14661,11 +14918,86 @@ void Player::SendItemDurations()
 
 void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast)
 {
-    if (!item)                                               // prevent crash
+    if (!item)                                              // prevent crash
         return;
 
-                                                            // last check 2.0.10
-    WorldPacket data(SMSG_ITEM_PUSH_RESULT, (8+4+4+4+1+4+4+4+4+4));
+    ObjectGuid playerGuid = GetGUID();
+    ObjectGuid unknownGuid = uint64(0);
+
+    WorldPacket data(SMSG_ITEM_PUSH_RESULT, 1 + 8 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4);
+
+    data.WriteBit(1);                                       // display in chat
+    data.WriteBit(created);                                 // 0 = received, 1 = created
+
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[4]);
+    data.WriteBit(unknownGuid[3]);
+    data.WriteBit(unknownGuid[7]);
+    data.WriteBit(unknownGuid[1]);
+    data.WriteBit(unknownGuid[4]);
+    data.WriteBit(unknownGuid[6]);
+
+    data.WriteBit(0);                                       // 1 = bonus item - "You received bonus loot"
+
+    data.WriteBit(playerGuid[5]);
+    data.WriteBit(playerGuid[1]);
+    data.WriteBit(unknownGuid[5]);
+    data.WriteBit(playerGuid[6]);
+    data.WriteBit(unknownGuid[2]);
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(unknownGuid[0]);
+    data.WriteBit(playerGuid[3]);
+
+    data.WriteBit(received);                                // 0 = looted, 1 = from npc
+
+    data.FlushBits();
+
+    // ! uint32 values order needs to be rechecked.
+    data.WriteByteSeq(unknownGuid[6]);
+
+    data << uint32(item->GetItemSuffixFactor());            // SuffixFactor
+
+    data.WriteByteSeq(playerGuid[1]);
+
+    data << uint32(0);
+    data << uint32(count);                                  // count of items
+    data << uint32(0);
+    data << uint32(item->GetItemRandomPropertyId());        // random item property id
+
+    data.WriteByteSeq(playerGuid[3]);
+    data.WriteByteSeq(unknownGuid[7]);
+    data.WriteByteSeq(playerGuid[5]);
+
+    data << uint32(0);
+
+    data.WriteByteSeq(playerGuid[2]);
+    data.WriteByteSeq(unknownGuid[0]);
+    data.WriteByteSeq(unknownGuid[1]);
+    data.WriteByteSeq(playerGuid[7]);
+
+    data << uint8(item->GetBagSlot());                      // bagslot
+    data << uint32(item->GetEntry());                       // item id
+    data << uint32(0);
+
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(unknownGuid[5]);
+    data.WriteByteSeq(unknownGuid[2]);
+
+    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory                          
+    data << uint32((item->GetCount() == count) ? item->GetSlot() : -1);// item slot, but when added to stack: 0xFFFFFFFF
+
+    data.WriteByteSeq(playerGuid[6]);
+    data.WriteByteSeq(unknownGuid[3]);
+    data.WriteByteSeq(unknownGuid[4]);
+
+    if (broadcast && GetGroup())
+        GetGroup()->BroadcastPacket(&data, true);
+    else
+        GetSession()->SendPacket(&data);
+
+    /*WorldPacket data(SMSG_ITEM_PUSH_RESULT, (8+4+4+4+1+4+4+4+4+4));
     data << uint64(GetGUID());                              // player GUID
     data << uint32(received);                               // 0=looted, 1=from npc
     data << uint32(created);                                // 0=received, 1=created
@@ -14677,12 +15009,7 @@ void Player::SendNewItem(Item* item, uint32 count, bool received, bool created, 
     data << uint32(item->GetItemSuffixFactor());            // SuffixFactor
     data << int32(item->GetItemRandomPropertyId());         // random item property id
     data << uint32(count);                                  // count of items
-    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory
-
-    if (broadcast && GetGroup())
-        GetGroup()->BroadcastPacket(&data, true);
-    else
-        GetSession()->SendPacket(&data);
+    data << uint32(GetItemCount(item->GetEntry()));         // count of items in inventory*/
 }
 
 /*********************************************************/
@@ -17144,10 +17471,39 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
             if (const QuestLocale* pLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
                 ObjectMgr::GetLocaleString(pLocale->Title, loc_idx, strTitle);
 
-        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT, (4 + strTitle.size() + 8));
-        data << uint32(quest->GetQuestId());
-        data << strTitle;
-        data << uint64(GetGUID());
+        ObjectGuid PlayerGuid = GetGUID();
+        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT);
+        
+        data.WriteBit(PlayerGuid[3]);
+        data.WriteBit(PlayerGuid[2]);
+        data.WriteBit(PlayerGuid[7]);
+        data.WriteBit(PlayerGuid[0]);
+        data.WriteBit(PlayerGuid[1]);
+        data.WriteBit(strTitle.size() != 0);                    // hasQuestName
+        data.WriteBit(PlayerGuid[6]);
+
+        if(strTitle.size() != 0)
+            data.WriteBits(strTitle.size(),10);
+
+        data.WriteBit(PlayerGuid[5]);
+        data.WriteBit(PlayerGuid[4]);
+        
+        data.FlushBits();
+
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[0]);
+        data.WriteByteSeq(PlayerGuid[6]);
+
+        if(strTitle.size() != 0)
+            data.WriteString(strTitle);
+
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[0]);
+        data.WriteByteSeq(PlayerGuid[6]);
+
+        data << quest->GetQuestId();
         pReceiver->GetSession()->SendPacket(&data);
 
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_CONFIRM_ACCEPT");
@@ -19038,12 +19394,10 @@ void Player::_LoadGroup(PreparedQueryResult result)
 
             uint8 subgroup = group->GetMemberGroup(GetGUID());
             SetGroup(group, subgroup);
-            if (getLevel() >= LEVELREQUIREMENT_HEROIC)
-            {
-                // the group leader may change the instance difficulty while the player is offline
-                SetDungeonDifficulty(group->GetDungeonDifficulty());
-                SetRaidDifficulty(group->GetRaidDifficulty());
-            }
+
+            // the group leader may change the instance difficulty while the player is offline
+            SetDungeonDifficulty(group->GetDungeonDifficulty());
+            SetRaidDifficulty(group->GetRaidDifficulty());
         }
     }
 
@@ -19258,13 +19612,12 @@ void Player::SendRaidInfo()
 {
     uint32 counter = 0;
 
-    WorldPacket data(SMSG_RAID_INSTANCE_INFO, 4);
-
-    size_t p_counter = data.wpos();
-    data << uint32(counter);                                // placeholder
-
+    WorldPacket data(SMSG_RAID_INSTANCE_INFO);
     time_t now = time(NULL);
 
+    ByteBuffer BitData;
+    ByteBuffer BodyData;
+    
     for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
@@ -19274,25 +19627,48 @@ void Player::SendRaidInfo()
                 InstanceSave* save = itr->second.save;
                 bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 uint32 completedEncounters = 0;
+
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
-                    if (InstanceScript* instanceScript = ((InstanceMap*)map)->GetInstanceScript())
+                    if (InstanceScript* instanceScript = static_cast<InstanceMap*>(map)->GetInstanceScript())
                         completedEncounters = instanceScript->GetCompletedEncounterMask();
 
-                data << uint32(save->GetMapId());           // map id
-                data << uint32(save->GetDifficulty());      // difficulty
-                data << uint32(isHeroic);                   // heroic
-                data << uint64(save->GetInstanceId());      // instance id
-                data << uint8(1);                           // expired = 0
-                data << uint8(0);                           // extended = 1
-                data << uint32(save->GetResetTime() - now); // reset time
-                data << uint32(completedEncounters);        // completed encounters mask
+                ObjectGuid InstanceID = save->GetInstanceId();
+
+                BitData.WriteBit(InstanceID[1]);
+                BitData.WriteBit(0);                                // expired
+                BitData.WriteBit(InstanceID[0]);
+                BitData.WriteBit(InstanceID[4]);
+                BitData.WriteBit(InstanceID[2]);
+                BitData.WriteBit(InstanceID[3]);
+                BitData.WriteBit(InstanceID[5]);
+                BitData.WriteBit(InstanceID[6]);
+                BitData.WriteBit(InstanceID[7]);
+                BitData.WriteBit(0);                                // extended
+
+                BodyData << uint32(save->GetResetTime() - now);     // reset time
+                BodyData.WriteByteSeq(InstanceID[0]);
+                BodyData.WriteByteSeq(InstanceID[3]);
+                BodyData << save->GetMapId()        ;               // map id
+                BodyData.WriteByteSeq(InstanceID[2]);
+                BodyData.WriteByteSeq(InstanceID[4]);
+                BodyData << save->GetDifficulty();                   // difficulty
+                BodyData.WriteByteSeq(InstanceID[7]);
+                BodyData << completedEncounters;                    // completed encounters mask
+                BodyData.WriteByteSeq(InstanceID[6]);
+                BodyData.WriteByteSeq(InstanceID[2]);
+                BodyData.WriteByteSeq(InstanceID[1]);
+                
                 ++counter;
             }
         }
     }
 
-    data.put<uint32>(p_counter, counter);
-    GetSession()->SendPacket(&data);
+    data.WriteBits(counter,20);
+    data.append(BitData);
+    data.FlushBits();
+    data.append(BodyData);
+
+    SendDirectMessage(&data);
 }
 
 /*
@@ -19447,6 +19823,15 @@ bool Player::CheckInstanceLoginValid()
         // cannot be in raid instance without a group
         if (!GetGroup())
             return false;
+        else
+        {
+            uint32 maxPlayers = ((InstanceMap*)GetMap())->GetMaxPlayers();
+            if (GetMap()->GetPlayersCountExceptGMs() >= maxPlayers)
+            {
+                SendTransferAborted(GetMap()->GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                return false;
+            }
+        }
     }
     else
     {
@@ -20114,7 +20499,7 @@ void Player::_SaveVoidStorage(SQLTransaction& trans)
             stmt->setUInt32(2, _voidStorageItems[i]->ItemEntry);
             stmt->setUInt8(3, i);
             stmt->setUInt32(4, _voidStorageItems[i]->CreatorGuid);
-            stmt->setUInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
+            stmt->setInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
             stmt->setUInt32(6, _voidStorageItems[i]->ItemSuffixFactor);
         }
 
@@ -20737,23 +21122,17 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendDungeonDifficulty(bool IsInGroup)
+void Player::SendDungeonDifficulty(uint32 difficulty)
 {
-    uint8 val = 0x00000001;
-    WorldPacket data(MSG_SET_DUNGEON_DIFFICULTY, 12);
-    data << (uint32)GetDungeonDifficulty();
-    data << uint32(val);
-    data << uint32(IsInGroup);
+    WorldPacket data(SMSG_SET_DUNGEON_DIFFICULTY, 4);
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendRaidDifficulty(bool IsInGroup, int32 forcedDifficulty)
+void Player::SendRaidDifficulty(uint32 difficulty)
 {
-    uint8 val = 0x00000001;
-    WorldPacket data(MSG_SET_RAID_DIFFICULTY, 12);
-    data << uint32(forcedDifficulty == -1 ? GetRaidDifficulty() : forcedDifficulty);
-    data << uint32(val);
-    data << uint32(IsInGroup);
+    WorldPacket data(SMSG_SET_RAID_DIFFICULTY, 4);
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
@@ -20784,7 +21163,7 @@ void Player::ResetInstances(uint8 method, bool isRaid)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->map_type == MAP_RAID || diff == DUNGEON_DIFFICULTY_HEROIC)
+            if (entry->map_type == MAP_RAID || diff > DUNGEON_DIFFICULTY_NORMAL && diff != DUNGEON_DIFFICULTY_CHALLENGE && diff != SCENARIO_DIFFICULTY_NORMAL)
             {
                 ++itr;
                 continue;
@@ -21864,6 +22243,8 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         if (IsInDisallowedMountForm())
             RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
 
+        RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
+
         if (Spell* spell = GetCurrentSpell(CURRENT_GENERIC_SPELL))
             if (spell->m_spellInfo->Id != spellid)
                 InterruptSpell(CURRENT_GENERIC_SPELL, false);
@@ -22240,12 +22621,30 @@ inline bool Player::_StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 c
     if (it)
     {
         uint32 new_count = pVendor->UpdateVendorItemCurrentCount(crItem, count);
+        ObjectGuid vGuid = pVendor->GetGUID();
 
-        WorldPacket data(SMSG_BUY_ITEM, (8+4+4+4));
-        data << uint64(pVendor->GetGUID());
-        data << uint32(vendorslot + 1);                   // numbered from 1 at client
-        data << int32(crItem->maxcount > 0 ? new_count : 0xFFFFFFFF);
+        WorldPacket data(SMSG_BUY_ITEM, 1 + 8 + 4 + 4 + 4);
+        data.WriteBit(vGuid[7]);
+        data.WriteBit(vGuid[0]);
+        data.WriteBit(vGuid[6]);
+        data.WriteBit(vGuid[1]);
+        data.WriteBit(vGuid[5]);
+        data.WriteBit(vGuid[2]);
+        data.WriteBit(vGuid[4]);
+        data.WriteBit(vGuid[3]);
+
+        data.WriteByteSeq(vGuid[1]);
+        data.WriteByteSeq(vGuid[5]);
+        data.WriteByteSeq(vGuid[2]);
+        data.WriteByteSeq(vGuid[3]);
+        data << uint32(vendorslot + 1); // numbered from 1 at client
+        data.WriteByteSeq(vGuid[0]);
+        data.WriteByteSeq(vGuid[6]);
         data << uint32(count);
+        data.WriteByteSeq(vGuid[7]);
+        data << int32(crItem->maxcount > 0 ? new_count : 0xFFFFFFFF);
+        data.WriteByteSeq(vGuid[4]);
+
         GetSession()->SendPacket(&data);
         SendNewItem(it, count, true, false, false);
 
@@ -23374,6 +23773,26 @@ inline void BeforeVisibilityDestroy<Creature>(Creature* t, Player* p)
 
 void Player::UpdateVisibilityOf(WorldObject* target)
 {
+    if (!target)
+        return;
+
+    if (target->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
+    if (((DynamicObject*)target)->GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group const* group = GetGroup();
+    
+        if (!group || ((DynamicObject*)target)->GetCasterGUID() != group->GetGUID())
+    	{
+            target->DestroyForPlayer(this);
+            m_clientGUIDs.erase(target->GetGUID());
+    	}
+    	else
+    	{
+            target->SendUpdateToPlayer(this);
+            m_clientGUIDs.insert(target->GetGUID());
+    	}
+    }
+
     if (HaveAtClient(target))
     {
         if (!CanSeeOrDetect(target, false, true))
@@ -23470,6 +23889,26 @@ void Player::SendInitialVisiblePackets(Unit* target)
 template<class T>
 void Player::UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow)
 {
+    if (!target)
+        return;
+
+    if (target->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
+    if (((DynamicObject*)target)->GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group const* group = GetGroup();
+    
+        if (!group || ((DynamicObject*)target)->GetCasterGUID() != group->GetGUID())
+    	{
+            target->BuildOutOfRangeUpdateBlock(&data);
+            m_clientGUIDs.erase(target->GetGUID());
+    	}
+    	else
+    	{
+            target->SendUpdateToPlayer(this);
+            m_clientGUIDs.insert(target->GetGUID());
+    	}
+    }
+
     if (HaveAtClient(target))
     {
         if (!CanSeeOrDetect(target, false, true))
@@ -23688,106 +24127,112 @@ void Player::SetGroup(Group* group, int8 subgroup)
 
 void Player::SendInitialPacketsBeforeAddToMap()
 {
-    /// Pass 'this' as argument because we're not stored in ObjectAccessor yet
+    // Pass 'this' as argument for the player, because it's not stored in ObjectAccessor yet.
     GetSocial()->SendSocialList(this);
 
     // guild bank list wtf?
 
     // Homebind
     WorldPacket data(SMSG_BINDPOINTUPDATE, 5*4);
-    data << m_homebindZ;
+    data << uint32(m_homebindAreaId);
     data << m_homebindX;
-    data << (uint32) m_homebindMapId;
+    data << m_homebindZ;
     data << m_homebindY;
-    data << (uint32) m_homebindAreaId;
+    data << m_homebindMapId;
     GetSession()->SendPacket(&data);
+
+    // Time sync send and reset -  should they be sent after being added to the map?
+    ResetTimeSync();
+    SendTimeSync();
 
     // SMSG_SET_PROFICIENCY
     // SMSG_SET_PCT_SPELL_MODIFIER
     // SMSG_SET_FLAT_SPELL_MODIFIER
     // SMSG_UPDATE_AURA_DURATION
 
+    // Send Player Talent Data and Initial Spells.
     SendTalentsInfoData();
-
-    data.Initialize(SMSG_WORLD_SERVER_INFO, 4 + 4 + 1 + 1);
-    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);  // LastWeeklyReset (not instance reset)
-    data << uint32(GetMap()->GetDifficulty());
-    data << uint8(0);                                               // IsOnTournamentRealm
-
-    data.WriteBit(0);                                               // IneligibleForLoot
-    data.WriteBit(0);                                               // HasRestrictedLevel
-    data.WriteBit(0);                                               // HasRestrictedMoney
-    data.WriteBit(0);                                               // HasUnknown
-    data.FlushBits();
-
-    //if (HasUnknown)
-    //    data << uint32(0);
-    //if (HasRestrictedLevel)
-    //    data << uint32(20);                                       // RestrictedLevel (starter accounts)
-    //if (IneligibleForLoot)
-    //    data << uint32(0);                                        // EncounterMask
-    //if (HasRestrictedMoney)
-    //    data << uint32(100000);                                   // RestrictedMoney (starter accounts)
-
-    GetSession()->SendPacket(&data);
-
     SendInitialSpells();
 
+    // SMSG_SEND_UNLEARN_SPELLS
     data.Initialize(SMSG_SEND_UNLEARN_SPELLS, 4);
     data << uint32(0);                                      // count, for (count) uint32;
     GetSession()->SendPacket(&data);
 
+    // Send Action Buttons, Reputations.
     SendInitialActionButtons();
     m_reputationMgr->SendInitialReputations();
+
+    // SMSG_CORPSE_RECLAIM_DELAY
+    // SMSG_INIT_WORLD_STATES
+    // SMSG_SET_PHASE_SHIFT
+
+    // Send Currencies, Equipment, Achievements.
+    SendCurrencies();
+    SendEquipmentSetList();
     m_achievementMgr->SendAllAchievementData(this);
 
-    SendEquipmentSetList();
+    // SMSG_LOGIN_VERIFY_WORLD
+    data.Initialize(SMSG_LOGIN_VERIFY_WORLD, 20);
+    data << GetOrientation();
+    data << GetMapId();
+    data << GetPositionZ();
+    data << GetPositionX();
+    data << GetPositionY();
+    GetSession()->SendPacket(&data);
 
+    // SMSG_LOGIN_SETTIMESPEED
     data.Initialize(SMSG_LOGIN_SETTIMESPEED, 20);
     data.AppendPackedTime(sWorld->GetGameTime());
     data << float(0.01666667f);                             // game speed
     data << uint32(1);
     data << uint32(1);
     data.AppendPackedTime(sWorld->GetGameTime());
-
     GetSession()->SendPacket(&data);
 
-    GetReputationMgr().SendForceReactions();                // SMSG_SET_FORCED_REACTIONS
+    // SMSG_SET_FORCED_REACTIONS
+    GetReputationMgr().SendForceReactions();
+
+    // MSG_LIST_STABLED_PETS
+    // SMSG_WEEKLY_SPELL_USAGE
+
+    // SMSG_WORLD_SERVER_INFO
+    GetSession()->SendServerWorldInfo();
 
     // SMSG_TALENTS_INFO x 2 for pet (unspent points and talents in separate packets...)
     // SMSG_PET_GUIDS
     // SMSG_UPDATE_WORLD_STATE
     // SMSG_POWER_UPDATE
 
-    SendCurrencies();
     SetMover(this);
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
 {
+    // Update Player Visibility.
     UpdateVisibilityForPlayer();
 
-    // update zone
+    // Update Zone and Area.
     uint32 newzone, newarea;
     GetZoneAndAreaId(newzone, newarea);
     UpdateZone(newzone, newarea);                            // also call SendInitWorldStates();
 
-    ResetTimeSync();
-    SendTimeSync();
-
+    // Send Raid CUF profiles.
     GetSession()->SendLoadCUFProfiles();
 
-    CastSpell(this, 836, true);                             // LOGINEFFECT
+    // Cast Login Effect Spell.
+    CastSpell(this, 836, true);
 
-    // set some aura effects that send packet to player client after add player to map
-    // SendMessageToSet not send it to player not it map, only for aura that not changed anything at re-apply
-    // same auras state lost at far teleport, send it one more time in this case also
+    // Set some aura effects that send packet to player client after add player to map.
+    // SendMessageToSet not send it to player not it map, only for aura that not changed anything at re-apply.
+    // Same auras state lost at far teleport, send it one more time in this case also.
     static const AuraType auratypes[] =
     {
         SPELL_AURA_MOD_FEAR,     SPELL_AURA_TRANSFORM,                 SPELL_AURA_WATER_WALK,
         SPELL_AURA_FEATHER_FALL, SPELL_AURA_HOVER,                     SPELL_AURA_SAFE_FALL,
         SPELL_AURA_FLY,          SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED, SPELL_AURA_NONE
     };
+
     for (AuraType const* itr = &auratypes[0]; itr && itr[0] != SPELL_AURA_NONE; ++itr)
     {
         Unit::AuraEffectList const& auraList = GetAuraEffectsByType(*itr);
@@ -23802,21 +24247,27 @@ void Player::SendInitialPacketsAfterAddToMap()
     if (HasAuraType(SPELL_AURA_MOD_ROOT))
         SetRooted(true, true);
 
+    // Send Auras, Enchantment and Item Durations.
     SendAurasForTarget(this);
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
-    // raid downscaling - send difficulty to player
+    // Send difficulties on login.
+
+    // Dungeons.
+    SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
+
+    // Raids + downscaling if needed.
     if (GetMap()->IsRaid())
     {
         if (GetMap()->GetDifficulty() != GetRaidDifficulty())
         {
             StoreRaidMapDifficulty();
-            SendRaidDifficulty(GetGroup() != NULL, GetStoredRaidDifficulty());
+            SendRaidDifficulty(GetStoredRaidDifficulty());
         }
     }
     else if (GetRaidDifficulty() != GetStoredRaidDifficulty())
-        SendRaidDifficulty(GetGroup() != NULL);
+        SendRaidDifficulty(GetRaidDifficulty() < RAID_DIFFICULTY_10MAN_NORMAL ? RAID_DIFFICULTY_10MAN_NORMAL : GetRaidDifficulty());
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()
@@ -23834,10 +24285,17 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg)
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data << uint32(mapid);
-    data << uint8(reason); // transfer abort reason
-    data << uint8(arg);
+    WorldPacket data(SMSG_TRANSFER_ABORTED);
+    
+    data.WriteBit(arg != 0);
+    data.WriteBits(reason,5); // transfer abort reason
+
+    data.FlushBits();
+
+    if(arg != 0)
+        data << arg;
+
+    data << mapid;
     GetSession()->SendPacket(&data);
 }
 
@@ -24571,6 +25029,30 @@ void Player::UpdateForQuestWorldObjects()
     GetSession()->SendPacket(&packet);
 }
 
+void Player::UpdateForRaidMarkers(Group* group)
+{
+    UpdateData udata(GetMapId());
+    WorldPacket packet;
+
+    for (uint8 i = 0; i < RAID_MARKER_COUNT; ++i)
+    {
+        if (DynamicObject* obj = GetMap()->GetDynamicObject(group->GetRaidMarker(i)))
+            if (group == GetGroup())
+            {
+                if (obj->GetMapId() == GetMapId())
+                    obj->BuildCreateUpdateBlockForPlayer(&udata, this);
+            }
+            else
+                obj->BuildOutOfRangeUpdateBlock(&udata);
+    }
+
+    if (!udata.HasData())
+        return;
+
+    udata.BuildPacket(&packet);
+    GetSession()->SendPacket(&packet);
+}
+
 void Player::SetSummonPoint(uint32 mapid, float x, float y, float z)
 {
     m_summon_expire = time(NULL) + MAX_PLAYER_SUMMON_DELAY;
@@ -24980,10 +25462,32 @@ void Player::ResurectUsingRequestData()
 
 void Player::SetClientControl(Unit* target, uint8 allowMove)
 {
+    ObjectGuid guid = target->GetGUID();
+
     WorldPacket data(SMSG_CLIENT_CONTROL_UPDATE, target->GetPackGUID().size()+1);
-    data.append(target->GetPackGUID());
-    data << uint8(allowMove);
+
+    data.WriteBit(allowMove);
+
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[0]);
+
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[1]);
+
     GetSession()->SendPacket(&data);
+
     if (target == this && allowMove == 1)
         SetMover(this);
 }
@@ -24997,23 +25501,23 @@ void Player::SetMover(Unit* target)
     ObjectGuid guid = target->GetGUID();
 
     WorldPacket data(SMSG_MOVE_SET_ACTIVE_MOVER, 9);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[6]);
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[4]);
     data.WriteBit(guid[1]);
     data.WriteBit(guid[2]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[6]);
 
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[3]);
-    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[1]);
-    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[6]);
 
     SendDirectMessage(&data);
 }
@@ -25808,6 +26312,12 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
         return;
     }
 
+    if (!item->AllowedForPlayer(this))
+    {
+        SendLootRelease(GetLootGUID());
+        return;
+    }
+
     // questitems use the blocked field for other purposes
     if (!qitem && item->is_blocked)
     {
@@ -25827,7 +26337,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             qitem->is_looted = true;
             //freeforall is 1 if everyone's supposed to get the quest item.
             if (item->freeforall || loot->GetPlayerQuestItems().size() == 1)
-                SendNotifyLootItemRemoved(lootSlot);
+                SendNotifyLootItemRemoved(lootSlot, GetLootGUID());
             else
                 loot->NotifyQuestItemRemoved(qitem->index);
         }
@@ -25837,7 +26347,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
             {
                 //freeforall case, notify only one player of the removal
                 ffaitem->is_looted = true;
-                SendNotifyLootItemRemoved(lootSlot);
+                SendNotifyLootItemRemoved(lootSlot, GetLootGUID());
             }
             else
             {
@@ -26102,7 +26612,7 @@ void Player::HandleFall(MovementInfo const& movementInfo)
     // 14.57 can be calculated by resolving damageperc formula below to 0
     if (z_diff >= 14.57f && !isDead() && !IsGameMaster() &&
         !HasAuraType(SPELL_AURA_HOVER) && !HasAuraType(SPELL_AURA_FEATHER_FALL) &&
-        !HasAuraType(SPELL_AURA_FLY) && !IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL))
+        !HasAuraType(SPELL_AURA_FLY) && !IsImmunedToDamage(SPELL_SCHOOL_MASK_NORMAL) && !IsInWater())
     {
         //Safe fall, fall height reduction
         int32 safe_fall = GetTotalAuraModifier(SPELL_AURA_SAFE_FALL);
@@ -26812,7 +27322,7 @@ void Player::SetMap(Map* map)
 
 void Player::_LoadGlyphs(PreparedQueryResult result)
 {
-    // SELECT spec, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6, glyph7, glyph8, glyph9 FROM character_glyphs WHERE guid = '%u'
+    // SELECT spec, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6 FROM character_glyphs WHERE guid = '%u'
     if (!result)
         return;
 

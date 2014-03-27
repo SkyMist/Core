@@ -70,3 +70,18 @@
 #include "MovementStructures.h"
 #include "Config.h"
 #include "GameObjectAI.h"
+
+void WorldSession::SendNewWorld(WorldLocation const &location)
+{
+    if(sMapMgr->IsValidMapCoord(location))
+    {
+        WorldPacket worldPosition(SMSG_NEW_WORLD, 20);
+        worldPosition << location.GetMapId() << location.GetPositionY() << location.GetPositionZ() << location.GetOrientation() << location.GetPositionX();
+        SendPacket(&worldPosition);
+    }
+    else
+    {
+        WorldPacket worldAbort(SMSG_NEW_WORLD_ABORT);
+        SendPacket(&worldAbort);
+    }
+}
