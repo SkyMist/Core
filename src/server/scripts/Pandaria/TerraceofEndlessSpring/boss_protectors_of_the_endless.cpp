@@ -22,7 +22,7 @@
 #include "MoveSplineInit.h"
 #include "Weather.h"
 
-#include "deadmines.h"
+#include "terrace_of_endless_spring.h"
 
 enum Yells
 {

@@ -51,7 +51,7 @@ enum CreatureIds
 enum GameObjectIds
 {
     // GameObjects
-    GO_SOMETHING                 = ,
+    GO_SOMETHING                 = 10001,
 };
 
 #endif
