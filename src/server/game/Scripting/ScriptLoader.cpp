@@ -660,6 +660,8 @@ void AddSC_zangarmarsh();
 void AddSC_kezan();
 
 // Pandaria
+void AddSC_terrace_of_endless_spring();
+void AddSC_instance_terrace_of_endless_spring();
 
 // Events
 void AddSC_event_childrens_week();
@@ -1377,11 +1379,12 @@ void AddMaelstromScripts()
     AddSC_kezan();
 #endif
 }
-
+// Pandaria
 void AddPandariaScripts()
 {
 #ifdef SCRIPTS
-
+    AddSC_terrace_of_endless_spring();
+	AddSC_instance_terrace_of_endless_spring();
 #endif
 }
 

@@ -5,7 +5,12 @@
 
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
-
+  Pandaria/TerraceofEndlessSpring/instance_terrace_of_endless_spring.cpp
+  Pandaria/TerraceofEndlessSpring/terrace_of_endless_spring.h
+  Pandaria/TerraceofEndlessSpring/boss_tsulong.cpp
+  Pandaria/TerraceofEndlessSpring/boss_lei_shi.cpp
+  Pandaria/TerraceofEndlessSpring/boss_protectors_of_the_endless.cpp
+  Pandaria/TerraceofEndlessSpring/boss_sha_of_fear.cpp
 )
 
 message("  -> Prepared: Pandaria")
