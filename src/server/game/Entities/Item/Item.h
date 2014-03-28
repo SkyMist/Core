@@ -216,6 +216,9 @@ bool ItemCanGoIntoBag(ItemTemplate const* proto, ItemTemplate const* pBagProto);
 class Item : public Object
 {
     public:
+
+        void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
+
         static Item* CreateItem(uint32 itemEntry, uint32 count, Player const* player = NULL);
         Item* CloneItem(uint32 count, Player const* player = NULL) const;
 

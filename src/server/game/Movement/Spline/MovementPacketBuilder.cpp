@@ -366,6 +366,7 @@ namespace Movement
             data.WriteBit(facingGuid[1]);
             data.WriteBit(facingGuid[4]);
             data.WriteBit(facingGuid[2]);
+
             data.WriteByteSeq(facingGuid[4]);
             data.WriteByteSeq(facingGuid[2]);
             data.WriteByteSeq(facingGuid[5]);

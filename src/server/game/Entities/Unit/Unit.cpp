@@ -15842,5 +15842,47 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
-    *data << uint8(0);
+
+    // Dynamic Fields (MoP new Dynamic Field system).
+
+    uint32 dynamicTabMask = 0;
+    std::vector<uint32> dynamicFieldsMask;
+    dynamicFieldsMask.resize(m_dynamicTab.size());
+
+    for (size_t i = 0; i < m_dynamicTab.size(); i++)
+        dynamicFieldsMask[i] = 0;
+
+    for (size_t i = 0; i < m_dynamicChange.size(); i++)
+    {
+        for (uint16 index = 0; index < 32; index++)
+        {
+            if (m_dynamicChange[i][index])
+            {
+                dynamicTabMask |= 1 << i; // Check if the mask changed.
+                dynamicFieldsMask[i] |= 1 << index; // Get the new mask to send.
+            }
+        }
+    }
+
+    *data << uint8(bool(dynamicTabMask)); // Set the mask for dynamic updates to true.
+
+    if (dynamicTabMask)
+    {
+        *data << uint32(dynamicTabMask);
+
+        for(size_t i = 0; i < m_dynamicTab.size(); i++)
+        {
+            if(dynamicTabMask & (1 << i))
+            {
+                *data << uint8(bool(true)); // The mask has changed, so update the values.
+                *data << uint32(dynamicFieldsMask[i]); // Send the new mask.
+
+                for(uint16 index = 0; index < 32; index++)
+                {
+                    if (dynamicFieldsMask[i] & (1 << index))
+                        *data << uint32(m_dynamicTab[i][index]);
+                }
+            }
+        }
+    }
 }

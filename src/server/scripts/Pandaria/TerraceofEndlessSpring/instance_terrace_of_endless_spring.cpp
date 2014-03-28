@@ -121,12 +121,12 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                     SaveToDB();
             }
 
-            uint32 GetData(uint32 type) OVERRIDE
+            uint32 GetData(uint32 type) const OVERRIDE
             {
                 return GetBossState(type);
             }
 
-            uint64 GetData64(uint32 data) OVERRIDE
+            uint64 GetData64(uint32 data) const OVERRIDE
             {
                 switch (data)
                 {

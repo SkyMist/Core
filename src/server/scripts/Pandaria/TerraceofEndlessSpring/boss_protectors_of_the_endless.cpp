@@ -136,7 +136,7 @@ public:
             summons.Summon(summon);
             summon->setActive(true);
 
-            if (me->isInCombat())
+            if (me->IsInCombat())
                 summon->AI()->DoZoneInCombat();
         }
 
@@ -235,7 +235,7 @@ public:
             summons.Summon(summon);
             summon->setActive(true);
 
-            if (me->isInCombat())
+            if (me->IsInCombat())
                 summon->AI()->DoZoneInCombat();
         }
 
@@ -334,7 +334,7 @@ public:
             summons.Summon(summon);
             summon->setActive(true);
 
-            if (me->isInCombat())
+            if (me->IsInCombat())
                 summon->AI()->DoZoneInCombat();
         }
 
