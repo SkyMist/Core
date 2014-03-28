@@ -35,7 +35,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
             uint64 LeiShiGUID;
             uint64 ShaofFearGUID;
 
-            void Initialize()
+            void Initialize() OVERRIDE
             {
                 SetBossNumber(MAX_ENCOUNTER);
 
@@ -51,7 +51,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                     SetBossState(i, NOT_STARTED);
             }
 
-            bool IsEncounterInProgress() const
+            bool IsEncounterInProgress() const OVERRIDE
             {
                 for (uint32 i = 0; i < MAX_ENCOUNTER; ++i)
                     if (GetBossState(i) == IN_PROGRESS)
@@ -60,7 +60,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 return false;
             }
 
-            void OnCreatureCreate(Creature* creature)
+            void OnCreatureCreate(Creature* creature) OVERRIDE
             {
                 switch (creature->GetEntry())
                 {
@@ -89,7 +89,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
             }
 
 /*
-            void OnUnitDeath(Unit* killed)
+            void OnUnitDeath(Unit* killed) OVERRIDE
             {
                 if (killed->GetTypeId() == TYPEID_PLAYER) return;
             
@@ -98,14 +98,14 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 }
             }
 
-            void OnGameObjectCreate(GameObject* go)
+            void OnGameObjectCreate(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
                 }
             }
 
-            void OnGameObjectRemove(GameObject* go)
+            void OnGameObjectRemove(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
@@ -113,7 +113,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
             }
 */
 
-            void SetData(uint32 type, uint32 data)
+            void SetData(uint32 type, uint32 data) OVERRIDE
             {
                 SetBossState(type, EncounterState(data));
 
@@ -121,12 +121,12 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                     SaveToDB();
             }
 
-            uint32 GetData(uint32 type)
+            uint32 GetData(uint32 type) OVERRIDE
             {
                 return GetBossState(type);
             }
 
-            uint64 GetData64(uint32 data)
+            uint64 GetData64(uint32 data) OVERRIDE
             {
                 switch (data)
                 {
@@ -141,7 +141,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 }
             }
 
-            bool SetBossState(uint32 data, EncounterState state)
+            bool SetBossState(uint32 data, EncounterState state) OVERRIDE
             {
                 if (!InstanceScript::SetBossState(data, state))
                     return false;
@@ -161,7 +161,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 return true;
             }
 
-            std::string GetSaveData()
+            std::string GetSaveData() OVERRIDE
             {
                 OUT_SAVE_INST_DATA;
 
@@ -172,7 +172,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 return saveStream.str();
             }
 
-            void Load(const char* in)
+            void Load(const char* in) OVERRIDE
             {
                 if (!in)
                 {
@@ -209,7 +209,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
             }
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
         {
             return new instance_terrace_of_endless_spring_InstanceMapScript(map);
         }

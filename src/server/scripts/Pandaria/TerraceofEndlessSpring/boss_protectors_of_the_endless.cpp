@@ -72,7 +72,7 @@ public:
         SummonList summons;
         EventMap events;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             events.Reset();
             summons.DespawnAll();
@@ -80,7 +80,7 @@ public:
             _Reset();
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
@@ -95,13 +95,13 @@ public:
             _EnterCombat();
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
             if (victim->GetTypeId() == TYPEID_PLAYER)
                 Talk(SAY_SLAY);
         }
 
-        void EnterEvadeMode()
+        void EnterEvadeMode() OVERRIDE
         {
             Reset();
             me->DeleteThreatList();
@@ -117,7 +117,7 @@ public:
             _EnterEvadeMode();
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
             summons.DespawnAll();
@@ -131,7 +131,7 @@ public:
             _JustDied();
         }
 
-        void JustSummoned(Creature* summon)
+        void JustSummoned(Creature* summon) OVERRIDE
         {
             summons.Summon(summon);
             summon->setActive(true);
@@ -140,7 +140,7 @@ public:
                 summon->AI()->DoZoneInCombat();
         }
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                 return;
@@ -158,7 +158,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new boss_protector_kaolanAI(creature);
     }
@@ -180,7 +180,7 @@ public:
         SummonList summons;
         EventMap events;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             events.Reset();
             summons.DespawnAll();
@@ -188,7 +188,7 @@ public:
             _Reset();
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
@@ -200,13 +200,13 @@ public:
             _EnterCombat();
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
             if (victim->GetTypeId() == TYPEID_PLAYER)
                 Talk(SAY_SLAY);
         }
 
-        void EnterEvadeMode()
+        void EnterEvadeMode() OVERRIDE
         {
             Reset();
             me->DeleteThreatList();
@@ -219,7 +219,7 @@ public:
             _EnterEvadeMode();
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
             summons.DespawnAll();
@@ -230,7 +230,7 @@ public:
             _JustDied();
         }
 
-        void JustSummoned(Creature* summon)
+        void JustSummoned(Creature* summon) OVERRIDE
         {
             summons.Summon(summon);
             summon->setActive(true);
@@ -239,7 +239,7 @@ public:
                 summon->AI()->DoZoneInCombat();
         }
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                 return;
@@ -257,7 +257,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new boss_elder_asaniAI(creature);
     }
@@ -279,7 +279,7 @@ public:
         SummonList summons;
         EventMap events;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             events.Reset();
             summons.DespawnAll();
@@ -287,7 +287,7 @@ public:
             _Reset();
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
@@ -299,13 +299,13 @@ public:
             _EnterCombat();
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
             if (victim->GetTypeId() == TYPEID_PLAYER)
                 Talk(SAY_SLAY);
         }
 
-        void EnterEvadeMode()
+        void EnterEvadeMode() OVERRIDE
         {
             Reset();
             me->DeleteThreatList();
@@ -318,7 +318,7 @@ public:
             _EnterEvadeMode();
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
             summons.DespawnAll();
@@ -329,7 +329,7 @@ public:
             _JustDied();
         }
 
-        void JustSummoned(Creature* summon)
+        void JustSummoned(Creature* summon) OVERRIDE
         {
             summons.Summon(summon);
             summon->setActive(true);
@@ -338,7 +338,7 @@ public:
                 summon->AI()->DoZoneInCombat();
         }
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                 return;
@@ -356,7 +356,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new boss_elder_regaliAI(creature);
     }
