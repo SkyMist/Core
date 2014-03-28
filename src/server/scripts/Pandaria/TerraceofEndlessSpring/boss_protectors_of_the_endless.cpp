@@ -56,14 +56,14 @@ enum MovePoints
     POINT_SUMMON            = 1
 };
 
-class boss_admiral_ripsnarl : public CreatureScript
+class boss_protector_kaolan : public CreatureScript
 {
 public:
-    boss_admiral_ripsnarl() : CreatureScript("boss_admiral_ripsnarl") { }
+    boss_protector_kaolan() : CreatureScript("boss_protector_kaolan") { }
 
-    struct boss_admiral_ripsnarlAI : public BossAI
+    struct boss_protector_kaolanAI : public BossAI
     {
-        boss_admiral_ripsnarlAI(Creature* creature) : BossAI(creature, DATA_ADMIRAL_RIPSNARL_EVENT), summons(me)
+        boss_protector_kaolanAI(Creature* creature) : BossAI(creature, DATA_PROT_OF_ENDLESS_EVENT), summons(me)
         {
             instance = creature->GetInstanceScript();
         }
@@ -88,7 +88,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_ADMIRAL_RIPSNARL_EVENT, IN_PROGRESS);
+                instance->SetData(DATA_PROT_OF_ENDLESS_EVENT, IN_PROGRESS);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
             }
 
@@ -110,7 +110,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_ADMIRAL_RIPSNARL_EVENT, FAIL);
+                instance->SetData(DATA_PROT_OF_ENDLESS_EVENT, FAIL);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
             }
 
@@ -124,7 +124,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_ADMIRAL_RIPSNARL_EVENT, DONE);
+                instance->SetData(DATA_PROT_OF_ENDLESS_EVENT, DONE);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
             }
 
@@ -136,7 +136,7 @@ public:
             summons.Summon(summon);
             summon->setActive(true);
 
-			if (me->isInCombat())
+            if (me->isInCombat())
                 summon->AI()->DoZoneInCombat();
         }
 
@@ -160,11 +160,211 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_admiral_ripsnarlAI(creature);
+        return new boss_protector_kaolanAI(creature);
     }
 };
 
-void AddSC_boss_admiral_ripsnarl()
+class boss_elder_asani : public CreatureScript
 {
-    new boss_admiral_ripsnarl();
+public:
+    boss_elder_asani() : CreatureScript("boss_elder_asani") { }
+
+    struct boss_elder_asaniAI : public BossAI
+    {
+        boss_elder_asaniAI(Creature* creature) : BossAI(creature, DATA_PROT_OF_ENDLESS_EVENT), summons(me)
+        {
+            instance = creature->GetInstanceScript();
+        }
+
+        InstanceScript* instance;
+        SummonList summons;
+        EventMap events;
+
+        void Reset()
+        {
+            events.Reset();
+            summons.DespawnAll();
+
+            _Reset();
+        }
+
+        void EnterCombat(Unit* /*who*/)
+        {
+            Talk(SAY_AGGRO);
+
+            // events.ScheduleEvent(EVENT_SUMMON_SERVITORS, 8000);
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
+
+            _EnterCombat();
+        }
+
+        void KilledUnit(Unit* victim)
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                Talk(SAY_SLAY);
+        }
+
+        void EnterEvadeMode()
+        {
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            // me->DespawnOrUnsummon(1000);
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+            _EnterEvadeMode();
+        }
+
+        void JustDied(Unit* /*killer*/)
+        {
+            Talk(SAY_DEATH);
+            summons.DespawnAll();
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+            _JustDied();
+        }
+
+        void JustSummoned(Creature* summon)
+        {
+            summons.Summon(summon);
+            summon->setActive(true);
+
+            if (me->isInCombat())
+                summon->AI()->DoZoneInCombat();
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            events.Update(diff);
+
+            // while (uint32 eventId = events.ExecuteEvent())
+            // {
+            //     switch (eventId)
+            //     {
+            //     }
+            // }
+
+            DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new boss_elder_asaniAI(creature);
+    }
+};
+
+class boss_elder_regali : public CreatureScript
+{
+public:
+    boss_elder_regali() : CreatureScript("boss_elder_regali") { }
+
+    struct boss_elder_regaliAI : public BossAI
+    {
+        boss_elder_regaliAI(Creature* creature) : BossAI(creature, DATA_PROT_OF_ENDLESS_EVENT), summons(me)
+        {
+            instance = creature->GetInstanceScript();
+        }
+
+        InstanceScript* instance;
+        SummonList summons;
+        EventMap events;
+
+        void Reset()
+        {
+            events.Reset();
+            summons.DespawnAll();
+
+            _Reset();
+        }
+
+        void EnterCombat(Unit* /*who*/)
+        {
+            Talk(SAY_AGGRO);
+
+            // events.ScheduleEvent(EVENT_SUMMON_SERVITORS, 8000);
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
+
+            _EnterCombat();
+        }
+
+        void KilledUnit(Unit* victim)
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                Talk(SAY_SLAY);
+        }
+
+        void EnterEvadeMode()
+        {
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            // me->DespawnOrUnsummon(1000);
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+            _EnterEvadeMode();
+        }
+
+        void JustDied(Unit* /*killer*/)
+        {
+            Talk(SAY_DEATH);
+            summons.DespawnAll();
+
+            if (instance)
+                instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+            _JustDied();
+        }
+
+        void JustSummoned(Creature* summon)
+        {
+            summons.Summon(summon);
+            summon->setActive(true);
+
+            if (me->isInCombat())
+                summon->AI()->DoZoneInCombat();
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            events.Update(diff);
+
+            // while (uint32 eventId = events.ExecuteEvent())
+            // {
+            //     switch (eventId)
+            //     {
+            //     }
+            // }
+
+            DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new boss_elder_regaliAI(creature);
+    }
+};
+
+void AddSC_boss_protectors_of_the_endless()
+{
+    new boss_protector_kaolan();
+    new boss_elder_asani();
+    new boss_elder_regali();
 }

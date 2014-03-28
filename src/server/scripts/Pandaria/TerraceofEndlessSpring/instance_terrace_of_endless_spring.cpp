@@ -18,7 +18,7 @@
 class instance_terrace_of_endless_spring : public InstanceMapScript
 {
     public:
-        instance_terrace_of_endless_spring() : InstanceMapScript("instance_terrace_of_endless_spring", 36) { }
+        instance_terrace_of_endless_spring() : InstanceMapScript("instance_terrace_of_endless_spring", 996) { }
 
         struct instance_terrace_of_endless_spring_InstanceMapScript : public InstanceScript
         {
@@ -150,12 +150,10 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 {
                     switch(data)
                     {
-                        case DATA_PROTECTOR_KAOLAN_EVENT:
-						case DATA_ELDER_ASANJ_EVENT:
-						case DATA_ELDER_REGAIL_EVENT:
-						case DATA_TSULONG_EVENT:
-						case DATA_LEI_SHI_EVENT:
-						case DATA_SHA_OF_FEAR_EVENT:
+                        case DATA_PROT_OF_ENDLESS_EVENT:
+                        case DATA_TSULONG_EVENT:
+                        case DATA_LEI_SHI_EVENT:
+                        case DATA_SHA_OF_FEAR_EVENT:
                         break;
                     }
                 }
@@ -168,7 +166,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 OUT_SAVE_INST_DATA;
 
                 std::ostringstream saveStream;
-                saveStream << "D M " << GetBossSaveData();
+                saveStream << "T S " << GetBossSaveData();
 
                 OUT_SAVE_INST_DATA_COMPLETE;
                 return saveStream.str();
@@ -189,7 +187,7 @@ class instance_terrace_of_endless_spring : public InstanceMapScript
                 std::istringstream loadStream(in);
                 loadStream >> dataHead1 >> dataHead2;
 
-                if (dataHead1 == 'D' && dataHead2 == 'M')
+                if (dataHead1 == 'T' && dataHead2 == 'S')
                 {
                     for (uint32 i = 0; i < MAX_ENCOUNTER; ++i)
                     {

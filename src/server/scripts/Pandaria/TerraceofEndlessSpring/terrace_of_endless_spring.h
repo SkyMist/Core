@@ -10,17 +10,15 @@
 #include "Map.h"
 #include "Creature.h"
 
-#define MAX_ENCOUNTER 6
+#define MAX_ENCOUNTER 4
 
 enum Data
 {
     // Bosses
-    DATA_PROTECTOR_KAOLAN           = 0,
-    DATA_ELDER_ASANJ                = 1,
-    DATA_ELDER_REGAIL               = 2,
-    DATA_TSULONG                    = 3,
-    DATA_LEI_SHI                    = 4,
-    DATA_SHA_OF_FEAR                = 5
+    DATA_PROT_OF_ENDLESS_EVENT      = 0,
+    DATA_TSULONG_EVENT              = 1,
+    DATA_LEI_SHI_EVENT              = 2,
+    DATA_SHA_OF_FEAR_EVENT          = 3
 };
 
 enum Data64

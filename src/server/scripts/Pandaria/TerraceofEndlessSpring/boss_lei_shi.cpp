@@ -63,7 +63,7 @@ public:
 
     struct boss_lei_shiAI : public BossAI
     {
-        boss_lei_shiAI(Creature* creature) : BossAI(creature, DATA_LEI_SHI), summons(me)
+        boss_lei_shiAI(Creature* creature) : BossAI(creature, DATA_LEI_SHI_EVENT), summons(me)
         {
             instance = creature->GetInstanceScript();
         }
@@ -88,7 +88,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_LEI_SHI, IN_PROGRESS);
+                instance->SetData(DATA_LEI_SHI_EVENT, IN_PROGRESS);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
             }
 
@@ -110,7 +110,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_LEI_SHI, FAIL);
+                instance->SetData(DATA_LEI_SHI_EVENT, FAIL);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
             }
 
@@ -124,7 +124,7 @@ public:
 
             if (instance)
             {
-                instance->SetData(DATA_LEI_SHI, DONE);
+                instance->SetData(DATA_LEI_SHI_EVENT, DONE);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
             }
 
