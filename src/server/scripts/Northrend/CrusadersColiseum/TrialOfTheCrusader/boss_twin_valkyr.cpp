@@ -695,12 +695,10 @@ class spell_powering_up : public SpellScriptLoader
 
             bool Load() OVERRIDE
             {
-                spellId = sSpellMgr->GetSpellIdForDifficulty(SPELL_SURGE_OF_SPEED, GetCaster());
-                if (!sSpellMgr->GetSpellInfo(spellId))
+                if (!sSpellMgr->GetSpellInfo(SPELL_SURGE_OF_SPEED))
                     return false;
 
-                poweringUp = sSpellMgr->GetSpellIdForDifficulty(SPELL_POWERING_UP, GetCaster());
-                if (!sSpellMgr->GetSpellInfo(poweringUp))
+                if (!sSpellMgr->GetSpellInfo(SPELL_POWERING_UP))
                     return false;
 
                 return true;
@@ -751,9 +749,9 @@ class spell_valkyr_essences : public SpellScriptLoader
 
             bool Load() OVERRIDE
             {
-                spellId = sSpellMgr->GetSpellIdForDifficulty(SPELL_SURGE_OF_SPEED, GetCaster());
-                if (!sSpellMgr->GetSpellInfo(spellId))
+                if (!sSpellMgr->GetSpellInfo(SPELL_SURGE_OF_SPEED))
                     return false;
+
                 return true;
             }
 
@@ -763,14 +761,14 @@ class spell_valkyr_essences : public SpellScriptLoader
                 {
                     if (dmgInfo.GetSpellInfo())
                     {
-                        if (uint32 poweringUp = sSpellMgr->GetSpellIdForDifficulty(SPELL_POWERING_UP, owner))
+                        if (uint32 poweringUp = SPELL_POWERING_UP)
                         {
                             if (urand(0, 99) < 5)
                                 GetTarget()->CastSpell(GetTarget(), spellId, true);
 
                             // Twin Vortex part
-                            uint32 lightVortex = sSpellMgr->GetSpellIdForDifficulty(SPELL_LIGHT_VORTEX_DAMAGE, owner);
-                            uint32 darkVortex = sSpellMgr->GetSpellIdForDifficulty(SPELL_DARK_VORTEX_DAMAGE, owner);
+                            uint32 lightVortex = SPELL_LIGHT_VORTEX_DAMAGE;
+                            uint32 darkVortex = SPELL_DARK_VORTEX_DAMAGE;
                             int32 stacksCount = int32(dmgInfo.GetSpellInfo()->Effects[EFFECT_0].CalcValue()) * 0.001 - 1;
 
                             if (lightVortex && darkVortex && stacksCount)
@@ -793,8 +791,8 @@ class spell_valkyr_essences : public SpellScriptLoader
                             }
 
                             // Picking floating balls
-                            uint32 unleashedDark = sSpellMgr->GetSpellIdForDifficulty(SPELL_UNLEASHED_DARK, owner);
-                            uint32 unleashedLight = sSpellMgr->GetSpellIdForDifficulty(SPELL_UNLEASHED_LIGHT, owner);
+                            uint32 unleashedDark = SPELL_UNLEASHED_DARK;
+                            uint32 unleashedLight = SPELL_UNLEASHED_LIGHT;
 
                             if (unleashedDark && unleashedLight)
                             {

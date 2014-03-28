@@ -26769,9 +26769,6 @@ void Player::LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank)
     if (CurTalentPoints == 0)
         return;
 
-    if (talentRank >= MAX_PET_TALENT_RANK)
-        return;
-
     TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
 
     if (!talentInfo)

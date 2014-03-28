@@ -148,7 +148,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 case CHAT_MSG_PARTY:
                 case CHAT_MSG_RAID:
                 case CHAT_MSG_GUILD:
-                case CHAT_MSG_BATTLEGROUND:
+                case CHAT_MSG_INSTANCE_CHAT:
                 case CHAT_MSG_WHISPER:
                     if (sWorld->getBoolConfig(CONFIG_CHATLOG_ADDON))
                     {
@@ -245,7 +245,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         case CHAT_MSG_OFFICER:
         case CHAT_MSG_RAID:
         case CHAT_MSG_RAID_WARNING:
-        case CHAT_MSG_BATTLEGROUND:
+        case CHAT_MSG_INSTANCE_CHAT:
             textLength = recvData.ReadBits(8);
             msg = recvData.ReadString(textLength);
             break;
@@ -434,8 +434,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             ChatHandler::FillMessageData(&data, this, CHAT_MSG_RAID_WARNING, lang, "", 0, msg.c_str(), NULL);
             group->BroadcastPacket(&data, false);
         } break;
-        case CHAT_MSG_BATTLEGROUND:
-        case CHAT_MSG_BATTLEGROUND_LEADER:
+        case CHAT_MSG_INSTANCE_CHAT:
+        case CHAT_MSG_INSTANCE_CHAT_LEADER:
         {
             // battleground raid is always in Player->GetGroup(), never in GetOriginalGroup()
             Group* group = GetPlayer()->GetGroup();
@@ -443,7 +443,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 return;
 
             if (group->IsLeader(GetPlayer()->GetGUID()))
-                type = CHAT_MSG_BATTLEGROUND_LEADER;
+                type = CHAT_MSG_INSTANCE_CHAT_LEADER;
 
             sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, group);
 
@@ -582,7 +582,7 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
             break;
         }
         case CHAT_MSG_GUILD:
-        case CHAT_MSG_BATTLEGROUND:
+        case CHAT_MSG_INSTANCE_CHAT:
         {
             uint32 msgLen = recvData.ReadBits(9);
             uint32 prefixLen = recvData.ReadBits(5);
@@ -610,7 +610,7 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
 
     switch (type)
     {
-        case CHAT_MSG_BATTLEGROUND:
+        case CHAT_MSG_INSTANCE_CHAT:
         {
             Group* group = sender->GetGroup();
             if (!group || !group->isBGGroup())

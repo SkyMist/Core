@@ -350,10 +350,10 @@ public:
     uint32 SpellLevel;
     SpellDurationEntry const* DurationEntry;
     uint32 PowerType;
-    uint32 ManaCost;
-    uint32 ManaCostPerlevel;
-    uint32 ManaPerSecond;
-    float ManaCostPercentage;
+    uint32 powerCost;
+    uint32 powerCostPerlevel;
+    uint32 powerCostPerSecond;
+    float  powerCostPercentage;
     uint32 RuneCostID;
     SpellRangeEntry const* RangeEntry;
     float  Speed;
@@ -368,8 +368,8 @@ public:
     uint32 SpellVisual[2];
     uint32 SpellIconID;
     uint32 ActiveIconID;
-    char* SpellName;
-    char* Rank;
+    char*  SpellName;
+    char*  Rank;
     uint32 MaxTargetLevel;
     uint32 MaxAffectedTargets;
     uint32 SpellFamilyName;
