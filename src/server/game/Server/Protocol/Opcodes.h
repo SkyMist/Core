@@ -249,9 +249,9 @@ enum Opcodes
    CMSG_GUILD_BANK_BUY_TAB                                  = 0x0,
    CMSG_GUILD_BANK_DEPOSIT_MONEY                            = 0x0,
    CMSG_GUILD_BANK_LOG_QUERY                                = 0x0,
-   CMSG_GUILD_BANK_MONEY_WITHDRAWN_QUERY                    = 0x0,
+   CMSG_GUILD_BANK_MONEY_WITHDRAWN_QUERY                    = 0x03FC, // 5.4.7 18019
    CMSG_GUILD_BANK_NOTE                                     = 0x0,
-   CMSG_GUILD_BANK_QUERY_TAB                                = 0x0,
+   CMSG_GUILD_BANK_QUERY_TAB                                = 0x07DC, // 5.4.7 18019
    CMSG_GUILD_BANK_QUERY_TEXT                               = 0x0,
    CMSG_GUILD_BANK_SWAP_ITEMS                               = 0x0,
    CMSG_GUILD_BANK_UPDATE_TAB                               = 0x0,
@@ -273,7 +273,7 @@ enum Opcodes
    CMSG_GUILD_PROMOTE                                       = 0x0,
    CMSG_GUILD_QUERY                                         = 0x0,
    CMSG_GUILD_QUERY_NEWS                                    = 0x0,
-   CMSG_GUILD_QUERY_RANKS                                   = 0x0,
+   CMSG_GUILD_QUERY_RANKS                                   = 0x1BBC, // 5.4.7 18019
    CMSG_GUILD_REMOVE                                        = 0x0,
    CMSG_GUILD_REPLACE_GUILD_MASTER                          = 0x0,
    CMSG_GUILD_REQUEST_CHALLENGE_UPDATE                      = 0x0,
@@ -294,7 +294,7 @@ enum Opcodes
    CMSG_ITEM_REFUND                                         = 0x0,
    CMSG_ITEM_REFUND_INFO                                    = 0x0,
    CMSG_ITEM_TEXT_QUERY                                     = 0x0,
-   CMSG_JOIN_CHANNEL                                        = 0x0,
+   CMSG_JOIN_CHANNEL                                        = 0x1D20, // 5.4.7 18019
    CMSG_KEEP_ALIVE                                          = 0x0,
    CMSG_LEARN_PREVIEW_TALENTS                               = 0x0,
    CMSG_LEARN_PREVIEW_TALENTS_PET                           = 0x0,
@@ -771,7 +771,7 @@ enum Opcodes
    SMSG_CHALLANGES_INFO                                     = 0x0,
    SMSG_CHANNEL_LIST                                        = 0x0,
    SMSG_CHANNEL_MEMBER_COUNT                                = 0x0,
-   SMSG_CHANNEL_NOTIFY                                      = 0x0,
+   SMSG_CHANNEL_NOTIFY                                      = 0x11C5, // 5.4.7 18019
    SMSG_CHARACTER_LOGIN_FAILED                              = 0x0,
    SMSG_CHAR_CREATE                                         = 0x1469, // 5.4.7 18019
    SMSG_CHAR_CUSTOMIZE                                      = 0x0,
@@ -1181,7 +1181,7 @@ enum Opcodes
    SMSG_PVP_LOG_DATA                                        = 0x0,
    SMSG_PVP_OPTIONS_ENABLED                                 = 0x0,
    SMSG_QUERY_QUESTS_COMPLETED_RESPONSE                     = 0x0,
-   SMSG_QUERY_TIME_RESPONSE                                 = 0x0C30, // 5.4.7 18019
+   SMSG_QUERY_TIME_RESPONSE                                 = 0x0E2A, // 5.4.7 18019
    SMSG_QUESTGIVER_OFFER_REWARD                             = 0x0,
    SMSG_QUESTGIVER_QUEST_COMPLETE                           = 0x0,
    SMSG_QUESTGIVER_QUEST_DETAILS                            = 0x0,
@@ -1264,6 +1264,7 @@ enum Opcodes
    SMSG_SET_PROFICIENCY                                     = 0x1E3B, // 5.4.7 18019
    SMSG_SET_PROJECTILE_POSITION                             = 0x0,
    SMSG_SET_RAID_DIFFICULTY                                 = 0x16A6, // 5.4.7 18019
+   SMSG_SET_TIMEZONE_INFORMATION                            = 0x0C2B, // 5.4.7 18019
    SMSG_SHOP_BUY                                            = 0x0,
    SMSG_SHOP_BUY_ERROR                                      = 0x0,
    SMSG_SHOP_ITEM                                           = 0x0,
