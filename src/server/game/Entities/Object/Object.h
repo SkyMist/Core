@@ -265,6 +265,10 @@ class Object
         bool HasFlag64(uint16 index, uint64 flag) const;
         void ApplyModFlag64(uint16 index, uint64 flag, bool apply);
 
+        // MOP Dynamic Fields system.
+        void SetDynamicUInt32Value(uint32 tab, uint16 index, uint32 value);
+        uint32 GetDynamicUInt32Value(uint32 tab, uint16 index) const;
+
         // Values / Fields update.
         void ClearUpdateMask(bool remove);
         virtual void BuildUpdate(UpdateDataMapType&) { }
@@ -329,6 +333,9 @@ class Object
         uint16 m_valuesCount;
         uint16 _fieldNotifyFlags;
         bool m_objectUpdated;
+
+        std::vector<uint32*> m_dynamicTab;
+        std::vector<bool*> m_dynamicChange;
 
     private:
         // Add / Update / Remove.

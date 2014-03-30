@@ -919,28 +919,28 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     bool IsSessionTimeAlertEnabled = false;
     data.Initialize(SMSG_FEATURE_SYSTEM_STATUS);
     data << uint8(2);                                       // Complain System Status
-    data << uint32(1);                                      // NumSoRRemaining
-    data << uint32(1);                                      // Is lua function LoadURL enabled
-    data << uint32(2);                                      // unk dword10
-    data << uint32(0);                                      // unk dword1C
-    data.WriteBit(0);                                       // GMItemRestorationButtonEnabled
-    data.WriteBit(IsSessionTimeAlertEnabled);               // IsSessionTimeAlertEnabled
-    data.WriteBit(0);                                       // IsInGameStoreEnabled
-    data.WriteBit(0);                                       // CanSendSoRRequest
-    data.WriteBit(IsGMQuickTicketSystemEnabled);            // GMQuickTicketSystemEnabled
-    data.WriteBit(0);                                       // byte21
+    data << uint32(0);                                      // NumSoRRemaining
+    data << uint32(0);                                      // Is lua function LoadURL enabled
+    data << uint32(1);                                      // unk dword10
+    data << uint32(14);                                     // unk dword1C
+    data.WriteBit(1);                                       // GMItemRestorationButtonEnabled (Item restoration button)
+    data.WriteBit(IsSessionTimeAlertEnabled);               // IsSessionTimeAlertEnabled (parental controls)
+    data.WriteBit(1);                                       // IsInGameStoreEnabled (show ingame shop icon)
+    data.WriteBit(0);                                       // CanSendSoRRequest (Recruit a Friend button)
+    data.WriteBit(IsGMQuickTicketSystemEnabled);            // GMQuickTicketSystemEnabled (feedback system - bug, suggestion and report systems)
+    data.WriteBit(1);                                       // byte21
     data.WriteBit(0);                                       // IsVoiceChatEnabled
-    data.WriteBit(0);                                       // IsInGameStoreAPIAvailable
-    data.WriteBit(0);                                       // CanSendSoRByText
-    data.WriteBit(0);                                       // IsInGameStoreDisabledByParentalControl
+    data.WriteBit(1);                                       // IsInGameStoreAPIAvailable (ingame shop status 0 - "The Shop is temporarily unavailable.")
+    data.WriteBit(0);                                       // CanSendSoRByText (Scroll of Resurrection button)
+    data.WriteBit(0);                                       // IsInGameStoreDisabledByParentalControl (1 - "Feature has been disabled by Parental Controls.")
     data.FlushBits();
 
     if (IsGMQuickTicketSystemEnabled)
     {
-        data << uint32(1);
+        data << uint32(60000);
         data << uint32(0);
+        data << uint32(1);
         data << uint32(10);
-        data << uint32(60);
     }
 
     if (IsSessionTimeAlertEnabled)
@@ -1013,6 +1013,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         pCurrChar->SetRank(0);
         pCurrChar->SetGuildLevel(0);
     }
+
+    SendTimezoneInformation();
 
     data.Initialize(SMSG_LEARNED_DANCE_MOVES, 4+4);
     data << uint64(0);

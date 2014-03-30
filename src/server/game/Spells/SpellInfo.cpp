@@ -914,7 +914,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, SpellEffectEntry const** effe
     Rank = spellEntry->Rank;
     SchoolMask = spellMisc ? spellMisc->SchoolMask : 0;
     RuneCostID = spellEntry->runeCostID;
-    SpellDifficultyId = spellEntry->SpellDifficultyId;
+    SpellDifficultyId = spellMisc ? spellMisc->DifficultyMode : 0;
     SpellScalingId = spellEntry->SpellScalingId;
     SpellAuraOptionsId = spellEntry->SpellAuraOptionsId;
     SpellAuraRestrictionsId = spellEntry->SpellAuraRestrictionsId;
@@ -1007,10 +1007,10 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, SpellEffectEntry const** effe
 
     // SpellPowerEntry
     SpellPowerEntry const* _power = GetSpellPower();
-    ManaCost = _power ? _power->manaCost : 0;
-    ManaCostPerlevel = _power ? _power->manaCostPerlevel : 0;
-    ManaCostPercentage = _power ? _power->ManaCostPercentageFloat : 0;
-    ManaPerSecond = _power ? _power->manaPerSecond : 0;
+    powerCost = _power ? _power->powerCost : 0;
+    powerCostPerlevel = _power ? _power->powerCostPerlevel : 0;
+    powerCostPercentage = _power ? _power->powerCostPercentage : 0;
+    powerCostPerSecond = _power ? _power->powerCostPerSecond : 0;
     PowerType = _power ? _power->powerType : 0;
 
     // SpellReagentsEntry
@@ -1821,10 +1821,10 @@ SpellCastResult SpellInfo::CheckTarget(Unit const* caster, WorldObject const* ta
             return SPELL_FAILED_TARGET_AURASTATE;
     }
 
-    if (TargetAuraSpell && !unitTarget->HasAura(sSpellMgr->GetSpellIdForDifficulty(TargetAuraSpell, caster)))
+    if (TargetAuraSpell && !unitTarget->HasAura(TargetAuraSpell))
         return SPELL_FAILED_TARGET_AURASTATE;
 
-    if (ExcludeTargetAuraSpell && unitTarget->HasAura(sSpellMgr->GetSpellIdForDifficulty(ExcludeTargetAuraSpell, caster)))
+    if (ExcludeTargetAuraSpell && unitTarget->HasAura(ExcludeTargetAuraSpell))
         return SPELL_FAILED_TARGET_AURASTATE;
 
     if (unitTarget->HasAuraType(SPELL_AURA_PREVENT_RESURRECTION))
@@ -2369,31 +2369,31 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
         return 0;
     }
 
-    // Base powerCost
-    int32 powerCost = ManaCost;
+    // Base PowerCost
+    int32 PowerCost = powerCost;
     // PCT cost from total amount
-    if (ManaCostPercentage)
+    if (powerCostPercentage)
     {
         switch (PowerType)
         {
             // health as power used
             case POWER_HEALTH:
-                powerCost += int32(CalculatePct(caster->GetCreateHealth(), ManaCostPercentage));
+                PowerCost += int32(CalculatePct(caster->GetCreateHealth(), powerCostPercentage));
                 break;
             case POWER_MANA:
-                powerCost += int32(CalculatePct(caster->GetCreateMana(), ManaCostPercentage));
+                PowerCost += int32(CalculatePct(caster->GetCreateMana(), powerCostPercentage));
                 break;
             case POWER_RAGE:
             case POWER_FOCUS:
             case POWER_ENERGY:
-                powerCost += int32(CalculatePct(caster->GetMaxPower(Powers(PowerType)), ManaCostPercentage));
+                PowerCost += int32(CalculatePct(caster->GetMaxPower(Powers(PowerType)), powerCostPercentage));
                 break;
             case POWER_RUNES:
             case POWER_RUNIC_POWER:
-                TC_LOG_DEBUG("spells", "CalculateManaCost: Not implemented yet!");
+                TC_LOG_DEBUG("spells", "CalculatePowerCost: Not implemented yet!");
                 break;
             default:
-                TC_LOG_ERROR("spells", "CalculateManaCost: Unknown power type '%d' in spell %d", PowerType, Id);
+                TC_LOG_ERROR("spells", "CalculatePowerCost: Unknown power type '%d' in spell %d", PowerType, Id);
                 return 0;
         }
     }
@@ -2406,7 +2406,7 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
             continue;
         if (!((*i)->GetMiscValueB() & (1 << PowerType)))
             continue;
-        powerCost += (*i)->GetAmount();
+        PowerCost += (*i)->GetAmount();
     }
 
     // Shiv - costs 20 + weaponSpeed*10 energy (apply only to non-triggered spell with energy cost)
@@ -2426,12 +2426,12 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
             speed = caster->GetAttackTime(slot);
         }
 
-        powerCost += speed / 100;
+        PowerCost += speed / 100;
     }
 
     // Apply cost mod by spell
     if (Player* modOwner = caster->GetSpellModOwner())
-        modOwner->ApplySpellMod(Id, SPELLMOD_COST, powerCost);
+        modOwner->ApplySpellMod(Id, SPELLMOD_COST, PowerCost);
 
     if (!caster->IsControlledByPlayer())
     {
@@ -2440,7 +2440,7 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
             GtNPCManaCostScalerEntry const* spellScaler = sGtNPCManaCostScalerStore.LookupEntry(SpellLevel - 1);
             GtNPCManaCostScalerEntry const* casterScaler = sGtNPCManaCostScalerStore.LookupEntry(caster->getLevel() - 1);
             if (spellScaler && casterScaler)
-                powerCost *= casterScaler->ratio / spellScaler->ratio;
+                PowerCost *= casterScaler->ratio / spellScaler->ratio;
         }
     }
 
@@ -2452,11 +2452,11 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
             continue;
         if (!((*i)->GetMiscValueB() & (1 << PowerType)))
             continue;
-        powerCost += CalculatePct(powerCost, (*i)->GetAmount());
+        PowerCost += CalculatePct(PowerCost, (*i)->GetAmount());
     }
-    if (powerCost < 0)
-        powerCost = 0;
-    return powerCost;
+    if (PowerCost < 0)
+        PowerCost = 0;
+    return PowerCost;
 }
 
 bool SpellInfo::IsRanked() const

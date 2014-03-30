@@ -259,6 +259,14 @@ Item::Item()
     m_refundRecipient = 0;
     m_paidMoney = 0;
     m_paidExtendedCost = 0;
+
+    m_dynamicTab.resize(ITEM_DYNAMIC_END);
+    m_dynamicChange.resize(ITEM_DYNAMIC_END);
+    for (uint32 i = 0; i < ITEM_DYNAMIC_END; i++)
+    {
+        m_dynamicTab[i] = new uint32[32];
+        m_dynamicChange[i] = new bool[32];
+    }
 }
 
 bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
@@ -1089,6 +1097,83 @@ void Item::BuildUpdate(UpdateDataMapType& data_map)
     if (Player* owner = GetOwner())
         BuildFieldsUpdate(owner, data_map);
     ClearUpdateMask(false);
+}
+
+void Item::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
+{
+    if (!target)
+        return;
+
+    ByteBuffer fieldBuffer;
+    UpdateMask updateMask;
+    updateMask.SetCount(m_valuesCount);
+
+    uint32* flags = NULL;
+    uint32 visibleFlag = GetUpdateFieldData(target, flags);
+
+    for (uint16 index = 0; index < m_valuesCount; ++index)
+    {
+        if ((_fieldNotifyFlags & flags[index] ||
+             ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag))))
+        {
+            updateMask.SetBit(index);
+            fieldBuffer << m_uint32Values[index];
+        }
+    }
+
+    *data << uint8(updateMask.GetBlockCount());
+    updateMask.AppendToPacket(data);
+    data->append(fieldBuffer);
+
+    // Prevent usage of bags with dynamic field system.
+    if (IsBag())
+    {
+        *data << uint8(0);
+        return;
+    }
+
+    // Dynamic Fields (MoP new Dynamic Field system).
+
+    uint32 dynamicTabMask = 0;
+    std::vector<uint32> dynamicFieldsMask;
+    dynamicFieldsMask.resize(m_dynamicTab.size());
+
+    for (size_t i = 0; i < m_dynamicTab.size(); i++)
+        dynamicFieldsMask[i] = 0;
+
+    for (size_t i = 0; i < m_dynamicChange.size(); i++)
+    {
+        for (uint16 index = 0; index < 32; index++)
+        {
+            if (m_dynamicChange[i][index])
+            {
+                dynamicTabMask |= 1 << i; // Check if the mask changed.
+                dynamicFieldsMask[i] |= 1 << index; // Get the new mask to send.
+            }
+        }
+    }
+
+    *data << uint8(bool(dynamicTabMask)); // Set the mask for dynamic updates to true.
+
+    if (dynamicTabMask)
+    {
+        *data << uint32(dynamicTabMask);
+
+        for (size_t i = 0; i < m_dynamicTab.size(); i++)
+        {
+            if (dynamicTabMask & (1 << i))
+            {
+                *data << uint8(1); // The mask has changed, so update the values.
+                *data << uint32(dynamicFieldsMask[i]); // Send the new mask.
+
+                for (uint16 index = 0; index < 32; index++)
+                {
+                    if (dynamicFieldsMask[i] & (1 << index))
+                        *data << uint32(m_dynamicTab[i][index]);
+                }
+            }
+        }
+    }
 }
 
 void Item::SaveRefundDataToDB()

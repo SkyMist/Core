@@ -502,6 +502,14 @@ void WorldSession::LogoutPlayer(bool save)
             _player->SetPendingBind(0, 0);
         }
 
+        if (_player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+        {
+            _player->Dismount();
+            _player->RemoveAurasByType(SPELL_AURA_MOUNTED);
+            _player->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
+            _player->RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
+        }
+
         //drop a flag if player is carrying it
         if (Battleground* bg = _player->GetBattleground())
             bg->EventPlayerLoggedOut(_player);
@@ -1078,6 +1086,26 @@ void WorldSession::HandleAddonRegisteredPrefixesOpcode(WorldPacket& recvPacket)
     }
 
     _filterAddonMessages = true;
+}
+
+void WorldSession::SendTimezoneInformation()
+{
+    char timezoneString[256];
+    // TIME_ZONE_INFORMATION timeZoneInfo;
+    // GetTimeZoneInformation(&timeZoneInfo);
+    // wcstombs(timezoneString, timeZoneInfo.StandardName, sizeof(timezoneString));
+
+    sprintf(timezoneString, "Etc/UTC"); // The method above cannot be used, because of non-english OS translations, so we send const data (possible strings are hardcoded in the client because of the same reason)
+
+    WorldPacket data(SMSG_SET_TIMEZONE_INFORMATION, 2 + strlen(timezoneString) * 2);
+    data.WriteBits(strlen(timezoneString), 7);
+    data.WriteBits(strlen(timezoneString), 7);
+
+    data.FlushBits();
+
+    data.WriteString(timezoneString);
+    data.WriteString(timezoneString);
+    SendPacket(&data);
 }
 
 void WorldSession::SetPlayer(Player* player)

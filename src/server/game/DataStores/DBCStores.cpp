@@ -60,6 +60,7 @@ static AreaFlagByMapID sAreaFlagByMapID;                    // for instances wit
 static WMOAreaInfoByTripple sWMOAreaInfoByTripple;
 
 DBCStorage <AchievementEntry> sAchievementStore(Achievementfmt);
+DBCStorage <AchievementCategoryEntry> sAchievementCategoryStore(AchievementCategoryfmt);
 DBCStorage <AchievementCriteriaEntry> sAchievementCriteriaStore(AchievementCriteriafmt);
 DBCStorage <AreaTriggerEntry> sAreaTriggerStore(AreaTriggerEntryfmt);
 DBCStorage <ArmorLocationEntry> sArmorLocationStore(ArmorLocationfmt);
@@ -214,7 +215,6 @@ DBCStorage <SpellCastTimesEntry> sSpellCastTimesStore(SpellCastTimefmt);
 DBCStorage <SpellCategoriesEntry> sSpellCategoriesStore(SpellCategoriesEntryfmt);
 DBCStorage <SpellCategoryEntry> sSpellCategoryStore(SpellCategoryfmt);
 DBCStorage <SpellEffectEntry> sSpellEffectStore(SpellEffectEntryfmt);
-DBCStorage <SpellDifficultyEntry> sSpellDifficultyStore(SpellDifficultyfmt);
 DBCStorage <SpellDurationEntry> sSpellDurationStore(SpellDurationfmt);
 DBCStorage <SpellFocusObjectEntry> sSpellFocusObjectStore(SpellFocusObjectfmt);
 DBCStorage <SpellRadiusEntry> sSpellRadiusStore(SpellRadiusfmt);
@@ -347,6 +347,7 @@ void LoadDBCStores(const std::string& dataPath)
     }
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sAchievementStore,            dbcPath, "Achievement.dbc"/*, &CustomAchievementfmt, &CustomAchievementIndex*/);//15595
+    LoadDBC(availableDbcLocales, bad_dbc_files, sAchievementCategoryStore,    dbcPath, "Achievement_Category.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sAchievementCriteriaStore,    dbcPath, "Achievement_Criteria.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sAreaTriggerStore,            dbcPath, "AreaTrigger.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sAreaGroupStore,              dbcPath, "AreaGroup.dbc");//15595
@@ -544,7 +545,6 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellCastingRequirementsStore, dbcPath,"SpellCastingRequirements.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellEffectStore,            dbcPath,"SpellEffect.dbc"/*, &CustomSpellEffectEntryfmt, &CustomSpellEffectEntryIndex*/);//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellCastTimesStore,         dbcPath, "SpellCastTimes.dbc");//15595
-    // LoadDBC(availableDbcLocales, bad_dbc_files, sSpellDifficultyStore,        dbcPath, "SpellDifficulty.dbc", &CustomSpellDifficultyfmt, &CustomSpellDifficultyIndex);//15595 -- DBC gone, wtf blizzard ...
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellDurationStore,          dbcPath, "SpellDuration.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellFocusObjectStore,       dbcPath, "SpellFocusObject.dbc");//15595
     // DISABLED - needs more research
@@ -662,34 +662,6 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sTalentStore,                 dbcPath, "Talent.dbc");//15595
 
-    // Create Spelldifficulty searcher
-    for (uint32 i = 0; i < sSpellDifficultyStore.GetNumRows(); ++i)
-    {
-        SpellDifficultyEntry const* spellDiff = sSpellDifficultyStore.LookupEntry(i);
-        if (!spellDiff)
-            continue;
-
-        SpellDifficultyEntry newEntry;
-        memset(newEntry.SpellID, 0, 4*sizeof(uint32));
-        for (uint32 x = 0; x < MAX_DIFFICULTY; ++x)
-        {
-            if (spellDiff->SpellID[x] <= 0 || !sSpellStore.LookupEntry(spellDiff->SpellID[x]))
-            {
-                if (spellDiff->SpellID[x] > 0)//don't show error if spell is <= 0, not all modes have spells and there are unknown negative values
-                    TC_LOG_ERROR("sql.sql", "spelldifficulty_dbc: spell %i at field id:%u at spellid%i does not exist in SpellStore (spell.dbc), loaded as 0", spellDiff->SpellID[x], spellDiff->ID, x);
-                newEntry.SpellID[x] = 0;//spell was <= 0 or invalid, set to 0
-            }
-            else
-                newEntry.SpellID[x] = spellDiff->SpellID[x];
-        }
-
-        if (newEntry.SpellID[0] <= 0 || newEntry.SpellID[1] <= 0)//id0-1 must be always set!
-            continue;
-
-        for (uint32 x = 0; x < MAX_DIFFICULTY; ++x)
-            sSpellMgr->SetSpellDifficultyId(uint32(newEntry.SpellID[x]), spellDiff->ID);
-    }
-
     // create talent spells set
     for (unsigned int i = 0; i < sTalentStore.GetNumRows(); ++i)
     {
@@ -697,7 +669,7 @@ void LoadDBCStores(const std::string& dataPath)
         if (!talentInfo)
             continue;
 
-        for (int j = 0; j < MAX_TALENT_RANK; j++)
+        for (int j = 0; j < 1; j++)
             if (talentInfo->SpellId)
                 sTalentSpellPosMap[talentInfo->SpellId] = TalentSpellPos(i, j);
     }

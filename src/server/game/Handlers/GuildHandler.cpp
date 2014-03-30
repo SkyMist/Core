@@ -277,22 +277,22 @@ void WorldSession::HandleGuildQueryRanksOpcode(WorldPacket& recvPacket)
     ObjectGuid guildGuid;
 
     guildGuid[2] = recvPacket.ReadBit();
-    guildGuid[3] = recvPacket.ReadBit();
-    guildGuid[0] = recvPacket.ReadBit();
-    guildGuid[6] = recvPacket.ReadBit();
-    guildGuid[4] = recvPacket.ReadBit();
     guildGuid[7] = recvPacket.ReadBit();
+    guildGuid[0] = recvPacket.ReadBit();
     guildGuid[5] = recvPacket.ReadBit();
+    guildGuid[6] = recvPacket.ReadBit();
+    guildGuid[3] = recvPacket.ReadBit();
+    guildGuid[4] = recvPacket.ReadBit();
     guildGuid[1] = recvPacket.ReadBit();
 
+    recvPacket.ReadByteSeq(guildGuid[6]);
+    recvPacket.ReadByteSeq(guildGuid[0]);
+    recvPacket.ReadByteSeq(guildGuid[1]);
+    recvPacket.ReadByteSeq(guildGuid[7]);
+    recvPacket.ReadByteSeq(guildGuid[2]);
     recvPacket.ReadByteSeq(guildGuid[3]);
     recvPacket.ReadByteSeq(guildGuid[4]);
     recvPacket.ReadByteSeq(guildGuid[5]);
-    recvPacket.ReadByteSeq(guildGuid[7]);
-    recvPacket.ReadByteSeq(guildGuid[1]);
-    recvPacket.ReadByteSeq(guildGuid[0]);
-    recvPacket.ReadByteSeq(guildGuid[6]);
-    recvPacket.ReadByteSeq(guildGuid[2]);
 
     TC_LOG_DEBUG("guild", "CMSG_GUILD_QUERY_RANKS [%s]: Guild: %u",
         GetPlayerInfo().c_str(), GUID_LOPART(guildGuid));
@@ -436,11 +436,32 @@ void WorldSession::HandleGuildBankerActivate(WorldPacket& recvPacket)
 // Called when opening guild bank tab only (first one)
 void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvPacket)
 {
-    uint64 guid;
+    ObjectGuid guid;
+    bool SendAllSlots;
     uint8 tabId;
-    bool sendAllSlots;
 
-    recvPacket >> guid >> tabId >> sendAllSlots;
+    recvPacket >> tabId;
+
+    guid[4] = recvPacket.ReadBit();
+    guid[0] = recvPacket.ReadBit();
+    guid[1] = recvPacket.ReadBit();
+    guid[7] = recvPacket.ReadBit();
+
+    recvPacket >> SendAllSlots;
+
+    guid[3] = recvPacket.ReadBit();
+    guid[6] = recvPacket.ReadBit();
+    guid[2] = recvPacket.ReadBit();
+    guid[5] = recvPacket.ReadBit();
+
+    recvPacket.ReadByteSeq(guid[0]);
+    recvPacket.ReadByteSeq(guid[6]);
+    recvPacket.ReadByteSeq(guid[1]);
+    recvPacket.ReadByteSeq(guid[7]);
+    recvPacket.ReadByteSeq(guid[5]);
+    recvPacket.ReadByteSeq(guid[2]);
+    recvPacket.ReadByteSeq(guid[3]);
+    recvPacket.ReadByteSeq(guid[4]);
 
     TC_LOG_DEBUG("guild", "CMSG_GUILD_BANK_QUERY_TAB [%s]: Go: [" UI64FMTD "], TabId: %u, AllSlots: %u"
         , GetPlayerInfo().c_str(), guid, tabId, sendAllSlots);

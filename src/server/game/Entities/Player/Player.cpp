@@ -684,6 +684,14 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
 
     m_valuesCount = PLAYER_END;
 
+    m_dynamicTab.resize(PLAYER_DYNAMIC_END);
+    m_dynamicChange.resize(PLAYER_DYNAMIC_END);
+    for (uint32 i = 0; i < PLAYER_DYNAMIC_END; i++)
+    {
+        m_dynamicTab[i] = new uint32[32];
+        m_dynamicChange[i] = new bool[32];
+    }
+
     m_session = session;
 
     m_divider = 0;
@@ -24185,8 +24193,8 @@ void Player::SendInitialPacketsBeforeAddToMap()
     data.Initialize(SMSG_LOGIN_SETTIMESPEED, 20);
     data.AppendPackedTime(sWorld->GetGameTime());
     data << float(0.01666667f);                             // game speed
-    data << uint32(1);
-    data << uint32(1);
+    data << uint32(0);
+    data << uint32(0);
     data.AppendPackedTime(sWorld->GetGameTime());
     GetSession()->SendPacket(&data);
 
@@ -26767,9 +26775,6 @@ void Player::LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank)
     uint32 CurTalentPoints = pet->GetFreeTalentPoints();
 
     if (CurTalentPoints == 0)
-        return;
-
-    if (talentRank >= MAX_PET_TALENT_RANK)
         return;
 
     TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
