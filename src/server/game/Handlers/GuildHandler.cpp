@@ -464,7 +464,7 @@ void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvPacket)
     recvPacket.ReadByteSeq(guid[4]);
 
     TC_LOG_DEBUG("guild", "CMSG_GUILD_BANK_QUERY_TAB [%s]: Go: [" UI64FMTD "], TabId: %u, AllSlots: %u"
-        , GetPlayerInfo().c_str(), guid, tabId, sendAllSlots);
+        , GetPlayerInfo().c_str(), guid, tabId, SendAllSlots);
 
     if (GetPlayer()->GetGameObjectIfCanInteractWith(guid, GAMEOBJECT_TYPE_GUILD_BANK))
         if (Guild* guild = GetPlayer()->GetGuild())

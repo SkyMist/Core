@@ -684,13 +684,7 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
 
     m_valuesCount = PLAYER_END;
 
-    m_dynamicTab.resize(PLAYER_DYNAMIC_END);
-    m_dynamicChange.resize(PLAYER_DYNAMIC_END);
-    for (uint32 i = 0; i < PLAYER_DYNAMIC_END; i++)
-    {
-        m_dynamicTab[i] = new uint32[32];
-        m_dynamicChange[i] = new bool[32];
-    }
+    InitializeDynamicFields();
 
     m_session = session;
 
@@ -18460,6 +18454,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadEquipmentSets(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS));
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
+
+     // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
 
     return true;
 }
