@@ -370,57 +370,85 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
 
     // Update Dynamic Flags.
     ByteBuffer DynamicFieldsData;
-
-    uint32 changedValuesCount = 0;
+    uint8 changedFieldsCount = 0;
 
     // We get all object's dynamic fields.
     for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
     {
-        // Storage for changed offset id's and changed values id's.
-        std::list<uint32> changedOffsets;
-        std::list<uint32> changedFieldValues;
+        // Increased changed fields count if the values changed.
+        for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
+        {
+            if (itr->second.values[offsetNum].valueUpdated == 1)
+            {
+                changedFieldsCount++;
+                break;
+            }
+        }
+
+        // Storage for changed offsets.
+        std::vector<bool> _updateFieldState;
+        _updateFieldState.resize(itr->second.offsets);
 
         // We check all offsets of the field and store the changed values and their count and id's.
         for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
+            if (itr->second.values[offsetNum].valueUpdated == 1)
+                _updateFieldState[offsetNum] = true;
+
+        std::size_t FieldMaskSize = (_updateFieldState.size() / 32);
+        if (_updateFieldState.size() % 32)
+            FieldMaskSize += 1;
+
+        std::vector<DWORD> FieldMask;
+        FieldMask.resize(FieldMaskSize);
+        std::vector<DWORD>::iterator FieldMaskItr = FieldMask.begin();
+
+        //construct the proper mask
+        for (std::vector<bool>::iterator itr = _updateFieldState.begin(); itr != _updateFieldState.end();++itr)
         {
-		    if (itr->second.values[offsetNum].valueUpdated == 1)
-		    {
-                changedOffsets.push_back(offsetNum);
-                changedFieldValues.push_back(itr->second.values[offsetNum].valueNumber);
-                changedValuesCount++;
-		    }
+            uint32 Mask = 0;
+
+            for (uint8 pos = 0; pos < 32; ++pos)
+            {
+                if (itr != _updateFieldState.end())
+                    Mask |= pos << *itr++;
+            }
+
+            FieldMask.insert(FieldMaskItr++, Mask);
         }
 
         // Check if the default size of the field was changed by adding more values then the default field size takes.
         bool m_fieldSizeChanged = itr->second.offsets > GetDynamicFieldDefaultSize(itr->second.entry) ? true : false;
 
-        // Client only handles 32 values updated at once for these fields.
-        bool m_overClientTreshold = changedOffsets.size() > MAX_DYNAMIC_FLAG_VALUES_CHANGE_SIZE ? true : false;
-
         DynamicFieldsData.WriteBit(m_fieldSizeChanged);
-        DynamicFieldsData.WriteBits(changedOffsets.size(), 7);
+        DynamicFieldsData.WriteBits(FieldMask.size(), 7);
         DynamicFieldsData.FlushBits();
 
         // Inform the client that the size of the field changed and send the new one.
         if (m_fieldSizeChanged)
-        {
-		    DynamicFieldsData << uint16(itr->second.offsets); // Send new total size.
-        }
+            DynamicFieldsData << uint16(itr->second.offsets); // Send new total size.
 
         ByteBuffer FieldsValue;
 
-        for (std::list<uint32>::iterator changedOffsetNum = changedOffsets.begin(); changedOffsetNum != changedOffsets.end(); ++changedOffsetNum)
+        for (std::size_t i = 0; i < FieldMask.size(); ++i)
         {
-		    DynamicFieldsData << *changedOffsetNum;
+            DynamicFieldsData << uint32(FieldMask[i]);
 
-		    std::list<uint32>::iterator changedOffsetValue = std::find(changedFieldValues.begin(), changedFieldValues.end(), *changedOffsetNum);
-		    FieldsValue << *changedOffsetValue;
-        }
+            for (uint8 bitpos = 0; bitpos < 32; ++bitpos)
+            {
+                bool IsSet = (FieldMask[i] >> bitpos) & 0x00000001;
+
+                if (IsSet)
+                {
+                    uint32 ValueOffset = i * 32 + bitpos;
+                    FieldsValue << ValueOffset;
+                }
+            }
+         }
 
         DynamicFieldsData.append(FieldsValue);
-	}
+    }
 
-    *data << uint8(changedValuesCount);
+    *data << uint8(changedFieldsCount);
     data->append(DynamicFieldsData);*/
 }
 
