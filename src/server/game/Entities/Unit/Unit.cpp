@@ -15841,5 +15841,5 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     data->append(fieldBuffer);
 
     // Dynamic Fields (MoP new Dynamic Field system).
-    *data << uint8(0);
+    *data << uint8(0); // Not used till we fix the update properly.
 }
