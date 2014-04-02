@@ -1673,8 +1673,8 @@ void WorldSession::HandleRealmSplitOpcode(WorldPacket& recvData)
     recvData >> unk;
 
     WorldPacket data(SMSG_REALM_SPLIT, 4+4+split_date.size()+1);
-    data << unk;
-    data << uint32(0x00000000);                             // realm split state
+    data << unk;                                            // StatePending
+    data << uint32(0x00000000);                             // ClientState
     // split states:
     // 0x0 realm normal
     // 0x1 realm split

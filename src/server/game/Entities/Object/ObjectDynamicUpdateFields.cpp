@@ -46,7 +46,7 @@
 
 /*** Object Dynamic Field Flags functions ***/
 
-void Object::SetDynamicFieldUInt32Value(uint32 index, uint16 offset, uint32 value)
+void Object::SetDynamicFieldUInt32Value(uint32 index, std::size_t offset, uint32 value)
 {
     ASSERT(m_dynamicfields.find(index) != m_dynamicfields.end() || PrintDynamicIndexError(index, true));
 
@@ -55,7 +55,7 @@ void Object::SetDynamicFieldUInt32Value(uint32 index, uint16 offset, uint32 valu
     if (itr->second.values[offset].valueNumber != value)
     {
         itr->second.values[offset].valueNumber = value;
-        itr->second.values[offset].valueUpdated = 1;
+        itr->second.values[offset].valueUpdated = true;
 
         if (m_inWorld && !m_objectUpdated)
         {
@@ -65,7 +65,7 @@ void Object::SetDynamicFieldUInt32Value(uint32 index, uint16 offset, uint32 valu
     }
 }
 
-uint32 Object::GetDynamicFieldUInt32Value(uint32 index, uint16 offset) const
+uint32 Object::GetDynamicFieldUInt32Value(uint32 index, std::size_t offset) const
 {
     ASSERT(m_dynamicfields.find(index) != m_dynamicfields.end() || PrintDynamicIndexError(index, false));
 
@@ -98,20 +98,22 @@ void Object::LoadDynamicFields()
 {
     for (uint32 fieldSize = 0; fieldSize < GetDynamicFieldEntryNumberCount(); fieldSize++)
     {
-        uint32 fieldEntry = GetDynamicFieldIndexFromEntryNumber(fieldSize);
+        uint32 Entry = GetDynamicFieldIndexFromEntryNumber(fieldSize);
 
-        DynamicField newDynamicField;
-        newDynamicField.entry = fieldEntry;
-        newDynamicField.offsets = GetDynamicFieldDefaultSize(fieldEntry);
-		newDynamicField.values.resize(newDynamicField.offsets);
+        DynamicField Field;
 
-        for (uint16 offsetNum = 0; offsetNum < newDynamicField.offsets; offsetNum++)
+        Field.entry = Entry;
+        Field.changed = false;
+
+        Field.values.resize(GetDynamicFieldDefaultSize(Entry));
+
+        for (std::size_t offsetNum = 0; offsetNum < Field.values.size(); offsetNum++)
         {
-            newDynamicField.values[offsetNum].valueNumber = 0;
-            newDynamicField.values[offsetNum].valueUpdated = 0;
+            Field.values[offsetNum].valueNumber = 0;
+            Field.values[offsetNum].valueUpdated = false;
         }
 
-        m_dynamicfields[fieldEntry] = newDynamicField;
+        m_dynamicfields[Entry] = Field;
     }
 }
 

@@ -1217,7 +1217,7 @@ enum Opcodes
    SMSG_RATED_BG_STATS                                      = 0x0,
    SMSG_READ_ITEM_FAILED                                    = 0x0,
    SMSG_READ_ITEM_OK                                        = 0x0,
-   SMSG_REALM_SPLIT                                         = 0x145A, // 5.4.7 18019
+   SMSG_REALM_SPLIT                                         = 0x0708, // 5.4.7 18019
    SMSG_REALM_NAME_QUERY_RESPONSE                           = 0x1652, // 5.4.7 18019
    SMSG_REAL_GROUP_UPDATE                                   = 0x0,
    SMSG_RECEIVED_MAIL                                       = 0x0,
