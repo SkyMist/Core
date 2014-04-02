@@ -368,87 +368,70 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
 
     /*// Dynamic Fields (MoP new Dynamic Field system).
 
-    // Update Dynamic Flags.
+    UpdateMask DynamicFieldsMask;
     ByteBuffer DynamicFieldsData;
-    uint8 changedFieldsCount = 0;
+
+    DynamicFieldsMask.SetCount(m_dynamicfields.size());
 
     // We get all object's dynamic fields.
-    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
+    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(), uint8 = index; itr != m_dynamicfields.end(); ++itr, ++index)
     {
-        // Increased changed fields count if the values changed.
-        for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
-        {
-            if (itr->second.values[offsetNum].valueUpdated == 1)
+        if(itr->second.changed)
+        {   
+            DynamicFieldsMask.SetBit(index);
+
+            bool SizeChanged = false;
+            std::vector<uint32> FieldMask;
+            std::vector<uint32>::iterator FieldMaskItr = FieldMask.begin();
+            std::size_t FieldMaskSize = itr->second.values.size() / 32;
+
+            if(itr->second.values.size() % 32 != 0)
+                FieldMaskSize += 1;
+
+            FieldMask.resize(FieldMaskSize);
+
+            //construct the proper mask
+            for(std::vector<DynamicFieldValues>::iterator jitr = itr->second.values.begin(); jitr != itr->second.values.end(); ++jitr)
             {
-                changedFieldsCount++;
-                break;
-            }
-        }
-
-        // Storage for changed offsets.
-        std::vector<bool> _updateFieldState;
-        _updateFieldState.resize(itr->second.offsets);
-
-        // We check all offsets of the field and store the changed values and their count and id's.
-        for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
-            if (itr->second.values[offsetNum].valueUpdated == 1)
-                _updateFieldState[offsetNum] = true;
-
-        std::size_t FieldMaskSize = (_updateFieldState.size() / 32);
-        if (_updateFieldState.size() % 32)
-            FieldMaskSize += 1;
-
-        std::vector<DWORD> FieldMask;
-        FieldMask.resize(FieldMaskSize);
-        std::vector<DWORD>::iterator FieldMaskItr = FieldMask.begin();
-
-        //construct the proper mask
-        for (std::vector<bool>::iterator itr = _updateFieldState.begin(); itr != _updateFieldState.end();++itr)
-        {
-            uint32 Mask = 0;
-
-            for (uint8 pos = 0; pos < 32; ++pos)
-            {
-                if (itr != _updateFieldState.end())
-                    Mask |= pos << *itr++;
-            }
-
-            FieldMask.insert(FieldMaskItr++, Mask);
-        }
-
-        // Check if the default size of the field was changed by adding more values then the default field size takes.
-        bool m_fieldSizeChanged = itr->second.offsets > GetDynamicFieldDefaultSize(itr->second.entry) ? true : false;
-
-        DynamicFieldsData.WriteBit(m_fieldSizeChanged);
-        DynamicFieldsData.WriteBits(FieldMask.size(), 7);
-        DynamicFieldsData.FlushBits();
-
-        // Inform the client that the size of the field changed and send the new one.
-        if (m_fieldSizeChanged)
-            DynamicFieldsData << uint16(itr->second.offsets); // Send new total size.
-
-        ByteBuffer FieldsValue;
-
-        for (std::size_t i = 0; i < FieldMask.size(); ++i)
-        {
-            DynamicFieldsData << uint32(FieldMask[i]);
-
-            for (uint8 bitpos = 0; bitpos < 32; ++bitpos)
-            {
-                bool IsSet = (FieldMask[i] >> bitpos) & 0x00000001;
-
-                if (IsSet)
+                uint32 Mask = 0;
+                for(uint8 pos = 0; pos < 32; ++pos)
                 {
-                    uint32 ValueOffset = i * 32 + bitpos;
-                    FieldsValue << ValueOffset;
+                    if(jitr != itr->second.values.end())
+                    {
+                        Mask |= pos << itr->changed;
+                        itr++;
+                    }
+                }
+                FieldMask.insert(FieldMaskItr++, Mask);
+            }
+
+            DynamicFieldsData.WriteBit(SizeChanged);
+            DynamicFieldsData.WriteBits(FieldMaskSize, 7);
+            DynamicFieldsData.FlushBits();
+
+            if(SizeChanged)
+            {
+                DynamicFieldsData << uint16(0);				//new size, unk value
+            }
+
+            for(std::size_t i = 0; i < FieldMask.size(); ++i)
+            {
+                DynamicFieldsData << FieldMask[i];
+
+                for(uint8 bitpos = 0; bitpos < 32; ++bitpos)
+                {
+                    if((FieldMask[i] >> bitpos) & 0x00000001)
+                    {
+                        uint32 ValueOffset = i*32 + bitpos;
+                        DynamicFieldsData << itr->second.values[ValueOffset].valueNumber;
+                    }
                 }
             }
-         }
-
-        DynamicFieldsData.append(FieldsValue);
+        }
     }
 
-    *data << uint8(changedFieldsCount);
+    *data << uint8(DynamicFieldsMask.GetBlockCount());
+    DynamicFieldsMask.AppendToPacket(data);
     data->append(DynamicFieldsData);*/
 }
 
@@ -459,8 +442,8 @@ void Object::ClearUpdateMask(bool remove)
     if (m_objectUpdated)
     {
         for (DynamicFieldsList::iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
-            for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
-                itr->second.values[offsetNum].valueUpdated = 0;
+            for (std::size_t offsetNum = 0; offsetNum < itr->second.values.size(); offsetNum++)
+                itr->second.values[offsetNum].valueUpdated = false;
 
         if (remove)
             sObjectAccessor->RemoveUpdateObject(this);

@@ -124,13 +124,13 @@ typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 struct DynamicFieldValues
 {
     uint32 valueNumber; // Values count.
-    uint8 valueUpdated; // Checks for updated values - set to 1 if value changed and wasn't updated, so it gets sent.
+    bool valueUpdated;  // Checks for updated values - set to true if value changed and wasn't updated, so it gets sent.
 };
 
 struct DynamicField
 {
-    uint32 entry; // Field entry.
-    uint16 offsets; // Number of Offsets.
+    uint32 entry;       // Field entry.
+    bool changed;       // wether the field changed, means that it gets sent in the update packet
 
     std::vector<DynamicFieldValues> values; // Number of values (correspons with offsets numbers).
 };
@@ -290,8 +290,8 @@ class Object
         uint32 GetDynamicFieldEntryNumberCount();
         uint32 GetDynamicFieldDefaultSize(uint32 index) const;
 
-        void SetDynamicFieldUInt32Value(uint32 index, uint16 offset, uint32 value);
-        uint32 GetDynamicFieldUInt32Value(uint32 index, uint16 offset) const;
+        void SetDynamicFieldUInt32Value(uint32 index, std::size_t offset, uint32 value);
+        uint32 GetDynamicFieldUInt32Value(uint32 index, std::size_t offset) const;
         bool PrintDynamicIndexError(uint32 index, bool set) const; // Prints an error if we use non-existing indexes or offsets.
 
         DynamicFieldsList  m_dynamicfields;                     // Dynamic Fields the object has.
