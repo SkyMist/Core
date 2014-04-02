@@ -121,6 +121,22 @@ class ZoneScript;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 
+struct DynamicFieldValues
+{
+    uint32 valueNumber; // Values count.
+    uint8 valueUpdated; // Checks for updated values - set to 1 if value changed and wasn't updated, so it gets sent.
+};
+
+struct DynamicField
+{
+    uint32 entry; // Field entry.
+    uint16 offsets; // Number of Offsets.
+
+    std::vector<DynamicFieldValues> values; // Number of values (correspons with offsets numbers).
+};
+
+typedef std::map<uint32, DynamicField> DynamicFieldsList;
+
 //! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
 //! Nuke this out when porting ObjectGuid from MaNGOS, but preserve the per-byte storage
 struct ObjectGuid
@@ -219,7 +235,7 @@ class Object
 
         virtual void DestroyForPlayer(Player* target, bool onDeath = false) const;
 
-        // Values and flags.
+        // Field Flags system.
         int32 GetInt32Value(uint16 index) const;
         uint32 GetUInt32Value(uint16 index) const;
         uint64 GetUInt64Value(uint16 index) const;
@@ -265,9 +281,20 @@ class Object
         bool HasFlag64(uint16 index, uint64 flag) const;
         void ApplyModFlag64(uint16 index, uint64 flag, bool apply);
 
-        // MOP Dynamic Fields system.
-        void SetDynamicUInt32Value(uint32 tab, uint16 index, uint32 value);
-        uint32 GetDynamicUInt32Value(uint32 tab, uint16 index) const;
+        // MOP Dynamic Field Flags system.
+        #define MAX_DYNAMIC_FLAG_VALUES_CHANGE_SIZE 32
+
+        void InitializeDynamicFields();
+        void LoadDynamicFields();
+        uint32 GetDynamicFieldIndexFromEntryNumber(uint32 entry);
+        uint32 GetDynamicFieldEntryNumberCount();
+        uint32 GetDynamicFieldDefaultSize(uint32 index) const;
+
+        void SetDynamicFieldUInt32Value(uint32 index, uint16 offset, uint32 value);
+        uint32 GetDynamicFieldUInt32Value(uint32 index, uint16 offset) const;
+        bool PrintDynamicIndexError(uint32 index, bool set) const; // Prints an error if we use non-existing indexes or offsets.
+
+        DynamicFieldsList  m_dynamicfields;                     // Dynamic Fields the object has.
 
         // Values / Fields update.
         void ClearUpdateMask(bool remove);
@@ -317,8 +344,10 @@ class Object
         std::string _ConcatFields(uint16 startIndex, uint16 size) const;
         void _LoadIntoDataField(std::string const& data, uint32 startOffset, uint32 count);
 
-        uint32 GetUpdateFieldData(Player const* target, uint32*& flags) const;
         virtual void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
+
+        // Normal Update Fields system.
+        uint32 GetUpdateFieldData(Player const* target, uint32*& flags) const;
 
         uint16 m_updateFlag;
 
@@ -333,9 +362,6 @@ class Object
         uint16 m_valuesCount;
         uint16 _fieldNotifyFlags;
         bool m_objectUpdated;
-
-        std::vector<uint32*> m_dynamicTab;
-        std::vector<bool*> m_dynamicChange;
 
     private:
         // Add / Update / Remove.

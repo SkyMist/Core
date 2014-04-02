@@ -127,26 +127,14 @@ Object::~Object()
 
     delete [] m_uint32Values;
     m_uint32Values = 0;
-
-    for (size_t i = 0; i < m_dynamicTab.size(); ++i)
-    {
-        delete [] m_dynamicTab[i];
-        delete [] m_dynamicChange[i];
-    }
 }
 
 void Object::_InitValues()
 {
     m_uint32Values = new uint32[m_valuesCount];
-    memset(m_uint32Values, 0, m_valuesCount*sizeof(uint32));
+    memset(m_uint32Values, 0, m_valuesCount * sizeof(uint32));
 
     _changesMask.SetCount(m_valuesCount);
-
-    for (size_t i = 0; i < m_dynamicTab.size(); ++i)
-    {
-        memset(m_dynamicTab[i], 0, 32 * sizeof(uint32));
-        memset(m_dynamicChange[i], 0, 32 * sizeof(bool));
-    }
 
     m_objectUpdated = false;
 }
@@ -345,44 +333,6 @@ void Object::DestroyForPlayer(Player* target, bool onDeath) const
     target->GetSession()->SendPacket(&data);
 }
 
-int32 Object::GetInt32Value(uint16 index) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    return m_int32Values[index];
-}
-
-uint32 Object::GetUInt32Value(uint16 index) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    return m_uint32Values[index];
-}
-
-uint64 Object::GetUInt64Value(uint16 index) const
-{
-    ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, false));
-    return *((uint64*)&(m_uint32Values[index]));
-}
-
-float Object::GetFloatValue(uint16 index) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    return m_floatValues[index];
-}
-
-uint8 Object::GetByteValue(uint16 index, uint8 offset) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    ASSERT(offset < 4);
-    return *(((uint8*)&m_uint32Values[index])+offset);
-}
-
-uint16 Object::GetUInt16Value(uint16 index, uint8 offset) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    ASSERT(offset < 2);
-    return *(((uint16*)&m_uint32Values[index])+offset);
-}
-
 void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const
 {
     if (!target)
@@ -390,12 +340,15 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
 
     ByteBuffer fieldBuffer;
     UpdateMask updateMask;
-    updateMask.SetCount(m_valuesCount);
+
+    uint32 valCount = m_valuesCount;
 
     uint32* flags = NULL;
     uint32 visibleFlag = GetUpdateFieldData(target, flags);
 
-    for (uint16 index = 0; index < m_valuesCount; ++index)
+    updateMask.SetCount(valCount);
+
+    for (uint16 index = 0; index < valCount; ++index)
     {
         if ((_fieldNotifyFlags & flags[index] ||
              ((updateType == UPDATETYPE_VALUES ? _changesMask.GetBit(index) : m_uint32Values[index]) && (flags[index] & visibleFlag))))
@@ -409,55 +362,66 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
 
-    // Prevent usage of stuff not having Dynamic Field system flags.
-    if (!isType(TYPEMASK_ITEM) && !isType(TYPEMASK_GAMEOBJECT) && !isType(TYPEMASK_UNIT) && !isType(TYPEMASK_PLAYER) || isType(TYPEMASK_CONTAINER))
+    // As this is a virtual function and Units / Players, Items and GameObjects use their own, 
+    // other object types don't need handling for the new Dynamic Fields system.
+    *data << uint8(0); // Not used till we fix the update properly.
+
+    /*// Dynamic Fields (MoP new Dynamic Field system).
+
+    // Update Dynamic Flags.
+    ByteBuffer DynamicFieldsData;
+
+    uint32 changedValuesCount = 0;
+
+    // We get all object's dynamic fields.
+    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
     {
-        *data << uint8(0);
-        return;
-    }
+        // Storage for changed offset id's and changed values id's.
+        std::list<uint32> changedOffsets;
+        std::list<uint32> changedFieldValues;
 
-    // Dynamic Fields (MoP new Dynamic Field system).
-
-    uint32 dynamicTabMask = 0;
-    std::vector<uint32> dynamicFieldsMask;
-    dynamicFieldsMask.resize(m_dynamicTab.size());
-
-    for (size_t i = 0; i < m_dynamicTab.size(); i++)
-        dynamicFieldsMask[i] = 0;
-
-    for (size_t i = 0; i < m_dynamicChange.size(); i++)
-    {
-        for (uint16 index = 0; index < 32; index++)
+        // We check all offsets of the field and store the changed values and their count and id's.
+        for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
         {
-            if (m_dynamicChange[i][index])
-            {
-                dynamicTabMask |= 1 << i; // Check if the mask changed.
-                dynamicFieldsMask[i] |= 1 << index; // Get the new mask to send.
-            }
+		    if (itr->second.values[offsetNum].valueUpdated == 1)
+		    {
+                changedOffsets.push_back(offsetNum);
+                changedFieldValues.push_back(itr->second.values[offsetNum].valueNumber);
+                changedValuesCount++;
+		    }
         }
-    }
 
-    *data << uint8(bool(dynamicTabMask)); // Set the mask for dynamic updates to true.
+        // Check if the default size of the field was changed by adding more values then the default field size takes.
+        bool m_fieldSizeChanged = itr->second.offsets > GetDynamicFieldDefaultSize(itr->second.entry) ? true : false;
 
-    if (dynamicTabMask)
-    {
-        *data << uint32(dynamicTabMask);
+        // Client only handles 32 values updated at once for these fields.
+        bool m_overClientTreshold = changedOffsets.size() > MAX_DYNAMIC_FLAG_VALUES_CHANGE_SIZE ? true : false;
 
-        for (size_t i = 0; i < m_dynamicTab.size(); i++)
+        DynamicFieldsData.WriteBit(m_fieldSizeChanged);
+        DynamicFieldsData.WriteBits(changedOffsets.size(), 7);
+        DynamicFieldsData.FlushBits();
+
+        // Inform the client that the size of the field changed and send the new one.
+        if (m_fieldSizeChanged)
         {
-            if (dynamicTabMask & (1 << i))
-            {
-                *data << uint8(1); // The mask has changed, so update the values.
-                *data << uint32(dynamicFieldsMask[i]); // Send the new mask.
-
-                for (uint16 index = 0; index < 32; index++)
-                {
-                    if (dynamicFieldsMask[i] & (1 << index))
-                        *data << uint32(m_dynamicTab[i][index]);
-                }
-            }
+		    DynamicFieldsData << uint16(itr->second.offsets); // Send new total size.
         }
-    }
+
+        ByteBuffer FieldsValue;
+
+        for (std::list<uint32>::iterator changedOffsetNum = changedOffsets.begin(); changedOffsetNum != changedOffsets.end(); ++changedOffsetNum)
+        {
+		    DynamicFieldsData << *changedOffsetNum;
+
+		    std::list<uint32>::iterator changedOffsetValue = std::find(changedFieldValues.begin(), changedFieldValues.end(), *changedOffsetNum);
+		    FieldsValue << *changedOffsetValue;
+        }
+
+        DynamicFieldsData.append(FieldsValue);
+	}
+
+    *data << uint8(changedValuesCount);
+    data->append(DynamicFieldsData);*/
 }
 
 void Object::ClearUpdateMask(bool remove)
@@ -466,8 +430,9 @@ void Object::ClearUpdateMask(bool remove)
 
     if (m_objectUpdated)
     {
-        for (size_t i = 0; i < m_dynamicTab.size(); i++)
-            memset(m_dynamicChange[i], 0, 32 * sizeof(bool));
+        for (DynamicFieldsList::iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
+            for (uint16 offsetNum = 0; offsetNum < itr->second.offsets; offsetNum++)
+                itr->second.values[offsetNum].valueUpdated = 0;
 
         if (remove)
             sObjectAccessor->RemoveUpdateObject(this);
@@ -560,416 +525,6 @@ void Object::_LoadIntoDataField(std::string const& data, uint32 startOffset, uin
         m_uint32Values[startOffset + index] = atol(tokens[index]);
         _changesMask.SetBit(startOffset + index);
     }
-}
-
-void Object::SetInt32Value(uint16 index, int32 value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (m_int32Values[index] != value)
-    {
-        m_int32Values[index] = value;
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::SetUInt32Value(uint16 index, uint32 value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (m_uint32Values[index] != value)
-    {
-        m_uint32Values[index] = value;
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::UpdateUInt32Value(uint16 index, uint32 value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    m_uint32Values[index] = value;
-    _changesMask.SetBit(index);
-}
-
-void Object::SetUInt64Value(uint16 index, uint64 value)
-{
-    ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
-    if (*((uint64*)&(m_uint32Values[index])) != value)
-    {
-        m_uint32Values[index] = PAIR64_LOPART(value);
-        m_uint32Values[index + 1] = PAIR64_HIPART(value);
-        _changesMask.SetBit(index);
-        _changesMask.SetBit(index + 1);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-bool Object::AddUInt64Value(uint16 index, uint64 value)
-{
-    ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
-    if (value && !*((uint64*)&(m_uint32Values[index])))
-    {
-        m_uint32Values[index] = PAIR64_LOPART(value);
-        m_uint32Values[index + 1] = PAIR64_HIPART(value);
-        _changesMask.SetBit(index);
-        _changesMask.SetBit(index + 1);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-bool Object::RemoveUInt64Value(uint16 index, uint64 value)
-{
-    ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
-    if (value && *((uint64*)&(m_uint32Values[index])) == value)
-    {
-        m_uint32Values[index] = 0;
-        m_uint32Values[index + 1] = 0;
-        _changesMask.SetBit(index);
-        _changesMask.SetBit(index + 1);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-void Object::SetFloatValue(uint16 index, float value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (m_floatValues[index] != value)
-    {
-        m_floatValues[index] = value;
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::SetByteValue(uint16 index, uint8 offset, uint8 value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (offset > 4)
-    {
-        TC_LOG_ERROR("misc", "Object::SetByteValue: wrong offset %u", offset);
-        return;
-    }
-
-    if (uint8(m_uint32Values[index] >> (offset * 8)) != value)
-    {
-        m_uint32Values[index] &= ~uint32(uint32(0xFF) << (offset * 8));
-        m_uint32Values[index] |= uint32(uint32(value) << (offset * 8));
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::SetUInt16Value(uint16 index, uint8 offset, uint16 value)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (offset > 2)
-    {
-        TC_LOG_ERROR("misc", "Object::SetUInt16Value: wrong offset %u", offset);
-        return;
-    }
-
-    if (uint16(m_uint32Values[index] >> (offset * 16)) != value)
-    {
-        m_uint32Values[index] &= ~uint32(uint32(0xFFFF) << (offset * 16));
-        m_uint32Values[index] |= uint32(uint32(value) << (offset * 16));
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::SetStatFloatValue(uint16 index, float value)
-{
-    if (value < 0)
-        value = 0.0f;
-
-    SetFloatValue(index, value);
-}
-
-void Object::SetStatInt32Value(uint16 index, int32 value)
-{
-    if (value < 0)
-        value = 0;
-
-    SetUInt32Value(index, uint32(value));
-}
-
-void Object::ApplyModUInt32Value(uint16 index, int32 val, bool apply)
-{
-    int32 cur = GetUInt32Value(index);
-    cur += (apply ? val : -val);
-    if (cur < 0)
-        cur = 0;
-    SetUInt32Value(index, cur);
-}
-
-void Object::ApplyModInt32Value(uint16 index, int32 val, bool apply)
-{
-    int32 cur = GetInt32Value(index);
-    cur += (apply ? val : -val);
-    SetInt32Value(index, cur);
-}
-
-void Object::ApplyModSignedFloatValue(uint16 index, float  val, bool apply)
-{
-    float cur = GetFloatValue(index);
-    cur += (apply ? val : -val);
-    SetFloatValue(index, cur);
-}
-
-void Object::ApplyPercentModFloatValue(uint16 index, float val, bool apply)
-{
-    float value = GetFloatValue(index);
-    ApplyPercentModFloatVar(value, val, apply);
-    SetFloatValue(index, value);
-}
-
-void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
-{
-    float cur = GetFloatValue(index);
-    cur += (apply ? val : -val);
-    if (cur < 0)
-        cur = 0;
-    SetFloatValue(index, cur);
-}
-
-void Object::SetFlag(uint16 index, uint32 newFlag)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-    uint32 oldval = m_uint32Values[index];
-    uint32 newval = oldval | newFlag;
-
-    if (oldval != newval)
-    {
-        m_uint32Values[index] = newval;
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::RemoveFlag(uint16 index, uint32 oldFlag)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-    ASSERT(m_uint32Values);
-
-    uint32 oldval = m_uint32Values[index];
-    uint32 newval = oldval & ~oldFlag;
-
-    if (oldval != newval)
-    {
-        m_uint32Values[index] = newval;
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::ToggleFlag(uint16 index, uint32 flag)
-{
-    if (HasFlag(index, flag))
-        RemoveFlag(index, flag);
-    else
-        SetFlag(index, flag);
-}
-
-bool Object::HasFlag(uint16 index, uint32 flag) const
-{
-    if (index >= m_valuesCount && !PrintIndexError(index, false))
-        return false;
-
-    return (m_uint32Values[index] & flag) != 0;
-}
-
-void Object::ApplyModFlag(uint16 index, uint32 flag, bool apply)
-{
-    if (apply) SetFlag(index, flag); else RemoveFlag(index, flag);
-}
-
-void Object::SetByteFlag(uint16 index, uint8 offset, uint8 newFlag)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (offset > 4)
-    {
-        TC_LOG_ERROR("misc", "Object::SetByteFlag: wrong offset %u", offset);
-        return;
-    }
-
-    if (!(uint8(m_uint32Values[index] >> (offset * 8)) & newFlag))
-    {
-        m_uint32Values[index] |= uint32(uint32(newFlag) << (offset * 8));
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::RemoveByteFlag(uint16 index, uint8 offset, uint8 oldFlag)
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
-
-    if (offset > 4)
-    {
-        TC_LOG_ERROR("misc", "Object::RemoveByteFlag: wrong offset %u", offset);
-        return;
-    }
-
-    if (uint8(m_uint32Values[index] >> (offset * 8)) & oldFlag)
-    {
-        m_uint32Values[index] &= ~uint32(uint32(oldFlag) << (offset * 8));
-        _changesMask.SetBit(index);
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-void Object::ToggleByteFlag(uint16 index, uint8 offset, uint8 flag)
-{
-    if (HasByteFlag(index, offset, flag))
-        RemoveByteFlag(index, offset, flag);
-    else
-        SetByteFlag(index, offset, flag);
-}
-
-bool Object::HasByteFlag(uint16 index, uint8 offset, uint8 flag) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    ASSERT(offset < 4);
-    return (((uint8*)&m_uint32Values[index])[offset] & flag) != 0;
-}
-
-void Object::SetFlag64(uint16 index, uint64 newFlag)
-{
-    uint64 oldval = GetUInt64Value(index);
-    uint64 newval = oldval | newFlag;
-    SetUInt64Value(index, newval);
-}
-
-void Object::RemoveFlag64(uint16 index, uint64 oldFlag)
-{
-    uint64 oldval = GetUInt64Value(index);
-    uint64 newval = oldval & ~oldFlag;
-    SetUInt64Value(index, newval);
-}
-
-void Object::ToggleFlag64(uint16 index, uint64 flag)
-{
-    if (HasFlag64(index, flag))
-        RemoveFlag64(index, flag);
-    else
-        SetFlag64(index, flag);
-}
-
-bool Object::HasFlag64(uint16 index, uint64 flag) const
-{
-    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
-    return (GetUInt64Value(index) & flag) != 0;
-}
-
-void Object::ApplyModFlag64(uint16 index, uint64 flag, bool apply)
-{
-    if (apply) SetFlag64(index, flag); else RemoveFlag64(index, flag);
-}
-
-void Object::SetDynamicUInt32Value(uint32 tab, uint16 index, uint32 value)
-{
-    ASSERT(tab < m_dynamicTab.size() || index < 32);
-
-    if (m_dynamicTab[tab][index] != value)
-    {
-        m_dynamicTab[tab][index] = value;
-        m_dynamicChange[tab][index] = true;
-
-        if (m_inWorld && !m_objectUpdated)
-        {
-            sObjectAccessor->AddUpdateObject(this);
-            m_objectUpdated = true;
-        }
-    }
-}
-
-uint32 Object::GetDynamicUInt32Value(uint32 tab, uint16 index) const
-{
-    ASSERT (tab < m_dynamicTab.size() || index < 32);
-    return m_dynamicTab[tab][index];
-}
-
-bool Object::PrintIndexError(uint32 index, bool set) const
-{
-    TC_LOG_ERROR("misc", "Attempt %s non-existed value field: %u (count: %u) for object typeid: %u type mask: %u", (set ? "set value to" : "get value from"), index, m_valuesCount, GetTypeId(), m_objectType);
-
-    // ASSERT must fail after function call
-    return false;
 }
 
 WorldObject::WorldObject(bool isWorldObject): WorldLocation(),
