@@ -18,8 +18,8 @@
  */
 
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -30,7 +30,7 @@
 #include "CreatureAIImpl.h"
 #include "CreatureGroups.h"
 #include "Creature.h"
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "Formulas.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -47,7 +47,7 @@
 #include "PetAI.h"
 #include "Pet.h"
 #include "Player.h"
-#include "PlayerMovementMgr.h"
+#include "PlayerMovement.h"
 #include "QuestDef.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"

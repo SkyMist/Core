@@ -21,14 +21,14 @@
 #define __UNIT_H
 
 #include "DBCStructure.h"
-#include "UnitMovementMgr.h"
+#include "UnitMovement.h"
 #include "EventProcessor.h"
 #include "FollowerReference.h"
 #include "FollowerRefManager.h"
 #include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
-#include "ObjectMovementMgr.h"
+#include "ObjectMovement.h"
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
@@ -363,12 +363,6 @@ class Vehicle;
 class VehicleJoinEvent;
 class TransportBase;
 class SpellCastTargets;
-
-namespace Movement
-{
-    class ExtraMovementStatusElement;
-    class MoveSpline;
-}
 
 typedef std::list<Unit*> UnitList;
 typedef std::list< std::pair<Aura*, uint8> > DispelChargesList;
@@ -2093,7 +2087,7 @@ class Unit : public WorldObject
 
     // =================================================================================== //
 
-        /*** Movement functions - Handled by UnitMovementMgr or locally. ***/
+        /*** Movement functions - Handled by UnitMovement or locally. ***/
     public:
         float GetSpeed(UnitMoveType mtype) const;
         float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
@@ -2171,7 +2165,7 @@ class Unit : public WorldObject
 
         TimeTrackerSmall m_movesplineTimer;
 
-        /*** Positions functions - Handled by UnitMovementMgr or locally. ***/
+        /*** Positions functions - Handled by UnitMovement or locally. ***/
     public:
         void SendTeleportPacket(Position& pos);
 

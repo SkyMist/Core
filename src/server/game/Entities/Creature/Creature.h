@@ -20,11 +20,11 @@
 #ifndef TRINITYCORE_CREATURE_H
 #define TRINITYCORE_CREATURE_H
 
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "Common.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "UpdateMask.h"
 #include "ItemPrototype.h"
 #include "LootMgr.h"
@@ -440,8 +440,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         uint32 GetDBTableGUIDLow() const { return m_DBTableGuid; }
 
-        void Update(uint32 time);                         // overwrited Unit::Update
-        void GetRespawnPosition(float &x, float &y, float &z, float* ori = NULL, float* dist =NULL) const;
+        void Update(uint32 time);                         // Overwrite Unit::Update
 
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
         uint32 GetCorpseDelay() const { return m_corpseDelay; }
@@ -492,8 +491,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool HasSpell(uint32 spellID) const;
 
         bool UpdateEntry(uint32 entry, uint32 team=ALLIANCE, const CreatureData* data=NULL);
-
-        void UpdateMovementFlags();
 
         bool UpdateStats(Stats stat);
         bool UpdateAllStats();
@@ -587,9 +584,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction = true) const;
         bool _IsTargetAcceptable(const Unit* target) const;
 
-        MovementGeneratorType GetDefaultMovementType() const { return m_defaultMovementType; }
-        void SetDefaultMovementType(MovementGeneratorType mgt) { m_defaultMovementType = mgt; }
-
         void RemoveCorpse(bool setSpawnTime = true);
 
         void DespawnOrUnsummon(uint32 msTimeToDespawn = 0);
@@ -620,19 +614,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }
         virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }
         virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const;
-
-        void SetPosition(float x, float y, float z, float o);
-        void SetPosition(const Position &pos) { SetPosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation()); }
-
-        void SetHomePosition(float x, float y, float z, float o) { m_homePosition.Relocate(x, y, z, o); }
-        void SetHomePosition(const Position &pos) { m_homePosition.Relocate(pos); }
-        void GetHomePosition(float &x, float &y, float &z, float &ori) const { m_homePosition.GetPosition(x, y, z, ori); }
-        Position GetHomePosition() const { return m_homePosition; }
-
-        void SetTransportHomePosition(float x, float y, float z, float o) { m_transportHomePosition.Relocate(x, y, z, o); }
-        void SetTransportHomePosition(const Position &pos) { m_transportHomePosition.Relocate(pos); }
-        void GetTransportHomePosition(float &x, float &y, float &z, float &ori) { m_transportHomePosition.GetPosition(x, y, z, ori); }
-        Position GetTransportHomePosition() { return m_transportHomePosition; }
 
         uint32 GetWaypointPath(){return m_path_id;}
         void LoadPath(uint32 pathid) { m_path_id = pathid; }
@@ -681,7 +662,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         uint64 m_lootRecipient;
         uint32 m_lootRecipientGroup;
 
-        /// Timers
+        // Timers
         time_t m_corpseRemoveTime;                          // (msecs)timer for death or corpse disappearance
         time_t m_respawnTime;                               // (secs) time of next respawn
         uint32 m_respawnDelay;                              // (secs) delay between corpse disappearance and respawning
@@ -692,7 +673,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void RegenerateMana();
         void RegenerateHealth();
         void Regenerate(Powers power);
-        MovementGeneratorType m_defaultMovementType;
+
         uint32 m_DBTableGuid;                               ///< For new or temporary creatures is 0 for saved it is lowguid
         uint8 m_equipmentId;
         int8 m_originalEquipmentId; // can be -1
@@ -705,9 +686,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
 
-        Position m_homePosition;
-        Position m_transportHomePosition;
-
         bool DisableReputationGain;
 
         CreatureTemplate const* m_creatureInfo;                 // Can differ from sObjectMgr->GetCreatureTemplate(GetEntry()) in difficulty mode > 0
@@ -718,18 +696,52 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         bool IsInvisibleDueToDespawn() const;
         bool CanAlwaysSee(WorldObject const* obj) const;
+
     private:
         void ForcedDespawn(uint32 timeMSToDespawn = 0);
 
-        //WaypointMovementGenerator vars
+        // WaypointMovementGenerator vars
         uint32 m_waypointID;
         uint32 m_path_id;
 
-        //Formation var
+        // Formations var
         CreatureGroup* m_formation;
         bool TriggerJustRespawned;
 
         Spell const* _focusSpell;   ///> Locks the target during spell cast for proper facing
+
+        /*** Movement functions - Handled by CreatureMovement or locally. ***/
+    public:
+        // Movement information.
+        void UpdateMovementFlags();
+
+        MovementGeneratorType GetDefaultMovementType() const { return m_defaultMovementType; }
+        void SetDefaultMovementType(MovementGeneratorType mgt) { m_defaultMovementType = mgt; }
+
+    protected:
+        MovementGeneratorType m_defaultMovementType;
+
+        /*** Positions functions - Handled by CreatureMovement or locally. ***/
+    public:
+        // Positions information.
+        void SetPosition(float x, float y, float z, float o);
+        void SetPosition(const Position &pos) { SetPosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation()); }
+
+        void SetHomePosition(float x, float y, float z, float o) { m_homePosition.Relocate(x, y, z, o); }
+        void SetHomePosition(const Position &pos) { m_homePosition.Relocate(pos); }
+        void GetHomePosition(float &x, float &y, float &z, float &ori) const { m_homePosition.GetPosition(x, y, z, ori); }
+        Position GetHomePosition() const { return m_homePosition; }
+
+        void GetRespawnPosition(float &x, float &y, float &z, float* ori = NULL, float* dist = NULL) const;
+
+        void SetTransportHomePosition(float x, float y, float z, float o) { m_transportHomePosition.Relocate(x, y, z, o); }
+        void SetTransportHomePosition(const Position &pos) { m_transportHomePosition.Relocate(pos); }
+        void GetTransportHomePosition(float &x, float &y, float &z, float &ori) { m_transportHomePosition.GetPosition(x, y, z, ori); }
+        Position GetTransportHomePosition() { return m_transportHomePosition; }
+
+    protected:
+        Position m_homePosition;
+        Position m_transportHomePosition;
 };
 
 class AssistDelayEvent : public BasicEvent

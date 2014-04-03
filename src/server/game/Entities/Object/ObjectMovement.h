@@ -4,8 +4,8 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#ifndef _OBJECT_MOVEMENT_MGR_H
-#define _OBJECT_MOVEMENT_MGR_H
+#ifndef _OBJECT_MOVEMENT_H
+#define _OBJECT_MOVEMENT_H
 
 #include "Common.h"
 #include "UpdateMask.h"

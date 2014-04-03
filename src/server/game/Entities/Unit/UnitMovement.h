@@ -4,8 +4,8 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#ifndef _UNIT_MOVEMENT_MGR_H
-#define _UNIT_MOVEMENT_MGR_H
+#ifndef _UNIT_MOVEMENT_H
+#define _UNIT_MOVEMENT_H
 
 #include "DBCStructure.h"
 #include "EventProcessor.h"
@@ -14,10 +14,16 @@
 #include "HostileRefManager.h"
 #include "MotionMaster.h"
 #include "Object.h"
-#include "ObjectMovementMgr.h"
+#include "ObjectMovement.h"
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
+
+namespace Movement
+{
+    class ExtraMovementStatusElement;
+    class MoveSpline;
+}
 
 enum UnitMoveType
 {

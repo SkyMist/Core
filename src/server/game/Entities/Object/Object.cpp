@@ -18,7 +18,7 @@
  */
 
 #include "Object.h"
-#include "ObjectMovementMgr.h"
+#include "ObjectMovement.h"
 #include "Common.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
@@ -26,9 +26,9 @@
 #include "Log.h"
 #include "World.h"
 #include "Creature.h"
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "Player.h"
-#include "PlayerMovementMgr.h"
+#include "PlayerMovement.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "UpdateData.h"
@@ -52,7 +52,7 @@
 #include "MovementPacketBuilder.h"
 #include "DynamicTree.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
+#include "UnitMovement.h"
 #include "Group.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -148,14 +148,6 @@ void Object::_Create(uint32 guidlow, uint32 entry, HighGuid guidhigh)
     SetUInt16Value(OBJECT_FIELD_TYPE, 0, m_objectType);
     m_PackGUID.clear();
     m_PackGUID.appendPackGUID(GetGUID());
-}
-
-std::string Object::_ConcatFields(uint16 startIndex, uint16 size) const
-{
-    std::ostringstream ss;
-    for (uint16 index = 0; index < size; ++index)
-        ss << GetUInt32Value(index + startIndex) << ' ';
-    return ss.str();
 }
 
 void Object::AddToWorld()
@@ -519,23 +511,6 @@ uint32 Object::GetUpdateFieldData(Player const* target, uint32*& flags) const
     }
 
     return visibleFlag;
-}
-
-void Object::_LoadIntoDataField(std::string const& data, uint32 startOffset, uint32 count)
-{
-    if (data.empty())
-        return;
-
-    Tokenizer tokens(data, ' ', count);
-
-    if (tokens.size() != count)
-        return;
-
-    for (uint32 index = 0; index < count; ++index)
-    {
-        m_uint32Values[startOffset + index] = atol(tokens[index]);
-        _changesMask.SetBit(startOffset + index);
-    }
 }
 
 WorldObject::WorldObject(bool isWorldObject): WorldLocation(),

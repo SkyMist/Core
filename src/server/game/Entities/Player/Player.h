@@ -24,15 +24,15 @@
 #include "GroupReference.h"
 #include "MapReference.h"
 
-#include "PlayerMovementMgr.h"
+#include "PlayerMovement.h"
 #include "Item.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
 
@@ -865,15 +865,6 @@ enum RestType
     REST_TYPE_IN_CITY   = 2
 };
 
-enum TeleportToOptions
-{
-    TELE_TO_GM_MODE             = 0x01,
-    TELE_TO_NOT_LEAVE_TRANSPORT = 0x02,
-    TELE_TO_NOT_LEAVE_COMBAT    = 0x04,
-    TELE_TO_NOT_UNSUMMON_PET    = 0x08,
-    TELE_TO_SPELL               = 0x10
-};
-
 /// Type of environmental damages
 enum EnviromentalDamage
 {
@@ -1285,14 +1276,7 @@ class Player : public Unit, public GridObject<Player>
             SetFloatValue(UNIT_FIELD_COMBAT_REACH, scale * DEFAULT_COMBAT_REACH);
         }
 
-        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool raidDifficultyChange = false);
-        bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
-        bool TeleportToBGEntryPoint();
-
         void PlayHoverAnimation();
-
-        void SetSummonPoint(uint32 mapid, float x, float y, float z);
-        void SummonIfPossible(bool agree);
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
@@ -1363,18 +1347,11 @@ class Player : public Unit, public GridObject<Player>
 
         void setDeathState(DeathState s);                   // overwrite Unit::setDeathState
 
-        void InnEnter(time_t time, uint32 mapid, float x, float y, float z);
-
         float GetRestBonus() const { return m_rest_bonus; }
         void SetRestBonus(float rest_bonus_new);
 
         RestType GetRestType() const { return rest_type; }
         void SetRestType(RestType n_r_type) { rest_type = n_r_type; }
-
-        uint32 GetInnPosMapId() const { return inn_pos_mapid; }
-        float GetInnPosX() const { return inn_pos_x; }
-        float GetInnPosY() const { return inn_pos_y; }
-        float GetInnPosZ() const { return inn_pos_z; }
 
         time_t GetTimeInnEnter() const { return time_inn_enter; }
         void UpdateInnerTime (time_t time) { time_inn_enter = time; }
@@ -1705,7 +1682,6 @@ class Player : public Unit, public GridObject<Player>
         static float  GetFloatValueFromArray(Tokenizer const& data, uint16 index);
         static uint32 GetZoneIdFromDB(uint64 guid);
         static uint32 GetLevelFromDB(uint64 guid);
-        static bool   LoadPositionFromDB(uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight, uint64 guid);
 
         static bool IsValidGender(uint8 Gender) { return Gender <= GENDER_FEMALE; }
         static bool IsValidClass(uint8 Class) { return (1 << (Class - 1)) & CLASSMASK_ALL_PLAYABLE; }
@@ -1722,7 +1698,6 @@ class Player : public Unit, public GridObject<Player>
         static void SetUInt32ValueInArray(Tokenizer& data, uint16 index, uint32 value);
         static void SetFloatValueInArray(Tokenizer& data, uint16 index, float value);
         static void Customize(uint64 guid, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair);
-        static void SavePositionInDB(uint32 mapid, float x, float y, float z, float o, uint32 zone, uint64 guid);
 
         static void DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmChars = true, bool deleteFinally = false);
         static void DeleteOldCharacters();
@@ -2092,10 +2067,6 @@ class Player : public Unit, public GridObject<Player>
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
         void SendResetFailedNotify(uint32 mapid);
 
-        virtual bool UpdatePosition(float x, float y, float z, float orientation, bool teleport = false);
-        bool UpdatePosition(const Position &pos, bool teleport = false) { return UpdatePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), teleport); }
-        void UpdateUnderwaterState(Map* m, float x, float y, float z);
-
         void SendMessageToSet(WorldPacket* data, bool self) {SendMessageToSetInRange(data, GetVisibilityRange(), self); };// overwrite Object::SendMessageToSet
         void SendMessageToSetInRange(WorldPacket* data, float fist, bool self);// overwrite Object::SendMessageToSetInRange
         void SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only);
@@ -2142,12 +2113,6 @@ class Player : public Unit, public GridObject<Player>
         bool HasSkill(uint32 skill) const;
         void learnSkillRewardedSpells(uint32 id, uint32 value);
 
-        WorldLocation& GetTeleportDest() { return m_teleport_dest; }
-        bool IsBeingTeleported() const { return mSemaphoreTeleport_Near || mSemaphoreTeleport_Far; }
-        bool IsBeingTeleportedNear() const { return mSemaphoreTeleport_Near; }
-        bool IsBeingTeleportedFar() const { return mSemaphoreTeleport_Far; }
-        void SetSemaphoreTeleportNear(bool semphsetting) { mSemaphoreTeleport_Near = semphsetting; }
-        void SetSemaphoreTeleportFar(bool semphsetting) { mSemaphoreTeleport_Far = semphsetting; }
         void ProcessDelayedOperations();
 
         void CheckAreaExploreAndOutdoor(void);
@@ -2299,7 +2264,6 @@ class Player : public Unit, public GridObject<Player>
         void RemoveBattlegroundQueueId(BattlegroundQueueTypeId val);
         void SetInviteForBattlegroundQueueType(BattlegroundQueueTypeId bgQueueTypeId, uint32 instanceId);
         bool IsInvitedForBattlegroundInstance(uint32 instanceId) const;
-        WorldLocation const& GetBattlegroundEntryPoint() const { return m_bgData.joinPos; }
         void SetBattlegroundEntryPoint();
 
         void SetBGTeam(uint32 team);
@@ -2355,45 +2319,22 @@ class Player : public Unit, public GridObject<Player>
         /*********************************************************/
         /***                 VARIOUS SYSTEMS                   ***/
         /*********************************************************/
-        void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
-        Unit* m_mover;
-        WorldObject* m_seer;
-        void SetFallInformation(uint32 time, float z);
-        void HandleFall(MovementInfo const& movementInfo);
 
         bool IsKnowHowFlyIn(uint32 mapid, uint32 zone) const;
 
         void SetClientControl(Unit* target, uint8 allowMove);
 
-        void SetMover(Unit* target);
-
+        WorldObject* m_seer;
         void SetSeer(WorldObject* target) { m_seer = target; }
+
         void SetViewpoint(WorldObject* target, bool apply);
         WorldObject* GetViewpoint() const;
+
         void StopCastingCharm();
         void StopCastingBindSight();
 
         uint32 GetSaveTimer() const { return m_nextSave; }
-        void   SetSaveTimer(uint32 timer) { m_nextSave = timer; }
-
-        // Recall position
-        uint32 m_recallMap;
-        float  m_recallX;
-        float  m_recallY;
-        float  m_recallZ;
-        float  m_recallO;
-        void   SaveRecallPosition();
-
-        void SetHomebind(WorldLocation const& loc, uint32 areaId);
-
-        // Homebind coordinates
-        uint32 m_homebindMapId;
-        uint16 m_homebindAreaId;
-        float m_homebindX;
-        float m_homebindY;
-        float m_homebindZ;
-
-        WorldLocation GetStartPosition() const;
+        void SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
         // currently visible objects at player client
         typedef std::set<uint64> ClientGUIDs;
@@ -2413,8 +2354,6 @@ class Player : public Unit, public GridObject<Player>
 
         template<class T>
         void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
-
-        uint8 m_forced_speed_changes[MAX_MOVE_TYPE];
 
         bool HasAtLoginFlag(AtLoginFlags f) const { return m_atLoginFlags & f; }
         void SetAtLoginFlag(AtLoginFlags f) { m_atLoginFlags |= f; }
@@ -2557,16 +2496,6 @@ class Player : public Unit, public GridObject<Player>
         void AddWhisperWhiteList(uint64 guid) { WhisperList.push_back(guid); }
         bool IsInWhisperWhiteList(uint64 guid);
         void RemoveFromWhisperWhiteList(uint64 guid) { WhisperList.remove(guid); }
-
-        void ReadMovementInfo(WorldPacket& data, MovementInfo* mi, Movement::ExtraMovementStatusElement* extras = NULL);
-
-        /*! These methods send different packets to the client in apply and unapply case.
-            These methods are only sent to the current unit.
-        */
-        void SendMovementSetCanTransitionBetweenSwimAndFly(bool apply);
-        void SendMovementSetCollisionHeight(float height);
-
-        bool CanFly() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_CAN_FLY); }
 
         //! Return collision height sent to client
         float GetCollisionHeight(bool mounted) const;
@@ -2829,14 +2758,12 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_swingErrorMsg;
 
         ////////////////////Rest System/////////////////////
+
         time_t time_inn_enter;
-        uint32 inn_pos_mapid;
-        float  inn_pos_x;
-        float  inn_pos_y;
-        float  inn_pos_z;
         float m_rest_bonus;
         RestType rest_type;
-        ////////////////////Rest System/////////////////////
+
+        ////////////////////Social System/////////////////////
 
         // Social
         PlayerSocial *m_social;
@@ -2852,12 +2779,7 @@ class Player : public Unit, public GridObject<Player>
         // last used pet number (for BG's)
         uint32 m_lastpetnumber;
 
-        // Player summoning
         time_t m_summon_expire;
-        uint32 m_summon_mapid;
-        float  m_summon_x;
-        float  m_summon_y;
-        float  m_summon_z;
 
         DeclinedName *m_declinedname;
         Runes *m_runes;
@@ -2889,10 +2811,6 @@ class Player : public Unit, public GridObject<Player>
 
         void AdjustQuestReqItemCount(Quest const* quest, QuestStatusData& questStatusData);
 
-        bool IsCanDelayTeleport() const { return m_bCanDelayTeleport; }
-        void SetCanDelayTeleport(bool setting) { m_bCanDelayTeleport = setting; }
-        bool IsHasDelayedTeleport() const { return m_bHasDelayedTeleport; }
-        void SetDelayedTeleportFlag(bool setting) { m_bHasDelayedTeleport = setting; }
         void ScheduleDelayedOperation(uint32 operation) { if (operation < DELAYED_END) m_DelayedOperations |= operation; }
 
         MapReference m_mapRef;
@@ -2906,16 +2824,6 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_MirrorTimerFlags;
         uint8 m_MirrorTimerFlagsLast;
         bool m_isInWater;
-
-        // Current teleport data
-        WorldLocation m_teleport_dest;
-        uint32 m_teleport_options;
-        bool mSemaphoreTeleport_Near;
-        bool mSemaphoreTeleport_Far;
-
-        uint32 m_DelayedOperations;
-        bool m_bCanDelayTeleport;
-        bool m_bHasDelayedTeleport;
 
         // Temporary removed pet cache
         uint32 m_temporaryUnsummonedPetNumber;
@@ -2941,6 +2849,117 @@ class Player : public Unit, public GridObject<Player>
         uint32 _maxPersonalArenaRate;
 
         PhaseMgr phaseMgr;
+
+        /*** Movement functions - Handled by PlayerMovement or locally. ***/
+    public:
+        // Movement information.
+        void ReadMovementInfo(WorldPacket& data, MovementInfo* mi, Movement::ExtraMovementStatusElement* extras = NULL);
+
+        void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
+        void HandleFall(MovementInfo const& movementInfo);
+
+        bool CanFly() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_CAN_FLY); }
+
+        // ! These methods send different packets to the client in apply and unapply case and are only sent to the current unit.
+        void SendMovementSetCanTransitionBetweenSwimAndFly(bool apply);
+        void SendMovementSetCollisionHeight(float height);
+
+        // Active mover set.
+        void SetMover(Unit* target);
+
+        // Teleportation.
+        WorldLocation& GetTeleportDest() { return m_teleport_dest; }
+        bool IsBeingTeleported() const { return mSemaphoreTeleport_Near || mSemaphoreTeleport_Far; }
+        bool IsBeingTeleportedNear() const { return mSemaphoreTeleport_Near; }
+        bool IsBeingTeleportedFar() const { return mSemaphoreTeleport_Far; }
+        void SetSemaphoreTeleportNear(bool semphsetting) { mSemaphoreTeleport_Near = semphsetting; }
+        void SetSemaphoreTeleportFar(bool semphsetting) { mSemaphoreTeleport_Far = semphsetting; }
+
+        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0, bool raidDifficultyChange = false);
+        bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
+        bool TeleportToBGEntryPoint();
+
+        // Summoning.
+        void SummonIfPossible(bool agree);
+
+        uint8 m_forced_speed_changes[MAX_MOVE_TYPE];
+        Unit* m_mover;
+
+    protected:
+        // Summoning.
+        uint32 m_summon_mapid;
+        float  m_summon_x;
+        float  m_summon_y;
+        float  m_summon_z;
+
+    private:
+        // Teleportation.
+        bool IsCanDelayTeleport() const { return m_bCanDelayTeleport; }
+        void SetCanDelayTeleport(bool setting) { m_bCanDelayTeleport = setting; }
+        bool IsHasDelayedTeleport() const { return m_bHasDelayedTeleport; }
+        void SetDelayedTeleportFlag(bool setting) { m_bHasDelayedTeleport = setting; }
+
+        WorldLocation m_teleport_dest;
+        uint32 m_teleport_options;
+        bool mSemaphoreTeleport_Near;
+        bool mSemaphoreTeleport_Far;
+
+        uint32 m_DelayedOperations;
+        bool m_bCanDelayTeleport;
+        bool m_bHasDelayedTeleport;
+
+        /*** Positions functions - Handled by PlayerMovement or locally. ***/
+    public:
+        // Position loading / saving.
+        static bool LoadPositionFromDB(uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight, uint64 guid);
+        static void SavePositionInDB(uint32 mapid, float x, float y, float z, float o, uint32 zone, uint64 guid);
+
+        // Position update.
+        virtual bool UpdatePosition(float x, float y, float z, float orientation, bool teleport = false);
+        bool UpdatePosition(const Position &pos, bool teleport = false) { return UpdatePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), teleport); }
+
+        void UpdateUnderwaterState(Map* m, float x, float y, float z);
+        void SetFallInformation(uint32 time, float z);
+
+        // Bg's.
+        WorldLocation const& GetBattlegroundEntryPoint() const { return m_bgData.joinPos; }
+
+        // Summoning.
+        void SetSummonPoint(uint32 mapid, float x, float y, float z);
+
+        // Inns and Resting system.
+        void InnEnter(time_t time, uint32 mapid, float x, float y, float z);
+        uint32 GetInnPosMapId() const { return inn_pos_mapid; }
+        float GetInnPosX() const { return inn_pos_x; }
+        float GetInnPosY() const { return inn_pos_y; }
+        float GetInnPosZ() const { return inn_pos_z; }
+
+        // Recall position.
+        uint32 m_recallMap;
+        float  m_recallX;
+        float  m_recallY;
+        float  m_recallZ;
+        float  m_recallO;
+        void   SaveRecallPosition();
+
+        // Homebind coordinates.
+        uint32 m_homebindMapId;
+        uint16 m_homebindAreaId;
+        float  m_homebindX;
+        float  m_homebindY;
+        float  m_homebindZ;
+
+        void SetHomebind(WorldLocation const& loc, uint32 areaId);
+
+        // Start position.
+        WorldLocation GetStartPosition() const;
+
+    protected:
+        // Inn and Resting system.
+        uint32 inn_pos_mapid;
+        float  inn_pos_x;
+        float  inn_pos_y;
+        float  inn_pos_z;
 };
 
 void AddItemsSetItem(Player*player, Item* item);

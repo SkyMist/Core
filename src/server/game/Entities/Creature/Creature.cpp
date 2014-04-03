@@ -18,7 +18,7 @@
  */
 
 #include "Creature.h"
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
 #include "Common.h"
@@ -43,9 +43,9 @@
 #include "Opcodes.h"
 #include "OutdoorPvPMgr.h"
 #include "Player.h"
-#include "PlayerMovementMgr.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "PlayerMovement.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "PoolMgr.h"
 #include "QuestDef.h"
 #include "SpellAuraEffects.h"
@@ -2264,33 +2264,6 @@ time_t Creature::GetRespawnTimeEx() const
         return now;
 }
 
-void Creature::GetRespawnPosition(float &x, float &y, float &z, float* ori, float* dist) const
-{
-    if (m_DBTableGuid)
-    {
-        if (CreatureData const* data = sObjectMgr->GetCreatureData(GetDBTableGUIDLow()))
-        {
-            x = data->posX;
-            y = data->posY;
-            z = data->posZ;
-            if (ori)
-                *ori = data->orientation;
-            if (dist)
-                *dist = data->spawndist;
-
-            return;
-        }
-    }
-
-    x = GetPositionX();
-    y = GetPositionY();
-    z = GetPositionZ();
-    if (ori)
-        *ori = GetOrientation();
-    if (dist)
-        *dist = 0;
-}
-
 void Creature::AllLootRemovedFromCorpse()
 {
     if (!HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
@@ -2458,20 +2431,6 @@ uint32 Creature::GetPetAutoSpellOnPos(uint8 pos) const
         return m_charmInfo->GetCharmSpell(pos)->GetAction();
 }
 
-void Creature::SetPosition(float x, float y, float z, float o)
-{
-    // prevent crash when a bad coord is sent by the client
-    if (!Trinity::IsValidMapCoord(x, y, z, o))
-    {
-        TC_LOG_DEBUG("entities.unit", "Creature::SetPosition(%f, %f, %f) .. bad coordinates!", x, y, z);
-        return;
-    }
-
-    GetMap()->CreatureRelocation(ToCreature(), x, y, z, o);
-    if (IsVehicle())
-        GetVehicleKit()->RelocatePassengers();
-}
-
 bool Creature::IsDungeonBoss() const
 {
     CreatureTemplate const* cinfo = sObjectMgr->GetCreatureTemplate(GetEntry());
@@ -2542,36 +2501,6 @@ Unit* Creature::SelectNearestHostileUnitInAggroRange(bool useLOS) const
     }
 
     return target;
-}
-
-void Creature::UpdateMovementFlags()
-{
-    // Do not update movement flags if creature is controlled by a player (charm/vehicle)
-    if (m_movedPlayer)
-        return;
-
-    // Set the movement flags if the creature is in that mode. (Only fly if actually in air, only swim if in water, etc)
-    float ground = GetMap()->GetHeight(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
-
-    bool isInAir = (G3D::fuzzyGt(GetPositionZMinusOffset(), ground + 0.05f) || G3D::fuzzyLt(GetPositionZMinusOffset(), ground - 0.05f)); // Can be underground too, prevent the falling
-
-    if (GetCreatureTemplate()->InhabitType & INHABIT_AIR && isInAir && !IsFalling())
-    {
-        if (GetCreatureTemplate()->InhabitType & INHABIT_GROUND)
-            SetCanFly(true);
-        else
-            SetDisableGravity(true);
-    }
-    else
-    {
-        SetCanFly(false);
-        SetDisableGravity(false);
-    }
-
-    if (!isInAir)
-        SetFall(false);
-
-    SetSwim(GetCreatureTemplate()->InhabitType & INHABIT_WATER && IsInWater());
 }
 
 void Creature::SetObjectScale(float scale)

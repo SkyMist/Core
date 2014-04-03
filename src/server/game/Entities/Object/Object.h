@@ -24,7 +24,7 @@
 #include "UpdateMask.h"
 #include "GridReference.h"
 #include "ObjectDefines.h"
-#include "ObjectMovementMgr.h"
+#include "ObjectMovement.h"
 #include "Map.h"
 
 #include <set>
@@ -379,7 +379,7 @@ class Object
 
     // =================================================================================== //
 
-        /*** Movement functions - Handled by ObjectMovementMgr or locally. ***/
+        /*** Movement functions - Handled by ObjectMovement or locally. ***/
     protected:
         void BuildMovementUpdate(ByteBuffer* data, uint16 flags) const;
 };
@@ -670,7 +670,7 @@ class WorldObject : public Object, public WorldLocation
 
     // =================================================================================== //
 
-        /*** Movement functions - Handled by ObjectMovementMgr or locally. ***/
+        /*** Movement functions - Handled by ObjectMovement or locally. ***/
     public:
         // Transports.
         float GetTransOffsetX() const { return m_movementInfo.transport.pos.GetPositionX(); }
@@ -688,7 +688,7 @@ class WorldObject : public Object, public WorldLocation
         // Movement holder.
         MovementInfo m_movementInfo;
 
-        /*** Positions functions - Handled by ObjectMovementMgr or locally. ***/
+        /*** Positions functions - Handled by ObjectMovement or locally. ***/
 
         // Points and distances.
         void GetNearPoint2D(float &x, float &y, float distance, float absAngle) const;

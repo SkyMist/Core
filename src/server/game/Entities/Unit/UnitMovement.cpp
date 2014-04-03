@@ -5,8 +5,8 @@
 */
 
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -17,7 +17,7 @@
 #include "CreatureAIImpl.h"
 #include "CreatureGroups.h"
 #include "Creature.h"
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "Formulas.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -34,7 +34,7 @@
 #include "PetAI.h"
 #include "Pet.h"
 #include "Player.h"
-#include "PlayerMovementMgr.h"
+#include "PlayerMovement.h"
 #include "QuestDef.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"
@@ -55,7 +55,7 @@
 
 #include <math.h>
 
-/*** Movement functions. ***/
+/*** Movement functions - Handled by UnitMovement. ***/
 
 // Speeds functions.
 
@@ -952,7 +952,7 @@ void Unit::SetRooted(bool apply, bool packetOnly /*= false*/)
         Movement::PacketSender(this, SMSG_SPLINE_MOVE_UNROOT, SMSG_MOVE_UNROOT, SMSG_MOVE_UNROOT).Send();
 }
 
-/*** Positions functions. ***/
+/*** Positions functions - Handled by UnitMovement. ***/
 
 void Unit::SendTeleportPacket(Position& pos)
 {

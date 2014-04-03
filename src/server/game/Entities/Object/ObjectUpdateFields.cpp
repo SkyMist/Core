@@ -5,7 +5,7 @@
 */
 
 #include "Object.h"
-#include "ObjectMovementMgr.h"
+#include "ObjectMovement.h"
 #include "Common.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
@@ -13,9 +13,9 @@
 #include "Log.h"
 #include "World.h"
 #include "Creature.h"
-#include "CreatureMovementMgr.h"
+#include "CreatureMovement.h"
 #include "Player.h"
-#include "PlayerMovementMgr.h"
+#include "PlayerMovement.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "UpdateData.h"
@@ -39,7 +39,7 @@
 #include "MovementPacketBuilder.h"
 #include "DynamicTree.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
+#include "UnitMovement.h"
 #include "Group.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -471,3 +471,28 @@ bool Object::PrintIndexError(uint32 index, bool set) const
 }
 
 /*** Object Field Flags update handling and general usage calls ***/
+
+void Object::_LoadIntoDataField(std::string const& data, uint32 startOffset, uint32 count)
+{
+    if (data.empty())
+        return;
+
+    Tokenizer tokens(data, ' ', count);
+
+    if (tokens.size() != count)
+        return;
+
+    for (uint32 index = 0; index < count; ++index)
+    {
+        m_uint32Values[startOffset + index] = atol(tokens[index]);
+        _changesMask.SetBit(startOffset + index);
+    }
+}
+
+std::string Object::_ConcatFields(uint16 startIndex, uint16 size) const
+{
+    std::ostringstream ss;
+    for (uint16 index = 0; index < size; ++index)
+        ss << GetUInt32Value(index + startIndex) << ' ';
+    return ss.str();
+}

@@ -4,8 +4,8 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#ifndef _PLAYER_MOVEMENT_MGR_H
-#define _PLAYER_MOVEMENT_MGR_H
+#ifndef _PLAYER_MOVEMENT_H
+#define _PLAYER_MOVEMENT_H
 
 #include "DBCStores.h"
 #include "GroupReference.h"
@@ -17,12 +17,21 @@
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
 
 #include <string>
 #include <vector>
+
+enum TeleportToOptions
+{
+    TELE_TO_GM_MODE             = 0x01,
+    TELE_TO_NOT_LEAVE_TRANSPORT = 0x02,
+    TELE_TO_NOT_LEAVE_COMBAT    = 0x04,
+    TELE_TO_NOT_UNSUMMON_PET    = 0x08,
+    TELE_TO_SPELL               = 0x10
+};
 
 #endif

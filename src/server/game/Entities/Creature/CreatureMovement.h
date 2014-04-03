@@ -4,13 +4,13 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#ifndef _CREATURE_MOVEMENT_MGR_H
-#define _CREATURE_MOVEMENT_MGR_H
+#ifndef _CREATURE_MOVEMENT_H
+#define _CREATURE_MOVEMENT_H
 
 #include "Common.h"
 #include "Unit.h"
-#include "UnitMovementMgr.h"
-#include "ObjectMovementMgr.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "UpdateMask.h"
 #include "ItemPrototype.h"
 #include "LootMgr.h"
