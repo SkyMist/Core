@@ -56,6 +56,7 @@ void Object::SetDynamicFieldUInt32Value(uint32 index, std::size_t offset, uint32
     {
         itr->second.values[offset].valueNumber = value;
         itr->second.values[offset].valueUpdated = true;
+        itr->second.changed = true;
 
         if (m_inWorld && !m_objectUpdated)
         {
