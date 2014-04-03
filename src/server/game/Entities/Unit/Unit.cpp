@@ -15870,8 +15870,15 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                 uint32 Mask = 0;
 
                 for (uint8 pos = 0; pos < 32; ++pos)
+                {
+
                     if (jitr != itr->second.values.end())
+                    {
                         Mask |= pos << uint32(jitr->valueUpdated);
+                        ++jitr;
+                    }
+                }
+                        
 
                 FieldMask.insert(FieldMaskItr++, Mask);
             }
