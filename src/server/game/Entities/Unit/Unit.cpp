@@ -15855,14 +15855,14 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
             DynamicFieldsMask.SetBit(itr->second.entry);
 
             bool SizeChanged = false;
-            std::vector<uint32> FieldMask;
-            std::vector<uint32>::iterator FieldMaskItr = FieldMask.begin();
+            std::vector<uint32> FieldMask;    
             std::size_t FieldMaskSize = itr->second.values.size() / 32;
 
             if (itr->second.values.size() % 32 != 0)
                 FieldMaskSize += 1;
 
             FieldMask.resize(FieldMaskSize);
+            std::vector<uint32>::iterator FieldMaskItr = FieldMask.begin();
 
             // Construct the proper mask
             for (std::vector<DynamicFieldValues>::const_iterator jitr = itr->second.values.begin(); jitr != itr->second.values.end(); ++jitr)
@@ -15871,7 +15871,6 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
                 for (uint8 pos = 0; pos < 32; ++pos)
                 {
-
                     if (jitr != itr->second.values.end())
                     {
                         Mask |= pos << uint32(jitr->valueUpdated);
@@ -15879,7 +15878,6 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                     }
                 }
                         
-
                 FieldMask.insert(FieldMaskItr++, Mask);
             }
 
