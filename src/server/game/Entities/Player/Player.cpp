@@ -7653,17 +7653,20 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
         WorldPacket packet(SMSG_UPDATE_CURRENCY, 12);
 
+        packet.WriteBit(!printLog); // print in log
         packet.WriteBit(weekCap != 0);
         packet.WriteBit(0); // hasSeasonCount
-        packet.WriteBit(!printLog); // print in log
 
-        // if hasSeasonCount packet << uint32(seasontotalearned); TODO: save this in character DB and use it
-
-        packet << uint32(newTotalCount / precision);
-        packet << uint32(id);
         if (weekCap)
             packet << uint32(newWeekCount / precision);
 
+        packet << uint32(0);      //has Bonus Objective
+
+        // if hasSeasonCount packet << uint32(seasontotalearned); TODO: save this in character DB and use it
+
+        packet << uint32(id);
+        packet << uint32(newTotalCount / precision);
+        
         GetSession()->SendPacket(&packet);
     }
 }

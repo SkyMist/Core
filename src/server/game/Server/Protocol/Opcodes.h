@@ -1366,7 +1366,7 @@ enum Opcodes
    SMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
    SMSG_UPDATE_ACCOUNT_DATA_COMPLETE                        = 0x0,
    SMSG_UPDATE_COMBO_POINTS                                 = 0x0,
-   SMSG_UPDATE_CURRENCY                                     = 0x0,
+   SMSG_UPDATE_CURRENCY                                     = 0x173B, // 5.4.7 18019
    SMSG_UPDATE_CURRENCY_WEEK_LIMIT                          = 0x0,
    SMSG_UPDATE_DUNGEON_ENCOUNTER_FOR_LOOT                   = 0x0,
    SMSG_UPDATE_INSTANCE_ENCOUNTER_UNIT                      = 0x0,

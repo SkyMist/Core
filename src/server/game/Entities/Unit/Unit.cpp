@@ -15849,21 +15849,16 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     }*/
 
     uint32 index = 0;
+    uint32 dynFieldsUpdated = 0;
     UpdateMask DynamicFieldsMask;
     ByteBuffer DynamicFieldsData;
+    
+    /*//std::vector<uint32> updatedDynFieldEntries;
 
-
-    uint32 dynFieldsUpdated = 0;
-    //std::vector<uint32> updatedDynFieldEntries;
-
-    /*for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
-    {
+    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
         if (itr->second.changed)
-        {
             dynFieldsUpdated++;
-            updatedDynFieldEntries.push_back(itr->second.entry);
-        }
-    }*/
+            //updatedDynFieldEntries.push_back(itr->second.entry);*/
 
     DynamicFieldsMask.SetCount(m_dynamicfields.size());
 
@@ -15876,6 +15871,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
         if (itr->second.changed)
         {
+            dynFieldsUpdated++;
             DynamicFieldsMask.SetBit(index);
 
             std::vector<uint32> FieldMask;
@@ -15891,13 +15887,16 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
             FieldMask.resize(FieldMaskSize);
 
             // Construct the proper mask
-            for (uint32 i = 0; i < FieldMask.size(); i++) // Offset.
+            for (std::size_t i = 0; i < FieldMask.size(); i++) // Offset.
             {
                 uint32 Mask = 0;
 
                 for (uint8 pos = 0; pos < 32; ++pos)
-                    Mask |= pos << uint32(itr->second.values[i].valueUpdated);
-
+                {
+                    std::size_t ValueOffset = i * 32 + pos;
+                    Mask |= pos << uint32(itr->second.values[ValueOffset].valueUpdated);
+                }
+                
                 FieldMask[i] = Mask;
             }
 
@@ -15929,6 +15928,6 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     *data << uint8(DynamicFieldsMask.GetBlockCount()); // Send the blocks count.
     DynamicFieldsMask.AppendToPacket(data);
 
-    if (m_dynamicfields.size() > 0)
+    if (dynFieldsUpdated > 0)
         data->append(DynamicFieldsData);
 }
