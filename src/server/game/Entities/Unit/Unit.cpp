@@ -15869,12 +15869,14 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
     // We get all object's dynamic fields.
     //for (std::vector<uint32>::const_iterator index = updatedDynFieldEntries.begin(); index != updatedDynFieldEntries.end(); ++index)
-    for (DynamicFieldsList::const_iterator itr = itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
+    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
     {
         //DynamicFieldsList::const_iterator dynField = m_dynamicfields.find(*index);
+        index++;
+
         if (itr->second.changed)
         {
-            DynamicFieldsMask.SetBit(index++);
+            DynamicFieldsMask.SetBit(index);
 
             std::vector<uint32> FieldMask;
             std::size_t FieldMaskSize = itr->second.values.size() / 32;
