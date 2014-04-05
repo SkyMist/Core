@@ -15842,47 +15842,27 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
     // Dynamic Fields (MoP new Dynamic Field system).
 
-    /*if (!m_dynamicfields.size()) // Just a safety check, we must have dynamic fields to update them.
-    {
-        *data << uint8(0);
-        return;
-    }*/
-
     uint32 index = 0;
     uint32 dynFieldsUpdated = 0;
     UpdateMask DynamicFieldsMask;
     ByteBuffer DynamicFieldsData;
     
-    /*//std::vector<uint32> updatedDynFieldEntries;
-
-    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
-        if (itr->second.changed)
-            dynFieldsUpdated++;
-            //updatedDynFieldEntries.push_back(itr->second.entry);*/
-
     DynamicFieldsMask.SetCount(m_dynamicfields.size());
 
-    // We get all object's dynamic fields.
-    //for (std::vector<uint32>::const_iterator index = updatedDynFieldEntries.begin(); index != updatedDynFieldEntries.end(); ++index)
+    // We get all object's dynamic fields. 
     for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
     {
-        //DynamicFieldsList::const_iterator dynField = m_dynamicfields.find(*index);
         index++;
 
         if (itr->second.changed)
         {
+            ByteBuffer DynamicOffsetMask;
+            ByteBuffer DynamicFieldsValues;
             dynFieldsUpdated++;
             DynamicFieldsMask.SetBit(index);
 
             std::vector<uint32> FieldMask;
-            std::size_t FieldMaskSize = itr->second.values.size() / 32;
-
-            if (itr->second.values.size() % 32 != 0)
-                FieldMaskSize += 1;
-
-            /*for (uint32 i = 0; i < itr->second.values.size(); i++) // Offset.
-                if (dynField->second.values[i].valueUpdated)
-                    FieldMaskSize += 1;*/
+            std::size_t FieldMaskSize = (itr->second.values.size() + 31) / 32;
 
             FieldMask.resize(FieldMaskSize);
 
@@ -15894,10 +15874,11 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                 for (uint8 pos = 0; pos < 32; ++pos)
                 {
                     std::size_t ValueOffset = i * 32 + pos;
-                    Mask |= pos << uint32(itr->second.values[ValueOffset].valueUpdated);
+                    if (ValueOffset < itr->second.values.size())
+                        Mask |= uint32(itr->second.values[ValueOffset].valueUpdated) << pos;
                 }
                 
-                FieldMask[i] = Mask;
+                FieldMask.push_back(Mask);
             }
 
             bool SizeChanged = itr->second.values.size() > GetDynamicFieldDefaultSize(itr->second.entry);
@@ -15911,17 +15892,21 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
             for (std::size_t i = 0; i < FieldMask.size(); ++i)
             {
-                DynamicFieldsData << FieldMask[i];
+                DynamicOffsetMask << uint32(FieldMask[i]);
 
                 for (uint8 bitpos = 0; bitpos < 32; ++bitpos)
                 {
                     if ((FieldMask[i] >> bitpos) & 0x00000001)
                     {
                         uint32 ValueOffset = i * 32 + bitpos;
-                        DynamicFieldsData << itr->second.values[ValueOffset].valueNumber;
+                        if (ValueOffset < itr->second.values.size())
+                            DynamicFieldsValues << uint32(itr->second.values[ValueOffset].valueNumber);
                     }
                 }
             }
+
+            DynamicFieldsData.append(DynamicOffsetMask);
+            DynamicFieldsData.append(DynamicFieldsValues);
         }
     }
 
