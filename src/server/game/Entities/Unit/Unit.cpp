@@ -15864,10 +15864,8 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
             std::vector<uint32> FieldMask;
             std::size_t FieldMaskSize = (itr->second.values.size() + 31) / 32;
 
-            FieldMask.resize(FieldMaskSize);
-
             // Construct the proper mask
-            for (std::size_t i = 0; i < FieldMask.size(); i++) // Offset.
+            for (std::size_t i = 0; i < FieldMaskSize; i++) // Offset.
             {
                 uint32 Mask = 0;
 
