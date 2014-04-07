@@ -30,9 +30,7 @@ class CreatureTextBuilder
 {
     public:
         CreatureTextBuilder(WorldObject* obj, ChatMsg msgtype, uint8 textGroup, uint32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
         size_t operator()(WorldPacket* data, LocaleConstant locale) const
         {
@@ -76,9 +74,7 @@ class PlayerTextBuilder
 {
     public:
         PlayerTextBuilder(WorldObject* obj, WorldObject* speaker, ChatMsg msgtype, uint8 textGroup, uint32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _talker(speaker), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _talker(speaker), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
         size_t operator()(WorldPacket* data, LocaleConstant locale) const
         {
@@ -355,7 +351,7 @@ void CreatureTextMgr::SendSound(Creature* source, uint32 sound, ChatMsg msgType,
 
     WorldPacket data(SMSG_PLAY_SOUND, 4);
     data << uint32(sound);
-    data << uint64(source->GetGUID());
+
     SendNonChatPacket(source, &data, msgType, whisperGuid, range, team, gmOnly);
 }
 

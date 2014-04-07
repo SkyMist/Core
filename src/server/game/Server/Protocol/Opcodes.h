@@ -92,7 +92,7 @@ enum Opcodes
    CMSG_BATTLEMASTER_JOIN                                   = 0x0,
    CMSG_BATTLEMASTER_JOIN_ARENA                             = 0x0,
    CMSG_BATTLEMASTER_JOIN_RATED                             = 0x0,
-   CMSG_BEGIN_TRADE                                         = 0x0,
+   CMSG_BEGIN_TRADE                                         = 0x0C9A, // 5.4.7 18019
    CMSG_BINDER_ACTIVATE                                     = 0x0477, // 5.4.7 18019
    CMSG_BOT_DETECTED2                                       = 0x0,
    CMSG_BUG                                                 = 0x0,
@@ -287,7 +287,7 @@ enum Opcodes
    CMSG_GUILD_SWITCH_RANK                                   = 0x0,
    CMSG_HEARTH_AND_RESURRECT                                = 0x0,
    CMSG_IGNORE_TRADE                                        = 0x0,
-   CMSG_INITIATE_TRADE                                      = 0x0,
+   CMSG_INITIATE_TRADE                                      = 0x12BB, // 5.4.7 18019
    CMSG_INSPECT                                             = 0x01D4, // 5.4.7 18019
    CMSG_INSPECT_HONOR_STATS                                 = 0x047E, // 5.4.7 18019
    CMSG_INSTANCE_LOCK_WARNING_RESPONSE                      = 0x0,
@@ -351,7 +351,7 @@ enum Opcodes
    CMSG_MESSAGECHAT_EMOTE                                   = 0x0520, // 5.4.7 18019
    CMSG_MESSAGECHAT_GUILD                                   = 0x070B, // 5.4.7 18019
    CMSG_MESSAGECHAT_OFFICER                                 = 0x1F69, // 5.4.7 18019
-   CMSG_MESSAGECHAT_PARTY                                   = 0x0F02, // 5.4.7 18019
+   CMSG_MESSAGECHAT_PARTY                                   = 0x0642, // 5.4.7 18019
    CMSG_MESSAGECHAT_RAID                                    = 0x054B, // 5.4.7 18019
    CMSG_MESSAGECHAT_RAID_WARNING                            = 0x0423, // 5.4.7 18019
    CMSG_MESSAGECHAT_SAY                                     = 0x0C41, // 5.4.7 18019
@@ -534,7 +534,7 @@ enum Opcodes
    CMSG_SET_TAXI_BENCHMARK_MODE                             = 0x0,
    CMSG_SET_TITLE                                           = 0x0,
    CMSG_SET_TRADE_CURRENCY                                  = 0x0,
-   CMSG_SET_TRADE_GOLD                                      = 0x0,
+   CMSG_SET_TRADE_GOLD                                      = 0x0C93, // 5.4.7 18019
    CMSG_SET_TRADE_ITEM                                      = 0x0,
    CMSG_SET_VEHICLE_REC_ID_ACK                              = 0x0,
    CMSG_SET_WATCHED_FACTION                                 = 0x0,

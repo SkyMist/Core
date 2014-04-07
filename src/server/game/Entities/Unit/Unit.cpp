@@ -15846,7 +15846,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     uint32 dynFieldsUpdated = 0;
     UpdateMask DynamicFieldsMask;
     ByteBuffer DynamicFieldsData;
-    
+
     DynamicFieldsMask.SetCount(m_dynamicfields.size());
 
     // We get all object's dynamic fields. 
@@ -15875,7 +15875,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                     if (ValueOffset < itr->second.values.size())
                         Mask |= uint32(itr->second.values[ValueOffset].valueUpdated) << pos;
                 }
-                
+
                 FieldMask.push_back(Mask);
             }
 

@@ -125,22 +125,22 @@ uint32 Object::GetDynamicFieldIndexFromEntryNumber(uint32 entry)
 
     switch (entry)
     {
-         case 0:
-             if (GetTypeId() == TYPEID_UNIT)
-                 index = UNIT_DYNAMIC_PASSIVE_SPELLS;
-             else if (GetTypeId() == TYPEID_PLAYER)
-                 index = PLAYER_DYNAMIC_RESEARCH_SITES;
-             else if (GetTypeId() == TYPEID_GAMEOBJECT)
-                 index = GAMEOBJECT_DYNAMIC_UNK;
-             else if (GetTypeId() == TYPEID_ITEM)
-                 index = ITEM_DYNAMIC_MODIFIERS;
-             break;
-         case 1:
-             if (GetTypeId() == TYPEID_UNIT)
-                 index = UNIT_DYNAMIC_WORLD_EFFECTS;
-             else if (GetTypeId() == TYPEID_PLAYER)
-                 index = PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED;
-             break;
+        case 0:
+            if (GetTypeId() == TYPEID_UNIT)
+                index = UNIT_DYNAMIC_PASSIVE_SPELLS;
+            else if (GetTypeId() == TYPEID_PLAYER)
+                index = PLAYER_DYNAMIC_RESEARCH_SITES;
+            else if (GetTypeId() == TYPEID_GAMEOBJECT)
+                index = GAMEOBJECT_DYNAMIC_UNK;
+            else if (GetTypeId() == TYPEID_ITEM)
+                index = ITEM_DYNAMIC_MODIFIERS;
+            break;
+        case 1:
+            if (GetTypeId() == TYPEID_UNIT)
+                index = UNIT_DYNAMIC_WORLD_EFFECTS;
+            else if (GetTypeId() == TYPEID_PLAYER)
+                index = PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED;
+            break;
 
         default: break;
     }
@@ -172,20 +172,20 @@ uint32 Object::GetDynamicFieldDefaultSize(uint32 index) const
     // We also see what type of object got updated so the indexes don't get mixed up.
     switch (GetTypeId())
     {
-         case TYPEID_UNIT:
-             if (index == UNIT_DYNAMIC_PASSIVE_SPELLS || index == UNIT_DYNAMIC_WORLD_EFFECTS) size = 257;
-             break;
-         case TYPEID_PLAYER:
-             if (index == PLAYER_DYNAMIC_RESEARCH_SITES || index == PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED) size = 2;
-             break;
-         case TYPEID_GAMEOBJECT:
-             if (index == GAMEOBJECT_DYNAMIC_UNK) size = 1;
-             break;
-         case TYPEID_ITEM:
-             if (index == ITEM_DYNAMIC_MODIFIERS) size = 72;
-             break;
+        case TYPEID_UNIT:
+            if (index == UNIT_DYNAMIC_PASSIVE_SPELLS || index == UNIT_DYNAMIC_WORLD_EFFECTS) size = 257;
+            break;
+        case TYPEID_PLAYER:
+            if (index == PLAYER_DYNAMIC_RESEARCH_SITES || index == PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED) size = 2;
+            break;
+        case TYPEID_GAMEOBJECT:
+            if (index == GAMEOBJECT_DYNAMIC_UNK) size = 1;
+            break;
+        case TYPEID_ITEM:
+            if (index == ITEM_DYNAMIC_MODIFIERS) size = 72;
+            break;
 
-         default: break;
+        default: break;
     }
 
     return size;

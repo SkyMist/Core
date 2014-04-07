@@ -244,7 +244,6 @@ class instance_deadmines : public InstanceMapScript
             {
                 WorldPacket data(SMSG_PLAY_SOUND, 4);
                 data << uint32(sound);
-                data << uint64(unit->GetGUID());
                 unit->SendMessageToSet(&data, false);
             }
         };

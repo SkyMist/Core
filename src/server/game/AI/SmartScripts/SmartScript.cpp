@@ -43,9 +43,7 @@ class TrinityStringTextBuilder
 {
     public:
         TrinityStringTextBuilder(WorldObject* obj, ChatMsg msgtype, int32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
         size_t operator()(WorldPacket* data, LocaleConstant locale) const
         {

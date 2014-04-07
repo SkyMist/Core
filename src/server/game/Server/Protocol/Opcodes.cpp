@@ -112,7 +112,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBattlemasterJoinOpcode    );
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN_ARENA,                 STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBattlemasterJoinArena     );
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN_RATED,                 STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
-    DEFINE_OPCODE_HANDLER(CMSG_BEGIN_TRADE,                             STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBeginTradeOpcode          );
+    DEFINE_OPCODE_HANDLER(CMSG_BEGIN_TRADE,                             STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBeginTradeOpcode          );
     DEFINE_OPCODE_HANDLER(CMSG_BINDER_ACTIVATE,                         STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBinderActivateOpcode      );
     DEFINE_OPCODE_HANDLER(CMSG_BUG,                                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBugOpcode                 );
     DEFINE_OPCODE_HANDLER(CMSG_BUSY_TRADE,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleBusyTradeOpcode           );
@@ -287,7 +287,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_GUILD_SWITCH_RANK,                       STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_HEARTH_AND_RESURRECT,                    STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleHearthAndResurrect        );
     DEFINE_OPCODE_HANDLER(CMSG_IGNORE_TRADE,                            STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleIgnoreTradeOpcode         );
-    DEFINE_OPCODE_HANDLER(CMSG_INITIATE_TRADE,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleInitiateTradeOpcode       );
+    DEFINE_OPCODE_HANDLER(CMSG_INITIATE_TRADE,                          STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleInitiateTradeOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_INSPECT,                                 STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleInspectOpcode             );
     DEFINE_OPCODE_HANDLER(CMSG_INSPECT_HONOR_STATS,                     STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleInspectHonorStatsOpcode   ); 
     DEFINE_OPCODE_HANDLER(CMSG_INSTANCE_LOCK_WARNING_RESPONSE,          STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
@@ -509,7 +509,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_SET_TAXI_BENCHMARK_MODE,                 STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSetTaxiBenchmarkOpcode    );
     DEFINE_OPCODE_HANDLER(CMSG_SET_TITLE,                               STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSetTitleOpcode            );
     DEFINE_OPCODE_HANDLER(CMSG_SET_TRADE_CURRENCY,                      STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
-    DEFINE_OPCODE_HANDLER(CMSG_SET_TRADE_GOLD,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSetTradeGoldOpcode        );
+    DEFINE_OPCODE_HANDLER(CMSG_SET_TRADE_GOLD,                          STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleSetTradeGoldOpcode        );
     DEFINE_OPCODE_HANDLER(CMSG_SET_TRADE_ITEM,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSetTradeItemOpcode        );
     DEFINE_OPCODE_HANDLER(CMSG_SET_VEHICLE_REC_ID_ACK,                  STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_SET_WATCHED_FACTION,                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSetWatchedFactionOpcode   );
