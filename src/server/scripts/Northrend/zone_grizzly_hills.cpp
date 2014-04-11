@@ -127,7 +127,7 @@ public:
                     break;
                 case 20:
                     if (Creature* RWORG = Unit::GetCreature(*me, _RavenousworgGUID))
-                        RWORG->HandleEmoteCommand(34);
+                        RWORG->HandleEmote(34);
                     break;
                 case 21:
                     if (Creature* Mrfloppy = Unit::GetCreature(*me, _mrfloppyGUID))
@@ -401,7 +401,7 @@ public:
         {
             if (me->FindNearestCreature(NPC_TALLHORN_STAG, 0.2f))
             {
-                me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_USE_STANDING);
+                me->HandleEmote(EMOTE_STATE_USE_STANDING);
             }
             else
                 _events.ScheduleEvent(EVENT_WOODSMAN_1, 0);
@@ -416,11 +416,11 @@ public:
                 switch (eventId)
                 {
                     case EVENT_WOODSMAN_1:
-                        me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_LOOT);
+                        me->HandleEmote(EMOTE_STATE_LOOT);
                         _events.ScheduleEvent(EVENT_WOODSMAN_2, 3000);
                         break;
                     case EVENT_WOODSMAN_2:
-                        me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_ATTACK1H);
+                        me->HandleEmote(EMOTE_ONESHOT_ATTACK1H);
                         _events.ScheduleEvent(EVENT_WOODSMAN_1, 4000);
                         break;
                     default:

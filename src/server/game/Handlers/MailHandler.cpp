@@ -355,15 +355,34 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
     CharacterDatabase.CommitTransaction(trans);
 }
 
-//called when mail is read
+// Called when mail is read.
 void WorldSession::HandleMailMarkAsRead(WorldPacket& recvData)
 {
-    uint64 mailbox;
+    ObjectGuid GuidMail;
     uint32 mailId;
-    recvData >> mailbox;
+
+	GuidMail[4] = recvData.ReadBit();
+	GuidMail[0] = recvData.ReadBit();
+    GuidMail[2] = recvData.ReadBit();
+    GuidMail[7] = recvData.ReadBit();
+    GuidMail[1] = recvData.ReadBit();
+    GuidMail[6] = recvData.ReadBit();
+    GuidMail[3] = recvData.ReadBit();
+
     recvData >> mailId;
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
+    GuidMail[5] = recvData.ReadBit();
+
+    recvData.ReadByteSeq(GuidMail[2]);
+    recvData.ReadByteSeq(GuidMail[5]);
+    recvData.ReadByteSeq(GuidMail[0]);
+    recvData.ReadByteSeq(GuidMail[6]);
+    recvData.ReadByteSeq(GuidMail[1]);
+    recvData.ReadByteSeq(GuidMail[3]);
+    recvData.ReadByteSeq(GuidMail[7]);
+    recvData.ReadByteSeq(GuidMail[4]);
+
+    if (!GetPlayer()->GetGameObjectIfCanInteractWith(GuidMail, GAMEOBJECT_TYPE_MAILBOX))
         return;
 
     Player* player = _player;

@@ -338,7 +338,7 @@ class boss_sapphiron : public CreatureScript
                                 events.ScheduleEvent(EVENT_LAND, 3 * IN_MILLISECONDS);
                                 return;
                             case EVENT_LAND:
-                                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                                me->HandleEmote(EMOTE_ONESHOT_LAND);
                                 Talk(EMOTE_GROUND_PHASE);
                                 me->SetDisableGravity(false);
                                 events.ScheduleEvent(EVENT_GROUND, 1500);

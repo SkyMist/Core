@@ -128,7 +128,7 @@ public:
                         if (Unit* worm = me->FindNearestCreature(26250, 3))
                         {
                             worm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                            worm->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                            worm->HandleEmote(EMOTE_ONESHOT_EMERGE);
                         }
                         phaseTimer = 1000;
                         phase = 6;
@@ -601,12 +601,12 @@ public:
                         phase = 4;
                         break;
                     case 4:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_LOOT);
+                        me->HandleEmote(EMOTE_ONESHOT_LOOT);
                         phaseTimer = 1000;
                         phase = 5;
                         break;
                     case 5:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_NONE);
+                        me->HandleEmote(EMOTE_ONESHOT_NONE);
                         phaseTimer = 500;
                         phase = 6;
                         break;
@@ -1823,21 +1823,21 @@ public:
             switch (waypointId)
             {
                 case 10:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                    me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                     Talk(SAY_2);
                     break;
                 case 12:
                     Talk(SAY_3);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_LOOT);
+                    me->HandleEmote(EMOTE_ONESHOT_LOOT);
                     break;
                 case 16:
                     Talk(SAY_4);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                    me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                     break;
                 case 20:
                     me->SetPhaseMask(1, true);
                     Talk(SAY_5);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                    me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                     player->GroupEventHappens(QUEST_ESCAPING_THE_MIST, me);
                     SetRun(true);
                     break;
@@ -2183,7 +2183,7 @@ public:
         {
             if (uiTimer <= diff)
             {
-                me->HandleEmoteCommand(EMOTE_ONESHOT_KNEEL);
+                me->HandleEmote(EMOTE_ONESHOT_KNEEL);
                 GameObject* pCannon = me->FindNearestGameObject(GO_VALIANCE_KEEP_CANNON_1, 10);
                 if (!pCannon)
                     pCannon = me->FindNearestGameObject(GO_VALIANCE_KEEP_CANNON_2, 10);
@@ -2362,7 +2362,7 @@ public:
         void Reset() OVERRIDE
         {
             if (uiEmoteState)
-                me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, uiEmoteState);
+                me->HandleEmote(uiEmoteState);
 
             if (uiNpcFlags)
                 me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, uiNpcFlags);
@@ -2409,7 +2409,7 @@ public:
                         switch (me->GetEntry())
                         {
                             case NPC_SALTY_JOHN_THORPE:
-                                me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, 0);
+                                me->HandleEmote(EMOTE_STATE_NONE);
                                 Talk(SAY_HIDDEN_CULTIST_1);
                                 uiEventTimer = 5000;
                                 uiEventPhase = 2;

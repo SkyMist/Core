@@ -203,7 +203,7 @@ public:
                                 break;
                             case 2:
                                 me->SetTarget(instance ? instance->GetData64(DATA_ARTHAS) : 0);
-                                me->HandleEmoteCommand(29);
+                                me->HandleEmote(29);
                                 Talk(SAY_ESCAPE_SPEECH_2);
                                 ++uiOutroStep;
                                 uiOutroTimer = 9000;
@@ -214,7 +214,7 @@ public:
                                 uiOutroTimer = 16000;
                                 break;
                             case 4:
-                                me->HandleEmoteCommand(33);
+                                me->HandleEmote(33);
                                 ++uiOutroStep;
                                 uiOutroTimer = 500;
                                 break;

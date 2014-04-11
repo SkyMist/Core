@@ -203,7 +203,7 @@ class boss_blood_queen_lana_thel : public CreatureScript
                         player->RewardPlayerAndGroupAtEvent(NPC_INFILTRATOR_MINCHAR_BQ, player);
                     if (Creature* minchar = me->FindNearestCreature(NPC_INFILTRATOR_MINCHAR_BQ, 200.0f))
                     {
-                        minchar->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, 0);
+                        minchar->HandleEmote(EMOTE_STATE_NONE);
                         minchar->RemoveByteFlag(UNIT_FIELD_ANIM_TIER, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND);
                         minchar->SetCanFly(false);
                         minchar->RemoveAllAuras();

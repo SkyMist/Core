@@ -104,7 +104,7 @@ public:
             if (!Submerged && Submerge_Timer <= diff)
             {
                 //Cast
-                me->HandleEmoteCommand(EMOTE_ONESHOT_SUBMERGE);
+                me->HandleEmote(EMOTE_ONESHOT_SUBMERGE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 me->setFaction(35);
                 DoCast(me, SPELL_DIRTMOUND_PASSIVE);

@@ -908,7 +908,7 @@ public:
             return false;
         }
 
-        target->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, emote);
+        target->HandleEmote(emote);
 
         return true;
     }
@@ -1221,9 +1221,9 @@ public:
         char lastchar = args[strlen(args) - 1];
         switch (lastchar)
         {
-        case '?':   creature->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);      break;
-        case '!':   creature->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);   break;
-        default:    creature->HandleEmoteCommand(EMOTE_ONESHOT_TALK);          break;
+        case '?':   creature->HandleEmote(EMOTE_ONESHOT_QUESTION);      break;
+        case '!':   creature->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);   break;
+        default:    creature->HandleEmote(EMOTE_ONESHOT_TALK);          break;
         }
 
         return true;
@@ -1325,7 +1325,7 @@ public:
         creature->MonsterYell(args, LANG_UNIVERSAL, 0);
 
         // make an emote
-        creature->HandleEmoteCommand(EMOTE_ONESHOT_SHOUT);
+        creature->HandleEmote(EMOTE_ONESHOT_SHOUT);
 
         return true;
     }

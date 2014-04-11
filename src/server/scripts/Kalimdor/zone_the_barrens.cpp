@@ -223,7 +223,7 @@ public:
             me->GetMotionMaster()->MoveIdle();
 
             me->setFaction(FACTION_FRIENDLY_F);
-            me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+            me->HandleEmote(EMOTE_ONESHOT_SALUTE);
         }
 
         void SpellHit(Unit* /*caster*/, const SpellInfo* spell) OVERRIDE
@@ -415,7 +415,7 @@ public:
                             creature->setFaction(35);
                             creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                             creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            creature->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                            creature->HandleEmote(EMOTE_ONESHOT_ROAR);
                             AffrayChallenger[i] = creature->GetGUID();
                         }
                         WaveTimer = 5000;
@@ -452,7 +452,7 @@ public:
                             {
                                 creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                                 creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                                creature->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                                creature->HandleEmote(EMOTE_ONESHOT_ROAR);
                                 creature->setFaction(14);
                                 creature->AI()->AttackStart(warrior);
                                 ++Wave;
@@ -467,7 +467,7 @@ public:
                                 //creature->GetMotionMaster()->MovePoint(0, -1693, -4343, 4.32f);
                                 //creature->GetMotionMaster()->MovePoint(1, -1684, -4333, 2.78f);
                                 creature->GetMotionMaster()->MovePoint(2, -1682, -4329, 2.79f);
-                                creature->HandleEmoteCommand(EMOTE_STATE_READY_UNARMED);
+                                creature->HandleEmote(EMOTE_STATE_READY_UNARMED);
                                 EventBigWill = true;
                                 WaveTimer = 1000;
                             }

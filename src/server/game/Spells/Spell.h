@@ -345,9 +345,10 @@ class Spell
         void EffectCastButtons(SpellEffIndex effIndex);
         void EffectRechargeManaGem(SpellEffIndex effIndex);
         void EffectGiveCurrency(SpellEffIndex effIndex);
-        void EffectResurrectWithAura(SpellEffIndex effIndex);
-        void EffectCreateAreaTrigger(SpellEffIndex effIndex);
         void EffectRemoveTalent(SpellEffIndex effIndex);
+        void EffectCreateAreaTrigger(SpellEffIndex effIndex);
+        int32 CalculateMonkMeleeAttacks(Unit* caster, float coeff, int32 APmultiplier);
+        void EffectResurrectWithAura(SpellEffIndex effIndex);
 
         typedef std::set<Aura*> UsedSpellMods;
 
@@ -461,6 +462,7 @@ class Spell
         SpellCastTargets m_targets;
         int8 m_comboPointGain;
         SpellCustomErrors m_customError;
+        bool m_darkSimulacrum;
 
         UsedSpellMods m_appliedMods;
 
@@ -472,6 +474,7 @@ class Spell
         bool IsTriggered() const { return _triggeredCastFlags & TRIGGERED_FULL_MASK; }
         bool IsChannelActive() const { return m_caster->GetUInt32Value(UNIT_FIELD_CHANNEL_SPELL) != 0; }
         bool IsAutoActionResetSpell() const;
+        bool IsCritForTarget(Unit* target) const;
 
         bool IsDeletable() const { return !m_referencedFromCurrentSpell && !m_executedCurrently; }
         void SetReferencedFromCurrent(bool yes) { m_referencedFromCurrentSpell = yes; }
@@ -540,8 +543,8 @@ class Spell
         bool m_referencedFromCurrentSpell;                  // mark as references to prevent deleted and access by dead pointers
         bool m_executedCurrently;                           // mark as executed to prevent deleted and access by dead pointers
         bool m_needComboPoints;
-        uint8 m_applyMultiplierMask;
-        float m_damageMultipliers[3];
+        uint32 m_applyMultiplierMask;
+        float m_damageMultipliers[32];
 
         // Current targets, to be used in SpellEffects (MUST BE USED ONLY IN SPELL EFFECTS)
         Unit* unitTarget;
@@ -563,6 +566,8 @@ class Spell
         // Damage and healing in effects need just calculate
         int32 m_damage;           // Damge   in effects count here
         int32 m_healing;          // Healing in effects count here
+        int32 m_final_damage;     // Final damage in effects count here
+        int32 m_absorbed_damage;   // Final absorbed damage in effects count here
 
         // ******************************************
         // Spell trigger system
@@ -582,7 +587,7 @@ class Spell
             uint64 timeDelay;
             SpellMissInfo missCondition:8;
             SpellMissInfo reflectResult:8;
-            uint8  effectMask:8;
+            uint32  effectMask:32;
             bool   processed:1;
             bool   alive:1;
             bool   crit:1;
@@ -590,13 +595,13 @@ class Spell
             int32  damage;
         };
         std::list<TargetInfo> m_UniqueTargetInfo;
-        uint8 m_channelTargetEffectMask;                        // Mask req. alive targets
+        uint32 m_channelTargetEffectMask;                        // Mask req. alive targets
 
         struct GOTargetInfo
         {
             uint64 targetGUID;
             uint64 timeDelay;
-            uint8  effectMask:8;
+            uint32  effectMask:32;
             bool   processed:1;
         };
         std::list<GOTargetInfo> m_UniqueGOTargetInfo;
@@ -604,13 +609,13 @@ class Spell
         struct ItemTargetInfo
         {
             Item  *item;
-            uint8 effectMask;
+            uint32 effectMask;
         };
         std::list<ItemTargetInfo> m_UniqueItemInfo;
 
         SpellDestination m_destTargets[MAX_SPELL_EFFECTS];
 
-        void AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid = true, bool implicit = true);
+        void AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid = true, bool implicit = true, uint8 effectIndex = EFFECT_0);
         void AddGOTarget(GameObject* target, uint32 effectMask);
         void AddItemTarget(Item* item, uint32 effectMask);
         void AddDestTarget(SpellDestination const& dest, uint32 effIndex);
@@ -683,7 +688,9 @@ class Spell
         PathGenerator m_preGeneratedPath;
 
         ByteBuffer * m_effectExecuteData[MAX_SPELL_EFFECTS];
+        SpellPowerEntry const* m_spellPowerData;
 
+        bool m_redirected;
 #ifdef MAP_BASED_RAND_GEN
         int32 irand(int32 min, int32 max)       { return int32 (m_caster->GetMap()->mtRand.randInt(max - min)) + min; }
         uint32 urand(uint32 min, uint32 max)    { return m_caster->GetMap()->mtRand.randInt(max - min) + min; }

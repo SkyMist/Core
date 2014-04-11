@@ -88,7 +88,7 @@ public:
                 {
                     case 0:
                         me->SetWalk(false);
-                        me->HandleEmoteCommand(EMOTE_STATE_FLYGRABCLOSED);
+                        me->HandleEmote(EMOTE_STATE_FLYGRABCLOSED);
                         FlyBackTimer = 500;
                         break;
                     case 1:
@@ -104,7 +104,7 @@ public:
                     case 2:
                         if (!player->IsRessurectRequested())
                         {
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_CUSTOM_SPELL_01);
+                            me->HandleEmote(EMOTE_ONESHOT_CUSTOM_SPELL_01);
                             DoCast(player, SPELL_REVIVE, true);
                             Talk(WHISPER_REVIVE, player->GetGUID());
                         }

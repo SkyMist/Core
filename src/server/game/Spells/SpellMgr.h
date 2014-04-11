@@ -447,7 +447,10 @@ class PetAura
         typedef UNORDERED_MAP<uint32, uint32> PetAuraMap;
 
     public:
-        PetAura() : removeOnChangePet(false), damage(0) { }
+        PetAura() : removeOnChangePet(false), damage(0)
+        {
+            auras.clear();
+        }
 
         PetAura(uint32 petEntry, uint32 aura, bool _removeOnChangePet, int _damage) :
         removeOnChangePet(_removeOnChangePet), damage(_damage)
@@ -599,6 +602,10 @@ DiminishingLevels GetDiminishingReturnsMaxLevel(DiminishingGroup group);
 int32 GetDiminishingReturnsLimitDuration(DiminishingGroup group, SpellInfo const* spellproto);
 bool IsDiminishingReturnsGroupDurationLimited(DiminishingGroup group);
 
+typedef std::vector<std::set<uint32> > SpellClassList;
+typedef std::set<uint32> TalentSpellSet;
+typedef std::vector<std::list<uint32> > SpellPowerVector;
+
 class SpellMgr
 {
     friend class ACE_Singleton<SpellMgr, ACE_Null_Mutex>;
@@ -611,6 +618,9 @@ class SpellMgr
     public:
         // Spell correctness for client using
         static bool IsSpellValid(SpellInfo const* spellInfo, Player* player = NULL, bool msg = true);
+
+        // Spell difficulty
+        SpellInfo const* GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const;
 
         // Spell Ranks table
         SpellChainNode const* GetSpellChainNode(uint32 spell_id) const;
@@ -626,6 +636,8 @@ class SpellMgr
         SpellRequiredMapBounds GetSpellsRequiredForSpellBounds(uint32 spell_id) const;
         SpellsRequiringSpellMapBounds GetSpellsRequiringSpellBounds(uint32 spell_id) const;
         bool IsSpellRequiringSpell(uint32 spellid, uint32 req_spellid) const;
+        const SpellsRequiringSpellMap GetSpellsRequiringSpell();
+        uint32 GetSpellRequired(uint32 spell_id) const;
 
         // Spell learning
         SpellLearnSkillNode const* GetSpellLearnSkill(uint32 spell_id) const;
@@ -673,6 +685,7 @@ class SpellMgr
 
         PetLevelupSpellSet const* GetPetLevelupSpellList(uint32 petFamily) const;
         PetDefaultSpellsEntry const* GetPetDefaultSpellsEntry(int32 id) const;
+        SpellPowerEntry const* GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const;
 
         // Spell area
         SpellAreaMapBounds GetSpellAreaMapBounds(uint32 spell_id) const;
@@ -682,18 +695,18 @@ class SpellMgr
         SpellAreaForAreaMapBounds GetSpellAreaForAreaMapBounds(uint32 area_id) const;
 
         // SpellInfo object management
-        SpellInfo const* GetSpellInfo(uint32 spellId) const { return spellId < GetSpellInfoStoreSize() ?  mSpellInfoMap[spellId] : NULL; }
-        uint32 GetSpellInfoStoreSize() const { return mSpellInfoMap.size(); }
+        SpellInfo const* GetSpellInfo(uint32 spellId, Difficulty difficulty = REGULAR_DIFFICULTY) const;
+        uint32 GetSpellInfoStoreSize() const { return mSpellInfoMap[REGULAR_DIFFICULTY].size(); }
+        std::set<uint32> GetSpellClassList(uint8 ClassID) const { return mSpellClassInfo[ClassID]; }
+        std::list<uint32> GetSpellPowerList(uint32 spellId) const { return mSpellPowerInfo[spellId]; }
 
-    private:
-        SpellInfo* _GetSpellInfo(uint32 spellId) { return spellId < GetSpellInfoStoreSize() ?  mSpellInfoMap[spellId] : NULL; }
+        bool IsTalent(uint32 spellId) { return mTalentSpellInfo.find(spellId) != mTalentSpellInfo.end() ?  true :  false; }
 
     // Modifiers
     public:
 
         // Loading data at server startup
         void UnloadSpellInfoChains();
-        void LoadSpellTalentRanks();
         void LoadSpellRanks();
         void LoadSpellRequired();
         void LoadSpellLearnSkills();
@@ -714,10 +727,15 @@ class SpellMgr
         void LoadPetDefaultSpells();
         void LoadSpellAreas();
         void LoadSpellInfoStore();
+        void LoadSpellClassInfo();
         void UnloadSpellInfoStore();
         void UnloadSpellInfoImplicitTargetConditionLists();
         void LoadSpellInfoCustomAttributes();
         void LoadSpellInfoCorrections();
+        void LoadTalentSpellInfo();
+        void LoadSpellPowerInfo();
+
+        std::vector<uint32>        mSpellCreateItemList;
 
     private:
         SpellChainMap              mSpellChains;
@@ -745,7 +763,10 @@ class SpellMgr
         SkillLineAbilityMap        mSkillLineAbilityMap;
         PetLevelupSpellMap         mPetLevelupSpellMap;
         PetDefaultSpellsMap        mPetDefaultSpellsMap;           // only spells not listed in related mPetLevelupSpellMap entry
-        SpellInfoMap               mSpellInfoMap;
+        SpellInfoMap               mSpellInfoMap[MAX_DIFFICULTY];
+        SpellClassList             mSpellClassInfo;
+        TalentSpellSet             mTalentSpellInfo;
+        SpellPowerVector           mSpellPowerInfo;
 };
 
 #define sSpellMgr ACE_Singleton<SpellMgr, ACE_Null_Mutex>::instance()

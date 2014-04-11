@@ -924,7 +924,7 @@ void WorldObject::MonsterYellToZone(int32 textId, uint32 language, uint64 Target
 
 void WorldObject::MonsterTextEmote(const char* text, uint64 TargetGuid, bool IsBossEmote)
 {
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildMonsterChat(&data, IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, text, LANG_UNIVERSAL, GetName(), TargetGuid);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), true);
 }
@@ -951,7 +951,7 @@ void WorldObject::MonsterWhisper(const char* text, uint64 receiver, bool IsBossW
 
     LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildMonsterChat(&data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL, GetNameForLocaleIdx(loc_idx), receiver);
 
     player->GetSession()->SendPacket(&data);
@@ -966,7 +966,7 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
     LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
     char const* text = sObjectMgr->GetTrinityString(textId, loc_idx);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildMonsterChat(&data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL, GetNameForLocaleIdx(loc_idx), receiver);
 
     player->GetSession()->SendPacket(&data);
@@ -974,26 +974,132 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
 
 void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const &name, uint64 targetGuid) const
 {
+    /*** Variables. ***/
+
+    // Message and Channel name lengths.
+    uint32 messageLength = text ? strlen(text) : 0;
+    uint32 prefixLength = 0;
+    uint32 channelLength = 0;
+
+    // Channel name.
+    std::string channel = ""; // No channel name on creature chat :P.
+
+    // Speaker and Target names.
+    uint32 speakerNameLength = name ? strlen(name) + 1 : 0;
+
+    Unit* target = ObjectAccessor::FindUnit(targetGuid);
+    uint32 receiverLength = target ? strlen(target->GetName()) : 0;
+
+    /*** Packet building. ***/
+    data->Initialize(SMSG_MESSAGECHAT, 200); // guess size
+
+    ObjectGuid source = GetGUID();
+    ObjectGuid target = targetGuid;
+
+    ObjectGuid groupGuid = 0; // Not used by creatures.
+    ObjectGuid guildGuid = 0; // Not used by creatures.
+
+    data->WriteBit(0);
+    data->WriteBit(0);
+
+    data->WriteBit(guildGuid[4]);
+    data->WriteBit(guildGuid[5]);
+    data->WriteBit(guildGuid[1]);
+    data->WriteBit(guildGuid[0]);
+    data->WriteBit(guildGuid[2]);
+    data->WriteBit(guildGuid[6]);
+    data->WriteBit(guildGuid[7]);
+    data->WriteBit(guildGuid[3]);
+
+    data->WriteBit(1);
+    data->WriteBit(0); // Send Language
+
+    data->WriteBit(target[2]);
+    data->WriteBit(target[7]);
+    data->WriteBit(target[0]);
+    data->WriteBit(target[3]);
+    data->WriteBit(target[4]);
+    data->WriteBit(target[6]);
+    data->WriteBit(target[1]);
+    data->WriteBit(target[5]);
+
+    data->WriteBit(0); // Show in chat log - 1 for showing only in bubble
+    data->WriteBit(1);
+    data->WriteBit(1);
+    data->WriteBit(1);
+    data->WriteBit(0);
+    data->WriteBit(0);
+
+    data->WriteBit(source[5]);
+    data->WriteBit(source[7]);
+    data->WriteBit(source[6]);
+    data->WriteBit(source[4]);
+    data->WriteBit(source[3]);
+    data->WriteBit(source[2]);
+    data->WriteBit(source[1]);
+    data->WriteBit(source[0]);
+
+    data->WriteBit(1);
+    data->WriteBit(0);
+
+    data->WriteBit(groupGuid[5]);
+    data->WriteBit(groupGuid[2]);
+    data->WriteBit(groupGuid[6]);
+    data->WriteBit(groupGuid[1]);
+    data->WriteBit(groupGuid[7]);
+    data->WriteBit(groupGuid[3]);
+    data->WriteBit(groupGuid[0]);
+    data->WriteBit(groupGuid[4]);
+
+    data->WriteBit(1);
+    data->WriteBits(messageLength, 12);
+    data->WriteBit(0);
+    data->WriteBit(1);
+    data->WriteBit(1);
+    data->WriteBit(1);
+
+    data->FlushBits();
+
+    data->WriteByteSeq(guildGuid[7]);
+    data->WriteByteSeq(guildGuid[2]);
+    data->WriteByteSeq(guildGuid[1]);
+    data->WriteByteSeq(guildGuid[4]);
+    data->WriteByteSeq(guildGuid[6]);
+    data->WriteByteSeq(guildGuid[5]);
+    data->WriteByteSeq(guildGuid[3]);
+    data->WriteByteSeq(guildGuid[0]);
+
+    data->WriteByteSeq(groupGuid[5]);
+    data->WriteByteSeq(groupGuid[3]);
+    data->WriteByteSeq(groupGuid[2]);
+    data->WriteByteSeq(groupGuid[4]);
+    data->WriteByteSeq(groupGuid[1]);
+    data->WriteByteSeq(groupGuid[0]);
+    data->WriteByteSeq(groupGuid[7]);
+    data->WriteByteSeq(groupGuid[6]);
+
     *data << uint8(msgtype);
-    *data << uint32(language);
-    *data << uint64(GetGUID());
-    *data << uint32(0);                                     // 2.1.0
-    *data << uint32(name.size() + 1);
-    *data << name;
-    *data << uint64(targetGuid);                            // Unit Target
-    if (targetGuid && !IS_PLAYER_GUID(targetGuid))
-    {
-        *data << uint32(1);                                 // target name length
-        *data << uint8(0);                                  // target name
-    }
-    *data << uint32(strlen(text)+1);
-    *data << text;
-    *data << uint8(0);                                      // ChatTag
-    if (msgtype == CHAT_MSG_RAID_BOSS_EMOTE || msgtype == CHAT_MSG_RAID_BOSS_WHISPER)
-    {
-        *data << float(0);
-        *data << uint8(0);
-    }
+
+    data->WriteByteSeq(target[4]);
+    data->WriteByteSeq(target[2]);
+    data->WriteByteSeq(target[3]);
+    data->WriteByteSeq(target[0]);
+    data->WriteByteSeq(target[6]);
+    data->WriteByteSeq(target[7]);
+    data->WriteByteSeq(target[5]);
+    data->WriteByteSeq(target[1]);
+
+    data->WriteByteSeq(source[6]);
+    data->WriteByteSeq(source[1]);
+    data->WriteByteSeq(source[0]);
+    data->WriteByteSeq(source[2]);
+    data->WriteByteSeq(source[4]);
+    data->WriteByteSeq(source[5]);
+    data->WriteByteSeq(source[7]);
+    data->WriteByteSeq(source[3]);
+
+    data->WriteString(message);
+    *data << uint8(language);
 }
 
 void WorldObject::SendMessageToSet(WorldPacket* data, bool self)

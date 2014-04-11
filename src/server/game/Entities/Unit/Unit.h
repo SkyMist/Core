@@ -126,6 +126,9 @@ enum SpellValueMod
     SPELLVALUE_BASE_POINT0,
     SPELLVALUE_BASE_POINT1,
     SPELLVALUE_BASE_POINT2,
+    SPELLVALUE_BASE_POINT3,
+    SPELLVALUE_BASE_POINT4,
+    SPELLVALUE_BASE_POINT5,
     SPELLVALUE_RADIUS_MOD,
     SPELLVALUE_MAX_TARGETS,
     SPELLVALUE_AURA_STACK
@@ -1380,6 +1383,8 @@ class Unit : public WorldObject
         void TriggerAurasProcOnEvent(ProcEventInfo& eventInfo, AuraApplicationList& procAuras);
 
         void HandleEmoteCommand(uint32 anim_id);
+        void HandleEmote(uint32 emote_id);
+        void HandleEmoteState(uint32 emote_id);
         void AttackerStateUpdate (Unit* victim, WeaponAttackType attType = BASE_ATTACK, bool extra = false);
 
         void CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* damageInfo, WeaponAttackType attackType = BASE_ATTACK);

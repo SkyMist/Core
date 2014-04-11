@@ -441,7 +441,7 @@ public:
             me->GetPosition(x, y, z);
             me->Relocate(x, y, z + 0.94f);
             me->SetDisableGravity(true);
-            me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
+            me->HandleEmote(EMOTE_ONESHOT_DANCE);
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -452,7 +452,7 @@ public:
                 {
                     Active = true;
                     CanIteract = 3500;
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
+                    me->HandleEmote(EMOTE_ONESHOT_DANCE);
                 }
                 else
                     CanIteract -= diff;
@@ -471,16 +471,16 @@ public:
                 switch (emote)
                 {
                     case TEXT_EMOTE_KISS:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
+                        me->HandleEmote(EMOTE_ONESHOT_SHY);
                         break;
                     case TEXT_EMOTE_WAVE:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_WAVE);
+                        me->HandleEmote(EMOTE_ONESHOT_WAVE);
                         break;
                     case TEXT_EMOTE_BOW:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                        me->HandleEmote(EMOTE_ONESHOT_BOW);
                         break;
                     case TEXT_EMOTE_JOKE:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                        me->HandleEmote(EMOTE_ONESHOT_LAUGH);
                         break;
                     case TEXT_EMOTE_DANCE:
                         if (!player->HasAura(SPELL_SEDUCTION))

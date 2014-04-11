@@ -56,7 +56,7 @@ class npc_pet_gen_mojo : public CreatureScript
 
             void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
             {
-                me->HandleEmoteCommand(emote);
+                me->HandleEmote(emote);
                 Unit* owner = me->GetOwner();
                 if (emote != TEXT_EMOTE_KISS || !owner || owner->GetTypeId() != TYPEID_PLAYER ||
                     owner->ToPlayer()->GetTeam() != player->GetTeam())

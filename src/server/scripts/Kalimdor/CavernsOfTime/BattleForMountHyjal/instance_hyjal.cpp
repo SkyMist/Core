@@ -186,16 +186,16 @@ public:
 
                                     for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
                                     {
-                                         if (i->GetSource())
-                                         {
-                                            WorldPacket packet(SMSG_MESSAGECHAT, 200);
-                                            unit->BuildMonsterChat(&packet, CHAT_MSG_MONSTER_YELL, YELL_EFFORTS, 0, YELL_EFFORTS_NAME, i->GetSource()->GetGUID());
+                                        if (i->GetSource())
+                                        {
+                                            WorldPacket data;
+                                            unit->BuildMonsterChat(&data, CHAT_MSG_MONSTER_YELL, YELL_EFFORTS, 0, YELL_EFFORTS_NAME, i->GetSource()->GetGUID());
                                             i->GetSource()->GetSession()->SendPacket(&packet);
 
                                             WorldPacket data2(SMSG_PLAY_SOUND, 4);
                                             data2 << uint32(10986);
                                             i->GetSource()->GetSession()->SendPacket(&data2);
-                                         }
+                                        }
                                     }
                                 }
                             }

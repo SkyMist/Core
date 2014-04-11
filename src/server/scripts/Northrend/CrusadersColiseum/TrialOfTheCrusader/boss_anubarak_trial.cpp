@@ -630,7 +630,7 @@ class npc_frost_sphere : public CreatureScript
                         me->GetMotionMaster()->MoveIdle();
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         //At hit the ground
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_FLYDEATH);
+                        me->HandleEmote(EMOTE_ONESHOT_FLYDEATH);
                         me->GetMotionMaster()->MoveFall(POINT_FALL_GROUND);
                     }
                 }

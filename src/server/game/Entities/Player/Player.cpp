@@ -4175,7 +4175,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
     RemoveOwnedAura(spell_id, GetGUID());
 
     // remove pet auras
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         if (PetAura const* petSpell = sSpellMgr->GetPetAura(spell_id, i))
             RemovePetAura(petSpell);
 
@@ -4317,7 +4317,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id);
         if (spellInfo->IsPassive())
         {
-            for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
                 if (spellInfo->Effects[i].Effect == SPELL_EFFECT_DUAL_WIELD)
                 {
                     SetCanDualWield(false);
@@ -4569,7 +4569,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
             removeSpell(spellEntry->Id, true);
 
             // search for spells that the talent teaches and unlearn them
-            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                 if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                     removeSpell(spellEntry->Effects[i].TriggerSpell, true);
 
@@ -4630,7 +4630,7 @@ bool Player::RemoveTalent(uint32 talentId)
 
     removeSpell(spellId, true);
 
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
             removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
 
@@ -4731,7 +4731,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
         return TRAINER_SPELL_RED;
 
     bool hasSpell = true;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -4754,7 +4754,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
     if (getLevel() < trainer_spell->reqLevel)
         return TRAINER_SPELL_RED;
 
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -4781,7 +4781,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
 
     // check primary prof. limit
     // first rank of primary profession spell when there are no proffesions avalible is disabled
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -5997,12 +5997,15 @@ float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
     switch (attType)
     {
         case BASE_ATTACK:
-            return GetUInt32Value(PLAYER_FIELD_MAINHAND_EXPERTISE) / 4.0f;
+            return float(GetUInt32Value(PLAYER_FIELD_MAINHAND_EXPERTISE)) / 4.0f;
         case OFF_ATTACK:
-            return GetUInt32Value(PLAYER_FIELD_OFFHAND_EXPERTISE) / 4.0f;
-        default:
-            break;
+            return float(GetUInt32Value(PLAYER_FIELD_OFFHAND_EXPERTISE)) / 4.0f;
+        case RANGED_ATTACK:
+            return float(GetUInt32Value(PLAYER_FIELD_RANGED_EXPERTISE)) / 4.0f;
+
+        default: break;
     }
+
     return 0.0f;
 }
 
@@ -6140,6 +6143,11 @@ void Player::UpdateRating(CombatRating cr)
         case CR_MASTERY:
             UpdateMastery();
             break;
+        case CR_PVP_POWER:
+            UpdatePvPPowerPercentage();
+            break;
+
+        default: break;
     }
 }
 
@@ -8326,24 +8334,9 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
             case ITEM_MOD_CRIT_SPELL_RATING:
                 ApplyRatingMod(CR_CRIT_SPELL, int32(val), apply);
                 break;
-            // case ITEM_MOD_HIT_TAKEN_MELEE_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_HIT_TAKEN_RANGED_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_HIT_TAKEN_SPELL_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_CRIT_TAKEN_MELEE_RATING:
-            //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, int32(val), apply);
-            //     break;
             case ITEM_MOD_CRIT_TAKEN_RANGED_RATING:
                 ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(val), apply);
                 break;
-            // case ITEM_MOD_CRIT_TAKEN_SPELL_RATING:
-            //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
             case ITEM_MOD_HASTE_MELEE_RATING:
                 ApplyRatingMod(CR_HASTE_MELEE, int32(val), apply);
                 break;
@@ -8363,18 +8356,11 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
                 ApplyRatingMod(CR_CRIT_RANGED, int32(val), apply);
                 ApplyRatingMod(CR_CRIT_SPELL, int32(val), apply);
                 break;
-            // case ITEM_MOD_HIT_TAKEN_RATING: // Unused since 3.3.5
-            //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, int32(val), apply);
-            //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, int32(val), apply);
-            //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_CRIT_TAKEN_RATING: // Unused since 3.3.5
-            //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, int32(val), apply);
-            //     ApplyRatingMod(CR_CRIT_TAKEN_RANGED, int32(val), apply);
-            //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
             case ITEM_MOD_RESILIENCE_RATING:
                 ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(val), apply);
+                break;
+            case ITEM_MOD_PVP_POWER:
+                ApplyRatingMod(CR_PVP_POWER, int32(val), apply);
                 break;
             case ITEM_MOD_HASTE_RATING:
                 ApplyRatingMod(CR_HASTE_MELEE, int32(val), apply);
@@ -14020,6 +14006,9 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_RESILIENCE_RATING:
             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, -int32(removeValue), apply);
             break;
+        case ITEM_MOD_PVP_POWER:
+            ApplyRatingMod(CR_PVP_POWER, -int32(removeValue), apply);
+            break;
         case ITEM_MOD_HASTE_RATING:
             ApplyRatingMod(CR_HASTE_MELEE, -int32(removeValue), apply);
             ApplyRatingMod(CR_HASTE_RANGED, -int32(removeValue), apply);
@@ -14132,6 +14121,9 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
             break;
         case ITEM_MOD_RESILIENCE_RATING:
             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(addValue), apply);
+            break;
+        case ITEM_MOD_PVP_POWER:
+            ApplyRatingMod(CR_PVP_POWER, int32(addValue), apply);
             break;
         case ITEM_MOD_HASTE_RATING:
             ApplyRatingMod(CR_HASTE_MELEE, int32(addValue), apply);
@@ -14447,19 +14439,13 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                             ApplyRatingMod(CR_CRIT_SPELL, enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u CRITICAL", enchant_amount);
                             break;
-                        // case ITEM_MOD_HIT_TAKEN_RATING: // Unused since 3.3.5
-                        //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
-                        //     break;
-                        // case ITEM_MOD_CRIT_TAKEN_RATING: // Unused since 3.3.5
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
-                        //     break;
                         case ITEM_MOD_RESILIENCE_RATING:
                             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u RESILIENCE", enchant_amount);
+                            break;
+                        case ITEM_MOD_PVP_POWER:
+                            ApplyRatingMod(CR_PVP_POWER, enchant_amount, apply);
+                            sLog->outDebug(LOG_FILTER_PLAYER_ITEMS, "+ %u POWER JCJ", enchant_amount);
                             break;
                         case ITEM_MOD_HASTE_RATING:
                             ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
@@ -19993,7 +19979,7 @@ void Player::_SaveAuras(SQLTransaction& trans)
         int32 baseDamage[MAX_SPELL_EFFECTS];
         uint32 effMask = 0;
         uint8 recalculateMask = 0;
-        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (AuraEffect const* effect = aura->GetEffect(i))
             {
@@ -21061,11 +21047,22 @@ void Player::StopCastingCharm()
     }
 }
 
-inline void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/) const
+inline void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/, uint64 receiverGUID /* = 0*/) const
 {
-    data->Initialize(SMSG_MESSAGECHAT, 100); // guess size
+    /*** Variables. ***/
 
-    ObjectGuid target = 0;
+    // Message and Channel name lengths.
+    uint32 messageLength = text.length();
+    uint32 prefixLength = addonPrefix ? strlen(addonPrefix) : 0;
+    uint32 channelLength = channel.length();
+
+    // Speaker name.
+    uint32 speakerNameLength = strlen(GetName());
+
+    /*** Packet building. ***/
+    data->Initialize(SMSG_MESSAGECHAT, 200); // guess size
+
+    ObjectGuid target = receiverGUID; // Not sure, but it could be used for player - player Whispers too (so far only used in monster chat). NYI in packet sending.
     ObjectGuid source = GetGUID();
     ObjectGuid unkGuid = 0;
     ObjectGuid unkGuid2 = 0;
@@ -21178,7 +21175,7 @@ void Player::Say(const std::string& text, const uint32 language)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_SAY, language, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_SAY, _text, language);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), true);
 }
@@ -21188,7 +21185,7 @@ void Player::Yell(const std::string& text, const uint32 language)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_YELL, language, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_YELL, _text, language);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), true);
 }
@@ -21198,7 +21195,7 @@ void Player::TextEmote(const std::string& text)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_EMOTE, _text, LANG_UNIVERSAL);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), true, !GetSession()->HasPermission(rbac::RBAC_PERM_TWO_SIDE_INTERACTION_CHAT));
 }
@@ -21211,46 +21208,57 @@ void Player::WhisperAddon(const std::string& text, const std::string& prefix, Pl
     if (!receiver->GetSession()->IsAddonRegistered(prefix))
         return;
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, LANG_UNIVERSAL, prefix.c_str());
     receiver->GetSession()->SendPacket(&data);
 }
 
 void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
 {
-    bool isAddonMessage = language == LANG_ADDON;
+    bool isAddonMessage = (language == LANG_ADDON);
 
-    if (!isAddonMessage) // if not addon data
-        language = LANG_UNIVERSAL; // whispers should always be readable
+    if (!isAddonMessage) // If it's not addon data, whispers should always be readable.
+        language = LANG_UNIVERSAL;
 
     Player* rPlayer = ObjectAccessor::FindPlayer(receiver);
 
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
-    BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
-    rPlayer->GetSession()->SendPacket(&data);
+    // When the player you are whispering to is DND / AFK, he cannot receive your message, unless you are in GM mode.
+    if (!rPlayer->isDND() && !rPlayer->isAFK() || isGameMaster())
+    {
+        WorldPacket data;
+        BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
+        rPlayer->GetSession()->SendPacket(&data);
 
-    // rest stuff shouldn't happen in case of addon message
-    if (isAddonMessage)
-        return;
+        rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, _text, language);
+        GetSession()->SendPacket(&data);
+    }
+    else
+    {
+        // Announce AFK or DND message, or, if you're a player trying to whisper a GM, get a "Player not found" error.
+        if (rPlayer->isAFK())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+        else if (rPlayer->isDND())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+        else if (!isGameMaster() && rPlayer->isGameMaster())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_NOT_FOUND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+    }
 
-    data.Initialize(SMSG_MESSAGECHAT, 200);
-    rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, _text, language);
-    GetSession()->SendPacket(&data);
-
+    // Set Accepting Whispers to true if you whisper to someone while your / his GM mode is off.
     if (!isAcceptWhispers() && !IsGameMaster() && !rPlayer->IsGameMaster())
     {
         SetAcceptWhispers(true);
         ChatHandler(GetSession()).SendSysMessage(LANG_COMMAND_WHISPERON);
     }
 
-    // announce afk or dnd message
-    if (rPlayer->isAFK())
-        ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
-    else if (rPlayer->isDND())
-        ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+    // If you whisper someone who doesn't have GM mode on, while you are in DND / AFK mode, turn it off to be able to receive an answer or let him know you're there.
+    if (!rPlayer->isGameMaster())
+    {
+             if (isDND()) ToggleDND();
+        else if (isAFK()) ToggleAFK();
+    }
 }
 
 Item* Player::GetMItem(uint32 id)
@@ -24100,7 +24108,7 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
 
     // check learned spells state
     bool found = false;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (spellInfo->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL && !HasSpell(spellInfo->Effects[i].TriggerSpell))
         {

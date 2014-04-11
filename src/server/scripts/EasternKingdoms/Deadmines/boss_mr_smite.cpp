@@ -145,7 +145,7 @@ public:
                     switch (uiPhase)
                     {
                         case 1:
-                            me->HandleEmoteCommand(EMOTE_STATE_KNEEL); //dosen't work?
+                            me->HandleEmote(EMOTE_STATE_KNEEL); //dosen't work?
                             uiTimer = 1000;
                             uiPhase = 2;
                             break;

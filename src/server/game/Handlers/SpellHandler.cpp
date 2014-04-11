@@ -734,7 +734,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     uint32 unkMovementLoopCounter = 0;
     Unit* caster = mover;
 
-
     bool hasCastCount = !recvPacket.ReadBit();
     bool hasSrcLocation = recvPacket.ReadBit();
     bool hasTargetString = !recvPacket.ReadBit();
@@ -743,13 +742,21 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     bool hasCastFlags = !recvPacket.ReadBit();
     bool hasDestLocation = recvPacket.ReadBit();
     recvPacket.ReadBit();
-    uint8 researchDataCount = recvPacket.ReadBits(2);
+    uint8 archeologyCounter = recvPacket.ReadBits(2);
     bool hasMovement = recvPacket.ReadBit();
     recvPacket.ReadBit();
     bool hasGlyphIndex = !recvPacket.ReadBit();
 
-    for (uint8 i = 0; i < researchDataCount; ++i)
-        recvPacket.ReadBits(2);
+    uint8* archeologyType;
+    uint32* entry;
+    uint32* usedCount;
+
+    archeologyType = new uint8[archeologyCounter];
+    entry = new uint32[archeologyCounter];
+    usedCount = new uint32[archeologyCounter];
+
+    for (uint8 i = 0; i < archeologyCounter; ++i)
+        archeologyType[i] = recvPacket.ReadBits(2);
 
     bool hasElevation = !recvPacket.ReadBit();
     bool hasMissileSpeed = !recvPacket.ReadBit();
@@ -858,12 +865,21 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     if (hasTargetMask)
         targetMask = recvPacket.ReadBits(20);
 
-
-
     for (uint8 i = 0; i < researchDataCount; ++i)
     {
-        recvPacket.read_skip<uint32>();
-        recvPacket.read_skip<uint32>();
+        switch (archeologyType[i])
+        {
+            case 2: // Keystones
+                recvPacket >> entry[i];        // Item id
+                recvPacket >> usedCount[i];    // Item count
+                break;
+            case 1: // Fragments
+                recvPacket >> entry[i];        // Currency id
+                recvPacket >> usedCount[i];    // Currency count
+                break;
+
+            default: break;
+        }
     }
 
     if (hasGlyphIndex)
@@ -1135,6 +1151,173 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         // if rank not found then function return NULL but in explicit cast case original spell can be casted and later failed with appropriate error message
         if (actualSpellInfo)
             spellInfo = actualSpellInfo;
+    }
+
+    // Custom MoP Script
+    // Power Word : Solace - 129250 and Power Word : Insanity - 129249
+    if (spellInfo->Id == 129250 && _player->GetShapeshiftForm() == FORM_SHADOW)
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(129249);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Aimed Shot - 19434 and Aimed Shot (for Master Marksman) - 82928
+    else if (spellInfo->Id == 19434 && _player->HasAura(82926))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(82928);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Alter Time - 108978 and Alter Time (overrided) - 127140
+    else if (spellInfo->Id == 108978 && _player->HasAura(110909))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(127140);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Fix Dark Soul for Destruction warlocks
+    else if (spellInfo->Id == 113860 && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(113858);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Halo - 120517 and Halo - 120644 (shadow form)
+    else if (spellInfo->Id == 120517 && _player->HasAura(15473))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(120644);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Consecration - 116467 and Consecration - 26573
+    else if (spellInfo->Id == 116467)
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(26573);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Cascade (shadow) - 127632 and Cascade - 121135
+    else if (spellInfo->Id == 121135 && _player->HasAura(15473))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(127632);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Zen Pilgrimage - 126892 and Zen Pilgrimage : Return - 126895
+    else if (spellInfo->Id == 126892 && _player->HasAura(126896))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(126895);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Soul Swap - 86121 and Soul Swap : Exhale - 86213
+    else if (spellInfo->Id == 86121 && _player->HasAura(86211))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(86213);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+            _player->RemoveAura(86211);
+        }
+    }
+    // Mage Bomb - 125430 and  Living Bomb - 44457
+    else if (spellInfo->Id == 125430 && _player->HasSpell(44457))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(44457);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Mage Bomb - 125430 and Frost Bomb - 112948
+    else if (spellInfo->Id == 125430 && _player->HasSpell(112948))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(112948);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Mage Bomb - 125430 and  Nether Tempest - 114923
+    else if (spellInfo->Id == 125430 && _player->HasSpell(114923))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(114923);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Evocation - 12051 and  Rune of Power - 116011
+    else if (spellInfo->Id == 12051 && _player->HasSpell(116011))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(116011);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Frostbolt - 116 and Frostbolt - 126201 (heal for water elemental)
+    else if (spellInfo->Id == 116 && targets.GetUnitTarget())
+    {
+        if (targets.GetUnitTarget()->GetOwner() && targets.GetUnitTarget()->GetOwner()->GetTypeId() == TYPEID_PLAYER && targets.GetUnitTarget()->GetOwner()->GetGUID() == _player->GetGUID())
+        {
+            SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(126201);
+            if (newSpellInfo)
+            {
+                spellInfo = newSpellInfo;
+                spellId = newSpellInfo->Id;
+            }
+        }
+    }
+    // Surging Mist - 116694 and Surging Mist - 116995
+    // Surging Mist is instantly casted if player is channeling Soothing Mist
+    else if (spellInfo->Id == 116694 && _player->GetCurrentSpell(CURRENT_CHANNELED_SPELL) && _player->GetCurrentSpell(CURRENT_CHANNELED_SPELL)->GetSpellInfo()->Id == 115175)
+    {
+        recvPacket.rfinish();
+        _player->CastSpell(targets.GetUnitTarget(), 116995, true);
+        _player->EnergizeBySpell(_player, 116995, 1, POWER_CHI);
+        int32 powerCost = spellInfo->CalcPowerCost(_player, spellInfo->GetSchoolMask(), _player->GetSpellPowerEntryBySpell(spellInfo));
+        _player->ModifyPower(POWER_MANA, -powerCost);
+        return;
+    }
+    // Enveloping Mist - 124682 and Enveloping Mist - 132120
+    // Enveloping Mist is instantly casted if player is channeling Soothing Mist
+    else if (spellInfo->Id == 124682 && _player->GetCurrentSpell(CURRENT_CHANNELED_SPELL) && _player->GetCurrentSpell(CURRENT_CHANNELED_SPELL)->GetSpellInfo()->Id == 115175)
+    {
+        recvPacket.rfinish();
+        _player->CastSpell(targets.GetUnitTarget(), 132120, true);
+        int32 powerCost = spellInfo->CalcPowerCost(_player, spellInfo->GetSchoolMask(), _player->GetSpellPowerEntryBySpell(spellInfo));
+        _player->ModifyPower(POWER_CHI, -powerCost);
+        return;
     }
 
     Spell* spell = new Spell(caster, spellInfo, TRIGGERED_NONE, 0, false);

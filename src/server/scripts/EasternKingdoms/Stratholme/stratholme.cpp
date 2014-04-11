@@ -284,16 +284,16 @@ public:
                     if (me->IsWithinDistInMap(player, 5))
                         DoCast(player, SPELL_SLAP, false);
                     else
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
+                        me->HandleEmote(EMOTE_ONESHOT_RUDE);
                     break;
                 case TEXT_EMOTE_WAVE:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_WAVE);
+                    me->HandleEmote(EMOTE_ONESHOT_WAVE);
                     break;
                 case TEXT_EMOTE_BOW:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                    me->HandleEmote(EMOTE_ONESHOT_BOW);
                     break;
                 case TEXT_EMOTE_KISS:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_FLEX);
+                    me->HandleEmote(EMOTE_ONESHOT_FLEX);
                     break;
             }
         }

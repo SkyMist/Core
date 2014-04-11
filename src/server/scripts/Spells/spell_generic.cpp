@@ -3069,7 +3069,7 @@ class spell_gen_spectator_cheer_trigger : public SpellScriptLoader
 
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
-                GetCaster()->HandleEmoteCommand(EmoteArray[urand(0, 2)]);
+                GetCaster()->HandleEmote(EmoteArray[urand(0, 2)]);
             }
 
             void Register() OVERRIDE

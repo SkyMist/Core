@@ -751,7 +751,7 @@ class spell_item_piccolo_of_the_flaming_fire : public SpellScriptLoader
             {
                 PreventHitDefaultEffect(effIndex);
                 if (Player* target = GetHitPlayer())
-                    target->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                    target->HandleEmote(EMOTE_STATE_DANCE);
             }
 
             void Register() OVERRIDE

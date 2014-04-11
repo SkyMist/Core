@@ -397,6 +397,9 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvPacket)
 
     if (plrMover)                                            // nothing is charmed, or player charmed
     {
+        // Clear unit emote state.
+        plrMover->HandleEmote(EMOTE_ONESHOT_NONE);
+
         plrMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 
         AreaTableEntry const* zone = GetAreaEntryByAreaID(plrMover->GetAreaId());

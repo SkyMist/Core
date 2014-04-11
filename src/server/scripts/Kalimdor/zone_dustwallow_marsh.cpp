@@ -219,7 +219,7 @@ public:
                         break;
                     case 1:
                         Talk(SAY_QUEST3);
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                        me->HandleEmote(EMOTE_ONESHOT_LAUGH);
                         Step = 0;
                         bYellTimer = false;
                         break;

@@ -192,8 +192,9 @@ enum Opcodes
    CMSG_DISMISS_CRITTER                                     = 0x0,
    CMSG_DUEL_ACCEPTED                                       = 0x0,
    CMSG_DUEL_CANCELLED                                      = 0x0,
+   CMSG_DUEL_PROPOSED                                       = 0x19B3, // 5.4.7 18019
    CMSG_EJECT_PASSENGER                                     = 0x0,
-   CMSG_EMOTE                                               = 0x0,
+   CMSG_EMOTE                                               = 0x12C5, // 5.4.7 18019
    CMSG_ENABLETAXI                                          = 0x0,
    CMSG_ENABLE_NAGLE                                        = 0x0,
    CMSG_EQUIPMENT_SET_DELETE                                = 0x0,
@@ -331,12 +332,12 @@ enum Opcodes
    CMSG_LOOT_MONEY                                          = 0x15A0, // 5.4.7 18019
    CMSG_LOOT_RELEASE                                        = 0x12F0, // 5.4.7 18019
    CMSG_LOOT_ROLL                                           = 0x0,
-   CMSG_MAIL_CREATE_TEXT_ITEM                               = 0x0,
-   CMSG_MAIL_DELETE                                         = 0x0,
-   CMSG_MAIL_MARK_AS_READ                                   = 0x0,
-   CMSG_MAIL_RETURN_TO_SENDER                               = 0x0,
-   CMSG_MAIL_TAKE_ITEM                                      = 0x0,
-   CMSG_MAIL_TAKE_MONEY                                     = 0x0,
+   CMSG_MAIL_CREATE_TEXT_ITEM                               = 0x0254, // 5.4.7 18019
+   CMSG_MAIL_DELETE                                         = 0x13A3, // 5.4.7 18019
+   CMSG_MAIL_MARK_AS_READ                                   = 0x027F, // 5.4.7 18019
+   CMSG_MAIL_RETURN_TO_SENDER                               = 0x1C8A, // 5.4.7 18019
+   CMSG_MAIL_TAKE_ITEM                                      = 0x06F6, // 5.4.7 18019
+   CMSG_MAIL_TAKE_MONEY                                     = 0x0676, // 5.4.7 18019
    CMSG_MEETINGSTONE_INFO                                   = 0x0,
    CMSG_MESSAGECHAT_ADDON_BATTLEGROUND                      = 0x0,
    CMSG_MESSAGECHAT_ADDON_GUILD                             = 0x0,
@@ -500,7 +501,7 @@ enum Opcodes
    CMSG_SELECT_LOOT_SPEC                                    = 0x0,
    CMSG_SELF_RES                                            = 0x0,
    CMSG_SELL_ITEM                                           = 0x115F, // 5.4.7 18019
-   CMSG_SEND_MAIL                                           = 0x0,
+   CMSG_SEND_MAIL                                           = 0x01A9, // 5.4.7 18019
    CMSG_SEND_SOR_REQUEST_VIA_ADDRESS                        = 0x0,
    CMSG_SEND_SOR_REQUEST_VIA_BNET_ACCOUNT_ID                = 0x0,
    CMSG_SERVERTIME                                          = 0x0,
@@ -850,7 +851,7 @@ enum Opcodes
    SMSG_DUMP_RIDE_TICKETS_RESPONSE                          = 0x0,
    SMSG_DURABILITY_DAMAGE_DEATH                             = 0x0,
    SMSG_ECHO_PARTY_SQUELCH                                  = 0x0,
-   SMSG_EMOTE                                               = 0x0,
+   SMSG_EMOTE                                               = 0x022F, // 5.4.7 18019
    SMSG_ENABLE_BARBER_SHOP                                  = 0x0,
    SMSG_ENCHANTMENTLOG                                      = 0x0,
    SMSG_ENVIRONMENTALDAMAGELOG                              = 0x0,
@@ -1045,7 +1046,7 @@ enum Opcodes
    SMSG_LOOT_ROLL_WON                                       = 0x0,
    SMSG_LOOT_SLOT_CHANGED                                   = 0x0,
    SMSG_LOOT_START_ROLL                                     = 0x0,
-   SMSG_MAIL_LIST_RESULT                                    = 0x0,
+   SMSG_MAIL_LIST_RESULT                                    = 0x0401, // 5.4.7 18019
    SMSG_MAP_OBJ_EVENTS                                      = 0x0,
    SMSG_MEETINGSTONE_COMPLETE                               = 0x0,
    SMSG_MEETINGSTONE_IN_PROGRESS                            = 0x0,

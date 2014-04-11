@@ -673,14 +673,14 @@ class boss_professor_putricide : public CreatureScript
                                 case PHASE_COMBAT_2:
                                     if (Creature* face = me->FindNearestCreature(NPC_TEAR_GAS_TARGET_STALKER, 50.0f))
                                         me->SetFacingToObject(face);
-                                    me->HandleEmoteCommand(EMOTE_ONESHOT_KNEEL);
+                                    me->HandleEmote(EMOTE_ONESHOT_KNEEL);
                                     Talk(SAY_TRANSFORM_1);
                                     events.ScheduleEvent(EVENT_RESUME_ATTACK, 5500, 0, PHASE_COMBAT_2);
                                     break;
                                 case PHASE_COMBAT_3:
                                     if (Creature* face = me->FindNearestCreature(NPC_TEAR_GAS_TARGET_STALKER, 50.0f))
                                         me->SetFacingToObject(face);
-                                    me->HandleEmoteCommand(EMOTE_ONESHOT_KNEEL);
+                                    me->HandleEmote(EMOTE_ONESHOT_KNEEL);
                                     Talk(SAY_TRANSFORM_2);
                                     summons.DespawnIf(AbominationDespawner(me));
                                     events.ScheduleEvent(EVENT_RESUME_ATTACK, 8500, 0, PHASE_COMBAT_3);

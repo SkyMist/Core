@@ -92,7 +92,7 @@ public:
         void UpdateAI(uint32 diff) OVERRIDE
         {
             if (work == true)
-                me->HandleEmoteCommand(EMOTE_ONESHOT_WORK_CHOPWOOD);
+                me->HandleEmote(EMOTE_ONESHOT_WORK_CHOPWOOD);
             if (RebuffTimer <= diff)
             {
                 DoCast(me, SPELL_BUFF_SLEEP);

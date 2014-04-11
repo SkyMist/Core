@@ -1745,7 +1745,8 @@ enum Targets
     TARGET_DEST_CHANNEL_CASTER         = 106,
     TARGET_UNK_DEST_AREA_UNK_107       = 107, // not enough info - only generic spells avalible
     TARGET_GAMEOBJECT_CONE             = 108,
-    TARGET_DEST_UNK_110                = 110, // 1 spell
+    TARGET_UNK_109                     = 109, // spell 89008
+    TARGET_UNIT_CONE_ENEMY_110         = 110, // 1 spell
     TARGET_UNK_111                     = 111,
     TARGET_UNK_112                     = 112,
     TARGET_UNK_113                     = 113,
@@ -1764,7 +1765,7 @@ enum Targets
     TARGET_UNK_126                     = 126,
     TARGET_UNK_127                     = 127,
     TARGET_UNK_128                     = 128,
-    TARGET_UNK_129                     = 129, // TARGET_UNIT_CONE_ENEMY_129
+    TARGET_UNIT_CONE_ENEMY_129         = 129,
     TARGET_UNK_130                     = 130,
     TARGET_UNK_131                     = 131,
     TARGET_UNK_132                     = 132,
@@ -3682,7 +3683,6 @@ enum SkillType
     SKILL_DK_UNHOLY                = 772,
     SKILL_INSCRIPTION              = 773,
     SKILL_PET_MOTH                 = 775,
-    SKILL_RUNEFORGING              = 776, // Now 960???
     SKILL_MOUNTS                   = 777,
     SKILL_COMPANIONS               = 778,
     SKILL_PET_EXOTIC_CHIMAERA      = 780,
@@ -3733,7 +3733,7 @@ enum SkillType
     SKILL_NEW_PET_OBSERVER         = 930, // New class.
     SKILL_NEW_PET_WRATHGUARD       = 931, // New class.
     SKILL_ALL                      = 934, // All specializations combination.
-    SKILL_NEW_RUNEFORGING          = 960, // New class.
+    SKILL_RUNEFORGING              = 960, // New class.
     SKILL_PET_PR_FIRE_ELEMENTAL    = 962,
     SKILL_PET_PR_EARTH_ELEMENTAL   = 963,
     SKILL_WAY_OF_GRILL             = 975, // New cooking.

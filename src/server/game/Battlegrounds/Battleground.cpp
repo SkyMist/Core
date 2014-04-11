@@ -727,7 +727,7 @@ void Battleground::YellToAll(Creature* creature, char const* text, uint32 langua
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         if (Player* player = _GetPlayer(itr, "YellToAll"))
         {
-            WorldPacket data(SMSG_MESSAGECHAT, 200);
+            WorldPacket data;
             creature->BuildMonsterChat(&data, CHAT_MSG_MONSTER_YELL, text, language, creature->GetName(), itr->first);
             player->SendDirectMessage(&data);
         }

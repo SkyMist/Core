@@ -1788,7 +1788,7 @@ struct SpecializationSpellsEntry
 struct SpellEffectEntry
 {
     uint32    Id;                                           // 0         m_ID
-    //uint32    Unk0;                                       // 1         unk - Pandaria
+    uint32    EffectDifficulty;                             // 1         m_effectDifficulty
     uint32    Effect;                                       // 2         m_effect
     float     EffectValueMultiplier;                        // 3         m_effectAmplitude
     uint32    EffectApplyAuraName;                          // 4         m_effectAura
@@ -1901,6 +1901,9 @@ struct SpellEntry
     uint32 SpellTotemsId;                                    // 22       SpellTotems.dbc
     uint32 ResearchProject;                                  // 23       ResearchProject.dbc
     uint32 SpellMiscId;                                      // 24       SpellMisc.dbc
+
+    // struct access functions
+    SpellEffectEntry const* GetSpellEffect(uint32 eff, uint32 difficulty) const;
 };
 
 // SpellMisc.dbc
@@ -2550,6 +2553,20 @@ struct TalentSpellPos
 };
 
 typedef std::map<uint32, TalentSpellPos> TalentSpellPosMap;
+
+struct SpellEffect
+{
+    SpellEffect()
+    {
+        for (uint8 i = 0; i < MAX_DIFFICULTY; i++)
+            for (uint8 y = 0; y < MAX_SPELL_EFFECTS; y++)
+                effects[i][y] = 0;
+    }
+
+    SpellEffectEntry const* effects[MAX_DIFFICULTY][32];
+};
+
+typedef std::map<uint32, SpellEffect> SpellEffectMap;
 
 struct TaxiPathBySourceAndDestination
 {

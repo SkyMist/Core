@@ -292,7 +292,7 @@ public:
                     if (Creature* pGrauf = me->SummonCreature(NPC_GRAUF, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3*IN_MILLISECONDS))
                     {
                         pGrauf->GetMotionMaster()->MoveFall();
-                        pGrauf->HandleEmoteCommand(EMOTE_ONESHOT_FLYDEATH);
+                        pGrauf->HandleEmote(EMOTE_ONESHOT_FLYDEATH);
                     }
                     me->GetMotionMaster()->MoveJump(Location[4].GetPositionX(), Location[4].GetPositionY(), Location[4].GetPositionZ(), 5.0f, 10.0f);
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);

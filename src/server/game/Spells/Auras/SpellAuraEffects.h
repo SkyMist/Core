@@ -215,6 +215,9 @@ class AuraEffect
         void HandleModTotalPercentStat(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraModResistenceOfStatPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraModExpertise(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleOverrideSpellPowerByAttackPower(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleIncreaseHasteFromItemsByPct(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleModManaRegenByHaste(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         //   heal and energize
         void HandleModPowerRegen(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleModPowerRegenPCT(AuraApplication const* aurApp, uint8 mode, bool apply) const;
@@ -252,6 +255,7 @@ class AuraEffect
         void HandleAuraModAttackPowerPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraModRangedAttackPowerPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraModAttackPowerOfArmor(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleOverrideAttackPowerBySpellPower(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         //   damage bonus
         void HandleModDamageDone(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleModDamagePercentDone(AuraApplication const* aurApp, uint8 mode, bool apply) const;
@@ -274,6 +278,7 @@ class AuraEffect
         void HandleAuraConvertRune(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraLinked(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraOpenStable(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+        void HandleAuraStrangulate(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraModFakeInebriation(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraOverrideSpells(AuraApplication const* aurApp, uint8 mode, bool apply) const;
         void HandleAuraSetVehicle(AuraApplication const* aurApp, uint8 mode, bool apply) const;
@@ -318,11 +323,11 @@ namespace Trinity
                 // Wards
                 if ((spellProtoA->SpellFamilyName == SPELLFAMILY_MAGE) ||
                     (spellProtoA->SpellFamilyName == SPELLFAMILY_WARLOCK))
-                    if (spellProtoA->GetCategory() == 56)
+                    if (spellProtoA->Category == 56)
                         return true;
                 if ((spellProtoB->SpellFamilyName == SPELLFAMILY_MAGE) ||
                     (spellProtoB->SpellFamilyName == SPELLFAMILY_WARLOCK))
-                    if (spellProtoB->GetCategory() == 56)
+                    if (spellProtoB->Category == 56)
                         return false;
 
                 // Sacred Shield
@@ -344,9 +349,9 @@ namespace Trinity
                     return false;
 
                 // Ice Barrier
-                if (spellProtoA->GetCategory() == 471)
+                if (spellProtoA->Category == 471)
                     return true;
-                if (spellProtoB->GetCategory() == 471)
+                if (spellProtoB->Category == 471)
                     return false;
 
                 // Sacrifice
@@ -359,6 +364,20 @@ namespace Trinity
 
                 return false;
             }
+    };
+
+    class DurationOrderPred
+    {
+        public:
+            DurationOrderPred(bool ascending = true) : m_ascending(ascending) {}
+            bool operator() (constAuraPtr a, constAuraPtr b) const
+            {
+                uint32 rA = a->GetDuration();
+                uint32 rB = b->GetDuration();
+                return m_ascending ? rA < rB : rA > rB;
+            }
+        private:
+            const bool m_ascending;
     };
 }
 #endif

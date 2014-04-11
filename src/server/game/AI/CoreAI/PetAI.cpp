@@ -582,19 +582,19 @@ void PetAI::ReceiveEmote(Player* player, uint32 emote)
         {
             case TEXT_EMOTE_COWER:
                 if (me->IsPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(/*EMOTE_ONESHOT_ROAR*/EMOTE_ONESHOT_OMNICAST_GHOUL);
+                    me->HandleEmote(/*EMOTE_ONESHOT_ROAR*/EMOTE_ONESHOT_OMNICAST_GHOUL);
                 break;
             case TEXT_EMOTE_ANGRY:
                 if (me->IsPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(/*EMOTE_ONESHOT_COWER*/EMOTE_STATE_STUN);
+                    me->HandleEmote(/*EMOTE_ONESHOT_COWER*/EMOTE_STATE_STUN);
                 break;
             case TEXT_EMOTE_GLARE:
                 if (me->IsPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_STATE_STUN);
+                    me->HandleEmote(EMOTE_STATE_STUN);
                 break;
             case TEXT_EMOTE_SOOTHE:
                 if (me->IsPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_OMNICAST_GHOUL);
+                    me->HandleEmote(EMOTE_ONESHOT_OMNICAST_GHOUL);
                 break;
         }
 }

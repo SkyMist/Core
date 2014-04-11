@@ -600,6 +600,12 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
     uint32 health = victim->GetHealth();
     TC_LOG_DEBUG("entities.unit", "Unit " UI64FMTD " dealt %u damage to unit " UI64FMTD, GetGUID(), damage, victim->GetGUID());
 
+    // clear unit emote state
+    if (GetTypeId() == TYPEID_PLAYER)
+        HandleEmote(EMOTE_ONESHOT_NONE);
+    if (victim != this && victim->GetTypeId() == TYPEID_PLAYER)
+        victim->HandleEmote(EMOTE_ONESHOT_NONE);
+
     // duel ends when player has 1 or less hp
     bool duel_hasEnded = false;
     bool duel_wasMounted = false;
@@ -1221,11 +1227,11 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     if (!victim->IsAlive() || victim->HasUnitState(UNIT_STATE_IN_FLIGHT) || (victim->GetTypeId() == TYPEID_UNIT && victim->ToCreature()->IsInEvadeMode()))
         return;
 
-    // Hmmmm dont like this emotes client must by self do all animations
+    // Client should do these by itself.
     if (damageInfo->HitInfo & HITINFO_CRITICALHIT)
-        victim->HandleEmoteCommand(EMOTE_ONESHOT_WOUND_CRITICAL);
+        victim->HandleEmote(EMOTE_ONESHOT_WOUND_CRITICAL);
     if (damageInfo->blocked_amount && damageInfo->TargetState != VICTIMSTATE_BLOCKS)
-        victim->HandleEmoteCommand(EMOTE_ONESHOT_PARRY_SHIELD);
+        victim->HandleEmote(EMOTE_ONESHOT_PARRY_SHIELD);
 
     if (damageInfo->TargetState == VICTIMSTATE_PARRY)
     {
@@ -1345,12 +1351,33 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     }
 }
 
+// The emote opcode is used only for ONESHOT Animations now.
 void Unit::HandleEmoteCommand(uint32 anim_id)
 {
     WorldPacket data(SMSG_EMOTE, 4 + 8);
     data << uint32(anim_id);
     data << uint64(GetGUID());
     SendMessageToSet(&data, true);
+}
+
+// The UNIT_NPC_EMOTESTATE field is used for Emote States now.
+void Unit::HandleEmoteState(uint32 emote_id)
+{
+    SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, emote_id);
+}
+
+// This does the trick in correctly selecting what to use :D.
+void Unit::HandleEmote(uint32 emote_id)
+{
+    if (!emote_id)
+        HandleEmoteState(EMOTE_ONESHOT_NONE);
+    else if (EmotesEntry const* emoteEntry = sEmotesStore.LookupEntry(emote_id))
+    {
+        if (emoteEntry->EmoteType) // 1, 2 Emote States, 0 ONESHOT animations play.
+            HandleEmoteState(emote_id);
+        else
+            HandleEmoteCommand(emote_id);
+    }
 }
 
 bool Unit::IsDamageReducedByArmor(SpellSchoolMask schoolMask, SpellInfo const* spellInfo, uint8 effIndex)
@@ -2159,7 +2186,7 @@ int32 Unit::GetMechanicResistChance(SpellInfo const* spellInfo) const
         return 0;
 
     int32 resistMech = 0;
-    for (uint8 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
+    for (uint32 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
     {
         if (!spellInfo->Effects[eff].IsEffect())
             break;
@@ -2217,7 +2244,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spellInfo
     // Chance resist mechanic (select max value from every mechanic spell effect)
     int32 resist_mech = 0;
     // Get effects mechanic and chance
-    for (uint8 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
+    for (uint32 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
     {
         int32 effect_mech = spellInfo->GetEffectMechanic(eff);
         if (effect_mech)
@@ -3002,7 +3029,7 @@ Aura* Unit::_TryStackingOrRefreshingExistingAura(SpellInfo const* newAura, uint3
                 return NULL;
 
             // update basepoints with new values - effect amount will be recalculated in ModStackAmount
-            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
                 if (!foundAura->HasEffect(i))
                     continue;
@@ -4167,7 +4194,7 @@ bool Unit::HasAuraWithMechanic(uint32 mechanicMask) const
         if (spellInfo->Mechanic && (mechanicMask & (1 << spellInfo->Mechanic)))
             return true;
 
-        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             if (iter->second->HasEffect(i) && spellInfo->Effects[i].Effect && spellInfo->Effects[i].Mechanic)
                 if (mechanicMask & (1 << spellInfo->Effects[i].Mechanic))
                     return true;
@@ -6648,7 +6675,7 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 /*damage*/, Aura* triggeredByAura
                 if (victim && triggeredByAura->GetCasterGUID() == victim->GetGUID())
                     return false;
                 // Lookup base amount mana restore
-                for (uint8 i = 0; i < MAX_SPELL_EFFECTS; i++)
+                for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
                 {
                     if (procSpell->Effects[i].Effect == SPELL_EFFECT_ENERGIZE)
                     {
@@ -7216,7 +7243,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         // Enlightenment (trigger only from mana cost spells)
         case 35095:
         {
-            if (!procSpell || procSpell->PowerType != POWER_MANA || (procSpell->powerCost == 0 && procSpell->powerCostPercentage == 0 && procSpell->powerCostPerlevel == 0))
+            if (!procSpell || procSpell->PowerType != POWER_MANA || (procSpell->powerCost == 0 && procSpell->powerCostPercentage == 0))
                 return false;
             break;
         }
@@ -8171,7 +8198,7 @@ void Unit::SetMinion(Minion *minion, bool apply)
         {
             // All summoned by totem minions must disappear when it is removed.
         if (SpellInfo const* spInfo = sSpellMgr->GetSpellInfo(minion->ToTotem()->GetSpell()))
-            for (int i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
                 if (spInfo->Effects[i].Effect != SPELL_EFFECT_SUMMON)
                     continue;
@@ -9420,7 +9447,7 @@ uint32 Unit::SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, ui
         DoneTotal += int32(DoneAdvertisedBenefit * coeff * factorMod);
     }
 
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         switch (spellProto->Effects[i].ApplyAuraName)
         {
@@ -9513,7 +9540,7 @@ uint32 Unit::SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, u
         if (caster->GetGUID() == (*i)->GetCasterGUID() && (*i)->IsAffectingSpell(spellProto))
             AddPct(TakenTotalMod, (*i)->GetAmount());
 
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         switch (spellProto->Effects[i].ApplyAuraName)
         {
@@ -9654,7 +9681,7 @@ bool Unit::IsImmunedToSpell(SpellInfo const* spellInfo) const
     }
 
     bool immuneToAllEffects = true;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         // State/effect immunities applied by aura expect full spell immunity
         // Ignore effects with mechanic, they are supposed to be checked separately
@@ -9773,7 +9800,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* victim, uint32 pdamage, WeaponAttackType
     {
         bool normalized = false;
         if (spellProto)
-            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                 if (spellProto->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
                 {
                     normalized = true;
@@ -10259,6 +10286,12 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
         return;
 
     SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
+
+    // clear unit emote state
+    if (GetTypeId() == TYPEID_PLAYER)
+        HandleEmote(EMOTE_ONESHOT_NONE);
+    if (enemy && enemy->GetTypeId() == TYPEID_PLAYER)
+        enemy->HandleEmote(EMOTE_ONESHOT_NONE);
 
     if (Creature* creature = ToCreature())
     {
@@ -12476,7 +12509,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
         bool triggered = !(spellProto->AttributesEx3 & SPELL_ATTR3_CAN_PROC_WITH_TRIGGERED) ?
             (procExtra & PROC_EX_INTERNAL_TRIGGERED && !(procFlag & PROC_FLAG_DONE_TRAP_ACTIVATION)) : false;
 
-        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (itr->second->HasEffect(i))
             {
@@ -12544,7 +12577,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
 
         if (!handled)
         {
-            for (uint8 effIndex = 0; effIndex < MAX_SPELL_EFFECTS; ++effIndex)
+            for (uint32 effIndex = 0; effIndex < MAX_SPELL_EFFECTS; ++effIndex)
             {
                 if (!(i->effMask & (1<<effIndex)))
                     continue;
@@ -12715,8 +12748,8 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                         break;
                 } // switch (triggeredByAura->GetAuraType())
                 i->aura->CallScriptAfterEffectProcHandlers(triggeredByAura, aurApp, eventInfo);
-            } // for (uint8 effIndex = 0; effIndex < MAX_SPELL_EFFECTS; ++effIndex)
-        } // if (!handled)
+            }
+        }
 
         // Remove charge (aura can be removed by triggers)
         if (prepare && useCharges && takeCharges)
@@ -13162,7 +13195,7 @@ uint32 Unit::GetCastingTimeForBonus(SpellInfo const* spellProto, DamageEffectTyp
         CastingTime /= 2;
 
     // 50% for damage and healing spells for leech spells from damage bonus and 0% from healing
-    for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+    for (uint32 j = 0; j < MAX_SPELL_EFFECTS; ++j)
     {
         if (spellProto->Effects[j].Effect == SPELL_EFFECT_HEALTH_LEECH ||
             (spellProto->Effects[j].Effect == SPELL_EFFECT_APPLY_AURA && spellProto->Effects[j].ApplyAuraName == SPELL_AURA_PERIODIC_LEECH))
@@ -15752,7 +15785,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
                     // this also applies for transform auras
                     if (SpellInfo const* transform = sSpellMgr->GetSpellInfo(getTransForm()))
-                        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                             if (transform->Effects[i].IsAura(SPELL_AURA_TRANSFORM))
                                 if (CreatureTemplate const* transformInfo = sObjectMgr->GetCreatureTemplate(transform->Effects[i].MiscValue))
                                 {

@@ -357,7 +357,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleUnused,                                    //295 unused (4.3.4)
     &AuraEffect::HandleAuraSetVehicle,                            //296 SPELL_AURA_SET_VEHICLE_ID sets vehicle on target
     &AuraEffect::HandleNULL,                                      //297 Spirit Burst spells
-    &AuraEffect::HandleNULL,                                      //298 70569 - Strangulating, maybe prevents talk or cast
+    &AuraEffect::HandleAuraStrangulate,                           //298 70569 - Strangulating, maybe prevents talk or cast
     &AuraEffect::HandleUnused,                                    //299 unused (4.3.4)
     &AuraEffect::HandleNoImmediateEffect,                         //300 SPELL_AURA_SHARE_DAMAGE_PCT implemented in Unit::DealDamage
     &AuraEffect::HandleNoImmediateEffect,                         //301 SPELL_AURA_SCHOOL_HEAL_ABSORB implemented in Unit::CalcHealAbsorb
@@ -425,7 +425,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //363 SPELL_AURA_MOD_NEXT_SPELL
     &AuraEffect::HandleUnused,                                    //364 unused (4.3.4)
     &AuraEffect::HandleNULL,                                      //365 SPELL_AURA_MAX_FAR_CLIP_PLANE
-    &AuraEffect::HandleNULL,                                      //366 SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT
+    &AuraEffect::HandleOverrideSpellPowerByAttackPower,           //366 SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT  implemented in Unit::SpellBaseDamageBonus
     &AuraEffect::HandleNULL,                                      //367 SPELL_AURA_367
     &AuraEffect::HandleUnused,                                    //368 unused (4.3.4)
     &AuraEffect::HandleNULL,                                      //369 SPELL_AURA_ENABLE_POWER_BAR_TIMER
@@ -434,7 +434,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     // Auras < 371 Need Recheck.
     &AuraEffect::HandleNULL,                                      //371 SPELL_AURA_371
     &AuraEffect::HandleNULL,                                      //372 SPELL_AURA_372 (used in spell 130041) (5.4.2)
-    &AuraEffect::HandleNULL,                                      //373 SPELL_AURA_373
+    &AuraEffect::HandleAuraModIncreaseSpeed,                      //373 SPELL_AURA_INCREASE_MIN_SWIM_SPEED
     &AuraEffect::HandleNULL,                                      //374 SPELL_AURA_374
     &AuraEffect::HandleUnused,                                    //375 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //376 SPELL_AURA_376
@@ -444,13 +444,13 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleUnused,                                    //380 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //381 SPELL_AURA_381 (used in spell 21741) (5.4.2)
     &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_382
-    &AuraEffect::HandleNULL,                                      //383 SPELL_AURA_383
+    &AuraEffect::HandleNoImmediateEffect,                         //383 SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN
     &AuraEffect::HandleUnused,                                    //384 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //385 SPELL_AURA_385
     &AuraEffect::HandleNULL,                                      //386 SPELL_AURA_386 (used in spell 117915) (5.4.2)
     &AuraEffect::HandleNULL,                                      //387 SPELL_AURA_387 (used in spell 117923) (5.4.2)
     &AuraEffect::HandleNULL,                                      //388 SPELL_AURA_388 (used in spell 117983) (5.4.2)
-    &AuraEffect::HandleUnused,                                    //389 unused (5.4.2)
+    &AuraEffect::HandleNoImmediateEffect,                         //389 SPELL_AURA_KIL_JAEDENS_CUNNING in SpellInfo::AttackerStateUpdate
     &AuraEffect::HandleUnused,                                    //390 unused (5.4.2)
     &AuraEffect::HandleUnused,                                    //391 unused (5.4.2)
     &AuraEffect::HandleUnused,                                    //392 unused (5.4.2)
@@ -464,16 +464,16 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //400 SPELL_AURA_400 (used in spells 124353 & 124351) (5.4.2)
     &AuraEffect::HandleNULL,                                      //401 SPELL_AURA_401 (used in spell 125695) (5.4.2)
     &AuraEffect::HandleNULL,                                      //402 SPELL_AURA_402
-    &AuraEffect::HandleNULL,                                      //403 SPELL_AURA_403
-    &AuraEffect::HandleNULL,                                      //404 SPELL_AURA_404 (used in spell 115070) (5.4.2)
-    &AuraEffect::HandleNULL,                                      //405 SPELL_AURA_405
+    &AuraEffect::HandleNULL,                                      //403 SPELL_AURA_CHANGE_VISUAL_EFFECT
+    &AuraEffect::HandleOverrideAttackPowerBySpellPower,           //404 SPELL_AURA_OVERRIDE_AP_BY_SPELL_POWER_PCT
+    &AuraEffect::HandleIncreaseHasteFromItemsByPct,               //405 SPELL_AURA_INCREASE_HASTE_FROM_ITEMS_BY_PCT
     &AuraEffect::HandleNULL,                                      //406 SPELL_AURA_406
     &AuraEffect::HandleNULL,                                      //407 SPELL_AURA_407
     &AuraEffect::HandleNULL,                                      //408 SPELL_AURA_408
     &AuraEffect::HandleNULL,                                      //409 SPELL_AURA_409
     &AuraEffect::HandleNULL,                                      //410 SPELL_AURA_410 (used in spell 57902) (5.4.2)
     &AuraEffect::HandleNULL,                                      //411 SPELL_AURA_411
-    &AuraEffect::HandleNULL,                                      //412 SPELL_AURA_412 (used in spell 111546 & 117957) (5.4.2)
+    &AuraEffect::HandleModManaRegenByHaste,                       //412 SPELL_AURA_412 (used in spell 111546 & 117957) (5.4.2)
     &AuraEffect::HandleNULL,                                      //413 SPELL_AURA_413
     &AuraEffect::HandleNULL,                                      //414 SPELL_AURA_414
     &AuraEffect::HandleNULL,                                      //415 SPELL_AURA_415 (used in spell 123316) (5.4.2)
@@ -3052,7 +3052,19 @@ void AuraEffect::HandleAuraModIncreaseSpeed(AuraApplication const* aurApp, uint8
 
     Unit* target = aurApp->GetTarget();
 
+    if (GetAuraType() == SPELL_AURA_INCREASE_MIN_SWIM_SPEED)
+    {
+        target->UpdateSpeed(MOVE_SWIM, true);
+        return;
+    }
+
     target->UpdateSpeed(MOVE_RUN, true);
+
+    if (GetAuraType() == SPELL_AURA_MOD_MINIMUM_SPEED)
+    {
+        target->UpdateSpeed(MOVE_RUN_BACK, true);
+        target->UpdateSpeed(MOVE_FLIGHT, true);
+    }
 }
 
 void AuraEffect::HandleAuraModIncreaseMountedSpeed(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -6139,7 +6151,7 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
     // damage caster for heal amount
     if (target != caster && GetSpellInfo()->AttributesEx2 & SPELL_ATTR2_HEALTH_FUNNEL && GetSpellInfo()->Id != 755)
     {
-        uint32 funnelDamage = GetSpellInfo()->powerCostPerSecond; // damage is not affected by spell power
+        uint32 funnelDamage = GetSpellInfo()->channelTicCost; // damage is not affected by spell power
         if ((int32)funnelDamage > gain)
             funnelDamage = gain;
         uint32 funnelAbsorb = 0;
@@ -6513,4 +6525,116 @@ void AuraEffect::HandleEnableAltPower(AuraApplication const* aurApp, uint8 mode,
         aurApp->GetTarget()->SetMaxPower(POWER_ALTERNATE_POWER, powerEntry->MaxPower);
     else
         aurApp->GetTarget()->SetMaxPower(POWER_ALTERNATE_POWER, 0);
+}
+
+void AuraEffect::HandleAuraStrangulate(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & AURA_EFFECT_HANDLE_REAL))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+
+    if (!target)
+        return;
+
+    // Asphyxiate
+    if (m_spellInfo->Id == 108194)
+    {
+        int32 newZ = 10;
+        target->SetControlled(apply, UNIT_STATE_STUNNED);
+
+        if (apply)
+            target->UpdateHeight(target->GetPositionZ() + newZ);
+        else
+            target->UpdateHeight(target->GetPositionZ() - newZ);
+    }
+}
+
+// void AuraEffect::HandleChangeSpellVisualEffect(AuraApplication const* aurApp, uint8 mode, bool apply) const - aura 403
+// {
+//     if (!(mode & AURA_EFFECT_HANDLE_REAL))
+//         return;
+// 
+//     Unit* target = aurApp->GetTarget();
+//     if (!target)
+//         return;
+// 
+//     Player* player = target->ToPlayer();
+//     if (player == NULL)
+//         return;
+// 
+//     uint32 spellToReplace = apply ? GetMiscValue() : 0;
+//     uint32 replacer = apply ? m_spellInfo->Id : 0;
+// 
+//     /*Replaces visuals for digsites (PLAYER_DYNAMIC_RESEARCH_SITES)*/
+//     player->SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, spellToReplace);
+//     player->SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, replacer);
+// }
+
+void AuraEffect::HandleOverrideSpellPowerByAttackPower(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+
+    // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
+    // This information for client side use only
+    // Get healing bonus for all schools
+    target->SetFloatValue(PLAYER_FIELD_OVERRIDE_SPELL_POWER_BY_APPERCENT, float(GetAmount()));
+}
+
+void AuraEffect::HandleOverrideAttackPowerBySpellPower(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+
+    // Recalculate bonus
+    if (target->GetTypeId() == TYPEID_PLAYER)
+        target->ToPlayer()->UpdateAttackPowerAndDamage(false);
+
+    // Magic damage modifiers implemented in Unit::MeleeDamageBonusDone
+    // This information for client side use only
+    // Get attack power bonus for all attack type
+    target->SetFloatValue(PLAYER_FIELD_OVERRIDE_APBY_SPELL_POWER_PERCENT, float(GetAmount()));
+}
+
+void AuraEffect::HandleIncreaseHasteFromItemsByPct(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+
+    if (!target->ToPlayer())
+        return;
+
+    if (apply)
+    {
+        float HasteRating = target->ToPlayer()->GetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_HASTE_MELEE);
+        HasteRating *= (1 + GetAmount() / 100.0f);
+        float haste = 1 / (1 + (HasteRating * target->ToPlayer()->GetRatingMultiplier(CR_HASTE_MELEE)) / 100);
+
+        // Update haste percentage for client
+        target->SetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE, haste);
+        target->SetFloatValue(UNIT_FIELD_MOD_SPELL_HASTE, haste);
+        target->SetFloatValue(UNIT_FIELD_MOD_HASTE, haste);
+    }
+    else
+        target->ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+}
+
+void AuraEffect::HandleModManaRegenByHaste(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & AURA_EFFECT_HANDLE_REAL))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+    if (!target)
+        return;
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+        target->ToPlayer()->UpdateManaRegen();
 }

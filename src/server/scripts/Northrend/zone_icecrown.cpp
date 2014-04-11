@@ -1003,7 +1003,7 @@ class npc_margrave_dhakar : public CreatureScript
             void Reset() OVERRIDE
             {
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_NONE);
+                me->HandleEmote(EMOTE_STATE_NONE);
 
                 _events.Reset();
                 _summons.DespawnAll();
@@ -1032,7 +1032,7 @@ class npc_margrave_dhakar : public CreatureScript
                         case EVENT_INTRO:
                         {
                             Talk(SAY_DHAKAR_START);
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_READY2H);
+                            me->HandleEmote(EMOTE_STATE_READY2H);
 
                             if (Creature* morbidus = me->FindNearestCreature(NPC_MORBIDUS, 50.0f, true))
                             {

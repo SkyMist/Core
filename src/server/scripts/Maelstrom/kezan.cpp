@@ -72,7 +72,7 @@ public:
         void UpdateAI(uint32 diff) OVERRIDE
         {
             if (IsWorking())
-                me->HandleEmoteCommand(EMOTE_ONESHOT_WORK_MINING);
+                me->HandleEmote(EMOTE_ONESHOT_WORK_MINING);
 
             if (rebuffTimer <= diff)
             {
@@ -81,13 +81,13 @@ public:
                 switch (urand(0, 2))
                 {
                     case 0:
-                        me->HandleEmoteCommand(EMOTE_STATE_EXCLAIM);
+                        me->HandleEmote(EMOTE_STATE_EXCLAIM);
                         break;
                     case 1:
-                        me->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                        me->HandleEmote(EMOTE_STATE_DANCE);
                         break;
                     case 2:
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_NONE);
+                        me->HandleEmote(EMOTE_ONESHOT_NONE);
                         break;
                 }
                 rebuffTimer = 120000; // Rebuff again in 2 minutes

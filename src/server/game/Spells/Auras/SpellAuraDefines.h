@@ -36,13 +36,13 @@ enum AURA_FLAGS
 
 enum AuraEffectHandleModes
 {
-    AURA_EFFECT_HANDLE_DEFAULT = 0x0,
-    AURA_EFFECT_HANDLE_REAL = 0x01, // handler applies/removes effect from unit
+    AURA_EFFECT_HANDLE_DEFAULT         = 0x0,
+    AURA_EFFECT_HANDLE_REAL            = 0x01, // handler applies/removes effect from unit
     AURA_EFFECT_HANDLE_SEND_FOR_CLIENT = 0x02, // handler sends apply/remove packet to unit
-    AURA_EFFECT_HANDLE_CHANGE_AMOUNT = 0x04, // handler updates effect on target after effect amount change
-    AURA_EFFECT_HANDLE_REAPPLY = 0x08, // handler updates effect on target after aura is reapplied on target
-    AURA_EFFECT_HANDLE_STAT = 0x10, // handler updates effect on target when stat removal/apply is needed for calculations by core
-    AURA_EFFECT_HANDLE_SKILL = 0x20, // handler updates effect on target when skill removal/apply is needed for calculations by core
+    AURA_EFFECT_HANDLE_CHANGE_AMOUNT   = 0x04, // handler updates effect on target after effect amount change
+    AURA_EFFECT_HANDLE_REAPPLY         = 0x08, // handler updates effect on target after aura is reapplied on target
+    AURA_EFFECT_HANDLE_STAT            = 0x10, // handler updates effect on target when stat removal/apply is needed for calculations by core
+    AURA_EFFECT_HANDLE_SKILL           = 0x20, // handler updates effect on target when skill removal/apply is needed for calculations by core
     AURA_EFFECT_HANDLE_SEND_FOR_CLIENT_MASK = (AURA_EFFECT_HANDLE_SEND_FOR_CLIENT | AURA_EFFECT_HANDLE_REAL), // any case handler need to send packet
     AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK = (AURA_EFFECT_HANDLE_CHANGE_AMOUNT | AURA_EFFECT_HANDLE_REAL), // any case handler applies effect depending on amount
     AURA_EFFECT_HANDLE_CHANGE_AMOUNT_SEND_FOR_CLIENT_MASK = (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_SEND_FOR_CLIENT_MASK),
@@ -424,7 +424,7 @@ enum AuraType
     SPELL_AURA_MOD_NEXT_SPELL                               = 363,  // Used by 101601 Throw Totem - causes the client to initialize spell cast with specified spell
     SPELL_AURA_364                                          = 364,  // Not used in 4.3.4
     SPELL_AURA_MAX_FAR_CLIP_PLANE                           = 365,  // Overrides client's View Distance setting to max("Fair", current_setting) and turns off terrain display
-    SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT               = 366,  // NYI - Sets spellpower equal to % of attack power, discarding all other bonuses (from gear and buffs)
+    SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT               = 366,  // Sets spellpower equal to % of attack power, discarding all other bonuses (from gear and buffs)
     SPELL_AURA_367                                          = 367,
     SPELL_AURA_368                                          = 368,  // Not used in 4.3.4
     SPELL_AURA_ENABLE_POWER_BAR_TIMER                       = 369,
@@ -432,7 +432,7 @@ enum AuraType
     // Pandaria
     SPELL_AURA_371                                          = 371,
     SPELL_AURA_372                                          = 372,
-    SPELL_AURA_373                                          = 373,  // SPELL_AURA_ALLOW_ONLY_ABILITY2 ??
+    SPELL_AURA_INCREASE_MIN_SWIM_SPEED                      = 373,  // Not sure if increase only swim, but in Roll (Monk), blizz send only update swim speed packet
     SPELL_AURA_MODIFY_FALL_DAMAGE_PCT                       = 374,
     // 375 unusued
     SPELL_AURA_MOD_CURRENCY_GAIN2                           = 376,
@@ -442,13 +442,13 @@ enum AuraType
     // 380 unused
     SPELL_AURA_381                                          = 381,
     SPELL_AURA_382                                          = 382,
-    SPELL_AURA_383                                          = 383,
+    SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN                 = 383,  // SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN implemented in Spell::CheckCast
     // 384 unused
-    SPELL_AURA_385                                          = 385,
+    SPELL_AURA_385                                          = 385,  // Give a chance to misfire attacks and hit self instead
     SPELL_AURA_386                                          = 386,
     SPELL_AURA_387                                          = 387,
-    SPELL_AURA_388                                          = 388,
-    // 389 unused
+    SPELL_AURA_388                                          = 388,  // SPELL_AURA_MOD_TAXI_FLIGHT_SPEED
+    SPELL_AURA_389                                          = 389,  // SPELL_AURA_KIL_JAEDENS_CUNNING in SpellInfo::AttackerStateUpdate
     // 390 unused
     // 391 unused
     // 392 unused
@@ -462,20 +462,20 @@ enum AuraType
     SPELL_AURA_400                                          = 400,
     SPELL_AURA_401                                          = 401,
     SPELL_AURA_402                                          = 402,
-    SPELL_AURA_403                                          = 403,
-    SPELL_AURA_404                                          = 404,
-    SPELL_AURA_405                                          = 405,
+    SPELL_AURA_CHANGE_VISUAL_EFFECT                         = 403,
+    SPELL_AURA_OVERRIDE_AP_BY_SPELL_POWER_PCT               = 404,  // Sets attack power equal to % of spellpower, discarding all other bonuses (from gear and buffs)
+    SPELL_AURA_INCREASE_HASTE_FROM_ITEMS_BY_PCT             = 405,  // SPELL_AURA_INCREASE_STATS_FROM_ITEMS_BY_PCT
     SPELL_AURA_406                                          = 406,
-    SPELL_AURA_407                                          = 407,
+    SPELL_AURA_407                                          = 407,  // SPELL_AURA_MOD_FEAR_2
     SPELL_AURA_408                                          = 408,
     SPELL_AURA_409                                          = 409,
     SPELL_AURA_410                                          = 410,
-    SPELL_AURA_411                                          = 411,
-    SPELL_AURA_412                                          = 412,
+    SPELL_AURA_411                                          = 411,  // SPELL_AURA_MOD_CHARGES
+    SPELL_AURA_MOD_MANA_REGEN_BY_HASTE                      = 412,  // SPELL_AURA_MOD_MANA_REGEN_BY_HASTE
     SPELL_AURA_413                                          = 413,
     SPELL_AURA_414                                          = 414,
     SPELL_AURA_415                                          = 415,
-    SPELL_AURA_416                                          = 416,
+    SPELL_AURA_416                                          = 416,  // SPELL_AURA_SANCTITY_OF_BATTLE
     SPELL_AURA_417                                          = 417,
     SPELL_AURA_418                                          = 418,
     SPELL_AURA_419                                          = 419,

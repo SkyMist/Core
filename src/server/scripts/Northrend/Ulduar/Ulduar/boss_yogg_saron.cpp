@@ -626,7 +626,7 @@ class boss_voice_of_yogg_saron : public CreatureScript
                         summon->m_Events.AddEvent(new StartAttackEvent(me, summon), summon->m_Events.CalculateTime(1000));
                         break;
                     case NPC_YOGG_SARON:
-                        summon->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                        summon->HandleEmote(EMOTE_ONESHOT_EMERGE);
                         break;
                     case NPC_CONSTRICTOR_TENTACLE:
                         summon->CastSpell(summon, SPELL_LUNGE, true);
@@ -634,7 +634,7 @@ class boss_voice_of_yogg_saron : public CreatureScript
                     case NPC_CRUSHER_TENTACLE:
                     case NPC_CORRUPTOR_TENTACLE:
                         summon->SetReactState(REACT_PASSIVE);
-                        summon->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                        summon->HandleEmote(EMOTE_ONESHOT_EMERGE);
                         summon->m_Events.AddEvent(new StartAttackEvent(me, summon), summon->m_Events.CalculateTime(5000));
                         break;
                     case NPC_DESCEND_INTO_MADNESS:
@@ -1882,7 +1882,7 @@ class npc_turned_champion : public CreatureScript
                 if (type != POINT_MOTION_TYPE || pointId != 0)
                     return;
 
-                me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                me->HandleEmote(EMOTE_ONESHOT_SALUTE);
             }
 
             void DoAction(int32 action) OVERRIDE
