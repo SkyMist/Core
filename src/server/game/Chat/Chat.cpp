@@ -632,17 +632,34 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
     return ShowHelpForSubCommands(table, "", cmd);
 }
 
-//Note: target_guid used only in CHAT_MSG_WHISPER_INFORM mode (in this case channelName ignored)
-void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker, const char* addonPrefix /*= NULL*/)
+// Contains: Packet data, Player session, Message type, Message language, Channel name, Receiver GUID, Message text, Creature speaker, Addon prefix, Chat tag, Achievement id.
+void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char* channelName, uint64 target_guid, const char* message, Unit* speaker, const char* addonPrefix /*= NULL*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/, char const* localizedName /*= NULL*/)
 {
-    /*
-    *data << uint8(type);
-    if ((type != CHAT_MSG_CHANNEL && type != CHAT_MSG_WHISPER) || language == LANG_ADDON)
-        *data << uint32(language);
-    else
-        *data << uint32(LANG_UNIVERSAL);
-    */
+    /*** Some assignments and checks used as safety. ***/
 
+    // Set message length.
+    uint32 messageLength = message ? strlen(message) : 0;
+
+    // Set channel length.
+    uint32 channelLength = channelName ? strlen(channelName) : 0;
+
+    // Set addon prefix length.
+    uint32 addonPrefixLength = addonPrefix ? strlen(addonPrefix) : 0;
+
+    // Set language used.
+    if ((type != CHAT_MSG_CHANNEL && type != CHAT_MSG_WHISPER) || language == LANG_ADDON)
+        language = language;
+    else
+        language = LANG_UNIVERSAL;
+
+    // Build correct target GUID.
+    Player* speakerPlayer = NULL;
+    if (speaker && speaker->GetTypeId() == TYPEID_PLAYER)
+        speakerPlayer = speaker->ToPlayer();
+    else if (session)
+        speakerPlayer = session->GetPlayer();
+
+    // Build proper data depending on message type.
     switch (type)
     {
         case CHAT_MSG_SAY:
@@ -661,7 +678,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_BG_SYSTEM_HORDE:
         case CHAT_MSG_INSTANCE_CHAT:
         case CHAT_MSG_INSTANCE_CHAT_LEADER:
-            target_guid = session ? session->GetPlayer()->GetGUID() : 0;
+            target_guid = speakerPlayer ? speakerPlayer->GetGUID() : 0; // Original target_guid preserved for certain message types (ex. CHAT_MSG_WHISPER_INFORM).
             break;
         case CHAT_MSG_MONSTER_SAY:
         case CHAT_MSG_MONSTER_PARTY:
@@ -671,29 +688,50 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_RAID_BOSS_WHISPER:
         case CHAT_MSG_RAID_BOSS_EMOTE:
         case CHAT_MSG_BATTLENET:
-        {
             break;
-        }
-        default:
-            if (type != CHAT_MSG_WHISPER_INFORM && type != CHAT_MSG_IGNORED && type != CHAT_MSG_DND && type != CHAT_MSG_AFK)
-                target_guid = 0;                            // only for CHAT_MSG_WHISPER_INFORM used original value target_guid
-            break;
+
+        default: break;
     }
 
-    data->Initialize(SMSG_MESSAGECHAT, 200); // guess size
+    // Set speaker name length and get the speaker name.
+    uint32 speakerNameLength = 0;
+    if (speaker)
+        speakerNameLength = strlen(localizedName ? localizedName : speaker->GetName());
+    else if (session)
+        speakerNameLength = strlen(session ? session->GetPlayer()->GetName() : 0);
 
+    std::string speakerName = speaker ? (localizedName ? localizedName : speaker->GetName()) : (session ? session->GetPlayer()->GetName() : 0);
+
+    // Set target name length and get the target name.
+    uint32 targetNameLength = 0;
+    std::string targetName;
+    if (target_guid)
+    {
+        if (Unit* unit = ObjectAccessor::FindUnit(target_guid))
+        {
+            targetNameLength = strlen(unit->GetName());
+            targetName = unit->GetName();
+        }
+    }
+
+    /*** Packet building. ***/
+
+    // First establish what GUIDs to use.
+    ObjectGuid source = speaker ? speaker->GetGUID() : (session ? session->GetPlayer()->GetGUID() : 0);
     ObjectGuid target = target_guid;
-    ObjectGuid source = speaker ? speaker->GetGUID() : 0;
 
     ObjectGuid groupGuid = 0;
     if (type == CHAT_MSG_PARTY   || type == CHAT_MSG_PARTY_LEADER
         || type == CHAT_MSG_RAID || type == CHAT_MSG_RAID_LEADER || type == CHAT_MSG_RAID_WARNING
         || type == CHAT_MSG_INSTANCE_CHAT || type == CHAT_MSG_INSTANCE_CHAT_LEADER)
-        groupGuid = session ? session->GetPlayer()->GetGroup()->GetGUID() : 0;
+        groupGuid = (speakerPlayer && speakerPlayer->GetGroup()) ? speakerPlayer->GetGroup()->GetGUID() : 0;
 
     ObjectGuid guildGuid = 0;
     if (type == CHAT_MSG_GUILD || type == CHAT_MSG_OFFICER)
-        guildGuid = session ? (session->GetPlayer()->GetGuildId() ? sGuildMgr->GetGuildById(session->GetPlayer()->GetGuildId())->GetGUID() : 0) : 0;
+        guildGuid = (speakerPlayer && speakerPlayer->GetGuild()) ? speakerPlayer->GetGuild()->GetGUID() : 0;
+
+    // Now build the actual packet.
+    data->Initialize(SMSG_MESSAGECHAT, 200); // guess size
 
     data->WriteBit(0);
     data->WriteBit(0);
