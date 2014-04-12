@@ -228,7 +228,6 @@ DBCStorage <SpellShapeshiftFormEntry> sSpellShapeshiftFormStore(SpellShapeshiftF
 DBCStorage <StableSlotPricesEntry> sStableSlotPricesStore(StableSlotPricesfmt);
 DBCStorage <SummonPropertiesEntry> sSummonPropertiesStore(SummonPropertiesfmt);
 DBCStorage <TalentEntry> sTalentStore(TalentEntryfmt);
-TalentSpellPosMap sTalentSpellPosMap;
 typedef std::map<uint32, std::vector<uint32> > SpecializationSpellsMap;
 
 SpecializationSpellsMap sSpecializationSpellsMap;
@@ -670,18 +669,6 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sTalentStore,                 dbcPath, "Talent.dbc");//15595
 
-    // create talent spells set
-    for (unsigned int i = 0; i < sTalentStore.GetNumRows(); ++i)
-    {
-        TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
-        if (!talentInfo)
-            continue;
-
-        for (int j = 0; j < 1; j++)
-            if (talentInfo->SpellId)
-                sTalentSpellPosMap[talentInfo->SpellId] = TalentSpellPos(i, j);
-    }
-
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrSpecializationStore,              dbcPath, "ChrSpecialization.dbc");
 
     // prepare fast data access to bit pos of talent ranks for use at inspecting
@@ -890,23 +877,6 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint3
         return itr->second.effects[difficulty][effect];
 
     return itr->second.effects[NONE_DIFFICULTY][effect];
-}
-
-TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
-{
-    TalentSpellPosMap::const_iterator itr = sTalentSpellPosMap.find(spellId);
-    if (itr == sTalentSpellPosMap.end())
-        return NULL;
-
-    return &itr->second;
-}
-
-uint32 GetTalentSpellCost(uint32 spellId)
-{
-    if (TalentSpellPos const* pos = GetTalentSpellPos(spellId))
-        return pos->rank+1;
-
-    return 0;
 }
 
 int32 GetAreaFlagByAreaID(uint32 area_id)

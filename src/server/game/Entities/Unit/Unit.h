@@ -1621,6 +1621,8 @@ class Unit : public WorldObject
         void RemoveAura(AuraApplication * aurApp, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAura(Aura* aur, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
+        void RemoveAllSymbiosisAuras();
+
         void RemoveAurasDueToSpell(uint32 spellId, uint64 casterGUID = 0, uint32 reqEffMask = 0, AuraRemoveMode removeMode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAuraFromStack(uint32 spellId, uint64 casterGUID = 0, AuraRemoveMode removeMode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAurasDueToSpellByDispel(uint32 spellId, uint32 dispellerSpellId, uint64 casterGUID, Unit* dispeller, uint8 chargesRemoved = 1);
@@ -1777,6 +1779,7 @@ class Unit : public WorldObject
         virtual void UpdateMaxPower(Powers power) = 0;
         virtual void UpdateAttackPowerAndDamage(bool ranged = false) = 0;
         virtual void UpdateDamagePhysical(WeaponAttackType attType) = 0;
+        int32 GetTotalSpellPowerValue(SpellSchoolMask mask, bool heal) const;
         float GetTotalAttackPowerValue(WeaponAttackType attType) const;
         float GetWeaponDamageRange(WeaponAttackType attType, WeaponDamageRange type) const;
         void SetBaseWeaponDamage(WeaponAttackType attType, WeaponDamageRange damageRange, float value) { m_weaponDamage[attType][damageRange] = value; }
@@ -1825,8 +1828,19 @@ class Unit : public WorldObject
         void _RegisterDynObject(DynamicObject* dynObj);
         void _UnregisterDynObject(DynamicObject* dynObj);
         DynamicObject* GetDynObject(uint32 spellId);
+        int32 CountDynObjects(uint32 spellId);
+        void GetDynObjectList(std::list<DynamicObject*> &list, uint32 spellId);
         void RemoveDynObject(uint32 spellId);
         void RemoveAllDynObjects();
+
+        // AreaTrigger management
+        void _RegisterAreaTrigger(AreaTrigger* areaTrigger);
+        void _UnregisterAreaTrigger(AreaTrigger* areaTrigger);
+        AreaTrigger* GetAreaTrigger(uint32 spellId);
+        int32 CountAreaTriggers(uint32 spellId);
+        void GetAreaTriggerList(std::list<AreaTrigger*> &list, uint32 spellId);
+        void RemoveAreaTrigger(uint32 spellId);
+        void RemoveAllAreaTriggers();
 
         GameObject* GetGameObject(uint32 spellId) const;
         void AddGameObject(GameObject* gameObj);
@@ -2010,6 +2024,9 @@ class Unit : public WorldObject
 
         typedef std::list<DynamicObject*> DynObjectList;
         DynObjectList m_dynObj;
+
+        typedef std::list<AreaTrigger*> AreaTriggerList;
+        AreaTriggerList m_AreaTrigger;
 
         typedef std::list<GameObject*> GameObjectList;
         GameObjectList m_gameObj;

@@ -1002,6 +1002,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recvData)
 {
     uint32 triggerId;
     uint8 unk1, unk2;
+
     recvData >> triggerId;
     unk1 = recvData.ReadBit();
     unk2 = recvData.ReadBit();

@@ -1801,6 +1801,11 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetReputation(uint32 factionentry) const;
         std::string GetGuildName();
 
+        void LoadMountsAndLearnRidingSkills(uint32 spellId);
+
+		// Spell damage.
+		int32 GetSpellDamage(uint8 minLevel, uint8 minAttack, uint8 maxLevel, uint8 maxAttack, float attackCoef, float spellCoef, bool heal = false, WeaponAttackType attackType = BASE_ATTACK, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NORMAL);
+
         // Talents
         uint32 GetUsedTalentCount() const { return _talentMgr->UsedTalentCount; }
         void SetUsedTalentCount(uint32 talents) { _talentMgr->UsedTalentCount = talents; }
@@ -1820,14 +1825,20 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 GetNextResetTalentsCost() const;
         void InitTalentForLevel();
+        void InitSpellsForLevel(uint32 minLevel, uint32 maxLevel);
+        void RemoveSpecializationSpells();
         void BuildPlayerTalentsInfoData(WorldPacket* data);
         void BuildPetTalentsInfoData(WorldPacket* data);
         void SendTalentsInfoData();
-        bool LearnTalent(uint16 talentId);
+        bool LearnTalent(uint32 talentId);
         void LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank);
         bool AddTalent(uint32 spellId, uint8 spec, bool learning);
         bool HasTalent(uint32 spell_id, uint8 spec) const;
         uint32 CalculateTalentsPoints() const;
+
+        // Passive spells for talents.
+        void CastPassiveTalentSpell(uint32 spellId);
+        void RemovePassiveTalentSpell(uint32 spellId);
 
         // Dual Spec
         void UpdateSpecCount(uint8 count);
@@ -1871,6 +1882,7 @@ class Player : public Unit, public GridObject<Player>
         void ModifySpellCooldown(uint32 spellId, int32 cooldown);
         void SendCooldownEvent(SpellInfo const* spellInfo, uint32 itemId = 0, Spell* spell = NULL, bool setCooldown = true);
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
+        void ReduceSpellCooldown(uint32 spell_id, time_t modifyTime);
         void RemoveSpellCooldown(uint32 spell_id, bool update = false);
         void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
         void SendClearCooldown(uint32 spell_id, Unit* target);

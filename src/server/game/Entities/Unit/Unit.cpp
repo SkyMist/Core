@@ -315,6 +315,7 @@ Unit::~Unit()
     ASSERT(m_removedAuras.empty());
     ASSERT(m_gameObj.empty());
     ASSERT(m_dynObj.empty());
+    ASSERT(m_AreaTrigger.empty());
 }
 
 void Unit::Update(uint32 p_time)
@@ -3422,6 +3423,21 @@ void Unit::RemoveAura(uint32 spellId, uint64 caster, uint32 reqEffMask, AuraRemo
     }
 }
 
+void Unit::RemoveAllSymbiosisAuras()
+{
+    RemoveAura(110309); // Caster
+    RemoveAura(110478); // Death Knight
+    RemoveAura(110479); // Hunter
+    RemoveAura(110482); // Mage
+    RemoveAura(110483); // Monk
+    RemoveAura(110484); // Paladin
+    RemoveAura(110485); // Priest
+    RemoveAura(110486); // Rogue
+    RemoveAura(110488); // Shaman
+    RemoveAura(110490); // Warlock
+    RemoveAura(110491); // Warrior
+}
+
 void Unit::RemoveAura(AuraApplication * aurApp, AuraRemoveMode mode)
 {
     // we've special situation here, RemoveAura called while during aura removal
@@ -4564,6 +4580,8 @@ void Unit::ApplyStatPercentBuffMod(Stats stat, float val, bool apply)
     ApplyPercentModFloatValue(UNIT_FIELD_STAT_NEG_BUFF+stat, val, apply);
 }
 
+// Dynamic Object management.
+
 void Unit::_RegisterDynObject(DynamicObject* dynObj)
 {
     m_dynObj.push_back(dynObj);
@@ -4587,6 +4605,33 @@ DynamicObject* Unit::GetDynObject(uint32 spellId)
     return NULL;
 }
 
+int32 Unit::CountDynObjects(uint32 spellId)
+{
+    int32 count = 0;
+
+    if (m_dynObj.empty())
+        return 0;
+    for (DynObjectList::const_iterator i = m_dynObj.begin(); i != m_dynObj.end();++i)
+    {
+        DynamicObject* dynObj = *i;
+        if (dynObj->GetSpellId() == spellId)
+            count++;
+    }
+    return count;
+}
+
+void Unit::GetDynObjectList(std::list<DynamicObject*> &list, uint32 spellId)
+{
+    if (m_dynObj.empty())
+        return;
+    for (DynObjectList::const_iterator i = m_dynObj.begin(); i != m_dynObj.end();++i)
+    {
+        DynamicObject* dynObj = *i;
+        if (dynObj->GetSpellId() == spellId)
+            list.push_back(dynObj);
+    }
+}
+
 void Unit::RemoveDynObject(uint32 spellId)
 {
     if (m_dynObj.empty())
@@ -4608,6 +4653,81 @@ void Unit::RemoveAllDynObjects()
 {
     while (!m_dynObj.empty())
         m_dynObj.front()->Remove();
+}
+
+// AreaTrigger management.
+
+void Unit::_RegisterAreaTrigger(AreaTrigger* areaTrigger)
+{
+    m_AreaTrigger.push_back(areaTrigger);
+}
+
+void Unit::_UnregisterAreaTrigger(AreaTrigger* areaTrigger)
+{
+    m_AreaTrigger.remove(areaTrigger);
+}
+
+AreaTrigger* Unit::GetAreaTrigger(uint32 spellId)
+{
+    if (m_AreaTrigger.empty())
+        return NULL;
+    for (AreaTriggerList::const_iterator i = m_AreaTrigger.begin(); i != m_AreaTrigger.end();++i)
+    {
+        AreaTrigger* areaTrigger = *i;
+        if (areaTrigger->GetSpellId() == spellId)
+            return areaTrigger;
+    }
+    return NULL;
+}
+
+int32 Unit::CountAreaTriggers(uint32 spellId)
+{
+    int32 count = 0;
+
+    if (m_AreaTrigger.empty())
+        return 0;
+    for (AreaTriggerList::const_iterator i = m_AreaTrigger.begin(); i != m_AreaTrigger.end();++i)
+    {
+        AreaTrigger* areaTrigger = *i;
+        if (areaTrigger->GetSpellId() == spellId)
+            count++;
+    }
+    return count;
+}
+
+void Unit::GetAreaTriggerList(std::list<AreaTrigger*> &list, uint32 spellId)
+{
+    if (m_AreaTrigger.empty())
+        return;
+    for (AreaTriggerList::const_iterator i = m_AreaTrigger.begin(); i != m_AreaTrigger.end();++i)
+    {
+        AreaTrigger* areaTrigger = *i;
+        if (areaTrigger->GetSpellId() == spellId)
+            list.push_back(areaTrigger);
+    }
+}
+
+void Unit::RemoveAreaTrigger(uint32 spellId)
+{
+    if (m_AreaTrigger.empty())
+        return;
+    for (AreaTriggerList::iterator i = m_AreaTrigger.begin(); i != m_AreaTrigger.end();)
+    {
+        AreaTrigger* areaTrigger = *i;
+        if (areaTrigger->GetSpellId() == spellId)
+        {
+            areaTrigger->Remove();
+            i = m_AreaTrigger.begin();
+        }
+        else
+            ++i;
+    }
+}
+
+void Unit::RemoveAllAreaTriggers()
+{
+    while (!m_AreaTrigger.empty())
+        m_AreaTrigger.front()->Remove();
 }
 
 GameObject* Unit::GetGameObject(uint32 spellId) const
@@ -11593,6 +11713,32 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
     }
 }
 
+int32 Unit::GetTotalSpellPowerValue(SpellSchoolMask mask, bool heal) const
+{
+    int32 sp = 0;
+
+    if (GetTypeId() != TYPEID_PLAYER) return sp;
+    
+    if (heal) sp = GetInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS);
+    else 
+    {
+        int32 counter = 0;
+        for(uint32 i = 0 ; i < MAX_SPELL_SCHOOL ; i++)
+        {
+            if(mask & i)
+            {
+                sp += GetInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS+i);
+                counter++;
+            }
+        }
+        if(counter > 0) sp /= counter;
+    }
+
+    if(sp < 0) sp = 0;
+
+    return sp;
+}
+
 float Unit::GetTotalAttackPowerValue(WeaponAttackType attType) const
 {
     if (attType == RANGED_ATTACK)
@@ -11935,6 +12081,7 @@ void Unit::RemoveFromWorld()
 
         RemoveAllGameObjects();
         RemoveAllDynObjects();
+        RemoveAllAreaTriggers();
 
         ExitVehicle();  // Remove applied auras with SPELL_AURA_CONTROL_VEHICLE
         UnsummonAllTotems();

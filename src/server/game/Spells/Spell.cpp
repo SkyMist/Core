@@ -3382,7 +3382,10 @@ void Spell::cancel()
             CancelGlobalCooldown();
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
                 m_caster->ToPlayer()->RestoreSpellMods(this);
-            // no break
+            SendInterrupted(0);
+            SendCastResult(SPELL_FAILED_INTERRUPTED);
+            break;
+
         case SPELL_STATE_DELAYED:
             SendInterrupted(0);
             SendCastResult(SPELL_FAILED_INTERRUPTED);
@@ -3405,8 +3408,7 @@ void Spell::cancel()
             m_appliedMods.clear();
             break;
 
-        default:
-            break;
+        default: break;
     }
 
     SetReferencedFromCurrent(false);
@@ -3414,6 +3416,7 @@ void Spell::cancel()
         *m_selfContainer = NULL;
 
     m_caster->RemoveDynObject(m_spellInfo->Id);
+    m_caster->RemoveAreaTrigger(m_spellInfo->Id);
     if (m_spellInfo->IsChanneled()) // if not channeled then the object for the current cast wasn't summoned yet
         m_caster->RemoveGameObject(m_spellInfo->Id, true);
 

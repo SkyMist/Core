@@ -7483,7 +7483,7 @@ void Spell::EffectCreateAreaTrigger(SpellEffIndex effIndex)
     // Custom MoP Script
     switch (m_spellInfo->Id)
     {
-        case 121536:// Angelic Feather
+        case 121536: // Angelic Feather
         {
             int32 count = m_caster->CountAreaTrigger(m_spellInfo->Id);
 
@@ -7507,7 +7507,8 @@ void Spell::EffectCreateAreaTrigger(SpellEffIndex effIndex)
 
             break;
         }
-        case 115460:// Healing Sphere
+
+        case 115460: // Healing Sphere
         {
             int32 count = m_caster->CountAreaTrigger(m_spellInfo->Id);
 
@@ -7531,7 +7532,8 @@ void Spell::EffectCreateAreaTrigger(SpellEffIndex effIndex)
 
             break;
         }
-        case 116011:// Rune of Power
+
+        case 116011: // Rune of Power
         {
             int32 count = m_caster->CountAreaTrigger(m_spellInfo->Id);
 
