@@ -12038,16 +12038,16 @@ int32 Unit::GetCreatePowers(Powers power) const
         case POWER_LIGHT_FORCE:     return 0; // Should be 100 but the power is deprecated since MOP Beta.
         case POWER_RUNES:           return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 8 : 0; // Normally 6 but Death Runes count as two more (4 types x 2).
         case POWER_RUNIC_POWER:     return (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 1000 : 0;
-        case POWER_SOUL_SHARDS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_AFFLICTION && ToPlayer()->getLevel() >= 19) ? 400 : 0;
-        case POWER_ECLIPSE:         return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID   && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_DRUID_BALANCE) ? 100 : 0; // Goes -100 Lunar to 100 Solar Eclipse.
+        case POWER_SOUL_SHARDS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION && ToPlayer()->getLevel() >= 19) ? 400 : 0;
+        case POWER_ECLIPSE:         return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID   && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_DRUID_BALANCE) ? 100 : 0; // Goes -100 Lunar to 100 Solar Eclipse.
         case POWER_HOLY_POWER:      return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN) ? 3 : 0; // 5 max after learning Boundless Conviction at 85, otherwise 3.
         case POWER_ALTERNATE_POWER: return 100;
         case POWER_DARK_FORCE:      return 0; // Should be 100 but the power is deprecated since MOP Beta.
         case POWER_CHI:             return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MONK) ? 4 : 0; // 5 max after learning Ascension at 45, else 4.
-        case POWER_SHADOW_ORBS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST  && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_PRIEST_SHADOW && ToPlayer()->getLevel() >= 21) ? 3 : 0;
-        case POWER_BURNING_EMBERS:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DESTRUCTION && ToPlayer()->getLevel() >= 42) ? 40 : 0; // 4 full x 10 minor.
-        case POWER_DEMONIC_FURY:    return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_WARLOCK_DEMONOLOGY) ? 1000 : 0;
-        case POWER_ARCANE_CHARGES:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MAGE    && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == TALENT_TREE_MAGE_ARCANE) ? 4 : 0;
+        case POWER_SHADOW_ORBS:     return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST  && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_PRIEST_SHADOW && ToPlayer()->getLevel() >= 21) ? 3 : 0;
+        case POWER_BURNING_EMBERS:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION && ToPlayer()->getLevel() >= 42) ? 40 : 0; // 4 full x 10 minor.
+        case POWER_DEMONIC_FURY:    return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY) ? 1000 : 0;
+        case POWER_ARCANE_CHARGES:  return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MAGE    && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_MAGE_ARCANE) ? 4 : 0;
         case POWER_HEALTH:          return 0;
 
         default: break;

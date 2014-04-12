@@ -452,7 +452,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                 switch (m_spellInfo->Id)
                 {
                     case 34428: // Victory Rush
-                        if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
+                        if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
                             damage = CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 67.2f);
                         else
                             damage = CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 56.0f);
@@ -464,7 +464,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         break;
 
                     case 103840: // Impending Victory
-                        if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
+                        if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
                             damage = CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 70.0f);
                         else
                             damage = CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 56.0f);
@@ -473,7 +473,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         break;
 
                     case 118000: // Dragon Roar
-                        if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
+                        if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_WARRIOR_ARMS)
                             damage += CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 168);
                         else
                             damage += CalculatePct(m_caster->GetTotalAttackPowerValue(BASE_ATTACK), 140);
@@ -604,10 +604,10 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                             {
                                 float ap = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
 
-                                if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION
-                                    || m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_COMBAT)
+                                if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION
+                                    || m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_COMBAT)
                                     damage += int32(ap * combo * 0.12f);
-                                else if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
+                                else if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
                                     damage += int32(ap * combo * 0.149f);
                             }
                         }
@@ -657,10 +657,10 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                             {
                                 float ap = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
 
-                                if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION
-                                    || m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_COMBAT)
+                                if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION
+                                    || m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_COMBAT)
                                     damage += int32(ap * combo * 0.028f);
-                                else if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
+                                else if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
                                     damage += int32(ap * combo * 0.034f);
                             }
                         }
@@ -804,7 +804,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                     case 124335: // Swift Reflexes
                         if (m_caster->GetTypeId() == TYPEID_PLAYER)
                         {
-                            switch (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()))
+                            switch (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()))
                             {
                                 case SPEC_MONK_BREWMASTER:
                                     damage = CalculateMonkMeleeAttacks(m_caster, 0.3f, 5);
@@ -3254,7 +3254,7 @@ void Spell::EffectDispel(SpellEffIndex effIndex)
         case 115450:// Detox
             if (effIndex > 1)
                 if (Player* plr = m_caster->ToPlayer())
-                    if (plr->GetSpecializationId(plr->GetActiveSpec()) != SPEC_MONK_MISTWEAVER)
+                    if (plr->GetTalentSpecialization(plr->GetActiveSpec()) != SPEC_MONK_MISTWEAVER)
                         return;
             break;
 
@@ -3402,7 +3402,7 @@ void Spell::EffectDualWield(SpellEffIndex /*effIndex*/)
 
     // Mistweaver monks cannot dual wield
     if (unitTarget->ToPlayer())
-        if (unitTarget->ToPlayer()->GetSpecializationId(unitTarget->ToPlayer()->GetActiveSpec()) == SPEC_MONK_MISTWEAVER)
+        if (unitTarget->ToPlayer()->GetTalentSpecialization(unitTarget->ToPlayer()->GetActiveSpec()) == SPEC_MONK_MISTWEAVER)
             return;
 
     unitTarget->SetCanDualWield(true);
@@ -4075,7 +4075,7 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
                         fixed_bonus += spd * 0.264f;
 
                         if (owner->GetTypeId() == TYPEID_PLAYER)
-                            if (owner->ToPlayer()->GetSpecializationId(owner->ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
+                            if (owner->ToPlayer()->GetTalentSpecialization(owner->ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
                                 owner->EnergizeBySpell(owner, m_spellInfo->Id, 12, POWER_DEMONIC_FURY);
                     }
 

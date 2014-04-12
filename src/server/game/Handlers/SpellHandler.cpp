@@ -1185,7 +1185,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         }
     }
     // Fix Dark Soul for Destruction warlocks
-    else if (spellInfo->Id == 113860 && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
+    else if (spellInfo->Id == 113860 && _player->GetTalentSpecialization(_player->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
     {
         SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(113858);
         if (newSpellInfo)

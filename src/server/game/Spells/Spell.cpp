@@ -1421,7 +1421,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
         }
 
         if (m_caster->GetTypeId() == TYPEID_PLAYER && m_spellInfo->Id == 1449)
-            if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_MAGE_ARCANE)
+            if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) == SPEC_MAGE_ARCANE)
                 if (roll_chance_i(30))
                     m_caster->AddAura(36032, m_caster);
 
@@ -2616,7 +2616,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 // Soul of the Forest - 4 Energy
                 else if (plrCaster->HasAura(114107))
                 {
-                    if (plrCaster->GetSpecializationId(plrCaster->GetActiveSpec()) == SPEC_DROOD_CAT)
+                    if (plrCaster->GetTalentSpecialization(plrCaster->GetActiveSpec()) == SPEC_DRUID_CAT)
                         plrCaster->EnergizeBySpell(plrCaster, 114107, 4 * cp, POWER_ENERGY);
                 }
             }
@@ -4117,7 +4117,7 @@ void Spell::finish(bool ok)
             if (m_caster->GetTypeId() != TYPEID_PLAYER)
                 break;
 
-            if (m_caster->ToPlayer()->GetSpecializationId(m_caster->ToPlayer()->GetActiveSpec()) != SPEC_PRIEST_SHADOW)
+            if (m_caster->ToPlayer()->GetTalentSpecialization(m_caster->ToPlayer()->GetActiveSpec()) != SPEC_PRIEST_SHADOW)
                 break;
 
             if (m_caster->HasAura(95652))

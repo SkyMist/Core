@@ -684,7 +684,6 @@ void LoadDBCStores(const std::string& dataPath)
             if (!specializationInfo->classId || specializationInfo->classId >= MAX_CLASSES)
                 continue;
 
-
             sSpecializationClassStore[specializationInfo->classId][specializationInfo->TabPage] = j;
         }
     }

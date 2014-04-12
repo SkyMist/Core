@@ -1694,7 +1694,7 @@ void Player::Update(uint32 p_time)
 
             if (isAttackReady(BASE_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 1)               // send single time (client auto repeat)
@@ -1704,7 +1704,7 @@ void Player::Update(uint32 p_time)
                     }
                 }
                 //120 degrees of radiant range
-                else if (!HasInArc(2*M_PI/3, victim))
+                else if (!HasInArc(2 * M_PI / 3, victim))
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 2)               // send single time (client auto repeat)
@@ -1722,17 +1722,32 @@ void Player::Update(uint32 p_time)
                         if (getAttackTimer(OFF_ATTACK) < ATTACK_DISPLAY_DELAY)
                             setAttackTimer(OFF_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack
-                    AttackerStateUpdate(victim, BASE_ATTACK);
-                    resetAttackTimer(BASE_ATTACK);
+                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    if (!HasAura(114051) && !HasAura(121471))
+                    {
+                        AttackerStateUpdate(victim, BASE_ATTACK);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
+                    // Custom MoP Script - Wind Lash - Main Hand
+                    else if (HasAura(114051))
+                    {
+                        CastSpell(victim, 114089, true);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
+                    // Custom MoP Script - Shadow Blade - Main Hand
+                    else if (HasAura(121471))
+                    {
+                        CastSpell(victim, 121473, true);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
                 }
             }
 
             if (haveOffhandWeapon() && isAttackReady(OFF_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                     setAttackTimer(OFF_ATTACK, 100);
-                else if (!HasInArc(2*M_PI/3, victim))
+                else if (!HasInArc(2 * M_PI / 3, victim))
                     setAttackTimer(OFF_ATTACK, 100);
                 else
                 {
@@ -1740,9 +1755,24 @@ void Player::Update(uint32 p_time)
                     if (getAttackTimer(BASE_ATTACK) < ATTACK_DISPLAY_DELAY)
                         setAttackTimer(BASE_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack
-                    AttackerStateUpdate(victim, OFF_ATTACK);
-                    resetAttackTimer(OFF_ATTACK);
+                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    if (!HasAura(114051) && !HasAura(121471))
+                    {
+                        AttackerStateUpdate(victim, OFF_ATTACK);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
+                    // Custom MoP Script - Wind Lash - Off-Hand
+                    else if (HasAura(114051))
+                    {
+                        CastSpell(victim, 114093, true);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
+                    // Custom MOP script - Shadow Blades - Off Hand
+                    else if (HasAura(121471))
+                    {
+                        CastSpell(victim, 121474, true);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
                 }
             }
 
@@ -2354,13 +2384,13 @@ void Player::RegenerateAll()
     {
         switch (GetTalentSpecialization(GetActiveSpec()))
         {
-            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+            case SPEC_WARLOCK_DEMONOLOGY:
                 m_demonicFuryPowerRegenTimerCount += m_regenTimer;
                 break;
-            case TALENT_TREE_WARLOCK_DESTRUCTION:
+            case SPEC_WARLOCK_DESTRUCTION:
                 m_burningEmbersRegenTimerCount += m_regenTimer;
                 break;
-            case TALENT_TREE_WARLOCK_AFFLICTION:
+            case SPEC_WARLOCK_AFFLICTION:
                 m_soulShardsRegenTimerCount += m_regenTimer;
                 break;
 
@@ -2430,21 +2460,21 @@ void Player::RegenerateAll()
     {
         switch (GetTalentSpecialization(GetActiveSpec()))
         {
-            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+            case SPEC_WARLOCK_DEMONOLOGY:
                 if (m_demonicFuryPowerRegenTimerCount >= 100)
                 {
                     Regenerate(POWER_DEMONIC_FURY);
                     m_demonicFuryPowerRegenTimerCount -= 100;
                 }
                 break;
-            case TALENT_TREE_WARLOCK_DESTRUCTION:
+            case SPEC_WARLOCK_DESTRUCTION:
                 if (m_burningEmbersRegenTimerCount >= 15000)
                 {
                     Regenerate(POWER_BURNING_EMBERS);
                     m_burningEmbersRegenTimerCount -= 15000;
                 }
                 break;
-            case TALENT_TREE_WARLOCK_AFFLICTION:
+            case SPEC_WARLOCK_AFFLICTION:
                 if (m_soulShardsRegenTimerCount >= 20000)
                 {
                     Regenerate(POWER_SOUL_SHARDS);
@@ -3361,7 +3391,7 @@ void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
     for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
     {
         if (!HasSpell(*iter))
-            learnSpell(*iter, true);
+            learnSpell(*iter, false);
     }
 
     // Aberration
@@ -4836,10 +4866,12 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
 
     if (resetSpecialization)
     {
+        if (GetSpecializationId(GetActiveSpec()) == SPEC_NONE)
+            return;
+
         RemoveAllSymbiosisAuras();
         RemoveSpecializationSpells();
-        SetTalentSpecialization(GetActiveSpec(), 0);
-        SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, 0);
+        SetTalentSpecialization(GetActiveSpec(), SPEC_NONE);
 
         InitSpellsForLevel(0, getLevel());
     }
@@ -4870,6 +4902,14 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     */
 
     return true;
+}
+
+void SetTalentSpecialization(uint8 spec, uint32 specId)
+{
+    _talentMgr->SpecInfo[spec].SpecializationId = specId;
+
+    if (spec == GetActiveSpec())
+        SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, specId);
 }
 
 bool Player::RemoveTalent(uint32 talentId)
@@ -4905,6 +4945,62 @@ bool Player::RemoveTalent(uint32 talentId)
     }
 
     return false;
+}
+
+// Below can be used in boss scripts or LFG.
+uint32 Player::GetRoleForGroup(uint32 specializationId)
+{
+    uint32 roleId = GROUP_ROLE_DEFAULT;
+
+    switch (specializationId)
+    {
+        case SPEC_MAGE_FROST:
+        case SPEC_MAGE_FIRE:
+        case SPEC_MAGE_ARCANE:
+        case SPEC_ROGUE_COMBAT:
+        case SPEC_ROGUE_ASSASSINATION:
+        case SPEC_ROGUE_SUBTLETY:
+        case SPEC_HUNTER_BEASTMASTER:
+        case SPEC_HUNTER_MARKSMAN:
+        case SPEC_HUNTER_SURVIVAL:
+        case SPEC_WARLOCK_AFFLICTION:
+        case SPEC_WARLOCK_DEMONOLOGY:
+        case SPEC_WARLOCK_DESTRUCTION:
+        case SPEC_PRIEST_SHADOW:
+        case SPEC_DK_FROST:
+        case SPEC_DK_UNHOLY:
+        case SPEC_MONK_WINDWALKER:
+        case SPEC_PALADIN_RETRIBUTION:
+        case SPEC_SHAMAN_ELEMENTAL:
+        case SPEC_SHAMAN_ENHANCEMENT:
+        case SPEC_WARRIOR_ARMS:
+        case SPEC_WARRIOR_FURY:
+        case SPEC_DRUID_BALANCE:
+        case SPEC_DRUID_CAT:
+            roleId = ROLE_DPS;
+            break;
+
+        case SPEC_MONK_MISTWEAVER:
+        case SPEC_PALADIN_HOLY:
+        case SPEC_PRIEST_DISCIPLINE:
+        case SPEC_PRIEST_HOLY:
+        case SPEC_SHAMAN_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
+            roleId = ROLE_HEALER;
+            break;
+
+        case SPEC_MONK_BREWMASTER:
+        case SPEC_DK_BLOOD:
+        case SPEC_WARRIOR_PROTECTION:
+        case SPEC_DRUID_BEAR:
+        case SPEC_PALADIN_PROTECTION:
+            roleId = ROLE_TANK;
+            break;
+
+        default: break; // SPEC_NONE.
+    }
+
+    return roleId;
 }
 
 Mail* Player::GetMail(uint32 id)
@@ -12799,6 +12895,98 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
 
+    // Custom MoP script
+    // Jab Override Driver
+    if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_MONK)
+    {
+        Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+
+        // Glyph of Jab
+        if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && !HasAura(125660))
+        {
+            RemoveAura(108561); // 2H Staff Override
+            RemoveAura(115697); // 2H Polearm Override
+            RemoveAura(115689); // D/W Axes
+            RemoveAura(115694); // D/W Maces
+            RemoveAura(115696); // D/W Swords
+
+            switch (mainItem->GetTemplate()->SubClass)
+            {
+                case ITEM_SUBCLASS_WEAPON_STAFF:
+                    CastSpell(this, 108561, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_POLEARM:
+                    CastSpell(this, 115697, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_AXE:
+                    CastSpell(this, 115689, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_MACE:
+                    CastSpell(this, 115694, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_SWORD:
+                    CastSpell(this, 115696, true);
+                    break;
+
+                default: break;
+            }
+        }
+        else if (HasAura(125660))
+        {
+            RemoveAura(108561); // 2H Staff Override
+            RemoveAura(115697); // 2H Polearm Override
+            RemoveAura(115689); // D/W Axes
+            RemoveAura(115694); // D/W Maces
+            RemoveAura(115696); // D/W Swords
+        }
+    }
+    // Way of the Monk - 120277
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (getClass() == CLASS_MONK && HasAura(120277))
+        {
+            RemoveAurasDueToSpell(120275);
+            RemoveAurasDueToSpell(108977);
+
+            uint32 trigger = 0;
+            if (IsTwoHandUsed())
+            {
+                trigger = 120275;
+            }
+            else
+            {
+                Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+                if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && offItem && offItem->GetTemplate()->Class == ITEM_CLASS_WEAPON)
+                    trigger = 108977;
+            }
+
+            if (trigger)
+                CastSpell(this, trigger, true);
+
+            ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+        }
+    }
+    // Assassin's Resolve - 84601
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (getClass() == CLASS_ROGUE && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+        {
+            Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+            Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+
+            if (((mainItem && mainItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER) || (offItem && offItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER)))
+            {
+                if (HasAura(84601))
+                    RemoveAura(84601);
+
+                CastSpell(this, 84601, true);
+            }
+            else
+                RemoveAura(84601);
+        }
+    }
+
     return pItem;
 }
 
@@ -13597,6 +13785,97 @@ void Player::SwapItem(uint16 src, uint16 dst)
             RemoveItem(srcbag, srcslot, true);
             EquipItem(dest, pSrcItem, true);
             AutoUnequipOffhandIfNeed();
+        }
+
+        // Custom MoP script
+        // Jab Override Driver
+        if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_MONK)
+        {
+            Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+
+            if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && !HasAura(125660))
+            {
+                RemoveAura(108561); // 2H Staff Override
+                RemoveAura(115697); // 2H Polearm Override
+                RemoveAura(115689); // D/W Axes
+                RemoveAura(115694); // D/W Maces
+                RemoveAura(115696); // D/W Swords
+
+                switch (mainItem->GetTemplate()->SubClass)
+                {
+                    case ITEM_SUBCLASS_WEAPON_STAFF:
+                        CastSpell(this, 108561, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_POLEARM:
+                        CastSpell(this, 115697, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_AXE:
+                        CastSpell(this, 115689, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_MACE:
+                        CastSpell(this, 115694, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_SWORD:
+                        CastSpell(this, 115696, true);
+                        break;
+
+                    default: break;
+                }
+            }
+            else if (HasAura(125660))
+            {
+                RemoveAura(108561); // 2H Staff Override
+                RemoveAura(115697); // 2H Polearm Override
+                RemoveAura(115689); // D/W Axes
+                RemoveAura(115694); // D/W Maces
+                RemoveAura(115696); // D/W Swords
+            }
+        }
+        // Way of the Monk - 120277
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            if (getClass() == CLASS_MONK && HasAura(120277))
+            {
+                RemoveAurasDueToSpell(120275);
+                RemoveAurasDueToSpell(108977);
+
+                uint32 trigger = 0;
+                if (IsTwoHandUsed())
+                {
+                    trigger = 120275;
+                }
+                else
+                {
+                    Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                    Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+                    if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && offItem && offItem->GetTemplate()->Class == ITEM_CLASS_WEAPON)
+                        trigger = 108977;
+                }
+
+                if (trigger)
+                    CastSpell(this, trigger, true);
+
+                ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+            }
+        }
+        // Assassin's Resolve - 84601
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            if (getClass() == CLASS_ROGUE && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+            {
+                Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+
+                if (((mainItem && mainItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER) || (offItem && offItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER)))
+                {
+                    if (HasAura(84601))
+                        RemoveAura(84601);
+
+                    CastSpell(this, 84601, true);
+                }
+                else
+                    RemoveAura(84601);
+            }
         }
 
         return;
@@ -18240,7 +18519,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         TC_LOG_ERROR("entities.player", "Player %s(GUID: %u) has SpecCount = %u and ActiveSpec = %u.", GetName().c_str(), GetGUIDLow(), GetSpecsCount(), GetActiveSpec());
     }
 
-    // Only load selected specializations, learning mastery spells requires this
+    // Load specializations.
     Tokenizer talentTrees(fields[26].GetString(), ' ', MAX_TALENT_SPECS);
     for (uint8 i = 0; i < MAX_TALENT_SPECS; ++i)
     {
@@ -18251,8 +18530,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         if (sChrSpecializationStore.LookupEntry(talentTree))
             SetTalentSpecialization(i, talentTree);
     }
-
-    SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, GetTalentSpecialization(GetActiveSpec()));
 
     _LoadTalents(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_TALENTS));
     _LoadSpells(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELLS));
@@ -18348,7 +18625,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
             break;
 
         uint32 talentTree = atol(talentTrees[i]);
-        if (talentTree != 0 && !sChrSpecializationStore.LookupEntry(talentTree) && i == GetActiveSpec())
+        if (talentTree != SPEC_NONE && !sChrSpecializationStore.LookupEntry(talentTree) && i == GetActiveSpec())
             SetAtLoginFlag(AT_LOGIN_RESET_TALENTS); // invalid tree, reset talents
     }
 

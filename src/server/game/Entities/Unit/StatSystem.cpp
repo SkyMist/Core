@@ -226,7 +226,7 @@ bool Player::UpdateAllStats()
     // Assassin's Resolve - 84601
     if (GetTypeId() == TYPEID_PLAYER)
     {
-        if (getClass() == CLASS_ROGUE && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+        if (getClass() == CLASS_ROGUE && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
         {
             Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
             Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
@@ -782,7 +782,7 @@ void Player::UpdatePvPPowerPercentage()
     float damage_value = value;
     float heal_value = value;
 
-    switch (GetSpecializationId(GetActiveSpec()))
+    switch (GetTalentSpecialization(GetActiveSpec()))
     {
         // All other specializations and classes (including tanking) receive a 40% bonus to healing from PvP Power.
         case SPEC_WARRIOR_ARMS:
