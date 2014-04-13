@@ -36,6 +36,7 @@
 #include "ScriptMgr.h"
 #include "SpellScript.h"
 #include "Vehicle.h"
+#include "Pet.h"
 
 AuraApplication::AuraApplication(Unit* target, Unit* caster, Aura* aura, uint32 effMask):
 _target(target), _base(aura), _removeMode(AURA_REMOVE_NONE), _slot(MAX_AURAS),
@@ -1724,7 +1725,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             {
                 case 50720: // Vigilance
                     if (apply)
-                        target->CastSpell(caster, 59665, true, 0, NULLAURA_EFFECT, caster->GetGUID());
+                        target->CastSpell(caster, 59665, true, 0, NULL, caster->GetGUID());
                     else
                         target->SetReducedThreatPercent(0, 0);
                     break;
@@ -1780,7 +1781,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             if (GetSpellInfo()->SpellFamilyFlags[0] & 0x00400000)
             {
                 // Master of subtlety
-                if (constAuraEffectPtr aurEff = target->GetAuraEffect(31223, 0))
+                if (AuraEffect const* aurEff = target->GetAuraEffect(31223, 0))
                 {
                     if (!apply)
                         target->CastSpell(target, 31666, true);

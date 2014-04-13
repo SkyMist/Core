@@ -23318,7 +23318,7 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
     // if no cooldown found above then base at DBC data
     if (rec < 0 && catrec < 0)
     {
-        cat = spellInfo->GetCategory();
+        cat = spellInfo->Category;
         rec = spellInfo->RecoveryTime;
         catrec = spellInfo->CategoryRecoveryTime;
     }
@@ -24516,7 +24516,7 @@ void Player::resetSpells(bool myClassOnly)
                 continue;
 
             // skip spells with first rank learned as talent (and all talents then also)
-            uint32 firstRank = spellInfo->GetFirstSpellInChain(spellInfo->Id);
+            uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellInfo->Id);
 
             // skip broken spells
             if (!SpellMgr::IsSpellValid(spellInfo, this, false))

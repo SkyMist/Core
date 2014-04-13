@@ -269,11 +269,15 @@ uint32 CreatureTextMgr::SendChat(Creature* source, uint8 textGroup, uint64 whisp
         SendEmote(finalSource, iter->emote);
 
     if (srcPlr)
+	{
         PlayerTextBuilder builder(source, finalSource, finalType, iter->group, iter->id, finalLang, whisperGuid);
+        SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+	}
     else
+	{
         CreatureTextBuilder builder(finalSource, finalType, iter->group, iter->id, finalLang, whisperGuid);
-
-    SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+        SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+	}
 
     if (isEqualChanced || (!isEqualChanced && totalChance == 100.0f))
         SetRepeatId(source, textGroup, iter->id);
@@ -341,7 +345,7 @@ void CreatureTextMgr::SendNonChatPacket(WorldObject* source, WorldPacket* data, 
             uint32 areaId = source->GetAreaId();
             Map::PlayerList const& players = source->GetMap()->GetPlayers();
             for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                if (itr->GetSource()->GetAreaId() == areaId && itr->getSource()->InSamePhase(source) && (!team || Team(itr->GetSource()->GetTeam()) == team) && (!gmOnly || itr->GetSource()->IsGameMaster()))
+                if (itr->GetSource()->GetAreaId() == areaId && itr->GetSource()->InSamePhase(source) && (!team || Team(itr->GetSource()->GetTeam()) == team) && (!gmOnly || itr->GetSource()->IsGameMaster()))
                     itr->GetSource()->GetSession()->SendPacket(data);
             return;
         }
@@ -350,7 +354,7 @@ void CreatureTextMgr::SendNonChatPacket(WorldObject* source, WorldPacket* data, 
             uint32 zoneId = source->GetZoneId();
             Map::PlayerList const& players = source->GetMap()->GetPlayers();
             for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                if (itr->GetSource()->GetZoneId() == zoneId && itr->getSource()->InSamePhase(source) && (!team || Team(itr->GetSource()->GetTeam()) == team) && (!gmOnly || itr->GetSource()->IsGameMaster()))
+                if (itr->GetSource()->GetZoneId() == zoneId && itr->GetSource()->InSamePhase(source) && (!team || Team(itr->GetSource()->GetTeam()) == team) && (!gmOnly || itr->GetSource()->IsGameMaster()))
                     itr->GetSource()->GetSession()->SendPacket(data);
             return;
         }
@@ -358,7 +362,7 @@ void CreatureTextMgr::SendNonChatPacket(WorldObject* source, WorldPacket* data, 
         {
             Map::PlayerList const& players = source->GetMap()->GetPlayers();
             for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                if ((!team || Team(itr->GetSource()->GetTeam()) == team) && itr->getSource()->InSamePhase(source) && (!gmOnly || itr->GetSource()->IsGameMaster()))
+                if ((!team || Team(itr->GetSource()->GetTeam()) == team) && itr->GetSource()->InSamePhase(source) && (!gmOnly || itr->GetSource()->IsGameMaster()))
                     itr->GetSource()->GetSession()->SendPacket(data);
             return;
         }

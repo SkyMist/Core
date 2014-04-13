@@ -2309,7 +2309,7 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
         if (m_delayMoment == 0 || m_delayMoment > targetInfo.timeDelay)
             m_delayMoment = targetInfo.timeDelay;
     }
-    else if ((m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->ToCreature()->isPet()) && m_caster != target)
+    else if ((m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->ToCreature()->IsPet()) && m_caster != target)
     {
         if (!IsTriggered() && m_spellInfo->_IsCrowdControl(0, false))
         {
@@ -2774,7 +2774,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
             // cast at creature (or GO) quest objectives update at successful cast finished (+channel finished)
             // ignore pets or autorepeat/melee casts for speed (not exist quest for spells (hm...)
-            if (m_originalCaster && m_originalCaster->IsControlledByPlayer() && !spellHitTarget->ToCreature()->isPet() && !IsAutoRepeat() && !IsNextMeleeSwingSpell() && !IsChannelActive())
+            if (m_originalCaster && m_originalCaster->IsControlledByPlayer() && !spellHitTarget->ToCreature()->IsPet() && !IsAutoRepeat() && !IsNextMeleeSwingSpell() && !IsChannelActive())
                 if (Player* p = m_originalCaster->GetCharmerOrOwnerPlayerOrPlayerItself())
                     p->CastedCreatureOrGO(spellHitTarget->GetEntry(), spellHitTarget->GetGUID(), m_spellInfo->Id);
         }
@@ -3583,7 +3583,7 @@ void Spell::cast(bool skipCheck)
     SendSpellGo();
 
     // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
-    if (((m_spellInfo->Speed > 0.0f || (m_delayMoment && (m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->ToCreature()->isPet())))
+    if (((m_spellInfo->Speed > 0.0f || (m_delayMoment && (m_caster->GetTypeId() == TYPEID_PLAYER || m_caster->ToCreature()->IsPet())))
         && !m_spellInfo->IsChanneled()) || m_spellInfo->_IsNeedDelay() || m_spellInfo->AttributesEx4 & SPELL_ATTR4_UNK4)
     {
         // Remove used for cast item if need (it can be already NULL after TakeReagents call
@@ -3630,7 +3630,7 @@ void Spell::cast(bool skipCheck)
         // Clemency
         if (m_spellInfo->Id == 1022 || m_spellInfo->Id == 1038 || m_spellInfo->Id == 1044 || m_spellInfo->Id == 6940)
         {
-            if (AuraPtr clemency = m_caster->GetAura(105622))
+            if (Aura* clemency = m_caster->GetAura(105622))
             {
                 switch (m_spellInfo->Id)
                 {
@@ -3670,8 +3670,8 @@ void Spell::cast(bool skipCheck)
                         else
                             clemency->GetEffect(3)->SetAmount(1);
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
         }
@@ -3861,7 +3861,7 @@ void Spell::_handle_finish_phase()
                 if (_player->HasAura(115189))
                 {
                     int32 basepoints0 = _player->GetAura(115189) ? _player->GetAura(115189)->GetStackAmount() : 0;
-                    _player->CastCustomSpell(m_caster->getVictim(), 115190, &basepoints0, NULL, NULL, true);
+                    _player->CastCustomSpell(m_caster->GetVictim(), 115190, &basepoints0, NULL, NULL, true);
 
                     if (basepoints0)
                         _player->RemoveAura(115189);
@@ -4123,7 +4123,7 @@ void Spell::finish(bool ok)
             if (m_caster->HasAura(95652))
                 break;
 
-            if (!unitTarget || !unitTarget->isAlive() || unitTarget->GetHealthPct() >= 20.0f)
+            if (!unitTarget || !unitTarget->IsAlive() || unitTarget->GetHealthPct() >= 20.0f)
             {
                 m_caster->CastSpell(m_caster, 125927, true); // Shadow Orb energize
                 break;
@@ -4165,7 +4165,7 @@ void Spell::finish(bool ok)
         }
         case 53351: // Kill Shot
         {
-            if (!unitTarget || !unitTarget->isAlive() || unitTarget->GetHealthPct() >= 20.0f || m_caster->HasAura(90967))
+            if (!unitTarget || !unitTarget->IsAlive() || unitTarget->GetHealthPct() >= 20.0f || m_caster->HasAura(90967))
                 break;
 
             m_caster->CastSpell(m_caster, 90967, true); // Effect cooldown marker
@@ -5522,7 +5522,7 @@ void Spell::TakePower()
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
     {
         if (powerType == POWER_RAGE || powerType == POWER_ENERGY || powerType == POWER_RUNES
-         || powerType == POWER_HOLY_POWER || powerType == POWER_CHI || powerType == POWER_CHAOS_ORBS || powerType == POWER_BURNING_EMBERS)
+         || powerType == POWER_HOLY_POWER || powerType == POWER_CHI || powerType == POWER_SHADOW_ORBS || powerType == POWER_BURNING_EMBERS)
             if (uint64 targetGUID = m_targets.GetUnitTargetGUID())
                 for (std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
                     if (ihit->targetGUID == targetGUID)
@@ -6012,9 +6012,9 @@ SpellCastResult Spell::CheckCast(bool strict)
             return SPELL_FAILED_CASTER_AURASTATE;
 
         // Note: spell 62473 requres casterAuraSpell = triggering spell
-        if (!((m_spellInfo->Id == 48020 || m_spellInfo->Id == 114794) && m_spellInfo->CasterAuraSpell == 62388) && m_spellInfo->CasterAuraSpell && !m_caster->HasAura(sSpellMgr->GetSpellIdForDifficulty(m_spellInfo->CasterAuraSpell, m_caster)))
+        if (!((m_spellInfo->Id == 48020 || m_spellInfo->Id == 114794) && m_spellInfo->CasterAuraSpell == 62388) && m_spellInfo->CasterAuraSpell && !m_caster->HasAura(m_spellInfo->ExcludeCasterAuraSpell))
             return SPELL_FAILED_CASTER_AURASTATE;
-        if (m_spellInfo->ExcludeCasterAuraSpell && m_caster->HasAura(sSpellMgr->GetSpellIdForDifficulty(m_spellInfo->CasterAuraSpell, m_caster)))
+        if (m_spellInfo->ExcludeCasterAuraSpell && m_caster->HasAura(m_spellInfo->ExcludeCasterAuraSpell))
             return SPELL_FAILED_CASTER_AURASTATE;
 
         if (reqCombat && m_caster->IsInCombat() && !m_spellInfo->CanBeUsedInCombat())
@@ -6542,10 +6542,10 @@ SpellCastResult Spell::CheckCast(bool strict)
             {
                 if (m_caster->GetTypeId() != TYPEID_PLAYER)
                     return SPELL_FAILED_BAD_TARGETS;
-                if (!m_caster->ToPlayer()->GetSelection())
+                if (!m_caster->ToPlayer()->GetSelectedPlayer())
                     return SPELL_FAILED_BAD_TARGETS;
 
-                Player* target = ObjectAccessor::FindPlayer(m_caster->ToPlayer()->GetSelection());
+                Player* target = ObjectAccessor::FindPlayer(m_caster->ToPlayer()->GetSelectedPlayer()->GetGUID());
                 if (!target || m_caster->ToPlayer() == target || (!target->IsInSameRaidWith(m_caster->ToPlayer()) && m_spellInfo->Id != 48955)) // refer-a-friend spell
                     return SPELL_FAILED_BAD_TARGETS;
 
@@ -6577,7 +6577,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 Player* playerCaster = m_caster->ToPlayer();
                     //
-                if (!(playerCaster->GetSelection()))
+                if (!playerCaster->GetSelectedPlayer())
                     return SPELL_FAILED_BAD_TARGETS;
 
                 Player* target = playerCaster->GetSelectedPlayer();
@@ -7120,14 +7120,14 @@ SpellCastResult Spell::CheckPower()
     // Check valid power type
     if (m_spellPowerData->powerType >= MAX_POWERS)
     {
-        TC_LOG_ERROR("spells", "Spell::CheckPower: Unknown power type '%d'", m_spellPowerData->PowerType);
+        TC_LOG_ERROR("spells", "Spell::CheckPower: Unknown power type '%d'", m_spellPowerData->powerType);
         return SPELL_FAILED_UNKNOWN;
     }
 
     //check rune cost only if a spell has PowerType == POWER_RUNES
     if (m_spellPowerData->powerType == POWER_RUNES)
     {
-        SpellCastResult failReason = CheckRuneCost(m_spellPowerData->RuneCostID);
+        SpellCastResult failReason = CheckRuneCost(m_spellInfo->RuneCostID);
         if (failReason != SPELL_CAST_OK)
             return failReason;
     }

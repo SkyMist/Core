@@ -621,6 +621,7 @@ class SpellMgr
 
         // Spell difficulty
         SpellInfo const* GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const;
+        uint32 GetSpellDifficultyBySpellId(uint32 spellId, Unit const* caster) const;
 
         // Spell Ranks table
         SpellChainNode const* GetSpellChainNode(uint32 spell_id) const;

@@ -32,6 +32,7 @@
 #include "BattlefieldWG.h"
 #include "BattlefieldMgr.h"
 #include "Player.h"
+#include "BattlegroundIC.h"
 
 bool IsPrimaryProfessionSkill(uint32 skill)
 {
@@ -481,6 +482,24 @@ bool SpellMgr::IsSpellValid(SpellInfo const* spellInfo, Player* player, bool msg
     return true;
 }
 
+// Get spell difficulty from spell id and the caster.
+uint32 SpellMgr::GetSpellDifficultyBySpellId(uint32 spellId, Unit const* caster) const
+{
+    if (!caster || !caster->GetMap() || !caster->GetMap()->IsDungeon())
+        return spellId;
+
+    uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
+
+    if (mode >= MAX_DIFFICULTY)
+    {
+        TC_LOG_ERROR("spells", "SpellMgr::GetSpellDifficultyBySpellId: Incorrect Difficulty for spell %u.", spellId);
+        return spellId; // return source spell.
+    }
+
+    return GetSpellInfo(spellId, Difficulty(mode))->Id;
+}
+
+// Get spell difficulty from spell info and the caster.
 SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const
 {
     if (!spell)
@@ -490,6 +509,13 @@ SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell
         return spell;
 
     uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
+
+    if (mode >= MAX_DIFFICULTY)
+    {
+        TC_LOG_ERROR("spells", "SpellMgr::GetSpellForDifficultyFromSpell: Incorrect Difficulty for spell %u.", spell->Id);
+        return spell; // return source spellInfo.
+    }
+
     return GetSpellInfo(spell->Id, Difficulty(mode));
 }
 
@@ -2808,17 +2834,17 @@ void SpellMgr::LoadSpellClassInfo()
             mSpellClassInfo[ClassID].insert(spellEntry->Id);
         }
 
-        for (uint32 i = 0; i < sSpecializationSpellStore.GetNumRows(); ++i)
+        for (uint32 i = 0; i < sSpecializationSpellsStore.GetNumRows(); ++i)
         {
-            SpecializationSpellEntry const* specializationInfo = sSpecializationSpellStore.LookupEntry(i);
+            SpecializationSpellsEntry const* specializationInfo = sSpecializationSpellsStore.LookupEntry(i);
             if (!specializationInfo)
                 continue;
 
-            ChrSpecializationsEntry const* chrSpec = sChrSpecializationsStore.LookupEntry(specializationInfo->SpecializationEntry);
+            ChrSpecializationEntry const* chrSpec = sChrSpecializationStore.LookupEntry(specializationInfo->SpecializationId);
             if (!chrSpec)
                 continue;
 
-            mSpellClassInfo[chrSpec->classId].insert(specializationInfo->LearnSpell);
+            mSpellClassInfo[chrSpec->classId].insert(specializationInfo->SpellId);
         }
     }
 }
@@ -2854,27 +2880,27 @@ void SpellMgr::LoadSpellInfoStore()
         if (!spellPower)
             continue;
 
-        if (alreadySet.find(spellPower->SpellId) != alreadySet.end())
+        if (alreadySet.find(spellPower->spellId) != alreadySet.end())
             continue;
 
         for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
         {
-            SpellInfo* spell = mSpellInfoMap[difficulty][spellPower->SpellId];
+            SpellInfo* spell = mSpellInfoMap[difficulty][spellPower->spellId];
             if (!spell)
                 continue;
 
             spell->powerCost = spellPower->powerCost;
             spell->powerCostPercentage = spellPower->powerCostPercentage;
-            spell->powerPerSecond = spellPower->powerPerSecond;
+			spell->channelTicCost = spellPower->channelTicCost;
             spell->PowerType = spellPower->powerType;
 
             spell->spellPower->powerCost = spellPower->powerCost;
             spell->spellPower->powerCostPercentage = spellPower->powerCostPercentage;
-            spell->spellPower->powerPerSecond = spellPower->powerPerSecond;
+            spell->spellPower->channelTicCost = spellPower->channelTicCost;
             spell->spellPower->powerType = spellPower->powerType;
         }
 
-        alreadySet.insert(spellPower->SpellId);
+        alreadySet.insert(spellPower->spellId);
     }
 
     for (uint32 i = 0; i < sTalentStore.GetNumRows(); i++)
@@ -2883,10 +2909,10 @@ void SpellMgr::LoadSpellInfoStore()
         if (!talentInfo)
             continue;
 
-        SpellInfo* spellEntry = mSpellInfoMap[NONE_DIFFICULTY][talentInfo->spellId];
+        SpellInfo* spellEntry = mSpellInfoMap[REGULAR_DIFFICULTY][talentInfo->SpellId];
 
         if (spellEntry)
-            spellEntry->talentId = talentInfo->Id;
+            spellEntry->talentId = talentInfo->TalentID;
     }
 
     TC_LOG_INFO("server.loading", ">> Loaded SpellInfo store in %u ms", GetMSTimeDiffToNow(oldMSTime));
@@ -4989,7 +5015,7 @@ void SpellMgr::LoadTalentSpellInfo()
         if (!talent)
             continue;
 
-        mTalentSpellInfo.insert(talent->spellId);
+        mTalentSpellInfo.insert(talent->SpellId);
     }
 }
 
@@ -4997,10 +5023,10 @@ const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) c
 {
     if(spellId < GetSpellInfoStoreSize())
     {
-        if(mSpellInfoMap[difficulty][spellId])
+        if (mSpellInfoMap[difficulty][spellId])
             return mSpellInfoMap[difficulty][spellId];
 
-        return mSpellInfoMap[NONE_DIFFICULTY][spellId];
+        return mSpellInfoMap[REGULAR_DIFFICULTY][spellId];
     }
 
     return NULL;

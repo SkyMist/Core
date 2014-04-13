@@ -742,7 +742,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     bool hasCastFlags = !recvPacket.ReadBit();
     bool hasDestLocation = recvPacket.ReadBit();
     recvPacket.ReadBit();
-    uint8 archeologyCounter = recvPacket.ReadBits(2);
+    uint8 archaeologyCounter = recvPacket.ReadBits(2);
     bool hasMovement = recvPacket.ReadBit();
     recvPacket.ReadBit();
     bool hasGlyphIndex = !recvPacket.ReadBit();
@@ -751,11 +751,11 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     uint32* entry;
     uint32* usedCount;
 
-    archeologyType = new uint8[archeologyCounter];
-    entry = new uint32[archeologyCounter];
-    usedCount = new uint32[archeologyCounter];
+    archeologyType = new uint8[archaeologyCounter];
+    entry = new uint32[archaeologyCounter];
+    usedCount = new uint32[archaeologyCounter];
 
-    for (uint8 i = 0; i < archeologyCounter; ++i)
+    for (uint8 i = 0; i < archaeologyCounter; ++i)
         archeologyType[i] = recvPacket.ReadBits(2);
 
     bool hasElevation = !recvPacket.ReadBit();
@@ -865,7 +865,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     if (hasTargetMask)
         targetMask = recvPacket.ReadBits(20);
 
-    for (uint8 i = 0; i < researchDataCount; ++i)
+    for (uint8 i = 0; i < archaeologyCounter; ++i)
     {
         switch (archeologyType[i])
         {

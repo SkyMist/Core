@@ -381,7 +381,7 @@ SpellEffectInfo::SpellEffectInfo(SpellEntry const* spellEntry, SpellInfo const* 
     SpellClassMask = _effect ? _effect->EffectSpellClassMask : flag128(0);
     ImplicitTargetConditions = NULL;
     ScalingMultiplier = _effectScaling ? _effectScaling->Multiplier : 0.0f;
-    DeltaScalingMultiplier = _effectScaling ? _effectScaling->RandomMultiplier : 0.0f;
+    DeltaScalingMultiplier = _effectScaling ? _effectScaling->RandomPointsMultiplier : 0.0f;
     ComboScalingMultiplier = _effectScaling ? _effectScaling->OtherMultiplier: 0.0f;
 
     isAttackOrSpellPowerModified = IsAttackOrSpellPowerModified();
@@ -1068,7 +1068,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
 
     talentId = 0;
 
-    ExplicitTargetMask = _InitializeExplicitTargetMask();
+    _InitializeExplicitTargetMask();
 
     ChainEntry = NULL;
 }
@@ -1322,7 +1322,7 @@ bool SpellInfo::IsStackableOnOneSlotWithDifferentCasters() const
 
 bool SpellInfo::IsCooldownStartedOnEvent() const
 {
-    return Attributes & SPELL_ATTR0_DISABLED_WHILE_ACTIVE || (CategoryEntry && CategoryEntry->Flags & SPELL_CATEGORY_FLAG_COOLDOWN_STARTS_ON_EVENT);
+    return Attributes & SPELL_ATTR0_DISABLED_WHILE_ACTIVE || (Category && CategoryFlags & SPELL_CATEGORY_FLAG_COOLDOWN_STARTS_ON_EVENT);
 }
 
 bool SpellInfo::IsDeathPersistent() const
@@ -2404,7 +2404,7 @@ uint32 SpellInfo::CalcCastTime(Unit* caster, Spell* spell) const
 
     // Elegon - Overloaded
     if (caster && caster->HasAura(117204))
-        if (AuraPtr overloaded = caster->GetAura(117204))
+        if (Aura* overloaded = caster->GetAura(117204))
             castTime -= CalculatePct(castTime, (20 * overloaded->GetStackAmount()));
 
     // Glyph of Denounce
@@ -3490,7 +3490,7 @@ bool SpellInfo::IsPoisonOrBleedSpell() const
 bool SpellInfo::CanBeDarkSimulacrum(Unit* m_caster) const
 {
     // Dark Simulacrum
-    if (AuraEffectPtr darkSimulacrum = m_caster->GetAuraEffect(77616, 0))
+    if (AuraEffect* darkSimulacrum = m_caster->GetAuraEffect(77616, 0))
     {
         if (Id == darkSimulacrum->GetAmount())
             return true;
@@ -3521,7 +3521,7 @@ bool SpellInfo::CanBeDuplicated() const
     // Only spell with mana cost !
     if (PowerType != POWER_MANA)
         return false;
-    if (!ManaCost && !ManaCostPercentage)
+    if (!powerCost && !powerCostPercentage)
         return false;
 
     // Few spells can never be duplicated

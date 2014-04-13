@@ -32,6 +32,8 @@
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
+#include "../DynamicObject/DynamicObject.h"
+#include "../AreaTrigger/AreaTrigger.h"
 
 #define WORLD_TRIGGER   12999
 
@@ -2228,6 +2230,21 @@ namespace Trinity
             const bool m_ascending;
     };
 
+    // Binary predicate for sorting Units based on value of distance of an other Unit
+    class UnitDistanceCompareOrderPred
+    {
+        public:
+            UnitDistanceCompareOrderPred(const Unit* source, bool ascending = true) : m_object(source), m_ascending(ascending) {}
+            bool operator() (const Unit* a, const Unit* b) const
+            {
+                return m_ascending ? a->GetDistance(m_object) < b->GetDistance(m_object) :
+                                     a->GetDistance(m_object) > b->GetDistance(m_object);
+            }
+        private:
+            const Unit* m_object;
+            const bool m_ascending;
+    };
+
     // Binary predicate for sorting Units based on percent value of health
     class HealthPctOrderPred
     {
@@ -2240,6 +2257,36 @@ namespace Trinity
                 return m_ascending ? rA < rB : rA > rB;
             }
         private:
+            const bool m_ascending;
+    };
+
+    // Binary predicate for sorting DynamicObjects based on value of duration
+    class AreaTriggerDurationPctOrderPred
+    {
+        public:
+            AreaTriggerDurationPctOrderPred(bool ascending = true) : m_ascending(ascending) {}
+            bool operator() (const AreaTrigger* a, const AreaTrigger* b) const
+            {
+                int32 rA = a->GetDuration() ? float(a->GetDuration()) : 0;
+                int32 rB = b->GetDuration() ? float(b->GetDuration()) : 0;
+                return m_ascending ? rA < rB : rA > rB;
+            }
+        private:
+            const bool m_ascending;
+    };
+
+    // Binary predicate for sorting Units based on value of distance of an GameObject
+    class DistanceCompareOrderPred
+    {
+        public:
+            DistanceCompareOrderPred(const DynamicObject* object, bool ascending = true) : m_object(object), m_ascending(ascending) {}
+            bool operator() (const Unit* a, const Unit* b) const
+            {
+                return m_ascending ? a->GetDistance(m_object) < b->GetDistance(m_object) :
+                                     a->GetDistance(m_object) > b->GetDistance(m_object);
+            }
+        private:
+            const DynamicObject* m_object;
             const bool m_ascending;
     };
 }
