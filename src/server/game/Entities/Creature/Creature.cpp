@@ -18,6 +18,7 @@
  */
 
 #include "Creature.h"
+#include "Object.h"
 #include "CreatureMovement.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
@@ -43,9 +44,6 @@
 #include "Opcodes.h"
 #include "OutdoorPvPMgr.h"
 #include "Player.h"
-#include "PlayerMovement.h"
-#include "UnitMovement.h"
-#include "ObjectMovement.h"
 #include "PoolMgr.h"
 #include "QuestDef.h"
 #include "SpellAuraEffects.h"
@@ -155,7 +153,9 @@ m_AlreadySearchedAssistance(false), m_regenHealth(true), m_AI_locked(false), m_m
 m_creatureInfo(NULL), m_creatureData(NULL), m_path_id(0), m_formation(NULL)
 {
     m_regenTimer = CREATURE_REGEN_INTERVAL;
+
     m_valuesCount = UNIT_END;
+    _dynamicTabCount = UNIT_DYNAMIC_END; // Should be 32.
 
     for (uint8 i = 0; i < CREATURE_MAX_SPELLS; ++i)
         m_spells[i] = 0;
@@ -2187,8 +2187,8 @@ void Creature::AddCreatureSpellCooldown(uint32 spellid)
     if (cooldown)
         _AddCreatureSpellCooldown(spellid, time(NULL) + cooldown/IN_MILLISECONDS);
 
-    if (spellInfo->GetCategory())
-        _AddCreatureCategoryCooldown(spellInfo->GetCategory(), time(NULL));
+	if (spellInfo->Category)
+        _AddCreatureCategoryCooldown(spellInfo->Category, time(NULL));
 }
 
 bool Creature::HasCategoryCooldown(uint32 spell_id) const
@@ -2197,7 +2197,7 @@ bool Creature::HasCategoryCooldown(uint32 spell_id) const
     if (!spellInfo)
         return false;
 
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->GetCategory());
+    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
     return(itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(NULL));
 }
 

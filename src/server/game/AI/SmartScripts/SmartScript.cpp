@@ -48,7 +48,7 @@ class TrinityStringTextBuilder
         void operator()(WorldPacket* data, LocaleConstant locale, uint64 tguid) const
         {
             std::string text = sObjectMgr->GetTrinityString(_textId, locale);
-            char const* localizedName = _source->GetNameForLocaleIdx(locale);
+            std::string localizedName = _source->GetNameForLocaleIdx(locale);
 
             _source->BuildMonsterChat(data, _msgType, text.c_str(), _language, localizedName, tguid > 0 ? tguid : _targetGUID);
         }

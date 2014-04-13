@@ -696,9 +696,9 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     // Set speaker name length and get the speaker name.
     uint32 speakerNameLength = 0;
     if (speaker)
-        speakerNameLength = strlen(localizedName ? localizedName : speaker->GetName());
+        speakerNameLength = localizedName ? strlen(localizedName) : speaker->GetName().size();
     else if (session)
-        speakerNameLength = strlen(session ? session->GetPlayer()->GetName() : 0);
+        speakerNameLength = session ? session->GetPlayer()->GetName().size() : 0;
 
     std::string speakerName = speaker ? (localizedName ? localizedName : speaker->GetName()) : (session ? session->GetPlayer()->GetName() : 0);
 
@@ -709,7 +709,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     {
         if (Unit* unit = ObjectAccessor::FindUnit(target_guid))
         {
-            targetNameLength = strlen(unit->GetName());
+            targetNameLength = unit->GetName().size();
             targetName = unit->GetName();
         }
     }

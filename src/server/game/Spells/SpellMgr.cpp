@@ -1310,7 +1310,7 @@ void SpellMgr::LoadSpellRanks()
 
             for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
                 if (mSpellInfoMap[difficulty][addedSpell])
-                    mSpellInfoMap[addedSpell]->ChainEntry = &mSpellChains[addedSpell];
+                    mSpellInfoMap[difficulty][addedSpell]->ChainEntry = &mSpellChains[addedSpell];
 
             prevRank = addedSpell;
             ++itr;
@@ -3001,7 +3001,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                                 if (enchant->type[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
                                     continue;
             
-                                SpellInfo* procInfo = _GetSpellInfo(enchant->spellid[s]);
+                                SpellInfo* procInfo = (SpellInfo*)GetSpellInfo(enchant->spellid[s]);
                                 if (!procInfo)
                                     continue;
             
@@ -5015,15 +5015,15 @@ void SpellMgr::LoadSpellPowerInfo()
         if (!spellPower)
             continue;
 
-        mSpellPowerInfo[spellPower->SpellId].push_back(spellPower->Id);
+        mSpellPowerInfo[spellPower->spellId].push_back(spellPower->Id);
     }
 }
 
 SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
 {
-    for (auto itr : GetSpellPowerList(id))
+    for (std::list<uint32>::iterator itr = GetSpellPowerList(id).begin(); itr != GetSpellPowerList(id).end(); itr++)
     {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(itr);
+        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
         if (!spellPower)
             continue;
 

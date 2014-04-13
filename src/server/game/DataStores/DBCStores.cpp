@@ -869,13 +869,13 @@ char const* GetPetName(uint32 petfamily, uint32 /*dbclang*/)
 SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint32 difficulty)
 {
     SpellEffectMap::const_iterator itr = sSpellEffectMap.find(spellId);
-    if(itr == sSpellEffectMap.end())
+    if (itr == sSpellEffectMap.end())
         return NULL;
 
-    if(itr->second.effects[difficulty][effect])
+    if (itr->second.effects[difficulty][effect])
         return itr->second.effects[difficulty][effect];
 
-    return itr->second.effects[NONE_DIFFICULTY][effect];
+    return itr->second.effects[REGULAR_DIFFICULTY][effect];
 }
 
 int32 GetAreaFlagByAreaID(uint32 area_id)

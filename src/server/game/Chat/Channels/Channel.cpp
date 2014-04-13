@@ -626,7 +626,11 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
     }
 
     WorldPacket data;
-    ChatHandler::FillMessageData(&data, player ? player->GetSession() : NULL, CHAT_MSG_CHANNEL, lang, _name, player ? player->GetGUID() : 0, what.c_str(), NULL, NULL, chatTag);
+
+    if (Player* player = ObjectAccessor::FindPlayer(guid))
+        ChatHandler::FillMessageData(&data, player->GetSession(), CHAT_MSG_CHANNEL, lang, _name.c_str(), player->GetGUID(), what.c_str(), NULL, NULL, chatTag);
+	else
+        ChatHandler::FillMessageData(&data, NULL, CHAT_MSG_CHANNEL, lang, _name.c_str(), 0, what.c_str(), NULL, NULL, chatTag);
 
     SendToAll(&data, !playersStore[guid].IsModerator() ? guid : false);
 }

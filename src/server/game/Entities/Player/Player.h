@@ -25,14 +25,13 @@
 #include "MapReference.h"
 
 #include "PlayerMovement.h"
+#include "Common.h"
 #include "Item.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
-#include "UnitMovement.h"
-#include "ObjectMovement.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
 
@@ -1338,7 +1337,7 @@ class Player : public Unit, public GridObject<Player>
         void Whisper(std::string const& text, const uint32 language, uint64 receiver);
         void WhisperAddon(std::string const& text, std::string const& prefix, Player* receiver);
         /// Constructs the player Chat data for the specific functions to use
-        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, std::string const& text, uint32 language, const char* addonPrefix = NULL, const std::string& channel = "", uint64 receiverGUID = 0, uint8 chatTag = CHAT_TAG_NONE, uint32 achievementId = 0) const;
+        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, std::string const& text, uint32 language, const char* addonPrefix = NULL, const std::string& channel = "", uint64 receiverGUID = 0, uint8 chatTag = CHAT_TAG_NONE, uint32 achievementId = 0);
 
         /*********************************************************/
         /***                    STORAGE SYSTEM                 ***/

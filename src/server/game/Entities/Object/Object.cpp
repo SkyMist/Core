@@ -18,7 +18,6 @@
  */
 
 #include "Object.h"
-#include "ObjectMovement.h"
 #include "Common.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
@@ -26,9 +25,7 @@
 #include "Log.h"
 #include "World.h"
 #include "Creature.h"
-#include "CreatureMovement.h"
 #include "Player.h"
-#include "PlayerMovement.h"
 #include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "UpdateData.h"
@@ -52,10 +49,10 @@
 #include "MovementPacketBuilder.h"
 #include "DynamicTree.h"
 #include "Unit.h"
-#include "UnitMovement.h"
 #include "Group.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
+#include "Chat.h"
 
 uint32 GuidHigh2TypeId(uint32 guid_hi)
 {
@@ -85,6 +82,9 @@ Object::Object() : m_PackGUID(sizeof(uint64)+1)
     m_uint32Values      = NULL;
     m_valuesCount       = 0;
     _fieldNotifyFlags   = UF_FLAG_URGENT;
+
+    _dynamicFields      = NULL;
+    _dynamicTabCount    = 0;
 
     m_inWorld           = false;
     m_objectUpdated     = false;
@@ -127,6 +127,8 @@ Object::~Object()
 
     delete [] m_uint32Values;
     m_uint32Values = 0;
+
+    delete [] _dynamicFields;
 }
 
 void Object::_InitValues()
@@ -136,12 +138,15 @@ void Object::_InitValues()
 
     _changesMask.SetCount(m_valuesCount);
 
+    _dynamicFields = new DynamicFields[_dynamicTabCount];
+
     m_objectUpdated = false;
 }
 
 void Object::_Create(uint32 guidlow, uint32 entry, HighGuid guidhigh)
 {
-    if (!m_uint32Values) _InitValues();
+    if (!m_uint32Values || !_dynamicFields)
+        _InitValues();
 
     uint64 guid = MAKE_NEW_GUID(guidlow, entry, guidhigh);
     SetUInt64Value(OBJECT_FIELD_GUID, guid);
@@ -230,8 +235,8 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
                 case GAMEOBJECT_TYPE_TRANSPORT:
                     flags |= UPDATEFLAG_TRANSPORT;
                     break;
-                default:
-                    break;
+
+                default: break;
             }
         }
     }
@@ -247,6 +252,8 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) c
 
     BuildMovementUpdate(&buf, flags);
     BuildValuesUpdate(updateType, &buf, target);
+    BuildDynamicValuesUpdate(&buf);
+
     data->AddUpdateBlock(buf);
 }
 
@@ -269,6 +276,7 @@ void Object::BuildValuesUpdateBlockForPlayer(UpdateData* data, Player* target) c
     buf.append(GetPackGUID());
 
     BuildValuesUpdate(UPDATETYPE_VALUES, &buf, target);
+    BuildDynamicValuesUpdate(&buf);
 
     data->AddUpdateBlock(buf);
 }
@@ -359,18 +367,78 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
     *data << uint8(0); // Not used till we fix the update properly.
 }
 
+void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
+{
+    // Crashfix, prevent use of bags with dynamic fields or return if no updated fields.
+    Item* temp = ((Item*)this);
+    if (GetTypeId() == TYPEID_ITEM && temp && temp->ToBag() || _dynamicTabCount == 0)
+    {
+        *data << uint8(0);
+        return;
+    }
+
+    uint32 dynamicTabMask = 0;
+    std::vector<uint32> dynamicFieldsMask;
+    dynamicFieldsMask.resize(_dynamicTabCount);
+
+    for (uint32 i = 0; i < _dynamicTabCount; ++i)
+    {
+        dynamicFieldsMask[i] = 0;
+
+        for (uint32 index = 0; index < DynamicFields::Count; ++index)
+        {
+            if (!_dynamicFields[i]._dynamicChangedFields[index])
+                continue;
+
+            dynamicTabMask |= 1 << i;
+            dynamicFieldsMask[i] |= 1 << index;
+        }
+    }
+
+    *data << uint8(bool(dynamicTabMask)); // Signal an update needed (GetBlockCount()).
+
+    if (dynamicTabMask)
+    {
+        *data << uint32(dynamicTabMask); // Send the index (SetBit(index)).
+
+        // bool SizeChanged = DynamicFields::Count > 32; (or is it default field size???).
+
+        // *data.WriteBit(0); // SizeChanged
+        // *data.WriteBits(_dynamicTabCount, 7);
+        // *data.FlushBits();
+
+        // if (SizeChanged)
+        //     DynamicFieldsData << uint16(DynamicFields::Count);				// new size. unk value, size of all values or field indexes (offsets) ?
+
+        for (uint32 i = 0; i < _dynamicTabCount; ++i)
+        {
+            if (dynamicTabMask & (1 << i)) //if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )
+            {
+                *data << uint8(1);                     // Set the count.
+                *data << uint32(dynamicFieldsMask[i]); // Send the field index.
+
+                for (uint32 index = 0; index < 32; index++)
+                {
+                    if (dynamicFieldsMask[i] & (1 << index))
+                        *data << uint32(_dynamicFields[i]._dynamicValues[index]);  // Send the field index values.
+                }
+            }
+        }
+    }
+}
+
 void Object::ClearUpdateMask(bool remove)
 {
     _changesMask.Clear();
 
     if (m_objectUpdated)
     {
-        for (DynamicFieldsList::iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
-            for (std::size_t offsetNum = 0; offsetNum < itr->second.values.size(); offsetNum++)
-                itr->second.values[offsetNum].valueUpdated = false;
+        for (uint32 i = 0; i < _dynamicTabCount; ++i)
+            _dynamicFields[i].ClearMask();
 
         if (remove)
             sObjectAccessor->RemoveUpdateObject(this);
+
         m_objectUpdated = false;
     }
 }
@@ -815,7 +883,7 @@ namespace Trinity
     class MonsterChatBuilder
     {
         public:
-            MonsterChatBuilder(WorldObject const& obj, ChatMsg msgtype, int32 textId, uint32 language, uint64 targetGUID)
+            MonsterChatBuilder(WorldObject& obj, ChatMsg msgtype, int32 textId, uint32 language, uint64 targetGUID)
                 : i_object(obj), i_msgtype(msgtype), i_textId(textId), i_language(language), i_targetGUID(targetGUID) { }
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
@@ -826,7 +894,7 @@ namespace Trinity
             }
 
         private:
-            WorldObject const& i_object;
+            WorldObject& i_object;
             ChatMsg i_msgtype;
             int32 i_textId;
             uint32 i_language;
@@ -836,7 +904,7 @@ namespace Trinity
     class MonsterCustomChatBuilder
     {
         public:
-            MonsterCustomChatBuilder(WorldObject const& obj, ChatMsg msgtype, const char* text, uint32 language, uint64 targetGUID)
+            MonsterCustomChatBuilder(WorldObject& obj, ChatMsg msgtype, const char* text, uint32 language, uint64 targetGUID)
                 : i_object(obj), i_msgtype(msgtype), i_text(text), i_language(language), i_targetGUID(targetGUID) { }
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
@@ -845,7 +913,7 @@ namespace Trinity
             }
 
         private:
-            WorldObject const& i_object;
+            WorldObject& i_object;
             ChatMsg i_msgtype;
             const char* i_text;
             uint32 i_language;
@@ -972,7 +1040,7 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
     player->GetSession()->SendPacket(&data);
 }
 
-void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const &name, uint64 targetGuid) const
+void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const &name, uint64 targetGuid)
 {
     /*** Build packet using ChatHandler. ***/
     ChatHandler::FillMessageData(data, NULL, msgtype, language, NULL, targetGuid, text, ToUnit(), NULL, CHAT_TAG_NONE, 0, name.c_str());

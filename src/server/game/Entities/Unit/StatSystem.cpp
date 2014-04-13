@@ -810,7 +810,7 @@ void Player::UpdatePvPPowerPercentage()
         case SPEC_PRIEST_DISCIPLINE:
         case SPEC_PRIEST_HOLY:
         case SPEC_SHAMAN_RESTORATION:
-        case SPEC_DROOD_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
         case SPEC_MONK_WINDWALKER:
             damage_value = 0.0f;
             break;
@@ -831,9 +831,10 @@ void Player::UpdateArmorPenetration(int32 amount)
 
 void Player::UpdateMeleeHitChances()
 {
-    m_modMeleeHitChance = (float)GetTotalAuraModifier(SPELL_AURA_MOD_HIT_CHANCE);
-
+    m_modMeleeHitChance = 0;
+    AuraEffectList const & alist = GetAuraEffectsByType(SPELL_AURA_MOD_HIT_CHANCE);
     Item *weapon = this->GetWeaponForAttack(BASE_ATTACK);
+
     for (AuraEffectList::const_iterator itr = alist.begin(); itr != alist.end(); ++itr)
     {
         if ((*itr)->GetSpellInfo()->EquippedItemSubClassMask && !weapon)
@@ -899,7 +900,7 @@ void Player::UpdateExpertise(WeaponAttackType attack)
     {
         case BASE_ATTACK:   SetUInt32Value(PLAYER_FIELD_MAINHAND_EXPERTISE, expertise); break;
         case OFF_ATTACK:    SetUInt32Value(PLAYER_FIELD_OFFHAND_EXPERTISE, expertise);  break;
-        case RANGED_ATTACK: SetFloatValue(PLAYER_FILED_RANGED_EXPERTISE, expertise);    break;
+        case RANGED_ATTACK: SetFloatValue(PLAYER_FIELD_RANGED_EXPERTISE, expertise);    break;
         default: break;
     }
 }
@@ -953,7 +954,7 @@ void Player::UpdateManaRegen()
     if (HasAura(111546))
     {
         // haste also increase your mana regeneration
-        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
+        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
 
         combat_regen = combat_regen + (combat_regen * 6.25f);
         combat_regen *= HastePct;
@@ -963,7 +964,7 @@ void Player::UpdateManaRegen()
     // Nether Attunement - 117957 : Haste also increase your mana regeneration
     if (HasAura(117957))
     {
-        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
+        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
 
         combat_regen *= HastePct;
         base_regen *= HastePct;

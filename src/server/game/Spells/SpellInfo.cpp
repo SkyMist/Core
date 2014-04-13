@@ -979,7 +979,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     DmgClass = _category ? _category->DmgClass : 0;
     PreventionType = _category ? _category->PreventionType : 0;
 
-    if (SpellCategoryEntry const* categoryInfo = sSpellCategoryStores.LookupEntry(Category))
+    if (SpellCategoryEntry const* categoryInfo = sSpellCategoryStore.LookupEntry(Category))
         CategoryFlags = categoryInfo->Flags;
     else
         CategoryFlags = 0;
@@ -1023,7 +1023,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     spellPower->powerCost = 0;
     spellPower->powerCostPercentage = 0;
     spellPower->channelTicCost = 0;
-    spellPower->SpellId = Id;
+    spellPower->spellId = Id;
     spellPower->powerType = POWER_MANA;
 
     // SpellReagentsEntry
@@ -1052,18 +1052,18 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
         Totem[i] = _totem ? _totem->Totem[i] : 0;
 
     // SpecializationSpellsEntry
-    SpecializationSpellEntry const* specializationInfo = NULL;
-    for (uint32 i = 0; i < sSpecializationSpellStore.GetNumRows(); i++)
+    SpecializationSpellsEntry const* specializationInfo = NULL;
+    for (uint32 i = 0; i < sSpecializationSpellsStore.GetNumRows(); i++)
     {
-        specializationInfo = sSpecializationSpellStore.LookupEntry(i);
-        if(!specializationInfo)
+        specializationInfo = sSpecializationSpellsStore.LookupEntry(i);
+        if (!specializationInfo)
             continue;
 
-        if (specializationInfo->LearnSpell == Id)
-            SpecializationIdList.push_back(specializationInfo->SpecializationEntry);
+        if (specializationInfo->SpellId == Id)
+            SpecializationIdList.push_back(specializationInfo->SpecializationId);
 
-        if(specializationInfo->OverrideSpell == Id)
-            OverrideSpellList.push_back(specializationInfo->LearnSpell);
+        if (specializationInfo->RemovesSpellId == Id)
+            OverrideSpellList.push_back(specializationInfo->SpellId);
     }
 
     talentId = 0;
@@ -2446,7 +2446,7 @@ uint32 SpellInfo::GetRecoveryTime() const
     return RecoveryTime > CategoryRecoveryTime ? RecoveryTime : CategoryRecoveryTime;
 }
 
-uint32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, SpellPowerEntry const* spellPower) const
+int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, SpellPowerEntry const* spellPower) const
 {
     // Spell drain all exist power on cast (Only paladin lay of Hands)
     if (AttributesEx & SPELL_ATTR1_DRAIN_ALL_POWER)
@@ -2466,7 +2466,7 @@ uint32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, 
     // PCT cost from total amount
     if (spellPower->powerCostPercentage)
     {
-        switch (spellPower->PowerType)
+        switch (spellPower->powerType)
         {
             // health as power used
             case POWER_HEALTH:
@@ -2493,19 +2493,19 @@ uint32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, 
     SpellSchools school = GetFirstSchoolInMask(schoolMask);
 
     // Flat mod from caster auras by spell school
-    powerCost += caster->GetInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + school);
+    PowerCost += caster->GetInt32Value(UNIT_FIELD_POWER_COST_MODIFIER + school);
 
     // Apply cost mod by spell
     if (Player* modOwner = caster->GetSpellModOwner())
-        modOwner->ApplySpellMod(Id, SPELLMOD_COST, powerCost);
+        modOwner->ApplySpellMod(Id, SPELLMOD_COST, PowerCost);
 
     if (Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION)
-        powerCost = int32(powerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
+        PowerCost = int32(powerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
 
     // PCT mod from user auras by school
-    powerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
-    if (powerCost < 0)
-        powerCost = 0;
+    PowerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
+    if (PowerCost < 0)
+        PowerCost = 0;
 
     return PowerCost;
 }

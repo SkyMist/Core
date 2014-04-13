@@ -19,6 +19,7 @@
 
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
+#include "Chat.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Map.h"

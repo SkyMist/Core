@@ -190,7 +190,7 @@ public:
                                         {
                                             WorldPacket data;
                                             unit->BuildMonsterChat(&data, CHAT_MSG_MONSTER_YELL, YELL_EFFORTS, 0, YELL_EFFORTS_NAME, i->GetSource()->GetGUID());
-                                            i->GetSource()->GetSession()->SendPacket(&packet);
+                                            i->GetSource()->GetSession()->SendPacket(&data);
 
                                             WorldPacket data2(SMSG_PLAY_SOUND, 4);
                                             data2 << uint32(10986);

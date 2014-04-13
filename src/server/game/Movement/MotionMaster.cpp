@@ -391,8 +391,8 @@ void MotionMaster::CustomJump(float x, float y, float z, float speedXY, float sp
     float max_height = -Movement::computeFallElevation(moveTimeHalf,false,-speedZ);
     max_height /= 15.0f;
 
-    Movement::MoveSplineInit init(*_owner);
-    init.MoveTo(x,y,z);
+    Movement::MoveSplineInit init(_owner);
+    init.MoveTo(x, y, z, false);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(speedXY);
     init.Launch();

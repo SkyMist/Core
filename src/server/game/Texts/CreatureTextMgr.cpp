@@ -57,10 +57,12 @@ class PlayerTextBuilder
         {
             std::string text = sCreatureTextMgr->GetLocalizedChatString(_source->GetEntry(), _textGroup, _textId, locale);
 
-            _talker->BuildPlayerChat(data, _msgType, text, _language);
+            if (_talker->ToPlayer()) // Just safety check, all should be fine.
+                _talker->ToPlayer()->BuildPlayerChat(data, _msgType, text, _language);
         }
 
         WorldObject* _source;
+        WorldObject* _talker;
         ChatMsg _msgType;
         uint8 _textGroup;
         uint32 _textId;

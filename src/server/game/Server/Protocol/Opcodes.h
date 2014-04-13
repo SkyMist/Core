@@ -533,7 +533,7 @@ enum Opcodes
    CMSG_SET_SELECTION                                       = 0x10D5, // 5.4.7 18019
    CMSG_SET_SKILL_CHEAT                                     = 0x0,
    CMSG_SET_TAXI_BENCHMARK_MODE                             = 0x0,
-   CMSG_SET_TITLE                                           = 0x0,
+   CMSG_SET_TITLE                                           = 0x13E2, // 5.4.7 18019
    CMSG_SET_TRADE_CURRENCY                                  = 0x0,
    CMSG_SET_TRADE_GOLD                                      = 0x0C93, // 5.4.7 18019
    CMSG_SET_TRADE_ITEM                                      = 0x0,

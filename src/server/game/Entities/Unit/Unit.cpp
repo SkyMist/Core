@@ -18,8 +18,6 @@
  */
 
 #include "Unit.h"
-#include "UnitMovement.h"
-#include "ObjectMovement.h"
 #include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
@@ -30,7 +28,6 @@
 #include "CreatureAIImpl.h"
 #include "CreatureGroups.h"
 #include "Creature.h"
-#include "CreatureMovement.h"
 #include "Formulas.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -47,7 +44,6 @@
 #include "PetAI.h"
 #include "Pet.h"
 #include "Player.h"
-#include "PlayerMovement.h"
 #include "QuestDef.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"
@@ -265,8 +261,6 @@ Unit::Unit(bool isWorldObject) :
 
     _lastLiquid = NULL;
     _isWalkingBeforeCharm = false;
-
-    InitializeDynamicFields();
 }
 
 ////////////////////////////////////////////////////////////
@@ -3590,7 +3584,7 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, uint64 casterGUID, Unit*
                 if (aura->IsSingleTarget())
                     aura->UnregisterSingleTarget();
 
-                if (Aura* newAura = Aura::TryRefreshStackOrCreate(aura->GetSpellInfo(), effMask, stealer, NULL, &baseDamage[0], NULL, aura->GetCasterGUID()))
+                if (Aura* newAura = Aura::TryRefreshStackOrCreate(aura->GetSpellInfo(), effMask, stealer, NULL, aura->GetSpellInfo()->spellPower, &baseDamage[0], NULL, aura->GetCasterGUID()))
                 {
                     // created aura must not be single target aura,, so stealer won't loose it on recast
                     if (newAura->IsSingleTarget())
@@ -9337,7 +9331,7 @@ bool Unit::isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMas
                             break;
                         }
                         // Exorcism
-                        else if (spellProto->GetCategory() == 19)
+                        else if (spellProto->Category == 19)
                         {
                             if (victim->GetCreatureTypeMask() & CREATURE_TYPEMASK_DEMON_OR_UNDEAD)
                                 return true;
@@ -12819,7 +12813,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                     }
                     case SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK:
                         // Skip melee hits or instant cast spells
-                        if (procSpell && procSpell->CalcCastTime(getLevel()) > 0)
+                        if (procSpell && procSpell->CalcCastTime())
                             takeCharges = true;
                         break;
                     case SPELL_AURA_REFLECT_SPELLS_SCHOOL:
@@ -13323,7 +13317,7 @@ uint32 Unit::GetCastingTimeForBonus(SpellInfo const* spellProto, DamageEffectTyp
     if (overTime > 0 && CastingTime > 0 && DirectDamage)
     {
         // mainly for DoTs which are 3500 here otherwise
-        uint32 OriginalCastTime = spellProto->CalcCastTime(getLevel());
+        uint32 OriginalCastTime = spellProto->CalcCastTime();
         if (OriginalCastTime > 7000) OriginalCastTime = 7000;
         if (OriginalCastTime < 1500) OriginalCastTime = 1500;
         // Portion to Over Time
@@ -13412,7 +13406,7 @@ float Unit::CalculateDefaultCoefficient(SpellInfo const* spellInfo, DamageEffect
             DotFactor /= DotTicks;
     }
 
-    int32 CastingTime = spellInfo->IsChanneled() ? spellInfo->GetDuration() : spellInfo->CalcCastTime(getLevel());
+    int32 CastingTime = spellInfo->IsChanneled() ? spellInfo->GetDuration() : spellInfo->CalcCastTime();
     // Distribute Damage over multiple effects, reduce by AoE
     CastingTime = GetCastingTimeForBonus(spellInfo, damagetype, CastingTime);
 
@@ -14707,7 +14701,7 @@ Aura* Unit::AddAura(SpellInfo const* spellInfo, uint32 effMask, Unit* target)
             effMask &= ~(1<<i);
     }
 
-    if (Aura* aura = Aura::TryRefreshStackOrCreate(spellInfo, effMask, target, this))
+	if (Aura* aura = Aura::TryRefreshStackOrCreate(spellInfo, effMask, target, this, spellInfo->spellPower))
     {
         aura->ApplyForTargets();
         return aura;
@@ -15396,7 +15390,7 @@ bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
                     bp0[j] = spellEntry->Effects[j].BasePoints;
 
                 bp0[i] = seatId;
-                Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, bp0, NULL, origCasterGUID);
+                Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, spellEntry->spellPower, bp0, NULL, origCasterGUID);
             }
         }
         else
@@ -15404,7 +15398,7 @@ bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
             if (IsInMap(caster))
                 caster->CastSpell(target, spellEntry, GetVehicleKit() ? TRIGGERED_IGNORE_CASTER_MOUNTED_OR_ON_VEHICLE : TRIGGERED_NONE, NULL, NULL, origCasterGUID);
             else
-                Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, NULL, NULL, origCasterGUID);
+				Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, spellEntry->spellPower, NULL, NULL, origCasterGUID);
         }
 
         result = true;
@@ -16019,78 +16013,4 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
-
-    // Dynamic Fields (MoP new Dynamic Field system).
-
-    uint32 index = 0;
-    uint32 dynFieldsUpdated = 0;
-    UpdateMask DynamicFieldsMask;
-    ByteBuffer DynamicFieldsData;
-
-    DynamicFieldsMask.SetCount(m_dynamicfields.size());
-
-    // We get all object's dynamic fields. 
-    for (DynamicFieldsList::const_iterator itr = m_dynamicfields.begin(); itr != m_dynamicfields.end(); ++itr)
-    {
-        index++;
-
-        if (itr->second.changed)
-        {
-            ByteBuffer DynamicOffsetMask;
-            ByteBuffer DynamicFieldsValues;
-            dynFieldsUpdated++;
-            DynamicFieldsMask.SetBit(index);
-
-            std::vector<uint32> FieldMask;
-            std::size_t FieldMaskSize = (itr->second.values.size() + 31) / 32;
-
-            // Construct the proper mask
-            for (std::size_t i = 0; i < FieldMaskSize; i++) // Offset.
-            {
-                uint32 Mask = 0;
-
-                for (uint8 pos = 0; pos < 32; ++pos)
-                {
-                    std::size_t ValueOffset = i * 32 + pos;
-                    if (ValueOffset < itr->second.values.size())
-                        Mask |= uint32(itr->second.values[ValueOffset].valueUpdated) << pos;
-                }
-
-                FieldMask.push_back(Mask);
-            }
-
-            bool SizeChanged = itr->second.values.size() > GetDynamicFieldDefaultSize(itr->second.entry);
-
-            DynamicFieldsData.WriteBit(SizeChanged);
-            DynamicFieldsData.WriteBits(FieldMaskSize, 7);
-            DynamicFieldsData.FlushBits();
-
-            if (SizeChanged)
-                DynamicFieldsData << uint16(itr->second.values.size());				// new size. unk value, size of all values or field index ?
-
-            for (std::size_t i = 0; i < FieldMask.size(); ++i)
-            {
-                DynamicOffsetMask << uint32(FieldMask[i]);
-
-                for (uint8 bitpos = 0; bitpos < 32; ++bitpos)
-                {
-                    if ((FieldMask[i] >> bitpos) & 0x00000001)
-                    {
-                        uint32 ValueOffset = i * 32 + bitpos;
-                        if (ValueOffset < itr->second.values.size())
-                            DynamicFieldsValues << uint32(itr->second.values[ValueOffset].valueNumber);
-                    }
-                }
-            }
-
-            DynamicFieldsData.append(DynamicOffsetMask);
-            DynamicFieldsData.append(DynamicFieldsValues);
-        }
-    }
-
-    *data << uint8(DynamicFieldsMask.GetBlockCount()); // Send the blocks count.
-    DynamicFieldsMask.AppendToPacket(data);
-
-    if (dynFieldsUpdated > 0)
-        data->append(DynamicFieldsData);
 }

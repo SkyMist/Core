@@ -1847,9 +1847,9 @@ void Spell::SelectEffectTypeImplicitTargets(uint8 effIndex)
     {
         case SPELL_EFFECT_SUMMON_RAF_FRIEND:
         case SPELL_EFFECT_SUMMON_PLAYER:
-            if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->GetSelection())
+            if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->GetSelectedPlayer())
             {
-                WorldObject* target = ObjectAccessor::FindPlayer( && m_caster->ToPlayer()->GetSelection());
+				WorldObject* target = ObjectAccessor::FindPlayer(m_caster->ToPlayer()->GetSelectedPlayer()->GetGUID());
 
                 CallScriptObjectTargetSelectHandlers(target, SpellEffIndex(effIndex), SpellImplicitTargetInfo());
 
@@ -8576,8 +8576,8 @@ bool Spell::IsCritForTarget(Unit* target) const
     if (!target)
         return false;
 
-    for (auto itr : m_UniqueTargetInfo)
-        if (itr.targetGUID == target->GetGUID() && itr.crit)
+    for (std::list<TargetInfo>::const_iterator itr= m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
+        if (itr->targetGUID == target->GetGUID() && itr->crit)
             return true;
 
     return false;

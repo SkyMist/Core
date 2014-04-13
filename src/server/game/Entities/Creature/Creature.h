@@ -23,8 +23,6 @@
 #include "CreatureMovement.h"
 #include "Common.h"
 #include "Unit.h"
-#include "UnitMovement.h"
-#include "ObjectMovement.h"
 #include "UpdateMask.h"
 #include "ItemPrototype.h"
 #include "LootMgr.h"

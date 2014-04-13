@@ -119,7 +119,7 @@ enum SpecIndex
     // Monk.
     SPEC_MONK_BREWMASTER        = 268,
     SPEC_MONK_WINDWALKER        = 269,
-    SPEC_MONK_MISTWEAVER        = 270
+    SPEC_MONK_MISTWEAVER        = 270,
 
     // Pets.
     SPEC_PET                    = 1,

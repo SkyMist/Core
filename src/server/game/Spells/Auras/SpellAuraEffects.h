@@ -370,7 +370,7 @@ namespace Trinity
     {
         public:
             DurationOrderPred(bool ascending = true) : m_ascending(ascending) {}
-            bool operator() (constAuraPtr a, constAuraPtr b) const
+            bool operator() (Aura const* a, Aura const* b) const
             {
                 uint32 rA = a->GetDuration();
                 uint32 rB = b->GetDuration();

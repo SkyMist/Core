@@ -38,6 +38,7 @@
 #include "CreatureAI.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
+#include "DBCStores.h"
 #include "DisableMgr.h"
 #include "Formulas.h"
 #include "GameEventMgr.h"
@@ -55,6 +56,7 @@
 #include "Log.h"
 #include "MapInstanced.h"
 #include "MapManager.h"
+#include "Object.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -730,8 +732,7 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_objectTypeId = TYPEID_PLAYER;
 
     m_valuesCount = PLAYER_END;
-
-    InitializeDynamicFields();
+    _dynamicTabCount = PLAYER_DYNAMIC_END;
 
     m_session = session;
 
@@ -3387,7 +3388,7 @@ void Player::InitTalentForLevel()
 
 void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
 {
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), oldLevel, level);
+    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), minLevel, maxLevel);
     for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
     {
         if (!HasSpell(*iter))
@@ -3402,7 +3403,7 @@ void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
 
     // Worgen players are automatically granted Apprentice Riding at level 20, as well, due to their racial ability Running Wild.
     // http://www.wowhead.com/spell=33388
-    if (level >= 20 && getRace() == RACE_WORGEN)
+    if (getLevel() >= 20 && getRace() == RACE_WORGEN)
     {
         learnSpell(87840, false); // Running Wild
         learnSpell(33388, false); // Apprentice Riding
@@ -3426,7 +3427,7 @@ void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
             removeSpell(68992, false, false);
 
     // Mage players learn automatically Portal: Vale of Eternal Blossom and Teleport: Vale of Eternal Blossom at level 90
-    if (level == 90 && getClass() == CLASS_MAGE)
+    if (getLevel() == 90 && getClass() == CLASS_MAGE)
     {
         if (TeamForRace(getRace()) == ALLIANCE)
         {
@@ -4866,8 +4867,8 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
 
     if (resetSpecialization)
     {
-        if (GetSpecializationId(GetActiveSpec()) == SPEC_NONE)
-            return;
+        if (!resetTalents && GetTalentSpecialization(GetActiveSpec()) == SPEC_NONE)
+            return false;
 
         RemoveAllSymbiosisAuras();
         RemoveSpecializationSpells();
@@ -4904,7 +4905,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     return true;
 }
 
-void SetTalentSpecialization(uint8 spec, uint32 specId)
+void Player::SetTalentSpecialization(uint8 spec, uint32 specId)
 {
     _talentMgr->SpecInfo[spec].SpecializationId = specId;
 
@@ -4923,8 +4924,8 @@ bool Player::RemoveTalent(uint32 talentId)
     if (itr != GetTalentMap(GetActiveSpec())->end())
     {
         SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(itr->first);
-        if (unlearnSpellProto)
-            return;
+        if (!unlearnSpellProto)
+            return false;
 
         removeSpell(itr->first, true);
 
@@ -4977,7 +4978,7 @@ uint32 Player::GetRoleForGroup(uint32 specializationId)
         case SPEC_WARRIOR_FURY:
         case SPEC_DRUID_BALANCE:
         case SPEC_DRUID_CAT:
-            roleId = ROLE_DPS;
+            roleId = GROUP_ROLE_DPS;
             break;
 
         case SPEC_MONK_MISTWEAVER:
@@ -4986,7 +4987,7 @@ uint32 Player::GetRoleForGroup(uint32 specializationId)
         case SPEC_PRIEST_HOLY:
         case SPEC_SHAMAN_RESTORATION:
         case SPEC_DRUID_RESTORATION:
-            roleId = ROLE_HEALER;
+            roleId = GROUP_ROLE_HEALER;
             break;
 
         case SPEC_MONK_BREWMASTER:
@@ -4994,7 +4995,7 @@ uint32 Player::GetRoleForGroup(uint32 specializationId)
         case SPEC_WARRIOR_PROTECTION:
         case SPEC_DRUID_BEAR:
         case SPEC_PALADIN_PROTECTION:
-            roleId = ROLE_TANK;
+            roleId = GROUP_ROLE_TANK;
             break;
 
         default: break; // SPEC_NONE.
@@ -6643,8 +6644,8 @@ bool Player::UpdateCraftSkill(uint32 spellid)
             int skill_gain_chance = SkillGainChance(SkillValue, _spell_idx->second->max_value, (_spell_idx->second->max_value + _spell_idx->second->min_value) / 2, _spell_idx->second->min_value);
 
             // Since 4.0.x, we have bonus skill point reward with somes items ...
-            if (_spell_idx->second && _spell_idx->second->skill_gain >craft_skill_gain && skill_gain_chance == sWorld->getIntConfig(CONFIG_SKILL_CHANCE_ORANGE) * 10)
-                craft_skill_gain = _spell_idx->second->skill_gain;
+            if (_spell_idx->second && _spell_idx->second->character_points > craft_skill_gain && skill_gain_chance == sWorld->getIntConfig(CONFIG_SKILL_CHANCE_ORANGE) * 10)
+                craft_skill_gain = _spell_idx->second->character_points;
 
             return UpdateSkillPro(_spell_idx->second->skillId, skill_gain_chance, craft_skill_gain);
         }
@@ -13861,7 +13862,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
         // Assassin's Resolve - 84601
         if (GetTypeId() == TYPEID_PLAYER)
         {
-            if (getClass() == CLASS_ROGUE && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+            if (getClass() == CLASS_ROGUE && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
             {
                 Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
                 Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
@@ -15025,7 +15026,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                             break;
                         case ITEM_MOD_PVP_POWER:
                             ApplyRatingMod(CR_PVP_POWER, enchant_amount, apply);
-                            sLog->outDebug(LOG_FILTER_PLAYER_ITEMS, "+ %u POWER JCJ", enchant_amount);
+                            TC_LOG_DEBUG("entities.player.items", "+ %u POWER PVP", enchant_amount);
                             break;
                         case ITEM_MOD_HASTE_RATING:
                             ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
@@ -18697,6 +18698,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
      // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
+    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
+    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 
     return true;
 }
@@ -18868,7 +18871,7 @@ void Player::_LoadAuras(PreparedQueryResult result, uint32 timediff)
             else
                 remaincharges = 0;
 
-            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, &baseDamage[0], NULL, caster_guid))
+            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, spellInfo->spellPower, &baseDamage[0], NULL, caster_guid))
             {
                 if (!aura->CanBeSaved())
                 {
@@ -21623,7 +21626,7 @@ void Player::StopCastingCharm()
     }
 }
 
-void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/, uint64 receiverGUID /* = 0*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/) const
+void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/, uint64 receiverGUID /* = 0*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/)
 {
     /*** Build packet using ChatHandler. ***/
     ChatHandler::FillMessageData(data, GetSession(), msgtype, language, channel.c_str(), receiverGUID, text.c_str(), NULL, addonPrefix, chatTag, achievementId);
@@ -21685,7 +21688,7 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
 
     // When the player you are whispering to is DND / AFK, he cannot receive your message, unless you are in GM mode.
-    if (!rPlayer->isDND() && !rPlayer->isAFK() || isGameMaster())
+    if (!rPlayer->isDND() && !rPlayer->isAFK() || IsGameMaster())
     {
         WorldPacket data;
         BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
@@ -21701,7 +21704,7 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
             ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
         else if (rPlayer->isDND())
             ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
-        else if (!isGameMaster() && rPlayer->isGameMaster())
+        else if (!IsGameMaster() && rPlayer->IsGameMaster())
             ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_NOT_FOUND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
     }
 
@@ -21713,7 +21716,7 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
     }
 
     // If you whisper someone who doesn't have GM mode on, while you are in DND / AFK mode, turn it off to be able to receive an answer or let him know you're there.
-    if (!rPlayer->isGameMaster())
+    if (!rPlayer->IsGameMaster())
     {
              if (isDND()) ToggleDND();
         else if (isAFK()) ToggleAFK();
@@ -21807,11 +21810,11 @@ void Player::PetSpellInitialize()
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
         data << uint32(itr->first);                 // spell ID
 
-        CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->GetCategory());
+        CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != pet->m_CreatureCategoryCooldowns.end())
         {
             time_t categoryCooldown = (categoryitr->second > curTime) ? (categoryitr->second - curTime) * IN_MILLISECONDS : 0;
-            data << uint16(spellInfo->GetCategory());   // spell category
+            data << uint16(spellInfo->Category);        // spell category
             data << uint32(cooldown);                   // spell cooldown
             data << uint32(categoryCooldown);           // category cooldown
         }
@@ -21920,11 +21923,11 @@ void Player::VehicleSpellInitialize()
         time_t cooldown = (itr->second > now) ? (itr->second - now) * IN_MILLISECONDS : 0;
         data << uint32(itr->first);                 // spell ID
 
-        CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->GetCategory());
+        CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != vehicle->m_CreatureCategoryCooldowns.end())
         {
             time_t categoryCooldown = (categoryitr->second > now) ? (categoryitr->second - now) * IN_MILLISECONDS : 0;
-            data << uint16(spellInfo->GetCategory());   // spell category
+            data << uint16(spellInfo->Category);        // spell category
             data << uint32(cooldown);                   // spell cooldown
             data << uint32(categoryCooldown);           // category cooldown
         }
@@ -26783,7 +26786,7 @@ void Player::RemovePassiveTalentSpell(uint32 spellId)
                 GetDynObjectList(dynObjList, spellId);
 
                 for (std::list<DynamicObject*>::iterator itr = dynObjList.begin(); itr != dynObjList.end(); itr++)
-                    itr->SetDuration(0);
+                    (*itr)->SetDuration(0);
             }
             break;
         }

@@ -79,7 +79,7 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
     SetDuration(spell->GetDuration());
     SetObjectScale(1);
 
-    SetUInt64Value(AREATRIGGER_CASTER, caster->GetGUID());
+    SetUInt64Value(AREATRIGGER_FIELD_CASTER, caster->GetGUID());
     SetUInt32Value(AREATRIGGER_FIELD_SPELL_ID, spell->Id);
     SetUInt32Value(AREATRIGGER_FIELD_SPELL_VISUAL_ID, spell->SpellVisual[0]);
     SetUInt32Value(AREATRIGGER_FIELD_DURATION, spell->GetDuration());
@@ -140,9 +140,9 @@ void AreaTrigger::Update(uint32 p_time)
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
-                    if (!itr->HasAura(127797))
-                        caster->CastSpell(itr, 127797, true);
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                    if (!(*itr)->HasAura(127797))
+                        caster->CastSpell(*itr, 127797, true);
 
             break;
         }
@@ -158,9 +158,9 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    caster->CastSpell(itr, 115464, true); // Healing Sphere heal
+                    caster->CastSpell(*itr, 115464, true); // Healing Sphere heal
                     SetDuration(0);
                     return;
                 }
@@ -179,8 +179,8 @@ void AreaTrigger::Update(uint32 p_time)
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
-                    itr->CastSpell(itr, 115856, true);
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                    (*itr)->CastSpell(*itr, 115856, true);
 
             break;
         }
@@ -197,11 +197,11 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    if (itr->GetGUID() == caster->GetGUID())
+                    if ((*itr)->GetGUID() == caster->GetGUID())
                     {
-                        caster->CastSpell(itr, 116014, true); // Rune of Power
+                        caster->CastSpell(*itr, 116014, true); // Rune of Power
                         affected = true;
 
                         if (caster->ToPlayer())
@@ -229,13 +229,13 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
                     // Amethyst Pool - Periodic Damage
-                    if (itr->GetDistance(this) > 3.5f)
-                        itr->RemoveAura(130774);
-                    else if (!itr->HasAura(130774))
-                        caster->CastSpell(itr, 130774, true);
+                    if ((*itr)->GetDistance(this) > 3.5f)
+                        (*itr)->RemoveAura(130774);
+                    else if (!(*itr)->HasAura(130774))
+                        caster->CastSpell(*itr, 130774, true);
                 }
             }
 
@@ -251,15 +251,15 @@ void AreaTrigger::Update(uint32 p_time)
             Trinity::UnitListSearcher<Trinity::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
-            for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+            for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
             {
-                if (itr->IsInAxe(caster, this, 2.0f))
+                if ((*itr)->IsInAxe(caster, this, 2.0f))
                 {
-                    if (!itr->HasAura(116663))
-                        caster->AddAura(116663, itr);
+                    if (!(*itr)->HasAura(116663))
+                        caster->AddAura(116663, *itr);
                 }
                 else
-                    itr->RemoveAurasDueToSpell(116663);
+                    (*itr)->RemoveAurasDueToSpell(116663);
             }
 
             break;
@@ -275,11 +275,11 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    if (itr->GetGUID() == caster->GetGUID())
+                    if ((*itr)->GetGUID() == caster->GetGUID())
                     {
-                        caster->CastSpell(itr, 125355, true); // Heal for 15% of life
+                        caster->CastSpell(*itr, 125355, true); // Heal for 15% of life
                         SetDuration(0);
                         return;
                     }
@@ -300,9 +300,9 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    caster->CastSpell(itr, 124041, true); // Gift of the Serpent heal
+                    caster->CastSpell(*itr, 124041, true); // Gift of the Serpent heal
                     SetDuration(0);
                     return;
                 }
@@ -322,11 +322,11 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    if (itr->GetGUID() == caster->GetGUID())
+                    if ((*itr)->GetGUID() == caster->GetGUID())
                     {
-                        caster->CastSpell(itr, 121283, true); // Restore 1 Chi
+                        caster->CastSpell(*itr, 121283, true); // Restore 1 Chi
                         SetDuration(0);
                         return;
                     }
@@ -347,9 +347,9 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    caster->CastSpell(itr, 121557, true); // Angelic Feather increase speed
+                    caster->CastSpell(*itr, 121557, true); // Angelic Feather increase speed
                     SetDuration(0);
                     return;
                 }
@@ -369,9 +369,9 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
             {
-                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+                for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                 {
-                    caster->CastSpell(itr, 122036, true); // Path of Blossom damage
+                    caster->CastSpell(*itr, 122036, true); // Path of Blossom damage
                     SetDuration(0);
                     return;
                 }
@@ -390,12 +390,12 @@ void AreaTrigger::Update(uint32 p_time)
             Trinity::UnitListSearcher<Trinity::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
-            for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targets.end(); ++itr)
+            for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
             {
-                if (itr->GetGUID() != caster->GetGUID())
+                if ((*itr)->GetGUID() != caster->GetGUID())
                     continue;
 
-                caster->CastSpell(itr, 124507, true); // Gift of the Ox - Heal
+                caster->CastSpell(*itr, 124507, true); // Gift of the Ox - Heal
                 SetDuration(0);
                 return;
             }
@@ -411,7 +411,7 @@ void AreaTrigger::Remove()
 {
     if (IsInWorld())
     {
-        SpellInfo const* m_spellInfo = sSpellMgr->GetSpellInfo(GetUInt32Value(AREATRIGGER_FIELD_SPELLID));
+        SpellInfo const* m_spellInfo = sSpellMgr->GetSpellInfo(GetUInt32Value(AREATRIGGER_FIELD_SPELL_ID));
         if (!m_spellInfo)
             return;
 
