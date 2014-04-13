@@ -249,6 +249,7 @@ public:
     float     ValueMultiplier;
     float     DamageMultiplier;
     float     BonusMultiplier;
+    bool      isAttackOrSpellPowerModified;
     int32     MiscValue;
     int32     MiscValueB;
     Mechanics Mechanic;
@@ -361,6 +362,7 @@ public:
     uint32 channelTicCost;
     float  powerCostPercentage;
     uint32 RuneCostID;
+    float APMultiplier;
     SpellRangeEntry const* RangeEntry;
     float  Speed;
     uint32 StackAmount;

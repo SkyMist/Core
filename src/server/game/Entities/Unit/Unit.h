@@ -731,6 +731,42 @@ enum MeleeHitOutcome
     MELEE_HIT_GLANCING, MELEE_HIT_CRIT, MELEE_HIT_CRUSHING, MELEE_HIT_NORMAL
 };
 
+struct HealDone
+{
+    HealDone(uint32 heal, uint32 time)
+    : s_heal(heal), s_timestamp(time) {}
+
+    uint32 s_heal;
+    uint32 s_timestamp;
+};
+
+struct HealTaken
+{
+    HealTaken(uint32 heal, uint32 time)
+    : s_heal(heal), s_timestamp(time) {}
+
+    uint32 s_heal;
+    uint32 s_timestamp;
+};
+
+struct DamageDone
+{
+    DamageDone(uint32 dmg, uint32 time)
+    : s_damage(dmg), s_timestamp(time) {}
+
+    uint32 s_damage;
+    uint32 s_timestamp;
+};
+
+struct DamageTaken
+{
+    DamageTaken(uint32 dmg, uint32 time)
+    : s_damage(dmg), s_timestamp(time) {}
+
+    uint32 s_damage;
+    uint32 s_timestamp;
+};
+
 class DispelInfo
 {
 public:
@@ -1251,6 +1287,8 @@ class Unit : public WorldObject
         void SendMeleeAttackStop(Unit* victim = NULL);
         void SendMeleeAttackStart(Unit* victim);
 
+        bool IsVisionObscured(Unit* victim);
+
         void AddUnitState(uint32 f) { m_state |= f; }
         bool HasUnitState(const uint32 f) const { return (m_state & f); }
         void ClearUnitState(uint32 f) { m_state &= ~f; }
@@ -1299,6 +1337,10 @@ class Unit : public WorldObject
         float GetHealthPct() const { return GetMaxHealth() ? 100.f * GetHealth() / GetMaxHealth() : 0.0f; }
         uint32 CountPctFromMaxHealth(int32 pct) const { return CalculatePct(GetMaxHealth(), pct); }
         uint32 CountPctFromCurHealth(int32 pct) const { return CalculatePct(GetHealth(), pct); }
+        uint32 CountPctFromMaxMana(int32 pct) const { return CalculatePct(GetMaxPower(POWER_MANA), pct); }
+        uint32 CountPctFromCurMana(int32 pct) const { return CalculatePct(GetPower(POWER_MANA), pct); }
+        uint32 CountPctFromMaxPower(int32 pct, Powers power) const { return CalculatePct(GetMaxPower(power), pct); }
+        uint32 CountPctFromCurPower(int32 pct, Powers power) const { return CalculatePct(GetPower(power), pct); }
 
         void SetHealth(uint32 val);
         void SetMaxHealth(uint32 val);
@@ -1316,6 +1358,8 @@ class Unit : public WorldObject
         int32 CountPctFromMaxPower(Powers power, int32 pct) const { return CalculatePct(GetMaxPower(power), pct); }
         void SetPower(Powers power, int32 val);
         void SetMaxPower(Powers power, int32 val);
+        SpellPowerEntry const* GetSpellPowerEntryBySpell(SpellInfo const* spell) const;
+
         // returns the change in power
         int32 ModifyPower(Powers power, int32 val);
         int32 ModifyPowerPct(Powers power, float pct, bool apply = true);
@@ -1490,6 +1534,7 @@ class Unit : public WorldObject
         void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastSpell(GameObject* go, uint32 spellId, bool triggered, Item* castItem = NULL, AuraEffect* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(Unit* victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
+        void CastCustomSpell(Unit* Victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, int32 const* bp3, int32 const* bp4, int32 const* bp5, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, SpellValueMod mod, int32 value, Unit* victim, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, SpellValueMod mod, int32 value, Unit* victim = NULL, TriggerCastFlags triggerFlags = TRIGGERED_NONE, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, CustomSpellValues const &value, Unit* victim = NULL, TriggerCastFlags triggerFlags = TRIGGERED_NONE, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
@@ -1999,6 +2044,15 @@ class Unit : public WorldObject
         time_t GetLastDamagedTime() const { return _lastDamagedTime; }
         void SetLastDamagedTime(time_t val) { _lastDamagedTime = val; }
 
+        uint32 GetHealingDoneInPastSecs(uint32 secs);
+        uint32 GetHealingTakenInPastSecs(uint32 secs);
+        uint32 GetDamageDoneInPastSecs(uint32 secs);
+        uint32 GetDamageTakenInPastSecs(uint32 secs);
+        void SetHealDone(HealDone* healDone) { m_healDone.push_back(healDone); }
+        void SetHealTaken(HealTaken* healTaken) { m_healTaken.push_back(healTaken); }
+        void SetDamageDone(DamageDone* dmgDone) { m_dmgDone.push_back(dmgDone); }
+        void SetDamageTaken(DamageTaken* dmgTaken) { m_dmgTaken.push_back(dmgTaken); }
+
     protected:
         explicit Unit (bool isWorldObject);
 
@@ -2048,6 +2102,15 @@ class Unit : public WorldObject
         AuraApplicationList m_interruptableAuras;             // auras which have interrupt mask applied on unit
         AuraStateAurasMap m_auraStateAuras;        // Used for improve performance of aura state checks on aura apply/remove
         uint32 m_interruptMask;
+
+        typedef std::list<HealDone*> HealDoneList;
+        typedef std::list<HealTaken*> HealTakenList;
+        typedef std::list<DamageDone*> DmgDoneList;
+        typedef std::list<DamageTaken*> DmgTakenList;
+        HealDoneList m_healDone;
+        HealTakenList m_healTaken;
+        DmgDoneList m_dmgDone;
+        DmgTakenList m_dmgTaken;
 
         float m_auraModifiersGroup[UNIT_MOD_END][MODIFIER_TYPE_END];
         float m_weaponDamage[MAX_ATTACK][2];

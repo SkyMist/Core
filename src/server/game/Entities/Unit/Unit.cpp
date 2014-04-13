@@ -295,6 +295,20 @@ Unit::~Unit()
 
     _DeleteRemovedAuras();
 
+    for (HealDoneList::iterator itr = m_healDone.begin(); itr != m_healDone.end(); itr++)
+        delete (*itr);
+    for (HealTakenList::iterator itr = m_healTaken.begin(); itr != m_healTaken.end(); itr++)
+        delete (*itr);
+    for (DmgDoneList::iterator itr = m_dmgDone.begin(); itr != m_dmgDone.end(); itr++)
+        delete (*itr);
+    for (DmgTakenList::iterator itr = m_dmgTaken.begin(); itr != m_dmgTaken.end(); itr++)
+        delete (*itr);
+
+    m_healDone.clear();
+    m_healTaken.clear();
+    m_dmgDone.clear();
+    m_dmgTaken.clear();
+
     delete i_motionMaster;
     delete m_charmInfo;
     delete movespline;
@@ -323,6 +337,63 @@ void Unit::Update(uint32 p_time)
         return;
 
     _UpdateSpells(p_time);
+
+    HealDoneList::iterator healDoneNext;
+    for (HealDoneList::iterator itr = m_healDone.begin(); itr != m_healDone.end(); itr = healDoneNext)
+    {
+        healDoneNext = itr;
+        ++healDoneNext;
+
+        if ((getMSTime() - (*itr)->s_timestamp) > 60 * IN_MILLISECONDS)
+        {
+            delete (*itr);
+            m_healDone.erase(itr);
+        }
+    }
+
+    HealTakenList::iterator healTakenNext;
+    for (HealTakenList::iterator itr = m_healTaken.begin(); itr != m_healTaken.end(); itr = healTakenNext)
+    {
+        healTakenNext = itr;
+        ++healTakenNext;
+
+        if ((getMSTime() - (*itr)->s_timestamp) > 60 * IN_MILLISECONDS)
+        {
+            delete (*itr);
+            m_healTaken.erase(itr);
+        }
+    }
+
+    for (DmgDoneList::iterator itr = m_dmgDone.begin(); itr != m_dmgDone.end();)
+    {
+        auto ptr = *itr;
+        if (!ptr)
+        {
+            ++itr;
+            continue;
+        }
+
+        if ((getMSTime() - ptr->s_timestamp) > 60 * IN_MILLISECONDS)
+        {
+            delete ptr;
+            itr = m_dmgDone.erase(itr);
+        }
+        else
+            ++itr;
+    }
+
+    DmgTakenList::iterator dmgTakenNext;
+    for (DmgTakenList::iterator itr = m_dmgTaken.begin(); itr != m_dmgTaken.end(); itr = dmgTakenNext)
+    {
+        dmgTakenNext = itr;
+        ++dmgTakenNext;
+
+        if ((getMSTime() - (*itr)->s_timestamp) > 60 * IN_MILLISECONDS)
+        {
+            delete (*itr);
+            m_dmgTaken.erase(itr);
+        }
+    }
 
     // If this is set during update SetCantProc(false) call is missing somewhere in the code
     // Having this would prevent spells from being proced, so let's crash
@@ -822,6 +893,24 @@ void Unit::CastCustomSpell(Unit* target, uint32 spellId, int32 const* bp0, int32
         values.AddSpellMod(SPELLVALUE_BASE_POINT1, *bp1);
     if (bp2)
         values.AddSpellMod(SPELLVALUE_BASE_POINT2, *bp2);
+    CastCustomSpell(spellId, values, target, triggered ? TRIGGERED_FULL_MASK : TRIGGERED_NONE, castItem, triggeredByAura, originalCaster);
+}
+
+void Unit::CastCustomSpell(Unit* target, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, int32 const* bp3, int32 const* bp4, int32 const* bp5, bool triggered, Item* castItem, AuraEffect const* triggeredByAura, uint64 originalCaster)
+{
+    CustomSpellValues values;
+    if (bp0)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT0, *bp0);
+    if (bp1)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT1, *bp1);
+    if (bp2)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT2, *bp2);
+    if (bp3)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT3, *bp3);
+    if (bp4)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT4, *bp4);
+    if (bp5)
+        values.AddSpellMod(SPELLVALUE_BASE_POINT5, *bp5);
     CastCustomSpell(spellId, values, target, triggered ? TRIGGERED_FULL_MASK : TRIGGERED_NONE, castItem, triggeredByAura, originalCaster);
 }
 
@@ -12050,6 +12139,32 @@ int32 Unit::GetCreatePowers(Powers power) const
     return 0;
 }
 
+SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) const
+{
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (getClass() == CLASS_WARLOCK)
+        {
+            if (spell->Id == 686)
+            {
+                if (GetShapeshiftForm() == FORM_METAMORPHOSIS)
+                    return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_DEMONIC_FURY);
+                else
+                    return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_MANA);
+            }
+        }
+        else if (getClass() == CLASS_MONK)
+        {
+            if (GetShapeshiftForm() == FORM_WISE_SERPENT)
+                return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_MANA);
+
+            return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_ENERGY);
+        }
+    }
+
+    return spell->spellPower;
+}
+
 void Unit::AddToWorld()
 {
     if (!IsInWorld())
@@ -15760,6 +15875,54 @@ void Unit::SendClearTarget()
     SendMessageToSet(&data, false);
 }
 
+bool Unit::IsVisionObscured(Unit* victim)
+{
+    Aura* victimAura = NULL;
+    Aura* myAura = NULL;
+
+    Unit* victimCaster = NULL;
+    Unit* myCaster = NULL;
+
+    AuraEffectList const& vAuras = victim->GetAuraEffectsByType(SPELL_AURA_INTERFERE_TARGETTING);
+    for (AuraEffectList::const_iterator i = vAuras.begin(); i != vAuras.end(); ++i)
+    {
+        victimAura = (*i)->GetBase();
+        victimCaster = victimAura->GetCaster();
+        break;
+    }
+    AuraEffectList const& myAuras = GetAuraEffectsByType(SPELL_AURA_INTERFERE_TARGETTING);
+    for (AuraEffectList::const_iterator i = myAuras.begin(); i != myAuras.end(); ++i)
+    {
+        myAura = (*i)->GetBase();
+        myCaster = myAura->GetCaster();
+        break;
+    }
+
+    if ((myAura != NULL && myCaster == NULL) || (victimAura != NULL && victimCaster == NULL))
+        return false; // Failed auras, will result in crash
+
+    // E.G. Victim is in smoke bomb, and I'm not
+    // Spells fail unless I'm friendly to the caster of victim's smoke bomb
+    if (victimAura != NULL && myAura == NULL)
+    {
+        if (IsFriendlyTo(victimCaster))
+            return false;
+        else
+            return true;
+    }
+    // Victim is not in smoke bomb, while I am
+    // Spells fail if my smoke bomb aura's caster is my enemy
+    else if (myAura != NULL && victimAura == NULL)
+    {
+        if (IsFriendlyTo(myCaster))
+            return false;
+        else
+            return true;
+    }
+
+    return false;
+}
+
 uint32 Unit::GetResistance(SpellSchoolMask mask) const
 {
     int32 resist = -1;
@@ -15840,6 +16003,59 @@ void CharmInfo::SetIsReturning(bool val)
 bool CharmInfo::IsReturning()
 {
     return _isReturning;
+}
+
+/* In the next functions, we keep 1 minute of last damage */
+uint32 Unit::GetHealingDoneInPastSecs(uint32 secs)
+{
+    uint32 heal = 0;
+
+    for (HealDoneList::iterator itr = m_healDone.begin(); itr != m_healDone.end(); itr++)
+    {
+        if ((getMSTime() - (*itr)->s_timestamp) <= (secs * IN_MILLISECONDS))
+            heal += (*itr)->s_heal;
+    }
+
+    return heal;
+};
+
+uint32 Unit::GetHealingTakenInPastSecs(uint32 secs)
+{
+    uint32 heal = 0;
+
+    for (HealTakenList::iterator itr = m_healTaken.begin(); itr != m_healTaken.end(); itr++)
+    {
+        if ((getMSTime() - (*itr)->s_timestamp) <= (secs * IN_MILLISECONDS))
+            heal += (*itr)->s_heal;
+    }
+
+    return heal;
+};
+
+uint32 Unit::GetDamageDoneInPastSecs(uint32 secs)
+{
+    uint32 damage = 0;
+
+    for (DmgDoneList::iterator itr = m_dmgDone.begin(); itr != m_dmgDone.end(); itr++)
+    {
+        if ((getMSTime() - (*itr)->s_timestamp) <= (secs * IN_MILLISECONDS))
+            damage += (*itr)->s_damage;
+    }
+
+    return damage;
+};
+
+uint32 Unit::GetDamageTakenInPastSecs(uint32 secs)
+{
+    uint32 damage = 0;
+
+    for (DmgTakenList::iterator itr = m_dmgTaken.begin(); itr != m_dmgTaken.end(); itr++)
+    {
+        if ((getMSTime() - (*itr)->s_timestamp) <= (secs * IN_MILLISECONDS))
+            damage += (*itr)->s_damage;
+    }
+
+    return damage;
 }
 
 void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const

@@ -1656,7 +1656,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                         break;
 
                      // aura removed - remove death runes
-                    target->ToPlayer()->RemoveRunesBySpell(GetId());
+                    // target->ToPlayer()->RemoveRunesBySpell(GetId());
                 }
                 else if (GetId() == 81256) // Dancing Rune Weapon
                 {
@@ -1726,8 +1726,8 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                 case 50720: // Vigilance
                     if (apply)
                         target->CastSpell(caster, 59665, true, 0, NULL, caster->GetGUID());
-                    else
-                        target->SetReducedThreatPercent(0, 0);
+                    //else
+                    //    target->SetReducedThreatPercent(0, 0);
                     break;
 
                 default: break;

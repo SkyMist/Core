@@ -583,7 +583,7 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
             int32 ap = int32(caster->GetTotalAttackPowerValue(attType));
 
             float apdamage = float(ap) * _spellInfo->APMultiplier;
-            float spdamage = float(sp) * SPMultiplier;
+            float spdamage = float(sp) * BonusMultiplier; // Spell Power multiplier.
 
             value += apdamage + spdamage;
         }
@@ -3191,7 +3191,7 @@ bool SpellInfo::IsBreakingCamouflage() const
 
 bool SpellInfo::IsIgnoringCombat() const
 {
-    if (AttributesEx4 & SPELL_ATTR4_DAMAGE_DOESNT_BREAK_AURAS))
+    if (AttributesEx4 & SPELL_ATTR4_DAMAGE_DOESNT_BREAK_AURAS)
         return true;
 
     switch (Id)

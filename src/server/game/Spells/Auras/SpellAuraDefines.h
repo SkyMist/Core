@@ -448,7 +448,7 @@ enum AuraType
     SPELL_AURA_386                                          = 386,
     SPELL_AURA_387                                          = 387,
     SPELL_AURA_388                                          = 388,  // SPELL_AURA_MOD_TAXI_FLIGHT_SPEED
-    SPELL_AURA_389                                          = 389,  // SPELL_AURA_KIL_JAEDENS_CUNNING in SpellInfo::AttackerStateUpdate
+    SPELL_AURA_KIL_JAEDENS_CUNNING                          = 389,  // SPELL_AURA_KIL_JAEDENS_CUNNING in SpellInfo::AttackerStateUpdate
     // 390 unused
     // 391 unused
     // 392 unused

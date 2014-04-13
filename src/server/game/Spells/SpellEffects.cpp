@@ -331,14 +331,8 @@ void Spell::EffectInstaKill(SpellEffIndex /*effIndex*/)
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
         return;
 
-    if (!unitTarget || (!unitTarget->IsAlive() && m_spellInfo->Id != 108503))
+    if (!unitTarget || !unitTarget->IsAlive())
         return;
-
-    if (m_spellInfo->Id == 108503 && (!unitTarget->GetHealth() || !unitTarget->IsAlive()))
-    {
-        unitTarget->ToPet()->Remove(PET_SLOT_ACTUAL_PET_SLOT, false, unitTarget->ToPet()->m_Stampeded);
-        return;
-    }
 
     if (unitTarget->GetTypeId() == TYPEID_PLAYER)
         if (unitTarget->ToPlayer()->GetCommandStatus(CHEAT_GOD))
@@ -3812,13 +3806,6 @@ void Spell::EffectTameCreature(SpellEffIndex /*effIndex*/)
     if (m_caster->getClass() != CLASS_HUNTER)
         return;
 
-    // If we have a full list we shouldn't be able to create a new one.
-    if (m_caster->ToPlayer()->getSlotForNewPet() == PET_SLOT_FULL_LIST)
-    {
-        m_caster->ToPlayer()->SendPetTameResult(PET_TAME_ERROR_TOO_MANY_PETS);
-        return;
-    }
-
     // cast finish successfully
     //SendChannelUpdate(0);
     finish();
@@ -3842,7 +3829,7 @@ void Spell::EffectTameCreature(SpellEffIndex /*effIndex*/)
     pet->SetUInt32Value(UNIT_FIELD_LEVEL, level);
 
     // caster has a pet now
-    m_caster->SetMinion(pet, true, m_caster->ToPlayer()->getSlotForNewPet());
+    m_caster->SetMinion(pet, true);
 
     pet->InitTalentForLevel();
 
@@ -3868,10 +3855,6 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
     }
 
     uint32 petentry = m_spellInfo->Effects[effIndex].MiscValue;
-
-    PetSlot slot = PetSlot(m_spellInfo->Effects[effIndex].BasePoints);
-    if (petentry)
-        slot = PET_SLOT_UNK_SLOT;
 
     if (!owner)
     {
@@ -3918,7 +3901,7 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
 
     float x, y, z;
     owner->GetClosePoint(x, y, z, owner->GetObjectSize());
-    Pet* pet = owner->SummonPet(petentry, x, y, z, owner->GetOrientation(), SUMMON_PET, 0, PetSlot(slot));
+    Pet* pet = owner->SummonPet(petentry, x, y, z, owner->GetOrientation(), SUMMON_PET, 0);
     if (!pet)
         return;
 
@@ -3994,7 +3977,7 @@ void Spell::EffectLearnPetSpell(SpellEffIndex effIndex)
         return;
 
     pet->learnSpell(learn_spellproto->Id);
-    pet->SavePetToDB(PET_SLOT_ACTUAL_PET_SLOT);
+    pet->SavePetToDB(PET_SAVE_AS_CURRENT);
     pet->GetOwner()->PetSpellInitialize();
 }
 
@@ -5689,7 +5672,7 @@ void Spell::EffectDismissPet(SpellEffIndex effIndex)
     Pet* pet = unitTarget->ToPet();
 
     ExecuteLogEffectUnsummonObject(effIndex, pet);
-    pet->GetOwner()->RemovePet(pet, PET_SLOT_ACTUAL_PET_SLOT, false, pet->m_Stampeded);
+    pet->GetOwner()->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
 }
 
 void Spell::EffectSummonObject(SpellEffIndex effIndex)
@@ -6420,7 +6403,7 @@ void Spell::EffectSummonDeadPet(SpellEffIndex /*effIndex*/)
 
     //pet->AIM_Initialize();
     //player->PetSpellInitialize();
-    pet->SavePetToDB(PET_SLOT_ACTUAL_PET_SLOT);
+    pet->SavePetToDB(PET_SAVE_AS_CURRENT);
 }
 
 void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
@@ -6938,31 +6921,31 @@ void Spell::EffectActivateRune(SpellEffIndex effIndex)
     }
 
     // Blood Tap
-    if (m_spellInfo->Id == 45529 && count > 0)
-    {
-        std::set<uint8> runes;
-        for (uint8 i = 0; i < MAX_RUNES; i++)
-            if (player->GetRuneCooldown(i) && player->GetCurrentRune(i) != RUNE_DEATH)
-                runes.insert(i);
-        if (!runes.empty())
-        {
-            std::set<uint8>::iterator itr = runes.begin();
-            std::advance(itr, urand(0, runes.size()-1));
-            player->AddRuneBySpell((*itr), RUNE_DEATH, m_spellInfo->Id);
-            player->SetRuneCooldown((*itr), 0);
-            player->ResyncRunes(MAX_RUNES);
-        }
-
-        for (uint32 j = 0; j < MAX_RUNES && count > 0; ++j)
-        {
-            if (player->GetRuneConvertSpell(j) != m_spellInfo->Id)
-                continue;
-
-            player->SetRuneCooldown(j, 0);
-            player->ResyncRunes(MAX_RUNES);
-            --count;
-        }
-    }
+    // if (m_spellInfo->Id == 45529 && count > 0)
+    // {
+    //     std::set<uint8> runes;
+    //     for (uint8 i = 0; i < MAX_RUNES; i++)
+    //         if (player->GetRuneCooldown(i) && player->GetCurrentRune(i) != RUNE_DEATH)
+    //             runes.insert(i);
+    //     if (!runes.empty())
+    //     {
+    //         std::set<uint8>::iterator itr = runes.begin();
+    //         std::advance(itr, urand(0, runes.size()-1));
+    //         player->AddRuneBySpell((*itr), RUNE_DEATH, m_spellInfo->Id);
+    //         player->SetRuneCooldown((*itr), 0);
+    //         player->ResyncRunes(MAX_RUNES);
+    //     }
+	// 
+    //     for (uint32 j = 0; j < MAX_RUNES && count > 0; ++j)
+    //     {
+    //         if (player->GetRuneConvertSpell(j) != m_spellInfo->Id)
+    //             continue;
+	// 
+    //         player->SetRuneCooldown(j, 0);
+    //         player->ResyncRunes(MAX_RUNES);
+    //         --count;
+    //     }
+    // }
 
     // Empower rune weapon
     if (m_spellInfo->Id == 47568)
@@ -7001,14 +6984,13 @@ void Spell::EffectCreateTamedPet(SpellEffIndex effIndex)
     pet->GetMap()->AddToMap(pet->ToCreature());
 
     // unitTarget has pet now
-    unitTarget->SetMinion(pet, true, PET_SLOT_ACTUAL_PET_SLOT);
+    unitTarget->SetMinion(pet, true);
 
     pet->InitTalentForLevel();
 
     if (unitTarget->GetTypeId() == TYPEID_PLAYER)
     {
-        m_caster->ToPlayer()->m_currentPetSlot = m_caster->ToPlayer()->getSlotForNewPet();
-        pet->SavePetToDB(m_caster->ToPlayer()->m_currentPetSlot);
+        pet->SavePetToDB(PET_SAVE_AS_CURRENT);
         unitTarget->ToPlayer()->PetSpellInitialize();
     }
 }
