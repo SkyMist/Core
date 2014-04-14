@@ -1168,7 +1168,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
     InitTalentForLevel();
-    InitSpellsForLevel(0, start_level);
+    InitSpellsForLevel();
     InitPrimaryProfessions();                               // to max set before any spell added
 
     // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
@@ -3338,7 +3338,7 @@ void Player::GiveLevel(uint8 level)
     }
 
     InitTalentForLevel();
-    InitSpellsForLevel(oldLevel, level);
+    InitSpellsForLevel();
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
 
@@ -3412,13 +3412,38 @@ void Player::InitTalentForLevel()
         SendTalentsInfoData();                                  // Update client-side.
 }
 
-void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
+void Player::InitSpellsForLevel()
 {
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), minLevel, maxLevel);
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    std::list<uint32> spellList = sSpellMgr->GetSpellClassList(getClass());
+    uint8 level = getLevel();
+    uint32 specializationId = GetSpecializationId(GetActiveSpec());
+
+    for (std::list<uint32>::iterator spellId = spellList.begin(); spellId != spellList.end(); spellId++)
     {
-        if (!HasSpell(*iter))
-            learnSpell(*iter, false);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId);
+        if (!spell)
+            continue;
+
+        if (HasSpell(spellId))
+            continue;
+
+        if (!spell->SpecializationIdList.empty())
+        {
+            bool find = false;
+
+            for (std::list<uint32>::iterator itr = spell->SpecializationIdList.begin(); itr != spell->SpecializationIdList.end(); itr++)
+                if (itr == specializationId)
+                    find = true;
+
+            if (!find)
+                continue;
+        }
+
+        if (!IsSpellFitByClassAndRace(spellId))
+            continue;
+
+        if (spell->SpellLevel <= level)
+            learnSpell(spellId, false);
     }
 
     // Aberration
@@ -3490,12 +3515,19 @@ void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
 
 void Player::RemoveSpecializationSpells()
 {
-    std::list<uint32> learnList = GetSpellsForLevels(0, getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    std::list<uint32> spellToRemove;
+
+    PlayerSpellMap smap = GetSpellMap();
+
+    for (PlayerSpellMap::const_iterator itr = smap.begin(); itr != smap.end(); ++iter)
     {
-        if (HasSpell(*iter))
-            removeSpell(*iter, true);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(itr.first);
+        if (spell && !spell->SpecializationIdList.empty())
+            spellToRemove.push_back(itr.first);
     }
+
+    for (std::list<uint32>::iterator iter = spellToRemove.begin(); iter != spellToRemove.end(); ++iter)
+        removeSpell(*iter);
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -4900,7 +4932,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         RemoveSpecializationSpells();
         SetTalentSpecialization(GetActiveSpec(), SPEC_NONE);
 
-        InitSpellsForLevel(0, getLevel());
+        InitSpellsForLevel();
     }
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -7430,6 +7462,7 @@ uint32 Player::TeamForRace(uint8 race)
         {
             case 1: return HORDE;
             case 7: return ALLIANCE;
+            case 42: return PANDAREN_NEUTRAL;
         }
         TC_LOG_ERROR("entities.player", "Race (%u) has wrong teamid (%u) in DBC: wrong DBC files?", uint32(race), rEntry->TeamID);
     }
@@ -18579,7 +18612,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     // after spell and quest load
     InitTalentForLevel();
-    InitSpellsForLevel(0, getLevel());
+    InitSpellsForLevel();
     learnDefaultSpells();
 
     // must be before inventory (some items required reputation check)
@@ -18724,8 +18757,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
      // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
-    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
-    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
+    // SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
+    // SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 
     return true;
 }
@@ -27604,7 +27637,7 @@ void Player::ActivateSpec(uint8 spec)
 
     SetUsedTalentCount(spentTalents);
     InitTalentForLevel();
-    InitSpellsForLevel(0, getLevel());
+    InitSpellsForLevel();
 
     {
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ACTIONS_SPEC);

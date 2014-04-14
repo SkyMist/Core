@@ -1793,7 +1793,7 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 GetNextResetTalentsCost() const;
         void InitTalentForLevel();
-        void InitSpellsForLevel(uint32 minLevel, uint32 maxLevel);
+        void InitSpellsForLevel();
         void RemoveSpecializationSpells();
         void BuildPlayerTalentsInfoData(WorldPacket* data);
         void BuildPetTalentsInfoData(WorldPacket* data);

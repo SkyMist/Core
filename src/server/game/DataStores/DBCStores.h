@@ -68,7 +68,6 @@ void Zone2MapCoordinates(float &x, float &y, uint32 zone);
 void Map2ZoneCoordinates(float &x, float &y, uint32 zone);
 uint32 GetClassBySkillId(uint32 skillId);
 uint32 GetSkillIdByClass(uint32 classId);
-std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 specializationId, uint32 minLevel, uint32 maxLevel);
 
 typedef std::map<uint32/*pair32(map, diff)*/, MapDifficulty> MapDifficultyMap;
 MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty);
@@ -201,9 +200,7 @@ extern DBCStorage <SpellItemEnchantmentEntry>    sSpellItemEnchantmentStore;
 extern DBCStorage <SpellItemEnchantmentConditionEntry> sSpellItemEnchantmentConditionStore;
 extern SpellCategoryStore                        sSpellsByCategoryStore;
 extern PetFamilySpellsStore                      sPetFamilySpellsStore;
-extern SpellsPerClassStore                       sSpellsPerClassStore;
 extern ClassBySkillIdStore                       sClassBySkillIdStore;
-extern SpellEffectScallingByEffectId             sSpellEffectScallingByEffectId;
 extern DBCStorage <SpecializationSpellsEntry>    sSpecializationSpellsStore;
 extern SpecializationOverrideSpellsMap sSpecializationOverrideSpellMap;
 extern DBCStorage <SpellRadiusEntry>             sSpellRadiusStore;

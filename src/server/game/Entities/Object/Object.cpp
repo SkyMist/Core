@@ -361,10 +361,6 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
-
-    // As this is a virtual function and Units / Players, Items and GameObjects use their own, 
-    // other object types don't need handling for the new Dynamic Fields system.
-    *data << uint8(0); // Not used till we fix the update properly.
 }
 
 void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
