@@ -522,7 +522,7 @@ public:
                 if (GameObject* Keg = me->FindNearestGameObject(GO_KEG, 20))
                     Keg->Delete();
 
-                me->HandleEmoteCommand(7);
+                me->HandleEmote(7);
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->GetMotionMaster()->MoveTargetedHome();
 

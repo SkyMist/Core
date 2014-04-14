@@ -131,7 +131,7 @@ char const SpellCategoriesEntryfmt[] = "diiiiiiiix";
 char const SpellCategoryfmt[] = "nixxxx";
 char const SpellDurationfmt[] = "niii";
 //                                             0         10        20    26
-char const SpellEffectEntryfmt[] =            "nxifiiiffiiiiiifiifiiiiixiiiix";
+char const SpellEffectEntryfmt[] =            "niifiiiffiiiiiifiifiiiiixiiiix";
 const std::string CustomSpellEffectEntryfmt = "ppppppppppapppappppppppppp";
 const std::string CustomSpellEffectEntryIndex = "Id";
 char const SpellEntryfmt[] = "nssxxixxfiiiiiiiiiiiiiiii";
@@ -172,7 +172,7 @@ char const TransportAnimationfmt[] = "diifffx";
 char const VehicleEntryfmt[] = "nixffffiiiiiiiifffffffffffffffssssfifiixx";
 char const VehicleSeatEntryfmt[] = "niiffffffffffiiiiiifffffffiiifffiiiiiiiffiiiiixxxxxxxxxxxxxxxxxxxx";
 char const WMOAreaTableEntryfmt[] = "niiixxxxxiixxxx";
-char const WorldMapAreaEntryfmt[] = "xinxffffixxxxx";
+char const WorldMapAreaEntryfmt[] = "xinxffffixxxii";
 char const WorldMapOverlayEntryfmt[] = "nxiiiixxxxxxxxxx";
 char const WorldSafeLocsEntryfmt[] = "nifffxx";
 

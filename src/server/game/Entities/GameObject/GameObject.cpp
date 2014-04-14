@@ -45,6 +45,8 @@ GameObject::GameObject() : WorldObject(false), MapObject(),
     m_updateFlag = (UPDATEFLAG_STATIONARY_POSITION | UPDATEFLAG_ROTATION);
 
     m_valuesCount = GAMEOBJECT_END;
+    _dynamicTabCount = GAMEOBJECT_DYNAMIC_END;
+
     m_respawnTime = 0;
     m_respawnDelayTime = 300;
     m_lootState = GO_NOT_READY;
@@ -65,8 +67,6 @@ GameObject::GameObject() : WorldObject(false), MapObject(),
     lootingGroupLowGUID = 0;
 
     ResetLootMode(); // restore default loot mode
-
-    InitializeDynamicFields();
 }
 
 GameObject::~GameObject()
@@ -1695,7 +1695,7 @@ void GameObject::CastSpell(Unit* target, uint32 spellId)
         return;
 
     bool self = false;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (spellInfo->Effects[i].TargetA.GetTarget() == TARGET_UNIT_CASTER)
         {
@@ -2244,9 +2244,6 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
-
-    // Dynamic Fields (MoP new Dynamic Field system).
-    *data << uint8(0);
 }
 
 void GameObject::GetRespawnPosition(float &x, float &y, float &z, float* ori /* = NULL*/) const

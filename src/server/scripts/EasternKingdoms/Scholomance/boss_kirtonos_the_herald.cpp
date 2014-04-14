@@ -178,7 +178,7 @@ class boss_kirtonos_the_herald : public CreatureScript
                                 events.ScheduleEvent(INTRO_5, 1000);
                                 break;
                             case INTRO_5:
-                                me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                                me->HandleEmote(EMOTE_ONESHOT_ROAR);
                                 me->SetUInt32Value(UNIT_FIELD_VIRTUAL_ITEM_ID + 0, uint32(WEAPON_KIRTONOS_STAFF));
                                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_NOT_SELECTABLE);
                                 me->SetReactState(REACT_AGGRESSIVE);

@@ -25,6 +25,7 @@
 #include "GridReference.h"
 #include "ObjectDefines.h"
 #include "ObjectMovement.h"
+#include "ObjectDynamicUpdateFields.h"
 #include "Map.h"
 
 #include <set>
@@ -120,22 +121,6 @@ class WorldPacket;
 class ZoneScript;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
-
-struct DynamicFieldValues
-{
-    uint32 valueNumber; // Values count.
-    bool valueUpdated;  // Checks for updated values - set to true if value changed and wasn't updated, so it gets sent.
-};
-
-struct DynamicField
-{
-    uint32 entry;       // Field entry.
-    bool changed;       // wether the field changed, means that it gets sent in the update packet
-
-    std::vector<DynamicFieldValues> values; // Number of values (correspons with offsets numbers).
-};
-
-typedef std::map<uint32, DynamicField> DynamicFieldsList;
 
 //! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
 //! Nuke this out when porting ObjectGuid from MaNGOS, but preserve the per-byte storage
@@ -281,22 +266,7 @@ class Object
         bool HasFlag64(uint16 index, uint64 flag) const;
         void ApplyModFlag64(uint16 index, uint64 flag, bool apply);
 
-        // MOP Dynamic Field Flags system.
-        #define MAX_DYNAMIC_FLAG_VALUES_CHANGE_SIZE 32
-
-        void InitializeDynamicFields();
-        void LoadDynamicFields();
-        uint32 GetDynamicFieldIndexFromEntryNumber(uint32 entry);
-        uint32 GetDynamicFieldEntryNumberCount();
-        uint32 GetDynamicFieldDefaultSize(uint32 index) const;
-
-        void SetDynamicFieldUInt32Value(uint32 index, std::size_t offset, uint32 value);
-        uint32 GetDynamicFieldUInt32Value(uint32 index, std::size_t offset) const;
-        bool PrintDynamicIndexError(uint32 index, bool set) const; // Prints an error if we use non-existing indexes or offsets.
-
-        DynamicFieldsList  m_dynamicfields;                     // Dynamic Fields the object has.
-
-        // Values / Fields update.
+        // Normal Update Fields functions.
         void ClearUpdateMask(bool remove);
         virtual void BuildUpdate(UpdateDataMapType&) { }
         void BuildFieldsUpdate(Player*, UpdateDataMapType &) const;
@@ -306,6 +276,17 @@ class Object
 
         uint16 GetValuesCount() const { return m_valuesCount; }
         void ForceValuesUpdateAtIndex(uint32);
+
+        // Dynamic Update Fields functions.
+        uint32 GetDynamicUInt32Value(uint32 tab, uint16 index) const
+        {
+            ASSERT(tab < _dynamicTabCount);
+            ASSERT(index < DynamicFields::Count);
+
+            return _dynamicFields[tab]._dynamicValues[index];
+        }
+
+        void SetDynamicUInt32Value(uint32 tab, uint16 index, uint32 value);
 
         // Entity casts.
         Player* ToPlayer() { if (GetTypeId() == TYPEID_PLAYER) return reinterpret_cast<Player*>(this); else return NULL; }
@@ -339,16 +320,15 @@ class Object
         uint16 m_objectType;
         TypeID m_objectTypeId;
 
-        // Values / Fields.
+        // Values / Update Fields.
         void _InitValues();
         std::string _ConcatFields(uint16 startIndex, uint16 size) const;
         void _LoadIntoDataField(std::string const& data, uint32 startOffset, uint32 count);
 
+        // Normal Update Fields.
         virtual void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
 
-        // Normal Update Fields system.
         uint32 GetUpdateFieldData(Player const* target, uint32*& flags) const;
-
         uint16 m_updateFlag;
 
         union
@@ -361,6 +341,13 @@ class Object
         UpdateMask _changesMask;
         uint16 m_valuesCount;
         uint16 _fieldNotifyFlags;
+
+        // Dynamic Update Fields.
+        void BuildDynamicValuesUpdate(ByteBuffer* data) const;
+
+        DynamicFields* _dynamicFields;
+        uint32 _dynamicTabCount;
+
         bool m_objectUpdated;
 
     private:
@@ -532,7 +519,7 @@ class WorldObject : public Object, public WorldLocation
         void MonsterTextEmote(int32 textId, uint64 TargetGuid, bool IsBossEmote = false);
         void MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisper = false);
         void MonsterYellToZone(int32 textId, uint32 language, uint64 TargetGuid);
-        void BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const& name, uint64 TargetGuid) const;
+        void BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const& name, uint64 TargetGuid);
 
         // Sounds.
         void PlayDistanceSound(uint32 sound_id, Player* target = NULL);
@@ -730,6 +717,7 @@ class WorldObject : public Object, public WorldLocation
         bool IsInRange(WorldObject const* obj, float minRange, float maxRange, bool is3D = true) const;
         bool IsInRange2d(float x, float y, float minRange, float maxRange) const;
         bool IsInRange3d(float x, float y, float z, float minRange, float maxRange) const;
+        bool IsInAxe(const WorldObject* obj1, const WorldObject* obj2, float size) const;
         bool isInFront(WorldObject const* target, float arc = M_PI) const;
         bool isInBack(WorldObject const* target, float arc = M_PI) const;
 

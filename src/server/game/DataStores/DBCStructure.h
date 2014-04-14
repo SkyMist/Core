@@ -1788,7 +1788,7 @@ struct SpecializationSpellsEntry
 struct SpellEffectEntry
 {
     uint32    Id;                                           // 0         m_ID
-    //uint32    Unk0;                                       // 1         unk - Pandaria
+    uint32    EffectDifficulty;                             // 1         m_effectDifficulty
     uint32    Effect;                                       // 2         m_effect
     float     EffectValueMultiplier;                        // 3         m_effectAmplitude
     uint32    EffectApplyAuraName;                          // 4         m_effectAura
@@ -1901,6 +1901,9 @@ struct SpellEntry
     uint32 SpellTotemsId;                                    // 22       SpellTotems.dbc
     uint32 ResearchProject;                                  // 23       ResearchProject.dbc
     uint32 SpellMiscId;                                      // 24       SpellMisc.dbc
+
+    // struct access functions
+    SpellEffectEntry const* GetSpellEffect(uint32 eff, uint32 difficulty) const;
 };
 
 // SpellMisc.dbc
@@ -2436,7 +2439,7 @@ struct WorldMapAreaEntry
     //uint32  ID;                                           // 0
     uint32  map_id;                                         // 1
     uint32  area_id;                                        // 2 index (continent 0 areas ignored)
-    //char* internal_name                                   // 3
+    //char* internal_name                                   // 3 Map name
     float   y1;                                             // 4
     float   y2;                                             // 5
     float   x1;                                             // 6
@@ -2444,9 +2447,9 @@ struct WorldMapAreaEntry
     int32   virtual_map_id;                                 // 8 -1 (map_id have correct map) other: virtual map where zone show (map_id - where zone in fact internally)
     // int32   dungeonMap_id;                               // 9 pointer to DungeonMap.dbc (owerride x1, x2, y1, y2 coordinates)
     // uint32  parentMapID;                                 // 10
-
-    // uint32  minRecommendedLevel;                         // 12 Minimum recommended level displayed on world map
-    // uint32  maxRecommendedLevel;                         // 13 Maximum recommended level displayed on world map
+    // uint32  unk_1                                        // 11 Flag ?
+    uint32  minRecommendedLevel;                            // 12 Minimum recommended level displayed on world map
+    uint32  maxRecommendedLevel;                            // 13 Maximum recommended level displayed on world map
 };
 
 #define MAX_WORLD_MAP_OVERLAY_AREA_IDX 4
@@ -2540,16 +2543,19 @@ struct MapDifficulty
     bool hasErrorMessage;
 };
 
-struct TalentSpellPos
+struct SpellEffect
 {
-    TalentSpellPos() : talent_id(0), rank(0) { }
-    TalentSpellPos(uint16 _talent_id, uint8 _rank) : talent_id(_talent_id), rank(_rank) { }
+    SpellEffect()
+    {
+        for (uint8 i = 0; i < MAX_DIFFICULTY; i++)
+            for (uint8 y = 0; y < MAX_SPELL_EFFECTS; y++)
+                effects[i][y] = 0;
+    }
 
-    uint16 talent_id;
-    uint8  rank;
+    SpellEffectEntry const* effects[MAX_DIFFICULTY][32];
 };
 
-typedef std::map<uint32, TalentSpellPos> TalentSpellPosMap;
+typedef std::map<uint32, SpellEffect> SpellEffectMap;
 
 struct TaxiPathBySourceAndDestination
 {

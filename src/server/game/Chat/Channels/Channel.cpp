@@ -601,7 +601,7 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
     if (what.empty())
         return;
 
-    uint8 chatTag = 0;
+    uint8 chatTag = CHAT_TAG_NONE;
     if (Player* player = ObjectAccessor::FindPlayer(guid))
         chatTag = player->GetChatTag();
 
@@ -625,16 +625,12 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
         return;
     }
 
-    WorldPacket data(SMSG_MESSAGECHAT, 1 + 4 + 8 + 4 + _name.size() + 8 + 4 + what.size() + 1);
-    data << uint8(CHAT_MSG_CHANNEL);
-    data << uint32(lang);
-    data << uint64(guid);
-    data << uint32(0);
-    data << _name;
-    data << uint64(guid);
-    data << uint32(what.size() + 1);
-    data << what;
-    data << uint8(chatTag);
+    WorldPacket data;
+
+    if (Player* player = ObjectAccessor::FindPlayer(guid))
+        ChatHandler::FillMessageData(&data, player->GetSession(), CHAT_MSG_CHANNEL, lang, _name.c_str(), player->GetGUID(), what.c_str(), NULL, NULL, chatTag);
+	else
+        ChatHandler::FillMessageData(&data, NULL, CHAT_MSG_CHANNEL, lang, _name.c_str(), 0, what.c_str(), NULL, NULL, chatTag);
 
     SendToAll(&data, !playersStore[guid].IsModerator() ? guid : false);
 }

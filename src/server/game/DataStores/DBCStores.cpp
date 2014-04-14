@@ -215,6 +215,9 @@ DBCStorage <SpellCastTimesEntry> sSpellCastTimesStore(SpellCastTimefmt);
 DBCStorage <SpellCategoriesEntry> sSpellCategoriesStore(SpellCategoriesEntryfmt);
 DBCStorage <SpellCategoryEntry> sSpellCategoryStore(SpellCategoryfmt);
 DBCStorage <SpellEffectEntry> sSpellEffectStore(SpellEffectEntryfmt);
+
+SpellEffectMap sSpellEffectMap;
+
 DBCStorage <SpellDurationEntry> sSpellDurationStore(SpellDurationfmt);
 DBCStorage <SpellFocusObjectEntry> sSpellFocusObjectStore(SpellFocusObjectfmt);
 DBCStorage <SpellRadiusEntry> sSpellRadiusStore(SpellRadiusfmt);
@@ -225,7 +228,6 @@ DBCStorage <SpellShapeshiftFormEntry> sSpellShapeshiftFormStore(SpellShapeshiftF
 DBCStorage <StableSlotPricesEntry> sStableSlotPricesStore(StableSlotPricesfmt);
 DBCStorage <SummonPropertiesEntry> sSummonPropertiesStore(SummonPropertiesfmt);
 DBCStorage <TalentEntry> sTalentStore(TalentEntryfmt);
-TalentSpellPosMap sTalentSpellPosMap;
 typedef std::map<uint32, std::vector<uint32> > SpecializationSpellsMap;
 
 SpecializationSpellsMap sSpecializationSpellsMap;
@@ -544,6 +546,11 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellAuraRestrictionsStore,  dbcPath,"SpellAuraRestrictions.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellCastingRequirementsStore, dbcPath,"SpellCastingRequirements.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellEffectStore,            dbcPath,"SpellEffect.dbc"/*, &CustomSpellEffectEntryfmt, &CustomSpellEffectEntryIndex*/);//15595
+
+    for (uint32 i = 1; i < sSpellEffectStore.GetNumRows(); ++i)
+        if (SpellEffectEntry const *spellEffect = sSpellEffectStore.LookupEntry(i))
+            sSpellEffectMap[spellEffect->EffectSpellId].effects[spellEffect->EffectDifficulty][spellEffect->EffectIndex] = spellEffect;
+
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellCastTimesStore,         dbcPath, "SpellCastTimes.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellDurationStore,          dbcPath, "SpellDuration.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellFocusObjectStore,       dbcPath, "SpellFocusObject.dbc");//15595
@@ -662,18 +669,6 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sTalentStore,                 dbcPath, "Talent.dbc");//15595
 
-    // create talent spells set
-    for (unsigned int i = 0; i < sTalentStore.GetNumRows(); ++i)
-    {
-        TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
-        if (!talentInfo)
-            continue;
-
-        for (int j = 0; j < 1; j++)
-            if (talentInfo->SpellId)
-                sTalentSpellPosMap[talentInfo->SpellId] = TalentSpellPos(i, j);
-    }
-
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrSpecializationStore,              dbcPath, "ChrSpecialization.dbc");
 
     // prepare fast data access to bit pos of talent ranks for use at inspecting
@@ -688,7 +683,6 @@ void LoadDBCStores(const std::string& dataPath)
             // prevent memory corruption; otherwise cls will become 12 below
             if (!specializationInfo->classId || specializationInfo->classId >= MAX_CLASSES)
                 continue;
-
 
             sSpecializationClassStore[specializationInfo->classId][specializationInfo->TabPage] = j;
         }
@@ -872,21 +866,16 @@ char const* GetPetName(uint32 petfamily, uint32 /*dbclang*/)
     return pet_family->Name ? pet_family->Name : NULL;
 }
 
-TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
+SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint32 difficulty)
 {
-    TalentSpellPosMap::const_iterator itr = sTalentSpellPosMap.find(spellId);
-    if (itr == sTalentSpellPosMap.end())
+    SpellEffectMap::const_iterator itr = sSpellEffectMap.find(spellId);
+    if (itr == sSpellEffectMap.end())
         return NULL;
 
-    return &itr->second;
-}
+    if (itr->second.effects[difficulty][effect])
+        return itr->second.effects[difficulty][effect];
 
-uint32 GetTalentSpellCost(uint32 spellId)
-{
-    if (TalentSpellPos const* pos = GetTalentSpellPos(spellId))
-        return pos->rank+1;
-
-    return 0;
+    return itr->second.effects[REGULAR_DIFFICULTY][effect];
 }
 
 int32 GetAreaFlagByAreaID(uint32 area_id)

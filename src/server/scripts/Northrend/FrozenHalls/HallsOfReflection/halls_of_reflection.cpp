@@ -463,7 +463,7 @@ class npc_jaina_or_sylvanas_hor : public CreatureScript
                 case EVENT_INTRO_A2_18:
                     if (Creature* uther = ObjectAccessor::GetCreature(*me, _utherGUID))
                     {
-                        uther->HandleEmoteCommand(EMOTE_ONESHOT_NO);
+                        uther->HandleEmote(EMOTE_ONESHOT_NO);
                         uther->AI()->Talk(SAY_UTHER_INTRO_A2_8);
                     }
                     _events.ScheduleEvent(EVENT_INTRO_A2_19, 12000);
@@ -536,7 +536,7 @@ class npc_jaina_or_sylvanas_hor : public CreatureScript
                 case EVENT_INTRO_H2_13:
                     if (Creature* uther = ObjectAccessor::GetCreature(*me, _utherGUID))
                     {
-                        uther->HandleEmoteCommand(EMOTE_ONESHOT_NO);
+                        uther->HandleEmote(EMOTE_ONESHOT_NO);
                         uther->AI()->Talk(SAY_UTHER_INTRO_H2_5);
                     }
                     _events.ScheduleEvent(EVENT_INTRO_H2_14, 12000);
@@ -563,7 +563,7 @@ class npc_jaina_or_sylvanas_hor : public CreatureScript
                     }
                     if (Creature* uther = ObjectAccessor::GetCreature(*me, _utherGUID))
                     {
-                        uther->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_COWER);
+                        uther->HandleEmote(EMOTE_STATE_COWER);
                         if (_instance->GetData(DATA_TEAM_IN_INSTANCE) == ALLIANCE)
                             uther->AI()->Talk(SAY_UTHER_INTRO_A2_9);
                         else
@@ -872,7 +872,7 @@ class npc_jaina_or_sylvanas_escape_hor : public CreatureScript
                         break;
                     case EVENT_ESCAPE_8:
                         if (Creature* lichking = ObjectAccessor::GetCreature(*me, _lichkingGUID))
-                            lichking->HandleEmoteCommand(TEXT_EMOTE_ROAR);
+                            lichking->HandleEmote(TEXT_EMOTE_ROAR);
                         me->GetMotionMaster()->MovePoint(0, NpcJainaOrSylvanasEscapeRoute[0]);
                         _events.ScheduleEvent(EVENT_ESCAPE_9, 3000);
                         break;

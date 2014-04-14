@@ -32,6 +32,8 @@
 #include "SpellAuraDefines.h"
 #include "ThreatManager.h"
 #include "MoveSplineInit.h"
+#include "../DynamicObject/DynamicObject.h"
+#include "../AreaTrigger/AreaTrigger.h"
 
 #define WORLD_TRIGGER   12999
 
@@ -126,6 +128,9 @@ enum SpellValueMod
     SPELLVALUE_BASE_POINT0,
     SPELLVALUE_BASE_POINT1,
     SPELLVALUE_BASE_POINT2,
+    SPELLVALUE_BASE_POINT3,
+    SPELLVALUE_BASE_POINT4,
+    SPELLVALUE_BASE_POINT5,
     SPELLVALUE_RADIUS_MOD,
     SPELLVALUE_MAX_TARGETS,
     SPELLVALUE_AURA_STACK
@@ -726,6 +731,42 @@ enum MeleeHitOutcome
     MELEE_HIT_GLANCING, MELEE_HIT_CRIT, MELEE_HIT_CRUSHING, MELEE_HIT_NORMAL
 };
 
+struct HealDone
+{
+    HealDone(uint32 heal, uint32 time)
+    : s_heal(heal), s_timestamp(time) {}
+
+    uint32 s_heal;
+    uint32 s_timestamp;
+};
+
+struct HealTaken
+{
+    HealTaken(uint32 heal, uint32 time)
+    : s_heal(heal), s_timestamp(time) {}
+
+    uint32 s_heal;
+    uint32 s_timestamp;
+};
+
+struct DamageDone
+{
+    DamageDone(uint32 dmg, uint32 time)
+    : s_damage(dmg), s_timestamp(time) {}
+
+    uint32 s_damage;
+    uint32 s_timestamp;
+};
+
+struct DamageTaken
+{
+    DamageTaken(uint32 dmg, uint32 time)
+    : s_damage(dmg), s_timestamp(time) {}
+
+    uint32 s_damage;
+    uint32 s_timestamp;
+};
+
 class DispelInfo
 {
 public:
@@ -1246,6 +1287,8 @@ class Unit : public WorldObject
         void SendMeleeAttackStop(Unit* victim = NULL);
         void SendMeleeAttackStart(Unit* victim);
 
+        bool IsVisionObscured(Unit* victim);
+
         void AddUnitState(uint32 f) { m_state |= f; }
         bool HasUnitState(const uint32 f) const { return (m_state & f); }
         void ClearUnitState(uint32 f) { m_state &= ~f; }
@@ -1294,6 +1337,10 @@ class Unit : public WorldObject
         float GetHealthPct() const { return GetMaxHealth() ? 100.f * GetHealth() / GetMaxHealth() : 0.0f; }
         uint32 CountPctFromMaxHealth(int32 pct) const { return CalculatePct(GetMaxHealth(), pct); }
         uint32 CountPctFromCurHealth(int32 pct) const { return CalculatePct(GetHealth(), pct); }
+        uint32 CountPctFromMaxMana(int32 pct) const { return CalculatePct(GetMaxPower(POWER_MANA), pct); }
+        uint32 CountPctFromCurMana(int32 pct) const { return CalculatePct(GetPower(POWER_MANA), pct); }
+        uint32 CountPctFromMaxPower(int32 pct, Powers power) const { return CalculatePct(GetMaxPower(power), pct); }
+        uint32 CountPctFromCurPower(int32 pct, Powers power) const { return CalculatePct(GetPower(power), pct); }
 
         void SetHealth(uint32 val);
         void SetMaxHealth(uint32 val);
@@ -1311,6 +1358,8 @@ class Unit : public WorldObject
         int32 CountPctFromMaxPower(Powers power, int32 pct) const { return CalculatePct(GetMaxPower(power), pct); }
         void SetPower(Powers power, int32 val);
         void SetMaxPower(Powers power, int32 val);
+        SpellPowerEntry const* GetSpellPowerEntryBySpell(SpellInfo const* spell) const;
+
         // returns the change in power
         int32 ModifyPower(Powers power, int32 val);
         int32 ModifyPowerPct(Powers power, float pct, bool apply = true);
@@ -1380,6 +1429,8 @@ class Unit : public WorldObject
         void TriggerAurasProcOnEvent(ProcEventInfo& eventInfo, AuraApplicationList& procAuras);
 
         void HandleEmoteCommand(uint32 anim_id);
+        void HandleEmote(uint32 emote_id);
+        void HandleEmoteState(uint32 emote_id);
         void AttackerStateUpdate (Unit* victim, WeaponAttackType attType = BASE_ATTACK, bool extra = false);
 
         void CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* damageInfo, WeaponAttackType attackType = BASE_ATTACK);
@@ -1483,6 +1534,7 @@ class Unit : public WorldObject
         void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastSpell(GameObject* go, uint32 spellId, bool triggered, Item* castItem = NULL, AuraEffect* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(Unit* victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
+        void CastCustomSpell(Unit* Victim, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, int32 const* bp3, int32 const* bp4, int32 const* bp5, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, SpellValueMod mod, int32 value, Unit* victim, bool triggered, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, SpellValueMod mod, int32 value, Unit* victim = NULL, TriggerCastFlags triggerFlags = TRIGGERED_NONE, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastCustomSpell(uint32 spellId, CustomSpellValues const &value, Unit* victim = NULL, TriggerCastFlags triggerFlags = TRIGGERED_NONE, Item* castItem = NULL, AuraEffect const* triggeredByAura = NULL, uint64 originalCaster = 0);
@@ -1615,6 +1667,8 @@ class Unit : public WorldObject
         void RemoveAura(uint32 spellId, uint64 casterGUID = 0, uint32 reqEffMask = 0, AuraRemoveMode removeMode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAura(AuraApplication * aurApp, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAura(Aura* aur, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+
+        void RemoveAllSymbiosisAuras();
 
         void RemoveAurasDueToSpell(uint32 spellId, uint64 casterGUID = 0, uint32 reqEffMask = 0, AuraRemoveMode removeMode = AURA_REMOVE_BY_DEFAULT);
         void RemoveAuraFromStack(uint32 spellId, uint64 casterGUID = 0, AuraRemoveMode removeMode = AURA_REMOVE_BY_DEFAULT);
@@ -1772,6 +1826,7 @@ class Unit : public WorldObject
         virtual void UpdateMaxPower(Powers power) = 0;
         virtual void UpdateAttackPowerAndDamage(bool ranged = false) = 0;
         virtual void UpdateDamagePhysical(WeaponAttackType attType) = 0;
+        int32 GetTotalSpellPowerValue(SpellSchoolMask mask, bool heal) const;
         float GetTotalAttackPowerValue(WeaponAttackType attType) const;
         float GetWeaponDamageRange(WeaponAttackType attType, WeaponDamageRange type) const;
         void SetBaseWeaponDamage(WeaponAttackType attType, WeaponDamageRange damageRange, float value) { m_weaponDamage[attType][damageRange] = value; }
@@ -1820,8 +1875,19 @@ class Unit : public WorldObject
         void _RegisterDynObject(DynamicObject* dynObj);
         void _UnregisterDynObject(DynamicObject* dynObj);
         DynamicObject* GetDynObject(uint32 spellId);
+        int32 CountDynObjects(uint32 spellId);
+        void GetDynObjectList(std::list<DynamicObject*> &list, uint32 spellId);
         void RemoveDynObject(uint32 spellId);
         void RemoveAllDynObjects();
+
+        // AreaTrigger management
+        void _RegisterAreaTrigger(AreaTrigger* areaTrigger);
+        void _UnregisterAreaTrigger(AreaTrigger* areaTrigger);
+        AreaTrigger* GetAreaTrigger(uint32 spellId);
+        int32 CountAreaTriggers(uint32 spellId);
+        void GetAreaTriggerList(std::list<AreaTrigger*> &list, uint32 spellId);
+        void RemoveAreaTrigger(uint32 spellId);
+        void RemoveAllAreaTriggers();
 
         GameObject* GetGameObject(uint32 spellId) const;
         void AddGameObject(GameObject* gameObj);
@@ -1978,6 +2044,15 @@ class Unit : public WorldObject
         time_t GetLastDamagedTime() const { return _lastDamagedTime; }
         void SetLastDamagedTime(time_t val) { _lastDamagedTime = val; }
 
+        uint32 GetHealingDoneInPastSecs(uint32 secs);
+        uint32 GetHealingTakenInPastSecs(uint32 secs);
+        uint32 GetDamageDoneInPastSecs(uint32 secs);
+        uint32 GetDamageTakenInPastSecs(uint32 secs);
+        void SetHealDone(HealDone* healDone) { m_healDone.push_back(healDone); }
+        void SetHealTaken(HealTaken* healTaken) { m_healTaken.push_back(healTaken); }
+        void SetDamageDone(DamageDone* dmgDone) { m_dmgDone.push_back(dmgDone); }
+        void SetDamageTaken(DamageTaken* dmgTaken) { m_dmgTaken.push_back(dmgTaken); }
+
     protected:
         explicit Unit (bool isWorldObject);
 
@@ -2006,6 +2081,9 @@ class Unit : public WorldObject
         typedef std::list<DynamicObject*> DynObjectList;
         DynObjectList m_dynObj;
 
+        typedef std::list<AreaTrigger*> AreaTriggerList;
+        AreaTriggerList m_AreaTrigger;
+
         typedef std::list<GameObject*> GameObjectList;
         GameObjectList m_gameObj;
         bool m_isSorted;
@@ -2024,6 +2102,15 @@ class Unit : public WorldObject
         AuraApplicationList m_interruptableAuras;             // auras which have interrupt mask applied on unit
         AuraStateAurasMap m_auraStateAuras;        // Used for improve performance of aura state checks on aura apply/remove
         uint32 m_interruptMask;
+
+        typedef std::list<HealDone*> HealDoneList;
+        typedef std::list<HealTaken*> HealTakenList;
+        typedef std::list<DamageDone*> DmgDoneList;
+        typedef std::list<DamageTaken*> DmgTakenList;
+        HealDoneList m_healDone;
+        HealTakenList m_healTaken;
+        DmgDoneList m_dmgDone;
+        DmgTakenList m_dmgTaken;
 
         float m_auraModifiersGroup[UNIT_MOD_END][MODIFIER_TYPE_END];
         float m_weaponDamage[MAX_ATTACK][2];
@@ -2206,6 +2293,21 @@ namespace Trinity
             const bool m_ascending;
     };
 
+    // Binary predicate for sorting Units based on value of distance of an other Unit
+    class UnitDistanceCompareOrderPred
+    {
+        public:
+            UnitDistanceCompareOrderPred(const Unit* source, bool ascending = true) : m_object(source), m_ascending(ascending) {}
+            bool operator() (const Unit* a, const Unit* b) const
+            {
+                return m_ascending ? a->GetDistance(m_object) < b->GetDistance(m_object) :
+                                     a->GetDistance(m_object) > b->GetDistance(m_object);
+            }
+        private:
+            const Unit* m_object;
+            const bool m_ascending;
+    };
+
     // Binary predicate for sorting Units based on percent value of health
     class HealthPctOrderPred
     {
@@ -2218,6 +2320,36 @@ namespace Trinity
                 return m_ascending ? rA < rB : rA > rB;
             }
         private:
+            const bool m_ascending;
+    };
+
+    // Binary predicate for sorting DynamicObjects based on value of duration
+    class AreaTriggerDurationPctOrderPred
+    {
+        public:
+            AreaTriggerDurationPctOrderPred(bool ascending = true) : m_ascending(ascending) {}
+            bool operator() (const AreaTrigger* a, const AreaTrigger* b) const
+            {
+                int32 rA = a->GetDuration() ? float(a->GetDuration()) : 0;
+                int32 rB = b->GetDuration() ? float(b->GetDuration()) : 0;
+                return m_ascending ? rA < rB : rA > rB;
+            }
+        private:
+            const bool m_ascending;
+    };
+
+    // Binary predicate for sorting Units based on value of distance of an GameObject
+    class DistanceCompareOrderPred
+    {
+        public:
+            DistanceCompareOrderPred(const DynamicObject* object, bool ascending = true) : m_object(object), m_ascending(ascending) {}
+            bool operator() (const Unit* a, const Unit* b) const
+            {
+                return m_ascending ? a->GetDistance(m_object) < b->GetDistance(m_object) :
+                                     a->GetDistance(m_object) > b->GetDistance(m_object);
+            }
+        private:
+            const DynamicObject* m_object;
             const bool m_ascending;
     };
 }

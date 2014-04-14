@@ -42,16 +42,16 @@ void WorldSession::HandeSetTalentSpecialization(WorldPacket& recvData)
     uint32 specializationId = GetClassSpecializations(_player->getClass())[specializationTabId];
 
     _player->SetTalentSpecialization(_player->GetActiveSpec(), specializationId);
-    _player->SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, specializationId);
     _player->SendTalentsInfoData();
 
     std::list<uint32> learnList = GetSpellsForLevels(0, _player->getRaceMask(), _player->GetTalentSpecialization(_player->GetActiveSpec()), 0, _player->getLevel());
     for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
     {
         if (!_player->HasSpell(*iter))
-            _player->learnSpell(*iter, true);
+            _player->learnSpell(*iter, false);
     }
 
+    _player->InitSpellsForLevel(0, _player->getLevel());
     _player->SaveToDB();
 }
 
@@ -61,7 +61,7 @@ void WorldSession::HandleLearnTalentOpcode(WorldPacket& recvData)
     uint16 talentId;
     bool anythingLearned = false;
 
-    for (int i = 0; i != talentCount; i++)
+    for (uint32 i = 0; i < talentCount; i++)
     {
         recvData >> talentId;
         if (_player->LearnTalent(talentId))

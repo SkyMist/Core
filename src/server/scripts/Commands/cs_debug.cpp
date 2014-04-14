@@ -1061,7 +1061,7 @@ public:
             return false;
 
         uint32 animId = atoi((char*)args);
-        handler->GetSession()->GetPlayer()->HandleEmoteCommand(animId);
+        handler->GetSession()->GetPlayer()->HandleEmote(animId);
         return true;
     }
 

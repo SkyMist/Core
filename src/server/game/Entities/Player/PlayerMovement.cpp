@@ -547,6 +547,9 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     m_movementInfo.ResetJump();
     DisableSpline();
 
+    // clear unit emote state
+    HandleEmote(EMOTE_ONESHOT_NONE);
+
     if (m_transport)
     {
         if (!(options & TELE_TO_NOT_LEAVE_TRANSPORT))

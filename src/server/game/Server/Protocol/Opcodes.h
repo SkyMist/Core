@@ -92,7 +92,7 @@ enum Opcodes
    CMSG_BATTLEMASTER_JOIN                                   = 0x0,
    CMSG_BATTLEMASTER_JOIN_ARENA                             = 0x0,
    CMSG_BATTLEMASTER_JOIN_RATED                             = 0x0,
-   CMSG_BEGIN_TRADE                                         = 0x0,
+   CMSG_BEGIN_TRADE                                         = 0x0C9A, // 5.4.7 18019
    CMSG_BINDER_ACTIVATE                                     = 0x0477, // 5.4.7 18019
    CMSG_BOT_DETECTED2                                       = 0x0,
    CMSG_BUG                                                 = 0x0,
@@ -192,8 +192,9 @@ enum Opcodes
    CMSG_DISMISS_CRITTER                                     = 0x0,
    CMSG_DUEL_ACCEPTED                                       = 0x0,
    CMSG_DUEL_CANCELLED                                      = 0x0,
+   CMSG_DUEL_PROPOSED                                       = 0x19B3, // 5.4.7 18019
    CMSG_EJECT_PASSENGER                                     = 0x0,
-   CMSG_EMOTE                                               = 0x0,
+   CMSG_EMOTE                                               = 0x12C5, // 5.4.7 18019
    CMSG_ENABLETAXI                                          = 0x0,
    CMSG_ENABLE_NAGLE                                        = 0x0,
    CMSG_EQUIPMENT_SET_DELETE                                = 0x0,
@@ -287,7 +288,7 @@ enum Opcodes
    CMSG_GUILD_SWITCH_RANK                                   = 0x0,
    CMSG_HEARTH_AND_RESURRECT                                = 0x0,
    CMSG_IGNORE_TRADE                                        = 0x0,
-   CMSG_INITIATE_TRADE                                      = 0x0,
+   CMSG_INITIATE_TRADE                                      = 0x12BB, // 5.4.7 18019
    CMSG_INSPECT                                             = 0x01D4, // 5.4.7 18019
    CMSG_INSPECT_HONOR_STATS                                 = 0x047E, // 5.4.7 18019
    CMSG_INSTANCE_LOCK_WARNING_RESPONSE                      = 0x0,
@@ -331,12 +332,12 @@ enum Opcodes
    CMSG_LOOT_MONEY                                          = 0x15A0, // 5.4.7 18019
    CMSG_LOOT_RELEASE                                        = 0x12F0, // 5.4.7 18019
    CMSG_LOOT_ROLL                                           = 0x0,
-   CMSG_MAIL_CREATE_TEXT_ITEM                               = 0x0,
-   CMSG_MAIL_DELETE                                         = 0x0,
-   CMSG_MAIL_MARK_AS_READ                                   = 0x0,
-   CMSG_MAIL_RETURN_TO_SENDER                               = 0x0,
-   CMSG_MAIL_TAKE_ITEM                                      = 0x0,
-   CMSG_MAIL_TAKE_MONEY                                     = 0x0,
+   CMSG_MAIL_CREATE_TEXT_ITEM                               = 0x0254, // 5.4.7 18019
+   CMSG_MAIL_DELETE                                         = 0x13A3, // 5.4.7 18019
+   CMSG_MAIL_MARK_AS_READ                                   = 0x027F, // 5.4.7 18019
+   CMSG_MAIL_RETURN_TO_SENDER                               = 0x1C8A, // 5.4.7 18019
+   CMSG_MAIL_TAKE_ITEM                                      = 0x06F6, // 5.4.7 18019
+   CMSG_MAIL_TAKE_MONEY                                     = 0x0676, // 5.4.7 18019
    CMSG_MEETINGSTONE_INFO                                   = 0x0,
    CMSG_MESSAGECHAT_ADDON_BATTLEGROUND                      = 0x0,
    CMSG_MESSAGECHAT_ADDON_GUILD                             = 0x0,
@@ -351,7 +352,7 @@ enum Opcodes
    CMSG_MESSAGECHAT_EMOTE                                   = 0x0520, // 5.4.7 18019
    CMSG_MESSAGECHAT_GUILD                                   = 0x070B, // 5.4.7 18019
    CMSG_MESSAGECHAT_OFFICER                                 = 0x1F69, // 5.4.7 18019
-   CMSG_MESSAGECHAT_PARTY                                   = 0x0F02, // 5.4.7 18019
+   CMSG_MESSAGECHAT_PARTY                                   = 0x0642, // 5.4.7 18019
    CMSG_MESSAGECHAT_RAID                                    = 0x054B, // 5.4.7 18019
    CMSG_MESSAGECHAT_RAID_WARNING                            = 0x0423, // 5.4.7 18019
    CMSG_MESSAGECHAT_SAY                                     = 0x0C41, // 5.4.7 18019
@@ -500,7 +501,7 @@ enum Opcodes
    CMSG_SELECT_LOOT_SPEC                                    = 0x0,
    CMSG_SELF_RES                                            = 0x0,
    CMSG_SELL_ITEM                                           = 0x115F, // 5.4.7 18019
-   CMSG_SEND_MAIL                                           = 0x0,
+   CMSG_SEND_MAIL                                           = 0x01A9, // 5.4.7 18019
    CMSG_SEND_SOR_REQUEST_VIA_ADDRESS                        = 0x0,
    CMSG_SEND_SOR_REQUEST_VIA_BNET_ACCOUNT_ID                = 0x0,
    CMSG_SERVERTIME                                          = 0x0,
@@ -532,9 +533,9 @@ enum Opcodes
    CMSG_SET_SELECTION                                       = 0x10D5, // 5.4.7 18019
    CMSG_SET_SKILL_CHEAT                                     = 0x0,
    CMSG_SET_TAXI_BENCHMARK_MODE                             = 0x0,
-   CMSG_SET_TITLE                                           = 0x0,
+   CMSG_SET_TITLE                                           = 0x13E2, // 5.4.7 18019
    CMSG_SET_TRADE_CURRENCY                                  = 0x0,
-   CMSG_SET_TRADE_GOLD                                      = 0x0,
+   CMSG_SET_TRADE_GOLD                                      = 0x0C93, // 5.4.7 18019
    CMSG_SET_TRADE_ITEM                                      = 0x0,
    CMSG_SET_VEHICLE_REC_ID_ACK                              = 0x0,
    CMSG_SET_WATCHED_FACTION                                 = 0x0,
@@ -850,7 +851,7 @@ enum Opcodes
    SMSG_DUMP_RIDE_TICKETS_RESPONSE                          = 0x0,
    SMSG_DURABILITY_DAMAGE_DEATH                             = 0x0,
    SMSG_ECHO_PARTY_SQUELCH                                  = 0x0,
-   SMSG_EMOTE                                               = 0x0,
+   SMSG_EMOTE                                               = 0x022F, // 5.4.7 18019
    SMSG_ENABLE_BARBER_SHOP                                  = 0x0,
    SMSG_ENCHANTMENTLOG                                      = 0x0,
    SMSG_ENVIRONMENTALDAMAGELOG                              = 0x0,
@@ -1045,7 +1046,7 @@ enum Opcodes
    SMSG_LOOT_ROLL_WON                                       = 0x0,
    SMSG_LOOT_SLOT_CHANGED                                   = 0x0,
    SMSG_LOOT_START_ROLL                                     = 0x0,
-   SMSG_MAIL_LIST_RESULT                                    = 0x0,
+   SMSG_MAIL_LIST_RESULT                                    = 0x0401, // 5.4.7 18019
    SMSG_MAP_OBJ_EVENTS                                      = 0x0,
    SMSG_MEETINGSTONE_COMPLETE                               = 0x0,
    SMSG_MEETINGSTONE_IN_PROGRESS                            = 0x0,

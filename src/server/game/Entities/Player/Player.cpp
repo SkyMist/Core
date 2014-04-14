@@ -38,6 +38,7 @@
 #include "CreatureAI.h"
 #include "DatabaseEnv.h"
 #include "DB2Stores.h"
+#include "DBCStores.h"
 #include "DisableMgr.h"
 #include "Formulas.h"
 #include "GameEventMgr.h"
@@ -55,6 +56,7 @@
 #include "Log.h"
 #include "MapInstanced.h"
 #include "MapManager.h"
+#include "Object.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -198,6 +200,53 @@ void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level
     // level dependent taxi hubs
     if (level >= 68)
         SetTaximaskNode(213);                               //Shattered Sun Staging Area
+
+    // Add Taxi Nodes availables for player level.
+    for (uint32 i = 0; i < sTaxiNodesStore.GetNumRows(); i++)
+    {
+        TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(i);
+        if (!node)
+            continue;
+
+        // Bad map id
+        if (!sMapStore.LookupEntry(node->map_id))
+            continue;
+
+        int gx = (int)(32 - node->x / SIZE_OF_GRIDS);             //grid x
+        int gy = (int)(32 - node->y / SIZE_OF_GRIDS);             //grid y
+
+        // Bad positions
+        if (gx < 0 || gy < 0)
+            continue;
+
+        uint32 zone = sMapMgr->GetZoneId(node->map_id, node->x, node->y, node->z);
+        if (!zone)
+            continue;
+
+        WorldMapAreaEntry const* worldMapArea = sWorldMapAreaStore.LookupEntry(zone);
+        if (!worldMapArea)
+            continue;
+
+        uint32 team = Player::TeamForRace(race);
+
+        if (team == PANDAREN_NEUTRAL)
+            continue;
+
+        if (!node->MountCreatureID[team == ALLIANCE ? 1 : 0])
+            continue;
+
+        if (!worldMapArea->minRecommendedLevel)
+            continue;
+
+        uint32 minLevel = worldMapArea->minRecommendedLevel;
+
+        // Hackfix for TwilightHighlands map swapping
+        if (worldMapArea->area_id == 4922)
+            minLevel = 84;
+
+        if (minLevel <= level)
+            SetTaximaskNode(node->ID);
+    }
 }
 
 void PlayerTaxi::LoadTaxiMask(std::string const &data)
@@ -683,8 +732,7 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_objectTypeId = TYPEID_PLAYER;
 
     m_valuesCount = PLAYER_END;
-
-    InitializeDynamicFields();
+    _dynamicTabCount = PLAYER_DYNAMIC_END;
 
     m_session = session;
 
@@ -1120,6 +1168,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
     InitTalentForLevel();
+    InitSpellsForLevel(0, start_level);
     InitPrimaryProfessions();                               // to max set before any spell added
 
     // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
@@ -1646,7 +1695,7 @@ void Player::Update(uint32 p_time)
 
             if (isAttackReady(BASE_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 1)               // send single time (client auto repeat)
@@ -1656,7 +1705,7 @@ void Player::Update(uint32 p_time)
                     }
                 }
                 //120 degrees of radiant range
-                else if (!HasInArc(2*M_PI/3, victim))
+                else if (!HasInArc(2 * M_PI / 3, victim))
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 2)               // send single time (client auto repeat)
@@ -1674,17 +1723,32 @@ void Player::Update(uint32 p_time)
                         if (getAttackTimer(OFF_ATTACK) < ATTACK_DISPLAY_DELAY)
                             setAttackTimer(OFF_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack
-                    AttackerStateUpdate(victim, BASE_ATTACK);
-                    resetAttackTimer(BASE_ATTACK);
+                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    if (!HasAura(114051) && !HasAura(121471))
+                    {
+                        AttackerStateUpdate(victim, BASE_ATTACK);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
+                    // Custom MoP Script - Wind Lash - Main Hand
+                    else if (HasAura(114051))
+                    {
+                        CastSpell(victim, 114089, true);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
+                    // Custom MoP Script - Shadow Blade - Main Hand
+                    else if (HasAura(121471))
+                    {
+                        CastSpell(victim, 121473, true);
+                        resetAttackTimer(BASE_ATTACK);
+                    }
                 }
             }
 
             if (haveOffhandWeapon() && isAttackReady(OFF_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                     setAttackTimer(OFF_ATTACK, 100);
-                else if (!HasInArc(2*M_PI/3, victim))
+                else if (!HasInArc(2 * M_PI / 3, victim))
                     setAttackTimer(OFF_ATTACK, 100);
                 else
                 {
@@ -1692,9 +1756,24 @@ void Player::Update(uint32 p_time)
                     if (getAttackTimer(BASE_ATTACK) < ATTACK_DISPLAY_DELAY)
                         setAttackTimer(BASE_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack
-                    AttackerStateUpdate(victim, OFF_ATTACK);
-                    resetAttackTimer(OFF_ATTACK);
+                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    if (!HasAura(114051) && !HasAura(121471))
+                    {
+                        AttackerStateUpdate(victim, OFF_ATTACK);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
+                    // Custom MoP Script - Wind Lash - Off-Hand
+                    else if (HasAura(114051))
+                    {
+                        CastSpell(victim, 114093, true);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
+                    // Custom MOP script - Shadow Blades - Off Hand
+                    else if (HasAura(121471))
+                    {
+                        CastSpell(victim, 121474, true);
+                        resetAttackTimer(OFF_ATTACK);
+                    }
                 }
             }
 
@@ -2306,13 +2385,13 @@ void Player::RegenerateAll()
     {
         switch (GetTalentSpecialization(GetActiveSpec()))
         {
-            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+            case SPEC_WARLOCK_DEMONOLOGY:
                 m_demonicFuryPowerRegenTimerCount += m_regenTimer;
                 break;
-            case TALENT_TREE_WARLOCK_DESTRUCTION:
+            case SPEC_WARLOCK_DESTRUCTION:
                 m_burningEmbersRegenTimerCount += m_regenTimer;
                 break;
-            case TALENT_TREE_WARLOCK_AFFLICTION:
+            case SPEC_WARLOCK_AFFLICTION:
                 m_soulShardsRegenTimerCount += m_regenTimer;
                 break;
 
@@ -2382,21 +2461,21 @@ void Player::RegenerateAll()
     {
         switch (GetTalentSpecialization(GetActiveSpec()))
         {
-            case TALENT_TREE_WARLOCK_DEMONOLOGY:
+            case SPEC_WARLOCK_DEMONOLOGY:
                 if (m_demonicFuryPowerRegenTimerCount >= 100)
                 {
                     Regenerate(POWER_DEMONIC_FURY);
                     m_demonicFuryPowerRegenTimerCount -= 100;
                 }
                 break;
-            case TALENT_TREE_WARLOCK_DESTRUCTION:
+            case SPEC_WARLOCK_DESTRUCTION:
                 if (m_burningEmbersRegenTimerCount >= 15000)
                 {
                     Regenerate(POWER_BURNING_EMBERS);
                     m_burningEmbersRegenTimerCount -= 15000;
                 }
                 break;
-            case TALENT_TREE_WARLOCK_AFFLICTION:
+            case SPEC_WARLOCK_AFFLICTION:
                 if (m_soulShardsRegenTimerCount >= 20000)
                 {
                     Regenerate(POWER_SOUL_SHARDS);
@@ -3122,6 +3201,32 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
     SetUInt32Value(PLAYER_FIELD_XP, newXP);
 }
 
+// Give xp when gathering herbalism and mining
+// Formulas found here : http://www.wowwiki.com/Formulas:Gather_XP
+void Player::GiveGatheringXP()
+{
+    uint32 level = getLevel();
+    uint32 gain = 0;
+
+    if (level >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+        return;
+
+    if (level < 50)
+        gain = 12.76f * level;
+    else if (level > 49 && level < 60)
+        gain = 25 * level - 550;
+    else if (level > 59 && level < 70)
+        gain = 20 * level - 200;
+    else if (level > 69 && level < 80)
+        gain = 100 * level - 6600;
+    else if (level > 79 && level < 85)
+        gain = 750 * level - 58250;
+    else if (level > 84 && level < 90)
+        gain = 1720 * level - 138800;
+
+    GiveXP(gain, NULL);
+}
+
 // Update player to next level
 // Current player experience not update (must be update by caller)
 void Player::GiveLevel(uint8 level)
@@ -3233,6 +3338,7 @@ void Player::GiveLevel(uint8 level)
     }
 
     InitTalentForLevel();
+    InitSpellsForLevel(oldLevel, level);
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
 
@@ -3280,13 +3386,6 @@ void Player::GiveLevel(uint8 level)
         }
     }
 
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), oldLevel, level);
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
-    {
-        if (!HasSpell(*iter))
-            learnSpell(*iter, true);
-    }
-
     sScriptMgr->OnPlayerLevelChanged(this, oldLevel);
 }
 
@@ -3309,10 +3408,94 @@ void Player::InitTalentForLevel()
         }
     }
 
-    SetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS, CalculateTalentsPoints());
-
     if (!GetSession()->PlayerLoading())
-        SendTalentsInfoData();                         // update at client
+        SendTalentsInfoData();                                  // Update client-side.
+}
+
+void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
+{
+    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), minLevel, maxLevel);
+    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    {
+        if (!HasSpell(*iter))
+            learnSpell(*iter, false);
+    }
+
+    // Aberration
+    if (getRace() == RACE_WORGEN)
+        learnSpell(68976, false);
+    else
+        removeSpell(68976, false, false);
+
+    // Worgen players are automatically granted Apprentice Riding at level 20, as well, due to their racial ability Running Wild.
+    // http://www.wowhead.com/spell=33388
+    if (getLevel() >= 20 && getRace() == RACE_WORGEN)
+    {
+        learnSpell(87840, false); // Running Wild
+        learnSpell(33388, false); // Apprentice Riding
+    }
+    else
+    {
+        // Only for Worgens with level >= 20
+        if (HasSpell(87840))
+            removeSpell(87840, false, false);
+
+        // Some spells allowing flying mounts in some maps
+        if (HasSpell(115913) && getLevel() < 90)
+            removeSpell(115913, false, false);
+        if (HasSpell(90267) && getLevel() < 60)
+            removeSpell(90267, false, false);
+    }
+
+    // Only for Worgens - Darkflight
+    if (getRace() != RACE_WORGEN)
+        if (HasSpell(68992))
+            removeSpell(68992, false, false);
+
+    // Mage players learn automatically Portal: Vale of Eternal Blossom and Teleport: Vale of Eternal Blossom at level 90
+    if (getLevel() == 90 && getClass() == CLASS_MAGE)
+    {
+        if (TeamForRace(getRace()) == ALLIANCE)
+        {
+            learnSpell(132627, false); // Teleport: Vale of Eternal Blossoms
+            learnSpell(132626, false); // Portal: Vale of Eternal Blossoms
+
+            // Only for horde
+            if (HasSpell(132621))
+                removeSpell(132621, false, false);
+            if (HasSpell(132620))
+                removeSpell(132620, false, false);
+        }
+        else
+        {
+            learnSpell(132621, false); // Teleport: Vale of Eternal Blossoms
+            learnSpell(132620, false); // Portal: Vale of Eternal Blossoms
+
+            // Only for alliance
+            if (HasSpell(132626))
+                removeSpell(132626, false, false);
+            if (HasSpell(132627))
+                removeSpell(132627, false, false);
+        }
+    }
+
+    // Hack fix for Sparring - Not applied
+    if (HasSpell(116023))
+        CastSpell(this, 116023, true);
+
+    // Fix Pick Lock update at each level
+    if (HasSpell(1804) && getLevel() > 20)
+        SetSkill(921, GetSkillStep(921), (getLevel() * 5), (getLevel() * 5));
+}
+
+void Player::RemoveSpecializationSpells()
+{
+    std::list<uint32> learnList = GetSpellsForLevels(0, getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
+    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    {
+        if (HasSpell(*iter))
+            removeSpell(*iter, true);
+    }
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -3636,7 +3819,7 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
     if (!spellInfo)
     {
-        // do character spell book cleanup (all characters)
+        // Do character spell book cleanup (all characters).
         if (!IsInWorld() && !learning)                       // spell load case
         {
             TC_LOG_ERROR("spells", "Player::addSpell: Non-existed in SpellStore spell #%u request, deleting for all characters in `character_spell`.", spellId);
@@ -3651,7 +3834,7 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
 
     if (!SpellMgr::IsSpellValid(spellInfo, this, false))
     {
-        // do character spell book cleanup (all characters)
+        // Do character spell book cleanup (all characters).
         if (!IsInWorld() && !learning)                       // spell load case
         {
             TC_LOG_ERROR("spells", "Player::addTalent: Broken spell #%u learning not allowed, deleting for all characters in `character_talent`.", spellId);
@@ -3667,17 +3850,14 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
     PlayerTalentMap::iterator itr = GetTalentMap(spec)->find(spellId);
     if (itr == GetTalentMap(spec)->end())
     {
-        if (TalentSpellPos const* talentPos = GetTalentSpellPos(spellId))
-        {
-            PlayerSpellState state = learning ? PLAYERSPELL_NEW : PLAYERSPELL_UNCHANGED;
-            PlayerTalent* newtalent = new PlayerTalent();
+        PlayerSpellState state = learning ? PLAYERSPELL_NEW : PLAYERSPELL_UNCHANGED;
+        PlayerTalent* newtalent = new PlayerTalent();
 
-            newtalent->state = state;
-            newtalent->spec = spec;
+        newtalent->state = state;
+        newtalent->spec = spec;
 
-            (*GetTalentMap(spec))[spellId] = newtalent;
-            return true;
-        }
+        (*GetTalentMap(spec))[spellId] = newtalent;
+        return true;
     }
     else 
         itr->second->state = PLAYERSPELL_UNCHANGED;
@@ -3690,7 +3870,7 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
     if (!spellInfo)
     {
-        // do character spell book cleanup (all characters)
+        // Do character spell book cleanup (all characters).
         if (!IsInWorld() && !learning)                       // spell load case
         {
             TC_LOG_ERROR("spells", "Player::addSpell: Non-existed in SpellStore spell #%u request, deleting for all characters in `character_spell`.", spellId);
@@ -3705,7 +3885,7 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
 
     if (!SpellMgr::IsSpellValid(spellInfo, this, false))
     {
-        // do character spell book cleanup (all characters)
+        // Do character spell book cleanup (all characters).
         if (!IsInWorld() && !learning)                       // spell load case
         {
             TC_LOG_ERROR("spells", "Player::addSpell: Broken spell #%u learning not allowed, deleting for all characters in `character_spell`.", spellId);
@@ -3716,6 +3896,23 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
             TC_LOG_ERROR("spells", "Player::addSpell: Broken spell #%u learning not allowed.", spellId);
 
         return false;
+    }
+
+    // Check Mount capabilities and load them right and teach players appropriate riding skills.
+    LoadMountsAndLearnRidingSkills(spellId);
+
+    // Validate professions.
+    if (loading)
+    {
+        SkillLineAbilityMapBounds spellBounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellInfo->Id);
+        for (SkillLineAbilityMap::const_iterator spell_idx = spellBounds.first; spell_idx != spellBounds.second; ++spell_idx)
+        {
+            if (!IsProfessionSkill(spell_idx->second->skillId))
+                continue;
+    
+            if (!HasSkill(spell_idx->second->skillId))
+                disabled = true;
+        }
     }
 
     PlayerSpellState state = learning ? PLAYERSPELL_NEW : PLAYERSPELL_UNCHANGED;
@@ -3746,7 +3943,7 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
             }
         }
 
-        // not do anything if already known in expected state
+        // don't do anything if the spell is already known in it's expected state
         if (itr->second->state != PLAYERSPELL_REMOVED && itr->second->active == active &&
             itr->second->dependent == dependent && itr->second->disabled == disabled)
         {
@@ -3792,8 +3989,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                 }
                 else
                 {
-                    WorldPacket data(SMSG_REMOVED_SPELL, 7);
-                    data.WriteBits(1, 22); // Count
+                    WorldPacket data(SMSG_REMOVED_SPELL, 4 + 1);
+                    data.WriteBits(1, 22); // Count spells, always one by one.
                     data << uint32(spellId);
                     GetSession()->SendPacket(&data);
                 }
@@ -3911,11 +4108,9 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
             return false;
     }
 
-    uint32 talentCost = GetTalentSpellCost(spellId);
-
     // cast talents with SPELL_EFFECT_LEARN_SPELL (other dependent spells will learned later as not auto-learned)
     // note: all spells with SPELL_EFFECT_LEARN_SPELL isn't passive
-    if (!loading && talentCost > 0 && spellInfo->HasEffect(SPELL_EFFECT_LEARN_SPELL))
+    if (!loading && sSpellMgr->IsTalent(spellInfo->Id) && spellInfo->HasEffect(SPELL_EFFECT_LEARN_SPELL))
     {
         // ignore stance requirement for talent learn spell (stance set for spell only for client spell description show)
         CastSpell(this, spellId, true);
@@ -3933,9 +4128,13 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
     }
 
     // update used talent points count
-    SetUsedTalentCount(GetUsedTalentCount() + talentCost);
+    if (sSpellMgr->IsTalent(spellInfo->Id))
+    {
+        SetUsedTalentCount(GetUsedTalentCount() + 1);
+        CastPassiveTalentSpell(spellInfo->Id);
+    }
 
-    // update free primary prof.points (if any, can be none in case GM .learn prof. learning)
+    // update free primary prof. points (if any, can be none in case GM .learn prof. learning)
     if (uint32 freeProfs = GetFreePrimaryProfessionPoints())
     {
         if (spellInfo->IsPrimaryProfessionFirstRank())
@@ -3994,8 +4193,8 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
                         else
                             SetSkill(pSkill->id, GetSkillStep(pSkill->id), 1, 1);
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
         }
@@ -4027,8 +4226,115 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL, spellId);
     }
 
+    // Custom MoP Script
+    // 76856 - Mastery : Unshackled Fury - Hack Fix Pig
+    if (spellInfo->Id == 76856)
+        CastSpell(this, spellInfo->Id, true);
+
     // return true (for send learn packet) only if spell active (in case ranked spells) and not replace old spell
     return active && !disabled && !superceded_old;
+}
+
+void Player::LoadMountsAndLearnRidingSkills(uint32 spellId)
+{
+    if (sSpellMgr->GetSpellInfo(spellId)->HasAura(SPELL_AURA_MOUNTED))
+    {
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
+        {
+            if (info->Effects[i].ApplyAuraName == SPELL_AURA_MOUNTED)
+            {
+                MountTypeEntry const* mountTypeEntry = sMountTypeStore.LookupEntry(info->Effects[i].MiscValueB);
+                if (!mountTypeEntry)
+                    continue;
+
+                for (uint32 i = MAX_MOUNT_CAPABILITIES; i > 0; --i)
+                {
+                    if (MountCapabilityEntry const* mountCapability = sMountCapabilityStore.LookupEntry(mountTypeEntry->MountCapability[i - 1]))
+                    {
+                        switch (mountCapability->RequiredRidingSkill)
+                        {
+                            case 75:
+                            {
+                                if (getLevel() < 20)
+                                    break;
+
+                                learnSpell(33388, false);
+                                break;
+                            }
+
+                            case 150:
+                            {
+                                if (getLevel() < 40)
+                                    break;
+
+                                learnSpell(33388, false);
+                                learnSpell(33391, false);
+                                break;
+                            }
+
+                            case 225:
+                            {
+                                if (getLevel() < 60)
+                                    break;
+
+                                learnSpell(33388, false);
+                                learnSpell(33391, false);
+                                learnSpell(34090, false);
+                                break;
+                            }
+
+                            case 300:
+                            {
+                                if (getLevel() < 70)
+                                    break;
+
+                                if (mountCapability->RequiredSpell)
+                                    learnSpell(mountCapability->RequiredSpell, false);
+
+                                learnSpell(33388, false);
+                                learnSpell(33391, false);
+                                learnSpell(34090, false);
+                                learnSpell(34091, false);
+                                break;
+                            }
+
+                            case 375:
+                            {
+                                if (getLevel() < 80)
+                                    break;
+
+                                if (mountCapability->RequiredSpell)
+                                {
+                                    // Wisdom of the Four Winds
+                                    if (mountCapability->RequiredSpell == 115913)
+                                    {
+                                        if (getLevel() >= 90)
+                                            learnSpell(mountCapability->RequiredSpell, false);
+                                    }
+                                    else
+                                        learnSpell(mountCapability->RequiredSpell, false);
+                                }
+
+                                learnSpell(33388, false);
+                                learnSpell(33391, false);
+                                learnSpell(34090, false);
+                                learnSpell(34091, false);
+                                learnSpell(90265, false);
+                                break;
+                            }
+
+                            case 0:
+                                break;
+
+                            default: break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Player::AddTemporarySpell(uint32 spellId)
@@ -4137,7 +4443,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
     // unlearn non talent higher ranks (recursive)
     if (uint32 nextSpell = sSpellMgr->GetNextSpellInChain(spell_id))
     {
-        if (HasSpell(nextSpell) && !GetTalentSpellPos(nextSpell))
+        if (HasSpell(nextSpell))
             removeSpell(nextSpell, disabled, false);
     }
     //unlearn spells dependent from recently removed spells
@@ -4175,12 +4481,13 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
     RemoveOwnedAura(spell_id, GetGUID());
 
     // remove pet auras
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         if (PetAura const* petSpell = sSpellMgr->GetPetAura(spell_id, i))
             RemovePetAura(petSpell);
 
     // free talent points
-    uint32 talentCosts = GetTalentSpellCost(spell_id);
+    uint32 talentCosts = sSpellMgr->IsTalent(spell_id) ? 1 : 0;
+
     if (talentCosts > 0 && giveTalentPoints)
     {
         if (talentCosts < GetUsedTalentCount())
@@ -4197,6 +4504,8 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
         if (freeProfs <= sWorld->getIntConfig(CONFIG_MAX_PRIMARY_TRADE_SKILL))
             SetFreePrimaryProfessions(freeProfs);
     }
+
+    RemovePassiveTalentSpell(spell_id);
 
     // remove dependent skill
     SpellLearnSkillNode const* spellLearnSkill = sSpellMgr->GetSpellLearnSkill(spell_id);
@@ -4248,7 +4557,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
             if ((_spell_idx->second->learnOnGetSkill == ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL &&
                 pSkill->categoryId != SKILL_CATEGORY_CLASS) ||// not unlearn class skills (spellbook/talent pages)
                 // lockpicking/runeforging special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
-                ((pSkill->id == SKILL_LOCKPICKING || pSkill->id == SKILL_RUNEFORGING) && (_spell_idx->second->max_value == 0 || _spell_idx->second->max_value == 1)))
+                ((pSkill->id == SKILL_LOCKPICKING || pSkill->id == SKILL_RUNEFORGING) && _spell_idx->second->max_value == 0))
             {
                 // not reset skills for professions and racial abilities
                 if ((pSkill->categoryId == SKILL_CATEGORY_SECONDARY || pSkill->categoryId == SKILL_CATEGORY_PROFESSION) &&
@@ -4271,16 +4580,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
 
     if (uint32 prev_id = sSpellMgr->GetPrevSpellInChain(spell_id))
     {
-        // if talent then lesser rank also talent and need learn
-        if (talentCosts)
-        {
-            // I cannot see why mangos has these lines.
-            //if (learn_low_rank)
-            //    learnSpell(prev_id, false);
-        }
-        // if ranked non-stackable spell: need activate lesser rank and update dendence state
-        /// No need to check for spellInfo != NULL here because if cur_active is true, then that means that the spell was already in m_spells, and only valid spells can be pushed there.
-        else if (cur_active && !spellInfo->IsStackableWithRanks() && spellInfo->IsRanked())
+        if (cur_active && !spellInfo->IsStackableWithRanks() && spellInfo->IsRanked())
         {
             // need manually update dependence state (learn spell ignore like attempts)
             PlayerSpellMap::iterator prev_itr = m_spells.find(prev_id);
@@ -4317,7 +4617,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id);
         if (spellInfo->IsPassive())
         {
-            for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
                 if (spellInfo->Effects[i].Effect == SPELL_EFFECT_DUAL_WIELD)
                 {
                     SetCanDualWield(false);
@@ -4332,11 +4632,27 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
     // remove from spell book if not replaced by lesser rank
     if (!prev_activate)
     {
-        WorldPacket data(SMSG_REMOVED_SPELL, 7);
+        WorldPacket data(SMSG_REMOVED_SPELL, 4 + 1);
         data.WriteBits(1, 22); // Count
         data << uint32(spell_id);
         GetSession()->SendPacket(&data);
     }
+}
+
+void Player::ReduceSpellCooldown(uint32 spell_id, time_t modifyTime)
+{
+    int32 newCooldown = GetSpellCooldownDelay(spell_id) * 1000;
+    if (newCooldown < 0)
+        newCooldown = 0;
+    else
+        newCooldown -= modifyTime;
+
+    AddSpellCooldown(spell_id, 0, uint32(time(NULL) + newCooldown / 1000));
+    WorldPacket data(SMSG_MODIFY_COOLDOWN, 4+8+4);
+    data << uint32(spell_id);
+    data << uint64(GetGUID());
+    data << int32(-modifyTime);
+    SendDirectMessage(&data);
 }
 
 void Player::RemoveSpellCooldown(uint32 spell_id, bool update /* = false */)
@@ -4385,7 +4701,8 @@ void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
         // check if spellentry is present and if the cooldown is less or equal to 10 min
         if (entry &&
             entry->RecoveryTime <= 10 * MINUTE * IN_MILLISECONDS &&
-            entry->CategoryRecoveryTime <= 10 * MINUTE * IN_MILLISECONDS)
+            entry->CategoryRecoveryTime <= 10 * MINUTE * IN_MILLISECONDS &&
+            (entry->CategoryFlags & SPELL_CATEGORY_FLAG_COOLDOWN_EXPIRES_AT_MIDNIGHT) == 0)
         {
             // remove & notify
             RemoveSpellCooldown(itr->first, true);
@@ -4490,31 +4807,31 @@ void Player::_SaveSpellCooldowns(SQLTransaction& trans)
 uint32 Player::GetNextResetTalentsCost() const
 {
     // The first time reset costs 1 gold
-    if (GetTalentResetCost() < 1*GOLD)
-        return 1*GOLD;
+    if (GetTalentResetCost() < 1 * GOLD)
+        return 1 * GOLD;
     // then 5 gold
-    else if (GetTalentResetCost() < 5*GOLD)
-        return 5*GOLD;
+    else if (GetTalentResetCost() < 5 * GOLD)
+        return 5 * GOLD;
     // After that it increases in increments of 5 gold
-    else if (GetTalentResetCost() < 10*GOLD)
-        return 10*GOLD;
+    else if (GetTalentResetCost() < 10 * GOLD)
+        return 10 * GOLD;
     else
     {
         uint64 months = (sWorld->GetGameTime() - GetTalentResetTime())/MONTH;
         if (months > 0)
         {
             // This cost will be reduced by a rate of 5 gold per month
-            int32 new_cost = int32(GetTalentResetCost() - 5*GOLD*months);
+            int32 new_cost = int32(GetTalentResetCost() - 5 * GOLD * months);
             // to a minimum of 10 gold.
-            return (new_cost < 10*GOLD ? 10*GOLD : new_cost);
+            return (new_cost < 10 * GOLD ? 10 * GOLD : new_cost);
         }
         else
         {
             // After that it increases in increments of 5 gold
-            int32 new_cost = GetTalentResetCost() + 5*GOLD;
+            int32 new_cost = GetTalentResetCost() + 5 * GOLD;
             // until it hits a cap of 50 gold.
-            if (new_cost > 50*GOLD)
-                new_cost = 50*GOLD;
+            if (new_cost > 50 * GOLD)
+                new_cost = 50 * GOLD;
             return new_cost;
         }
     }
@@ -4525,12 +4842,15 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     if (!resetTalents && !resetSpecialization)
         return false;
 
+    // Can't reset talents if none were used.
+    if (resetTalents && !GetUsedTalentCount())
+        return false;
+
     sScriptMgr->OnPlayerTalentsReset(this, noCost);
-    
+
     // not need after this call
     if (HasAtLoginFlag(AT_LOGIN_RESET_TALENTS))
         RemoveAtLoginFlag(AT_LOGIN_RESET_TALENTS, true);
-
 
     uint32 cost = 0;
 
@@ -4545,57 +4865,50 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         }
     }
 
+    // if (Pet* pet = GetPet())
+    //     RemovePet(pet, PET_SLOT_ACTUAL_PET_SLOT, true, pet->m_Stampeded);
+    // else
+    //     RemovePet(NULL, PET_SLOT_ACTUAL_PET_SLOT, true, GetPet() ? GetPet()->m_Stampeded : false);
+
     RemovePet(NULL, PET_SAVE_NOT_IN_SLOT, true);
 
     if (resetTalents)
     {
-        for (uint32 talentId = 0; talentId < sTalentStore.GetNumRows(); ++talentId)
+        for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
         {
-            TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
-
-            if (!talentInfo)
-                continue;
-
-            // unlearn only talents for character class
-            // some spell learned by one class as normal spells or know at creation but another class learn it as talent,
-            // to prevent unexpected lost normal learned spell skip another class talents
-            if (talentInfo->playerClass != getClass())
-                continue;
-
-            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(talentInfo->SpellId);
+            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(talent->first);
             if (!spellEntry)
                 continue;
 
-            removeSpell(spellEntry->Id, true);
+            removeSpell(talent->first, true);
 
             // search for spells that the talent teaches and unlearn them
-            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                 if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                     removeSpell(spellEntry->Effects[i].TriggerSpell, true);
 
-            PlayerTalentMap::iterator playerTalent = GetTalentMap(GetActiveSpec())->find(spellEntry->Id);
-            if (playerTalent != GetTalentMap(GetActiveSpec())->end())
-                playerTalent->second->state = PLAYERSPELL_REMOVED;
+            talent->second->state = PLAYERSPELL_REMOVED;
         }
     }
 
     if (resetSpecialization)
     {
-        SetTalentSpecialization(GetActiveSpec(), 0);
-        SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, 0);
+        if (!resetTalents && GetTalentSpecialization(GetActiveSpec()) == SPEC_NONE)
+            return false;
 
-        std::list<uint32> learnList = GetSpellsForLevels(0, getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
-        for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
-        {
-            if (HasSpell(*iter))
-                removeSpell(*iter, true);
-        }
+        RemoveAllSymbiosisAuras();
+        RemoveSpecializationSpells();
+        SetTalentSpecialization(GetActiveSpec(), SPEC_NONE);
+
+        InitSpellsForLevel(0, getLevel());
     }
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
     _SaveTalents(trans);
     _SaveSpells(trans);
     CharacterDatabase.CommitTransaction(trans);
+
+    SendTalentsInfoData();
 
     if (!noCost)
     {
@@ -4618,34 +4931,103 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     return true;
 }
 
+void Player::SetTalentSpecialization(uint8 spec, uint32 specId)
+{
+    _talentMgr->SpecInfo[spec].SpecializationId = specId;
+
+    if (spec == GetActiveSpec())
+        SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, specId);
+}
+
 bool Player::RemoveTalent(uint32 talentId)
 {
     TalentEntry const* talent = sTalentStore.LookupEntry(talentId);
     if (!talent)
         return false;
 
-    uint32 spellId = talent->SpellId;
+    PlayerTalentMap::iterator itr = GetTalentMap(GetActiveSpec())->find(talent->SpellId);
 
-    SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(spellId);
-
-    removeSpell(spellId, true);
-
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-        if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
-            removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
-
-    PlayerTalentMap::iterator itr = GetTalentMap(GetActiveSpec())->find(spellId);
     if (itr != GetTalentMap(GetActiveSpec())->end())
+    {
+        SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(itr->first);
+        if (!unlearnSpellProto)
+            return false;
+
+        removeSpell(itr->first, true);
+
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
+                removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
+
         itr->second->state = PLAYERSPELL_REMOVED;
 
-    // Needs to be executed orthewise the talents will be screwedsx
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    _SaveTalents(trans);
-    _SaveSpells(trans);
-    CharacterDatabase.CommitTransaction(trans);
+        // Needs to be executed orthewise the talents will be screwed
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        _SaveTalents(trans);
+        _SaveSpells(trans);
+        CharacterDatabase.CommitTransaction(trans);
 
-    SendTalentsInfoData();
-    return true;
+        SendTalentsInfoData();
+        return true;
+    }
+
+    return false;
+}
+
+// Below can be used in boss scripts or LFG.
+uint32 Player::GetRoleForGroup(uint32 specializationId)
+{
+    uint32 roleId = GROUP_ROLE_DEFAULT;
+
+    switch (specializationId)
+    {
+        case SPEC_MAGE_FROST:
+        case SPEC_MAGE_FIRE:
+        case SPEC_MAGE_ARCANE:
+        case SPEC_ROGUE_COMBAT:
+        case SPEC_ROGUE_ASSASSINATION:
+        case SPEC_ROGUE_SUBTLETY:
+        case SPEC_HUNTER_BEASTMASTER:
+        case SPEC_HUNTER_MARKSMAN:
+        case SPEC_HUNTER_SURVIVAL:
+        case SPEC_WARLOCK_AFFLICTION:
+        case SPEC_WARLOCK_DEMONOLOGY:
+        case SPEC_WARLOCK_DESTRUCTION:
+        case SPEC_PRIEST_SHADOW:
+        case SPEC_DK_FROST:
+        case SPEC_DK_UNHOLY:
+        case SPEC_MONK_WINDWALKER:
+        case SPEC_PALADIN_RETRIBUTION:
+        case SPEC_SHAMAN_ELEMENTAL:
+        case SPEC_SHAMAN_ENHANCEMENT:
+        case SPEC_WARRIOR_ARMS:
+        case SPEC_WARRIOR_FURY:
+        case SPEC_DRUID_BALANCE:
+        case SPEC_DRUID_CAT:
+            roleId = GROUP_ROLE_DPS;
+            break;
+
+        case SPEC_MONK_MISTWEAVER:
+        case SPEC_PALADIN_HOLY:
+        case SPEC_PRIEST_DISCIPLINE:
+        case SPEC_PRIEST_HOLY:
+        case SPEC_SHAMAN_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
+            roleId = GROUP_ROLE_HEALER;
+            break;
+
+        case SPEC_MONK_BREWMASTER:
+        case SPEC_DK_BLOOD:
+        case SPEC_WARRIOR_PROTECTION:
+        case SPEC_DRUID_BEAR:
+        case SPEC_PALADIN_PROTECTION:
+            roleId = GROUP_ROLE_TANK;
+            break;
+
+        default: break; // SPEC_NONE.
+    }
+
+    return roleId;
 }
 
 Mail* Player::GetMail(uint32 id)
@@ -4731,7 +5113,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
         return TRAINER_SPELL_RED;
 
     bool hasSpell = true;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -4754,7 +5136,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
     if (getLevel() < trainer_spell->reqLevel)
         return TRAINER_SPELL_RED;
 
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -4781,7 +5163,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
 
     // check primary prof. limit
     // first rank of primary profession spell when there are no proffesions avalible is disabled
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (!trainer_spell->learnedSpell[i])
             continue;
@@ -5852,10 +6234,18 @@ void Player::HandleBaseModValue(BaseModGroup modGroup, BaseModType modType, floa
         return;
     }
 
-    if (modType == FLAT_MOD)
-        m_auraBaseMod[modGroup][modType] += apply ? amount : -amount;
-    else // PCT_MOD
-        ApplyPercentModFloatVar(m_auraBaseMod[modGroup][modType], amount, apply);
+    switch (modType)
+    {
+        case FLAT_MOD:
+            m_auraBaseMod[modGroup][modType] += apply ? amount : -amount;
+            break;
+
+        case PCT_MOD:
+            ApplyPercentModFloatVar(m_auraBaseMod[modGroup][modType], amount, apply);
+            break;
+
+        default: break;
+    }
 
     if (!CanModifyStats())
         return;
@@ -5905,16 +6295,38 @@ float Player::GetMeleeCritFromAgility()
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
 
-    GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
-    GtChanceToMeleeCritEntry     const* critRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
+    GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry((pclass-1) * GT_MAX_LEVEL + (level - 1));
+    GtChanceToMeleeCritEntry     const* critRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass-1) * GT_MAX_LEVEL + (level - 1));
     if (critBase == NULL || critRatio == NULL)
         return 0.0f;
 
-    return ((critBase->base * 100.0f) + GetStat(STAT_AGILITY) / critRatio->ratio);
+    float agilityFromStuff = GetStat(STAT_AGILITY) - GetCreateStat(STAT_AGILITY);
+
+	float ratio = agilityFromStuff / critRatio->ratio;
+	if (pclass == CLASS_DEATH_KNIGHT || pclass == CLASS_PALADIN || pclass == CLASS_WARRIOR) ratio = 0;
+
+    float crit = (critBase->base * 100.0f) + ratio;
+    return crit;
 }
 
 void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
 {
+    // Table for base dodge values
+    const float dodge_base[MAX_CLASSES] =
+    {
+        3.7580f, // Warrior
+        3.6520f, // Paladin
+       -5.4500f, // Hunter
+       -0.5900f, // Rogue
+        3.1830f, // Priest
+        3.6640f, // DK
+        1.6750f, // Shaman
+        3.4575f, // Mage
+        2.0350f, // Warlock
+        5.6097f, // Monk
+        4.9510f  // Druid
+    };
+
     // Crit/agility to dodge/agility coefficient multipliers; 3.2.0 increased required agility by 15%
     const float crit_to_dodge[MAX_CLASSES] =
     {
@@ -5938,8 +6350,7 @@ void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
         level = GT_MAX_LEVEL;
 
     // Dodge per agility is proportional to crit per agility, which is available from DBC files
-    GtChanceToMeleeCritEntry  const* dodgeRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
-    GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
+    GtChanceToMeleeCritEntry  const* dodgeRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + (level - 1));
     if (dodgeRatio == NULL || pclass > MAX_CLASSES)
         return;
 
@@ -5947,9 +6358,12 @@ void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
     float base_agility = GetCreateStat(STAT_AGILITY) * m_auraModifiersGroup[UNIT_MOD_STAT_START + STAT_AGILITY][BASE_PCT];
     float bonus_agility = GetTotalStatValue(STAT_AGILITY) - base_agility;
 
+	float dodge_ratio = 1 / dodgeRatio->ratio;
+	if (pclass == CLASS_DEATH_KNIGHT || pclass == CLASS_PALADIN || pclass == CLASS_WARRIOR) dodge_ratio = 0;
+
     // calculate diminishing (green in char screen) and non-diminishing (white) contribution
-    diminishing = 100.0f * (bonus_agility / (100.0f * dodgeRatio->ratio) * crit_to_dodge[pclass-1]);
-    nondiminishing = (((base_agility - 1) / (dodgeRatio->ratio * 100)) * crit_to_dodge[pclass-1] + critBase->base) * 100.0f;
+    diminishing = bonus_agility * dodge_ratio * crit_to_dodge[pclass-1];
+    nondiminishing = dodge_base[pclass-1] + base_agility * dodge_ratio * crit_to_dodge[pclass-1];
 }
 
 float Player::GetSpellCritFromIntellect()
@@ -5960,12 +6374,18 @@ float Player::GetSpellCritFromIntellect()
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
 
-    GtChanceToSpellCritBaseEntry const* critBase = sGtChanceToSpellCritBaseStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
-    GtChanceToSpellCritEntry const* critRatio = sGtChanceToSpellCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
+    GtChanceToSpellCritBaseEntry const* critBase = sGtChanceToSpellCritBaseStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + (level - 1));
+    GtChanceToSpellCritEntry const* critRatio = sGtChanceToSpellCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + (level - 1));
     if (critBase == NULL || critRatio == NULL)
         return 0.0f;
 
-    return ((critBase->base * 100.0f) + GetStat(STAT_INTELLECT) / critRatio->ratio);
+    float intellectFromStuff = GetStat(STAT_INTELLECT) - GetCreateStat(STAT_INTELLECT);
+
+	float ratio = intellectFromStuff / critRatio->ratio;
+	if(pclass == CLASS_WARRIOR || pclass == CLASS_HUNTER || pclass == CLASS_ROGUE || pclass == CLASS_DEATH_KNIGHT) ratio = 0;
+
+    float crit = (critBase->base * 100.0f) + ratio;
+    return crit;
 }
 
 float Player::GetRatingMultiplier(CombatRating cr) const
@@ -5975,10 +6395,10 @@ float Player::GetRatingMultiplier(CombatRating cr) const
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
 
-    GtCombatRatingsEntry const* Rating = sGtCombatRatingsStore.LookupEntry(cr*GT_MAX_LEVEL+level-1);
+    GtCombatRatingsEntry const* Rating = sGtCombatRatingsStore.LookupEntry(cr * GT_MAX_LEVEL + level - 1);
     // gtOCTClassCombatRatingScalarStore.dbc starts with 1, CombatRating with zero, so cr+1
-    GtOCTClassCombatRatingScalarEntry const* classRating = sGtOCTClassCombatRatingScalarStore.LookupEntry((getClass()-1)*GT_MAX_RATING+cr+1);
-    if (!Rating || !classRating)
+    GtOCTClassCombatRatingScalarEntry const* classRating = sGtOCTClassCombatRatingScalarStore.LookupEntry((getClass() - 1) * GT_MAX_RATING + cr + 1);
+    if (!Rating || !classRating || (classRating->ratio == 0 && Rating->ratio == 0))
         return 1.0f;                                        // By default use minimum coefficient (not must be called)
 
     return classRating->ratio / Rating->ratio;
@@ -5997,12 +6417,15 @@ float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
     switch (attType)
     {
         case BASE_ATTACK:
-            return GetUInt32Value(PLAYER_FIELD_MAINHAND_EXPERTISE) / 4.0f;
+            return float(GetUInt32Value(PLAYER_FIELD_MAINHAND_EXPERTISE)) / 4.0f;
         case OFF_ATTACK:
-            return GetUInt32Value(PLAYER_FIELD_OFFHAND_EXPERTISE) / 4.0f;
-        default:
-            break;
+            return float(GetUInt32Value(PLAYER_FIELD_OFFHAND_EXPERTISE)) / 4.0f;
+        case RANGED_ATTACK:
+            return float(GetUInt32Value(PLAYER_FIELD_RANGED_EXPERTISE)) / 4.0f;
+
+        default: break;
     }
+
     return 0.0f;
 }
 
@@ -6140,6 +6563,11 @@ void Player::UpdateRating(CombatRating cr)
         case CR_MASTERY:
             UpdateMastery();
             break;
+        case CR_PVP_POWER:
+            UpdatePvPPowerPercentage();
+            break;
+
+        default: break;
     }
 }
 
@@ -6208,12 +6636,13 @@ bool Player::UpdateSkill(uint32 skill_id, uint32 step)
 inline int SkillGainChance(uint32 SkillValue, uint32 GrayLevel, uint32 GreenLevel, uint32 YellowLevel)
 {
     if (SkillValue >= GrayLevel)
-        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_GREY)*10;
+        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_GREY)   * 10;
     if (SkillValue >= GreenLevel)
-        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_GREEN)*10;
+        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_GREEN)  * 10;
     if (SkillValue >= YellowLevel)
-        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_YELLOW)*10;
-    return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_ORANGE)*10;
+        return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_YELLOW) * 10;
+
+    return sWorld->getIntConfig(CONFIG_SKILL_CHANCE_ORANGE)     * 10;
 }
 
 bool Player::UpdateCraftSkill(uint32 spellid)
@@ -6238,13 +6667,16 @@ bool Player::UpdateCraftSkill(uint32 spellid)
 
             uint32 craft_skill_gain = sWorld->getIntConfig(CONFIG_SKILL_GAIN_CRAFTING);
 
-            return UpdateSkillPro(_spell_idx->second->skillId, SkillGainChance(SkillValue,
-                _spell_idx->second->max_value,
-                (_spell_idx->second->max_value + _spell_idx->second->min_value)/2,
-                _spell_idx->second->min_value),
-                craft_skill_gain);
+            int skill_gain_chance = SkillGainChance(SkillValue, _spell_idx->second->max_value, (_spell_idx->second->max_value + _spell_idx->second->min_value) / 2, _spell_idx->second->min_value);
+
+            // Since 4.0.x, we have bonus skill point reward with somes items ...
+            if (_spell_idx->second && _spell_idx->second->character_points > craft_skill_gain && skill_gain_chance == sWorld->getIntConfig(CONFIG_SKILL_CHANCE_ORANGE) * 10)
+                craft_skill_gain = _spell_idx->second->character_points;
+
+            return UpdateSkillPro(_spell_idx->second->skillId, skill_gain_chance, craft_skill_gain);
         }
     }
+
     return false;
 }
 
@@ -8326,24 +8758,9 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
             case ITEM_MOD_CRIT_SPELL_RATING:
                 ApplyRatingMod(CR_CRIT_SPELL, int32(val), apply);
                 break;
-            // case ITEM_MOD_HIT_TAKEN_MELEE_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_HIT_TAKEN_RANGED_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_HIT_TAKEN_SPELL_RATING:
-            //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_CRIT_TAKEN_MELEE_RATING:
-            //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, int32(val), apply);
-            //     break;
             case ITEM_MOD_CRIT_TAKEN_RANGED_RATING:
                 ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(val), apply);
                 break;
-            // case ITEM_MOD_CRIT_TAKEN_SPELL_RATING:
-            //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
             case ITEM_MOD_HASTE_MELEE_RATING:
                 ApplyRatingMod(CR_HASTE_MELEE, int32(val), apply);
                 break;
@@ -8363,18 +8780,11 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
                 ApplyRatingMod(CR_CRIT_RANGED, int32(val), apply);
                 ApplyRatingMod(CR_CRIT_SPELL, int32(val), apply);
                 break;
-            // case ITEM_MOD_HIT_TAKEN_RATING: // Unused since 3.3.5
-            //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, int32(val), apply);
-            //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, int32(val), apply);
-            //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
-            // case ITEM_MOD_CRIT_TAKEN_RATING: // Unused since 3.3.5
-            //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, int32(val), apply);
-            //     ApplyRatingMod(CR_CRIT_TAKEN_RANGED, int32(val), apply);
-            //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, int32(val), apply);
-            //     break;
             case ITEM_MOD_RESILIENCE_RATING:
                 ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(val), apply);
+                break;
+            case ITEM_MOD_PVP_POWER:
+                ApplyRatingMod(CR_PVP_POWER, int32(val), apply);
                 break;
             case ITEM_MOD_HASTE_RATING:
                 ApplyRatingMod(CR_HASTE_MELEE, int32(val), apply);
@@ -12512,6 +12922,98 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
 
+    // Custom MoP script
+    // Jab Override Driver
+    if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_MONK)
+    {
+        Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+
+        // Glyph of Jab
+        if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && !HasAura(125660))
+        {
+            RemoveAura(108561); // 2H Staff Override
+            RemoveAura(115697); // 2H Polearm Override
+            RemoveAura(115689); // D/W Axes
+            RemoveAura(115694); // D/W Maces
+            RemoveAura(115696); // D/W Swords
+
+            switch (mainItem->GetTemplate()->SubClass)
+            {
+                case ITEM_SUBCLASS_WEAPON_STAFF:
+                    CastSpell(this, 108561, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_POLEARM:
+                    CastSpell(this, 115697, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_AXE:
+                    CastSpell(this, 115689, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_MACE:
+                    CastSpell(this, 115694, true);
+                    break;
+                case ITEM_SUBCLASS_WEAPON_SWORD:
+                    CastSpell(this, 115696, true);
+                    break;
+
+                default: break;
+            }
+        }
+        else if (HasAura(125660))
+        {
+            RemoveAura(108561); // 2H Staff Override
+            RemoveAura(115697); // 2H Polearm Override
+            RemoveAura(115689); // D/W Axes
+            RemoveAura(115694); // D/W Maces
+            RemoveAura(115696); // D/W Swords
+        }
+    }
+    // Way of the Monk - 120277
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (getClass() == CLASS_MONK && HasAura(120277))
+        {
+            RemoveAurasDueToSpell(120275);
+            RemoveAurasDueToSpell(108977);
+
+            uint32 trigger = 0;
+            if (IsTwoHandUsed())
+            {
+                trigger = 120275;
+            }
+            else
+            {
+                Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+                if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && offItem && offItem->GetTemplate()->Class == ITEM_CLASS_WEAPON)
+                    trigger = 108977;
+            }
+
+            if (trigger)
+                CastSpell(this, trigger, true);
+
+            ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+        }
+    }
+    // Assassin's Resolve - 84601
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (getClass() == CLASS_ROGUE && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+        {
+            Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+            Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+
+            if (((mainItem && mainItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER) || (offItem && offItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER)))
+            {
+                if (HasAura(84601))
+                    RemoveAura(84601);
+
+                CastSpell(this, 84601, true);
+            }
+            else
+                RemoveAura(84601);
+        }
+    }
+
     return pItem;
 }
 
@@ -13312,6 +13814,97 @@ void Player::SwapItem(uint16 src, uint16 dst)
             AutoUnequipOffhandIfNeed();
         }
 
+        // Custom MoP script
+        // Jab Override Driver
+        if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_MONK)
+        {
+            Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+
+            if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && !HasAura(125660))
+            {
+                RemoveAura(108561); // 2H Staff Override
+                RemoveAura(115697); // 2H Polearm Override
+                RemoveAura(115689); // D/W Axes
+                RemoveAura(115694); // D/W Maces
+                RemoveAura(115696); // D/W Swords
+
+                switch (mainItem->GetTemplate()->SubClass)
+                {
+                    case ITEM_SUBCLASS_WEAPON_STAFF:
+                        CastSpell(this, 108561, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_POLEARM:
+                        CastSpell(this, 115697, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_AXE:
+                        CastSpell(this, 115689, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_MACE:
+                        CastSpell(this, 115694, true);
+                        break;
+                    case ITEM_SUBCLASS_WEAPON_SWORD:
+                        CastSpell(this, 115696, true);
+                        break;
+
+                    default: break;
+                }
+            }
+            else if (HasAura(125660))
+            {
+                RemoveAura(108561); // 2H Staff Override
+                RemoveAura(115697); // 2H Polearm Override
+                RemoveAura(115689); // D/W Axes
+                RemoveAura(115694); // D/W Maces
+                RemoveAura(115696); // D/W Swords
+            }
+        }
+        // Way of the Monk - 120277
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            if (getClass() == CLASS_MONK && HasAura(120277))
+            {
+                RemoveAurasDueToSpell(120275);
+                RemoveAurasDueToSpell(108977);
+
+                uint32 trigger = 0;
+                if (IsTwoHandUsed())
+                {
+                    trigger = 120275;
+                }
+                else
+                {
+                    Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                    Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+                    if (mainItem && mainItem->GetTemplate()->Class == ITEM_CLASS_WEAPON && offItem && offItem->GetTemplate()->Class == ITEM_CLASS_WEAPON)
+                        trigger = 108977;
+                }
+
+                if (trigger)
+                    CastSpell(this, trigger, true);
+
+                ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+            }
+        }
+        // Assassin's Resolve - 84601
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            if (getClass() == CLASS_ROGUE && ToPlayer()->GetTalentSpecialization(ToPlayer()->GetActiveSpec()) == SPEC_ROGUE_ASSASSINATION)
+            {
+                Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+
+                if (((mainItem && mainItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER) || (offItem && offItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER)))
+                {
+                    if (HasAura(84601))
+                        RemoveAura(84601);
+
+                    CastSpell(this, 84601, true);
+                }
+                else
+                    RemoveAura(84601);
+            }
+        }
+
         return;
     }
 
@@ -14020,6 +14613,9 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_RESILIENCE_RATING:
             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, -int32(removeValue), apply);
             break;
+        case ITEM_MOD_PVP_POWER:
+            ApplyRatingMod(CR_PVP_POWER, -int32(removeValue), apply);
+            break;
         case ITEM_MOD_HASTE_RATING:
             ApplyRatingMod(CR_HASTE_MELEE, -int32(removeValue), apply);
             ApplyRatingMod(CR_HASTE_RANGED, -int32(removeValue), apply);
@@ -14132,6 +14728,9 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
             break;
         case ITEM_MOD_RESILIENCE_RATING:
             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(addValue), apply);
+            break;
+        case ITEM_MOD_PVP_POWER:
+            ApplyRatingMod(CR_PVP_POWER, int32(addValue), apply);
             break;
         case ITEM_MOD_HASTE_RATING:
             ApplyRatingMod(CR_HASTE_MELEE, int32(addValue), apply);
@@ -14447,19 +15046,13 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                             ApplyRatingMod(CR_CRIT_SPELL, enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u CRITICAL", enchant_amount);
                             break;
-                        // case ITEM_MOD_HIT_TAKEN_RATING: // Unused since 3.3.5
-                        //     ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
-                        //     break;
-                        // case ITEM_MOD_CRIT_TAKEN_RATING: // Unused since 3.3.5
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
-                        //     ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
-                        //     break;
                         case ITEM_MOD_RESILIENCE_RATING:
                             ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u RESILIENCE", enchant_amount);
+                            break;
+                        case ITEM_MOD_PVP_POWER:
+                            ApplyRatingMod(CR_PVP_POWER, enchant_amount, apply);
+                            TC_LOG_DEBUG("entities.player.items", "+ %u POWER PVP", enchant_amount);
                             break;
                         case ITEM_MOD_HASTE_RATING:
                             ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
@@ -15773,6 +16366,10 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
         if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(quest->GetCharTitleId()))
             SetTitle(titleEntry);
     }
+
+    // Update talent points.
+    if (quest->GetBonusTalents())
+        InitTalentForLevel();
 
     // Send reward mail
     if (uint32 mail_template_id = quest->GetRewMailTemplateId())
@@ -17949,7 +18546,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         TC_LOG_ERROR("entities.player", "Player %s(GUID: %u) has SpecCount = %u and ActiveSpec = %u.", GetName().c_str(), GetGUIDLow(), GetSpecsCount(), GetActiveSpec());
     }
 
-    // Only load selected specializations, learning mastery spells requires this
+    // Load specializations.
     Tokenizer talentTrees(fields[26].GetString(), ' ', MAX_TALENT_SPECS);
     for (uint8 i = 0; i < MAX_TALENT_SPECS; ++i)
     {
@@ -17960,8 +18557,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         if (sChrSpecializationStore.LookupEntry(talentTree))
             SetTalentSpecialization(i, talentTree);
     }
-
-    SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, GetTalentSpecialization(GetActiveSpec()));
 
     _LoadTalents(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_TALENTS));
     _LoadSpells(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELLS));
@@ -17984,6 +18579,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     // after spell and quest load
     InitTalentForLevel();
+    InitSpellsForLevel(0, getLevel());
     learnDefaultSpells();
 
     // must be before inventory (some items required reputation check)
@@ -18056,7 +18652,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
             break;
 
         uint32 talentTree = atol(talentTrees[i]);
-        if (talentTree != 0 && !sChrSpecializationStore.LookupEntry(talentTree) && i == GetActiveSpec())
+        if (talentTree != SPEC_NONE && !sChrSpecializationStore.LookupEntry(talentTree) && i == GetActiveSpec())
             SetAtLoginFlag(AT_LOGIN_RESET_TALENTS); // invalid tree, reset talents
     }
 
@@ -18128,6 +18724,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
      // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
+    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
+    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 
     return true;
 }
@@ -18299,7 +18897,7 @@ void Player::_LoadAuras(PreparedQueryResult result, uint32 timediff)
             else
                 remaincharges = 0;
 
-            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, &baseDamage[0], NULL, caster_guid))
+            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, spellInfo->spellPower, &baseDamage[0], NULL, caster_guid))
             {
                 if (!aura->CanBeSaved())
                 {
@@ -19048,13 +19646,6 @@ void Player::_LoadSpells(PreparedQueryResult result)
         do
             addSpell((*result)[0].GetUInt32(), (*result)[1].GetBool(), false, false, (*result)[2].GetBool(), true);
         while (result->NextRow());
-    }
-
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
-    {
-        if (!HasSpell(*iter))
-            learnSpell(*iter, true);
     }
 }
 
@@ -19993,7 +20584,7 @@ void Player::_SaveAuras(SQLTransaction& trans)
         int32 baseDamage[MAX_SPELL_EFFECTS];
         uint32 effMask = 0;
         uint8 recalculateMask = 0;
-        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (AuraEffect const* effect = aura->GetEffect(i))
             {
@@ -21061,116 +21652,10 @@ void Player::StopCastingCharm()
     }
 }
 
-inline void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/) const
+void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/, uint64 receiverGUID /* = 0*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/)
 {
-    data->Initialize(SMSG_MESSAGECHAT, 100); // guess size
-
-    ObjectGuid target = 0;
-    ObjectGuid source = GetGUID();
-    ObjectGuid unkGuid = 0;
-    ObjectGuid unkGuid2 = 0;
-
-    data->WriteBit(0);
-    data->WriteBit(0);
-
-    data->WriteBit(unkGuid2[4]);
-    data->WriteBit(unkGuid2[5]);
-    data->WriteBit(unkGuid2[1]);
-    data->WriteBit(unkGuid2[0]);
-    data->WriteBit(unkGuid2[2]);
-    data->WriteBit(unkGuid2[6]);
-    data->WriteBit(unkGuid2[7]);
-    data->WriteBit(unkGuid2[3]);
-
-    data->WriteBit(1);
-    data->WriteBit(0); // Send Language
-
-    data->WriteBit(source[2]);
-    data->WriteBit(source[7]);
-    data->WriteBit(source[0]);
-    data->WriteBit(source[3]);
-    data->WriteBit(source[4]);
-    data->WriteBit(source[6]);
-    data->WriteBit(source[1]);
-    data->WriteBit(source[5]);
-
-    data->WriteBit(0); // Show in chat log - 1 for showing only in bubble
-    data->WriteBit(1);
-    data->WriteBit(1);
-    data->WriteBit(1);
-    data->WriteBit(0);
-    data->WriteBit(0);
-
-    data->WriteBit(target[5]);
-    data->WriteBit(target[7]);
-    data->WriteBit(target[6]);
-    data->WriteBit(target[4]);
-    data->WriteBit(target[3]);
-    data->WriteBit(target[2]);
-    data->WriteBit(target[1]);
-    data->WriteBit(target[0]);
-
-    data->WriteBit(1);
-    data->WriteBit(0);
-
-    data->WriteBit(unkGuid[5]);
-    data->WriteBit(unkGuid[2]);
-    data->WriteBit(unkGuid[6]);
-    data->WriteBit(unkGuid[1]);
-    data->WriteBit(unkGuid[7]);
-    data->WriteBit(unkGuid[3]);
-    data->WriteBit(unkGuid[0]);
-    data->WriteBit(unkGuid[4]);
-
-    data->WriteBit(1);
-    data->WriteBits(text.size(), 12);
-    data->WriteBit(0);
-    data->WriteBit(1);
-    data->WriteBit(1);
-    data->WriteBit(1);
-
-    data->FlushBits();
-
-    data->WriteByteSeq(unkGuid2[7]);
-    data->WriteByteSeq(unkGuid2[2]);
-    data->WriteByteSeq(unkGuid2[1]);
-    data->WriteByteSeq(unkGuid2[4]);
-    data->WriteByteSeq(unkGuid2[6]);
-    data->WriteByteSeq(unkGuid2[5]);
-    data->WriteByteSeq(unkGuid2[3]);
-    data->WriteByteSeq(unkGuid2[0]);
-
-    data->WriteByteSeq(unkGuid[5]);
-    data->WriteByteSeq(unkGuid[3]);
-    data->WriteByteSeq(unkGuid[2]);
-    data->WriteByteSeq(unkGuid[4]);
-    data->WriteByteSeq(unkGuid[1]);
-    data->WriteByteSeq(unkGuid[0]);
-    data->WriteByteSeq(unkGuid[7]);
-    data->WriteByteSeq(unkGuid[6]);
-
-    *data << uint8(msgtype);
-
-    data->WriteByteSeq(source[4]);
-    data->WriteByteSeq(source[2]);
-    data->WriteByteSeq(source[3]);
-    data->WriteByteSeq(source[0]);
-    data->WriteByteSeq(source[6]);
-    data->WriteByteSeq(source[7]);
-    data->WriteByteSeq(source[5]);
-    data->WriteByteSeq(source[1]);
-
-    data->WriteByteSeq(target[6]);
-    data->WriteByteSeq(target[1]);
-    data->WriteByteSeq(target[0]);
-    data->WriteByteSeq(target[2]);
-    data->WriteByteSeq(target[4]);
-    data->WriteByteSeq(target[5]);
-    data->WriteByteSeq(target[7]);
-    data->WriteByteSeq(target[3]);
-
-    data->WriteString(text);
-    *data << uint8(language);
+    /*** Build packet using ChatHandler. ***/
+    ChatHandler::FillMessageData(data, GetSession(), msgtype, language, channel.c_str(), receiverGUID, text.c_str(), NULL, addonPrefix, chatTag, achievementId);
 }
 
 void Player::Say(const std::string& text, const uint32 language)
@@ -21178,7 +21663,7 @@ void Player::Say(const std::string& text, const uint32 language)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_SAY, language, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_SAY, _text, language);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), true);
 }
@@ -21188,7 +21673,7 @@ void Player::Yell(const std::string& text, const uint32 language)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_YELL, language, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_YELL, _text, language);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), true);
 }
@@ -21198,7 +21683,7 @@ void Player::TextEmote(const std::string& text)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_EMOTE, _text, LANG_UNIVERSAL);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), true, !GetSession()->HasPermission(rbac::RBAC_PERM_TWO_SIDE_INTERACTION_CHAT));
 }
@@ -21211,46 +21696,57 @@ void Player::WhisperAddon(const std::string& text, const std::string& prefix, Pl
     if (!receiver->GetSession()->IsAddonRegistered(prefix))
         return;
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, LANG_UNIVERSAL, prefix.c_str());
     receiver->GetSession()->SendPacket(&data);
 }
 
 void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
 {
-    bool isAddonMessage = language == LANG_ADDON;
+    bool isAddonMessage = (language == LANG_ADDON);
 
-    if (!isAddonMessage) // if not addon data
-        language = LANG_UNIVERSAL; // whispers should always be readable
+    if (!isAddonMessage) // If it's not addon data, whispers should always be readable.
+        language = LANG_UNIVERSAL;
 
     Player* rPlayer = ObjectAccessor::FindPlayer(receiver);
 
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
 
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
-    BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
-    rPlayer->GetSession()->SendPacket(&data);
+    // When the player you are whispering to is DND / AFK, he cannot receive your message, unless you are in GM mode.
+    if (!rPlayer->isDND() && !rPlayer->isAFK() || IsGameMaster())
+    {
+        WorldPacket data;
+        BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
+        rPlayer->GetSession()->SendPacket(&data);
 
-    // rest stuff shouldn't happen in case of addon message
-    if (isAddonMessage)
-        return;
+        rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, _text, language);
+        GetSession()->SendPacket(&data);
+    }
+    else
+    {
+        // Announce AFK or DND message, or, if you're a player trying to whisper a GM, get a "Player not found" error.
+        if (rPlayer->isAFK())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+        else if (rPlayer->isDND())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+        else if (!IsGameMaster() && rPlayer->IsGameMaster())
+            ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_NOT_FOUND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+    }
 
-    data.Initialize(SMSG_MESSAGECHAT, 200);
-    rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, _text, language);
-    GetSession()->SendPacket(&data);
-
+    // Set Accepting Whispers to true if you whisper to someone while your / his GM mode is off.
     if (!isAcceptWhispers() && !IsGameMaster() && !rPlayer->IsGameMaster())
     {
         SetAcceptWhispers(true);
         ChatHandler(GetSession()).SendSysMessage(LANG_COMMAND_WHISPERON);
     }
 
-    // announce afk or dnd message
-    if (rPlayer->isAFK())
-        ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
-    else if (rPlayer->isDND())
-        ChatHandler(GetSession()).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName().c_str(), rPlayer->autoReplyMsg.c_str());
+    // If you whisper someone who doesn't have GM mode on, while you are in DND / AFK mode, turn it off to be able to receive an answer or let him know you're there.
+    if (!rPlayer->IsGameMaster())
+    {
+             if (isDND()) ToggleDND();
+        else if (isAFK()) ToggleAFK();
+    }
 }
 
 Item* Player::GetMItem(uint32 id)
@@ -21340,11 +21836,11 @@ void Player::PetSpellInitialize()
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
         data << uint32(itr->first);                 // spell ID
 
-        CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->GetCategory());
+        CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != pet->m_CreatureCategoryCooldowns.end())
         {
             time_t categoryCooldown = (categoryitr->second > curTime) ? (categoryitr->second - curTime) * IN_MILLISECONDS : 0;
-            data << uint16(spellInfo->GetCategory());   // spell category
+            data << uint16(spellInfo->Category);        // spell category
             data << uint32(cooldown);                   // spell cooldown
             data << uint32(categoryCooldown);           // category cooldown
         }
@@ -21453,11 +21949,11 @@ void Player::VehicleSpellInitialize()
         time_t cooldown = (itr->second > now) ? (itr->second - now) * IN_MILLISECONDS : 0;
         data << uint32(itr->first);                 // spell ID
 
-        CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->GetCategory());
+        CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != vehicle->m_CreatureCategoryCooldowns.end())
         {
             time_t categoryCooldown = (categoryitr->second > now) ? (categoryitr->second - now) * IN_MILLISECONDS : 0;
-            data << uint16(spellInfo->GetCategory());   // spell category
+            data << uint16(spellInfo->Category);        // spell category
             data << uint32(cooldown);                   // spell cooldown
             data << uint32(categoryCooldown);           // category cooldown
         }
@@ -22848,7 +23344,7 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
     // if no cooldown found above then base at DBC data
     if (rec < 0 && catrec < 0)
     {
-        cat = spellInfo->GetCategory();
+        cat = spellInfo->Category;
         rec = spellInfo->RecoveryTime;
         catrec = spellInfo->CategoryRecoveryTime;
     }
@@ -24046,9 +24542,7 @@ void Player::resetSpells(bool myClassOnly)
                 continue;
 
             // skip spells with first rank learned as talent (and all talents then also)
-            uint32 firstRank = spellInfo->GetFirstRankSpell()->Id;
-            if (GetTalentSpellCost(firstRank) > 0)
-                continue;
+            uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellInfo->Id);
 
             // skip broken spells
             if (!SpellMgr::IsSpellValid(spellInfo, this, false))
@@ -24073,8 +24567,32 @@ void Player::learnDefaultSpells()
         TC_LOG_DEBUG("entities.player.loading", "PLAYER (Class: %u Race: %u): Adding initial spell, id = %u", uint32(getClass()), uint32(getRace()), tspell);
         if (!IsInWorld())                                    // will send in INITIAL_SPELLS in list anyway at map add
             addSpell(tspell, true, true, true, false);
-        else                                                // but send in normal spell in game learn case
+        else                                                // but send in normal spell ingame learn case
             learnSpell(tspell, true);
+    }
+
+    if (getRace() == RACE_PANDAREN_HORDE)
+    {
+        uint32 spellLangHorde[2] = {669, 108127};
+        for (int i = 0; i < 2; i++)
+        {
+            if (!IsInWorld())                                    // will send in INITIAL_SPELLS in list anyway at map add
+                addSpell(spellLangHorde[i], true, true, true, false);
+            else                                                // but send in normal spell ingame learn case
+                learnSpell(spellLangHorde[i], true);
+        }
+    }
+
+    if (getRace() == RACE_PANDAREN_ALLIANCE)
+    {
+        uint32 spellLangAlliance[2] = {668,108127};
+        for (int i = 0; i < 2; i++)
+        {
+            if (!IsInWorld())                                    // will send in INITIAL_SPELLS in list anyway at map add
+                addSpell(spellLangAlliance[i], true, true, true, false);
+            else                                                 // but send in normal spell ingame learn case
+                learnSpell(spellLangAlliance[i], true);
+        }
     }
 }
 
@@ -24100,7 +24618,7 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
 
     // check learned spells state
     bool found = false;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (spellInfo->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL && !HasSpell(spellInfo->Effects[i].TriggerSpell))
         {
@@ -24121,8 +24639,8 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
         if (!learnedInfo)
             return;
 
-        // not have first rank learned (unlearned prof?)
-        if (!HasSpell(learnedInfo->GetFirstRankSpell()->Id))
+        // Doesn't have first rank learned (unlearned prof?).
+        if (!HasSpell(sSpellMgr->GetFirstSpellInChain(learned_0)))
             return;
 
         SpellsRequiringSpellMapBounds spellsRequired = sSpellMgr->GetSpellsRequiredForSpellBounds(learned_0);
@@ -24175,7 +24693,7 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 {
     uint32 raceMask  = getRaceMask();
     uint32 classMask = getClassMask();
-    for (uint32 j=0; j<sSkillLineAbilityStore.GetNumRows(); ++j)
+    for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
     {
         SkillLineAbilityEntry const* pAbility = sSkillLineAbilityStore.LookupEntry(j);
         if (!pAbility || pAbility->skillId != skill_id || pAbility->learnOnGetSkill != ABILITY_LEARNED_ON_GET_PROFESSION_SKILL)
@@ -26160,34 +26678,34 @@ void Player::CompletedAchievement(AchievementEntry const* entry)
     m_achievementMgr->CompletedAchievement(entry, this);
 }
 
-bool Player::LearnTalent(uint16 talentId)
+bool Player::LearnTalent(uint32 talentId)
 {
-    TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
+    // Can't learn more than max talents allowed (90 / 15 = 6).
+    uint32 CurTalentPoints = GetUsedTalentCount();
+    if (CurTalentPoints >= CalculateTalentsPoints())
+        return false;
 
+    TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
     if (!talentInfo)
         return false;
-        
-    uint32 maxTalentRow = GetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS);
 
-    // prevent learn talent for different class (cheating)
+    // Prevent learning talents from a different class (cheating).
     if (talentInfo->playerClass != getClass())
         return false;
 
-    // check if we have enough talent points
+    uint32 maxTalentRow = GetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS);
+
+    // Check if the player has enough talent points.
     if (talentInfo->Row > maxTalentRow)
         return false;
 
-    // Check if player doesnt have any spell in selected collumn
+    // Check if the player doesn't have any spell in the selected column.
     for (uint32 i = 0; i < sTalentStore.GetNumRows(); i++)
-    {
         if (TalentEntry const* talent = sTalentStore.LookupEntry(i))
-        {
             if (talentInfo->Row == talent->Row && HasSpell(talent->SpellId))
                 return false;
-        }
-    }
 
-    // spell not set in talent.dbc
+    // Spell is not set in Talent DBC.
     uint32 spellid = talentInfo->SpellId;
     if (spellid == 0)
     {
@@ -26195,17 +26713,112 @@ bool Player::LearnTalent(uint16 talentId)
         return false;
     }
 
-    // already known
+    // Check if talent is already known.
     if (HasSpell(spellid))
         return false;
 
+    // Check if talent can be added.
     if (!AddTalent(spellid, GetActiveSpec(), true))
         return false;
 
     learnSpell(spellid, false);
 
+    CastPassiveTalentSpell(spellid);
+
     TC_LOG_INFO("misc", "TalentID: %u Spell: %u Spec: %u\n", talentId, spellid, GetActiveSpec());
     return true;
+}
+
+void Player::CastPassiveTalentSpell(uint32 spellId)
+{
+    switch (spellId)
+    {
+        case 1463:  // Incanter's Ward
+            if (!HasAura(118858))
+            {
+                CastSpell(this, 118858, true); // +6% damage and 65% mana regen
+                UpdateManaRegen();
+            }
+            break;
+        case 16188: // Ancestral Swiftness
+            if (!HasAura(51470))
+                CastSpell(this, 51470, true);  // +5% spell haste
+            if (!HasAura(121617))
+                CastSpell(this, 121617, true); // +5% melee haste
+            break;
+        case 96268: // Death's Advance
+            if (!HasAura(124285))
+                CastSpell(this, 124285, true); // +10% speed
+            break;
+        case 108288:// Heart of the Wild
+            if (!HasAura(17005))
+                CastSpell(this, 17005, true); // +6% stats
+            break;
+        case 108415:// Soul Link
+            RemoveAura(108503); // Remove Grimoire of sacrifice
+            break;
+        case 108499:// Grimoire of Supremacy
+            if (!HasAura(108499))
+                AddAura(108499, this);
+            break;
+        case 108505:// Archimonde's Vengeance
+            if (!HasAura(116403))
+                CastSpell(this, 116403, true); // Passive
+            break;
+        case 119049:// Kil'Jaeden's Cunning
+            if (!HasAura(108507))
+                CastSpell(this, 108507, true); // Passive
+            break;
+
+        default: break;
+    }
+}
+
+void Player::RemovePassiveTalentSpell(uint32 spellId)
+{
+    switch (spellId)
+    {
+        case 1463:  // Incanter's Ward
+            RemoveAurasDueToSpell(118858);
+            break;
+        case 16188: // Ancestral Swiftness
+            RemoveAurasDueToSpell(51470);
+            RemoveAurasDueToSpell(121617);
+            break;
+        case 96268: // Death's Advance
+            RemoveAurasDueToSpell(124285);
+            break;
+        case 108288:// Heart of the Wild
+            RemoveAurasDueToSpell(17005);
+            break;
+        case 108415:// Soul Link
+            RemoveAurasDueToSpell(108446);
+            RemoveAurasDueToSpell(108503); // Remove Grimoire of sacrifice
+            break;
+        case 108499:// Grimoire of Supremacy
+            RemoveAurasDueToSpell(108499);
+            break;
+        case 108505:// Archimonde's Vengeance
+            RemoveAurasDueToSpell(116403);
+            break;
+        case 119049:// Kil'Jaeden's Cunning
+            RemoveAurasDueToSpell(108507);
+            break;
+        case 116011:// Rune of Power
+        {
+            if (CountDynObjects(spellId))
+            {
+                std::list<DynamicObject*> dynObjList;
+                GetDynObjectList(dynObjList, spellId);
+
+                for (std::list<DynamicObject*>::iterator itr = dynObjList.begin(); itr != dynObjList.end(); itr++)
+                    (*itr)->SetDuration(0);
+            }
+            break;
+        }
+
+        default: break;
+    }
 }
 
 void Player::LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank)
@@ -26373,7 +26986,7 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket* data)
     *data << uint8(GetActiveSpec());                        // talent group index (0 or 1)
     data->WriteBits(GetSpecsCount(), 19);
 
-    for (int i = 0; i < GetSpecsCount(); i++)
+    for (uint8 i = 0; i < GetSpecsCount(); i++)
     {
         wpos[i] = data->bitwpos();
         data->WriteBits(0, 23);
@@ -26383,8 +26996,6 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket* data)
 
     for (int32 i = 0; i < GetSpecsCount(); i++)
     {
-        uint32 const* talentTabIds = GetClassSpecializations(getClass());
-
         int32 talentCount = 0;
         for (uint32 talentId = 0; talentId < sTalentStore.GetNumRows(); ++talentId)
         {
@@ -26486,6 +27097,9 @@ void Player::BuildPetTalentsInfoData(WorldPacket* data)
 
 void Player::SendTalentsInfoData()
 {
+    // Update free talents points client-side
+    SetUInt32Value(PLAYER_FIELD_MAX_TALENT_TIERS, CalculateTalentsPoints());
+
     WorldPacket data(SMSG_TALENTS_INFO, 50);
     BuildPlayerTalentsInfoData(&data);
     GetSession()->SendPacket(&data);
@@ -26907,7 +27521,6 @@ void Player::UpdateSpecCount(uint8 count)
 
 void Player::ActivateSpec(uint8 spec)
 {
-    
     if (GetActiveSpec() == spec)
         return;
 
@@ -26928,69 +27541,31 @@ void Player::ActivateSpec(uint8 spec)
     ClearComboPointHolders();
     ClearAllReactives();
     UnsummonAllTotems();
-    ExitVehicle();
+    ExitVehicle(); // Impossible to switch specs from inside a vehicle..
     RemoveAllControlled();
-    /*RemoveAllAurasOnDeath();
+    RemoveAllAurasOnDeath();
     if (GetPet())
-        GetPet()->RemoveAllAurasOnDeath();*/
+        GetPet()->RemoveAllAurasOnDeath();
 
-    //RemoveAllAuras(GetGUID(), NULL, false, true); // removes too many auras
-    //ExitVehicle(); // should be impossible to switch specs from inside a vehicle..
-
-    // Let client clear his current Actions
+    // Let client clear it's current Actions
     SendActionButtons(2);
     // m_actionButtons.clear() is called in the next _LoadActionButtons
-    for (uint32 talentId = 0; talentId < sTalentStore.GetNumRows(); ++talentId)
+
+    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
     {
-        TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
+        removeSpell(talent->first, true); // Remove the talent.
 
-        if (!talentInfo)
-            continue;
-
-        /*TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
-
-        if (!talentTabInfo)
-            continue;
-
-        // unlearn only talents for character class
-        // some spell learned by one class as normal spells or know at creation but another class learn it as talent,
-        // to prevent unexpected lost normal learned spell skip another class talents
-        if ((getClassMask() & talentTabInfo->ClassMask) == 0)
-            continue;
-
-        for (int8 rank = MAX_TALENT_RANK-1; rank >= 0; --rank)
-        {
-            // skip non-existant talent ranks
-            if (talentInfo->RankID[rank] == 0)
-                continue;
-            removeSpell(talentInfo->RankID[rank], true); // removes the talent, and all dependant, learned, and chained spells..
-            if (const SpellInfo* _spellEntry = sSpellMgr->GetSpellInfo(talentInfo->RankID[rank]))
-                for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)                  // search through the SpellInfo for valid trigger spells
-                    if (_spellEntry->Effects[i].TriggerSpell > 0 && _spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
-                        removeSpell(_spellEntry->Effects[i].TriggerSpell, true); // and remove any spells that the talent teaches
-            // if this talent rank can be found in the PlayerTalentMap, mark the talent as removed so it gets deleted
-            //PlayerTalentMap::iterator plrTalent = m_talents[m_activeSpec]->find(talentInfo->RankID[rank]);
-            //if (plrTalent != m_talents[m_activeSpec]->end())
-            //    plrTalent->second->state = PLAYERSPELL_REMOVED;
-        }*/
+        // Search through SpellInfo for valid trigger spells and remove any spells that the talent teaches.
+        if (const SpellInfo* _spellEntry = sSpellMgr->GetSpellInfo(talent->first))
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                if (_spellEntry->Effects[i].TriggerSpell > 0 && _spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
+                    removeSpell(_spellEntry->Effects[i].TriggerSpell, true);
     }
-    /*
-    // Remove spec specific spells
-    for (uint32 i = 0; i < MAX_TALENT_TABS; ++i)
-    {
-        uint32 const* talentTabs = GetClassSpecializations(getClass());
-        std::vector<uint32> const* specSpells = GetTalentTreePrimarySpells(talentTabs[i]);
-        if (specSpells)
-            for (size_t i = 0; i < specSpells->size(); ++i)
-                removeSpell(specSpells->at(i), true);
 
-        TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentTabs[i]);
-        for (uint32 i = 0; i < MAX_MASTERY_SPELLS; ++i)
-            if (uint32 mastery = talentTabInfo->MasterySpellId[i])
-                removeSpell(mastery, true);
-    }
-    */
-    // set glyphs
+    // Remove spec specific spells.
+    RemoveSpecializationSpells();
+
+    // Set glyphs.
     for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
         // remove secondary glyph
         if (uint32 oldglyph = GetGlyph(GetActiveSpec(), slot))
@@ -27000,32 +27575,20 @@ void Player::ActivateSpec(uint8 spec)
     SetActiveSpec(spec);
     uint32 spentTalents = 0;
 
-    for (uint32 talentId = 0; talentId < sTalentStore.GetNumRows(); ++talentId)
+    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
     {
-        TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
-
-        if (!talentInfo)
-            continue;
-
-        // learn only talents for character class
-        if (talentInfo->playerClass != getClass())
-            continue;
-
-        learnSpell(talentInfo->SpellId, false); // add the talent to the PlayerSpellMap
-
+        learnSpell(talent->first, false); // Add the talent to the PlayerSpellMap.
+        spentTalents++; // Increase spentTalents count.
     }
-/*
-    std::vector<uint32> const* specSpells = GetTalentTreePrimarySpells(GetTalentSpecialization(GetActiveSpec()));
-    if (specSpells)
-        for (size_t i = 0; i < specSpells->size(); ++i)
-            learnSpell(specSpells->at(i), false);
 
+/*
     if (CanUseMastery())
         if (TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(GetTalentSpecialization(GetActiveSpec())))
             for (uint32 i = 0; i < MAX_MASTERY_SPELLS; ++i)
                 if (uint32 mastery = talentTabInfo->MasterySpellId[i])
                     learnSpell(mastery, false);
 */
+
     // set glyphs
     for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
     {
@@ -27041,6 +27604,7 @@ void Player::ActivateSpec(uint8 spec)
 
     SetUsedTalentCount(spentTalents);
     InitTalentForLevel();
+    InitSpellsForLevel(0, getLevel());
 
     {
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ACTIONS_SPEC);
@@ -27057,9 +27621,6 @@ void Player::ActivateSpec(uint8 spec)
         SetPower(POWER_MANA, 0); // Mana must be 0 even if it isn't the active power type.
 
     SetPower(pw, 0);
-
-   // if (!sTalentTabStore.LookupEntry(GetTalentSpecialization(GetActiveSpec())))
-    //    ResetTalents(true);
 }
 
 void Player::ResetTimeSync()

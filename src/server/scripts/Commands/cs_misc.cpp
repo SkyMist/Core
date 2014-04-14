@@ -232,7 +232,7 @@ public:
         uint32 spellId = handler->extractSpellIdFromLink((char*)args);
 
         if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
-            Aura::TryRefreshStackOrCreate(spellInfo, MAX_EFFECT_MASK, target, target);
+            Aura::TryRefreshStackOrCreate(spellInfo, MAX_EFFECT_MASK, target, target, spellInfo->spellPower);
 
         return true;
     }
@@ -2292,7 +2292,7 @@ public:
             }
 
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(9454))
-                Aura::TryRefreshStackOrCreate(spellInfo, MAX_EFFECT_MASK, player, player);
+                Aura::TryRefreshStackOrCreate(spellInfo, MAX_EFFECT_MASK, player, player, spellInfo->spellPower);
 
             // save player
             player->SaveToDB();
@@ -2411,7 +2411,7 @@ public:
         }
 
         WorldPacket data(SMSG_PLAY_SOUND, 4);
-        data << uint32(soundId) << handler->GetSession()->GetPlayer()->GetGUID();
+        data << uint32(soundId);
         sWorld->SendGlobalMessage(&data);
 
         handler->PSendSysMessage(LANG_COMMAND_PLAYED_TO_ALL, soundId);

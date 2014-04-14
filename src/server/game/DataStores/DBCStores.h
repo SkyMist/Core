@@ -32,8 +32,7 @@ typedef std::list<uint32> SimpleFactionsList;
 SimpleFactionsList const* GetFactionTeamList(uint32 faction);
 
 char const* GetPetName(uint32 petfamily, uint32 dbclang);
-uint32 GetTalentSpellCost(uint32 spellId);
-TalentSpellPos const* GetTalentSpellPos(uint32 spellId);
+SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint32 difficulty);
 
 int32 GetAreaFlagByAreaID(uint32 area_id);                  // -1 if not found
 AreaTableEntry const* GetAreaEntryByAreaID(uint32 area_id);
@@ -248,7 +247,7 @@ extern DBCStorage <UnitPowerBarEntry>            sUnitPowerBarStore;
 extern DBCStorage <VehicleEntry>                 sVehicleStore;
 extern DBCStorage <VehicleSeatEntry>             sVehicleSeatStore;
 extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
-//extern DBCStorage <WorldMapAreaEntry>           sWorldMapAreaStore; -- use Zone2MapCoordinates and Map2ZoneCoordinates
+extern DBCStorage <WorldMapAreaEntry>            sWorldMapAreaStore; // -- use Zone2MapCoordinates and Map2ZoneCoordinates
 extern DBCStorage <WorldMapOverlayEntry>         sWorldMapOverlayStore;
 extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;
 

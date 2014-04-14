@@ -25,14 +25,13 @@
 #include "MapReference.h"
 
 #include "PlayerMovement.h"
+#include "Common.h"
 #include "Item.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
-#include "UnitMovement.h"
-#include "ObjectMovement.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
 
@@ -124,40 +123,6 @@ struct PlayerTalent
 };
 
 extern uint32 const MasterySpells[MAX_CLASSES];
-
-enum TalentTree // talent tabs
-{
-    TALENT_TREE_WARRIOR_ARMS         = 746,
-    TALENT_TREE_WARRIOR_FURY         = 815,
-    TALENT_TREE_WARRIOR_PROTECTION   = 845,
-    TALENT_TREE_PALADIN_HOLY         = 831,
-    TALENT_TREE_PALADIN_PROTECTION   = 839,
-    TALENT_TREE_PALADIN_RETRIBUTION  = 855,
-    TALENT_TREE_HUNTER_BEAST_MASTERY = 811,
-    TALENT_TREE_HUNTER_MARKSMANSHIP  = 807,
-    TALENT_TREE_HUNTER_SURVIVAL      = 809,
-    TALENT_TREE_ROGUE_ASSASSINATION  = 182,
-    TALENT_TREE_ROGUE_COMBAT         = 181,
-    TALENT_TREE_ROGUE_SUBTLETY       = 183,
-    TALENT_TREE_PRIEST_DISCIPLINE    = 760,
-    TALENT_TREE_PRIEST_HOLY          = 813,
-    TALENT_TREE_PRIEST_SHADOW        = 795,
-    TALENT_TREE_DEATH_KNIGHT_BLOOD   = 398,
-    TALENT_TREE_DEATH_KNIGHT_FROST   = 399,
-    TALENT_TREE_DEATH_KNIGHT_UNHOLY  = 400,
-    TALENT_TREE_SHAMAN_ELEMENTAL     = 261,
-    TALENT_TREE_SHAMAN_ENHANCEMENT   = 263,
-    TALENT_TREE_SHAMAN_RESTORATION   = 262,
-    TALENT_TREE_MAGE_ARCANE          = 799,
-    TALENT_TREE_MAGE_FIRE            = 851,
-    TALENT_TREE_MAGE_FROST           = 823,
-    TALENT_TREE_WARLOCK_AFFLICTION   = 871,
-    TALENT_TREE_WARLOCK_DEMONOLOGY   = 867,
-    TALENT_TREE_WARLOCK_DESTRUCTION  = 865,
-    TALENT_TREE_DRUID_BALANCE        = 752,
-    TALENT_TREE_DRUID_FERAL_COMBAT   = 750,
-    TALENT_TREE_DRUID_RESTORATION    = 748
-};
 
 // Spell modifier (used for modify other spells)
 struct SpellModifier
@@ -1224,7 +1189,7 @@ struct PlayerTalentInfo
         {
             SpecInfo[i].Talents = new PlayerTalentMap();
             memset(SpecInfo[i].Glyphs, 0, MAX_GLYPH_SLOT_INDEX * sizeof(uint32));
-            SpecInfo[i].TalentTree = 0;
+            SpecInfo[i].SpecializationId = 0;
         }
     }
 
@@ -1242,7 +1207,7 @@ struct PlayerTalentInfo
     {
         PlayerTalentMap* Talents;
         uint32 Glyphs[MAX_GLYPH_SLOT_INDEX];
-        uint32 TalentTree;
+        uint32 SpecializationId;
     } SpecInfo[MAX_TALENT_SPECS];
 
     uint32 UsedTalentCount;
@@ -1328,7 +1293,8 @@ class Player : public Unit, public GridObject<Player>
         void SetGMVisible(bool on);
         void SetPvPDeath(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_PVP_DEATH; else m_ExtraFlags &= ~PLAYER_EXTRA_PVP_DEATH; }
 
-        void GiveXP(uint32 xp, Unit* victim, float group_rate=1.0f);
+        void GiveXP(uint32 xp, Unit* victim, float group_rate = 1.0f);
+        void GiveGatheringXP();
         void GiveLevel(uint8 level);
 
         void InitStatsForLevel(bool reapplyMods = false);
@@ -1372,7 +1338,7 @@ class Player : public Unit, public GridObject<Player>
         void Whisper(std::string const& text, const uint32 language, uint64 receiver);
         void WhisperAddon(std::string const& text, std::string const& prefix, Player* receiver);
         /// Constructs the player Chat data for the specific functions to use
-        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, std::string const& text, uint32 language, const char* addonPrefix = NULL) const;
+        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, std::string const& text, uint32 language, const char* addonPrefix = NULL, const std::string& channel = "", uint64 receiverGUID = 0, uint8 chatTag = CHAT_TAG_NONE, uint32 achievementId = 0);
 
         /*********************************************************/
         /***                    STORAGE SYSTEM                 ***/
@@ -1757,6 +1723,8 @@ class Player : public Unit, public GridObject<Player>
         PlayerMails::iterator GetMailBegin() { return m_mail.begin();}
         PlayerMails::iterator GetMailEnd() { return m_mail.end();}
 
+        uint32 GetRoleForGroup(uint32 specializationId);
+
         /*********************************************************/
         /*** MAILED ITEMS SYSTEM ***/
         /*********************************************************/
@@ -1801,6 +1769,11 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetReputation(uint32 factionentry) const;
         std::string GetGuildName();
 
+        void LoadMountsAndLearnRidingSkills(uint32 spellId);
+
+		// Spell damage.
+		int32 GetSpellDamage(uint8 minLevel, uint8 minAttack, uint8 maxLevel, uint8 maxAttack, float attackCoef, float spellCoef, bool heal = false, WeaponAttackType attackType = BASE_ATTACK, SpellSchoolMask schoolMask = SPELL_SCHOOL_MASK_NORMAL);
+
         // Talents
         uint32 GetUsedTalentCount() const { return _talentMgr->UsedTalentCount; }
         void SetUsedTalentCount(uint32 talents) { _talentMgr->UsedTalentCount = talents; }
@@ -1808,8 +1781,8 @@ class Player : public Unit, public GridObject<Player>
         void SetTalentResetCost(uint32 cost)  { _talentMgr->ResetTalentsCost = cost; }
         uint32 GetTalentResetTime() const { return _talentMgr->ResetTalentsTime; }
         void SetTalentResetTime(time_t time_)  { _talentMgr->ResetTalentsTime = time_; }
-        uint32 GetTalentSpecialization(uint8 spec) const { return _talentMgr->SpecInfo[spec].TalentTree; }
-        void SetTalentSpecialization(uint8 spec, uint32 tree) { _talentMgr->SpecInfo[spec].TalentTree = tree; }
+        uint32 GetTalentSpecialization(uint8 spec) const { return _talentMgr->SpecInfo[spec].SpecializationId; }
+        void SetTalentSpecialization(uint8 spec, uint32 specId);
         uint8 GetActiveSpec() const { return _talentMgr->ActiveSpec; }
         void SetActiveSpec(uint8 spec){ _talentMgr->ActiveSpec = spec; }
         uint8 GetSpecsCount() const { return _talentMgr->SpecsCount; }
@@ -1820,14 +1793,20 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 GetNextResetTalentsCost() const;
         void InitTalentForLevel();
+        void InitSpellsForLevel(uint32 minLevel, uint32 maxLevel);
+        void RemoveSpecializationSpells();
         void BuildPlayerTalentsInfoData(WorldPacket* data);
         void BuildPetTalentsInfoData(WorldPacket* data);
         void SendTalentsInfoData();
-        bool LearnTalent(uint16 talentId);
+        bool LearnTalent(uint32 talentId);
         void LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank);
         bool AddTalent(uint32 spellId, uint8 spec, bool learning);
         bool HasTalent(uint32 spell_id, uint8 spec) const;
         uint32 CalculateTalentsPoints() const;
+
+        // Passive spells for talents.
+        void CastPassiveTalentSpell(uint32 spellId);
+        void RemovePassiveTalentSpell(uint32 spellId);
 
         // Dual Spec
         void UpdateSpecCount(uint8 count);
@@ -1871,6 +1850,7 @@ class Player : public Unit, public GridObject<Player>
         void ModifySpellCooldown(uint32 spellId, int32 cooldown);
         void SendCooldownEvent(SpellInfo const* spellInfo, uint32 itemId = 0, Spell* spell = NULL, bool setCooldown = true);
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
+        void ReduceSpellCooldown(uint32 spell_id, time_t modifyTime);
         void RemoveSpellCooldown(uint32 spell_id, bool update = false);
         void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
         void SendClearCooldown(uint32 spell_id, Unit* target);
@@ -2029,6 +2009,7 @@ class Player : public Unit, public GridObject<Player>
         void UpdateMeleeHitChances();
         void UpdateRangedHitChances();
         void UpdateSpellHitChances();
+        void UpdatePvPPowerPercentage();
 
         void UpdateAllSpellCritChances();
         void UpdateSpellCritChance(uint32 school);

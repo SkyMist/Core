@@ -203,7 +203,7 @@ class npc_winterfin_playmate : public CreatureScript
                         case 2:
                             orphan->SetFacingToObject(me);
                             Talk(TEXT_WINTERFIN_PLAYMATE_1);
-                            me->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                            me->HandleEmote(EMOTE_STATE_DANCE);
                             timer = 3000;
                             break;
                         case 3:
@@ -216,7 +216,7 @@ class npc_winterfin_playmate : public CreatureScript
                             break;
                         case 5:
                             orphan->AI()->Talk(TEXT_ORACLE_ORPHAN_3);
-                            me->HandleEmoteCommand(EMOTE_STATE_NONE);
+                            me->HandleEmote(EMOTE_STATE_NONE);
                             player->GroupEventHappens(QUEST_PLAYMATE_ORACLE, me);
                             orphan->GetMotionMaster()->MoveFollow(player, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
                             Reset();
@@ -1001,7 +1001,7 @@ class npc_cw_area_trigger : public CreatureScript
                                                         emote = EMOTE_ONESHOT_DANCE;
                                                         break;
                                                 }
-                                                samuro->HandleEmoteCommand(emote);
+                                                samuro->HandleEmote(emote);
                                             }
                                     }
                                     break;

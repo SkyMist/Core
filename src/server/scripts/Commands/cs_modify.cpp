@@ -1251,7 +1251,7 @@ public:
             return false;
 
         uint32 anim_id = atoi((char*)args);
-        handler->GetSession()->GetPlayer()->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, anim_id);
+        handler->GetSession()->GetPlayer()->HandleEmote(anim_id);
 
         return true;
     }

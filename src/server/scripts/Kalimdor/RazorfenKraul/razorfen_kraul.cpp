@@ -79,7 +79,7 @@ public:
             switch (waypointId)
             {
                 case 3:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     Talk(SAY_POINT, player->GetGUID());
                     break;
                 case 4:

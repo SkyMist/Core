@@ -43,33 +43,14 @@ class TrinityStringTextBuilder
 {
     public:
         TrinityStringTextBuilder(WorldObject* obj, ChatMsg msgtype, int32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
-        size_t operator()(WorldPacket* data, LocaleConstant locale) const
+        void operator()(WorldPacket* data, LocaleConstant locale, uint64 tguid) const
         {
             std::string text = sObjectMgr->GetTrinityString(_textId, locale);
             std::string localizedName = _source->GetNameForLocaleIdx(locale);
 
-            *data << uint8(_msgType);
-            *data << uint32(_language);
-            *data << uint64(_source->GetGUID());
-            *data << uint32(1);                                      // 2.1.0
-            *data << uint32(localizedName.size() + 1);
-            *data << localizedName;
-            size_t whisperGUIDpos = data->wpos();
-            *data << uint64(_targetGUID);                           // Unit Target
-            if (_targetGUID && !IS_PLAYER_GUID(_targetGUID))
-            {
-                *data << uint32(1);                                  // target name length
-                *data << uint8(0);                                   // target name
-            }
-            *data << uint32(text.length() + 1);
-            *data << text;
-            *data << uint8(0);                                       // ChatTag
-
-            return whisperGUIDpos;
+            _source->BuildMonsterChat(data, _msgType, text.c_str(), _language, localizedName, tguid > 0 ? tguid : _targetGUID);
         }
 
         WorldObject* _source;
@@ -235,7 +216,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 {
                     if (IsUnit(*itr))
                     {
-                        (*itr)->ToUnit()->HandleEmoteCommand(e.action.emote.emote);
+                        (*itr)->ToUnit()->HandleEmote(e.action.emote.emote);
                         TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_PLAY_EMOTE: target: %s (GuidLow: %u), emote: %u",
                             (*itr)->GetName().c_str(), (*itr)->GetGUIDLow(), e.action.emote.emote);
                     }
@@ -425,7 +406,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 if (IsUnit(*itr))
                 {
                     uint32 emote = temp[urand(0, count - 1)];
-                    (*itr)->ToUnit()->HandleEmoteCommand(emote);
+                    (*itr)->ToUnit()->HandleEmote(emote);
                     TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_RANDOM_EMOTE: Creature guidLow %u handle random emote %u",
                         (*itr)->GetGUIDLow(), emote);
                 }
@@ -629,7 +610,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             {
                 if (IsUnit(*itr))
                 {
-                    (*itr)->ToUnit()->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, e.action.emote.emote);
+                    (*itr)->ToUnit()->HandleEmote(e.action.emote.emote);
                     TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction:: SMART_ACTION_SET_EMOTE_STATE. Unit %u set emotestate to %u",
                         (*itr)->GetGUIDLow(), e.action.emote.emote);
                 }
@@ -3363,35 +3344,6 @@ void SmartScript::OnMoveInLineOfSight(Unit* who)
 
 }
 
-/*
-void SmartScript::UpdateAIWhileCharmed(const uint32 diff) { }
-
-void SmartScript::DoAction(const int32 param) { }
-
-uint32 SmartScript::GetData(uint32 id)
-{
-    return 0;
-}
-
-void SmartScript::SetData(uint32 id, uint32 value) { }
-
-void SmartScript::SetGUID(uint64 guid, int32 id) { }
-
-uint64 SmartScript::GetGUID(int32 id)
-{
-    return 0;
-}
-
-void SmartScript::MovepointStart(uint32 id) { }
-
-void SmartScript::SetRun(bool run) { }
-
-void SmartScript::SetMovePathEndAction(SMART_ACTION action) { }
-
-uint32 SmartScript::DoChat(int8 id, uint64 whisperGuid)
-{
-    return 0;
-}*/
 // SmartScript end
 
 Unit* SmartScript::DoSelectLowestHpFriendly(float range, uint32 MinHPDiff)

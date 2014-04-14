@@ -234,7 +234,7 @@ public:
             if (Phase == SACRIFICING)
                 SetEquipmentSlots(false, EQUIP_UNEQUIP, EQUIP_NO_CHANGE, EQUIP_NO_CHANGE);
 
-            me->HandleEmoteCommand(EMOTE_ONESHOT_FLYDEATH);
+            me->HandleEmote(EMOTE_ONESHOT_FLYDEATH);
 
             summons.DespawnAll();
 

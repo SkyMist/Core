@@ -19,6 +19,7 @@
 
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
+#include "Chat.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Map.h"
@@ -359,7 +360,6 @@ void Battlefield::DoPlaySoundToAll(uint32 SoundID)
     WorldPacket data;
     data.Initialize(SMSG_PLAY_SOUND, 4);
     data << uint32(SoundID);
-    data << uint64(0);
 
     for (int team = 0; team < BG_TEAMS_COUNT; team++)
         for (GuidSet::const_iterator itr = m_PlayersInWar[team].begin(); itr != m_PlayersInWar[team].end(); ++itr)
@@ -449,44 +449,20 @@ void Battlefield::BroadcastPacketToWar(WorldPacket& data) const
 
 WorldPacket Battlefield::BuildWarningAnnPacket(std::string const& msg)
 {
-    WorldPacket data(SMSG_MESSAGECHAT, 200);
+    WorldPacket data;
 
-    data << uint8(CHAT_MSG_RAID_BOSS_EMOTE);
-    data << uint32(LANG_UNIVERSAL);
-    data << uint64(0);
-    data << uint32(0);                                      // 2.1.0
-    data << uint32(1);
-    data << uint8(0);
-    data << uint64(0);
-    data << uint32(msg.length() + 1);
-    data << msg;
-    data << uint8(0);
-    data << float(0);
-    data << uint8(0);
+    /*** Build Packet. ***/
+    ChatHandler::FillMessageData(&data, NULL, CHAT_MSG_RAID_BOSS_EMOTE, LANG_UNIVERSAL, NULL, 0, msg.c_str(), NULL);
 
+    /*** Packet built. ***/
     return data;
 }
 
 void Battlefield::SendWarningToAllInZone(uint32 entry)
 {
     if (Creature* stalker = GetCreature(StalkerGuid))
-        // FIXME: replaced CHAT_TYPE_END with CHAT_MSG_BG_SYSTEM_NEUTRAL to fix compile, it's a guessed change :/
         sCreatureTextMgr->SendChat(stalker, (uint8) entry, 0, CHAT_MSG_BG_SYSTEM_NEUTRAL, LANG_ADDON, TEXT_RANGE_ZONE);
 }
-
-/*void Battlefield::SendWarningToAllInWar(int32 entry, ...)
-{
-    const char *format = sObjectMgr->GetTrinityStringForDBCLocale(entry);
-    va_list ap;
-    char str [1024];
-    va_start(ap, entry);
-    vsnprintf(str, 1024, format, ap);
-    va_end(ap);
-    std::string msg = (std::string)str;
-
-    WorldPacket data = BuildWarningAnnPacket(msg);
-    BroadcastPacketWar(data);
-}*/
 
 void Battlefield::SendWarningToPlayer(Player* player, uint32 entry)
 {

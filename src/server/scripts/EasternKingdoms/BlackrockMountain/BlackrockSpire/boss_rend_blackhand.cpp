@@ -246,7 +246,7 @@ public:
                         case EVENT_START_2:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = me->GetCreature(*me, victorGUID))
-                                victor->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
+                                victor->HandleEmote(EMOTE_ONESHOT_POINT);
                             events.ScheduleEvent(EVENT_START_3, 4000);
                             break;
                         case EVENT_START_3:
@@ -260,7 +260,7 @@ public:
                             if (Creature* victor = me->GetCreature(*me, victorGUID))
                             {
                                 victor->SetFacingToObject(me);
-                                victor->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                                victor->HandleEmote(EMOTE_ONESHOT_TALK);
                             }
                             break;
                         case EVENT_TURN_TO_PLAYER:
@@ -280,16 +280,16 @@ public:
                             break;
                         case EVENT_WAVES_EMOTE_1:
                             if (Creature* victor = me->GetCreature(*me, victorGUID))
-                                victor->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);
+                                victor->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             break;
                         case EVENT_WAVES_EMOTE_2:
-                                me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                                me->HandleEmote(EMOTE_ONESHOT_ROAR);
                             break;
                         case EVENT_WAVES_TEXT_1:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = me->GetCreature(*me, victorGUID))
                                     victor->AI()->Talk(SAY_NEFARIUS_2);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
                             events.ScheduleEvent(EVENT_WAVES_EMOTE_1, 5000);
                             events.ScheduleEvent(EVENT_WAVE_2, 2000);

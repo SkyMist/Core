@@ -1045,18 +1045,18 @@ bool Pet::HaveInDiet(ItemTemplate const* item) const
 
 uint32 Pet::GetCurrentFoodBenefitLevel(uint32 itemlevel) const
 {
-    // -5 or greater food level
-    if (getLevel() <= itemlevel + 5)                         //possible to feed level 60 pet with level 55 level food for full effect
-        return 35000;
-    // -10..-6
-    else if (getLevel() <= itemlevel + 10)                   //pure guess, but sounds good
-        return 17000;
-    // -14..-11
-    else if (getLevel() <= itemlevel + 14)                   //level 55 food gets green on 70, makes sense to me
-        return 8000;
-    // -15 or less
+    // -10 or greater food level
+    if (getLevel() <= itemlevel + 10)                         // possible to feed level 85 pet with ilevel 75 level food for full effect
+        return 50;
+    // -10 to -20
+    else if (getLevel() <= itemlevel + 20)
+        return 25;
+    // -20 to -30
+    else if (getLevel() <= itemlevel + 30)
+        return 13;
+    // -30 or more difference
     else
-        return 0;                                           //food too low level
+        return 0;                                             // food too low level
 }
 
 void Pet::_LoadSpellCooldowns()
@@ -1258,7 +1258,7 @@ void Pet::_LoadAuras(uint32 timediff)
             else
                 remaincharges = 0;
 
-            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, &baseDamage[0], NULL, caster_guid))
+            if (Aura* aura = Aura::TryCreate(spellInfo, effMask, this, NULL, spellInfo->spellPower, &baseDamage[0], NULL, caster_guid))
             {
                 if (!aura->CanBeSaved())
                 {
@@ -1437,13 +1437,13 @@ bool Pet::addSpell(uint32 spellId, ActiveStates active /*= ACT_DECIDE*/, PetSpel
     if (newspell.active == ACT_ENABLED)
         ToggleAutocast(spellInfo, true);
 
-    uint32 talentCost = GetTalentSpellCost(spellId);
+    uint32 talentCost = sSpellMgr->IsTalent(spellId) ? 1 : 0;
     if (talentCost)
     {
         int32 free_points = GetMaxTalentPointsForLevel(getLevel());
         m_usedTalentCount += talentCost;
         // update free talent points
-        free_points-=m_usedTalentCount;
+        free_points -= m_usedTalentCount;
         SetFreeTalentPoints(free_points > 0 ? free_points : 0);
     }
     return true;
@@ -1535,7 +1535,7 @@ bool Pet::removeSpell(uint32 spell_id, bool learn_prev, bool clear_ab)
 
     RemoveAurasDueToSpell(spell_id);
 
-    uint32 talentCost = GetTalentSpellCost(spell_id);
+    uint32 talentCost = sSpellMgr->IsTalent(spell_id) ? 1 : 0;
     if (talentCost > 0)
     {
         if (m_usedTalentCount > talentCost)
@@ -1727,7 +1727,7 @@ void Pet::resetTalentsForAllPetsOf(Player* owner, Pet* onlinePet /*= NULL*/)
 
         uint32 spell = fields[0].GetUInt32();
 
-        if (!GetTalentSpellCost(spell))
+        if (!sSpellMgr->IsTalent(spell))
             continue;
 
         if (need_execute)

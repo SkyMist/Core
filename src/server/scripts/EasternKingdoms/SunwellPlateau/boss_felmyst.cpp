@@ -280,7 +280,7 @@ public:
             case 0:
                 //me->AttackStop();
                 me->GetMotionMaster()->Clear(false);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                 me->StopMoving();
                 Talk(YELL_TAKEOFF);
                 events.ScheduleEvent(EVENT_FLIGHT_SEQUENCE, 2000);
@@ -400,7 +400,7 @@ public:
                 break;
             case 10:
                 me->SetDisableGravity(false);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                me->HandleEmote(EMOTE_ONESHOT_LAND);
                 EnterPhase(PHASE_GROUND);
                 AttackStart(SelectTarget(SELECT_TARGET_TOPAGGRO));
                 break;

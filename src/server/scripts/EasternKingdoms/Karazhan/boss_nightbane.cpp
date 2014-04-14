@@ -248,7 +248,7 @@ public:
             Talk(YELL_FLY_PHASE);
 
             me->InterruptSpell(CURRENT_GENERIC_SPELL);
-            me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+            me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
             me->SetDisableGravity(true);
             (*me).GetMotionMaster()->Clear(false);
             (*me).GetMotionMaster()->MovePoint(0, IntroWay[2][0], IntroWay[2][1], IntroWay[2][2]);
@@ -273,7 +273,7 @@ public:
                     if (MovePhase >= 7)
                     {
                         me->SetLevitate(false);
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                        me->HandleEmote(EMOTE_ONESHOT_LAND);
                         me->GetMotionMaster()->MovePoint(8, IntroWay[7][0], IntroWay[7][1], IntroWay[7][2]);
                     }
                     else
@@ -287,7 +287,7 @@ public:
                     if (MovePhase >= 7)
                     {
                         me->SetLevitate(false);
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                        me->HandleEmote(EMOTE_ONESHOT_LAND);
                         me->GetMotionMaster()->MovePoint(8, IntroWay[7][0], IntroWay[7][1], IntroWay[7][2]);
                     }
                     else

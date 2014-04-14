@@ -1002,6 +1002,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recvData)
 {
     uint32 triggerId;
     uint8 unk1, unk2;
+
     recvData >> triggerId;
     unk1 = recvData.ReadBit();
     unk2 = recvData.ReadBit();
@@ -1719,7 +1720,7 @@ void WorldSession::HandleSetTitleOpcode(WorldPacket& recvData)
     // -1 at none
     if (title > 0 && title < MAX_TITLE_INDEX)
     {
-       if (!GetPlayer()->HasTitle(title))
+        if (!GetPlayer()->HasTitle(title))
             return;
     }
     else

@@ -670,7 +670,7 @@ void WorldSession::HandleEmoteOpcode(WorldPacket& recvData)
     uint32 emote;
     recvData >> emote;
     sScriptMgr->OnPlayerEmote(GetPlayer(), emote);
-    GetPlayer()->HandleEmoteCommand(emote);
+    GetPlayer()->HandleEmote(emote);
 }
 
 namespace Trinity
@@ -743,26 +743,19 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
 
     sScriptMgr->OnPlayerTextEmote(GetPlayer(), text_emote, emoteNum, guid);
 
-    EmotesTextEntry const* em = sEmotesTextStore.LookupEntry(text_emote);
-    if (!em)
+    EmotesTextEntry const* textEmote = sEmotesTextStore.LookupEntry(text_emote);
+    if (!textEmote)
         return;
 
-    uint32 emote_anim = em->textid;
-
-    switch (emote_anim)
+    EmotesEntry const* emote = sEmotesStore.LookupEntry(textEmote->textid);
+    if (emote && !emote->UnitStandState)
     {
-        case EMOTE_STATE_SLEEP:
-        case EMOTE_STATE_SIT:
-        case EMOTE_STATE_KNEEL:
-        case EMOTE_ONESHOT_NONE:
-            break;
-        default:
-            // Only allow text-emotes for "dead" entities (feign death included)
-            if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
-                break;
-            GetPlayer()->HandleEmoteCommand(emote_anim);
-            break;
+        // Only allow text-emotes for "dead" entities (feign death included).
+        if (!GetPlayer()->HasUnitState(UNIT_STATE_DIED))
+            GetPlayer()->HandleEmote(emote->Id);
     }
+    else
+        GetPlayer()->HandleEmote(EMOTE_ONESHOT_NONE);
 
     Unit* unit = ObjectAccessor::GetUnit(*_player, guid);
 

@@ -293,24 +293,24 @@ class boss_lich_king_toc : public CreatureScript
                             break;
                         case 5030:
                             Talk(SAY_STAGE_4_04);
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_TALK);
+                            me->HandleEmote(EMOTE_STATE_TALK);
                             _updateTimer = 10*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 5040);
                             break;
                         case 5040:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                            me->HandleEmote(EMOTE_ONESHOT_NONE);
                             me->GetMotionMaster()->MovePoint(1, LichKingLoc[1]);
                             _updateTimer = 1*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 0);
                             break;
                         case 5050:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             _updateTimer = 3*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 5060);
                             break;
                         case 5060:
                             Talk(SAY_STAGE_4_05);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_KNEEL);
+                            me->HandleEmote(EMOTE_ONESHOT_KNEEL);
                             _updateTimer = 2.5*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 5070);
                             break;
@@ -445,7 +445,7 @@ class npc_fizzlebang_toc : public CreatureScript
                         case 1130:
                             me->GetMotionMaster()->MovementExpired();
                             Talk(SAY_STAGE_1_03);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                            me->HandleEmote(EMOTE_ONESHOT_SPELL_CAST_OMNI);
                             if (Unit* pTrigger =  me->SummonCreature(NPC_TRIGGER, ToCCommonLoc[1].GetPositionX(), ToCCommonLoc[1].GetPositionY(), ToCCommonLoc[1].GetPositionZ(), 4.69494f, TEMPSUMMON_MANUAL_DESPAWN))
                             {
                                 _triggerGUID = pTrigger->GetGUID();
@@ -462,7 +462,7 @@ class npc_fizzlebang_toc : public CreatureScript
                             _updateTimer = 4*IN_MILLISECONDS;
                             break;
                         case 1134:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_SPELL_CAST_OMNI);
+                            me->HandleEmote(EMOTE_ONESHOT_SPELL_CAST_OMNI);
                             if (Creature* pPortal = me->SummonCreature(NPC_WILFRED_PORTAL, ToCCommonLoc[1].GetPositionX(), ToCCommonLoc[1].GetPositionY(), ToCCommonLoc[1].GetPositionZ(), 4.71239f, TEMPSUMMON_MANUAL_DESPAWN))
                             {
                                 pPortal->SetReactState(REACT_PASSIVE);
@@ -567,19 +567,19 @@ class npc_tirion_toc : public CreatureScript
                     switch (_instance->GetData(TYPE_EVENT))
                     {
                         case 110:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             Talk(SAY_STAGE_0_01);
                             _updateTimer = 22*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 120);
                             break;
                         case 140:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             Talk(SAY_STAGE_0_02);
                             _updateTimer = 5*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 150);
                             break;
                         case 150:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_NONE);
+                            me->HandleEmote(EMOTE_STATE_NONE);
                             if (_instance->GetBossState(BOSS_BEASTS) != DONE)
                             {
                                 _instance->DoUseDoorOrButton(_instance->GetData64(GO_MAIN_GATE_DOOR));
@@ -855,13 +855,13 @@ class npc_garrosh_toc : public CreatureScript
                     switch (_instance->GetData(TYPE_EVENT))
                     {
                         case 130:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             Talk(SAY_STAGE_0_03h);
                             _updateTimer = 3*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 132);
                             break;
                         case 132:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_NONE);
+                            me->HandleEmote(EMOTE_STATE_NONE);
                             _updateTimer = 5*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 140);
                             break;
@@ -939,13 +939,13 @@ class npc_varian_toc : public CreatureScript
                     switch (_instance->GetData(TYPE_EVENT))
                     {
                         case 120:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             Talk(SAY_STAGE_0_03a);
                             _updateTimer = 2*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 122);
                             break;
                         case 122:
-                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_NONE);
+                            me->HandleEmote(EMOTE_STATE_NONE);
                             _updateTimer = 3*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 130);
                             break;

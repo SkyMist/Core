@@ -152,7 +152,7 @@ class example_creature : public CreatureScript
             //Our Receive emote function
             void ReceiveEmote(Player* /*player*/, uint32 uiTextEmote) OVERRIDE
             {
-                me->HandleEmoteCommand(uiTextEmote);
+                me->HandleEmote(uiTextEmote);
 
                 switch (uiTextEmote)
                 {

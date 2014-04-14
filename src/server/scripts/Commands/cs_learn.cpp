@@ -118,7 +118,7 @@ public:
         else
             targetPlayer->learnSpell(spell, false);
 
-        if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id))
+        if (sSpellMgr->IsTalent(spellInfo->GetFirstRankSpell()->Id))
             targetPlayer->SendTalentsInfoData();
 
         return true;
@@ -179,7 +179,7 @@ public:
                 continue;
 
             // skip spells with first rank learned as talent (and all talents then also)
-            if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id) > 0)
+            if (sSpellMgr->IsTalent(spellInfo->GetFirstRankSpell()->Id))
                 continue;
 
             // skip broken spells
@@ -464,7 +464,7 @@ public:
         else
             handler->SendSysMessage(LANG_FORGET_SPELL);
 
-        if (GetTalentSpellCost(spellId))
+        if (sSpellMgr->IsTalent(spellId))
             target->SendTalentsInfoData();
 
         return true;

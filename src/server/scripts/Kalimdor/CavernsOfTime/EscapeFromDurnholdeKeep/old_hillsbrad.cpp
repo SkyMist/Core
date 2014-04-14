@@ -363,7 +363,7 @@ public:
                     SetRun(false);
                     break;
                 case 60:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                    me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                     //make horsie run off
                     SetEscortPaused(true);
                     me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
@@ -636,7 +636,7 @@ public:
                     Talk(SAY_TA_FREE);
                     break;
                 case 7:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
+                    me->HandleEmote(EMOTE_ONESHOT_CHEER);
                     break;
             }
         }

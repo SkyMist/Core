@@ -261,7 +261,7 @@ Item::Item()
     m_paidMoney = 0;
     m_paidExtendedCost = 0;
 
-    InitializeDynamicFields();
+    _dynamicTabCount = ITEM_DYNAMIC_END; // Should be 32 here.
 }
 
 bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
@@ -1122,16 +1122,6 @@ void Item::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     *data << uint8(updateMask.GetBlockCount());
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
-
-    // Prevent usage of bags with dynamic field system.
-    if (IsBag())
-    {
-        *data << uint8(0);
-        return;
-    }
-
-    // Dynamic Fields (MoP new Dynamic Field system).
-    *data << uint8(0);
 }
 
 void Item::SaveRefundDataToDB()

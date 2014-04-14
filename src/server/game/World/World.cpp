@@ -2240,18 +2240,10 @@ namespace Trinity
                 {
                     WorldPacket* data = new WorldPacket();
 
-                    uint32 lineLength = strlen(line) + 1;
+                    /*** Build Packet. ***/
+                    ChatHandler::FillMessageData(data, NULL, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, NULL, 0, line, NULL);
 
-                    data->Initialize(SMSG_MESSAGECHAT, 100);                // guess size
-                    *data << uint8(CHAT_MSG_SYSTEM);
-                    *data << uint32(LANG_UNIVERSAL);
-                    *data << uint64(0);
-                    *data << uint32(0);                                     // can be chat msg group or something
-                    *data << uint64(0);
-                    *data << uint32(lineLength);
-                    *data << line;
-                    *data << uint8(0);
-
+                    /*** Packet built. ***/
                     data_list.push_back(data);
                 }
             }

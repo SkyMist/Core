@@ -164,7 +164,7 @@ class StandUpEvent : public BasicEvent
 
         bool Execute(uint64 /*eventTime*/, uint32 /*diff*/)
         {
-            _owner.HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+            _owner.HandleEmote(EMOTE_ONESHOT_ROAR);
             return true;
         }
 

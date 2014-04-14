@@ -294,7 +294,7 @@ npc_anachronos_the_ancient : Creature that controls the event.
 npc_anachronos_quest_trigger: controls the spawning of the BG War mobs.
 go_crystalline_tear : GameObject that begins the event and hands out quest
 TO DO: get correct spell IDs and timings for spells cast upon dragon transformations
-TO DO: Dragons should use the HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF) after transformation, but for some unknown reason it doesnt work.
+TO DO: Dragons should use the HandleEmote(EMOTE_ONESHOT_LIFTOFF) after transformation, but for some unknown reason it doesnt work.
 EndContentData */
 
 #define EVENT_AREA_RADIUS 65 //65yds
@@ -580,7 +580,7 @@ public:
                         Merithra->CastSpell(Merithra, 25105, true);
                         break;
                     case 10:
-                        Merithra->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                        Merithra->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                         Merithra->SetDisableGravity(true);
                         Merithra->GetMotionMaster()->MoveCharge(-8065, 1530, 6.61f, 3);
                         break;
@@ -607,7 +607,7 @@ public:
                         Arygos->CastSpell(Arygos, 25107, true);
                         break;
                     case 18:
-                        Arygos->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                        Arygos->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                         Arygos->SetDisableGravity(true);
                         Arygos->GetMotionMaster()->MoveCharge(-8065, 1530, 6.61f, 42);
                         break;
@@ -634,7 +634,7 @@ public:
                         Caelestrasz->CastSpell(Caelestrasz, 25106, true);
                         break;
                     case 26:
-                        Caelestrasz->HandleEmoteCommand(254);
+                        Caelestrasz->HandleEmote(254);
                         Caelestrasz->SetDisableGravity(true);
                         Caelestrasz->GetMotionMaster()->MoveCharge(-8065, 1530, 7.61f, 4);
                         break;
@@ -774,7 +774,7 @@ public:
                         me->SetDisplayId(15500);
                         break;
                     case 63:
-                        me->HandleEmoteCommand(254);
+                        me->HandleEmote(254);
                         me->SetDisableGravity(true);
                         break;
                     case 64:

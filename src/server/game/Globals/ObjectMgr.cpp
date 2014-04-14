@@ -4080,7 +4080,7 @@ void ObjectMgr::LoadQuests()
                 qinfo->RewardSpell = 0;                        // no spell reward will display for this quest
             }
 
-            else if (GetTalentSpellCost(qinfo->RewardSpell))
+            else if (sSpellMgr->IsTalent(qinfo->RewardSpell))
             {
                 TC_LOG_ERROR("sql.sql", "Quest %u has `RewardSpell` = %u but spell %u is talent, quest will not have a spell reward.",
                     qinfo->GetQuestId(), qinfo->RewardSpell, qinfo->RewardSpell);
@@ -4106,7 +4106,7 @@ void ObjectMgr::LoadQuests()
                 qinfo->RewardSpellCast = 0;                    // no spell will be casted on player
             }
 
-            else if (GetTalentSpellCost(qinfo->RewardSpellCast))
+            else if (sSpellMgr->IsTalent(qinfo->RewardSpellCast))
             {
                 TC_LOG_ERROR("sql.sql", "Quest %u has `RewardSpell` = %u but spell %u is talent, quest will not have a spell reward.",
                     qinfo->GetQuestId(), qinfo->RewardSpellCast, qinfo->RewardSpellCast);
@@ -4239,7 +4239,7 @@ void ObjectMgr::LoadQuests()
             }
 
             /* Can we require talents?
-            else if (GetTalentSpellCost(qinfo->RewardSpellCast))
+            else if (sSpellMgr->IsTalent(qinfo->RewardSpellCast))
             {
                 TC_LOG_ERROR("sql.sql", "Quest %u has `RewardSpell` = %u but spell %u is talent, quest will not have a spell reward.",
                     qinfo->GetQuestId(), qinfo->RewardSpellCast, qinfo->RewardSpellCast);
@@ -8075,7 +8075,7 @@ void ObjectMgr::AddSpellToTrainer(uint32 entry, uint32 spell, uint32 spellCost, 
         return;
     }
 
-    if (GetTalentSpellCost(spell))
+    if (sSpellMgr->IsTalent(spell))
     {
         TC_LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry (Entry: %u) for a non-existing spell (Spell: %u) which is a talent, ignoring", entry, spell);
         return;
