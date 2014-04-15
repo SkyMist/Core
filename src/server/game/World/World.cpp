@@ -1632,6 +1632,10 @@ void World::SetInitialWorldSettings()
     sSpellMgr->LoadSpellAreas();
     TC_LOG_INFO("server.loading", "");
 
+    TC_LOG_INFO("server.loading", "Loading Spell Classes Info...");
+    sSpellMgr->LoadSpellClassInfo();
+    TC_LOG_INFO("server.loading", "");
+
     TC_LOG_INFO("server.loading", "Loading AreaTrigger definitions...");
     sObjectMgr->LoadAreaTriggerTeleports();
     TC_LOG_INFO("server.loading", "");

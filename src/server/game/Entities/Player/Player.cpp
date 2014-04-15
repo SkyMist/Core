@@ -200,53 +200,6 @@ void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level
     // level dependent taxi hubs
     if (level >= 68)
         SetTaximaskNode(213);                               //Shattered Sun Staging Area
-
-    // Add Taxi Nodes availables for player level.
-    for (uint32 i = 0; i < sTaxiNodesStore.GetNumRows(); i++)
-    {
-        TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(i);
-        if (!node)
-            continue;
-
-        // Bad map id
-        if (!sMapStore.LookupEntry(node->map_id))
-            continue;
-
-        int gx = (int)(32 - node->x / SIZE_OF_GRIDS);             //grid x
-        int gy = (int)(32 - node->y / SIZE_OF_GRIDS);             //grid y
-
-        // Bad positions
-        if (gx < 0 || gy < 0)
-            continue;
-
-        uint32 zone = sMapMgr->GetZoneId(node->map_id, node->x, node->y, node->z);
-        if (!zone)
-            continue;
-
-        WorldMapAreaEntry const* worldMapArea = sWorldMapAreaStore.LookupEntry(zone);
-        if (!worldMapArea)
-            continue;
-
-        uint32 team = Player::TeamForRace(race);
-
-        if (team == PANDAREN_NEUTRAL)
-            continue;
-
-        if (!node->MountCreatureID[team == ALLIANCE ? 1 : 0])
-            continue;
-
-        if (!worldMapArea->minRecommendedLevel)
-            continue;
-
-        uint32 minLevel = worldMapArea->minRecommendedLevel;
-
-        // Hackfix for TwilightHighlands map swapping
-        if (worldMapArea->area_id == 4922)
-            minLevel = 84;
-
-        if (minLevel <= level)
-            SetTaximaskNode(node->ID);
-    }
 }
 
 void PlayerTaxi::LoadTaxiMask(std::string const &data)
@@ -3414,36 +3367,36 @@ void Player::InitTalentForLevel()
 
 void Player::InitSpellsForLevel()
 {
-    std::list<uint32> spellList = sSpellMgr->GetSpellClassList(getClass());
+    std::set<uint32> spellList = sSpellMgr->GetSpellClassList(getClass());
     uint8 level = getLevel();
-    uint32 specializationId = GetSpecializationId(GetActiveSpec());
+    uint32 specializationId = GetTalentSpecialization(GetActiveSpec());
 
-    for (std::list<uint32>::iterator spellId = spellList.begin(); spellId != spellList.end(); spellId++)
+    for (std::set<uint32>::iterator spellId = spellList.begin(); spellId != spellList.end(); spellId++)
     {
-        SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(*spellId);
         if (!spell)
             continue;
 
-        if (HasSpell(spellId))
+        if (HasSpell(*spellId))
             continue;
 
         if (!spell->SpecializationIdList.empty())
         {
             bool find = false;
 
-            for (std::list<uint32>::iterator itr = spell->SpecializationIdList.begin(); itr != spell->SpecializationIdList.end(); itr++)
-                if (itr == specializationId)
+            for (std::list<uint32>::const_iterator itr = spell->SpecializationIdList.begin(); itr != spell->SpecializationIdList.end(); itr++)
+                if ((*itr) == specializationId)
                     find = true;
 
             if (!find)
                 continue;
         }
 
-        if (!IsSpellFitByClassAndRace(spellId))
+        if (!IsSpellFitByClassAndRace(*spellId))
             continue;
 
         if (spell->SpellLevel <= level)
-            learnSpell(spellId, false);
+            learnSpell(*spellId, false);
     }
 
     // Aberration
@@ -3519,11 +3472,11 @@ void Player::RemoveSpecializationSpells()
 
     PlayerSpellMap smap = GetSpellMap();
 
-    for (PlayerSpellMap::const_iterator itr = smap.begin(); itr != smap.end(); ++iter)
+    for (PlayerSpellMap::const_iterator itr = smap.begin(); itr != smap.end(); ++itr)
     {
-        SpellInfo const* spell = sSpellMgr->GetSpellInfo(itr.first);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(itr->first);
         if (spell && !spell->SpecializationIdList.empty())
-            spellToRemove.push_back(itr.first);
+            spellToRemove.push_back(itr->first);
     }
 
     for (std::list<uint32>::iterator iter = spellToRemove.begin(); iter != spellToRemove.end(); ++iter)
@@ -18756,7 +18709,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
-     // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
+    // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
     // SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
     // SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 

@@ -12232,6 +12232,8 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
     // and may have some references during delete
     RemoveAllAuras();
     RemoveAllGameObjects();
+    RemoveAllDynObjects();
+    RemoveAllAreaTriggers();
 
     if (finalCleanup)
         m_cleanupDone = true;

@@ -2870,7 +2870,7 @@ void SpellMgr::LoadSpellInfoStore()
         if (SpellEntry const* spellEntry = sSpellStore.LookupEntry(i))
         {
             std::set<uint32> difficultyInfo = spellDifficultyList[i];
-            for(std::set<uint32>::iterator itr = difficultyInfo.begin(); itr != difficultyInfo.end(); itr++)
+            for (std::set<uint32>::iterator itr = difficultyInfo.begin(); itr != difficultyInfo.end(); itr++)
                 mSpellInfoMap[(*itr)][i] = new SpellInfo(spellEntry, (*itr));
 
             spellDifficultyCount++;
@@ -5067,7 +5067,7 @@ void SpellMgr::LoadSpellPowerInfo()
 
 SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
 {
-    for (std::list<uint32>::iterator itr = GetSpellPowerList(id).begin(); itr != GetSpellPowerList(id).end(); itr++)
+    for (std::list<uint32>::const_iterator itr = GetSpellPowerList(id).begin(); itr != GetSpellPowerList(id).end(); itr++)
     {
         SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
         if (!spellPower)

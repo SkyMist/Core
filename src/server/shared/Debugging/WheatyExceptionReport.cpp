@@ -29,15 +29,22 @@
 inline LPTSTR ErrorMessage(DWORD dw)
 {
     LPVOID lpMsgBuf;
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL);
-    return (LPTSTR)lpMsgBuf;
+    DWORD formatResult = FormatMessage(
+                            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                            FORMAT_MESSAGE_FROM_SYSTEM,
+                            NULL,
+                            dw,
+                            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                            (LPTSTR) &lpMsgBuf,
+                            0, NULL);
+    if (formatResult != 0)
+        return (LPTSTR)lpMsgBuf;
+    else
+    {
+        LPTSTR msgBuf = (LPTSTR)LocalAlloc(LPTR, 30);
+        sprintf(msgBuf, "Unknown error: %u", dw);
+        return msgBuf;
+    }
 }
 
 //============================== Global Variables =============================
@@ -51,6 +58,7 @@ LPTOP_LEVEL_EXCEPTION_FILTER WheatyExceptionReport::m_previousFilter;
 HANDLE WheatyExceptionReport::m_hReportFile;
 HANDLE WheatyExceptionReport::m_hDumpFile;
 HANDLE WheatyExceptionReport::m_hProcess;
+SymbolPairs WheatyExceptionReport::symbols;
 
 // Declare global instance of class
 WheatyExceptionReport g_WheatyExceptionReport;
@@ -78,6 +86,7 @@ WheatyExceptionReport::~WheatyExceptionReport()
 {
     if (m_previousFilter)
         SetUnhandledExceptionFilter(m_previousFilter);
+    ClearSymbols();
 }
 
 //===========================================================
@@ -491,7 +500,7 @@ PEXCEPTION_POINTERS pExceptionInfo)
 
 //    #ifdef _M_IX86                                          // X86 Only!
 
-    _tprintf(_T("========================\r\n"));
+    /*_tprintf(_T("========================\r\n"));
     _tprintf(_T("Local Variables And Parameters\r\n"));
 
     trashableContext = *pCtx;
@@ -503,7 +512,7 @@ PEXCEPTION_POINTERS pExceptionInfo)
 
     SymEnumSymbols(GetCurrentProcess(),
         (UINT_PTR)GetModuleHandle(szFaultingModule),
-        0, EnumerateSymbolsCallback, 0);
+        0, EnumerateSymbolsCallback, 0);*/
   //  #endif                                                  // X86 Only!
 
     SymCleanup(GetCurrentProcess());
@@ -757,10 +766,11 @@ ULONG         /*SymbolSize*/,
 PVOID         UserContext)
 {
 
-    char szBuffer[16192];
+    char szBuffer[1024 * 64];
 
     __try
     {
+        ClearSymbols();
         if (FormatSymbolValue(pSymInfo, (STACKFRAME64*)UserContext,
             szBuffer, sizeof(szBuffer)))
             _tprintf(_T("\t%s\r\n"), szBuffer);
@@ -862,6 +872,9 @@ char* suffix)
 {
     bHandled = false;
 
+    if (!StoreSymbol(dwTypeIndex, offset))
+        return pszCurrBuffer;
+
     DWORD typeTag;
     if (!SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_SYMTAG, &typeTag))
         return pszCurrBuffer;
@@ -872,6 +885,17 @@ char* suffix)
     if (SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_SYMNAME,
         &pwszTypeName))
     {
+        // handle special cases
+        if (wcscmp(pwszTypeName, L"std::basic_string<char,std::char_traits<char>,std::allocator<char> >") == 0)
+        {
+            LocalFree(pwszTypeName);
+            pszCurrBuffer += sprintf(pszCurrBuffer, " %s", "std::string");
+            pszCurrBuffer = FormatOutputValue(pszCurrBuffer, btStdString, 0, (PVOID)offset);
+            pszCurrBuffer += sprintf(pszCurrBuffer, "\r\n");
+            bHandled = true;
+            return pszCurrBuffer;
+        }
+
         pszCurrBuffer += sprintf(pszCurrBuffer, " %ls", pwszTypeName);
         LocalFree(pwszTypeName);
     }
@@ -879,12 +903,16 @@ char* suffix)
     if (strlen(suffix) > 0)
         pszCurrBuffer += sprintf(pszCurrBuffer, "%s", suffix);
 
+    DWORD innerTypeID;
     switch (typeTag)
     {
         case SymTagPointerType:
-            DWORD innerTypeID;
             if (SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_TYPEID, &innerTypeID))
             {
+#define MAX_NESTING_LEVEL 5
+                if (nestingLevel >= MAX_NESTING_LEVEL)
+                    break;
+
                 pszCurrBuffer += sprintf(pszCurrBuffer, " %s", Name);
                 BOOL isReference;
                 SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_IS_REFERENCE, &isReference);
@@ -908,7 +936,7 @@ char* suffix)
                         LocalFree(pwszTypeName);
                     }
 
-                    pszCurrBuffer += sprintf(pszCurrBuffer, "%s = NULL", addressStr);
+                    pszCurrBuffer += sprintf(pszCurrBuffer, "%s = NULL\r\n", addressStr);
 
                     bHandled = true;
                     return pszCurrBuffer;
@@ -918,11 +946,44 @@ char* suffix)
                     FormatOutputValue(&addressStr[1], btVoid, sizeof(PVOID), (PVOID)offset);
                     pszCurrBuffer = DumpTypeIndex(pszCurrBuffer, modBase, innerTypeID, nestingLevel + 1,
                         address, bHandled, "", addressStr);
+
+                    if (!bHandled)
+                    {
+                        BasicType basicType = GetBasicType(dwTypeIndex, modBase);
+                        pszCurrBuffer += sprintf(pszCurrBuffer, rgBaseType[basicType]);
+                        // Get the size of the child member
+                        ULONG64 length;
+                        SymGetTypeInfo(m_hProcess, modBase, innerTypeID, TI_GET_LENGTH, &length);
+                        pszCurrBuffer = FormatOutputValue(pszCurrBuffer, basicType, length, (PVOID)address);
+                        pszCurrBuffer += sprintf(pszCurrBuffer, "\r\n");
+                        bHandled = true;
+                        return pszCurrBuffer;
+                    }
                 }
             }
             break;
-        default:
+        case SymTagData:
+            if (SymGetTypeInfo(m_hProcess, modBase, dwTypeIndex, TI_GET_TYPEID, &innerTypeID))
+            {
+                DWORD innerTypeTag;
+                if (!SymGetTypeInfo(m_hProcess, modBase, innerTypeID, TI_GET_SYMTAG, &innerTypeTag))
+                    break;
+
+                if (innerTypeTag == SymTagPointerType)
+                {
+                    pszCurrBuffer += sprintf(pszCurrBuffer, " %s", Name);
+
+                    pszCurrBuffer = DumpTypeIndex(pszCurrBuffer, modBase, innerTypeID, nestingLevel + 1,
+                        offset, bHandled, "", "");
+                }
+            }
             break;
+        case SymTagBaseType:
+            break;
+        case SymTagEnum:
+            return pszCurrBuffer;
+
+        default: break;
     }
 
     // Determine how many children this type has.
@@ -937,7 +998,7 @@ char* suffix)
     // TI_FINDCHILDREN_PARAMS struct has.  Use derivation to accomplish this.
     struct FINDCHILDREN : TI_FINDCHILDREN_PARAMS
     {
-        ULONG   MoreChildIds[1024];
+        ULONG   MoreChildIds[1024*2];
         FINDCHILDREN(){Count = sizeof(MoreChildIds) / sizeof(MoreChildIds[0]);}
     } children;
 
@@ -997,13 +1058,6 @@ char* suffix)
             ULONG64 length;
             SymGetTypeInfo(m_hProcess, modBase, typeId, TI_GET_LENGTH, &length);
 
-            //             BasicType basicType = GetBasicType(children.ChildId[i], modBase);
-            //
-            //          pszCurrBuffer += sprintf(pszCurrBuffer, rgBaseType[basicType]);
-            //
-            // Emit the variable name
-            //          pszCurrBuffer += sprintf(pszCurrBuffer, "\'%s\'", Name);
-
             pszCurrBuffer = FormatOutputValue(pszCurrBuffer, basicType,
                 length, (PVOID)dwFinalOffset);
 
@@ -1022,41 +1076,60 @@ PVOID pAddress)
 {
     __try
     {
-        // Format appropriately (assuming it's a 1, 2, or 4 bytes (!!!)
-        if (length == 1)
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PBYTE)pAddress);
-        else if (length == 2)
-            pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PWORD)pAddress);
-        else if (length == 4)
+        switch (basicType)
         {
-            if (basicType == btFloat)
-            {
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = %f", *(PFLOAT)pAddress);
-            }
-            else if (basicType == btChar)
-            {
-                if (!IsBadStringPtr(*(PSTR*)pAddress, 32))
+            case btChar:
+                pszCurrBuffer += sprintf(pszCurrBuffer, " = \"%s\"", pAddress);
+                break;
+            case btStdString:
+                pszCurrBuffer += sprintf(pszCurrBuffer, " = \"%s\"", static_cast<std::string*>(pAddress)->c_str());
+                break;
+            default:
+                // Format appropriately (assuming it's a 1, 2, or 4 bytes (!!!)
+                if (length == 1)
+                    pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PBYTE)pAddress);
+                else if (length == 2)
+                    pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PWORD)pAddress);
+                else if (length == 4)
                 {
-                    pszCurrBuffer += sprintf(pszCurrBuffer, " = \"%.31s\"",
-                        *(PSTR*)pAddress);
+                    if (basicType == btFloat)
+                    {
+                        pszCurrBuffer += sprintf(pszCurrBuffer, " = %f", *(PFLOAT)pAddress);
+                    }
+                    else if (basicType == btChar)
+                    {
+                        if (!IsBadStringPtr(*(PSTR*)pAddress, 32))
+                        {
+                            pszCurrBuffer += sprintf(pszCurrBuffer, " = \"%.31s\"",
+                                *(PSTR*)pAddress);
+                        }
+                        else
+                            pszCurrBuffer += sprintf(pszCurrBuffer, " = %X",
+                            *(PDWORD)pAddress);
+                    }
+                    else
+                        pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PDWORD)pAddress);
+                }
+                else if (length == 8)
+                {
+                    if (basicType == btFloat)
+                    {
+                        pszCurrBuffer += sprintf(pszCurrBuffer, " = %lf",
+                            *(double *)pAddress);
+                    }
+                    else
+                        pszCurrBuffer += sprintf(pszCurrBuffer, " = %I64X",
+                        *(DWORD64*)pAddress);
                 }
                 else
-                    pszCurrBuffer += sprintf(pszCurrBuffer, " = %X",
-                    *(PDWORD)pAddress);
-            }
-            else
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", *(PDWORD)pAddress);
-        }
-        else if (length == 8)
-        {
-            if (basicType == btFloat)
-            {
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = %lf",
-                    *(double *)pAddress);
-            }
-            else
-                pszCurrBuffer += sprintf(pszCurrBuffer, " = %I64X",
-                *(DWORD64*)pAddress);
+                {
+    #if _WIN64
+                    pszCurrBuffer += sprintf(pszCurrBuffer, " = %I64X", (DWORD64*)pAddress);
+    #else
+                    pszCurrBuffer += sprintf(pszCurrBuffer, " = %X", (PDWORD)pAddress);
+    #endif
+                }
+                break;
         }
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
@@ -1102,7 +1175,7 @@ WheatyExceptionReport::GetBasicType(DWORD typeIndex, DWORD64 modBase)
 //============================================================================
 int __cdecl WheatyExceptionReport::_tprintf(const TCHAR * format, ...)
 {
-    TCHAR szBuff[16192];
+    TCHAR szBuff[1024 * 64];
     int retValue;
     DWORD cbWritten;
     va_list argptr;
@@ -1114,6 +1187,16 @@ int __cdecl WheatyExceptionReport::_tprintf(const TCHAR * format, ...)
     WriteFile(m_hReportFile, szBuff, retValue * sizeof(TCHAR), &cbWritten, 0);
 
     return retValue;
+}
+
+bool WheatyExceptionReport::StoreSymbol(DWORD type, DWORD_PTR offset)
+{
+    return symbols.insert(SymbolPair(type, offset)).second;
+}
+
+void WheatyExceptionReport::ClearSymbols()
+{
+    symbols.clear();
 }
 
 #endif  // _WIN32
