@@ -21329,7 +21329,7 @@ void Player::SendAttackSwingCancelAttack()
     ObjectGuid guid = GetGUID();
 
     WorldPacket data(SMSG_CANCEL_COMBAT, 0);
-    data.WriteBit(guid[3]);
+    /*data.WriteBit(guid[3]);
     data.WriteBit(guid[1]);
     data.WriteBit(guid[0]);
     data.WriteBit(guid[7]);
@@ -21347,7 +21347,7 @@ void Player::SendAttackSwingCancelAttack()
     data.WriteByteSeq(guid[7]);
     data << uint32(0); // Unk
     data.WriteByteSeq(guid[1]);
-    data << uint8(0); //Unk
+    data << uint8(0); //Unk*/
     data.WriteByteSeq(guid[0]);
 
     GetSession()->SendPacket(&data);

@@ -767,7 +767,7 @@ enum Opcodes
    SMSG_CALENDAR_UPDATE_INVITE_LIST                         = 0x0,
    SMSG_CAMERA_SHAKE                                        = 0x0,
    SMSG_CANCEL_AUTO_REPEAT                                  = 0x0,
-   SMSG_CANCEL_COMBAT                                       = 0x1E7A, // 5.4.7 18019
+   SMSG_CANCEL_COMBAT                                       = 0x1E48, // 5.4.7 18019
    SMSG_CAST_FAILED                                         = 0x0560, // 5.4.7 18019
    SMSG_CHALLANGES_INFO                                     = 0x0,
    SMSG_CHANNEL_LIST                                        = 0x0,
@@ -1166,9 +1166,9 @@ enum Opcodes
    SMSG_PLAYER_VEHICLE_DATA                                 = 0x0,
    SMSG_PLAY_DANCE                                          = 0x0,
    SMSG_PLAY_MUSIC                                          = 0x0,
-   SMSG_PLAY_OBJECT_SOUND                                   = 0x0,
+   SMSG_PLAY_OBJECT_SOUND                                   = 0x0C43, // 5.4.7 18019
    SMSG_PLAY_ONE_SHOT_ANIM_KIT                              = 0x0,
-   SMSG_PLAY_SOUND                                          = 0x0,
+   SMSG_PLAY_SOUND                                          = 0x0E22, // 5.4.7 18019
    SMSG_PLAY_SPELL_VISUAL                                   = 0x0,
    SMSG_PLAY_SPELL_VISUAL_KIT                               = 0x0,
    SMSG_PLAY_TIME_WARNING                                   = 0x0,
@@ -1333,7 +1333,7 @@ enum Opcodes
    SMSG_STREAMING_MOVIE                                     = 0x0,
    SMSG_SUMMON_CANCEL                                       = 0x0,
    SMSG_SUMMON_REQUEST                                      = 0x0,
-   SMSG_SUPERCEDED_SPELL                                    = 0x0,
+   SMSG_SUPERCEDED_SPELL                                    = 0x052a, // 5.4.7 18019
    SMSG_SUPPRESS_NPC_GREETINGS                              = 0x0,
    SMSG_SUSPEND_COMMS                                       = 0x0,
    SMSG_SUSPEND_TOKEN_RESPONSE                              = 0x0,
