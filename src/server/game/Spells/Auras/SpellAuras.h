@@ -168,7 +168,6 @@ class Aura
         bool CanBeSentToClient() const;
         // Single cast aura helpers
         bool IsSingleTarget() const {return m_isSingleTarget; }
-        bool IsSingleTargetWith(Aura const* aura) const;
         void SetIsSingleTarget(bool val) { m_isSingleTarget = val; }
         void UnregisterSingleTarget();
         int32 CalcDispelChance(Unit* auraTarget, bool offensive) const;
@@ -229,6 +228,8 @@ class Aura
         void CallScriptEffectManaShieldHandlers(AuraEffect* aurEff, AuraApplication const* aurApp, DamageInfo & dmgInfo, uint32 & absorbAmount, bool & defaultPrevented);
         void CallScriptEffectAfterManaShieldHandlers(AuraEffect* aurEff, AuraApplication const* aurApp, DamageInfo & dmgInfo, uint32 & absorbAmount);
         void CallScriptEffectSplitHandlers(AuraEffect* aurEff, AuraApplication const* aurApp, DamageInfo & dmgInfo, uint32 & splitAmount);
+        void SetScriptData(uint32 type, uint32 data);
+        void SetScriptGuid(uint32 type, uint64 data);
         // Spell Proc Hooks
         bool CallScriptCheckProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
         bool CallScriptPrepareProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);

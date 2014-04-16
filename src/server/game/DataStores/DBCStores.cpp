@@ -195,9 +195,7 @@ DBCStorage <SpellEffectScalingEntry> sSpellEffectScalingStore(SpellEffectScaling
 
 SpellCategoryStore sSpellsByCategoryStore;
 PetFamilySpellsStore sPetFamilySpellsStore;
-SpellsPerClassStore sSpellsPerClassStore;
 ClassBySkillIdStore sClassBySkillIdStore;
-SpellEffectScallingByEffectId sSpellEffectScallingByEffectId;
 
 DBCStorage <SpellScalingEntry> sSpellScalingStore(SpellScalingEntryfmt);
 DBCStorage <SpellTotemsEntry> sSpellTotemsStore(SpellTotemsEntryfmt);
@@ -548,7 +546,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellEffectStore,            dbcPath,"SpellEffect.dbc"/*, &CustomSpellEffectEntryfmt, &CustomSpellEffectEntryIndex*/);//15595
 
     for (uint32 i = 1; i < sSpellEffectStore.GetNumRows(); ++i)
-        if (SpellEffectEntry const *spellEffect = sSpellEffectStore.LookupEntry(i))
+        if (SpellEffectEntry const* spellEffect = sSpellEffectStore.LookupEntry(i))
             sSpellEffectMap[spellEffect->EffectSpellId].effects[spellEffect->EffectDifficulty][spellEffect->EffectIndex] = spellEffect;
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellCastTimesStore,         dbcPath, "SpellCastTimes.dbc");//15595
@@ -566,15 +564,6 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellShapeshiftFormStore,    dbcPath, "SpellShapeshiftForm.dbc");//15595
     //LoadDBC(availableDbcLocales, bad_dbc_files, sStableSlotPricesStore,       dbcPath, "StableSlotPrices.dbc");
     LoadDBC(availableDbcLocales, bad_dbc_files, sSummonPropertiesStore,       dbcPath, "SummonProperties.dbc");//15595
-
-    for (uint32 j = 0; j < sSpellEffectScalingStore.GetNumRows(); j++)
-    {
-        SpellEffectScalingEntry const* spellEffectScaling = sSpellEffectScalingStore.LookupEntry(j);
-        if (!spellEffectScaling)
-            continue;
-
-        sSpellEffectScallingByEffectId.insert(std::make_pair(spellEffectScaling->SpellEffectId, j));
-    }
 
     std::map<std::string, uint32> classIdByName;
     for (uint32 j = 0; j < sChrClassesStore.GetNumRows(); j++)
@@ -600,34 +589,6 @@ void LoadDBCStores(const std::string& dataPath)
             continue;
 
         sClassBySkillIdStore.insert(std::make_pair(j, iter->second));
-    }
-
-    for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
-    {
-        SkillLineAbilityEntry const* skillAbility = sSkillLineAbilityStore.LookupEntry(j);
-        if (!skillAbility)
-            continue;
-
-        if (skillAbility->learnOnGetSkill != ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL)
-            continue;
-
-        SpellEntry const* spellInfo = sSpellStore.LookupEntry(skillAbility->spellId);
-        if (!spellInfo)
-            continue;
-
-        SpellLevelsEntry const* spellLevels = sSpellLevelsStore.LookupEntry(spellInfo->SpellLevelsId);
-        if (!spellLevels || !spellLevels->spellLevel)
-            continue;
-
-        uint32 classId = GetClassBySkillId(skillAbility->skillId);
-
-        if (!classId)
-            continue;
-
-        if (sSpellsPerClassStore.find(classId) == sSpellsPerClassStore.end())
-            sSpellsPerClassStore.insert(make_pair(classId, std::list<SkillLineAbilityEntry const*>()));
-
-        sSpellsPerClassStore[classId].push_back(skillAbility);
     }
 
     // Must be done when sSkillLineAbilityStore, sSpellStore, sSpellLevelsStore and sCreatureFamilyStore are all loaded
@@ -878,6 +839,11 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint3
     return itr->second.effects[REGULAR_DIFFICULTY][effect];
 }
 
+SpellEffectScalingEntry const* GetSpellEffectScalingEntry(uint32 effectId)
+{
+    return sSpellEffectScalingStore.LookupEntry(effectId);
+}
+
 int32 GetAreaFlagByAreaID(uint32 area_id)
 {
     AreaFlagByAreaID::iterator i = sAreaFlagByAreaID.find(area_id);
@@ -1055,57 +1021,6 @@ uint32 GetSkillIdByClass(uint32 classId)
         if (iter->second == classId)
             return iter->first;
     return 0;
-}
-
-std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 specializationId, uint32 minLevel, uint32 maxLevel)
-{
-    std::list<uint32> spellList;
-
-    if (classId != 0)
-    {
-        SpellsPerClassStore::const_iterator classIter = sSpellsPerClassStore.find(classId);
-        if (classIter != sSpellsPerClassStore.end())
-        {
-            const std::list<SkillLineAbilityEntry const*>& learnSpellList = classIter->second;
-            for (std::list<SkillLineAbilityEntry const*>::const_iterator iter = learnSpellList.begin(); iter != learnSpellList.end(); iter++)
-            {
-                SkillLineAbilityEntry const* skillLine = *iter;
-                if (!skillLine)
-                    continue;
-
-                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(skillLine->spellId);
-                if (!spellInfo)
-                    continue;
-
-                if (skillLine->racemask && !(skillLine->racemask & raceMask))
-                    continue;
-
-                if (spellInfo->SpellLevel <= minLevel || spellInfo->SpellLevel > maxLevel)
-                    continue;
-
-                spellList.push_back(spellInfo->Id);
-            }
-        }
-    }
-
-    if (!specializationId)
-        return spellList;
-
-    SpecializationSpellsMap::const_iterator specIter = sSpecializationSpellsMap.find(specializationId);
-    if (specIter != sSpecializationSpellsMap.end())
-    {
-        const std::vector<uint32>& learnSpellList = specIter->second;
-        for (int i = 0; i != learnSpellList.size(); i++)
-        {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(learnSpellList[i]);
-
-            if (spellInfo->SpellLevel <= minLevel || spellInfo->SpellLevel > maxLevel)
-                continue;
-            
-            spellList.push_back(spellInfo->Id);
-        }
-    }
-    return spellList;
 }
 
 MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty)

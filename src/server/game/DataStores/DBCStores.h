@@ -33,6 +33,7 @@ SimpleFactionsList const* GetFactionTeamList(uint32 faction);
 
 char const* GetPetName(uint32 petfamily, uint32 dbclang);
 SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint32 difficulty);
+SpellEffectScalingEntry const* GetSpellEffectScalingEntry(uint32 effectId);
 
 int32 GetAreaFlagByAreaID(uint32 area_id);                  // -1 if not found
 AreaTableEntry const* GetAreaEntryByAreaID(uint32 area_id);
@@ -68,7 +69,6 @@ void Zone2MapCoordinates(float &x, float &y, uint32 zone);
 void Map2ZoneCoordinates(float &x, float &y, uint32 zone);
 uint32 GetClassBySkillId(uint32 skillId);
 uint32 GetSkillIdByClass(uint32 classId);
-std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 specializationId, uint32 minLevel, uint32 maxLevel);
 
 typedef std::map<uint32/*pair32(map, diff)*/, MapDifficulty> MapDifficultyMap;
 MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty);
@@ -201,9 +201,7 @@ extern DBCStorage <SpellItemEnchantmentEntry>    sSpellItemEnchantmentStore;
 extern DBCStorage <SpellItemEnchantmentConditionEntry> sSpellItemEnchantmentConditionStore;
 extern SpellCategoryStore                        sSpellsByCategoryStore;
 extern PetFamilySpellsStore                      sPetFamilySpellsStore;
-extern SpellsPerClassStore                       sSpellsPerClassStore;
 extern ClassBySkillIdStore                       sClassBySkillIdStore;
-extern SpellEffectScallingByEffectId             sSpellEffectScallingByEffectId;
 extern DBCStorage <SpecializationSpellsEntry>    sSpecializationSpellsStore;
 extern SpecializationOverrideSpellsMap sSpecializationOverrideSpellMap;
 extern DBCStorage <SpellRadiusEntry>             sSpellRadiusStore;
@@ -247,7 +245,7 @@ extern DBCStorage <UnitPowerBarEntry>            sUnitPowerBarStore;
 extern DBCStorage <VehicleEntry>                 sVehicleStore;
 extern DBCStorage <VehicleSeatEntry>             sVehicleSeatStore;
 extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
-extern DBCStorage <WorldMapAreaEntry>            sWorldMapAreaStore; // -- use Zone2MapCoordinates and Map2ZoneCoordinates
+//extern DBCStorage <WorldMapAreaEntry>            sWorldMapAreaStore; -- use Zone2MapCoordinates and Map2ZoneCoordinates
 extern DBCStorage <WorldMapOverlayEntry>         sWorldMapOverlayStore;
 extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;
 

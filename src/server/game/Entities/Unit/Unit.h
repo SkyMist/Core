@@ -1194,10 +1194,29 @@ enum ReactiveType
 
 enum PlayerTotemType
 {
-    SUMMON_TYPE_TOTEM_FIRE  = 63,
-    SUMMON_TYPE_TOTEM_EARTH = 81,
-    SUMMON_TYPE_TOTEM_WATER = 82,
-    SUMMON_TYPE_TOTEM_AIR   = 83
+    SUMMON_TYPE_TOTEM_FIRE   = 63,
+    SUMMON_TYPE_TOTEM_FIRE2  = 3403,
+    SUMMON_TYPE_TOTEM_FIRE3  = 3599,
+
+    SUMMON_TYPE_TOTEM_EARTH  = 81,
+    SUMMON_TYPE_TOTEM_EARTH2 = 3400,
+    SUMMON_TYPE_TOTEM_EARTH3 = 3404,
+
+    SUMMON_TYPE_TOTEM_WATER  = 82,
+    SUMMON_TYPE_TOTEM_WATER2 = 3402,
+
+    SUMMON_TYPE_TOTEM_AIR    = 83,
+    SUMMON_TYPE_TOTEM_AIR2   = 3405,
+    SUMMON_TYPE_TOTEM_AIR3   = 3407,
+    SUMMON_TYPE_TOTEM_AIR4   = 3406,
+    SUMMON_TYPE_TOTEM_AIR5   = 3399,
+};
+
+enum Stagger
+{
+    LIGHT_STAGGER       = 124275,
+    MODERATE_STAGGER    = 124274,
+    HEAVY_STAGGER       = 124273
 };
 
 // delay time next attack to prevent client attack animation problems
@@ -1414,6 +1433,7 @@ class Unit : public WorldObject
         uint16 GetMaxSkillValueForLevel(Unit const* target = NULL) const { return (target ? getLevelForTarget(target) : getLevel()) * 5; }
         void DealDamageMods(Unit* victim, uint32 &damage, uint32* absorb);
         uint32 DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDamage = NULL, DamageEffectType damagetype = DIRECT_DAMAGE, SpellSchoolMask damageSchoolMask = SPELL_SCHOOL_MASK_NORMAL, SpellInfo const* spellProto = NULL, bool durabilityLoss = true);
+        uint32 CalcStaggerDamage(Player* victim, uint32 damage, DamageEffectType damagetype, SpellSchoolMask damageSchoolMask, SpellInfo const* spellProto = NULL);
         void Kill(Unit* victim, bool durabilityLoss = true);
         int32 DealHeal(Unit* victim, uint32 addhealth);
 
@@ -1685,10 +1705,13 @@ class Unit : public WorldObject
 
         void RemoveAreaAurasDueToLeaveWorld();
         void RemoveAllAuras();
+        void RemoveNonPassiveAuras();
         void RemoveArenaAuras();
         void RemoveAllAurasOnDeath();
+        void RemoveNegativeAuras();
         void RemoveAllAurasRequiringDeadTarget();
         void RemoveAllAurasExceptType(AuraType type);
+        void RemoveAllAurasByType(AuraType type);
         void RemoveAllAurasExceptType(AuraType type1, AuraType type2); /// @todo: once we support variadic templates use them here
         void DelayOwnedAuras(uint32 spellId, uint64 caster, int32 delaytime);
 
@@ -1696,6 +1719,8 @@ class Unit : public WorldObject
         void _ApplyAllAuraStatMods();
 
         AuraEffectList const& GetAuraEffectsByType(AuraType type) const { return m_modAuras[type]; }
+        AuraEffectList GetAuraEffectsByMechanic(uint32 mechanic_mask) const;
+
         AuraList      & GetSingleCastAuras()       { return m_scAuras; }
         AuraList const& GetSingleCastAuras() const { return m_scAuras; }
 
@@ -2142,6 +2167,8 @@ class Unit : public WorldObject
         bool IsTriggeredAtSpellProcEvent(Unit* victim, Aura* aura, SpellInfo const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const* & spellProcEvent);
         bool HandleAuraProcOnPowerAmount(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
         bool HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
+        bool HandleHasteAuraProc(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
+        bool HandleSpellCritChanceAuraProc(Unit* victim, uint32 damage, AuraEffect* triggredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
         bool HandleAuraProc(Unit* victim, uint32 damage, Aura* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown, bool * handled);
         bool HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
         bool HandleOverrideClassScriptAuraProc(Unit* victim, uint32 damage, AuraEffect* triggeredByAura, SpellInfo const* procSpell, uint32 cooldown);

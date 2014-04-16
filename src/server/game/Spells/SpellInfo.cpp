@@ -353,7 +353,7 @@ SpellImplicitTargetInfo::StaticData  SpellImplicitTargetInfo::_data[TOTAL_SPELL_
 SpellEffectInfo::SpellEffectInfo(SpellEntry const* spellEntry, SpellInfo const* spellInfo, uint8 effIndex, uint32 difficulty)
 {
     SpellEffectEntry const* _effect = spellEntry->GetSpellEffect(effIndex, difficulty);
-    SpellEffectScalingEntry const* _effectScaling = sSpellEffectScalingStore.LookupEntry(_effect ? _effect->Id : 0);
+    SpellEffectScalingEntry const* _effectScaling = GetSpellEffectScalingEntry(_effect ? _effect->Id : 0);
     SpellScalingEntry const* scaling = spellInfo->GetSpellScaling();
 
     _spellInfo = spellInfo;
@@ -878,45 +878,13 @@ SpellEffectInfo::StaticData SpellEffectInfo::_data[TOTAL_SPELL_EFFECTS] =
 SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
 {
     Id = spellEntry->Id;
-
-    SpellMiscEntry const* spellMisc = GetSpellMisc();
-
-    Attributes = spellMisc ? spellMisc->Attributes : 0;
-    AttributesEx = spellMisc ? spellMisc->AttributesEx: 0;
-    AttributesEx2 = spellMisc ? spellMisc->AttributesEx2 : 0;
-    AttributesEx3 = spellMisc ? spellMisc->AttributesEx3 : 0;
-    AttributesEx4 = spellMisc ? spellMisc->AttributesEx4 : 0;
-    AttributesEx5 = spellMisc ? spellMisc->AttributesEx5 : 0;
-    AttributesEx6 = spellMisc ? spellMisc->AttributesEx6 : 0;
-    AttributesEx7 = spellMisc ? spellMisc->AttributesEx7 : 0;
-    AttributesEx8 = spellMisc ? spellMisc->AttributesEx8 : 0;
-    AttributesEx9 = spellMisc ? spellMisc->AttributesEx9 : 0;
-    AttributesEx10 = spellMisc ? spellMisc->AttributesEx10 : 0;
-    AttributesEx11 = spellMisc ? spellMisc->AttributesEx11 : 0;
-    AttributesEx12 = spellMisc ? spellMisc->AttributesEx12 : 0;
     AttributesCu = 0;
 
-    uint32 _castingTimeIndex = spellMisc ? spellMisc->CastingTimeIndex :0;
-    uint32 _durationIndex = spellMisc ? spellMisc->DurationIndex :0;
-    uint32 _rangeEntry = spellMisc ? spellMisc->rangeIndex :0;
-
-    CastTimeEntry = _castingTimeIndex ? sSpellCastTimesStore.LookupEntry(_castingTimeIndex) : NULL;
-    DurationEntry = _durationIndex ? sSpellDurationStore.LookupEntry(_durationIndex) : NULL;
-    RangeEntry = _rangeEntry? sSpellRangeStore.LookupEntry(_rangeEntry) : NULL;
-
-    Speed = spellMisc ? spellMisc->speed : 0;
-
-    for (uint8 i = 0; i < 2; ++i)
-        SpellVisual[i] = spellMisc ? spellMisc->SpellVisual[i] : 0;
-
-    SpellIconID = spellMisc ? spellMisc->SpellIconID : 0;
-    ActiveIconID = spellMisc ? spellMisc->activeIconID: 0;
     SpellName = spellEntry->SpellName;
     Rank = spellEntry->Rank;
-    SchoolMask = spellMisc ? spellMisc->SchoolMask : 0;
     RuneCostID = spellEntry->runeCostID;
+    SpellDifficultyId = 0;
     APMultiplier = spellEntry->APMultiplier;
-    SpellDifficultyId = spellMisc ? spellMisc->DifficultyMode : 0;
     SpellScalingId = spellEntry->SpellScalingId;
     SpellAuraOptionsId = spellEntry->SpellAuraOptionsId;
     SpellAuraRestrictionsId = spellEntry->SpellAuraRestrictionsId;
@@ -1026,6 +994,39 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     spellPower->spellId = Id;
     spellPower->powerType = POWER_MANA;
 
+    // SpellMiscEntry
+    SpellMiscEntry const* spellMisc = GetSpellMisc();
+    Attributes = spellMisc ? spellMisc->Attributes : 0;
+    AttributesEx = spellMisc ? spellMisc->AttributesEx: 0;
+    AttributesEx2 = spellMisc ? spellMisc->AttributesEx2 : 0;
+    AttributesEx3 = spellMisc ? spellMisc->AttributesEx3 : 0;
+    AttributesEx4 = spellMisc ? spellMisc->AttributesEx4 : 0;
+    AttributesEx5 = spellMisc ? spellMisc->AttributesEx5 : 0;
+    AttributesEx6 = spellMisc ? spellMisc->AttributesEx6 : 0;
+    AttributesEx7 = spellMisc ? spellMisc->AttributesEx7 : 0;
+    AttributesEx8 = spellMisc ? spellMisc->AttributesEx8 : 0;
+    AttributesEx9 = spellMisc ? spellMisc->AttributesEx9 : 0;
+    AttributesEx10 = spellMisc ? spellMisc->AttributesEx10 : 0;
+    AttributesEx11 = spellMisc ? spellMisc->AttributesEx11 : 0;
+    AttributesEx12 = spellMisc ? spellMisc->AttributesEx12 : 0;
+
+    uint32 _castingTimeIndex = spellMisc ? spellMisc->CastingTimeIndex : 0;
+    uint32 _durationIndex = spellMisc ? spellMisc->DurationIndex : 0;
+    uint32 _rangeEntry = spellMisc ? spellMisc->rangeIndex : 0;
+
+    CastTimeEntry = sSpellCastTimesStore.LookupEntry(_castingTimeIndex);
+    DurationEntry = sSpellDurationStore.LookupEntry(_durationIndex);
+    RangeEntry = sSpellRangeStore.LookupEntry(_rangeEntry);
+
+    Speed = spellMisc ? spellMisc->speed : 1.00f;
+
+    for (uint8 i = 0; i < 2; ++i)
+        SpellVisual[i] = spellMisc ? spellMisc->SpellVisual[i] : 0;
+
+    SpellIconID = spellMisc ? spellMisc->SpellIconID : 0;
+    ActiveIconID = spellMisc ? spellMisc->activeIconID: 0;
+    SchoolMask = spellMisc ? spellMisc->SchoolMask : 0;
+
     // SpellReagentsEntry
     SpellReagentsEntry const* _reagents = GetSpellReagents();
     for (uint8 i = 0; i < MAX_SPELL_REAGENTS; ++i)
@@ -1068,7 +1069,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
 
     talentId = 0;
 
-    _InitializeExplicitTargetMask();
+    ExplicitTargetMask = _GetExplicitTargetMask();
 
     ChainEntry = NULL;
 }
@@ -2606,7 +2607,7 @@ bool SpellInfo::IsHighRankOf(SpellInfo const* spellInfo) const
     return false;
 }
 
-void SpellInfo::_InitializeExplicitTargetMask()
+uint32 SpellInfo::_GetExplicitTargetMask() const
 {
     bool srcSet = false;
     bool dstSet = false;
@@ -2634,7 +2635,7 @@ void SpellInfo::_InitializeExplicitTargetMask()
         targetMask |= effectTargetMask;
     }
 
-    ExplicitTargetMask = targetMask;
+    return targetMask;
 }
 
 bool SpellInfo::IsAllwaysStackModifers() const
@@ -3474,6 +3475,7 @@ bool SpellInfo::IsPoisonOrBleedSpell() const
         case 3409:  // Crippling Poison
         case 5760:  // Mind-Numbling Poison
         case 8680:  // Wound Poison
+        case 79136: // Venomous Wound (damage)
         case 89775: // Hemorrhage (DoT)
         case 112961:// Leeching Poison
         case 113780:// Deadly Poison (direct damage)

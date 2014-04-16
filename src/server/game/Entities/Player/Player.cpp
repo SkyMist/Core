@@ -200,53 +200,6 @@ void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level
     // level dependent taxi hubs
     if (level >= 68)
         SetTaximaskNode(213);                               //Shattered Sun Staging Area
-
-    // Add Taxi Nodes availables for player level.
-    for (uint32 i = 0; i < sTaxiNodesStore.GetNumRows(); i++)
-    {
-        TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(i);
-        if (!node)
-            continue;
-
-        // Bad map id
-        if (!sMapStore.LookupEntry(node->map_id))
-            continue;
-
-        int gx = (int)(32 - node->x / SIZE_OF_GRIDS);             //grid x
-        int gy = (int)(32 - node->y / SIZE_OF_GRIDS);             //grid y
-
-        // Bad positions
-        if (gx < 0 || gy < 0)
-            continue;
-
-        uint32 zone = sMapMgr->GetZoneId(node->map_id, node->x, node->y, node->z);
-        if (!zone)
-            continue;
-
-        WorldMapAreaEntry const* worldMapArea = sWorldMapAreaStore.LookupEntry(zone);
-        if (!worldMapArea)
-            continue;
-
-        uint32 team = Player::TeamForRace(race);
-
-        if (team == PANDAREN_NEUTRAL)
-            continue;
-
-        if (!node->MountCreatureID[team == ALLIANCE ? 1 : 0])
-            continue;
-
-        if (!worldMapArea->minRecommendedLevel)
-            continue;
-
-        uint32 minLevel = worldMapArea->minRecommendedLevel;
-
-        // Hackfix for TwilightHighlands map swapping
-        if (worldMapArea->area_id == 4922)
-            minLevel = 84;
-
-        if (minLevel <= level)
-            SetTaximaskNode(node->ID);
-    }
 }
 
 void PlayerTaxi::LoadTaxiMask(std::string const &data)
@@ -1168,7 +1121,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
     InitTalentForLevel();
-    InitSpellsForLevel(0, start_level);
+    InitSpellsForLevel();
     InitPrimaryProfessions();                               // to max set before any spell added
 
     // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
@@ -1228,6 +1181,26 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
                 if (iProto->GetMaxStackSize() < count)
                     count = iProto->GetMaxStackSize();
             }
+
+            switch(itemId)
+            {
+                // Pandaren start weapons, they are given with the first quest
+                case 73207:
+                case 73208:
+                case 73209:
+                case 73210:
+                case 73211:
+                case 73212:
+                case 73213:
+                case 76390:
+                case 76391:
+                case 76392:
+                case 76393:
+                    continue;
+                default:
+                    break;
+            }
+
             StoreNewItemInBestSlots(itemId, count);
         }
     }
@@ -1264,6 +1237,30 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
         }
     }
     // all item positions resolved
+
+    //Pandaren's start quest
+    if (createInfo->Race == RACE_PANDAREN_NEUTRAL)
+    {
+        Quest const* quest = NULL;
+        switch (createInfo->Class)
+        {
+            case CLASS_WARRIOR: quest = sObjectMgr->GetQuestTemplate(30045); break;
+            case CLASS_SHAMAN: quest = sObjectMgr->GetQuestTemplate(30044); break;
+            case CLASS_ROGUE: quest = sObjectMgr->GetQuestTemplate(30043); break;
+            case CLASS_PRIEST: quest = sObjectMgr->GetQuestTemplate(30042); break;
+            case CLASS_HUNTER: quest = sObjectMgr->GetQuestTemplate(30041); break;
+            case CLASS_MAGE: quest = sObjectMgr->GetQuestTemplate(30040); break;
+            case CLASS_MONK: quest = sObjectMgr->GetQuestTemplate(30039); break;
+            default: break;
+        }
+
+        if (quest)
+        {
+            this->AddQuest(quest, NULL);
+            if (CanCompleteQuest(quest->GetQuestId()))
+                CompleteQuest(quest->GetQuestId());
+        }
+    }
 
     return true;
 }
@@ -3338,7 +3335,7 @@ void Player::GiveLevel(uint8 level)
     }
 
     InitTalentForLevel();
-    InitSpellsForLevel(oldLevel, level);
+    InitSpellsForLevel();
     InitTaxiNodesForLevel();
     InitGlyphsForLevel();
 
@@ -3386,6 +3383,22 @@ void Player::GiveLevel(uint8 level)
         }
     }
 
+    // Pandaria quest add (Custom MOP script).
+    if (level == 85)
+    {
+        uint32 idQuest;
+        if (GetTeam() == TEAM_ALLIANCE)
+        {
+            idQuest = 29547;
+        }
+        else
+            idQuest = 29611;
+
+        Quest const* quest = sObjectMgr->GetQuestTemplate(idQuest);
+        if (quest)
+            AddQuest(quest, NULL);
+    }
+
     sScriptMgr->OnPlayerLevelChanged(this, oldLevel);
 }
 
@@ -3412,13 +3425,38 @@ void Player::InitTalentForLevel()
         SendTalentsInfoData();                                  // Update client-side.
 }
 
-void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
+void Player::InitSpellsForLevel()
 {
-    std::list<uint32> learnList = GetSpellsForLevels(getClass(), getRaceMask(), GetTalentSpecialization(GetActiveSpec()), minLevel, maxLevel);
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    std::set<uint32> spellList = sSpellMgr->GetSpellClassList(getClass());
+    uint8 level = getLevel();
+    uint32 specializationId = GetTalentSpecialization(GetActiveSpec());
+
+    for (std::set<uint32>::iterator spellId = spellList.begin(); spellId != spellList.end(); spellId++)
     {
-        if (!HasSpell(*iter))
-            learnSpell(*iter, false);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(*spellId);
+        if (!spell)
+            continue;
+
+        if (HasSpell(*spellId))
+            continue;
+
+        if (!spell->SpecializationIdList.empty())
+        {
+            bool find = false;
+
+            for (std::list<uint32>::const_iterator itr = spell->SpecializationIdList.begin(); itr != spell->SpecializationIdList.end(); itr++)
+                if ((*itr) == specializationId)
+                    find = true;
+
+            if (!find)
+                continue;
+        }
+
+        if (!IsSpellFitByClassAndRace(*spellId))
+            continue;
+
+        if (spell->SpellLevel <= level)
+            learnSpell(*spellId, false);
     }
 
     // Aberration
@@ -3490,12 +3528,19 @@ void Player::InitSpellsForLevel(uint32 minLevel, uint32 maxLevel)
 
 void Player::RemoveSpecializationSpells()
 {
-    std::list<uint32> learnList = GetSpellsForLevels(0, getRaceMask(), GetTalentSpecialization(GetActiveSpec()), 0, getLevel());
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    std::list<uint32> spellToRemove;
+
+    PlayerSpellMap smap = GetSpellMap();
+
+    for (PlayerSpellMap::const_iterator itr = smap.begin(); itr != smap.end(); ++itr)
     {
-        if (HasSpell(*iter))
-            removeSpell(*iter, true);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(itr->first);
+        if (spell && !spell->SpecializationIdList.empty())
+            spellToRemove.push_back(itr->first);
     }
+
+    for (std::list<uint32>::iterator iter = spellToRemove.begin(); iter != spellToRemove.end(); ++iter)
+        removeSpell(*iter);
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -4900,7 +4945,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         RemoveSpecializationSpells();
         SetTalentSpecialization(GetActiveSpec(), SPEC_NONE);
 
-        InitSpellsForLevel(0, getLevel());
+        InitSpellsForLevel();
     }
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -7430,6 +7475,7 @@ uint32 Player::TeamForRace(uint8 race)
         {
             case 1: return HORDE;
             case 7: return ALLIANCE;
+            case 42: return PANDAREN_NEUTRAL;
         }
         TC_LOG_ERROR("entities.player", "Race (%u) has wrong teamid (%u) in DBC: wrong DBC files?", uint32(race), rEntry->TeamID);
     }
@@ -18579,7 +18625,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     // after spell and quest load
     InitTalentForLevel();
-    InitSpellsForLevel(0, getLevel());
+    InitSpellsForLevel();
     learnDefaultSpells();
 
     // must be before inventory (some items required reputation check)
@@ -18723,7 +18769,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
-     // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
+    // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
     SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
     SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 
@@ -27604,7 +27650,7 @@ void Player::ActivateSpec(uint8 spec)
 
     SetUsedTalentCount(spentTalents);
     InitTalentForLevel();
-    InitSpellsForLevel(0, getLevel());
+    InitSpellsForLevel();
 
     {
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ACTIONS_SPEC);

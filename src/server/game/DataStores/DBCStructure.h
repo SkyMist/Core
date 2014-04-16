@@ -1797,7 +1797,7 @@ struct SpellEffectEntry
     float     EffectBonusMultiplier;                        // 7         m_effectBonus
     float     EffectDamageMultiplier;                       // 8         m_effectChainAmplitude
     uint32    EffectChainTarget;                            // 9         m_effectChainTargets
-    int32     EffectDieSides;                               // 10         m_effectDieSides
+    int32     EffectDieSides;                               // 10        m_effectDieSides
     uint32    EffectItemType;                               // 11        m_effectItemType
     uint32    EffectMechanic;                               // 12        m_effectMechanic
     int32     EffectMiscValue;                              // 13        m_effectMiscValue
@@ -1938,12 +1938,12 @@ struct SpellMiscEntry
 // SpellEffectScaling.dbc
 struct SpellEffectScalingEntry
 {
-    uint32 Id;                      // 1  Id
-    float Multiplier;               // 2
-    float RandomPointsMultiplier;   // 3
-    float OtherMultiplier;          // 4
-    // float UnkMultiplier          // 5
-    uint32 SpellEffectId;           // 6
+    //uint32    Unk_540;            // New 5.4.X
+    float Multiplier;               // 1
+    float RandomPointsMultiplier;   // 2
+    float OtherMultiplier;          // 3
+    // float UnkMultiplier          // 4
+    uint32 SpellEffectId;           // 5 Effect ID
 };
 
 // SpellCategories.dbc
@@ -1965,9 +1965,7 @@ typedef std::set<uint32> SpellCategorySet;
 typedef std::map<uint32, SpellCategorySet > SpellCategoryStore;
 typedef std::set<uint32> PetFamilySpellsSet;
 typedef std::map<uint32, PetFamilySpellsSet > PetFamilySpellsStore;
-typedef UNORDERED_MAP<uint32, std::list<SkillLineAbilityEntry const*> > SpellsPerClassStore;
 typedef UNORDERED_MAP<uint32, uint32> ClassBySkillIdStore;
-typedef UNORDERED_MAP<uint32, uint32> SpellEffectScallingByEffectId;
 
 struct SpellCastTimesEntry
 {
@@ -2547,8 +2545,8 @@ struct SpellEffect
 {
     SpellEffect()
     {
-        for (uint8 i = 0; i < MAX_DIFFICULTY; i++)
-            for (uint8 y = 0; y < MAX_SPELL_EFFECTS; y++)
+        for (uint32 i = 0; i < MAX_DIFFICULTY; i++)
+            for (uint32 y = 0; y < MAX_SPELL_EFFECTS; y++)
                 effects[i][y] = 0;
     }
 

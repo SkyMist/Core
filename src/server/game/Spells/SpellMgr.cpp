@@ -92,7 +92,6 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellInfo const* spellproto,
         case SPELLFAMILY_UNK1:
         {
             return DIMINISHING_NONE;
-
             break;
         }
 
@@ -1325,9 +1324,9 @@ void SpellMgr::LoadSpellRanks()
             ++count;
             int32 addedSpell = itr->first;
 
-            for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
-                if (mSpellInfoMap[difficulty][addedSpell]->ChainEntry)
-                    TC_LOG_ERROR("sql.sql", "Spell %u (rank: %u, first: %u) listed in `spell_ranks` already has ChainEntry from dbc for difficulty %u.", addedSpell, itr->second, lastSpell, difficulty);
+            //for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
+            //    if (mSpellInfoMap[difficulty][addedSpell]->ChainEntry)
+            //        TC_LOG_ERROR("sql.sql", "Spell %u (rank: %u, first: %u) listed in `spell_ranks` already has ChainEntry from dbc for difficulty %u.", addedSpell, itr->second, lastSpell, difficulty);
 
             mSpellChains[addedSpell].first = GetSpellInfo(lastSpell);
             mSpellChains[addedSpell].last = GetSpellInfo(rankChain.back().first);
@@ -2853,6 +2852,8 @@ void SpellMgr::LoadSpellInfoStore()
 {
     uint32 oldMSTime = getMSTime();
 
+    uint32 spellDifficultyCount = 0;
+
     std::map<uint32, std::set<uint32> > spellDifficultyList;
 
     for (uint32 i = 0; i < sSpellEffectStore.GetNumRows(); ++i)
@@ -2868,10 +2869,17 @@ void SpellMgr::LoadSpellInfoStore()
         if (SpellEntry const* spellEntry = sSpellStore.LookupEntry(i))
         {
             std::set<uint32> difficultyInfo = spellDifficultyList[i];
-            for(std::set<uint32>::iterator itr = difficultyInfo.begin(); itr != difficultyInfo.end(); itr++)
+            for (std::set<uint32>::iterator itr = difficultyInfo.begin(); itr != difficultyInfo.end(); itr++)
                 mSpellInfoMap[(*itr)][i] = new SpellInfo(spellEntry, (*itr));
+
+            spellDifficultyCount++;
         }
     }
+
+    uint32 spelldifficultyMSTime = getMSTime();
+    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Difficulty entries in %u ms", spellDifficultyCount, GetMSTimeDiffToNow(oldMSTime));
+
+    uint32 spellPowerCount = 0;
 
     std::set<uint32> alreadySet;
     for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
@@ -2901,7 +2909,13 @@ void SpellMgr::LoadSpellInfoStore()
         }
 
         alreadySet.insert(spellPower->spellId);
+        spellPowerCount++;
     }
+
+    uint32 spellPowerMSTime = getMSTime();
+    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Power entries in %u ms", spellPowerCount, GetMSTimeDiffToNow(spelldifficultyMSTime));
+
+    uint32 spellTalentsCount = 0;
 
     for (uint32 i = 0; i < sTalentStore.GetNumRows(); i++)
     {
@@ -2913,7 +2927,12 @@ void SpellMgr::LoadSpellInfoStore()
 
         if (spellEntry)
             spellEntry->talentId = talentInfo->TalentID;
+
+        spellTalentsCount++;
     }
+
+    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Talents in %u ms", spellTalentsCount, GetMSTimeDiffToNow(spellPowerMSTime));
+    TC_LOG_INFO("server.loading", "");
 
     TC_LOG_INFO("server.loading", ">> Loaded SpellInfo store in %u ms", GetMSTimeDiffToNow(oldMSTime));
 }
@@ -4265,7 +4284,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
             }
 
             // This must be re-done if targets changed since the spellinfo load
-            spellInfo->_InitializeExplicitTargetMask();
+            spellInfo->ExplicitTargetMask = spellInfo->_GetExplicitTargetMask();
 
             switch (spellInfo->Id)
             {
@@ -5047,7 +5066,9 @@ void SpellMgr::LoadSpellPowerInfo()
 
 SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
 {
-    for (std::list<uint32>::iterator itr = GetSpellPowerList(id).begin(); itr != GetSpellPowerList(id).end(); itr++)
+    std::list<uint32> powerList = GetSpellPowerList(id);
+
+    for (std::list<uint32>::iterator itr = powerList.begin(); itr != powerList.end(); itr++)
     {
         SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
         if (!spellPower)

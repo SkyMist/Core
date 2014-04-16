@@ -33,26 +33,40 @@ void WorldSession::HandeSetTalentSpecialization(WorldPacket& recvData)
     uint32 specializationTabId;
     recvData >> specializationTabId;
 
+    uint8 classId = _player->getClass();
+
     if (specializationTabId > MAX_TALENT_TABS)
         return;
 
     if (_player->GetTalentSpecialization(_player->GetActiveSpec()))
         return;
 
-    uint32 specializationId = GetClassSpecializations(_player->getClass())[specializationTabId];
+    uint32 specializationId = 0;
+    uint32 specializationSpell = 0;
 
-    _player->SetTalentSpecialization(_player->GetActiveSpec(), specializationId);
-    _player->SendTalentsInfoData();
-
-    std::list<uint32> learnList = GetSpellsForLevels(0, _player->getRaceMask(), _player->GetTalentSpecialization(_player->GetActiveSpec()), 0, _player->getLevel());
-    for (std::list<uint32>::const_iterator iter = learnList.begin(); iter != learnList.end(); iter++)
+    for (uint32 i = 0; i < sChrSpecializationStore.GetNumRows(); i++)
     {
-        if (!_player->HasSpell(*iter))
-            _player->learnSpell(*iter, false);
+        ChrSpecializationEntry const* specialization = sChrSpecializationStore.LookupEntry(i);
+        if (!specialization)
+            continue;
+
+        if (specialization->classId == classId && specialization->TabPage == specializationTabId)
+        {
+            specializationId = specialization->Id;
+            specializationSpell = specialization->MasterySpellId;
+            break;
+        }
     }
 
-    _player->InitSpellsForLevel(0, _player->getLevel());
-    _player->SaveToDB();
+    if (specializationId)
+    {
+        _player->SetTalentSpecialization(_player->GetActiveSpec(), specializationId);
+        _player->SendTalentsInfoData();
+        if (specializationSpell)
+            _player->learnSpell(specializationSpell, false);
+        _player->InitSpellsForLevel();
+        _player->SaveToDB();
+	}
 }
 
 void WorldSession::HandleLearnTalentOpcode(WorldPacket& recvData)

@@ -702,6 +702,9 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     std::string speakerName = speaker ? (localizedName ? localizedName : speaker->GetName()) : (session ? session->GetPlayer()->GetName() : 0);
 
+    if (speaker && speaker->GetTypeId() == TYPEID_UNIT)
+        chatTag = 32; // Seems like all creature chats have this tag (Taken from sniffs).
+
     // Set target name length and get the target name.
     uint32 targetNameLength = 0;
     std::string targetName;
@@ -730,8 +733,17 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (type == CHAT_MSG_GUILD || type == CHAT_MSG_OFFICER)
         guildGuid = (speakerPlayer && speakerPlayer->GetGuild()) ? speakerPlayer->GetGuild()->GetGUID() : 0;
 
+    // Then establish the variables needed.
+    bool HasSpeaker = ((speaker || speakerPlayer) && speakerNameLength > 0);
+    bool HasReceiver = (target_guid && targetNameLength > 0);
+    bool HasMessage = messageLength > 0;
+    bool HasLanguage = language ? true : false;
+    bool HasChannel = (type == CHAT_MSG_CHANNEL && channelLength > 0);
+    bool HasAddonPrefix = addonPrefixLength > 0;
+    bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0);
     bool HasChatTag = chatTag != 0;
-    bool HasAchievement = type == CHAT_MSG_ACHIEVEMENT;
+    bool HasConstantTime = true;
+    bool ShowInChatWindow = true; // Toggle show in chat window - show in chat bubble.
 
     // Now build the actual packet.
     data->Initialize(SMSG_MESSAGECHAT);
@@ -749,7 +761,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(guildGuid[3]);
 
     data->WriteBit(!HasChatTag);
-    data->WriteBit(0);                              // Send Language
+    data->WriteBit(!HasLanguage);                   // Send Language
 
     data->WriteBit(target[2]);
     data->WriteBit(target[7]);
@@ -760,11 +772,11 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(target[1]);
     data->WriteBit(target[5]);
 
-    data->WriteBit(0);                              // Show in chat log - 1 for showing only in bubble
+    data->WriteBit(!ShowInChatWindow);               // Show in chat log - false for showing only in bubble (inversed - set bool false->true here for bubble showing).
     data->WriteBit(!HasAchievement);
-    data->WriteBit(!(targetNameLength > 0));
-    data->WriteBit(!(speakerNameLength > 0));
-    data->WriteBit(!(messageLength > 0));
+    data->WriteBit(!HasReceiver);
+    data->WriteBit(!HasSpeaker);
+    data->WriteBit(!HasMessage);
 
     data->WriteBit(0);
 
@@ -779,10 +791,10 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     data->WriteBit(1);                              // HasDword38, some kind of time
 
-    if (targetNameLength > 0)
+    if (HasReceiver)
         data->WriteBits(targetNameLength, 11);
 
-    if (speakerNameLength > 0)
+    if (HasSpeaker)
         data->WriteBits(speakerNameLength, 11);
 
     data->WriteBit(0);
@@ -801,20 +813,20 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasChatTag)
         data->WriteBits(chatTag, 9);
 
-    if (messageLength > 0)
+    if (HasMessage)
         data->WriteBits(messageLength, 12);
 
-    data->WriteBit(0);                              //byte1499
-    data->WriteBit(!(addonPrefixLength > 0));
-    data->WriteBit(!(channelLength > 0));
+    data->WriteBit(0);                              // byte1499
+    data->WriteBit(!HasAddonPrefix);
+    data->WriteBit(!HasChannel);
 
-    if (addonPrefixLength > 0)
+    if (HasAddonPrefix)
         data->WriteBits(addonPrefixLength, 5);
 
-    if (channelLength > 0)
+    if (HasChannel)
         data->WriteBits(channelLength, 7);
 
-    data->WriteBit(false);                          //HasConstantTime
+    data->WriteBit(!HasConstantTime);               // HasConstantTime
 
     data->FlushBits();
 
@@ -838,13 +850,13 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     *data << uint8(type);
 
-    //if(HasDword38)
+    //if (HasDword38)
     //  *data << uint32(0);
 
-    if (addonPrefixLength > 0)
+    if (HasAddonPrefix)
         data->WriteString(std::string(addonPrefix));
 
-    //if(HasUnkFloat)
+    //if (HasUnkFloat)
     //  *data << float(0);
 
     data->WriteByteSeq(target[4]);
@@ -868,21 +880,23 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasAchievement)
         *data << achievementId;
 
-    if (targetNameLength > 0)
+    if (HasReceiver)
         data->WriteString(targetName);
 
-    if (messageLength > 0)
+    if (HasMessage)
         data->WriteString(message);
 
-    if (speakerNameLength > 0)
+    if (HasSpeaker)
         data->WriteString(speakerName);
 
-    *data << uint8(language);
+    if (HasLanguage)
+        *data << uint8(language);
 
-    if (channelLength > 0)
+    if (HasChannel)
         data->WriteString(std::string(channelName));
 
-    *data << uint32(time(NULL));
+    if (HasConstantTime)
+        *data << uint32(time(NULL));
 }
 
 Player* ChatHandler::getSelectedPlayer()
