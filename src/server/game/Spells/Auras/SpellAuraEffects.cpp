@@ -446,7 +446,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_382
     &AuraEffect::HandleNoImmediateEffect,                         //383 SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN
     &AuraEffect::HandleUnused,                                    //384 unused (5.4.2)
-    &AuraEffect::HandleNULL,                                      //385 SPELL_AURA_385
+    &AuraEffect::HandleNoImmediateEffect,                         //385 SPELL_AURA_STRIKE_SELF in Unit::AttackerStateUpdate
     &AuraEffect::HandleNULL,                                      //386 SPELL_AURA_386 (used in spell 117915) (5.4.2)
     &AuraEffect::HandleNULL,                                      //387 SPELL_AURA_387 (used in spell 117923) (5.4.2)
     &AuraEffect::HandleNULL,                                      //388 SPELL_AURA_388 (used in spell 117983) (5.4.2)

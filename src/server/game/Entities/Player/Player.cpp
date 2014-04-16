@@ -1181,6 +1181,26 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
                 if (iProto->GetMaxStackSize() < count)
                     count = iProto->GetMaxStackSize();
             }
+
+            switch(itemId)
+            {
+                // Pandaren start weapons, they are given with the first quest
+                case 73207:
+                case 73208:
+                case 73209:
+                case 73210:
+                case 73211:
+                case 73212:
+                case 73213:
+                case 76390:
+                case 76391:
+                case 76392:
+                case 76393:
+                    continue;
+                default:
+                    break;
+            }
+
             StoreNewItemInBestSlots(itemId, count);
         }
     }
@@ -1217,6 +1237,30 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
         }
     }
     // all item positions resolved
+
+    //Pandaren's start quest
+    if (createInfo->Race == RACE_PANDAREN_NEUTRAL)
+    {
+        Quest const* quest = NULL;
+        switch (createInfo->Class)
+        {
+            case CLASS_WARRIOR: quest = sObjectMgr->GetQuestTemplate(30045); break;
+            case CLASS_SHAMAN: quest = sObjectMgr->GetQuestTemplate(30044); break;
+            case CLASS_ROGUE: quest = sObjectMgr->GetQuestTemplate(30043); break;
+            case CLASS_PRIEST: quest = sObjectMgr->GetQuestTemplate(30042); break;
+            case CLASS_HUNTER: quest = sObjectMgr->GetQuestTemplate(30041); break;
+            case CLASS_MAGE: quest = sObjectMgr->GetQuestTemplate(30040); break;
+            case CLASS_MONK: quest = sObjectMgr->GetQuestTemplate(30039); break;
+            default: break;
+        }
+
+        if (quest)
+        {
+            this->AddQuest(quest, NULL);
+            if (CanCompleteQuest(quest->GetQuestId()))
+                CompleteQuest(quest->GetQuestId());
+        }
+    }
 
     return true;
 }
@@ -3337,6 +3381,22 @@ void Player::GiveLevel(uint8 level)
                     SetByteFlag(PLAYER_FIELD_LIFETIME_MAX_RANK, 1, 0x01);
             }
         }
+    }
+
+    // Pandaria quest add (Custom MOP script).
+    if (level == 85)
+    {
+        uint32 idQuest;
+        if (GetTeam() == TEAM_ALLIANCE)
+        {
+            idQuest = 29547;
+        }
+        else
+            idQuest = 29611;
+
+        Quest const* quest = sObjectMgr->GetQuestTemplate(idQuest);
+        if (quest)
+            AddQuest(quest, NULL);
     }
 
     sScriptMgr->OnPlayerLevelChanged(this, oldLevel);
@@ -18710,8 +18770,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
     // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
-    // SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
-    // SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
+    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
+    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
 
     return true;
 }

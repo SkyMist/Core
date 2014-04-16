@@ -369,7 +369,7 @@ Aura* Aura::TryRefreshStackOrCreate(SpellInfo const* spellproto, uint32 tryEffMa
         return foundAura;
     }
     else
-		return Create(spellproto, effMask, owner, caster, spellproto->spellPower, baseAmount, castItem, casterGUID);
+		return Create(spellproto, effMask, owner, caster, spellPowerData, baseAmount, castItem, casterGUID);
 }
 
 Aura* Aura::TryCreate(SpellInfo const* spellproto, uint32 tryEffMask, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, int32* baseAmount /*= NULL*/, Item* castItem /*= NULL*/, uint64 casterGUID /*= 0*/)
@@ -381,7 +381,7 @@ Aura* Aura::TryCreate(SpellInfo const* spellproto, uint32 tryEffMask, WorldObjec
     uint32 effMask = Aura::BuildEffectMaskForOwner(spellproto, tryEffMask, owner);
     if (!effMask)
         return NULL;
-    return Create(spellproto, effMask, owner, caster, spellproto->spellPower, baseAmount, castItem, casterGUID);
+    return Create(spellproto, effMask, owner, caster, spellPowerData, baseAmount, castItem, casterGUID);
 }
 
 Aura* Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, int32* baseAmount, Item* castItem, uint64 casterGUID)
@@ -415,9 +415,21 @@ Aura* Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
         case TYPEID_UNIT:
         case TYPEID_PLAYER:
             aura = new UnitAura(spellproto, effMask, owner, caster, spellPowerData, baseAmount, castItem, casterGUID);
+            aura->GetUnitOwner()->_AddAura(((UnitAura*)aura), caster);
+            aura->LoadScripts();
+            aura->_InitEffects(effMask, caster, baseAmount);
             break;
         case TYPEID_DYNAMICOBJECT:
             aura = new DynObjAura(spellproto, effMask, owner, caster, spellPowerData, baseAmount, castItem, casterGUID);
+            ASSERT(aura->GetDynobjOwner());
+            ASSERT(aura->GetDynobjOwner()->IsInWorld());
+            ASSERT(aura->GetCaster()->IsInWorld());
+            ASSERT(aura->GetDynobjOwner()->GetMap() == aura->GetCaster()->GetMap());
+
+            aura->GetDynobjOwner()->SetAura(aura);
+            aura->_InitEffects(effMask, caster, baseAmount);
+            
+            aura->LoadScripts();
             break;
         default:
             ASSERT(false);
@@ -460,7 +472,13 @@ void Aura::_InitEffects(uint32 effMask, Unit* caster, int32 *baseAmount)
     for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (effMask & (uint32(1) << i))
+		{
             m_effects[i] = new AuraEffect(this, i, baseAmount ? baseAmount + i : NULL, caster);
+
+            m_effects[i]->CalculatePeriodic(caster, true, false);
+            m_effects[i]->SetAmount(m_effects[i]->CalculateAmount(caster));
+            m_effects[i]->CalculateSpellMod();
+	    }
         else
             m_effects[i] = NULL;
     }
@@ -792,8 +810,8 @@ void Aura::Update(uint32 diff, Unit* caster)
                     Powers powertype = Powers(m_spellPowerData->powerType);
                     if (powertype == POWER_HEALTH)
                     {
-                        if (int32(caster->GetHealth()) > manaPerSecond)
-                            caster->ModifyHealth(-manaPerSecond);
+                        if (int32(caster->CountPctFromMaxHealth(manaPerSecond)) < caster->GetHealth())
+                            caster->ModifyHealth(-1 * caster->CountPctFromMaxHealth(manaPerSecond));
                         else
                         {
                             Remove();
@@ -802,8 +820,8 @@ void Aura::Update(uint32 diff, Unit* caster)
                     }
                     else
                     {
-                        if (int32(caster->GetPower(powertype)) >= manaPerSecond)
-                            caster->ModifyPower(powertype, -manaPerSecond);
+                        if (int32(caster->CountPctFromMaxPower(manaPerSecond, powertype)) <= caster->GetPower(powertype))
+                            caster->ModifyPower(powertype, -1 * int32(caster->CountPctFromMaxPower(manaPerSecond, powertype)));
                         else
                         {
                             Remove();
@@ -1115,31 +1133,6 @@ bool Aura::CanBeSentToClient() const
 {
     return GetId() != 115098 && (!IsPassive() || GetSpellInfo()->HasAreaAuraEffect() || HasEffectType(SPELL_AURA_ABILITY_IGNORE_AURASTATE) || HasEffectType(SPELL_AURA_CAST_WHILE_WALKING)
         || HasEffectType(SPELL_AURA_OVERRIDE_ACTIONBAR_SPELLS) || HasEffectType(SPELL_AURA_OVERRIDE_ACTIONBAR_SPELLS_2) || HasEffectType(SPELL_AURA_MOD_IGNORE_SHAPESHIFT));
-}
-
-bool Aura::IsSingleTargetWith(Aura const* aura) const
-{
-    // Same spell?
-    if (GetSpellInfo()->IsRankOf(aura->GetSpellInfo()))
-        return true;
-
-    SpellSpecificType spec = GetSpellInfo()->GetSpellSpecific();
-    // spell with single target specific types
-    switch (spec)
-    {
-        case SPELL_SPECIFIC_JUDGEMENT:
-        case SPELL_SPECIFIC_MAGE_POLYMORPH:
-            if (aura->GetSpellInfo()->GetSpellSpecific() == spec)
-                return true;
-            break;
-
-        default: break;
-    }
-
-    if (HasEffectType(SPELL_AURA_CONTROL_VEHICLE) && aura->HasEffectType(SPELL_AURA_CONTROL_VEHICLE))
-        return true;
-
-    return false;
 }
 
 void Aura::UnregisterSingleTarget()
@@ -2026,9 +2019,10 @@ bool Aura::CanStackWith(Aura const* existingAura) const
     if (m_spellInfo->SpellIconID == 0 || existingSpellInfo->SpellIconID == 0)
     {
         bool isModifier = false;
-        for (uint8 i = 0; i < 32; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if (m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER ||
+            if (m_spellInfo->Effects[i].IsEffect() &&
+                m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER ||
                 m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER  ||
                 existingSpellInfo->Effects[i].ApplyAuraName == SPELL_AURA_ADD_FLAT_MODIFIER ||
                 existingSpellInfo->Effects[i].ApplyAuraName == SPELL_AURA_ADD_PCT_MODIFIER)
@@ -2045,9 +2039,10 @@ bool Aura::CanStackWith(Aura const* existingAura) const
 
     if (m_spellInfo->IsAllwaysStackModifers() && !existingSpellInfo->IsAllwaysStackModifers())
     {
-        for (uint8 i = 0; i < 32; ++i)
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if ((m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA || m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID) &&
+            if (m_spellInfo->Effects[i].IsEffect() &&
+                (m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA || m_spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID) &&
                 (existingSpellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA || existingSpellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID) &&
                 m_spellInfo->Effects[i].ApplyAuraName == existingSpellInfo->Effects[i].ApplyAuraName)
             {
@@ -2070,7 +2065,20 @@ bool Aura::CanStackWith(Aura const* existingAura) const
         }
     }
 
-    if (HasEffectType(SPELL_AURA_CONTROL_VEHICLE) && existingAura->HasEffectType(SPELL_AURA_CONTROL_VEHICLE))
+    bool isVehicleAura1 = false;
+    bool isVehicleAura2 = false;
+    uint32 i = 0;
+    while (i < MAX_SPELL_EFFECTS && !(isVehicleAura1 && isVehicleAura2))
+    {
+        if (m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_CONTROL_VEHICLE)
+            isVehicleAura1 = true;
+        if (existingSpellInfo->Effects[i].ApplyAuraName == SPELL_AURA_CONTROL_VEHICLE)
+            isVehicleAura2 = true;
+
+        ++i;
+    }
+
+    if (isVehicleAura1 && isVehicleAura2)
     {
         Vehicle* veh = NULL;
         if (GetOwner()->ToUnit())
@@ -2535,6 +2543,18 @@ void Aura::CallScriptEffectSplitHandlers(AuraEffect* aurEff, AuraApplication con
     }
 }
 
+void Aura::SetScriptData(uint32 type, uint32 data)
+{
+    for (std::list<AuraScript*>::iterator scritr = m_loadedScripts.begin(); scritr != m_loadedScripts.end(); ++scritr)
+        (*scritr)->SetData(type, data);
+}
+
+void Aura::SetScriptGuid(uint32 type, uint64 data)
+{
+    for (std::list<AuraScript*>::iterator scritr = m_loadedScripts.begin(); scritr != m_loadedScripts.end(); ++scritr)
+        (*scritr)->SetGuid(type, data);
+}
+
 bool Aura::CallScriptCheckProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo)
 {
     bool result = true;
@@ -2636,12 +2656,8 @@ void Aura::CallScriptAfterEffectProcHandlers(AuraEffect const* aurEff, AuraAppli
 UnitAura::UnitAura(SpellInfo const* spellproto, uint32 effMask, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, int32 *baseAmount, Item* castItem, uint64 casterGUID)
     : Aura(spellproto, owner, caster, spellPowerData, castItem, casterGUID)
 {
-    m_AuraDRGroup = DIMINISHING_NONE;
-    LoadScripts();
-    _InitEffects(effMask, caster, baseAmount);
-    GetUnitOwner()->_AddAura(this, caster);
-
     m_spellPowerData = spellPowerData;
+    m_AuraDRGroup = DIMINISHING_NONE;
 }
 
 void UnitAura::_ApplyForTarget(Unit* target, Unit* caster, AuraApplication * aurApp)
@@ -2741,13 +2757,6 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint32> & targets, Unit* caster)
 DynObjAura::DynObjAura(SpellInfo const* spellproto, uint32 effMask, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, int32 *baseAmount, Item* castItem, uint64 casterGUID)
     : Aura(spellproto, owner, caster, spellPowerData, castItem, casterGUID)
 {
-    LoadScripts();
-    ASSERT(GetDynobjOwner());
-    ASSERT(GetDynobjOwner()->IsInWorld());
-    ASSERT(GetDynobjOwner()->GetMap() == caster->GetMap());
-    _InitEffects(effMask, caster, baseAmount);
-    GetDynobjOwner()->SetAura(this);
-
     m_spellPowerData = spellPowerData;
 }
 

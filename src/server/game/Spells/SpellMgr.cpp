@@ -92,7 +92,6 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellInfo const* spellproto,
         case SPELLFAMILY_UNK1:
         {
             return DIMINISHING_NONE;
-
             break;
         }
 
@@ -4285,7 +4284,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
             }
 
             // This must be re-done if targets changed since the spellinfo load
-            spellInfo->_InitializeExplicitTargetMask();
+            spellInfo->ExplicitTargetMask = spellInfo->_GetExplicitTargetMask();
 
             switch (spellInfo->Id)
             {
@@ -5067,7 +5066,9 @@ void SpellMgr::LoadSpellPowerInfo()
 
 SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
 {
-    for (std::list<uint32>::const_iterator itr = GetSpellPowerList(id).begin(); itr != GetSpellPowerList(id).end(); itr++)
+    std::list<uint32> powerList = GetSpellPowerList(id);
+
+    for (std::list<uint32>::iterator itr = powerList.begin(); itr != powerList.end(); itr++)
     {
         SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
         if (!spellPower)

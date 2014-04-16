@@ -1939,11 +1939,11 @@ struct SpellMiscEntry
 struct SpellEffectScalingEntry
 {
     //uint32    Unk_540;            // New 5.4.X
-    float Multiplier;               // 2
-    float RandomPointsMultiplier;   // 3
-    float OtherMultiplier;          // 4
-    // float UnkMultiplier          // 5
-    uint32 SpellEffectId;           // 6 Effect ID
+    float Multiplier;               // 1
+    float RandomPointsMultiplier;   // 2
+    float OtherMultiplier;          // 3
+    // float UnkMultiplier          // 4
+    uint32 SpellEffectId;           // 5 Effect ID
 };
 
 // SpellCategories.dbc

@@ -444,7 +444,7 @@ enum AuraType
     SPELL_AURA_382                                          = 382,
     SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN                 = 383,  // SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN implemented in Spell::CheckCast
     // 384 unused
-    SPELL_AURA_385                                          = 385,  // Give a chance to misfire attacks and hit self instead
+    SPELL_AURA_STRIKE_SELF                                  = 385,  // Give a chance to misfire attacks and hit self instead
     SPELL_AURA_386                                          = 386,
     SPELL_AURA_387                                          = 387,
     SPELL_AURA_388                                          = 388,  // SPELL_AURA_MOD_TAXI_FLIGHT_SPEED

@@ -839,6 +839,11 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint3
     return itr->second.effects[REGULAR_DIFFICULTY][effect];
 }
 
+SpellEffectScalingEntry const* GetSpellEffectScalingEntry(uint32 effectId)
+{
+    return sSpellEffectScalingStore.LookupEntry(effectId);
+}
+
 int32 GetAreaFlagByAreaID(uint32 area_id)
 {
     AreaFlagByAreaID::iterator i = sAreaFlagByAreaID.find(area_id);
