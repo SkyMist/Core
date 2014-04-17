@@ -1388,10 +1388,6 @@ void World::SetInitialWorldSettings()
     sSpellMgr->LoadTalentSpellInfo();
     TC_LOG_INFO("server.loading", "");
 
-    TC_LOG_INFO("server.loading", "Loading SpellPowerInfo store....");
-    sSpellMgr->LoadSpellPowerInfo();
-    TC_LOG_INFO("server.loading", "");
-
     TC_LOG_INFO("server.loading", "Loading SpellInfo corrections...");
     sSpellMgr->LoadSpellInfoCorrections();
     TC_LOG_INFO("server.loading", "");

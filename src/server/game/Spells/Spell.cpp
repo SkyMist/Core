@@ -3859,7 +3859,7 @@ void Spell::_handle_finish_phase()
         if (m_comboPointGain)
             m_caster->m_movedPlayer->GainSpellComboPoints(m_comboPointGain);
 
-        if (m_spellInfo->PowerType == POWER_HOLY_POWER && m_caster->m_movedPlayer->getClass() == CLASS_PALADIN)
+        if (m_caster->GetSpellPowerEntryBySpell(m_spellInfo)->powerType == POWER_HOLY_POWER && m_caster->m_movedPlayer->getClass() == CLASS_PALADIN)
             HandleHolyPower(m_caster->m_movedPlayer);
     }
 
@@ -4299,10 +4299,10 @@ void Spell::SendSpellStart()
 
     if ((m_caster->GetTypeId() == TYPEID_PLAYER ||
         (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->ToCreature()->IsPet()))
-         && m_spellInfo->PowerType != POWER_HEALTH)
+         && m_caster->GetSpellPowerEntryBySpell(m_spellInfo)->powerType != POWER_HEALTH)
         castFlags |= CAST_FLAG_POWER_LEFT_SELF;
 
-    if (m_spellInfo->RuneCostID && m_spellInfo->PowerType == POWER_RUNES)
+    if (m_spellInfo->RuneCostID && m_caster->GetSpellPowerEntryBySpell(m_spellInfo)->powerType == POWER_RUNES)
         castFlags |= CAST_FLAG_UNKNOWN_19;
 
     ObjectGuid casterGuid = m_CastItem ? m_CastItem->GetGUID() : m_caster->GetGUID();
@@ -5497,7 +5497,7 @@ void Spell::TakePower()
     }
 
     // In Spell::HandleHolyPower
-    if (m_spellInfo->PowerType == POWER_HOLY_POWER)
+    if (m_caster->GetSpellPowerEntryBySpell(m_spellInfo)->powerType == POWER_HOLY_POWER)
     {
         if (m_spellInfo->Id == 85222)
         {

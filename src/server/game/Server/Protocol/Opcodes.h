@@ -693,10 +693,7 @@ enum Opcodes
    SMSG_ATTACKERSTATEUPDATE                                 = 0x0540, // 5.4.7 18019
    SMSG_ATTACKSTART                                         = 0x0403, // 5.4.7 18019
    SMSG_ATTACKSTOP                                          = 0x1448, // 5.4.7 18019
-   SMSG_ATTACKSWING_BADFACING                               = 0x0,
-   SMSG_ATTACKSWING_CANT_ATTACK                             = 0x0,
-   SMSG_ATTACKSWING_DEADTARGET                              = 0x0,
-   SMSG_ATTACKSWING_NOTINRANGE                              = 0x0,
+   SMSG_ATTACKSWING_RESULT                                  = 0x04E0, // 5.4.7 18019
    SMSG_AUCTION_HELLO                                       = 0x04E9, // 5.4.7 18019
    SMSG_AUCTION_BIDDER_LIST_RESULT                          = 0x0,
    SMSG_AUCTION_BIDDER_NOTIFICATION                         = 0x0,

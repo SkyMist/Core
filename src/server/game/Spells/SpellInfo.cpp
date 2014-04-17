@@ -981,19 +981,6 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     BaseLevel = _levels ? _levels->baseLevel : 0;
     SpellLevel = _levels ? _levels->spellLevel : 0;
 
-    // SpellPowerEntry
-    powerCost = 0;
-    powerCostPercentage = 0;
-    channelTicCost = 0;
-    PowerType = POWER_MANA;
-
-    spellPower = new SpellPowerEntry();
-    spellPower->powerCost = 0;
-    spellPower->powerCostPercentage = 0;
-    spellPower->channelTicCost = 0;
-    spellPower->spellId = Id;
-    spellPower->powerType = POWER_MANA;
-
     // SpellMiscEntry
     SpellMiscEntry const* spellMisc = GetSpellMisc();
     Attributes = spellMisc ? spellMisc->Attributes : 0;
@@ -1274,8 +1261,22 @@ bool SpellInfo::IsStackableWithRanks() const
 {
     if (IsPassive())
         return false;
-    if (PowerType != POWER_MANA && PowerType != POWER_HEALTH)
-        return false;
+
+    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
+	{
+        if (SpellPowerEntry const* power = sSpellPowerStore.LookupEntry(i))
+		{
+           if (power->spellId == this->Id)
+		   {
+			   if (power->powerType != POWER_MANA && power->powerType != POWER_HEALTH)
+			   {
+                   return false;
+                   break;
+               }
+           }
+        }
+	}
+
     if (IsProfessionOrRiding())
         return false;
 
@@ -2501,10 +2502,10 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, S
         modOwner->ApplySpellMod(Id, SPELLMOD_COST, PowerCost);
 
     if (Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION)
-        PowerCost = int32(powerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
+        PowerCost = int32(PowerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
 
     // PCT mod from user auras by school
-    PowerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
+    PowerCost = int32(PowerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
     if (PowerCost < 0)
         PowerCost = 0;
 
@@ -3035,11 +3036,6 @@ SpellLevelsEntry const* SpellInfo::GetSpellLevels() const
     return SpellLevelsId ? sSpellLevelsStore.LookupEntry(SpellLevelsId) : NULL;
 }
 
-SpellPowerEntry const* SpellInfo::GetSpellPower() const
-{
-    return sSpellPowerStore.LookupEntry(Id);
-}
-
 SpellReagentsEntry const* SpellInfo::GetSpellReagents() const
 {
     return SpellReagentsId ? sSpellReagentsStore.LookupEntry(SpellReagentsId) : NULL;
@@ -3521,10 +3517,20 @@ bool SpellInfo::CanBeDuplicated() const
     // But some cannot ...
 
     // Only spell with mana cost !
-    if (PowerType != POWER_MANA)
-        return false;
-    if (!powerCost && !powerCostPercentage)
-        return false;
+    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
+	{
+        if (SpellPowerEntry const* power = sSpellPowerStore.LookupEntry(i))
+		{
+           if (power->spellId == this->Id)
+		   {
+			   if (power->powerType != POWER_MANA || !power->powerCost && !power->powerCostPercentage)
+			   {
+                   return false;
+                   break;
+               }
+           }
+        }
+	}
 
     // Few spells can never be duplicated
     switch (Id)

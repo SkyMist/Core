@@ -481,24 +481,7 @@ bool SpellMgr::IsSpellValid(SpellInfo const* spellInfo, Player* player, bool msg
     return true;
 }
 
-// Get spell difficulty from spell id and the caster.
-uint32 SpellMgr::GetSpellDifficultyBySpellId(uint32 spellId, Unit const* caster) const
-{
-    if (!caster || !caster->GetMap() || !caster->GetMap()->IsDungeon())
-        return spellId;
-
-    uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
-
-    if (mode >= MAX_DIFFICULTY)
-    {
-        TC_LOG_ERROR("spells", "SpellMgr::GetSpellDifficultyBySpellId: Incorrect Difficulty for spell %u.", spellId);
-        return spellId; // return source spell.
-    }
-
-    return GetSpellInfo(spellId, Difficulty(mode))->Id;
-}
-
-// Get spell difficulty from spell info and the caster.
+// Get spell difficulty from SpellInfoMap for the caster.
 SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const
 {
     if (!spell)
@@ -2879,42 +2862,6 @@ void SpellMgr::LoadSpellInfoStore()
     uint32 spelldifficultyMSTime = getMSTime();
     TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Difficulty entries in %u ms", spellDifficultyCount, GetMSTimeDiffToNow(oldMSTime));
 
-    uint32 spellPowerCount = 0;
-
-    std::set<uint32> alreadySet;
-    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
-        if (!spellPower)
-            continue;
-
-        if (alreadySet.find(spellPower->spellId) != alreadySet.end())
-            continue;
-
-        for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
-        {
-            SpellInfo* spell = mSpellInfoMap[difficulty][spellPower->spellId];
-            if (!spell)
-                continue;
-
-            spell->powerCost = spellPower->powerCost;
-            spell->powerCostPercentage = spellPower->powerCostPercentage;
-			spell->channelTicCost = spellPower->channelTicCost;
-            spell->PowerType = spellPower->powerType;
-
-            spell->spellPower->powerCost = spellPower->powerCost;
-            spell->spellPower->powerCostPercentage = spellPower->powerCostPercentage;
-            spell->spellPower->channelTicCost = spellPower->channelTicCost;
-            spell->spellPower->powerType = spellPower->powerType;
-        }
-
-        alreadySet.insert(spellPower->spellId);
-        spellPowerCount++;
-    }
-
-    uint32 spellPowerMSTime = getMSTime();
-    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Power entries in %u ms", spellPowerCount, GetMSTimeDiffToNow(spelldifficultyMSTime));
-
     uint32 spellTalentsCount = 0;
 
     for (uint32 i = 0; i < sTalentStore.GetNumRows(); i++)
@@ -2931,7 +2878,7 @@ void SpellMgr::LoadSpellInfoStore()
         spellTalentsCount++;
     }
 
-    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Talents in %u ms", spellTalentsCount, GetMSTimeDiffToNow(spellPowerMSTime));
+    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Talents in %u ms", spellTalentsCount, GetMSTimeDiffToNow(spelldifficultyMSTime));
     TC_LOG_INFO("server.loading", "");
 
     TC_LOG_INFO("server.loading", ">> Loaded SpellInfo store in %u ms", GetMSTimeDiffToNow(oldMSTime));
@@ -4957,10 +4904,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 40167: // Introspection
                     spellInfo->Attributes |= SPELL_ATTR0_NEGATIVE_1;
                     break;
-                case 2378: // Minor Fortitude
-                    spellInfo->powerCost = 0;
-                    spellInfo->channelTicCost = 0;
-                    break;
                 // Halls Of Origination spells
                 // Temple Guardian Anhuur
                 case 76606: // Disable Beacon Beams L
@@ -5040,7 +4983,7 @@ void SpellMgr::LoadTalentSpellInfo()
 
 const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) const
 {
-    if(spellId < GetSpellInfoStoreSize())
+    if (spellId < GetSpellInfoStoreSize())
     {
         if (mSpellInfoMap[difficulty][spellId])
             return mSpellInfoMap[difficulty][spellId];
@@ -5049,35 +4992,4 @@ const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) c
     }
 
     return NULL;
-}
-
-void SpellMgr::LoadSpellPowerInfo()
-{
-    mSpellPowerInfo.resize(sSpellStore.GetNumRows());
-    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
-        if (!spellPower)
-            continue;
-
-        mSpellPowerInfo[spellPower->spellId].push_back(spellPower->Id);
-    }
-}
-
-SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
-{
-    std::list<uint32> powerList = GetSpellPowerList(id);
-
-    for (std::list<uint32>::iterator itr = powerList.begin(); itr != powerList.end(); itr++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
-        if (!spellPower)
-            continue;
-
-        if (spellPower->powerType == power)
-            return spellPower;
-    }
-
-    SpellInfo const* spell = sSpellMgr->GetSpellInfo(id);
-    return spell->spellPower;
 }

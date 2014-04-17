@@ -108,6 +108,14 @@ enum PlayerSpellState
     PLAYERSPELL_TEMPORARY = 4
 };
 
+enum AttackSwingResult
+{
+    ATTACKSWING_NOT_IN_RANGE  = 0,
+    ATTACKSWING_BAD_FACING    = 1,
+    ATTACKSWING_DEAD_TARGET   = 2,
+    ATTACKSWING_CANNOT_ATTACK = 3
+};
+
 struct PlayerSpell
 {
     PlayerSpellState state : 8;
@@ -2032,12 +2040,9 @@ class Player : public Unit, public GridObject<Player>
         void DestroyForPlayer(Player* target, bool onDeath = false) const;
         void SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool recruitAFriend = false, float group_rate=1.0f);
 
-        // notifiers
-        void SendAttackSwingCantAttack();
+        // Notifiers.
+        void SendAttackSwingResult(AttackSwingResult result) const;
         void SendAttackSwingCancelAttack();
-        void SendAttackSwingDeadTarget();
-        void SendAttackSwingNotInRange();
-        void SendAttackSwingBadFacingAttack();
         void SendAutoRepeatCancel(Unit* target);
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
