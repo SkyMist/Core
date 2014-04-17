@@ -442,7 +442,8 @@ Aura* Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
 }
 
 Aura::Aura(SpellInfo const* spellproto, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, Item* castItem, uint64 casterGUID) :
-m_spellInfo(spellproto), m_casterGuid(casterGUID ? casterGUID : caster->GetGUID()),
+m_spellInfo(caster ? sSpellMgr->GetSpellForDifficultyFromSpell(spellproto, caster) : ((owner && owner->ToUnit()) ? sSpellMgr->GetSpellForDifficultyFromSpell(spellproto, owner->ToUnit()) : spellproto)), 
+m_casterGuid(casterGUID ? casterGUID : caster->GetGUID()),
 m_castItemGuid(castItem ? castItem->GetGUID() : 0), m_applyTime(time(NULL)),
 m_owner(owner), m_timeCla(0), m_updateTargetMapInterval(0),
 m_casterLevel(caster ? caster->getLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),

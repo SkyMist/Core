@@ -490,12 +490,15 @@ SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell
     if (!caster || !caster->GetMap() || !caster->GetMap()->IsDungeon())
         return spell;
 
+    if (caster->GetTypeId() == TYPEID_PLAYER)
+        return spell; // Only creatures have difficulties for spells.
+
     uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
 
     if (mode >= MAX_DIFFICULTY)
     {
         TC_LOG_ERROR("spells", "SpellMgr::GetSpellForDifficultyFromSpell: Incorrect Difficulty for spell %u.", spell->Id);
-        return spell; // return source spellInfo.
+        return spell; // Return source spellInfo.
     }
 
     return GetSpellInfo(spell->Id, Difficulty(mode));

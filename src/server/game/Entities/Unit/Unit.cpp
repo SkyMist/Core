@@ -12676,8 +12676,6 @@ int32 Unit::GetCreatePowers(Powers power) const
 // Spell power system.
 SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) const
 {
-    SpellPowerEntry const* neededSpellPower;
-
     // Find the power entries we need first.
     for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
     {
@@ -12688,32 +12686,46 @@ SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) c
         if (spell->Id != spellPower->spellId) // We just search for the spell we need.
             continue;
 
+        std::vector<SpellPowerEntry const*> defaultSpellPower;
+
         // For players, calculate the power from the specialization auras.
         if (GetTypeId() == TYPEID_PLAYER)
         {
             if (spellPower->auraChoice == 0)
-                neededSpellPower = spellPower; // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
+            {
+                defaultSpellPower.push_back(spellPower); // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
+                break; // Break the loop.
+            }
 
             if (spellPower->auraChoice > 0 && HasAura(spellPower->auraChoice)) // We see if the caster has one of the special needed auras for specs.
             {
-                neededSpellPower = spellPower; // We found the needed power entry.
+				return spellPower; // We found the needed power entry.
                 break; // Break the loop.
             }
+
+            // If nothing found, return what the vector stored.
+            return defaultSpellPower.front();
         }
         else // For units, calculate the power from the difficulty mode.
         {
             if (spellPower->difficultyMode == 0)
-                neededSpellPower = spellPower; // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
+            {
+                defaultSpellPower.push_back(spellPower); // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
+                break; // Break the loop.
+            }
 
             if (spellPower->difficultyMode > 0 && GetMap()->GetSpawnMode() == spellPower->difficultyMode) // We see if the map spawn mode is the one we need.
             {
-                neededSpellPower = spellPower; // We found the needed power entry.
+                return spellPower; // We found the needed power entry.
                 break; // Break the loop.
             }
+
+            // If nothing found, return what the vector stored.
+            return defaultSpellPower.front();
         }
     }
 
-    return neededSpellPower;
+    return NULL;
 }
 
 void Unit::AddToWorld()
