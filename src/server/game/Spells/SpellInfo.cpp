@@ -2450,6 +2450,10 @@ uint32 SpellInfo::GetRecoveryTime() const
 
 int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, SpellPowerEntry const* spellPower) const
 {
+    // No power cost.
+    if (!spellPower)
+        return 0;
+
     // Spell drain all exist power on cast (Only paladin lay of Hands)
     if (AttributesEx & SPELL_ATTR1_DRAIN_ALL_POWER)
     {
@@ -2459,6 +2463,7 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, S
         // Else drain all power
         if (spellPower->powerType < MAX_POWERS)
             return caster->GetPower(Powers(spellPower->powerType));
+
         TC_LOG_ERROR("spells", "SpellInfo::CalcPowerCost: Unknown power type '%d' in spell %d", spellPower->powerType, Id);
         return 0;
     }

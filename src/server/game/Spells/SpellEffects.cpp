@@ -6422,7 +6422,7 @@ void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
         {
             uint32 spell_id = totem->GetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL);
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id);
-            if (spellInfo)
+            if (spellInfo && m_caster->ToUnit()->GetSpellPowerEntryBySpell(spellInfo))
             {
                 mana += m_caster->ToUnit()->GetSpellPowerEntryBySpell(spellInfo)->powerCost;
                 mana += int32(CalculatePct(m_caster->GetCreateMana(), m_caster->ToUnit()->GetSpellPowerEntryBySpell(spellInfo)->powerCostPercentage));

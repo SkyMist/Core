@@ -6571,7 +6571,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 case 28719:
                 {
                     // mana back
-                    basepoints0 = int32(CalculatePct(GetSpellPowerEntryBySpell(procSpell)->powerCost, 30));
+                    basepoints0 = GetSpellPowerEntryBySpell(procSpell) ? int32(CalculatePct(GetSpellPowerEntryBySpell(procSpell)->powerCost, 30)) : 0;
                     target = this;
                     triggered_spell_id = 28742;
                     break;
@@ -7973,7 +7973,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         // Enlightenment (trigger only from mana cost spells)
         case 35095:
         {
-            if (!procSpell || GetSpellPowerEntryBySpell(procSpell)->powerType != POWER_MANA || (GetSpellPowerEntryBySpell(procSpell)->powerCost == 0 && GetSpellPowerEntryBySpell(procSpell)->powerCostPercentage == 0))
+            if (!procSpell || !GetSpellPowerEntryBySpell(procSpell) || GetSpellPowerEntryBySpell(procSpell)->powerType != POWER_MANA || (GetSpellPowerEntryBySpell(procSpell)->powerCost == 0 && GetSpellPowerEntryBySpell(procSpell)->powerCostPercentage == 0))
                 return false;
             break;
         }
@@ -12673,9 +12673,12 @@ int32 Unit::GetCreatePowers(Powers power) const
     return 0;
 }
 
-// Spell power system.
+// Spell power system !Note: Many spells/auras do not have a SpellPower entry, so it returns NULL.
 SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) const
 {
+    // Store the powers in aq vector we then erase.
+    std::vector<SpellPowerEntry const*> defaultSpellPower;
+
     // Find the power entries we need first.
     for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
     {
@@ -12685,8 +12688,6 @@ SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) c
 
         if (spell->Id != spellPower->spellId) // We just search for the spell we need.
             continue;
-
-        std::vector<SpellPowerEntry const*> defaultSpellPower;
 
         // For players, calculate the power from the specialization auras.
         if (GetTypeId() == TYPEID_PLAYER)
@@ -12699,9 +12700,6 @@ SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) c
 				return spellPower; // We found the needed power entry.
                 break; // Break the loop.
             }
-
-            // If nothing found, return what the vector stored.
-            return defaultSpellPower.front();
         }
         else // For units, calculate the power from the difficulty mode.
         {
@@ -12713,13 +12711,11 @@ SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) c
                 return spellPower; // We found the needed power entry.
                 break; // Break the loop.
             }
-
-            // If nothing found, return what the vector stored.
-            return defaultSpellPower.front();
         }
     }
 
-    return NULL;
+    // If nothing found in the loop, return what the vector stored, or, if the vector stored nothing, return NULL.
+    return !defaultSpellPower.size() ? NULL : defaultSpellPower.front();
 }
 
 void Unit::AddToWorld()
@@ -13503,7 +13499,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                     case SPELL_AURA_MOD_POWER_COST_SCHOOL_PCT:
                     case SPELL_AURA_MOD_POWER_COST_SCHOOL:
                         // Skip melee hits and spells ws wrong school or zero cost
-                        if (procSpell &&
+                        if (procSpell && GetSpellPowerEntryBySpell(procSpell) &&
                             (GetSpellPowerEntryBySpell(procSpell)->powerCost != 0 || GetSpellPowerEntryBySpell(procSpell)->powerCostPercentage != 0) && // Cost check
                             (triggeredByAura->GetMiscValue() & procSpell->SchoolMask))          // School check
                             takeCharges = true;

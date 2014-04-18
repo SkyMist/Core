@@ -449,7 +449,7 @@ m_owner(owner), m_timeCla(0), m_updateTargetMapInterval(0),
 m_casterLevel(caster ? caster->getLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),
 m_isRemoved(false), m_isSingleTarget(false), m_isUsingCharges(false)
 {
-    if (spellPowerData->channelTicCost)
+    if (spellPowerData && spellPowerData->channelTicCost)
         m_timeCla = 1 * IN_MILLISECONDS;
 
     m_maxDuration = CalcMaxDuration(caster);
@@ -877,7 +877,7 @@ void Aura::RefreshDuration()
 {
     SetDuration(GetMaxDuration());
 
-    if (m_spellPowerData->channelTicCost)
+    if (m_spellPowerData && m_spellPowerData->channelTicCost)
         m_timeCla = 1 * IN_MILLISECONDS;
 }
 
