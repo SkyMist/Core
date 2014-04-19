@@ -198,7 +198,7 @@ struct ItemUpgradeEntry
     uint32 currencyCost;
 };
 
-//RulesetItemUpgrade.db2
+// RulesetItemUpgrade.db2
 struct RulesetItemUpgradeEntry
 {
     uint32 Id;
