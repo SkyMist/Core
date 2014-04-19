@@ -139,22 +139,6 @@ enum CharacterCustomizeFlags
 
 static uint32 copseReclaimDelay[MAX_DEATH_COUNT] = { 30, 60, 120 };
 
-uint32 const MasterySpells[MAX_CLASSES] =
-{
-        0,
-    87500,  // Warrior
-    87494,  // Paladin
-    87493,  // Hunter
-    87496,  // Rogue
-    87495,  // Priest
-    87492,  // Death Knight
-    87497,  // Shaman
-    86467,  // Mage
-    87498,  // Warlock
-        0,
-    87491,  // Druid
-};
-
 // == PlayerTaxi ================================================
 
 PlayerTaxi::PlayerTaxi()
@@ -4953,6 +4937,8 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     _SaveSpells(trans);
     CharacterDatabase.CommitTransaction(trans);
 
+    UpdateMasteryPercentage();
+
     SendTalentsInfoData();
 
     if (!noCost)
@@ -6601,11 +6587,7 @@ void Player::UpdateRating(CombatRating cr)
                 UpdateExpertise(OFF_ATTACK);
             }
             break;
-        case CR_ARMOR_PENETRATION:
-            if (affectStats)
-                UpdateArmorPenetration(amount);
-            break;
-        case CR_MASTERY:
+        case CR_MASTERY:                                    // Implemented in Player::UpdateMastery
             UpdateMastery();
             break;
         case CR_PVP_POWER:
@@ -8850,9 +8832,6 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
             case ITEM_MOD_MANA_REGENERATION:
                 ApplyManaRegenBonus(int32(val), apply);
                 break;
-            case ITEM_MOD_ARMOR_PENETRATION_RATING:
-                ApplyRatingMod(CR_ARMOR_PENETRATION, int32(val), apply);
-                break;
             case ITEM_MOD_SPELL_POWER:
                 ApplySpellPowerBonus(int32(val), apply);
                 break;
@@ -8883,6 +8862,8 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
             case ITEM_MOD_ARCANE_RESISTANCE:
                 HandleStatModifier(UNIT_MOD_RESISTANCE_ARCANE, BASE_VALUE, float(val), apply);
                 break;
+
+            default: break;
         }
     }
 
@@ -8923,9 +8904,7 @@ void Player::_ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply
 
     WeaponAttackType attType = BASE_ATTACK;
 
-    if (slot == EQUIPMENT_SLOT_RANGED && (
-        proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN ||
-        proto->InventoryType == INVTYPE_RANGEDRIGHT))
+    if (slot == EQUIPMENT_SLOT_MAINHAND && (proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN || proto->InventoryType == INVTYPE_RANGEDRIGHT))
     {
         attType = RANGED_ATTACK;
     }
@@ -8943,9 +8922,7 @@ void Player::_ApplyWeaponDamage(uint8 slot, ItemTemplate const* proto, ScalingSt
     WeaponAttackType attType = BASE_ATTACK;
     float damage = 0.0f;
 
-    if (slot == EQUIPMENT_SLOT_RANGED && (
-        proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN ||
-        proto->InventoryType == INVTYPE_RANGEDRIGHT))
+    if (slot == EQUIPMENT_SLOT_MAINHAND && (proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN || proto->InventoryType == INVTYPE_RANGEDRIGHT))
     {
         attType = RANGED_ATTACK;
     }
@@ -8985,7 +8962,7 @@ void Player::_ApplyWeaponDamage(uint8 slot, ItemTemplate const* proto, ScalingSt
 
     if (proto->Delay && !IsInFeralForm())
     {
-        if (slot == EQUIPMENT_SLOT_RANGED)
+        if (slot == EQUIPMENT_SLOT_MAINHAND && (proto->InventoryType == INVTYPE_RANGED || proto->InventoryType == INVTYPE_THROWN || proto->InventoryType == INVTYPE_RANGEDRIGHT))
             SetAttackTime(RANGED_ATTACK, apply ? proto->Delay: BASE_ATTACK_TIME);
         else if (slot == EQUIPMENT_SLOT_MAINHAND)
             SetAttackTime(BASE_ATTACK, apply ? proto->Delay: BASE_ATTACK_TIME);
@@ -9188,9 +9165,9 @@ void Player::CastItemCombatSpell(Unit* target, WeaponAttackType attType, uint32 
                         EquipmentSlots slot;
                         switch (attType)
                         {
-                            case BASE_ATTACK:   slot = EQUIPMENT_SLOT_MAINHAND; break;
+                            case BASE_ATTACK:
+                            case RANGED_ATTACK: slot = EQUIPMENT_SLOT_MAINHAND; break;
                             case OFF_ATTACK:    slot = EQUIPMENT_SLOT_OFFHAND;  break;
-                            case RANGED_ATTACK: slot = EQUIPMENT_SLOT_RANGED;   break;
                             default: slot = EQUIPMENT_SLOT_END; break;
                         }
                         if (slot != i)
@@ -10823,30 +10800,12 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
             slots[0] = EQUIPMENT_SLOT_OFFHAND;
             break;
         case INVTYPE_RANGED:
-            slots[0] = EQUIPMENT_SLOT_RANGED;
+        case INVTYPE_THROWN:
+        case INVTYPE_RANGEDRIGHT:
+            SetMainHandWeaponSlot();
             break;
         case INVTYPE_2HWEAPON:
-            slots[0] = EQUIPMENT_SLOT_MAINHAND;
-            if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
-            {
-                if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
-                {
-                    if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
-                    {
-                        const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
-                        break;
-                    }
-                }
-            }
-
-            if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
-            {
-                if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
-                {
-                    const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
-                    break;
-                }
-            }
+            SetMainHandWeaponSlot();
             if (CanDualWield() && CanTitanGrip() && proto->SubClass != ITEM_SUBCLASS_WEAPON_POLEARM && proto->SubClass != ITEM_SUBCLASS_WEAPON_STAFF)
                 slots[1] = EQUIPMENT_SLOT_OFFHAND;
             break;
@@ -10862,12 +10821,6 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
         case INVTYPE_HOLDABLE:
             slots[0] = EQUIPMENT_SLOT_OFFHAND;
             break;
-        case INVTYPE_THROWN:
-            slots[0] = EQUIPMENT_SLOT_RANGED;
-            break;
-        case INVTYPE_RANGEDRIGHT:
-            slots[0] = EQUIPMENT_SLOT_RANGED;
-            break;
         case INVTYPE_BAG:
             slots[0] = INVENTORY_SLOT_BAG_START + 0;
             slots[1] = INVENTORY_SLOT_BAG_START + 1;
@@ -10875,14 +10828,11 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
             slots[3] = INVENTORY_SLOT_BAG_START + 3;
             break;
         case INVTYPE_RELIC:
-        {
-           if (playerClass == CLASS_PALADIN || playerClass == CLASS_DRUID ||
-               playerClass == CLASS_SHAMAN || playerClass == CLASS_DEATH_KNIGHT)
-               slots[0] = EQUIPMENT_SLOT_RANGED;
+           if (playerClass == CLASS_PALADIN || playerClass == CLASS_DRUID || playerClass == CLASS_SHAMAN || playerClass == CLASS_DEATH_KNIGHT)
+            SetMainHandWeaponSlot();
            break;
-        }
-        default:
-            return NULL_SLOT;
+
+        default: return NULL_SLOT;
     }
 
     if (slot != NULL_SLOT)
@@ -10909,6 +10859,31 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
 
     // no free position
     return NULL_SLOT;
+}
+
+void Player::SetMainHandWeaponSlot()
+{
+    slots[0] = EQUIPMENT_SLOT_MAINHAND;
+    if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+    {
+        if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+        {
+            if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+            {
+                const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                break;
+            }
+        }
+    }
+
+    if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+    {
+        if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+        {
+            const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+            break;
+        }
+    }
 }
 
 InventoryResult Player::CanUnequipItems(uint32 item, uint32 count) const
@@ -11092,9 +11067,9 @@ Item* Player::GetWeaponForAttack(WeaponAttackType attackType, bool useable /*= f
     uint8 slot;
     switch (attackType)
     {
-        case BASE_ATTACK:   slot = EQUIPMENT_SLOT_MAINHAND; break;
+        case BASE_ATTACK:   // Since MoP, Base and Ranged attacks use same weapon slots.
+        case RANGED_ATTACK: slot = EQUIPMENT_SLOT_MAINHAND; break;
         case OFF_ATTACK:    slot = EQUIPMENT_SLOT_OFFHAND;  break;
-        case RANGED_ATTACK: slot = EQUIPMENT_SLOT_RANGED;   break;
         default: return NULL;
     }
 
@@ -11140,7 +11115,6 @@ uint8 Player::GetAttackBySlot(uint8 slot)
     {
         case EQUIPMENT_SLOT_MAINHAND: return BASE_ATTACK;
         case EQUIPMENT_SLOT_OFFHAND:  return OFF_ATTACK;
-        case EQUIPMENT_SLOT_RANGED:   return RANGED_ATTACK;
         default:                      return MAX_ATTACK;
     }
 }
@@ -12924,16 +12898,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         else if (slot == EQUIPMENT_SLOT_OFFHAND)
             UpdateExpertise(OFF_ATTACK);
-
-        switch (slot)
-        {
-            case EQUIPMENT_SLOT_MAINHAND:
-            case EQUIPMENT_SLOT_OFFHAND:
-            case EQUIPMENT_SLOT_RANGED:
-                RecalculateRating(CR_ARMOR_PENETRATION);
-            default:
-                break;
-        }
     }
     else
     {
@@ -13179,16 +13143,6 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
                     }
                     else if (slot == EQUIPMENT_SLOT_OFFHAND)
                         UpdateExpertise(OFF_ATTACK);
-                    // update armor penetration - passive auras may need it
-                    switch (slot)
-                    {
-                        case EQUIPMENT_SLOT_MAINHAND:
-                        case EQUIPMENT_SLOT_OFFHAND:
-                        case EQUIPMENT_SLOT_RANGED:
-                            RecalculateRating(CR_ARMOR_PENETRATION);
-                        default:
-                            break;
-                    }
                 }
             }
 
@@ -13308,17 +13262,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
                 // remove item dependent auras and casts (only weapon and armor slots)
                 RemoveItemDependentAurasAndCasts(pItem);
 
-                // update expertise and armor penetration - passive auras may need it
-                switch (slot)
-                {
-                    case EQUIPMENT_SLOT_MAINHAND:
-                    case EQUIPMENT_SLOT_OFFHAND:
-                    case EQUIPMENT_SLOT_RANGED:
-                        RecalculateRating(CR_ARMOR_PENETRATION);
-                    default:
-                        break;
-                }
-
+                // update expertise
                 if (slot == EQUIPMENT_SLOT_MAINHAND)
                     UpdateExpertise(BASE_ATTACK);
                 else if (slot == EQUIPMENT_SLOT_OFFHAND)
@@ -14374,7 +14318,11 @@ bool Player::IsUseEquipedWeapon(bool mainhand) const
 bool Player::IsTwoHandUsed() const
 {
     Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
-    return mainItem && mainItem->GetTemplate()->InventoryType == INVTYPE_2HWEAPON && !CanTitanGrip();
+
+    if (mainItem && mainItem->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
+        return false;
+
+    return mainItem && ((mainItem->GetTemplate()->InventoryType == INVTYPE_2HWEAPON && !CanTitanGrip()) || mainItem->GetTemplate()->InventoryType == INVTYPE_RANGED || mainItem->GetTemplate()->InventoryType == INVTYPE_THROWN || mainItem->GetTemplate()->InventoryType == INVTYPE_RANGEDRIGHT);
 }
 
 void Player::TradeCancel(bool sendback)
@@ -14616,7 +14564,7 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_DEFENSE_SKILL_RATING:
             ApplyRatingMod(CR_DEFENSE_SKILL, -int32(removeValue), apply);
             break;
-        case  ITEM_MOD_DODGE_RATING:
+        case ITEM_MOD_DODGE_RATING:
             ApplyRatingMod(CR_DODGE, -int32(removeValue), apply);
             break;
         case ITEM_MOD_PARRY_RATING:
@@ -14680,9 +14628,6 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_MANA_REGENERATION:
             ApplyManaRegenBonus(-int32(removeValue), apply);
             break;
-        case ITEM_MOD_ARMOR_PENETRATION_RATING:
-            ApplyRatingMod(CR_ARMOR_PENETRATION, -int32(removeValue), apply);
-            break;
         case ITEM_MOD_SPELL_POWER:
             ApplySpellPowerBonus(-int32(removeValue), apply);
             break;
@@ -14699,6 +14644,8 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_MASTERY_RATING:
             ApplyRatingMod(CR_MASTERY, -int32(removeValue), apply);
             break;
+
+        default: break;
     }
 
     switch (reforge->FinalStat)
@@ -14796,9 +14743,6 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_MANA_REGENERATION:
             ApplyManaRegenBonus(int32(addValue), apply);
             break;
-        case ITEM_MOD_ARMOR_PENETRATION_RATING:
-            ApplyRatingMod(CR_ARMOR_PENETRATION, int32(addValue), apply);
-            break;
         case ITEM_MOD_SPELL_POWER:
             ApplySpellPowerBonus(int32(addValue), apply);
             break;
@@ -14815,6 +14759,155 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
         case ITEM_MOD_MASTERY_RATING:
             ApplyRatingMod(CR_MASTERY, int32(addValue), apply);
             break;
+
+        default: break;
+    }
+}
+
+void Player::ApplyItemUpgrade(Item* item, bool apply)
+{
+    if (!item)
+        return;
+
+    ItemUpgradeEntry const* itemUpgrade = sItemUpgradeStore.LookupEntry(item->GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2));
+    if (!itemUpgrade || itemUpgrade->itemLevelUpgrade == 0)
+        return;
+
+    ItemUpgradeEntry const* prevItemUpgrade = sItemUpgradeStore.LookupEntry(itemUpgrade->precItemUpgradeId);
+    ItemTemplate const* proto = item->GetTemplate();
+    if (!proto)
+        return;
+
+    uint16 itemLevel = (prevItemUpgrade && prevItemUpgrade->itemLevelUpgrade) ? (proto->ItemLevel + prevItemUpgrade->itemLevelUpgrade) : proto->ItemLevel;
+    uint16 nextItemLevel = proto->ItemLevel + itemUpgrade->itemLevelUpgrade;
+
+    for (uint8 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+    {
+        uint32 statType = proto->ItemStat[i].ItemStatType;
+        int32 baseVal = proto->ItemStat[i].ItemStatValue;
+        int32 val = 0;
+
+        if (prevItemUpgrade && prevItemUpgrade->itemLevelUpgrade != 0)
+            val = baseVal * float(float(sSpellMgr->GetDatasForILevel(itemLevel)) / float(sSpellMgr->GetDatasForILevel(proto->ItemLevel)));
+
+        if (!sSpellMgr->GetDatasForILevel(itemLevel))
+            continue;
+
+        int32 newVal = 0;
+        if (val == 0)
+            newVal = baseVal * float(float(sSpellMgr->GetDatasForILevel(nextItemLevel)) / float(sSpellMgr->GetDatasForILevel(itemLevel)));
+        else
+            newVal = val * float(float(sSpellMgr->GetDatasForILevel(nextItemLevel)) / float(sSpellMgr->GetDatasForILevel(itemLevel)));
+
+        if (baseVal == 0 || newVal == 0)
+            continue;
+
+        val = baseVal;
+
+        switch (statType)
+        {
+            case ITEM_MOD_MANA:
+                HandleStatModifier(UNIT_MOD_MANA, BASE_VALUE, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_HEALTH:
+                HandleStatModifier(UNIT_MOD_HEALTH, BASE_VALUE, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_AGILITY:
+                HandleStatModifier(UNIT_MOD_STAT_AGILITY, BASE_VALUE, float(newVal - val), apply);
+                ApplyStatBuffMod(STAT_AGILITY, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_STRENGTH:
+                HandleStatModifier(UNIT_MOD_STAT_STRENGTH, BASE_VALUE, float(newVal - val), apply);
+                ApplyStatBuffMod(STAT_STRENGTH, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_INTELLECT:
+                HandleStatModifier(UNIT_MOD_STAT_INTELLECT, BASE_VALUE, float(newVal - val), apply);
+                ApplyStatBuffMod(STAT_INTELLECT, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_SPIRIT:
+                HandleStatModifier(UNIT_MOD_STAT_SPIRIT, BASE_VALUE, float(newVal - val), apply);
+                ApplyStatBuffMod(STAT_SPIRIT, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_STAMINA:
+                HandleStatModifier(UNIT_MOD_STAT_STAMINA, BASE_VALUE, float(newVal - val), apply);
+                ApplyStatBuffMod(STAT_STAMINA, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_DODGE_RATING:
+                ApplyRatingMod(CR_DODGE, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_PARRY_RATING:
+                ApplyRatingMod(CR_PARRY, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_BLOCK_RATING:
+                ApplyRatingMod(CR_BLOCK, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HIT_MELEE_RATING:
+                ApplyRatingMod(CR_HIT_MELEE, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HIT_RANGED_RATING:
+                ApplyRatingMod(CR_HIT_RANGED, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HIT_SPELL_RATING:
+                ApplyRatingMod(CR_HIT_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_CRIT_MELEE_RATING:
+                ApplyRatingMod(CR_CRIT_MELEE, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_CRIT_RANGED_RATING:
+                ApplyRatingMod(CR_CRIT_RANGED, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_CRIT_SPELL_RATING:
+                ApplyRatingMod(CR_CRIT_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HASTE_MELEE_RATING:
+                ApplyRatingMod(CR_HASTE_MELEE, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HASTE_RANGED_RATING:
+                ApplyRatingMod(CR_HASTE_RANGED, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HASTE_SPELL_RATING:
+                ApplyRatingMod(CR_HASTE_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HIT_RATING:
+                ApplyRatingMod(CR_HIT_MELEE, int32(newVal - val), apply);
+                ApplyRatingMod(CR_HIT_RANGED, int32(newVal - val), apply);
+                ApplyRatingMod(CR_HIT_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_CRIT_RATING:
+                ApplyRatingMod(CR_CRIT_MELEE, int32(newVal - val), apply);
+                ApplyRatingMod(CR_CRIT_RANGED, int32(newVal - val), apply);
+                ApplyRatingMod(CR_CRIT_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_RESILIENCE_RATING:
+                ApplyRatingMod(CR_RESILIENCE_PLAYER_DAMAGE_TAKEN, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_PVP_POWER:
+                ApplyRatingMod(CR_PVP_POWER, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_HASTE_RATING:
+                ApplyRatingMod(CR_HASTE_MELEE, int32(newVal - val), apply);
+                ApplyRatingMod(CR_HASTE_RANGED, int32(newVal - val), apply);
+                ApplyRatingMod(CR_HASTE_SPELL, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_EXPERTISE_RATING:
+                ApplyRatingMod(CR_EXPERTISE, int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_ATTACK_POWER:
+                HandleStatModifier(UNIT_MOD_ATTACK_POWER, TOTAL_VALUE, float(newVal - val), apply);
+                HandleStatModifier(UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_VALUE, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_RANGED_ATTACK_POWER:
+                HandleStatModifier(UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_VALUE, float(newVal - val), apply);
+                break;
+            case ITEM_MOD_SPELL_POWER:
+                ApplySpellPowerBonus(int32(newVal - val), apply);
+                break;
+            case ITEM_MOD_MASTERY_RATING:
+                ApplyRatingMod(CR_MASTERY, int32(newVal - val), apply);
+                break;
+
+            default: break;
+        }
     }
 }
 
@@ -14830,6 +14923,7 @@ void Player::ApplyEnchantment(Item* item, bool apply)
     }
 
     ApplyEnchantment(item, REFORGE_ENCHANTMENT_SLOT, apply);
+    ApplyItemUpgrade(item, apply);
 }
 
 void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur, bool ignore_condition)
@@ -14898,12 +14992,13 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                     // processed in Player::CastItemCombatSpell
                     break;
                 case ITEM_ENCHANTMENT_TYPE_DAMAGE:
-                    if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
+                    if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND && (item->GetTemplate()->InventoryType == INVTYPE_RANGED || item->GetTemplate()->InventoryType == INVTYPE_THROWN ||
+                        item->GetTemplate()->InventoryType == INVTYPE_RANGEDRIGHT))
+                        HandleStatModifier(UNIT_MOD_DAMAGE_RANGED, TOTAL_VALUE, float(enchant_amount), apply);
+                    else if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
                         HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, float(enchant_amount), apply);
                     else if (item->GetSlot() == EQUIPMENT_SLOT_OFFHAND)
                         HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, float(enchant_amount), apply);
-                    else if (item->GetSlot() == EQUIPMENT_SLOT_RANGED)
-                        HandleStatModifier(UNIT_MOD_DAMAGE_RANGED, TOTAL_VALUE, float(enchant_amount), apply);
                     break;
                 case ITEM_ENCHANTMENT_TYPE_EQUIP_SPELL:
                     if (enchant_spell_id)
@@ -15123,10 +15218,6 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                             ApplyManaRegenBonus(enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u MANA_REGENERATION", enchant_amount);
                             break;
-                        case ITEM_MOD_ARMOR_PENETRATION_RATING:
-                            ApplyRatingMod(CR_ARMOR_PENETRATION, enchant_amount, apply);
-                            TC_LOG_DEBUG("entities.player.items", "+ %u ARMOR PENETRATION", enchant_amount);
-                            break;
                         case ITEM_MOD_SPELL_POWER:
                             ApplySpellPowerBonus(enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u SPELL_POWER", enchant_amount);
@@ -15147,8 +15238,8 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                             ApplyRatingMod(CR_MASTERY, enchant_amount, apply);
                             TC_LOG_DEBUG("entities.player.items", "+ %u MASTERY", enchant_amount);
                             break;
-                        default:
-                            break;
+
+                        default: break;
                     }
                     break;
                 }
@@ -15157,7 +15248,10 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                     if (getClass() == CLASS_SHAMAN)
                     {
                         float addValue = 0.0f;
-                        if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
+                        if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND &&
+                           (item->GetTemplate()->InventoryType != INVTYPE_RANGED && 
+                            item->GetTemplate()->InventoryType != INVTYPE_THROWN &&
+                            item->GetTemplate()->InventoryType != INVTYPE_RANGEDRIGHT))
                         {
                             addValue = float(enchant_amount * item->GetTemplate()->Delay / 1000.0f);
                             HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, addValue, apply);
@@ -25326,7 +25420,7 @@ bool Player::HasItemFitToSpellRequirements(SpellInfo const* spellInfo, Item cons
     {
         case ITEM_CLASS_WEAPON:
         {
-            for (uint8 i = EQUIPMENT_SLOT_MAINHAND; i < EQUIPMENT_SLOT_TABARD; ++i)
+            for (uint8 i = EQUIPMENT_SLOT_MAINHAND; i <= EQUIPMENT_SLOT_OFFHAND; ++i)
                 if (Item* item = GetUseableItemByPos(INVENTORY_SLOT_BAG_0, i))
                     if (item != ignoreItem && item->IsFitToSpellRequirements(spellInfo))
                         return true;
@@ -25346,7 +25440,9 @@ bool Player::HasItemFitToSpellRequirements(SpellInfo const* spellInfo, Item cons
                     return true;
 
             // ranged slot can have some armor subclasses
-            if (Item* item = GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED))
+            if (Item* item = GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+                if (item->GetTemplate()->InventoryType == INVTYPE_RANGED || item->GetTemplate()->InventoryType == INVTYPE_THROWN
+                 || item->GetTemplate()->InventoryType == INVTYPE_RANGEDRIGHT)
                 if (item != ignoreItem && item->IsFitToSpellRequirements(spellInfo))
                     return true;
 
@@ -27612,14 +27708,6 @@ void Player::ActivateSpec(uint8 spec)
         spentTalents++; // Increase spentTalents count.
     }
 
-/*
-    if (CanUseMastery())
-        if (TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(GetTalentSpecialization(GetActiveSpec())))
-            for (uint32 i = 0; i < MAX_MASTERY_SPELLS; ++i)
-                if (uint32 mastery = talentTabInfo->MasterySpellId[i])
-                    learnSpell(mastery, false);
-*/
-
     // set glyphs
     for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
     {
@@ -27994,7 +28082,7 @@ float Player::GetAverageItemLevel()
     for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
     {
         // don't check tabard, ranged, offhand or shirt
-        if (i == EQUIPMENT_SLOT_TABARD || i == EQUIPMENT_SLOT_RANGED || i == EQUIPMENT_SLOT_OFFHAND || i == EQUIPMENT_SLOT_BODY)
+        if (i == EQUIPMENT_SLOT_TABARD || i == EQUIPMENT_SLOT_OFFHAND || i == EQUIPMENT_SLOT_BODY)
             continue;
 
         if (m_items[i] && m_items[i]->GetTemplate())
@@ -28321,9 +28409,4 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetTy
     //ObjectAccessor::UpdateObjectVisibility(pet);
 
     return pet;
-}
-
-bool Player::CanUseMastery() const
-{
-    return HasSpell(MasterySpells[getClass()]);
 }

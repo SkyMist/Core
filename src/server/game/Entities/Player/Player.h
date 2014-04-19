@@ -130,8 +130,6 @@ struct PlayerTalent
     uint8 spec             : 8;
 };
 
-extern uint32 const MasterySpells[MAX_CLASSES];
-
 // Spell modifier (used for modify other spells)
 struct SpellModifier
 {
@@ -704,7 +702,6 @@ enum EquipmentSlots                                         // 19 slots
     EQUIPMENT_SLOT_BACK         = 14,
     EQUIPMENT_SLOT_MAINHAND     = 15,
     EQUIPMENT_SLOT_OFFHAND      = 16,
-    EQUIPMENT_SLOT_RANGED       = 17,
     EQUIPMENT_SLOT_TABARD       = 18,
     EQUIPMENT_SLOT_END          = 19
 };
@@ -1414,6 +1411,8 @@ class Player : public Unit, public GridObject<Player>
         InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = NULL) const;
         InventoryResult CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem = NULL, bool swap = false, uint32* no_space_count = NULL) const;
 
+        void SetMainHandWeaponSlot();
+
         void AddRefundReference(uint32 it);
         void DeleteRefundReference(uint32 it);
 
@@ -1499,6 +1498,7 @@ class Player : public Unit, public GridObject<Player>
         void ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool apply_dur = true, bool ignore_condition = false);
         void ApplyEnchantment(Item* item, bool apply);
         void ApplyReforgeEnchantment(Item* item, bool apply);
+        void ApplyItemUpgrade(Item* item, bool apply);
         void UpdateSkillEnchantments(uint16 skill_id, uint16 curr_value, uint16 new_value);
         void SendEnchantmentDurations();
         void BuildEnchantmentsInfoData(WorldPacket* data);
@@ -1759,7 +1759,6 @@ class Player : public Unit, public GridObject<Player>
         TrainerSpellState GetTrainerSpellState(TrainerSpell const* trainer_spell) const;
         bool IsSpellFitByClassAndRace(uint32 spell_id) const;
         bool IsNeedCastPassiveSpellAtLearn(SpellInfo const* spellInfo) const;
-        bool IsCurrentSpecMasterySpell(SpellInfo const* spellInfo) const;
 
         void SendProficiency(ItemClass itemClass, uint32 itemSubclassMask);
         void SendInitialSpells();
@@ -1991,8 +1990,10 @@ class Player : public Unit, public GridObject<Player>
         void ApplyRatingMod(CombatRating cr, int32 value, bool apply);
         void UpdateRating(CombatRating cr);
         void UpdateAllRatings();
+
         void UpdateMastery();
-        bool CanUseMastery() const;
+        bool CanUseMastery() const { return HasAuraType(SPELL_AURA_MASTERY); }
+        bool IsCurrentSpecMasterySpell(SpellInfo const* spellInfo) const;
 
         void CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& min_damage, float& max_damage);
 

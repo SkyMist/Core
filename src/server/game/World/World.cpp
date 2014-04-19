@@ -2063,6 +2063,10 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadMissingKeyChains();
     TC_LOG_INFO("server.loading", "");
 
+    TC_LOG_INFO("server.loading", "Initializing Item Upgrade data...");
+    sSpellMgr->InitializeItemUpgradeDatas();
+    TC_LOG_INFO("server.loading", "");
+
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
     TC_LOG_INFO("server.worldserver", "World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));

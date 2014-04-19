@@ -911,7 +911,11 @@ class spell_gen_clone_weapon_aura : public SpellScriptLoader
 
                         if (Player* player = caster->ToPlayer())
                         {
-                            if (Item* rangedItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED))
+                            if (Item* rangedItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+                            if (rangedItem->GetTemplate()->InventoryType == INVTYPE_2HWEAPON && !CanTitanGrip()) ||
+                                rangedItem->GetTemplate()->InventoryType == INVTYPE_RANGED ||
+                                rangedItem->GetTemplate()->InventoryType == INVTYPE_THROWN ||
+                                rangedItem->GetTemplate()->InventoryType == INVTYPE_RANGEDRIGHT);
                                 target->SetUInt32Value(UNIT_FIELD_VIRTUAL_ITEM_ID + 2, rangedItem->GetEntry());
                         }
                         else

@@ -28,5 +28,7 @@ char const ItemExtendedCostEntryfmt[]="nxxiiiiiiiiiiiixiiiiiiiiiiiiiii";
 char const KeyChainfmt[] = "nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 char const SceneScriptfmt[] = "nssii";
 char const SpellReagentsfmt[] = "diiiiiiiiiiiiiiiiii";
+const char ItemUpgradeEntryfmt[] = "niiiii";
+const char RulesetItemUpgradeEntryfmt[] = "niii";
 
 #endif

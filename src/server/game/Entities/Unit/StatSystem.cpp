@@ -253,7 +253,6 @@ bool Player::UpdateAllStats()
     UpdateManaRegen();
     UpdateExpertise(BASE_ATTACK);
     UpdateExpertise(OFF_ATTACK);
-    RecalculateRating(CR_ARMOR_PENETRATION);
 
     for (uint8 i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
         UpdateResistances(i);
@@ -637,6 +636,7 @@ void Player::UpdateAllCritPercentages()
 
 void Player::UpdateMastery()
 {
+    // No mastery.
     if (!CanUseMastery())
     {
         SetFloatValue(PLAYER_FIELD_MASTERY, 0.0f);
@@ -821,12 +821,6 @@ void Player::UpdatePvPPowerPercentage()
 
     SetFloatValue(PLAYER_FIELD_PVP_POWER_DAMAGE, damage_value);
     SetFloatValue(PLAYER_FIELD_PVP_POWER_HEALING, heal_value);
-}
-
-void Player::UpdateArmorPenetration(int32 amount)
-{
-    // Store Rating Value
-    SetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + CR_ARMOR_PENETRATION, amount);
 }
 
 void Player::UpdateMeleeHitChances()

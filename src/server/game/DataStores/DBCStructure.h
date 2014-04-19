@@ -786,7 +786,6 @@ struct ChrPowerTypesEntry
    uint32 power;                                               // 2
 };
 
-
 struct ChrSpecializationEntry
 {
     uint32  Id;                                             // 0
