@@ -57,7 +57,7 @@ enum Opcodes
    CMSG_ARENA_TEAM_QUERY                                    = 0x0,
    CMSG_ARENA_TEAM_REMOVE                                   = 0x0,
    CMSG_ARENA_TEAM_ROSTER                                   = 0x0,
-   CMSG_ATTACKSTOP                                          = 0x1E13, // 5.4.7 18019 0x1777 
+   CMSG_ATTACKSTOP                                          = 0x1E13, // 5.4.7 18019
    CMSG_ATTACKSWING                                         = 0x1513, // 5.4.7 18019
    CMSG_AUCTION_HELLO                                       = 0x047F, // 5.4.7 18019
    CMSG_AUCTION_LIST_BIDDER_ITEMS                           = 0x0,
@@ -216,10 +216,10 @@ enum Opcodes
    CMSG_GHOST                                               = 0x0,
    CMSG_GMRESPONSE_RESOLVE                                  = 0x0,
    CMSG_GMSURVEY_SUBMIT                                     = 0x0,
-   CMSG_GMTICKET_CREATE                                     = 0x0,
+   CMSG_GMTICKET_CREATE                                     = 0x103B, // 5.4.7 18019
    CMSG_GMTICKET_DELETETICKET                               = 0x0,
    CMSG_GMTICKET_GETTICKET                                  = 0x0,
-   CMSG_GMTICKET_SYSTEMSTATUS                               = 0x0,
+   CMSG_GMTICKET_SYSTEMSTATUS                               = 0x128A, // 5.4.7 18019
    CMSG_GMTICKET_UPDATETEXT                                 = 0x0,
    CMSG_GM_INVIS                                            = 0x0,
    CMSG_GM_NUKE                                             = 0x0,
@@ -301,8 +301,8 @@ enum Opcodes
    CMSG_LEARN_PREVIEW_TALENTS_PET                           = 0x0,
    CMSG_LEARN_TALENT                                        = 0x1F5A, // 5.4.7 18019
    CMSG_LEAVE_CHANNEL                                       = 0x0,
-   CMSG_LFG_GET_STATUS                                      = 0x0,
-   CMSG_LFG_JOIN                                            = 0x0,
+   CMSG_LFG_GET_STATUS                                      = 0x19AA, // 5.4.7 18019
+   CMSG_LFG_JOIN                                            = 0x18B8, // 5.4.7 18019
    CMSG_LFG_LEAVE                                           = 0x0,
    CMSG_LFG_LFR_JOIN                                        = 0x0,
    CMSG_LFG_LFR_LEAVE                                       = 0x0,
@@ -360,7 +360,7 @@ enum Opcodes
    CMSG_MESSAGECHAT_YELL                                    = 0x0C43, // 5.4.7 18019
    CMSG_MINIGAME_MOVE                                       = 0x0,
    CMSG_MINIMAP_PING                                        = 0x1A93, // 5.4.7 18019
-   CMSG_MOUNTSPECIAL_ANIM                                   = 0x0,
+   CMSG_MOUNTSPECIAL_ANIM                                   = 0x1F32, // 5.4.7 18019
    CMSG_MOVE_CHARM_TELEPORT_CHEAT                           = 0x0,
    CMSG_MOVE_CHNG_TRANSPORT                                 = 0x0,
    CMSG_MOVE_ENABLE_SWIM_TO_FLY_TRANS_ACK                   = 0x0,
@@ -466,7 +466,7 @@ enum Opcodes
    CMSG_REALM_NAME_QUERY                                    = 0x1899, // 5.4.7 18019
    CMSG_RECLAIM_CORPSE                                      = 0x065C, // 5.4.7 18019
    CMSG_REDIRECTION_AUTH_PROOF                              = 0x0,
-   CMSG_REFORGE_ITEM                                        = 0x0,
+   CMSG_REFORGE_ITEM                                        = 0x1632, // 5.4.7 18019
    CMSG_REORDER_CHARACTERS                                  = 0x1892, // 5.4.7 18019
    CMSG_REPAIR_ITEM                                         = 0x0577, // 5.4.7 18019
    CMSG_REPLACE_ACCOUNT_DATA                                = 0x0,
@@ -560,8 +560,8 @@ enum Opcodes
    CMSG_SYNC_DANCE                                          = 0x0,
    CMSG_TAXICLEARALLNODES                                   = 0x0,
    CMSG_TAXIENABLEALLNODES                                  = 0x0,
-   CMSG_TAXINODE_STATUS_QUERY                               = 0x0,
-   CMSG_TAXIQUERYAVAILABLENODES                             = 0x0,
+   CMSG_TAXINODE_STATUS_QUERY                               = 0x01FF, // 5.4.7 18019
+   CMSG_TAXIQUERYAVAILABLENODES                             = 0x0656, // 5.4.7 18019
    CMSG_TAXISHOWNODES                                       = 0x0,
    CMSG_TELEPORT_TO_UNIT                                    = 0x0,
    CMSG_TEXT_EMOTE                                          = 0x037D, // 5.4.7 18019
@@ -572,7 +572,7 @@ enum Opcodes
    CMSG_TOTEM_DESTROYED                                     = 0x0,
    CMSG_TRAINER_BUY_SPELL                                   = 0x0274, // 5.4.7 18019
    CMSG_TRAINER_LIST                                        = 0x075E, // 5.4.7 18019
-   CMSG_TRANSMOGRIFY_ITEMS                                  = 0x0,
+   CMSG_TRANSMOGRIFY_ITEMS                                  = 0x13F8, // 5.4.7 18019
    CMSG_TRIGGER_CINEMATIC_CHEAT                             = 0x0,
    CMSG_TURN_IN_PETITION                                    = 0x0,
    CMSG_TUTORIAL_CLEAR                                      = 0x0,
@@ -788,7 +788,7 @@ enum Opcodes
    SMSG_CHECK_FOR_BOTS                                      = 0x0,
    SMSG_CLEAR_BOSS_EMOTES                                   = 0x0,
    SMSG_CLEAR_COOLDOWN                                      = 0x0,
-   SMSG_CLEAR_COOLDOWNS                                     = 0x0,
+   SMSG_CLEAR_COOLDOWNS                                     = 0x1926, // 5.4.7 18019
    SMSG_CLEAR_FAR_SIGHT_IMMEDIATE                           = 0x0,
    SMSG_CLEAR_TARGET                                        = 0x0,
    SMSG_CLIENTCACHE_VERSION                                 = 0x1E41, // 5.4.7 18019
@@ -891,7 +891,7 @@ enum Opcodes
    SMSG_GMTICKET_CREATE                                     = 0x0,
    SMSG_GMTICKET_DELETETICKET                               = 0x0,
    SMSG_GMTICKET_GETTICKET                                  = 0x0,
-   SMSG_GMTICKET_SYSTEMSTATUS                               = 0x0,
+   SMSG_GMTICKET_SYSTEMSTATUS                               = 0x145B, // 5.4.7 18019
    SMSG_GMTICKET_UPDATETEXT                                 = 0x0,
    SMSG_GM_MESSAGECHAT                                      = 0x0,
    SMSG_GM_PLAYER_INFO                                      = 0x0,
@@ -998,7 +998,7 @@ enum Opcodes
    SMSG_LEVELUP_INFO                                        = 0x0E6A, // 5.4.7 18019
    SMSG_LFG_BOOT_PROPOSAL_UPDATE                            = 0x0,
    SMSG_LFG_DISABLED                                        = 0x0,
-   SMSG_LFG_JOIN_RESULT                                     = 0x0,
+   SMSG_LFG_JOIN_RESULT                                     = 0x12E9, // 5.4.7 18019
    SMSG_LFG_OFFER_CONTINUE                                  = 0x0,
    SMSG_LFG_OPEN_FROM_GOSSIP                                = 0x0,
    SMSG_LFG_PARTY_INFO                                      = 0x0,
@@ -1061,7 +1061,7 @@ enum Opcodes
    SMSG_MONSTER_MOVE                                        = 0x12D8, // 5.4.7 18019
    SMSG_MOTD                                                = 0x0E20, // 5.4.7 18019
    SMSG_MOUNTRESULT                                         = 0x0,
-   SMSG_MOUNTSPECIAL_ANIM                                   = 0x0,
+   SMSG_MOUNTSPECIAL_ANIM                                   = 0x0E4B, // 5.4.7 18019
    SMSG_MOVE_COLLISION_DISABLE                              = 0x0,
    SMSG_MOVE_COLLISION_ENABLE                               = 0x0,
    SMSG_MOVE_FEATHER_FALL                                   = 0x0,
@@ -1222,7 +1222,7 @@ enum Opcodes
    SMSG_REDIRECT_CLIENT                                     = 0x0,
    SMSG_REFER_A_FRIEND_EXPIRED                              = 0x0,
    SMSG_REFER_A_FRIEND_FAILURE                              = 0x0,
-   SMSG_REFORGE_RESULT                                      = 0x0,
+   SMSG_REFORGE_RESULT                                      = 0x1601, // 5.4.7 18019
    SMSG_REMOVED_SPELL                                       = 0x05E3, // 5.4.7 18019
    SMSG_REPORT_PVP_AFK_RESULT                               = 0x0,
    SMSG_REQUEST_CEMETERY_LIST_RESPONSE                      = 0x0,

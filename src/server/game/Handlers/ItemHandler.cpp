@@ -22,6 +22,7 @@
 #include "WorldSession.h"
 #include "Opcodes.h"
 #include "Log.h"
+#include "Chat.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Item.h"
@@ -1510,7 +1511,18 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
     Player* player = GetPlayer();
 
     // Read data
-    uint32 count = recvData.ReadBits(22);
+    uint32 count;
+    ObjectGuid npcGuid;
+
+    npcGuid[3] = recvData.ReadBit();
+    npcGuid[2] = recvData.ReadBit();
+    npcGuid[4] = recvData.ReadBit();
+    npcGuid[5] = recvData.ReadBit();
+    npcGuid[1] = recvData.ReadBit();
+    npcGuid[0] = recvData.ReadBit();
+    count = recvData.ReadBits(21);
+    npcGuid[7] = recvData.ReadBit();
+    npcGuid[6] = recvData.ReadBit();
 
     if (count >= EQUIPMENT_SLOT_END)
     {
@@ -1522,55 +1534,82 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
     std::vector<ObjectGuid> itemGuids(count, ObjectGuid(0));
     std::vector<uint32> newEntries(count, 0);
     std::vector<uint32> slots(count, 0);
+    bool unk0, unk1;
+
+    for (uint8 i = 0; i < count; ++i) {
+
+        unk0 = recvData.ReadBit();
+        unk1 = recvData.ReadBit();
+
+        if (unk1)
+        {
+            itemGuids[i][5] = recvData.ReadBit();
+            itemGuids[i][6] = recvData.ReadBit();
+            itemGuids[i][4] = recvData.ReadBit();
+            itemGuids[i][0] = recvData.ReadBit();
+            itemGuids[i][7] = recvData.ReadBit();
+            itemGuids[i][3] = recvData.ReadBit();
+            itemGuids[i][1] = recvData.ReadBit();
+            itemGuids[i][2] = recvData.ReadBit();
+        }
+
+        if (unk0)
+        {
+            itemGuids[i][3] = recvData.ReadBit();
+            itemGuids[i][6] = recvData.ReadBit();
+            itemGuids[i][4] = recvData.ReadBit();
+            itemGuids[i][0] = recvData.ReadBit();
+            itemGuids[i][1] = recvData.ReadBit();
+            itemGuids[i][7] = recvData.ReadBit();
+            itemGuids[i][5] = recvData.ReadBit();
+            itemGuids[i][2] = recvData.ReadBit();
+        }
+
+    }
 
     for (uint8 i = 0; i < count; ++i)
     {
-        itemGuids[i][0] = recvData.ReadBit();
-        itemGuids[i][5] = recvData.ReadBit();
-        itemGuids[i][6] = recvData.ReadBit();
-        itemGuids[i][2] = recvData.ReadBit();
-        itemGuids[i][3] = recvData.ReadBit();
-        itemGuids[i][7] = recvData.ReadBit();
-        itemGuids[i][4] = recvData.ReadBit();
-        itemGuids[i][1] = recvData.ReadBit();
-    }
 
-    ObjectGuid npcGuid;
-    npcGuid[7] = recvData.ReadBit();
-    npcGuid[3] = recvData.ReadBit();
-    npcGuid[5] = recvData.ReadBit();
-    npcGuid[6] = recvData.ReadBit();
-    npcGuid[1] = recvData.ReadBit();
-    npcGuid[4] = recvData.ReadBit();
-    npcGuid[0] = recvData.ReadBit();
-    npcGuid[2] = recvData.ReadBit();
-
-    recvData.FlushBits();
-
-    for (uint32 i = 0; i < count; ++i)
-    {
         recvData >> newEntries[i];
-
-        recvData.ReadByteSeq(itemGuids[i][1]);
-        recvData.ReadByteSeq(itemGuids[i][5]);
-        recvData.ReadByteSeq(itemGuids[i][0]);
-        recvData.ReadByteSeq(itemGuids[i][4]);
-        recvData.ReadByteSeq(itemGuids[i][6]);
-        recvData.ReadByteSeq(itemGuids[i][7]);
-        recvData.ReadByteSeq(itemGuids[i][3]);
-        recvData.ReadByteSeq(itemGuids[i][2]);
-
         recvData >> slots[i];
+
     }
 
-    recvData.ReadByteSeq(npcGuid[7]);
-    recvData.ReadByteSeq(npcGuid[2]);
     recvData.ReadByteSeq(npcGuid[5]);
     recvData.ReadByteSeq(npcGuid[4]);
-    recvData.ReadByteSeq(npcGuid[3]);
     recvData.ReadByteSeq(npcGuid[1]);
-    recvData.ReadByteSeq(npcGuid[6]);
     recvData.ReadByteSeq(npcGuid[0]);
+    recvData.ReadByteSeq(npcGuid[2]);
+    recvData.ReadByteSeq(npcGuid[7]);
+    recvData.ReadByteSeq(npcGuid[6]);
+    recvData.ReadByteSeq(npcGuid[3]);
+
+    for (uint8 i = 0; i < count; ++i)
+    {
+        if (unk0)
+        {
+            recvData.ReadByteSeq(itemGuids[i][4]);
+            recvData.ReadByteSeq(itemGuids[i][0]);
+            recvData.ReadByteSeq(itemGuids[i][5]);
+            recvData.ReadByteSeq(itemGuids[i][6]);
+            recvData.ReadByteSeq(itemGuids[i][2]);
+            recvData.ReadByteSeq(itemGuids[i][7]);
+            recvData.ReadByteSeq(itemGuids[i][1]);
+            recvData.ReadByteSeq(itemGuids[i][3]);
+        }
+
+        if (unk1)
+        {
+            recvData.ReadByteSeq(itemGuids[i][3]);
+            recvData.ReadByteSeq(itemGuids[i][6]);
+            recvData.ReadByteSeq(itemGuids[i][2]);
+            recvData.ReadByteSeq(itemGuids[i][7]);
+            recvData.ReadByteSeq(itemGuids[i][4]);
+            recvData.ReadByteSeq(itemGuids[i][5]);
+            recvData.ReadByteSeq(itemGuids[i][0]);
+            recvData.ReadByteSeq(itemGuids[i][1]);
+        }
+    }
 
     // Validate
 
@@ -1681,6 +1720,7 @@ void WorldSession::SendReforgeResult(bool success)
     WorldPacket data(SMSG_REFORGE_RESULT, 1);
     data.WriteBit(success);
     data.FlushBits();
+
     SendPacket(&data);
 }
 
@@ -1691,25 +1731,25 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
     uint32 bag;
     Player* player = GetPlayer();
 
-    recvData >> reforgeEntry >> slot >> bag;
+    recvData >> slot >> reforgeEntry >> bag;
 
-    guid[2] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
-    guid[5] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
 
     recvData.ReadByteSeq(guid[2]);
-    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[0]);
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[4]);
-    recvData.ReadByteSeq(guid[1]);
-    recvData.ReadByteSeq(guid[0]);
-    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[7]);
 
     if (!player->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_REFORGER))
     {
