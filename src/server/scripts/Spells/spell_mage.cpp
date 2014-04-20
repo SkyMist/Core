@@ -939,7 +939,7 @@ class spell_mage_master_of_elements : public SpellScriptLoader
             {
                 PreventDefaultAction();
 
-                int32 mana = int32(eventInfo.GetDamageInfo()->GetSpellInfo()->CalcPowerCost(GetTarget(), eventInfo.GetDamageInfo()->GetSchoolMask(), eventInfo.GetDamageInfo()->GetSpellInfo()->spellPower));
+                int32 mana = int32(eventInfo.GetDamageInfo()->GetSpellInfo()->CalcPowerCost(GetTarget(), eventInfo.GetDamageInfo()->GetSchoolMask(), GetTarget()->GetSpellPowerEntryBySpell(eventInfo.GetDamageInfo()->GetSpellInfo())));
                 mana = CalculatePct(mana, aurEff->GetAmount());
 
                 if (mana > 0)

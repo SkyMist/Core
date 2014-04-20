@@ -442,13 +442,14 @@ Aura* Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
 }
 
 Aura::Aura(SpellInfo const* spellproto, WorldObject* owner, Unit* caster, SpellPowerEntry const* spellPowerData, Item* castItem, uint64 casterGUID) :
-m_spellInfo(spellproto), m_casterGuid(casterGUID ? casterGUID : caster->GetGUID()),
+m_spellInfo(caster ? sSpellMgr->GetSpellForDifficultyFromSpell(spellproto, caster) : ((owner && owner->ToUnit()) ? sSpellMgr->GetSpellForDifficultyFromSpell(spellproto, owner->ToUnit()) : spellproto)), 
+m_casterGuid(casterGUID ? casterGUID : caster->GetGUID()),
 m_castItemGuid(castItem ? castItem->GetGUID() : 0), m_applyTime(time(NULL)),
 m_owner(owner), m_timeCla(0), m_updateTargetMapInterval(0),
 m_casterLevel(caster ? caster->getLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),
 m_isRemoved(false), m_isSingleTarget(false), m_isUsingCharges(false)
 {
-    if (spellPowerData->channelTicCost)
+    if (spellPowerData && spellPowerData->channelTicCost)
         m_timeCla = 1 * IN_MILLISECONDS;
 
     m_maxDuration = CalcMaxDuration(caster);
@@ -876,7 +877,7 @@ void Aura::RefreshDuration()
 {
     SetDuration(GetMaxDuration());
 
-    if (m_spellPowerData->channelTicCost)
+    if (m_spellPowerData && m_spellPowerData->channelTicCost)
         m_timeCla = 1 * IN_MILLISECONDS;
 }
 
@@ -2198,12 +2199,10 @@ bool Aura::IsProcTriggeredOnEvent(AuraApplication* aurApp, ProcEventInfo& eventI
             {
                 WeaponAttackType attType = eventInfo.GetDamageInfo()->GetAttackType();
                 Item* item = NULL;
-                if (attType == BASE_ATTACK)
+                if (attType == BASE_ATTACK || attType = RANGED_ATTACK)
                     item = target->ToPlayer()->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
                 else if (attType == OFF_ATTACK)
                     item = target->ToPlayer()->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
-                else
-                    item = target->ToPlayer()->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
 
                 if (!item || item->IsBroken() || item->GetTemplate()->Class != ITEM_CLASS_WEAPON || !((1<<item->GetTemplate()->SubClass) & GetSpellInfo()->EquippedItemSubClassMask))
                     return false;

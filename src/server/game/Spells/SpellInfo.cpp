@@ -487,7 +487,7 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
     // base amount modification based on spell lvl vs caster lvl
     if (ScalingMultiplier != 0.0f)
     {
-        if (caster && _spellInfo->Id != 113344) // Hack Fix Bloodbath
+        if (caster && !_spellInfo->IsCustomCalculated())
         {
             int32 level = caster->getLevel();
             if (target && _spellInfo->IsPositiveEffect(_effIndex) && (Effect == SPELL_EFFECT_APPLY_AURA) && _spellInfo->Id != 774) // Hack Fix Rejuvenation, doesn't use the target level for basepoints
@@ -981,19 +981,6 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     BaseLevel = _levels ? _levels->baseLevel : 0;
     SpellLevel = _levels ? _levels->spellLevel : 0;
 
-    // SpellPowerEntry
-    powerCost = 0;
-    powerCostPercentage = 0;
-    channelTicCost = 0;
-    PowerType = POWER_MANA;
-
-    spellPower = new SpellPowerEntry();
-    spellPower->powerCost = 0;
-    spellPower->powerCostPercentage = 0;
-    spellPower->channelTicCost = 0;
-    spellPower->spellId = Id;
-    spellPower->powerType = POWER_MANA;
-
     // SpellMiscEntry
     SpellMiscEntry const* spellMisc = GetSpellMisc();
     Attributes = spellMisc ? spellMisc->Attributes : 0;
@@ -1274,8 +1261,22 @@ bool SpellInfo::IsStackableWithRanks() const
 {
     if (IsPassive())
         return false;
-    if (PowerType != POWER_MANA && PowerType != POWER_HEALTH)
-        return false;
+
+    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
+	{
+        if (SpellPowerEntry const* power = sSpellPowerStore.LookupEntry(i))
+		{
+           if (power->spellId == this->Id)
+		   {
+			   if (power->powerType != POWER_MANA && power->powerType != POWER_HEALTH)
+			   {
+                   return false;
+                   break;
+               }
+           }
+        }
+	}
+
     if (IsProfessionOrRiding())
         return false;
 
@@ -2449,6 +2450,10 @@ uint32 SpellInfo::GetRecoveryTime() const
 
 int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, SpellPowerEntry const* spellPower) const
 {
+    // No power cost.
+    if (!spellPower)
+        return 0;
+
     // Spell drain all exist power on cast (Only paladin lay of Hands)
     if (AttributesEx & SPELL_ATTR1_DRAIN_ALL_POWER)
     {
@@ -2458,6 +2463,7 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, S
         // Else drain all power
         if (spellPower->powerType < MAX_POWERS)
             return caster->GetPower(Powers(spellPower->powerType));
+
         TC_LOG_ERROR("spells", "SpellInfo::CalcPowerCost: Unknown power type '%d' in spell %d", spellPower->powerType, Id);
         return 0;
     }
@@ -2501,10 +2507,10 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask, S
         modOwner->ApplySpellMod(Id, SPELLMOD_COST, PowerCost);
 
     if (Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION)
-        PowerCost = int32(powerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
+        PowerCost = int32(PowerCost / (1.117f * SpellLevel / caster->getLevel() -0.1327f));
 
     // PCT mod from user auras by school
-    PowerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
+    PowerCost = int32(PowerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
     if (PowerCost < 0)
         PowerCost = 0;
 
@@ -3035,11 +3041,6 @@ SpellLevelsEntry const* SpellInfo::GetSpellLevels() const
     return SpellLevelsId ? sSpellLevelsStore.LookupEntry(SpellLevelsId) : NULL;
 }
 
-SpellPowerEntry const* SpellInfo::GetSpellPower() const
-{
-    return sSpellPowerStore.LookupEntry(Id);
-}
-
 SpellReagentsEntry const* SpellInfo::GetSpellReagents() const
 {
     return SpellReagentsId ? sSpellReagentsStore.LookupEntry(SpellReagentsId) : NULL;
@@ -3521,10 +3522,20 @@ bool SpellInfo::CanBeDuplicated() const
     // But some cannot ...
 
     // Only spell with mana cost !
-    if (PowerType != POWER_MANA)
-        return false;
-    if (!powerCost && !powerCostPercentage)
-        return false;
+    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
+	{
+        if (SpellPowerEntry const* power = sSpellPowerStore.LookupEntry(i))
+		{
+           if (power->spellId == this->Id)
+		   {
+			   if (power->powerType != POWER_MANA || !power->powerCost && !power->powerCostPercentage)
+			   {
+                   return false;
+                   break;
+               }
+           }
+        }
+	}
 
     // Few spells can never be duplicated
     switch (Id)
@@ -3680,6 +3691,23 @@ bool SpellInfo::CanTriggerHotStreak() const
         case 30455: // Ice Lance
         case 44614: // Frostfire Bolt
         case 108853:// Inferno Blast
+            return true;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool SpellInfo::IsCustomCalculated() const
+{
+    switch (Id)
+    {
+        case 113344:// Bloodbath
+        case 124464:// Mastery: Shadowy Recall - Shadow Word: Pain
+        case 124465:// Mastery: Shadowy Recall - Vampiric Touch
+        case 124467:// Mastery: Shadowy Recall - Devouring Plague
+        case 124468:// Mastery: Shadowy Recall - Mind Flay
             return true;
         default:
             break;

@@ -4040,7 +4040,7 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, uint64 casterGUID, Unit*
                 if (aura->IsSingleTarget())
                     aura->UnregisterSingleTarget();
 
-                if (Aura* newAura = Aura::TryRefreshStackOrCreate(aura->GetSpellInfo(), effMask, stealer, NULL, aura->GetSpellInfo()->spellPower, &baseDamage[0], NULL, aura->GetCasterGUID()))
+                if (Aura* newAura = Aura::TryRefreshStackOrCreate(aura->GetSpellInfo(), effMask, stealer, NULL, stealer->GetSpellPowerEntryBySpell(aura->GetSpellInfo()), &baseDamage[0], NULL, aura->GetCasterGUID()))
                 {
                     // created aura must not be single target aura,, so stealer won't loose it on recast
                     if (newAura->IsSingleTarget())
@@ -6571,7 +6571,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 case 28719:
                 {
                     // mana back
-                    basepoints0 = int32(CalculatePct(procSpell->powerCost, 30));
+                    basepoints0 = GetSpellPowerEntryBySpell(procSpell) ? int32(CalculatePct(GetSpellPowerEntryBySpell(procSpell)->powerCost, 30)) : 0;
                     target = this;
                     triggered_spell_id = 28742;
                     break;
@@ -7973,7 +7973,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
         // Enlightenment (trigger only from mana cost spells)
         case 35095:
         {
-            if (!procSpell || procSpell->PowerType != POWER_MANA || (procSpell->powerCost == 0 && procSpell->powerCostPercentage == 0))
+            if (!procSpell || !GetSpellPowerEntryBySpell(procSpell) || GetSpellPowerEntryBySpell(procSpell)->powerType != POWER_MANA || (GetSpellPowerEntryBySpell(procSpell)->powerCost == 0 && GetSpellPowerEntryBySpell(procSpell)->powerCostPercentage == 0))
                 return false;
             break;
         }
@@ -11121,14 +11121,21 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
         return false;
 
     // can't attack unattackable units or GMs
-    if (target->HasUnitState(UNIT_STATE_UNATTACKABLE)
-        || (target->GetTypeId() == TYPEID_PLAYER && target->ToPlayer()->IsGameMaster()))
+    if (target->HasUnitState(UNIT_STATE_UNATTACKABLE) || (target->GetTypeId() == TYPEID_PLAYER && target->ToPlayer()->IsGameMaster()))
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
         return false;
+    }
 
     // can't attack own vehicle or passenger
     if (m_vehicle)
+    {
         if (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))
+        {
+            if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
             return false;
+        }
+    }
 
     // can't attack invisible (ignore stealth for aoe spells) also if the area being looked at is from a spell use the dynamic object created instead of the casting unit.
     if ((!bySpell || !(bySpell->AttributesEx6 & SPELL_ATTR6_CAN_TARGET_INVISIBLE)) && (obj ? !obj->CanSeeOrDetect(target, bySpell && bySpell->IsAffectingArea()) : !CanSeeOrDetect(target, bySpell && bySpell->IsAffectingArea())))
@@ -11136,18 +11143,18 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
 
     // can't attack dead
     if ((!bySpell || !bySpell->IsAllowingDeadTarget()) && !target->IsAlive())
-       return false;
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_DEAD_TARGET);
+        return false;
+    }
 
     // can't attack untargetable
-    if ((!bySpell || !(bySpell->AttributesEx6 & SPELL_ATTR6_CAN_TARGET_UNTARGETABLE))
-        && target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+    if ((!bySpell || !(bySpell->AttributesEx6 & SPELL_ATTR6_CAN_TARGET_UNTARGETABLE)) && target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
         return false;
 
     if (Player const* playerAttacker = ToPlayer())
-    {
         if (playerAttacker->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_UBER))
             return false;
-    }
 
     // check flags
     if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_TAXI_FLIGHT | UNIT_FLAG_NOT_ATTACKABLE_1 | UNIT_FLAG_UNK_16)
@@ -11167,8 +11174,7 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
 
     // PvP, PvC, CvP case
     // can't attack friendly targets
-    if ( GetReactionTo(target) > REP_NEUTRAL
-        || target->GetReactionTo(this) > REP_NEUTRAL)
+    if (GetReactionTo(target) > REP_NEUTRAL || target->GetReactionTo(this) > REP_NEUTRAL)
         return false;
 
     // Not all neutral creatures can be attacked
@@ -11188,7 +11194,6 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
                         if (FactionState const* repState = player->GetReputationMgr().GetState(factionEntry))
                             if (!(repState->Flags & FACTION_FLAG_AT_WAR))
                                 return false;
-
             }
         }
     }
@@ -11208,8 +11213,11 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
     // PvP case - can't attack when attacker or target are in sanctuary
     // however, 13850 client doesn't allow to attack when one of the unit's has sanctuary flag and is pvp
     if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE) && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE)
-        && ((target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_SANCTUARY) || (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_SANCTUARY)))
+    && ((target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_SANCTUARY) || (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_SANCTUARY)))
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
         return false;
+    }
 
     // additional checks - only PvP case
     if (playerAffectingAttacker && playerAffectingTarget)
@@ -11217,13 +11225,12 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
         if (target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_PVP)
             return true;
 
-        if (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_FFA_PVP
-            && target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_FFA_PVP)
+        if (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_FFA_PVP && target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_FFA_PVP)
             return true;
 
-        return (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_UNK1)
-            || (target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_UNK1);
+        return (GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_UNK1) || (target->GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1) & UNIT_BYTE2_FLAG_UNK1);
     }
+
     return true;
 }
 
@@ -12666,30 +12673,49 @@ int32 Unit::GetCreatePowers(Powers power) const
     return 0;
 }
 
+// Spell power system !Note: Many spells/auras do not have a SpellPower entry, so it returns NULL.
 SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) const
 {
-    if (GetTypeId() == TYPEID_PLAYER)
+    // Store the powers in aq vector we then erase.
+    std::vector<SpellPowerEntry const*> defaultSpellPower;
+
+    // Find the power entries we need first.
+    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
     {
-        if (getClass() == CLASS_WARLOCK)
+        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
+        if (!spellPower)
+            continue;
+
+        if (spell->Id != spellPower->spellId) // We just search for the spell we need.
+            continue;
+
+        // For players, calculate the power from the specialization auras.
+        if (GetTypeId() == TYPEID_PLAYER)
         {
-            if (spell->Id == 686)
+            if (spellPower->auraChoice == 0)
+                defaultSpellPower.push_back(spellPower); // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
+
+            if (spellPower->auraChoice > 0 && HasAura(spellPower->auraChoice)) // We see if the caster has one of the special needed auras for specs.
             {
-                if (GetShapeshiftForm() == FORM_METAMORPHOSIS)
-                    return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_DEMONIC_FURY);
-                else
-                    return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_MANA);
+				return spellPower; // We found the needed power entry.
+                break; // Break the loop.
             }
         }
-        else if (getClass() == CLASS_MONK)
+        else // For units, calculate the power from the difficulty mode.
         {
-            if (GetShapeshiftForm() == FORM_WISE_SERPENT)
-                return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_MANA);
+            if (spellPower->difficultyMode == 0)
+                defaultSpellPower.push_back(spellPower); // Just set it to the first thing we find, this is generally 0 auraChoice and returns correct data.
 
-            return sSpellMgr->GetSpellPowerEntryByIdAndPower(spell->Id, POWER_ENERGY);
+            if (spellPower->difficultyMode > 0 && GetMap()->GetSpawnMode() == spellPower->difficultyMode) // We see if the map spawn mode is the one we need.
+            {
+                return spellPower; // We found the needed power entry.
+                break; // Break the loop.
+            }
         }
     }
 
-    return spell->spellPower;
+    // If nothing found in the loop, return what the vector stored, or, if the vector stored nothing, return NULL.
+    return !defaultSpellPower.size() ? NULL : defaultSpellPower.front();
 }
 
 void Unit::AddToWorld()
@@ -13473,8 +13499,8 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                     case SPELL_AURA_MOD_POWER_COST_SCHOOL_PCT:
                     case SPELL_AURA_MOD_POWER_COST_SCHOOL:
                         // Skip melee hits and spells ws wrong school or zero cost
-                        if (procSpell &&
-                            (procSpell->powerCost != 0 || procSpell->powerCostPercentage != 0) && // Cost check
+                        if (procSpell && GetSpellPowerEntryBySpell(procSpell) &&
+                            (GetSpellPowerEntryBySpell(procSpell)->powerCost != 0 || GetSpellPowerEntryBySpell(procSpell)->powerCostPercentage != 0) && // Cost check
                             (triggeredByAura->GetMiscValue() & procSpell->SchoolMask))          // School check
                             takeCharges = true;
                         break;
@@ -14247,12 +14273,10 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* victim, Aura* aura, SpellInfo const
         if (spellProto->EquippedItemClass == ITEM_CLASS_WEAPON)
         {
             Item* item = NULL;
-            if (attType == BASE_ATTACK)
+            if (attType == BASE_ATTACK || attType == RANGED_ATTACK)
                 item = player->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
             else if (attType == OFF_ATTACK)
                 item = player->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
-            else
-                item = player->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
 
             if (player->IsInFeralForm())
                 return false;
@@ -15345,7 +15369,7 @@ Aura* Unit::AddAura(SpellInfo const* spellInfo, uint32 effMask, Unit* target)
             effMask &= ~(1<<i);
     }
 
-	if (Aura* aura = Aura::TryRefreshStackOrCreate(spellInfo, effMask, target, this, spellInfo->spellPower))
+	if (Aura* aura = Aura::TryRefreshStackOrCreate(spellInfo, effMask, target, this, GetSpellPowerEntryBySpell(spellInfo)))
     {
         aura->ApplyForTargets();
         return aura;
@@ -16034,7 +16058,7 @@ bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
                     bp0[j] = spellEntry->Effects[j].BasePoints;
 
                 bp0[i] = seatId;
-                Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, spellEntry->spellPower, bp0, NULL, origCasterGUID);
+                Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, clicker->GetSpellPowerEntryBySpell(spellEntry), bp0, NULL, origCasterGUID);
             }
         }
         else
@@ -16042,7 +16066,7 @@ bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
             if (IsInMap(caster))
                 caster->CastSpell(target, spellEntry, GetVehicleKit() ? TRIGGERED_IGNORE_CASTER_MOUNTED_OR_ON_VEHICLE : TRIGGERED_NONE, NULL, NULL, origCasterGUID);
             else
-				Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, spellEntry->spellPower, NULL, NULL, origCasterGUID);
+				Aura::TryRefreshStackOrCreate(spellEntry, MAX_EFFECT_MASK, this, clicker, clicker->GetSpellPowerEntryBySpell(spellEntry), NULL, NULL, origCasterGUID);
         }
 
         result = true;

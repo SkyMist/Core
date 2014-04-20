@@ -564,6 +564,8 @@ typedef std::pair<SkillLineAbilityMap::const_iterator, SkillLineAbilityMap::cons
 typedef std::multimap<uint32, uint32> PetLevelupSpellSet;
 typedef std::map<uint32, PetLevelupSpellSet> PetLevelupSpellMap;
 
+typedef std::map<uint16, uint16> ItemUpgradeDatas;
+
 struct PetDefaultSpellsEntry
 {
     uint32 spellid[MAX_CREATURE_SPELL_DATA_SLOT];
@@ -604,7 +606,6 @@ bool IsDiminishingReturnsGroupDurationLimited(DiminishingGroup group);
 
 typedef std::vector<std::set<uint32> > SpellClassList;
 typedef std::set<uint32> TalentSpellSet;
-typedef std::vector<std::list<uint32> > SpellPowerVector;
 
 class SpellMgr
 {
@@ -621,7 +622,6 @@ class SpellMgr
 
         // Spell difficulty
         SpellInfo const* GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const;
-        uint32 GetSpellDifficultyBySpellId(uint32 spellId, Unit const* caster) const;
 
         // Spell Ranks table
         SpellChainNode const* GetSpellChainNode(uint32 spell_id) const;
@@ -686,7 +686,6 @@ class SpellMgr
 
         PetLevelupSpellSet const* GetPetLevelupSpellList(uint32 petFamily) const;
         PetDefaultSpellsEntry const* GetPetDefaultSpellsEntry(int32 id) const;
-        SpellPowerEntry const* GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const;
 
         // Spell area
         SpellAreaMapBounds GetSpellAreaMapBounds(uint32 spell_id) const;
@@ -699,9 +698,11 @@ class SpellMgr
         SpellInfo const* GetSpellInfo(uint32 spellId, Difficulty difficulty = REGULAR_DIFFICULTY) const;
         uint32 GetSpellInfoStoreSize() const { return mSpellInfoMap[REGULAR_DIFFICULTY].size(); }
         std::set<uint32> GetSpellClassList(uint8 ClassID) const { return mSpellClassInfo[ClassID]; }
-        std::list<uint32> GetSpellPowerList(uint32 spellId) const { return mSpellPowerInfo[spellId]; }
 
         bool IsTalent(uint32 spellId) { return mTalentSpellInfo.find(spellId) != mTalentSpellInfo.end() ?  true :  false; }
+
+        // Item Upgrade datas
+        uint16 GetDatasForILevel(uint16 iLevel) { return mItemUpgradeDatas.find(iLevel) != mItemUpgradeDatas.end() ? mItemUpgradeDatas[iLevel] : 0; };
 
     // Modifiers
     public:
@@ -734,7 +735,7 @@ class SpellMgr
         void LoadSpellInfoCustomAttributes();
         void LoadSpellInfoCorrections();
         void LoadTalentSpellInfo();
-        void LoadSpellPowerInfo();
+        void InitializeItemUpgradeDatas();
 
         std::vector<uint32>        mSpellCreateItemList;
 
@@ -767,7 +768,7 @@ class SpellMgr
         SpellInfoMap               mSpellInfoMap[MAX_DIFFICULTY];
         SpellClassList             mSpellClassInfo;
         TalentSpellSet             mTalentSpellInfo;
-        SpellPowerVector           mSpellPowerInfo;
+        ItemUpgradeDatas           mItemUpgradeDatas;
 };
 
 #define sSpellMgr ACE_Singleton<SpellMgr, ACE_Null_Mutex>::instance()

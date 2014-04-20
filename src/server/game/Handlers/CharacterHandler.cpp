@@ -1790,7 +1790,7 @@ void WorldSession::HandleEquipmentSetUse(WorldPacket& recvData)
             continue;
 
         // Only equip weapons in combat
-        if (_player->IsInCombat() && i != EQUIPMENT_SLOT_MAINHAND && i != EQUIPMENT_SLOT_OFFHAND && i != EQUIPMENT_SLOT_RANGED)
+        if (_player->IsInCombat() && i != EQUIPMENT_SLOT_MAINHAND && i != EQUIPMENT_SLOT_OFFHAND)
             continue;
 
         Item* item = _player->GetItemByGuid(itemGuid);

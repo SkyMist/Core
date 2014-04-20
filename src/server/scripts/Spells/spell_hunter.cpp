@@ -968,7 +968,7 @@ class spell_hun_thrill_of_the_hunt : public SpellScriptLoader
             void HandleEffectProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
             {
                 PreventDefaultAction();
-				int32 focus = eventInfo.GetDamageInfo()->GetSpellInfo()->CalcPowerCost(GetTarget(), SpellSchoolMask(eventInfo.GetDamageInfo()->GetSchoolMask()), eventInfo.GetDamageInfo()->GetSpellInfo()->spellPower);
+				int32 focus = eventInfo.GetDamageInfo()->GetSpellInfo()->CalcPowerCost(GetTarget(), SpellSchoolMask(eventInfo.GetDamageInfo()->GetSchoolMask()), GetTarget()->GetSpellPowerEntryBySpell(eventInfo.GetDamageInfo()->GetSpellInfo()));
                 focus = CalculatePct(focus, aurEff->GetAmount());
 
                 GetTarget()->CastCustomSpell(GetTarget(), SPELL_HUNTER_THRILL_OF_THE_HUNT, &focus, NULL, NULL, true, NULL, aurEff);

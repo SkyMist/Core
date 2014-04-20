@@ -481,24 +481,7 @@ bool SpellMgr::IsSpellValid(SpellInfo const* spellInfo, Player* player, bool msg
     return true;
 }
 
-// Get spell difficulty from spell id and the caster.
-uint32 SpellMgr::GetSpellDifficultyBySpellId(uint32 spellId, Unit const* caster) const
-{
-    if (!caster || !caster->GetMap() || !caster->GetMap()->IsDungeon())
-        return spellId;
-
-    uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
-
-    if (mode >= MAX_DIFFICULTY)
-    {
-        TC_LOG_ERROR("spells", "SpellMgr::GetSpellDifficultyBySpellId: Incorrect Difficulty for spell %u.", spellId);
-        return spellId; // return source spell.
-    }
-
-    return GetSpellInfo(spellId, Difficulty(mode))->Id;
-}
-
-// Get spell difficulty from spell info and the caster.
+// Get spell difficulty from SpellInfoMap for the caster.
 SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell, Unit const* caster) const
 {
     if (!spell)
@@ -507,12 +490,15 @@ SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell
     if (!caster || !caster->GetMap() || !caster->GetMap()->IsDungeon())
         return spell;
 
+    if (caster->GetTypeId() == TYPEID_PLAYER)
+        return spell; // Only creatures have difficulties for spells.
+
     uint32 mode = uint32(caster->GetMap()->GetSpawnMode());
 
     if (mode >= MAX_DIFFICULTY)
     {
         TC_LOG_ERROR("spells", "SpellMgr::GetSpellForDifficultyFromSpell: Incorrect Difficulty for spell %u.", spell->Id);
-        return spell; // return source spellInfo.
+        return spell; // Return source spellInfo.
     }
 
     return GetSpellInfo(spell->Id, Difficulty(mode));
@@ -1789,6 +1775,27 @@ void SpellMgr::LoadSpellGroupStackRules()
     TC_LOG_INFO("server.loading", ">> Loaded %u spell group stack rules in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+void SpellMgr::InitializeItemUpgradeDatas()
+{
+    uint32 oldMSTime = getMSTime();
+
+    uint16 spTable[71][2] =
+    {
+        {458, 4914}, {463, 5152}, {466, 5293}, {470, 5497}, {471, 5552}, {474, 5704}, {476, 5812}, {478, 5920}, {480, 6037}, {483, 6206},
+        {484, 6262}, {487, 6445}, {489, 6564}, {490, 6628}, {491, 6684}, {493, 6810}, {494, 6874}, {496, 7007}, {497, 7070}, {498, 7140},
+        {500, 7272}, {501, 7337}, {502, 7410}, {503, 7478}, {504, 7548}, {505, 7619}, {506, 7690}, {507, 7759}, {508, 7836}, {509, 7907},
+        {510, 7982}, {511, 8054}, {512, 8132}, {513, 8209}, {514, 8286}, {515, 8364}, {516, 8441}, {517, 8521}, {518, 8603}, {519, 8680},
+        {520, 8764}, {521, 8841}, {522, 8925}, {524, 9093}, {525, 9179}, {526, 9265}, {528, 9440}, {530, 9618}, {532, 9797}, {535, 10078},
+        {536, 10169}, {539, 10458}, {540, 10557}, {541, 10655}, {543, 10859}, {544, 10957}, {545, 11060}, {548, 11372}, {549, 11479}, {553, 11916},
+        {557, 12370}, {559, 12602}, {561, 12841}, {563, 13079}, {566, 13452}, {567, 13578}, {570, 13961}, {572, 14225}, {574, 14492}, {576, 14766}, {580, 15321}
+    };
+
+    for (uint8 i = 0; i < 71; ++i)
+        mItemUpgradeDatas.insert(std::make_pair(spTable[i][0], spTable[i][1]));
+
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 71 Item Upgrade datas in %u ms", GetMSTimeDiffToNow(oldMSTime));
+}
+
 void SpellMgr::LoadSpellProcEvents()
 {
     uint32 oldMSTime = getMSTime();
@@ -2879,42 +2886,6 @@ void SpellMgr::LoadSpellInfoStore()
     uint32 spelldifficultyMSTime = getMSTime();
     TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Difficulty entries in %u ms", spellDifficultyCount, GetMSTimeDiffToNow(oldMSTime));
 
-    uint32 spellPowerCount = 0;
-
-    std::set<uint32> alreadySet;
-    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
-        if (!spellPower)
-            continue;
-
-        if (alreadySet.find(spellPower->spellId) != alreadySet.end())
-            continue;
-
-        for (uint32 difficulty = 0; difficulty < MAX_DIFFICULTY; difficulty++)
-        {
-            SpellInfo* spell = mSpellInfoMap[difficulty][spellPower->spellId];
-            if (!spell)
-                continue;
-
-            spell->powerCost = spellPower->powerCost;
-            spell->powerCostPercentage = spellPower->powerCostPercentage;
-			spell->channelTicCost = spellPower->channelTicCost;
-            spell->PowerType = spellPower->powerType;
-
-            spell->spellPower->powerCost = spellPower->powerCost;
-            spell->spellPower->powerCostPercentage = spellPower->powerCostPercentage;
-            spell->spellPower->channelTicCost = spellPower->channelTicCost;
-            spell->spellPower->powerType = spellPower->powerType;
-        }
-
-        alreadySet.insert(spellPower->spellId);
-        spellPowerCount++;
-    }
-
-    uint32 spellPowerMSTime = getMSTime();
-    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Power entries in %u ms", spellPowerCount, GetMSTimeDiffToNow(spelldifficultyMSTime));
-
     uint32 spellTalentsCount = 0;
 
     for (uint32 i = 0; i < sTalentStore.GetNumRows(); i++)
@@ -2931,7 +2902,7 @@ void SpellMgr::LoadSpellInfoStore()
         spellTalentsCount++;
     }
 
-    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Talents in %u ms", spellTalentsCount, GetMSTimeDiffToNow(spellPowerMSTime));
+    TC_LOG_INFO("server.loading", "Loaded %u SpellInfo store Spell Talents in %u ms", spellTalentsCount, GetMSTimeDiffToNow(spelldifficultyMSTime));
     TC_LOG_INFO("server.loading", "");
 
     TC_LOG_INFO("server.loading", ">> Loaded SpellInfo store in %u ms", GetMSTimeDiffToNow(oldMSTime));
@@ -3269,6 +3240,34 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     break;
                 // SPELLS
+                case 688:   // Summon Imp
+                    spellInfo->OverrideSpellList.push_back(112866); // Summon Fel Imp
+                    break;
+                case 697:   // Summon Voidwalker
+                    spellInfo->OverrideSpellList.push_back(112867); // Summon Voidlord
+                    break;
+                case 712:   // Summon Succubus
+                    spellInfo->OverrideSpellList.push_back(112868); // Summon Shivarra
+                    break;
+                case 691:   // Summon Felhunter
+                    spellInfo->OverrideSpellList.push_back(112869); // Summon Observer
+                    break;
+                case 30146: // Summon Felguard
+                    spellInfo->OverrideSpellList.push_back(112870); // Summon Wrathguard
+                    break;
+                case 1122:  // Summon Infernal
+                    spellInfo->OverrideSpellList.push_back(112921); // Summon Abyssal
+                    break;
+                case 18540: // Summon Doomguard
+                    spellInfo->OverrideSpellList.push_back(112927); // Summon Terrorguard
+                    break;
+                case 120517:// Halo (Holy)
+                case 120644:// Halo (shadow)
+                    spellInfo->AttributesCu &= ~SPELL_ATTR0_CU_NEGATIVE;
+                    break;
+                case 80240: // Havoc
+                    spellInfo->ProcCharges = 3;
+                    break;
                 case 128997:// Spirit Beast Blessing
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     break;
@@ -3290,11 +3289,17 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 95809: // Insanity
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_DEATH_PERSISTENT;
                     break;
-                case 2818:  // Deadly Poison (DoT)
-                case 31803: // Censure (DoT)
+                case 2818: // Deadly Poison
+                case 12654: // Ignite
+                case 31803: // Censure
+                case 77661: // Searing Flame
+                case 77489: // Echo of Light
+                case 99002: // Fiery Claws, Item - Druid T12 Feral 2P Bonus
+                case 99132: // Divine Fire, Item - Priest T12 Healer 2P Bonus
+                case 99173: // Burning Wounds, Item - Rogue T12 2P Bonus
+                case 56161: // Glyph of Prayer of Healing
                 case 55078: // Blood Plague
                 case 55095: // Frost Fever
-                case 77489: // Echo of Light (HoT)
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_RESET_PERIODIC_TIMER;
                     break;
                 case 81662: // Will of the Necropolis
@@ -3796,8 +3801,19 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 102355:// Faerie Swarm
                     spellInfo->AttributesEx5 |= SPELL_ATTR5_SINGLE_TARGET_SPELL;
                     break;
+                case 3411:  // Intervene
+                    spellInfo->OverrideSpellList.push_back(114029); // Add Safeguard to override spell list of Intervene
+                    break;
                 case 1784:  // Stealth
                     spellInfo->OverrideSpellList.push_back(115191); // Add Stealth (talent) to override spell list of Stealth
+                    break;
+                case 115191:// Subterfuge
+                    spellInfo->AttributesEx |= SPELL_ATTR0_DISABLED_WHILE_ACTIVE;
+                    break;
+                case 115192:// Subterfuge
+                    spellInfo->Attributes |= SPELL_ATTR0_DONT_AFFECT_SHEATH_STATE;
+                    spellInfo->Attributes |= SPELL_ATTR0_NOT_SHAPESHIFT;
+                    spellInfo->AttributesEx |= SPELL_ATTR1_NOT_BREAK_STEALTH;
                     break;
                 case 130493:// Nightstalker
                     spellInfo->Effects[1].Effect = 0;
@@ -3961,6 +3977,16 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     spellInfo->Effects[2].ApplyAuraName = SPELL_AURA_MOD_SCALE;
                     spellInfo->Effects[2].BasePoints = 30;
                     break;
+                case 111546:
+                    spellInfo->Effects[1].Effect = 0;
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_NONE;
+                    break;
+                case 113890:
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_DEST;
+                    break;
+                case 113886:
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    break;
                 case 122292:// Intervene (Symbiosis)
                     spellInfo->Effects[1].BasePoints = 100;
                     break;
@@ -3975,6 +4001,10 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 132566:// Seed of Corruption (Malefic Grasp)
                 case 131737:// Agony (Malefic Grasp)
                 case 42463: // Seal of Truth
+                case 124464:// Shadow Word: Pain (Mastery instant damage)
+                case 124465:// Vampiric Touch (Mastery instant damage)
+                case 124467:// Devouring Plague (Mastery instant damage)
+                case 124468:// Mind Flay (Mastery instant damage)
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
                     break;
                 case 131116:// Allow to use Raging Blow
@@ -4228,6 +4258,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     spellInfo->ProcChance = 100;
                     spellInfo->ProcCharges = 1;
                     spellInfo->ProcFlags = PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_POS;
+                    spellInfo->Effects[1].SpellClassMask = spellInfo->Effects[0].SpellClassMask;
                     break;
                 case 54785: // Demonic Leap
                     spellInfo->DmgClass = SPELL_DAMAGE_CLASS_NONE;
@@ -4243,7 +4274,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     break;
                 case 33891:  // Tree form
                 case 114282: // Tree form
-                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(18);
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(9);
                     break;
                 // Chain Lightning Elemental Overload proc
                 case 45297:
@@ -4252,6 +4283,51 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 // Silencing Shot
                 case 34490:
                     spellInfo->Speed = 0;
+                    break;
+               // Magic Barrier, Lady Vashj
+                case 38112:
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                    break;
+                case 36819: // Pyroblast (Kael'thas)
+                    spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REFLECTED;
+                    break;
+                // Snowball
+                case 25677:
+                    spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_DUMMY;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 54402: // Land Mine Knockback
+                    spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_DEST_AREA_ALLY;
+                    spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_DEST_AREA_ALLY;
+                    break;
+                // Improved Frost Presence (Rank 1/2)
+                case 50384:
+                case 50385:
+                    spellInfo->Effects[EFFECT_1].SpellClassMask = 0;
+                    break;
+                case 81262: // Efflorensence
+                case 88685: // Holy World: Sanctuary
+                case 73920: // Healing Rain
+                    spellInfo->AttributesEx5 &= ~SPELL_ATTR5_START_PERIODIC_AT_APPLY;
+                    break;
+                // Detonate Mana, Tyrande's Favorite Doll
+                case 92601:
+                    spellInfo->CasterAuraSpell = 92596;
+                    break;
+                // Glyph of Fear
+                case 56244:
+                    spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_ADD_FLAT_MODIFIER;
+                    spellInfo->Effects[EFFECT_0].BasePoints = 5000;
+                    spellInfo->Effects[EFFECT_0].MiscValue = SPELLMOD_COOLDOWN;
+                    break;
+                // Eclipse markers
+                case 67484:
+                case 67483:
+                case 48517:
+                case 48518:
+                    spellInfo->AuraInterruptFlags = 0;
+                    spellInfo->Attributes |= SPELL_ATTR0_CANT_CANCEL;
                     break;
 
                 default: break;
@@ -4921,8 +4997,14 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 77844: // Twilight Cutter
                 case 77845: // Twilight Cutter
                 case 77846: // Twilight Cutter
-                    spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS); // 100yd
-                    break;
+                        {
+                            const SpellRadiusEntry* radius = sSpellRadiusStore.LookupEntry(12);
+                            if (!radius)
+                                break;
+                
+                            spellInfo->Effects[0].RadiusEntry = radius; //200yards.
+                        }
+                        break;
                 case 75509: // Twilight Mending
                     spellInfo->AttributesEx6 |= SPELL_ATTR6_CAN_TARGET_INVISIBLE;
                     spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
@@ -4930,6 +5012,45 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 75888: // Awaken Flames
                 case 75889: // Awaken Flames
                     spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                    break;
+                case 74799: // Soul Consumption
+                        {
+                            const SpellRadiusEntry* radius = sSpellRadiusStore.LookupEntry(32);
+                            if (!radius)
+                                break;
+                
+                            spellInfo->Effects[1].RadiusEntry = radius; //200yards.
+                        }
+                        break;
+                case 74802: // Consumption (10man normal)
+                case 75874: // Consumption (25man normal)
+                case 74630: // Combustion (10man normal)
+                case 75882: // Combustion (25man normal)
+                        {
+                            const SpellRadiusEntry* radius = sSpellRadiusStore.LookupEntry(22);
+                            if (!radius)
+                                break;
+                
+                            spellInfo->Effects[0].RadiusEntry = radius; //200yards.
+                        }
+                        break;
+                case 75875: // Consumption (10man heroic)
+                case 75876: // Consumption (25man heroic)
+                case 75883: // Combustion (10man heroic)
+                case 75884: // Combustion (25man heroic)
+                        {
+                            const SpellRadiusEntry* radius = sSpellRadiusStore.LookupEntry(22);
+                            if (!radius)
+                                break;
+                
+                            spellInfo->Effects[0].RadiusEntry = radius; //200yards.
+                            spellInfo->Effects[1].RadiusEntry = radius; //200yards.
+                        }
+                        break;
+                    break;
+                case 74562: // Fiery Combustion
+                case 74792: // Soul Consumption
+                    spellInfo->AttributesEx |= (SPELL_ATTR1_CANT_BE_REFLECTED|SPELL_ATTR1_CANT_BE_REDIRECTED);
                     break;
                 // ENDOF RUBY SANCTUM SPELLS
                 //
@@ -4956,10 +5077,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 40166: // Introspection
                 case 40167: // Introspection
                     spellInfo->Attributes |= SPELL_ATTR0_NEGATIVE_1;
-                    break;
-                case 2378: // Minor Fortitude
-                    spellInfo->powerCost = 0;
-                    spellInfo->channelTicCost = 0;
                     break;
                 // Halls Of Origination spells
                 // Temple Guardian Anhuur
@@ -5040,7 +5157,7 @@ void SpellMgr::LoadTalentSpellInfo()
 
 const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) const
 {
-    if(spellId < GetSpellInfoStoreSize())
+    if (spellId < GetSpellInfoStoreSize())
     {
         if (mSpellInfoMap[difficulty][spellId])
             return mSpellInfoMap[difficulty][spellId];
@@ -5049,35 +5166,4 @@ const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) c
     }
 
     return NULL;
-}
-
-void SpellMgr::LoadSpellPowerInfo()
-{
-    mSpellPowerInfo.resize(sSpellStore.GetNumRows());
-    for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); i++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
-        if (!spellPower)
-            continue;
-
-        mSpellPowerInfo[spellPower->spellId].push_back(spellPower->Id);
-    }
-}
-
-SpellPowerEntry const* SpellMgr::GetSpellPowerEntryByIdAndPower(uint32 id, Powers power) const
-{
-    std::list<uint32> powerList = GetSpellPowerList(id);
-
-    for (std::list<uint32>::iterator itr = powerList.begin(); itr != powerList.end(); itr++)
-    {
-        SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(*itr);
-        if (!spellPower)
-            continue;
-
-        if (spellPower->powerType == power)
-            return spellPower;
-    }
-
-    SpellInfo const* spell = sSpellMgr->GetSpellInfo(id);
-    return spell->spellPower;
 }

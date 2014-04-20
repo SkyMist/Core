@@ -187,6 +187,26 @@ struct SpellReagentsEntry
     uint32    ReagentCount[MAX_SPELL_REAGENTS2];             // 11 - 20   m_reagentCount
 };
 
+// ItemUpgrade.db2
+struct ItemUpgradeEntry
+{
+    uint32 Id;
+    uint32 itemUpgradePath;
+    uint32 itemLevelUpgrade;
+    uint32 precItemUpgradeId;
+    uint32 currencyId;
+    uint32 currencyCost;
+};
+
+// RulesetItemUpgrade.db2
+struct RulesetItemUpgradeEntry
+{
+    uint32 Id;
+    uint32 unk;
+    uint32 itemUpgradeId;
+    uint32 itemid;
+};
+
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform
 #if defined(__GNUC__)
 #pragma pack()

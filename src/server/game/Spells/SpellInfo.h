@@ -357,10 +357,6 @@ public:
     uint32 BaseLevel;
     uint32 SpellLevel;
     SpellDurationEntry const* DurationEntry;
-    uint32 PowerType;
-    uint32 powerCost;
-    uint32 channelTicCost;
-    float  powerCostPercentage;
     uint32 RuneCostID;
     float APMultiplier;
     SpellRangeEntry const* RangeEntry;
@@ -402,6 +398,7 @@ public:
     uint32 SpellTargetRestrictionsId;
     uint32 SpellTotemsId;
     uint32 SpellMiscId;
+
     // SpellScalingEntry
     int32  CastTimeMin;
     int32  CastTimeMax;
@@ -412,7 +409,6 @@ public:
     SpellEffectInfo Effects[MAX_SPELL_EFFECTS];
     uint32 ExplicitTargetMask;
     SpellChainNode const* ChainEntry;
-    SpellPowerEntry* spellPower;
 
     // SpecializationSpellEntry
     std::list<uint32> SpecializationIdList;
@@ -432,7 +428,6 @@ public:
     SpellEquippedItemsEntry const* GetSpellEquippedItems() const;
     SpellInterruptsEntry const* GetSpellInterrupts() const;
     SpellLevelsEntry const* GetSpellLevels() const;
-    SpellPowerEntry const* GetSpellPower() const;
     SpellMiscEntry const* GetSpellMisc() const;
     SpellReagentsEntry const* GetSpellReagents() const;
     SpellScalingEntry const* GetSpellScaling() const;
@@ -560,6 +555,7 @@ public:
     bool IsAffectedByResilience() const;
     bool IsLethalPoison() const;
     bool CanTriggerHotStreak() const;
+    bool IsCustomCalculated() const;
 
     // loading helpers
     uint32 _GetExplicitTargetMask() const;

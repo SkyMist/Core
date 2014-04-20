@@ -1388,10 +1388,6 @@ void World::SetInitialWorldSettings()
     sSpellMgr->LoadTalentSpellInfo();
     TC_LOG_INFO("server.loading", "");
 
-    TC_LOG_INFO("server.loading", "Loading SpellPowerInfo store....");
-    sSpellMgr->LoadSpellPowerInfo();
-    TC_LOG_INFO("server.loading", "");
-
     TC_LOG_INFO("server.loading", "Loading SpellInfo corrections...");
     sSpellMgr->LoadSpellInfoCorrections();
     TC_LOG_INFO("server.loading", "");
@@ -2065,6 +2061,10 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading missing KeyChains...");
     sObjectMgr->LoadMissingKeyChains();
+    TC_LOG_INFO("server.loading", "");
+
+    TC_LOG_INFO("server.loading", "Initializing Item Upgrade data...");
+    sSpellMgr->InitializeItemUpgradeDatas();
     TC_LOG_INFO("server.loading", "");
 
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
