@@ -1330,7 +1330,7 @@ enum Opcodes
    SMSG_STREAMING_MOVIE                                     = 0x0,
    SMSG_SUMMON_CANCEL                                       = 0x0,
    SMSG_SUMMON_REQUEST                                      = 0x0,
-   SMSG_SUPERCEDED_SPELL                                    = 0x052a, // 5.4.7 18019
+   SMSG_SUPERCEDED_SPELL                                    = 0x052A, // 5.4.7 18019
    SMSG_SUPPRESS_NPC_GREETINGS                              = 0x0,
    SMSG_SUSPEND_COMMS                                       = 0x0,
    SMSG_SUSPEND_TOKEN_RESPONSE                              = 0x0,
