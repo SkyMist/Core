@@ -654,6 +654,13 @@ void Battleground::SetTeamStartLoc(uint32 TeamID, float X, float Y, float Z, flo
     m_TeamStartLocO[idx] = O;
 }
 
+void Battleground::SendPacketToAll(WorldPacket* packet)
+{
+    for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
+        if (Player* player = _GetPlayer(itr, "SendPacketToAll"))
+            player->SendDirectMessage(packet);
+}
+
 void Battleground::SendPacketToTeam(uint32 TeamID, WorldPacket* packet, Player* sender, bool self)
 {
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
