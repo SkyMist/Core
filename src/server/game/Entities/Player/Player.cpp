@@ -21550,7 +21550,7 @@ void Player::SendAttackSwingCancelAttack()
     ObjectGuid guid = GetGUID();
 
     WorldPacket data(SMSG_CANCEL_COMBAT, 0);
-    data.WriteBit(guid[3]);
+    /*data.WriteBit(guid[3]);
     data.WriteBit(guid[1]);
     data.WriteBit(guid[0]);
     data.WriteBit(guid[7]);
@@ -21569,15 +21569,34 @@ void Player::SendAttackSwingCancelAttack()
     data << uint32(0); // Unk
     data.WriteByteSeq(guid[1]);
     data << uint8(0); //Unk
-    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[0]);*/
 
     GetSession()->SendPacket(&data);
 }
 
 void Player::SendAutoRepeatCancel(Unit* target)
 {
-    WorldPacket data(SMSG_CANCEL_AUTO_REPEAT, target->GetPackGUID().size());
-    data.append(target->GetPackGUID());                     // may be it's target guid
+    WorldPacket data(SMSG_CANCEL_AUTO_REPEAT, 9);
+    ObjectGuid TargetGuid = target->GetGUID();
+
+    data.WriteBit(TargetGuid[6]);
+    data.WriteBit(TargetGuid[3]);
+    data.WriteBit(TargetGuid[0]);
+    data.WriteBit(TargetGuid[1]);
+    data.WriteBit(TargetGuid[4]);
+    data.WriteBit(TargetGuid[2]);
+    data.WriteBit(TargetGuid[7]);
+    data.WriteBit(TargetGuid[5]);
+    data.FlushBits();
+    data.WriteByteSeq(TargetGuid[4]);
+    data.WriteByteSeq(TargetGuid[6]);
+    data.WriteByteSeq(TargetGuid[3]);
+    data.WriteByteSeq(TargetGuid[1]);
+    data.WriteByteSeq(TargetGuid[2]);
+    data.WriteByteSeq(TargetGuid[0]);
+    data.WriteByteSeq(TargetGuid[7]);
+    data.WriteByteSeq(TargetGuid[5]);
+
     GetSession()->SendPacket(&data);
 }
 

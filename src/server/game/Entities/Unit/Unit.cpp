@@ -16253,15 +16253,57 @@ void Unit::SendThreatListUpdate()
         uint32 count = getThreatManager().getThreatList().size();
 
         TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_THREAT_UPDATE Message");
-        WorldPacket data(SMSG_THREAT_UPDATE, 8 + count * 8);
-        data.append(GetPackGUID());
-        data << uint32(count);
+        WorldPacket data(SMSG_THREAT_UPDATE, 4 + 8 + count * 13);
+        ByteBuffer BitPart;
+        ByteBuffer BytePart;
+        ObjectGuid OwnerGuid = GetGUID();
+
         ThreatContainer::StorageType const &tlist = getThreatManager().getThreatList();
         for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
         {
-            data.appendPackGUID((*itr)->getUnitGuid());
-            data << uint32((*itr)->getThreat()*100);
+            ObjectGuid TargetGuid = (*itr)->getUnitGuid();
+            
+            BitPart.WriteBit(TargetGuid[6]);
+            BitPart.WriteBit(TargetGuid[2]);
+            BitPart.WriteBit(TargetGuid[3]);
+            BitPart.WriteBit(TargetGuid[0]);
+            BitPart.WriteBit(TargetGuid[4]);
+            BitPart.WriteBit(TargetGuid[7]);
+            BitPart.WriteBit(TargetGuid[2]);
+            BitPart.WriteBit(TargetGuid[1]);
+
+            BytePart.WriteByteSeq(TargetGuid[3]);
+            BytePart.WriteByteSeq(TargetGuid[7]);
+            BytePart.WriteByteSeq(TargetGuid[0]);
+            BytePart.WriteByteSeq(TargetGuid[1]);
+            BytePart.WriteByteSeq(TargetGuid[6]);
+            BytePart.WriteByteSeq(TargetGuid[5]);
+            BytePart << uint32((*itr)->getThreat() * 100);
+            BytePart.WriteByteSeq(TargetGuid[4]);
+            BytePart.WriteByteSeq(TargetGuid[2]);         
         }
+
+        data.WriteBits(count, 21);
+        data.append(BitPart);
+        data.WriteBit(OwnerGuid[7]);
+        data.WriteBit(OwnerGuid[2]);
+        data.WriteBit(OwnerGuid[4]);
+        data.WriteBit(OwnerGuid[5]);
+        data.WriteBit(OwnerGuid[0]);
+        data.WriteBit(OwnerGuid[6]);
+        data.WriteBit(OwnerGuid[1]);
+        data.WriteBit(OwnerGuid[3]);
+        data.FlushBits();
+        data.append(BytePart);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(OwnerGuid[7]);
+
         SendMessageToSet(&data, false);
     }
 }
@@ -16274,15 +16316,71 @@ void Unit::SendChangeCurrentVictimOpcode(HostileReference* pHostileReference)
 
         TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_HIGHEST_THREAT_UPDATE Message");
         WorldPacket data(SMSG_HIGHEST_THREAT_UPDATE, 8 + 8 + count * 8);
-        data.append(GetPackGUID());
-        data.appendPackGUID(pHostileReference->getUnitGuid());
-        data << uint32(count);
+        ByteBuffer BitPart;
+        ByteBuffer BytePart;
+        ObjectGuid OwnerGuid = GetGUID();
+        ObjectGuid HostileGuid = pHostileReference->getUnitGuid();
+
         ThreatContainer::StorageType const &tlist = getThreatManager().getThreatList();
         for (ThreatContainer::StorageType::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
         {
-            data.appendPackGUID((*itr)->getUnitGuid());
-            data << uint32((*itr)->getThreat());
+            ObjectGuid TargetGuid = (*itr)->getUnitGuid();
+            BitPart.WriteBit(TargetGuid[7]);
+            BitPart.WriteBit(TargetGuid[6]);
+            BitPart.WriteBit(TargetGuid[3]);
+            BitPart.WriteBit(TargetGuid[2]);
+            BitPart.WriteBit(TargetGuid[0]);
+            BitPart.WriteBit(TargetGuid[5]);
+            BitPart.WriteBit(TargetGuid[1]);
+            BitPart.WriteBit(TargetGuid[4]);
+            BytePart.WriteByteSeq(TargetGuid[1]);
+            BytePart.WriteByteSeq(TargetGuid[2]);
+            BytePart.WriteByteSeq(TargetGuid[3]);
+            BytePart.WriteByteSeq(TargetGuid[0]);
+            BytePart.WriteByteSeq(TargetGuid[4]);
+            BytePart.WriteByteSeq(TargetGuid[7]);
+            BytePart << uint32((*itr)->getThreat());
+            BytePart.WriteByteSeq(TargetGuid[6]);
+            BytePart.WriteByteSeq(TargetGuid[5]);
         }
+
+        data.WriteBit(HostileGuid[1]);
+        data.WriteBit(HostileGuid[5]);
+        data.WriteBit(HostileGuid[3]);
+        data.WriteBit(HostileGuid[4]);
+        data.WriteBit(OwnerGuid[4]);
+        data.WriteBit(HostileGuid[6]);
+        data.WriteBit(OwnerGuid[6]);
+        data.WriteBits(count, 21);
+        data.WriteBit(OwnerGuid[3]);
+        data.WriteBit(OwnerGuid[5]);
+        data.WriteBit(OwnerGuid[2]);
+        data.WriteBit(OwnerGuid[1]);
+        data.append(BitPart);
+        data.WriteBit(OwnerGuid[0]);
+        data.WriteBit(OwnerGuid[7]);
+        data.WriteBit(HostileGuid[7]);
+        data.WriteBit(HostileGuid[2]);
+        data.WriteBit(HostileGuid[0]);
+        data.FlushBits();
+        data.WriteByteSeq(HostileGuid[7]);
+        data.append(BytePart);
+        data.WriteByteSeq(HostileGuid[4]);
+        data.WriteByteSeq(OwnerGuid[2]);
+        data.WriteByteSeq(HostileGuid[3]);
+        data.WriteByteSeq(OwnerGuid[3]);
+        data.WriteByteSeq(OwnerGuid[7]);
+        data.WriteByteSeq(HostileGuid[0]);
+        data.WriteByteSeq(OwnerGuid[0]);
+        data.WriteByteSeq(OwnerGuid[5]);
+        data.WriteByteSeq(HostileGuid[5]);
+        data.WriteByteSeq(OwnerGuid[4]);
+        data.WriteByteSeq(HostileGuid[2]);
+        data.WriteByteSeq(OwnerGuid[6]);
+        data.WriteByteSeq(HostileGuid[6]);
+        data.WriteByteSeq(OwnerGuid[1]);
+        data.WriteByteSeq(HostileGuid[1]);
+
         SendMessageToSet(&data, false);
     }
 }
@@ -16291,16 +16389,73 @@ void Unit::SendClearThreatListOpcode()
 {
     TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_THREAT_CLEAR Message");
     WorldPacket data(SMSG_THREAT_CLEAR, 8);
-    data.append(GetPackGUID());
+    ObjectGuid OwnerGuid = GetGUID();
+    
+    data.WriteBit(OwnerGuid[5]);
+    data.WriteBit(OwnerGuid[7]);
+    data.WriteBit(OwnerGuid[1]);
+    data.WriteBit(OwnerGuid[2]);
+    data.WriteBit(OwnerGuid[6]);
+    data.WriteBit(OwnerGuid[3]);
+    data.WriteBit(OwnerGuid[4]);
+    data.WriteBit(OwnerGuid[0]);
+    data.FlushBits();
+    data.WriteByteSeq(OwnerGuid[2]);
+    data.WriteByteSeq(OwnerGuid[0]);
+    data.WriteByteSeq(OwnerGuid[6]);
+    data.WriteByteSeq(OwnerGuid[7]);
+    data.WriteByteSeq(OwnerGuid[5]);
+    data.WriteByteSeq(OwnerGuid[4]);
+    data.WriteByteSeq(OwnerGuid[1]);
+    data.WriteByteSeq(OwnerGuid[3]);
+
     SendMessageToSet(&data, false);
 }
 
 void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
 {
     TC_LOG_DEBUG("entities.unit", "WORLD: Send SMSG_THREAT_REMOVE Message");
-    WorldPacket data(SMSG_THREAT_REMOVE, 8 + 8);
-    data.append(GetPackGUID());
-    data.appendPackGUID(pHostileReference->getUnitGuid());
+    WorldPacket data(SMSG_THREAT_REMOVE, 9 + 9);
+
+    //Those may be wrong, if it doesn't work, simply change the values :P
+    ObjectGuid Guid1 = pHostileReference->getUnitGuid();
+    ObjectGuid Guid2 = GetGUID();
+
+    data.WriteBit(Guid2[2]);
+    data.WriteBit(Guid2[1]);
+    data.WriteBit(Guid1[3]);
+    data.WriteBit(Guid2[4]);
+    data.WriteBit(Guid2[6]);
+    data.WriteBit(Guid1[6]);
+    data.WriteBit(Guid2[3]);
+    data.WriteBit(Guid1[7]);
+    data.WriteBit(Guid1[4]);
+    data.WriteBit(Guid2[5]);
+    data.WriteBit(Guid1[2]);
+    data.WriteBit(Guid1[5]);
+    data.WriteBit(Guid1[1]);
+    data.WriteBit(Guid1[0]);
+    data.WriteBit(Guid2[7]);
+    data.WriteBit(Guid2[0]);
+    data.FlushBits();
+
+    data.WriteByteSeq(Guid2[1]);
+    data.WriteByteSeq(Guid1[3]);
+    data.WriteByteSeq(Guid2[3]);
+    data.WriteByteSeq(Guid2[6]);
+    data.WriteByteSeq(Guid2[0]);
+    data.WriteByteSeq(Guid1[0]);
+    data.WriteByteSeq(Guid1[4]);
+    data.WriteByteSeq(Guid1[1]);
+    data.WriteByteSeq(Guid1[6]);
+    data.WriteByteSeq(Guid2[4]);
+    data.WriteByteSeq(Guid2[5]);
+    data.WriteByteSeq(Guid1[7]);
+    data.WriteByteSeq(Guid2[7]);
+    data.WriteByteSeq(Guid2[2]);
+    data.WriteByteSeq(Guid1[2]);
+    data.WriteByteSeq(Guid1[5]);
+
     SendMessageToSet(&data, false);
 }
 

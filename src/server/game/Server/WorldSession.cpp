@@ -1304,3 +1304,12 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p) const
             return true;
     }
 }
+
+void WorldSession::_SendNotificationPacket(const char* message)
+{
+    WorldPacket notification(SMSG_NOTIFICATION, 2 + strlen(message));
+    notification.WriteBits(strlen(message), 11);
+    notification.FlushBits();
+    notification.WriteString(std::string(message));
+    SendPacket(&notification);
+}

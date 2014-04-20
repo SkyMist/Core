@@ -683,18 +683,46 @@ namespace Trinity
 
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
-                std::string const name(i_target ? i_target->GetNameForLocaleIdx(loc_idx) : "");
-                uint32 namlen = name.size();
+                ObjectGuid PlayerGuid = i_player.GetGUID();
+                ObjectGuid TargetGuid = i_target->GetGUID();
 
-                data.Initialize(SMSG_TEXT_EMOTE, 20 + namlen);
-                data << i_player.GetGUID();
-                data << uint32(i_text_emote);
+                data.Initialize(SMSG_TEXT_EMOTE, 4+4+9+9);
+                data.WriteBit(TargetGuid[2]);
+                data.WriteBit(TargetGuid[0]);
+                data.WriteBit(PlayerGuid[3]);
+                data.WriteBit(TargetGuid[3]);
+                data.WriteBit(TargetGuid[5]);
+                data.WriteBit(PlayerGuid[6]);
+                data.WriteBit(PlayerGuid[0]);
+                data.WriteBit(PlayerGuid[2]);
+                data.WriteBit(TargetGuid[1]);
+                data.WriteBit(TargetGuid[4]);
+                data.WriteBit(TargetGuid[7]);
+                data.WriteBit(PlayerGuid[5]);
+                data.WriteBit(PlayerGuid[3]);
+                data.WriteBit(PlayerGuid[1]);
+                data.WriteBit(TargetGuid[6]);
+                data.WriteBit(PlayerGuid[7]);
+                data.FlushBits();
+
+                data.WriteByteSeq(PlayerGuid[0]);
+                data.WriteByteSeq(PlayerGuid[5]);
+                data.WriteByteSeq(PlayerGuid[6]);
                 data << uint32(i_emote_num);
-                data << uint32(namlen);
-                if (namlen > 1)
-                    data << name;
-                else
-                    data << uint8(0x00);
+                data.WriteByteSeq(PlayerGuid[7]);
+                data.WriteByteSeq(PlayerGuid[2]);
+                data << uint32(i_text_emote);
+                data.WriteByteSeq(TargetGuid[3]);
+                data.WriteByteSeq(TargetGuid[1]);
+                data.WriteByteSeq(TargetGuid[6]);
+                data.WriteByteSeq(TargetGuid[2]);
+                data.WriteByteSeq(TargetGuid[0]);
+                data.WriteByteSeq(PlayerGuid[4]);
+                data.WriteByteSeq(PlayerGuid[3]);
+                data.WriteByteSeq(TargetGuid[7]);
+                data.WriteByteSeq(PlayerGuid[1]);
+                data.WriteByteSeq(TargetGuid[4]);
+                data.WriteByteSeq(TargetGuid[5]);
             }
 
         private:

@@ -1062,6 +1062,7 @@ class WorldSession
         } AntiDOS;
 
     private:
+        void _SendNotificationPacket(const char* message);
         // private trade methods
         void moveItems(Item* myItems[], Item* hisItems[]);
 
