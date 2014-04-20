@@ -111,8 +111,8 @@ void LoadDB2Stores(std::string const& dataPath)
     LoadDB2(availableDb2Locales, bad_db2_files, sKeyChainStore, db2Path, "KeyChain.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sSceneScriptStore, db2Path, "SceneScript.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sSpellReagentsStore, db2Path, "SpellReagents.db2");
-    LoadDB2(bad_db2_files, sItemUpgradeStore, db2Path, "ItemUpgrade.db2");
-    LoadDB2(bad_db2_files, sRulesetItemUpgradeStore, db2Path, "RulesetItemUpgrade.db2");
+    LoadDB2(availableDb2Locales, bad_db2_files, sItemUpgradeStore, db2Path, "ItemUpgrade.db2");
+    LoadDB2(availableDb2Locales, bad_db2_files, sRulesetItemUpgradeStore, db2Path, "RulesetItemUpgrade.db2");
 
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)
@@ -140,7 +140,7 @@ void LoadDB2Stores(std::string const& dataPath)
         exit(1);
     }
 
-    TC_LOG_INFO("misc", ">> Initialized %d DB2 data stores.", DB2FilesCount);
+    TC_LOG_INFO("server.loading", ">> Initialized %d DB2 data stores.", DB2FilesCount);
 }
 
 DB2StorageBase const* GetDB2Storage(uint32 type)

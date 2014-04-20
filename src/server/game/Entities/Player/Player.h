@@ -1266,6 +1266,7 @@ class Player : public Unit, public GridObject<Player>
 
         bool CanInteractWithQuestGiver(Object* questGiver);
         Creature* GetNPCIfCanInteractWith(uint64 guid, uint32 npcflagmask);
+        Creature* GetNPCIfCanInteractWithFlag2(uint64 guid, uint32 npcflagmask);
         GameObject* GetGameObjectIfCanInteractWith(uint64 guid, GameobjectTypes type) const;
 
         void ToggleAFK();
@@ -1411,8 +1412,6 @@ class Player : public Unit, public GridObject<Player>
         InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = NULL) const;
         InventoryResult CanStoreItem(uint8 bag, uint8 slot, ItemPosCountVec& dest, uint32 entry, uint32 count, Item* pItem = NULL, bool swap = false, uint32* no_space_count = NULL) const;
 
-        void SetMainHandWeaponSlot();
-
         void AddRefundReference(uint32 it);
         void DeleteRefundReference(uint32 it);
 
@@ -1443,7 +1442,7 @@ class Player : public Unit, public GridObject<Player>
           * @param  printLog used on SMSG_UPDATE_CURRENCY
           * @param  ignore gain multipliers
         */
-        void ModifyCurrency(uint32 id, int32 count, bool printLog = true, bool ignoreMultipliers = false);
+        void ModifyCurrency(uint32 id, int32 count, bool printLog = true, bool ignoreMultipliers = false, bool ignoreLimit = false);
 
         void ApplyEquipCooldown(Item* pItem);
         void QuickEquipItem(uint16 pos, Item* pItem);

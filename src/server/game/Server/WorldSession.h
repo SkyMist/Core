@@ -971,6 +971,10 @@ class WorldSession
         void HandleReforgeItemOpcode(WorldPacket& recvData);
         void SendReforgeResult(bool success);
 
+        // Item Upgrade
+        void HandleUpgradeItemOpcode(WorldPacket& recvData);
+        void SendItemUpgradeResult(bool success);
+
         // Miscellaneous
         void HandleSpellClick(WorldPacket& recvData);
         void HandleMirrorImageDataRequest(WorldPacket& recvData);

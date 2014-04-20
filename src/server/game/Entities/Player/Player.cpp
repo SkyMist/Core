@@ -2901,6 +2901,57 @@ Creature* Player::GetNPCIfCanInteractWith(uint64 guid, uint32 npcflagmask)
     return creature;
 }
 
+Creature* Player::GetNPCIfCanInteractWithFlag2(uint64 guid, uint32 npcflagmask)
+{
+    // unit checks
+    if (!guid)
+        return NULL;
+
+    if (!IsInWorld())
+        return NULL;
+
+    if (IsInFlight())
+        return NULL;
+
+    // exist (we need look pets also for some interaction (quest/etc)
+    Creature* creature = ObjectAccessor::GetCreatureOrPetOrVehicle(*this, guid);
+    if (!creature)
+        return NULL;
+
+    // Deathstate checks
+    if (!IsAlive() && !(creature->GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_GHOST))
+        return NULL;
+
+    // alive or spirit healer
+    if (!creature->IsAlive() && !(creature->GetCreatureTemplate()->type_flags & CREATURE_TYPEFLAGS_DEAD_INTERACT))
+        return NULL;
+
+    // appropriate npc type
+    if (npcflagmask && !creature->HasFlag(UNIT_FIELD_NPC_FLAGS + 1, npcflagmask))
+        return NULL;
+
+    // not allow interaction under control, but allow with own pets
+    if (creature->GetCharmerGUID())
+        return NULL;
+
+    // not enemy
+    if (creature->IsHostileTo(this))
+        return NULL;
+
+    // not unfriendly
+    if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(creature->getFaction()))
+        if (factionTemplate->faction)
+            if (FactionEntry const* faction = sFactionStore.LookupEntry(factionTemplate->faction))
+                if (faction->reputationListID >= 0 && GetReputationMgr().GetRank(faction) <= REP_UNFRIENDLY)
+                    return NULL;
+
+    // not too far
+    if (!creature->IsWithinDistInMap(this, INTERACTION_DISTANCE))
+        return NULL;
+
+    return creature;
+}
+
 GameObject* Player::GetGameObjectIfCanInteractWith(uint64 guid, GameobjectTypes type) const
 {
     if (GameObject* go = GetMap()->GetGameObject(guid))
@@ -4936,8 +4987,6 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
     _SaveTalents(trans);
     _SaveSpells(trans);
     CharacterDatabase.CommitTransaction(trans);
-
-    UpdateMasteryPercentage();
 
     SendTalentsInfoData();
 
@@ -8030,7 +8079,7 @@ bool Player::HasCurrency(uint32 id, uint32 count) const
     return itr != _currencyStorage.end() && itr->second.totalCount >= count;
 }
 
-void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bool ignoreMultipliers/* = false*/)
+void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bool ignoreMultipliers/* = false*/, bool ignoreLimit /* = false */)
 {
     if (!count)
         return;
@@ -8044,6 +8093,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
     int32 precision = currency->Flags & CURRENCY_FLAG_HIGH_PRECISION ? CURRENCY_PRECISION : 1;
     uint32 oldTotalCount = 0;
     uint32 oldWeekCount = 0;
+
     PlayerCurrenciesMap::iterator itr = _currencyStorage.find(id);
     if (itr == _currencyStorage.end())
     {
@@ -8062,7 +8112,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
     // count can't be more then weekCap if used (weekCap > 0)
     uint32 weekCap = GetCurrencyWeekCap(currency);
-    if (weekCap && count > int32(weekCap))
+    if (!ignoreLimit && weekCap && count > int32(weekCap))
         count = weekCap;
 
     // count can't be more then totalCap if used (totalCap > 0)
@@ -8074,23 +8124,25 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
     if (newTotalCount < 0)
         newTotalCount = 0;
 
-    int32 newWeekCount = int32(oldWeekCount) + (count > 0 ? count : 0);
+    int32 newWeekCount = !ignoreLimit ? (int32(oldWeekCount) + (count > 0 ? count : 0)) : int32(oldWeekCount);
     if (newWeekCount < 0)
         newWeekCount = 0;
 
-    // if we get more then weekCap just set to limit
-    if (weekCap && int32(weekCap) < newWeekCount)
+    if (!ignoreLimit)
     {
-        newWeekCount = int32(weekCap);
-        // weekCap - oldWeekCount always >= 0 as we set limit before!
-        newTotalCount = oldTotalCount + (weekCap - oldWeekCount);
-    }
+        // if we get more then weekCap just set to limit
+        if (weekCap && int32(weekCap) < newWeekCount)
+        {
+            newWeekCount = int32(weekCap);
+            newTotalCount = oldTotalCount + (weekCap - oldWeekCount);
+        }
 
-    // if we get more then totalCap set to maximum;
-    if (totalCap && int32(totalCap) < newTotalCount)
-    {
-        newTotalCount = int32(totalCap);
-        newWeekCount = weekCap;
+        // if we get more then totalCap set to maximum;
+        if (totalCap && int32(totalCap) < newTotalCount)
+        {
+            newTotalCount = int32(totalCap);
+            newWeekCount = weekCap;
+        }
     }
 
     if (uint32(newTotalCount) != oldTotalCount)
@@ -10802,10 +10854,51 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
         case INVTYPE_RANGED:
         case INVTYPE_THROWN:
         case INVTYPE_RANGEDRIGHT:
-            SetMainHandWeaponSlot();
+            slots[0] = EQUIPMENT_SLOT_MAINHAND;
+            if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+            {
+                if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+                {
+                    if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                    {
+                        const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                        break;
+                    }
+                }
+            }
+
+            if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+            {
+                if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                {
+                    const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                    break;
+                }
+            }
             break;
         case INVTYPE_2HWEAPON:
-            SetMainHandWeaponSlot();
+            slots[0] = EQUIPMENT_SLOT_MAINHAND;
+            if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+            {
+                if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+                {
+                    if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                    {
+                        const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                        break;
+                    }
+                }
+            }
+
+            if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+            {
+                if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                {
+                    const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                    break;
+                }
+            }
+
             if (CanDualWield() && CanTitanGrip() && proto->SubClass != ITEM_SUBCLASS_WEAPON_POLEARM && proto->SubClass != ITEM_SUBCLASS_WEAPON_STAFF)
                 slots[1] = EQUIPMENT_SLOT_OFFHAND;
             break;
@@ -10829,10 +10922,32 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
             break;
         case INVTYPE_RELIC:
            if (playerClass == CLASS_PALADIN || playerClass == CLASS_DRUID || playerClass == CLASS_SHAMAN || playerClass == CLASS_DEATH_KNIGHT)
-            SetMainHandWeaponSlot();
+		   {
+               slots[0] = EQUIPMENT_SLOT_MAINHAND;
+               if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+               {
+                   if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+                   {
+                       if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                       {
+                           const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                           break;
+                       }
+                   }
+               }
+
+               if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+               {
+                   if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
+                   {
+                       const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
+                       break;
+                   }
+               }
+		   }
            break;
 
-        default: return NULL_SLOT;
+        default: return NULL_SLOT; break;
     }
 
     if (slot != NULL_SLOT)
@@ -10859,31 +10974,6 @@ uint8 Player::FindEquipSlot(ItemTemplate const* proto, uint32 slot, bool swap) c
 
     // no free position
     return NULL_SLOT;
-}
-
-void Player::SetMainHandWeaponSlot()
-{
-    slots[0] = EQUIPMENT_SLOT_MAINHAND;
-    if (Item* mhWeapon = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
-    {
-        if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
-        {
-            if (mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || mhWeaponProto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
-            {
-                const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
-                break;
-            }
-        }
-    }
-
-    if (GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
-    {
-        if (proto->SubClass == ITEM_SUBCLASS_WEAPON_POLEARM || proto->SubClass == ITEM_SUBCLASS_WEAPON_STAFF)
-        {
-            const_cast<Player*>(this)->AutoUnequipOffhandIfNeed(true);
-            break;
-        }
-    }
 }
 
 InventoryResult Player::CanUnequipItems(uint32 item, uint32 count) const
@@ -28041,7 +28131,7 @@ void Player::RefundItem(Item* item)
         uint32 count = iece->RequiredCurrencyCount[i];
         uint32 currencyid = iece->RequiredCurrency[i];
         if (count && currencyid)
-            ModifyCurrency(currencyid, count);
+            ModifyCurrency(currencyid, count, false, true, true);
     }
 
     // Grant back money

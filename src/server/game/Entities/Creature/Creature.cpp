@@ -416,6 +416,8 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
     else
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS, npcflag);
 
+    SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, cInfo->npcflag2);
+
     SetAttackTime(BASE_ATTACK,  cInfo->baseattacktime);
     SetAttackTime(OFF_ATTACK,   cInfo->baseattacktime);
     SetAttackTime(RANGED_ATTACK, cInfo->rangeattacktime);
@@ -979,7 +981,9 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
 
     uint32 displayId = GetNativeDisplayId();
     uint32 npcflag = GetUInt32Value(UNIT_FIELD_NPC_FLAGS);
+    uint32 npcflag2 = GetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1);
     uint32 unit_flags = GetUInt32Value(UNIT_FIELD_FLAGS);
+    uint32 unit_flags2 = GetUInt32Value(UNIT_FIELD_FLAGS2);
     uint32 dynamicflags = GetUInt32Value(OBJECT_FIELD_DYNAMIC_FLAGS);
 
     // check if it's a custom model and if not, use 0 for displayId
@@ -993,8 +997,14 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
         if (npcflag == cinfo->npcflag)
             npcflag = 0;
 
+        if (npcflag2 == cinfo->npcflag2)
+            npcflag2 = 0;
+
         if (unit_flags == cinfo->unit_flags)
             unit_flags = 0;
+
+        if (unit_flags2 == cinfo->unit_flags2)
+            unit_flags2 = 0;
 
         if (dynamicflags == cinfo->dynamicflags)
             dynamicflags = 0;
@@ -1032,7 +1042,9 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
         ? IDLE_MOTION_TYPE : GetDefaultMovementType();
     data.spawnMask = spawnMask;
     data.npcflag = npcflag;
+    data.npcflag2 = npcflag2;
     data.unit_flags = unit_flags;
+    data.unit_flags2 = unit_flags2;
     data.dynamicflags = dynamicflags;
 
     // update in DB
@@ -1063,7 +1075,9 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setUInt32(index++, GetPower(POWER_MANA));
     stmt->setUInt8(index++, uint8(GetDefaultMovementType()));
     stmt->setUInt32(index++, npcflag);
+    stmt->setUInt32(index++, npcflag2);
     stmt->setUInt32(index++, unit_flags);
+    stmt->setUInt32(index++, unit_flags2);
     stmt->setUInt32(index++, dynamicflags);
     trans->Append(stmt);
 
@@ -1488,7 +1502,9 @@ void Creature::setDeathState(DeathState s)
             SaveRespawnTime();
 
         SetTarget(0);                // remove target selection in any cases (can be set at aura remove in Unit::setDeathState)
+
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+        SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, UNIT_NPC_FLAG2_NONE);
 
         setActive(false);
 
@@ -1524,6 +1540,7 @@ void Creature::setDeathState(DeathState s)
 
         CreatureTemplate const* cinfo = GetCreatureTemplate();
         SetUInt32Value(UNIT_FIELD_NPC_FLAGS, cinfo->npcflag);
+        SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, cinfo->npcflag2);
         ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~UNIT_STATE_IGNORE_PATHFINDING));
         SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
         LoadCreaturesAddon(true);

@@ -1770,16 +1770,16 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
 void WorldSession::SendItemUpgradeResult(bool success)
 {
-    WorldPacket data(SMSG_ITEM_UPGRADE_RESULT, 1);
-    data.WriteBit(success);
-    data.FlushBits();
-
-    SendPacket(&data);
+    // WorldPacket data(SMSG_ITEM_UPGRADE_RESULT, 1);
+    // data.WriteBit(success);
+    // data.FlushBits();
+	// 
+    // SendPacket(&data);
 }
 
 void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_UPGRADE_ITEM");
+    TC_LOG_DEBUG("network",  "WORLD: Received CMSG_UPGRADE_ITEM");
 
     ObjectGuid npcGuid;
     ObjectGuid itemGuid;
@@ -1892,5 +1892,7 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
     if (item->IsEquipped())
         player->ApplyItemUpgrade(item, true);
 
-    player->ModifyCurrency(itemUpEntry->currencyId, -itemUpEntry->currencyCost, false, true, true);
+    int32 currencyPointsCost = itemUpEntry->currencyCost;
+
+    player->ModifyCurrency(itemUpEntry->currencyId, -currencyPointsCost, false, true, true);
 }

@@ -1394,7 +1394,7 @@ enum Opcodes
    SMSG_WARGAME_REQUEST_SENT                                = 0x0,
    SMSG_WEATHER                                             = 0x0,
    SMSG_WEEKLY_LAST_RESET                                   = 0x0,
-   SMSG_WEEKLY_RESET_CURRENCY                               = 0x0620, // 5.4.7
+   SMSG_WEEKLY_RESET_CURRENCY                               = 0x0620, // 5.4.7 18019
    SMSG_WEEKLY_SPELL_USAGE                                  = 0x0,
    SMSG_WEEKLY_SPELL_USAGE_UPDATE                           = 0x0,
    SMSG_WHO                                                 = 0x0460, // 5.4.7 18019

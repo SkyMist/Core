@@ -816,7 +816,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasMessage)
         data->WriteBits(messageLength, 12);
 
-    data->WriteBit(1);                              // byte1499
+    data->WriteBit(0);                              // byte1499
     data->WriteBit(!HasAddonPrefix);
     data->WriteBit(!HasChannel);
 

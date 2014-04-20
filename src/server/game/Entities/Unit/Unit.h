@@ -39,101 +39,106 @@
 
 enum SpellInterruptFlags
 {
-    SPELL_INTERRUPT_FLAG_MOVEMENT     = 0x01, // why need this for instant?
-    SPELL_INTERRUPT_FLAG_PUSH_BACK    = 0x02, // push back
-    SPELL_INTERRUPT_FLAG_UNK3         = 0x04, // any info?
-    SPELL_INTERRUPT_FLAG_INTERRUPT    = 0x08, // interrupt
-    SPELL_INTERRUPT_FLAG_ABORT_ON_DMG = 0x10  // _complete_ interrupt on direct damage
-    //SPELL_INTERRUPT_UNK             = 0x20                // unk, 564 of 727 spells having this spell start with "Glyph"
+    SPELL_INTERRUPT_FLAG_MOVEMENT                   = 0x01, // why need this for instant?
+    SPELL_INTERRUPT_FLAG_PUSH_BACK                  = 0x02, // push back
+    SPELL_INTERRUPT_FLAG_UNK3                       = 0x04, // any info?
+    SPELL_INTERRUPT_FLAG_INTERRUPT                  = 0x08, // interrupt
+    SPELL_INTERRUPT_FLAG_ABORT_ON_DMG               = 0x10  // _complete_ interrupt on direct damage
+    //SPELL_INTERRUPT_UNK                           = 0x20    // unk, 564 of 727 spells having this spell start with "Glyph"
 };
 
 // See SpellAuraInterruptFlags for other values definitions
 enum SpellChannelInterruptFlags
 {
-    CHANNEL_INTERRUPT_FLAG_INTERRUPT    = 0x08,  // interrupt
-    CHANNEL_FLAG_DELAY                  = 0x4000
+    CHANNEL_INTERRUPT_FLAG_INTERRUPT                = 0x08,  // interrupt
+    CHANNEL_FLAG_DELAY                              = 0x4000
 };
 
 enum SpellAuraInterruptFlags
 {
-    AURA_INTERRUPT_FLAG_HITBYSPELL          = 0x00000001,   // 0    removed when getting hit by a negative spell?
-    AURA_INTERRUPT_FLAG_TAKE_DAMAGE         = 0x00000002,   // 1    removed by any damage
-    AURA_INTERRUPT_FLAG_CAST                = 0x00000004,   // 2    cast any spells
-    AURA_INTERRUPT_FLAG_MOVE                = 0x00000008,   // 3    removed by any movement
-    AURA_INTERRUPT_FLAG_TURNING             = 0x00000010,   // 4    removed by any turning
-    AURA_INTERRUPT_FLAG_JUMP                = 0x00000020,   // 5    removed by entering combat
-    AURA_INTERRUPT_FLAG_NOT_MOUNTED         = 0x00000040,   // 6    removed by dismounting
-    AURA_INTERRUPT_FLAG_NOT_ABOVEWATER      = 0x00000080,   // 7    removed by entering water
-    AURA_INTERRUPT_FLAG_NOT_UNDERWATER      = 0x00000100,   // 8    removed by leaving water
-    AURA_INTERRUPT_FLAG_NOT_SHEATHED        = 0x00000200,   // 9    removed by unsheathing
-    AURA_INTERRUPT_FLAG_TALK                = 0x00000400,   // 10   talk to npc / loot? action on creature
-    AURA_INTERRUPT_FLAG_USE                 = 0x00000800,   // 11   mine/use/open action on gameobject
-    AURA_INTERRUPT_FLAG_MELEE_ATTACK        = 0x00001000,   // 12   removed by attacking
-    AURA_INTERRUPT_FLAG_SPELL_ATTACK        = 0x00002000,   // 13   ???
-    AURA_INTERRUPT_FLAG_UNK14               = 0x00004000,   // 14
-    AURA_INTERRUPT_FLAG_TRANSFORM           = 0x00008000,   // 15   removed by transform?
-    AURA_INTERRUPT_FLAG_UNK16               = 0x00010000,   // 16
-    AURA_INTERRUPT_FLAG_MOUNT               = 0x00020000,   // 17   misdirect, aspect, swim speed
-    AURA_INTERRUPT_FLAG_NOT_SEATED          = 0x00040000,   // 18   removed by standing up (used by food and drink mostly and sleep/Fake Death like)
-    AURA_INTERRUPT_FLAG_CHANGE_MAP          = 0x00080000,   // 19   leaving map/getting teleported
+    AURA_INTERRUPT_FLAG_HITBYSPELL                  = 0x00000001,   // 0    removed when getting hit by a negative spell?
+    AURA_INTERRUPT_FLAG_TAKE_DAMAGE                 = 0x00000002,   // 1    removed by any damage
+    AURA_INTERRUPT_FLAG_CAST                        = 0x00000004,   // 2    cast any spells
+    AURA_INTERRUPT_FLAG_MOVE                        = 0x00000008,   // 3    removed by any movement
+    AURA_INTERRUPT_FLAG_TURNING                     = 0x00000010,   // 4    removed by any turning
+    AURA_INTERRUPT_FLAG_JUMP                        = 0x00000020,   // 5    removed by entering combat
+    AURA_INTERRUPT_FLAG_NOT_MOUNTED                 = 0x00000040,   // 6    removed by dismounting
+    AURA_INTERRUPT_FLAG_NOT_ABOVEWATER              = 0x00000080,   // 7    removed by entering water
+    AURA_INTERRUPT_FLAG_NOT_UNDERWATER              = 0x00000100,   // 8    removed by leaving water
+    AURA_INTERRUPT_FLAG_NOT_SHEATHED                = 0x00000200,   // 9    removed by unsheathing
+    AURA_INTERRUPT_FLAG_TALK                        = 0x00000400,   // 10   talk to npc / loot? action on creature
+    AURA_INTERRUPT_FLAG_USE                         = 0x00000800,   // 11   mine/use/open action on gameobject
+    AURA_INTERRUPT_FLAG_MELEE_ATTACK                = 0x00001000,   // 12   removed by attacking
+    AURA_INTERRUPT_FLAG_SPELL_ATTACK                = 0x00002000,   // 13   ???
+    AURA_INTERRUPT_FLAG_UNK14                       = 0x00004000,   // 14
+    AURA_INTERRUPT_FLAG_TRANSFORM                   = 0x00008000,   // 15   removed by transform?
+    AURA_INTERRUPT_FLAG_UNK16                       = 0x00010000,   // 16
+    AURA_INTERRUPT_FLAG_MOUNT                       = 0x00020000,   // 17   misdirect, aspect, swim speed
+    AURA_INTERRUPT_FLAG_NOT_SEATED                  = 0x00040000,   // 18   removed by standing up (used by food and drink mostly and sleep/Fake Death like)
+    AURA_INTERRUPT_FLAG_CHANGE_MAP                  = 0x00080000,   // 19   leaving map/getting teleported
     AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION    = 0x00100000,   // 20   removed by auras that make you invulnerable, or make other to lose selection on you
-    AURA_INTERRUPT_FLAG_UNK21               = 0x00200000,   // 21
-    AURA_INTERRUPT_FLAG_TELEPORTED          = 0x00400000,   // 22
-    AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT    = 0x00800000,   // 23   removed by entering pvp combat
-    AURA_INTERRUPT_FLAG_DIRECT_DAMAGE       = 0x01000000,   // 24   removed by any direct damage
-    AURA_INTERRUPT_FLAG_LANDING             = 0x02000000,   // 25   removed by hitting the ground
+    AURA_INTERRUPT_FLAG_UNK21                       = 0x00200000,   // 21
+    AURA_INTERRUPT_FLAG_TELEPORTED                  = 0x00400000,   // 22
+    AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT            = 0x00800000,   // 23   removed by entering pvp combat
+    AURA_INTERRUPT_FLAG_DIRECT_DAMAGE               = 0x01000000,   // 24   removed by any direct damage
+    AURA_INTERRUPT_FLAG_LANDING                     = 0x02000000,   // 25   removed by hitting the ground
 
     AURA_INTERRUPT_FLAG_NOT_VICTIM = (AURA_INTERRUPT_FLAG_HITBYSPELL | AURA_INTERRUPT_FLAG_TAKE_DAMAGE | AURA_INTERRUPT_FLAG_DIRECT_DAMAGE)
 };
 
 enum SpellModOp
 {
-    SPELLMOD_DAMAGE                 = 0,
-    SPELLMOD_DURATION               = 1,
-    SPELLMOD_THREAT                 = 2,
-    SPELLMOD_EFFECT1                = 3,
-    SPELLMOD_CHARGES                = 4,
-    SPELLMOD_RANGE                  = 5,
-    SPELLMOD_RADIUS                 = 6,
-    SPELLMOD_CRITICAL_CHANCE        = 7,
-    SPELLMOD_ALL_EFFECTS            = 8,
-    SPELLMOD_NOT_LOSE_CASTING_TIME  = 9,
-    SPELLMOD_CASTING_TIME           = 10,
-    SPELLMOD_COOLDOWN               = 11,
-    SPELLMOD_EFFECT2                = 12,
-    SPELLMOD_IGNORE_ARMOR           = 13,
-    SPELLMOD_COST                   = 14,
-    SPELLMOD_CRIT_DAMAGE_BONUS      = 15,
-    SPELLMOD_RESIST_MISS_CHANCE     = 16,
-    SPELLMOD_JUMP_TARGETS           = 17,
-    SPELLMOD_CHANCE_OF_SUCCESS      = 18,
-    SPELLMOD_ACTIVATION_TIME        = 19,
-    SPELLMOD_DAMAGE_MULTIPLIER      = 20,
-    SPELLMOD_GLOBAL_COOLDOWN        = 21,
-    SPELLMOD_DOT                    = 22,
-    SPELLMOD_EFFECT3                = 23,
-    SPELLMOD_BONUS_MULTIPLIER       = 24,
+    SPELLMOD_DAMAGE                    = 0,
+    SPELLMOD_DURATION                  = 1,
+    SPELLMOD_THREAT                    = 2,
+    SPELLMOD_EFFECT1                   = 3,
+    SPELLMOD_CHARGES                   = 4,
+    SPELLMOD_RANGE                     = 5,
+    SPELLMOD_RADIUS                    = 6,
+    SPELLMOD_CRITICAL_CHANCE           = 7,
+    SPELLMOD_ALL_EFFECTS               = 8,
+    SPELLMOD_NOT_LOSE_CASTING_TIME     = 9,
+    SPELLMOD_CASTING_TIME              = 10,
+    SPELLMOD_COOLDOWN                  = 11,
+    SPELLMOD_EFFECT2                   = 12,
+    SPELLMOD_IGNORE_ARMOR              = 13,
+    SPELLMOD_COST                      = 14,
+    SPELLMOD_CRIT_DAMAGE_BONUS         = 15,
+    SPELLMOD_RESIST_MISS_CHANCE        = 16,
+    SPELLMOD_JUMP_TARGETS              = 17,
+    SPELLMOD_CHANCE_OF_SUCCESS         = 18,
+    SPELLMOD_ACTIVATION_TIME           = 19,
+    SPELLMOD_DAMAGE_MULTIPLIER         = 20,
+    SPELLMOD_GLOBAL_COOLDOWN           = 21,
+    SPELLMOD_DOT                       = 22,
+    SPELLMOD_EFFECT3                   = 23,
+    SPELLMOD_BONUS_MULTIPLIER          = 24,
     // spellmod 25
-    SPELLMOD_PROC_PER_MINUTE        = 26,
-    SPELLMOD_VALUE_MULTIPLIER       = 27,
-    SPELLMOD_RESIST_DISPEL_CHANCE   = 28,
-    SPELLMOD_CRIT_DAMAGE_BONUS_2    = 29, //one not used spell
-    SPELLMOD_SPELL_COST_REFUND_ON_FAIL = 30
+    SPELLMOD_PROC_PER_MINUTE           = 26,
+    SPELLMOD_VALUE_MULTIPLIER          = 27,
+    SPELLMOD_RESIST_DISPEL_CHANCE      = 28,
+    SPELLMOD_CRIT_DAMAGE_BONUS_2       = 29, // one not used spell
+    SPELLMOD_SPELL_COST_REFUND_ON_FAIL = 30,
+    SPELLMOD_UNK1                      = 31,
+    SPELLMOD_UNK2                      = 32,
+    // spellmod 33
+    SPELLMOD_UNK3                      = 34,
+    SPELLMOD_BOUNCE_MAX_DISTANCE       = 35
 };
 
-#define MAX_SPELLMOD 32
+#define MAX_SPELLMOD 36
 
 enum SpellValueMod
 {
-    SPELLVALUE_BASE_POINT0,
-    SPELLVALUE_BASE_POINT1,
-    SPELLVALUE_BASE_POINT2,
-    SPELLVALUE_BASE_POINT3,
-    SPELLVALUE_BASE_POINT4,
-    SPELLVALUE_BASE_POINT5,
-    SPELLVALUE_RADIUS_MOD,
-    SPELLVALUE_MAX_TARGETS,
-    SPELLVALUE_AURA_STACK
+    SPELLVALUE_BASE_POINT0   = 0,
+    SPELLVALUE_BASE_POINT1   = 1,
+    SPELLVALUE_BASE_POINT2   = 2,
+    SPELLVALUE_BASE_POINT3   = 3,
+    SPELLVALUE_BASE_POINT4   = 4,
+    SPELLVALUE_BASE_POINT5   = 5,
+    SPELLVALUE_RADIUS_MOD    = 6,
+    SPELLVALUE_MAX_TARGETS   = 7,
+    SPELLVALUE_AURA_STACK    = 8
 };
 
 class CustomSpellValues
@@ -382,34 +387,35 @@ typedef std::list<SpellImmune> SpellImmuneList;
 
 enum UnitModifierType
 {
-    BASE_VALUE = 0,
-    BASE_PCT = 1,
-    TOTAL_VALUE = 2,
-    TOTAL_PCT = 3,
+    BASE_VALUE        = 0,
+    BASE_PCT          = 1,
+    TOTAL_VALUE       = 2,
+    TOTAL_PCT         = 3,
+
     MODIFIER_TYPE_END = 4
 };
 
 enum WeaponDamageRange
 {
-    MINDAMAGE,
-    MAXDAMAGE
+    MINDAMAGE      = 0,
+    MAXDAMAGE      = 1
 };
 
 enum DamageTypeToSchool
 {
-    RESISTANCE,
-    DAMAGE_DEALT,
-    DAMAGE_TAKEN
+    RESISTANCE     = 0,
+    DAMAGE_DEALT   = 1,
+    DAMAGE_TAKEN   = 2
 };
 
 enum AuraRemoveMode
 {
-    AURA_REMOVE_NONE = 0,
-    AURA_REMOVE_BY_DEFAULT = 1,       // scripted remove, remove by stack with aura with different ids and sc aura remove
-    AURA_REMOVE_BY_CANCEL,
-    AURA_REMOVE_BY_ENEMY_SPELL,       // dispel and absorb aura destroy
-    AURA_REMOVE_BY_EXPIRE,            // aura duration has ended
-    AURA_REMOVE_BY_DEATH
+    AURA_REMOVE_NONE           = 0,
+    AURA_REMOVE_BY_DEFAULT     = 1,       // scripted remove, remove by stack with aura with different ids and sc aura remove
+    AURA_REMOVE_BY_CANCEL      = 2,
+    AURA_REMOVE_BY_ENEMY_SPELL = 3,       // dispel and absorb aura destroy
+    AURA_REMOVE_BY_EXPIRE      = 4,       // aura duration has ended
+    AURA_REMOVE_BY_DEATH       = 5
 };
 
 enum TriggerCastFlags
@@ -433,6 +439,7 @@ enum TriggerCastFlags
     TRIGGERED_DONT_REPORT_CAST_ERROR                = 0x00040000,   //! Will return SPELL_FAILED_DONT_REPORT in CheckCast functions
     TRIGGERED_IGNORE_EQUIPPED_ITEM_REQUIREMENT      = 0x00080000,   //! Will ignore equipped item requirements
     TRIGGERED_IGNORE_TARGET_CHECK                   = 0x00100000,   //! Will ignore most target checks (mostly DBC target checks)
+
     TRIGGERED_FULL_MASK                             = 0xFFFFFFFF
 };
 
@@ -485,18 +492,20 @@ enum UnitMods
 
 enum BaseModGroup
 {
-    CRIT_PERCENTAGE,
-    RANGED_CRIT_PERCENTAGE,
-    OFFHAND_CRIT_PERCENTAGE,
-    SHIELD_BLOCK_VALUE,
-    BASEMOD_END
+    CRIT_PERCENTAGE         = 0,
+    RANGED_CRIT_PERCENTAGE  = 1,
+    OFFHAND_CRIT_PERCENTAGE = 2,
+    SHIELD_BLOCK_VALUE      = 3,
+
+    BASEMOD_END             = 4
 };
 
 enum BaseModType
 {
-    FLAT_MOD,
-    PCT_MOD,
-    MOD_END
+    FLAT_MOD                = 0,
+    PCT_MOD                 = 1,
+
+    MOD_END                 = 2
 };
 
 enum DeathState
@@ -556,7 +565,8 @@ enum WeaponAttackType
     BASE_ATTACK   = 0,
     OFF_ATTACK    = 1,
     RANGED_ATTACK = 2,
-    MAX_ATTACK
+
+    MAX_ATTACK    = 3
 };
 
 enum CombatRating
@@ -636,7 +646,8 @@ enum UnitFlags
     UNIT_FLAG_UNK_29                = 0x20000000,           // used in Feing Death spell
     UNIT_FLAG_SHEATHE               = 0x40000000,
     UNIT_FLAG_UNK_31                = 0x80000000,
-    MAX_UNIT_FLAGS = 33
+
+    MAX_UNIT_FLAGS                  = 33
 };
 
 // Value masks for UNIT_FIELD_FLAGS2
@@ -694,7 +705,16 @@ enum NPCFlags
     UNIT_NPC_FLAG_PLAYER_VEHICLE        = 0x02000000,       // players with mounts that have vehicle data should have it set
     UNIT_NPC_FLAG_REFORGER              = 0x08000000,       // reforging
     UNIT_NPC_FLAG_TRANSMOGRIFIER        = 0x10000000,       // transmogrification
-    UNIT_NPC_FLAG_VAULTKEEPER           = 0x20000000        // void storage
+    UNIT_NPC_FLAG_VAULTKEEPER           = 0x20000000,       // void storage
+    UNIT_NPC_FLAG_PETBATTLE             = 0x40000000,       // pet battle
+    UNIT_NPC_FLAG_BLACK_MARKET          = 0x80000000		// black market auction house
+};
+
+/// Non Player Character flags
+enum NPCFlags2
+{
+    UNIT_NPC_FLAG2_NONE                 = 0x00000000,
+    UNIT_NPC_FLAG2_ITEM_UPGRADE         = 0x00000001        // Item Upgrade
 };
 
 enum UnitTypeMask
@@ -714,9 +734,7 @@ enum UnitTypeMask
 
 struct DiminishingReturn
 {
-    DiminishingReturn(DiminishingGroup group, uint32 t, uint32 count)
-        : DRGroup(group), stack(0), hitTime(t), hitCount(count)
-    { }
+    DiminishingReturn(DiminishingGroup group, uint32 t, uint32 count) : DRGroup(group), stack(0), hitTime(t), hitCount(count) { }
 
     DiminishingGroup        DRGroup:16;
     uint16                  stack:16;
@@ -726,14 +744,20 @@ struct DiminishingReturn
 
 enum MeleeHitOutcome
 {
-    MELEE_HIT_EVADE, MELEE_HIT_MISS, MELEE_HIT_DODGE, MELEE_HIT_BLOCK, MELEE_HIT_PARRY,
-    MELEE_HIT_GLANCING, MELEE_HIT_CRIT, MELEE_HIT_CRUSHING, MELEE_HIT_NORMAL
+    MELEE_HIT_EVADE    = 0,
+    MELEE_HIT_MISS     = 1,
+    MELEE_HIT_DODGE    = 2,
+    MELEE_HIT_BLOCK    = 3,
+    MELEE_HIT_PARRY    = 4,
+    MELEE_HIT_GLANCING = 5,
+    MELEE_HIT_CRIT     = 6,
+    MELEE_HIT_CRUSHING = 7,
+    MELEE_HIT_NORMAL   = 8
 };
 
 struct HealDone
 {
-    HealDone(uint32 heal, uint32 time)
-    : s_heal(heal), s_timestamp(time) {}
+    HealDone(uint32 heal, uint32 time) : s_heal(heal), s_timestamp(time) { }
 
     uint32 s_heal;
     uint32 s_timestamp;
@@ -741,8 +765,7 @@ struct HealDone
 
 struct HealTaken
 {
-    HealTaken(uint32 heal, uint32 time)
-    : s_heal(heal), s_timestamp(time) {}
+    HealTaken(uint32 heal, uint32 time) : s_heal(heal), s_timestamp(time) { }
 
     uint32 s_heal;
     uint32 s_timestamp;
@@ -750,8 +773,7 @@ struct HealTaken
 
 struct DamageDone
 {
-    DamageDone(uint32 dmg, uint32 time)
-    : s_damage(dmg), s_timestamp(time) {}
+    DamageDone(uint32 dmg, uint32 time) : s_damage(dmg), s_timestamp(time) { }
 
     uint32 s_damage;
     uint32 s_timestamp;
@@ -759,8 +781,7 @@ struct DamageDone
 
 struct DamageTaken
 {
-    DamageTaken(uint32 dmg, uint32 time)
-    : s_damage(dmg), s_timestamp(time) {}
+    DamageTaken(uint32 dmg, uint32 time) : s_damage(dmg), s_timestamp(time) { }
 
     uint32 s_damage;
     uint32 s_timestamp;
@@ -779,6 +800,7 @@ public:
     {
         _chargesRemoved = amount;
     }
+
 private:
     Unit* _dispellerUnit;
     uint32 _dispellerSpell;
@@ -812,6 +834,7 @@ private:
     uint32 m_absorb;
     uint32 m_resist;
     uint32 m_block;
+
 public:
     explicit DamageInfo(Unit* _attacker, Unit* _victim, uint32 _damage, SpellInfo const* _spellInfo, SpellSchoolMask _schoolMask, DamageEffectType _damageType);
     explicit DamageInfo(CalcDamageInfo& dmgInfo);
@@ -838,12 +861,13 @@ class HealInfo
 private:
     uint32 m_heal;
     uint32 m_absorb;
+
 public:
-    explicit HealInfo(uint32 heal)
-        : m_heal(heal)
+    explicit HealInfo(uint32 heal) : m_heal(heal)
     {
         m_absorb = 0;
     }
+
     void AbsorbHeal(uint32 amount)
     {
         amount = std::min(amount, GetHeal());
@@ -916,8 +940,7 @@ struct SpellNonMeleeDamage
 {
     SpellNonMeleeDamage(Unit* _attacker, Unit* _target, uint32 _SpellID, uint32 _schoolMask)
         : target(_target), attacker(_attacker), SpellID(_SpellID), damage(0), overkill(0), schoolMask(_schoolMask),
-        absorb(0), resist(0), physicalLog(false), unused(false), blocked(0), HitInfo(0), cleanDamage(0)
-    { }
+        absorb(0), resist(0), physicalLog(false), unused(false), blocked(0), HitInfo(0), cleanDamage(0) { }
 
     Unit   *target;
     Unit   *attacker;
@@ -938,7 +961,7 @@ struct SpellNonMeleeDamage
 struct SpellPeriodicAuraLogInfo
 {
     SpellPeriodicAuraLogInfo(AuraEffect const* _auraEff, uint32 _damage, uint32 _overDamage, uint32 _absorb, uint32 _resist, float _multiplier, bool _critical)
-        : auraEff(_auraEff), damage(_damage), overDamage(_overDamage), absorb(_absorb), resist(_resist), multiplier(_multiplier), critical(_critical){ }
+        : auraEff(_auraEff), damage(_damage), overDamage(_overDamage), absorb(_absorb), resist(_resist), multiplier(_multiplier), critical(_critical) { }
 
     AuraEffect const* auraEff;
     uint32 damage;
@@ -1080,23 +1103,23 @@ typedef std::list<Player*> SharedVisionList;
 
 enum CharmType
 {
-    CHARM_TYPE_CHARM,
-    CHARM_TYPE_POSSESS,
-    CHARM_TYPE_VEHICLE,
-    CHARM_TYPE_CONVERT
+    CHARM_TYPE_CHARM    = 0,
+    CHARM_TYPE_POSSESS  = 1,
+    CHARM_TYPE_VEHICLE  = 2,
+    CHARM_TYPE_CONVERT  = 3
 };
 
 typedef UnitActionBarEntry CharmSpellInfo;
 
 enum ActionBarIndex
 {
-    ACTION_BAR_INDEX_START = 0,
+    ACTION_BAR_INDEX_START           = 0,
     ACTION_BAR_INDEX_PET_SPELL_START = 3,
-    ACTION_BAR_INDEX_PET_SPELL_END = 7,
-    ACTION_BAR_INDEX_END = 10
+    ACTION_BAR_INDEX_PET_SPELL_END   = 7,
+    ACTION_BAR_INDEX_END             = 10
 };
 
-#define MAX_UNIT_ACTION_BAR_INDEX (ACTION_BAR_INDEX_END-ACTION_BAR_INDEX_START)
+#define MAX_UNIT_ACTION_BAR_INDEX (ACTION_BAR_INDEX_END - ACTION_BAR_INDEX_START)
 
 struct CharmInfo
 {
@@ -1148,7 +1171,6 @@ struct CharmInfo
         void GetStayPosition(float &x, float &y, float &z);
 
     private:
-
         Unit* _unit;
         UnitActionBarEntry PetActionBar[MAX_UNIT_ACTION_BAR_INDEX];
         CharmSpellInfo _charmspells[4];

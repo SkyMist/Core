@@ -397,23 +397,24 @@ void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
     {
         *data << uint32(dynamicTabMask); // Send the index (SetBit(index)).
 
-        // bool SizeChanged = DynamicFields::Count > 32; (or is it default field size???).
+        bool SizeChanged = DynamicFields::Count > 32; // (or is it default field size???).
+        std::size_t FieldMaskSize = (DynamicFields::Count + 31) / 32;
 
-        // *data.WriteBit(0); // SizeChanged
-        // *data.WriteBits(_dynamicTabCount, 7);
-        // *data.FlushBits();
+        data->WriteBit(SizeChanged);
+        data->WriteBits(FieldMaskSize, 7);
+        data->FlushBits();
 
-        // if (SizeChanged)
-        //     DynamicFieldsData << uint16(DynamicFields::Count);				// new size. unk value, size of all values or field indexes (offsets) ?
+        if (SizeChanged)
+            *data << uint16(DynamicFields::Count); // New size. unk value, size of all values or field indexes (offsets) ?
 
         for (uint32 i = 0; i < _dynamicTabCount; ++i)
         {
-            if (dynamicTabMask & (1 << i)) //if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )
+            if (dynamicTabMask & (1 << i)) // if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )
             {
-                *data << uint8(1);                     // Set the count.
+                *data << uint8(1);                     // Signal an update needed.
                 *data << uint32(dynamicFieldsMask[i]); // Send the field index.
 
-                for (uint32 index = 0; index < 32; index++)
+                for (uint32 index = 0; index < DynamicFields::Count; index++)
                 {
                     if (dynamicFieldsMask[i] & (1 << index))
                         *data << uint32(_dynamicFields[i]._dynamicValues[index]);  // Send the field index values.

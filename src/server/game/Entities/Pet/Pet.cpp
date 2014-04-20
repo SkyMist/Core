@@ -208,6 +208,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
     SetNativeDisplayId(fields[3].GetUInt32());
     uint32 petlevel = fields[4].GetUInt16();
     SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+    SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, UNIT_NPC_FLAG2_NONE);
     SetName(fields[8].GetString());
 
     switch (getPetType())
@@ -769,6 +770,7 @@ bool Pet::CreateBaseAtTamed(CreatureTemplate const* cinfo, Map* map, uint32 phas
     SetUInt32Value(UNIT_FIELD_PET_EXPERIENCE, 0);
     SetUInt32Value(UNIT_FIELD_PET_NEXT_LEVEL_EXPERIENCE, uint32(sObjectMgr->GetXPForLevel(getLevel()+1)*PET_XP_FACTOR));
     SetUInt32Value(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+    SetUInt32Value(UNIT_FIELD_NPC_FLAGS + 1, UNIT_NPC_FLAG2_NONE);
 
     if (cinfo->type == CREATURE_TYPE_BEAST)
     {

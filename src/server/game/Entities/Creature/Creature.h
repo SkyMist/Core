@@ -94,6 +94,7 @@ struct CreatureTemplate
     uint32  faction_A;
     uint32  faction_H;
     uint32  npcflag;
+    uint32  npcflag2;
     float   speed_walk;
     float   speed_run;
     float   scale;
@@ -264,7 +265,9 @@ struct CreatureData
     uint8 movementType;
     uint8 spawnMask;
     uint32 npcflag;
+    uint32 npcflag2;
     uint32 unit_flags;                                      // enum UnitFlags mask values
+    uint32 unit_flags2;                                     // enum UnitFlags2 mask values
     uint32 dynamicflags;
     bool dbData;
 };

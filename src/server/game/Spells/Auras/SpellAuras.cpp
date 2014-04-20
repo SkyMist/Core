@@ -2199,7 +2199,7 @@ bool Aura::IsProcTriggeredOnEvent(AuraApplication* aurApp, ProcEventInfo& eventI
             {
                 WeaponAttackType attType = eventInfo.GetDamageInfo()->GetAttackType();
                 Item* item = NULL;
-                if (attType == BASE_ATTACK || attType = RANGED_ATTACK)
+                if (attType == BASE_ATTACK || attType == RANGED_ATTACK)
                     item = target->ToPlayer()->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
                 else if (attType == OFF_ATTACK)
                     item = target->ToPlayer()->GetUseableItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);

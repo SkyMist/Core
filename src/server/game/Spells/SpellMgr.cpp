@@ -1793,7 +1793,7 @@ void SpellMgr::InitializeItemUpgradeDatas()
     for (uint8 i = 0; i < 71; ++i)
         mItemUpgradeDatas.insert(std::make_pair(spTable[i][0], spTable[i][1]));
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 71 Item Upgrade datas in %u ms", GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded 71 Item Upgrade datas in %u ms", GetMSTimeDiffToNow(oldMSTime));
 }
 
 void SpellMgr::LoadSpellProcEvents()

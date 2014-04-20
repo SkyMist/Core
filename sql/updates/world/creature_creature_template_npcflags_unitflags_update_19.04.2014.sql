@@ -1,0 +1,2 @@
+alter table `creature_template` add column `npcflag2` int (10)UNSIGNED  DEFAULT '0' NOT NULL  after `npcflag`;
+alter table `creature` add column `npcflag2` int (10)UNSIGNED  DEFAULT '0' NOT NULL  after `npcflag`, add column `unit_flags2` int (10)UNSIGNED  DEFAULT '0' NOT NULL  after `unit_flags`;
