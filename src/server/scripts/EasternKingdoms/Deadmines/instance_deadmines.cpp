@@ -104,7 +104,6 @@ class instance_deadmines : public InstanceMapScript
                         // it's a hack - Mr. Smite should do that but his too far away
                         pIronCladDoor->SetName("Mr. Smite");
                         pIronCladDoor->MonsterYell(SAY_MR_SMITE_ALARM1, LANG_UNIVERSAL, 0);
-                        DoPlaySound(pIronCladDoor, SOUND_MR_SMITE_ALARM1);
                         State = CANNON_BLAST_INITIATED;
                         break;
                     case CANNON_BLAST_INITIATED:
@@ -116,7 +115,6 @@ class instance_deadmines : public InstanceMapScript
                             BlastOutDoor();
                             LeverStucked();
                             pIronCladDoor->MonsterYell(SAY_MR_SMITE_ALARM2, LANG_UNIVERSAL, 0);
-                            DoPlaySound(pIronCladDoor, SOUND_MR_SMITE_ALARM2);
                             State = PIRATES_ATTACK;
                         } else CannonBlast_Timer -= diff;
                         break;
@@ -169,19 +167,13 @@ class instance_deadmines : public InstanceMapScript
             void ShootCannon()
             {
                 if (GameObject* pDefiasCannon = instance->GetGameObject(DefiasCannonGUID))
-                {
                     pDefiasCannon->SetGoState(GO_STATE_ACTIVE);
-                    DoPlaySound(pDefiasCannon, SOUND_CANNONFIRE);
-                }
             }
 
             void BlastOutDoor()
             {
                 if (GameObject* pIronCladDoor = instance->GetGameObject(IronCladDoorGUID))
-                {
                     pIronCladDoor->SetGoState(GO_STATE_ACTIVE_ALTERNATIVE);
-                    DoPlaySound(pIronCladDoor, SOUND_DESTROYDOOR);
-                }
             }
 
             void LeverStucked()
@@ -238,13 +230,6 @@ class instance_deadmines : public InstanceMapScript
                 }
 
                 return 0;
-            }
-
-            void DoPlaySound(GameObject* unit, uint32 sound)
-            {
-                WorldPacket data(SMSG_PLAY_SOUND, 4);
-                data << uint32(sound);
-                unit->SendMessageToSet(&data, false);
             }
         };
 

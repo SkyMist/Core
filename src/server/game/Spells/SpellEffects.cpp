@@ -7236,9 +7236,7 @@ void Spell::EffectPlaySound(SpellEffIndex effIndex)
         return;
     }
 
-    WorldPacket data(SMSG_PLAY_SOUND, 4);
-    data << uint32(soundId);
-    unitTarget->ToPlayer()->GetSession()->SendPacket(&data);
+    unitTarget->SendPlaySound(soundId, true);
 }
 
 void Spell::EffectRemoveAura(SpellEffIndex effIndex)
