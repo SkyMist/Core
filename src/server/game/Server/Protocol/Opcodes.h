@@ -766,7 +766,7 @@ enum Opcodes
    SMSG_CALENDAR_SEND_NUM_PENDING                           = 0x0,
    SMSG_CALENDAR_UPDATE_INVITE_LIST                         = 0x0,
    SMSG_CAMERA_SHAKE                                        = 0x0,
-   SMSG_CANCEL_AUTO_REPEAT                                  = 0x0,
+   SMSG_CANCEL_AUTO_REPEAT                                  = 0x12B0, // 5.4.7 18019
    SMSG_CANCEL_COMBAT                                       = 0x1E48, // 5.4.7 18019
    SMSG_CAST_FAILED                                         = 0x0560, // 5.4.7 18019
    SMSG_CHALLANGES_INFO                                     = 0x0,
@@ -963,7 +963,7 @@ enum Opcodes
    SMSG_GUILD_XP_GAIN                                       = 0x1A11, // 5.4.7 18019
    SMSG_GUILD_XP_UPDATE                                     = 0x0,
    SMSG_HEALTH_UPDATE                                       = 0x0,
-   SMSG_HIGHEST_THREAT_UPDATE                               = 0x0,
+   SMSG_HIGHEST_THREAT_UPDATE                               = 0x0761, // 5.4.7 18019
    SMSG_HOTFIX_INFO                                         = 0x0,
    SMSG_HOTFIX_NOTIFY                                       = 0x0,
    SMSG_INITIALIZE_FACTIONS                                 = 0x11E1, // 5.4.7 18019
@@ -1114,7 +1114,7 @@ enum Opcodes
    SMSG_NEW_TAXI_PATH                                       = 0x0,
    SMSG_NEW_WORLD                                           = 0x05AB, // 5.4.7 18019
    SMSG_NEW_WORLD_ABORT                                     = 0x0,
-   SMSG_NOTIFICATION                                        = 0x0,
+   SMSG_NOTIFICATION                                        = 0x1513, // 5.4.7 18019
    SMSG_NOTIFY_DANCE                                        = 0x0,
    SMSG_NOTIFY_DEST_LOC_SPELL_CAST                          = 0x0,
    SMSG_NPC_TEXT_UPDATE                                     = 0x10E0, // 5.4.7 18019
@@ -1343,9 +1343,9 @@ enum Opcodes
    SMSG_TAXINODE_STATUS                                     = 0x0,
    SMSG_TEST_DROP_RATE_RESULT                               = 0x0,
    SMSG_TEXT_EMOTE                                          = 0x0522, // 5.4.7 18019
-   SMSG_THREAT_CLEAR                                        = 0x0,
-   SMSG_THREAT_REMOVE                                       = 0x0,
-   SMSG_THREAT_UPDATE                                       = 0x0,
+   SMSG_THREAT_CLEAR                                        = 0x1D7A, // 5.4.7 18019
+   SMSG_THREAT_REMOVE                                       = 0x1E29, // 5.4.7 18019
+   SMSG_THREAT_UPDATE                                       = 0x1708, // 5.4.7 18019
    SMSG_TIME_ADJUSTMENT                                     = 0x0,
    SMSG_TIME_SYNC_REQ                                       = 0x12F1, // 5.4.7 18019
    SMSG_TITLE_EARNED                                        = 0x0,

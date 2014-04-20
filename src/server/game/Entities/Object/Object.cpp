@@ -1418,9 +1418,45 @@ bool WorldObject::InSamePhase(WorldObject const* obj) const
 
 void WorldObject::PlayDistanceSound(uint32 sound_id, Player* target /*= NULL*/)
 {
-    WorldPacket data(SMSG_PLAY_OBJECT_SOUND, 4+8);
+    WorldPacket data(SMSG_PLAY_OBJECT_SOUND, 4+9+9);
+    ObjectGuid Guid1 = GetGUID();
+    ObjectGuid Guid2 = Guid1;
+
+    data.WriteBit(Guid2[0]);
+    data.WriteBit(Guid1[6]);
+    data.WriteBit(Guid1[0]);
+    data.WriteBit(Guid1[7]);
+    data.WriteBit(Guid1[2]);
+    data.WriteBit(Guid1[5]);
+    data.WriteBit(Guid2[5]);
+    data.WriteBit(Guid2[3]);
+    data.WriteBit(Guid1[1]);
+    data.WriteBit(Guid1[4]);
+    data.WriteBit(Guid2[4]);
+    data.WriteBit(Guid2[6]);
+    data.WriteBit(Guid1[3]);
+    data.WriteBit(Guid2[7]);
+    data.WriteBit(Guid2[1]);
+    data.WriteBit(Guid2[2]);
+    data.FlushBits();
     data << uint32(sound_id);
-    data << uint64(GetGUID());
+    data.WriteByteSeq(Guid1[6]);
+    data.WriteByteSeq(Guid1[2]);
+    data.WriteByteSeq(Guid1[4]);
+    data.WriteByteSeq(Guid1[5]);
+    data.WriteByteSeq(Guid1[1]);
+    data.WriteByteSeq(Guid2[1]);
+    data.WriteByteSeq(Guid2[0]);
+    data.WriteByteSeq(Guid2[4]);
+    data.WriteByteSeq(Guid2[2]);
+    data.WriteByteSeq(Guid2[6]);
+    data.WriteByteSeq(Guid1[7]);
+    data.WriteByteSeq(Guid1[3]);
+    data.WriteByteSeq(Guid2[7]);
+    data.WriteByteSeq(Guid1[0]);
+    data.WriteByteSeq(Guid2[5]);
+    data.WriteByteSeq(Guid2[3]);
+
     if (target)
         target->SendDirectMessage(&data);
     else
@@ -1429,8 +1465,27 @@ void WorldObject::PlayDistanceSound(uint32 sound_id, Player* target /*= NULL*/)
 
 void WorldObject::PlayDirectSound(uint32 sound_id, Player* target /*= NULL*/)
 {
-    WorldPacket data(SMSG_PLAY_SOUND, 4);
+    WorldPacket data(SMSG_PLAY_SOUND, 4+9);
+    ObjectGuid ActorGuid = GetGUID();
+
+    data.WriteBit(ActorGuid[1]);
+    data.WriteBit(ActorGuid[6]);
+    data.WriteBit(ActorGuid[7]);
+    data.WriteBit(ActorGuid[5]);
+    data.WriteBit(ActorGuid[4]);
+    data.WriteBit(ActorGuid[3]);
+    data.WriteBit(ActorGuid[0]);
+    data.WriteBit(ActorGuid[2]);
+    data.FlushBits();
+    data.WriteByteSeq(ActorGuid[3]);
+    data.WriteByteSeq(ActorGuid[6]);
+    data.WriteByteSeq(ActorGuid[5]);
+    data.WriteByteSeq(ActorGuid[4]);
     data << uint32(sound_id);
+    data.WriteByteSeq(ActorGuid[1]);
+    data.WriteByteSeq(ActorGuid[2]);
+    data.WriteByteSeq(ActorGuid[0]);
+    data.WriteByteSeq(ActorGuid[7]);
 
     if (target)
         target->SendDirectMessage(&data);
