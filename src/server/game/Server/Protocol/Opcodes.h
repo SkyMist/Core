@@ -585,6 +585,7 @@ enum Opcodes
    CMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
    CMSG_UPDATE_MISSILE_TRAJECTORY                           = 0x0,
    CMSG_UPDATE_PROJECTILE_POSITION                          = 0x0,
+   CMSG_UPGRADE_ITEM                                        = 0x0,
    CMSG_USED_FOLLOW                                         = 0x0,
    CMSG_USE_ITEM                                            = 0x15E3, // 5.4.7 18019
    CMSG_VIOLENCE_LEVEL                                      = 0x05A0, // 5.4.7 18019
@@ -991,6 +992,7 @@ enum Opcodes
    SMSG_ITEM_SEND_PASSIVE                                   = 0x0,
    SMSG_ITEM_TEXT_QUERY_RESPONSE                            = 0x0,
    SMSG_ITEM_TIME_UPDATE                                    = 0x0,
+   SMSG_ITEM_UPGRADE_RESULT                                 = 0x0,
    SMSG_JOINED_BATTLEGROUND_QUEUE                           = 0x0,
    SMSG_KICK_REASON                                         = 0x0,
    SMSG_LEARNED_DANCE_MOVES                                 = 0x0,

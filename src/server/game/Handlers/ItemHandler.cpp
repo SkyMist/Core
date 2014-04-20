@@ -1810,11 +1810,11 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
 void WorldSession::SendItemUpgradeResult(bool success)
 {
-    // WorldPacket data(SMSG_ITEM_UPGRADE_RESULT, 1);
-    // data.WriteBit(success);
-    // data.FlushBits();
-	// 
-    // SendPacket(&data);
+    WorldPacket data(SMSG_ITEM_UPGRADE_RESULT, 1);
+    data.WriteBit(success);
+    data.FlushBits();
+
+    SendPacket(&data);
 }
 
 void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
