@@ -328,7 +328,7 @@ void CreatureTextMgr::SendSound(Creature* source, uint32 sound, ChatMsg msgType,
     data.WriteByteSeq(ActorGuid[5]);
     data.WriteByteSeq(ActorGuid[4]);
 
-    data << uint32(sound_id);
+    data << uint32(sound);
 
     data.WriteByteSeq(ActorGuid[1]);
     data.WriteByteSeq(ActorGuid[2]);

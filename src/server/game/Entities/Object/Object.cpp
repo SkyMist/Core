@@ -875,7 +875,7 @@ void WorldObject::SendPlaySound(uint32 Sound, bool OnlySelf)
     data.WriteByteSeq(ActorGuid[5]);
     data.WriteByteSeq(ActorGuid[4]);
 
-    data << uint32(sound_id);
+    data << uint32(Sound);
 
     data.WriteByteSeq(ActorGuid[1]);
     data.WriteByteSeq(ActorGuid[2]);
