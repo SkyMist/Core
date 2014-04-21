@@ -2928,14 +2928,25 @@ void World::SendAutoBroadcast()
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
             break;
         case 2: // 2 has this SendWorldText extra from 1.
+        {
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
-        case 1:
+
             WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
             notification.WriteBits(msg.length(), 11);
             notification.FlushBits();
             notification.WriteString(msg);
             sWorld->SendGlobalMessage(&notification);
             break;
+        }
+        case 1:
+        {
+            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
+            notification.WriteBits(msg.length(), 11);
+            notification.FlushBits();
+            notification.WriteString(msg);
+            sWorld->SendGlobalMessage(&notification);
+            break;
+        }
 
         default: break;
     }
