@@ -10807,9 +10807,27 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (CreateVehicleKit(VehicleId, creatureEntry))
             {
                 // Send others that we now have a vehicle
-                WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, GetPackGUID().size()+4);
-                data.appendPackGUID(GetGUID());
+                WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, 9+4);
+                ObjectGuid PlayerGuid = GetGUID();
+                data.WriteBit(PlayerGuid[0]);
+                data.WriteBit(PlayerGuid[1]);
+                data.WriteBit(PlayerGuid[6]);
+                data.WriteBit(PlayerGuid[3]);
+                data.WriteBit(PlayerGuid[7]);
+                data.WriteBit(PlayerGuid[4]);
+                data.WriteBit(PlayerGuid[2]);
+                data.WriteBit(PlayerGuid[5]);
+                data.FlushBits();
+                data.WriteByteSeq(PlayerGuid[5]);
+                data.WriteByteSeq(PlayerGuid[3]);
+                data.WriteByteSeq(PlayerGuid[0]);
                 data << uint32(VehicleId);
+                data.WriteByteSeq(PlayerGuid[7]);
+                data.WriteByteSeq(PlayerGuid[4]);
+                data.WriteByteSeq(PlayerGuid[2]);
+                data.WriteByteSeq(PlayerGuid[1]);
+                data.WriteByteSeq(PlayerGuid[6]);
+                
                 SendMessageToSet(&data, true);
 
                 player->SendOnCancelExpectedVehicleRideAura();
@@ -10856,9 +10874,26 @@ void Unit::Dismount()
     if (GetTypeId() == TYPEID_PLAYER && GetVehicleKit())
     {
         // Send other players that we are no longer a vehicle
-        data.Initialize(SMSG_PLAYER_VEHICLE_DATA, 8+4);
-        data.appendPackGUID(GetGUID());
+        data.Initialize(SMSG_PLAYER_VEHICLE_DATA, 9+4);
+        ObjectGuid PlayerGuid = GetGUID();
+        data.WriteBit(PlayerGuid[0]);
+        data.WriteBit(PlayerGuid[1]);
+        data.WriteBit(PlayerGuid[6]);
+        data.WriteBit(PlayerGuid[3]);
+        data.WriteBit(PlayerGuid[7]);
+        data.WriteBit(PlayerGuid[4]);
+        data.WriteBit(PlayerGuid[2]);
+        data.WriteBit(PlayerGuid[5]);
+        data.FlushBits();
+        data.WriteByteSeq(PlayerGuid[5]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[0]);
         data << uint32(0);
+        data.WriteByteSeq(PlayerGuid[7]);
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[2]);
+        data.WriteByteSeq(PlayerGuid[1]);
+        data.WriteByteSeq(PlayerGuid[6]);
         ToPlayer()->SendMessageToSet(&data, true);
         // Remove vehicle from player
         RemoveVehicleKit();
