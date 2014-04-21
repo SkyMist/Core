@@ -657,12 +657,7 @@ void WorldSession::SendNotification(const char *format, ...)
         vsnprintf(szStr, 1024, format, ap);
         va_end(ap);
 
-        size_t len = strlen(szStr);
-        WorldPacket data(SMSG_NOTIFICATION, 2 + len);
-        data.WriteBits(len, 13);
-        data.FlushBits();
-        data.append(szStr, len);
-        SendPacket(&data);
+        _SendNotificationPacket(szStr);
     }
 }
 
@@ -678,13 +673,17 @@ void WorldSession::SendNotification(uint32 string_id, ...)
         vsnprintf(szStr, 1024, format, ap);
         va_end(ap);
 
-        size_t len = strlen(szStr);
-        WorldPacket data(SMSG_NOTIFICATION, 2 + len);
-        data.WriteBits(len, 13);
-        data.FlushBits();
-        data.append(szStr, len);
-        SendPacket(&data);
+        _SendNotificationPacket(szStr);
     }
+}
+
+void WorldSession::_SendNotificationPacket(const char* message)
+{
+    WorldPacket notification(SMSG_NOTIFICATION, 2 + strlen(message));
+    notification.WriteBits(strlen(message), 11);
+    notification.FlushBits();
+    notification.WriteString(std::string(message));
+    SendPacket(&notification);
 }
 
 const char *WorldSession::GetTrinityString(int32 entry) const
@@ -1303,13 +1302,4 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p) const
         default: // invalid policy
             return true;
     }
-}
-
-void WorldSession::_SendNotificationPacket(const char* message)
-{
-    WorldPacket notification(SMSG_NOTIFICATION, 2 + strlen(message));
-    notification.WriteBits(strlen(message), 11);
-    notification.FlushBits();
-    notification.WriteString(std::string(message));
-    SendPacket(&notification);
 }

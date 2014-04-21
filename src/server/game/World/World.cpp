@@ -2922,25 +2922,22 @@ void World::SendAutoBroadcast()
 
     uint32 abcenter = sWorld->getIntConfig(CONFIG_AUTOBROADCAST_CENTER);
 
-    if (abcenter == 0)
-        sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
-    else if (abcenter == 1)
+    switch (abcenter)
     {
-        WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-        data.WriteBits(msg.length(), 13);
-        data.FlushBits();
-        data.WriteString(msg);
-        sWorld->SendGlobalMessage(&data);
-    }
-    else if (abcenter == 2)
-    {
-        sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+        case 0:
+            sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+            break;
+        case 2: // 2 has this SendWorldText extra from 1.
+            sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+        case 1:
+            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
+            notification.WriteBits(msg.length(), 11);
+            notification.FlushBits();
+            notification.WriteString(msg);
+            sWorld->SendGlobalMessage(&notification);
+            break;
 
-        WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-        data.WriteBits(msg.length(), 13);
-        data.FlushBits();
-        data.WriteString(msg);
-        sWorld->SendGlobalMessage(&data);
+        default: break;
     }
 
     TC_LOG_DEBUG("misc", "AutoBroadcast: '%s'", msg.c_str());

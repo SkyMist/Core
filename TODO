@@ -4,25 +4,30 @@ SkyMist Project ToDo List.
 - Make server workable on (Fix critical stuff).
 
 ToDO:
-- Finish spell and movement system, add SMSG_ADD_RUNE_POWER opcode.
+- Finish spell system.        // System ok - ToDo: Update remaining opcodes and files and port class spell fixes.
+- Finish movement.
 - Finish Speeds changing.
 
 == Milestone 2 ==
 - Make server playable on (Fix big stuff).
 
 ToDO:
-- Currency.
-- Quests.
-- Achievements.
-- Vehicles.
+- Quests.                     // Partially updated, a bit of research needed on the new features.
+- Achievements.               // Partially implemented and updated.
 - Guilds.
 - Battlegrounds.
-- Black Market, Transmog, Reforge, Void Storage etc.
+- Implement Item Black Market.
+- Item Upgrade, Void Storage. // Systems ok - ToDo: Update opcodes.
 - Pet System.
 
 DONE:
-- Finish Groups system and Difficulty opcodes.
+- Groups.
+- Map Difficulties.
 - Map, Spawn, Phasing systems.
+- Currency.
+- Vehicles.
+- Item Transmogrify.
+- Item Reforge.
 
 == Milestone 3 == !! 30 April Deadline to get here. !!
 - Finish stuff - Beta Stage - Launchable after DB update. Not perfectly functionable yet as still under heavy work, but needed.

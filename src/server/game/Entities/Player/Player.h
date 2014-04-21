@@ -1072,19 +1072,25 @@ struct VoidStorageItem
 {
     VoidStorageItem()
     {
-        ItemId = 0;
-        ItemEntry = 0;
-        CreatorGuid = 0;
+        ItemId               = 0;
+        ItemEntry            = 0;
+        CreatorGuid          = 0;
         ItemRandomPropertyId = 0;
-        ItemSuffixFactor = 0;
+        ItemReforgeId        = 0;
+        ItemTransmogrifyId   = 0;
+        ItemUpgradeId        = 0;
+        ItemSuffixFactor     = 0;
     }
 
-    VoidStorageItem(uint64 id, uint32 entry, uint32 creator, uint32 randomPropertyId, uint32 suffixFactor)
+    VoidStorageItem(uint64 id, uint32 entry, uint32 creator, uint32 randomPropertyId, uint32 reforgeId, uint32 transmogrifyId, uint32 upgradeId, uint32 suffixFactor)
     {
         ItemId = id;
         ItemEntry = entry;
         CreatorGuid = creator;
         ItemRandomPropertyId = randomPropertyId;
+        ItemReforgeId = reforgeId;
+        ItemTransmogrifyId = transmogrifyId;
+        ItemUpgradeId = upgradeId;
         ItemSuffixFactor = suffixFactor;
     }
 
@@ -1092,6 +1098,9 @@ struct VoidStorageItem
     uint32 ItemEntry;
     uint32 CreatorGuid;
     uint32 ItemRandomPropertyId;
+    uint32 ItemReforgeId;
+    uint32 ItemTransmogrifyId;
+    uint32 ItemUpgradeId;
     uint32 ItemSuffixFactor;
 };
 

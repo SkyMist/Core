@@ -744,6 +744,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     bool HasChatTag = chatTag != 0;
     bool HasConstantTime = true;
     bool ShowInChatWindow = true; // Toggle show in chat window - show in chat bubble.
+    bool HasSecondTime = true;    // This is in relation to HasConstantTime. For players it's always the same, for creatures it varies. ToDo: Find what it does (text duration ?).
 
     // Now build the actual packet.
     data->Initialize(SMSG_MESSAGECHAT);
@@ -789,7 +790,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(source[1]);
     data->WriteBit(source[0]);
 
-    data->WriteBit(1);                              // HasDword38, some kind of time
+    data->WriteBit(!HasSecondTime);
 
     if (HasReceiver)
         data->WriteBits(targetNameLength, 11);
@@ -850,8 +851,8 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     *data << uint8(type);
 
-    //if (HasDword38)
-    //  *data << uint32(0);
+    if (HasSecondTime)
+        *data << uint32(time(NULL));
 
     if (HasAddonPrefix)
         data->WriteString(std::string(addonPrefix));
