@@ -32,7 +32,7 @@ void WorldSession::HandleDismissControlledVehicle(WorldPacket &recvData)
 
     uint64 vehicleGUID = _player->GetCharmGUID();
 
-    if (!vehicleGUID)                                       // something wrong here...
+    if (!vehicleGUID)                                      // something wrong here...
     {
         recvData.rfinish();                                // prevent warnings spam
         return;
@@ -68,7 +68,7 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket& recvData)
 
     switch (recvData.GetOpcode())
     {
-        /*case CMSG_REQUEST_VEHICLE_PREV_SEAT:
+        case CMSG_REQUEST_VEHICLE_PREV_SEAT:
             GetPlayer()->ChangeSeat(-1, false);
             break;
         case CMSG_REQUEST_VEHICLE_NEXT_SEAT:
@@ -79,22 +79,23 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket& recvData)
             static MovementStatusElements const accessoryGuid[] =
             {
                 MSEExtraInt8,
+                MSEHasGuidByte5,
                 MSEHasGuidByte2,
                 MSEHasGuidByte4,
-                MSEHasGuidByte7,
-                MSEHasGuidByte6,
-                MSEHasGuidByte5,
                 MSEHasGuidByte0,
                 MSEHasGuidByte1,
                 MSEHasGuidByte3,
+                MSEHasGuidByte6,
+                MSEHasGuidByte7,           
                 MSEGuidByte6,
+                MSEGuidByte7,
                 MSEGuidByte1,
                 MSEGuidByte2,
+                MSEGuidByte4,
+                MSEGuidByte0,
                 MSEGuidByte5,
                 MSEGuidByte3,
-                MSEGuidByte0,
-                MSEGuidByte4,
-                MSEGuidByte7,
+                     
             };
 
             Movement::ExtraMovementStatusElement extra(accessoryGuid);
@@ -120,11 +121,28 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket& recvData)
         }
         case CMSG_REQUEST_VEHICLE_SWITCH_SEAT:
         {
-            uint64 guid;        // current vehicle guid
-            recvData.readPackGUID(guid);
-
+            ObjectGuid guid;        // current vehicle guid
             int8 seatId;
+
             recvData >> seatId;
+
+            guid[3] = recvData.ReadBit();
+            guid[4] = recvData.ReadBit();
+            guid[0] = recvData.ReadBit();
+            guid[5] = recvData.ReadBit();
+            guid[1] = recvData.ReadBit();
+            guid[6] = recvData.ReadBit();
+            guid[2] = recvData.ReadBit();
+            guid[7] = recvData.ReadBit();
+
+            recvData.ReadByteSeq(guid[6]);
+            recvData.ReadByteSeq(guid[4]);
+            recvData.ReadByteSeq(guid[1]);
+            recvData.ReadByteSeq(guid[7]);
+            recvData.ReadByteSeq(guid[0]);
+            recvData.ReadByteSeq(guid[2]);
+            recvData.ReadByteSeq(guid[5]);
+            recvData.ReadByteSeq(guid[3]);
 
             if (vehicle_base->GetGUID() == guid)
                 GetPlayer()->ChangeSeat(seatId);
@@ -133,7 +151,7 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket& recvData)
                     if (vehicle->HasEmptySeat(seatId))
                         vehUnit->HandleSpellClick(GetPlayer(), seatId);
             break;
-        }*/
+        }
         default:
             break;
     }

@@ -128,7 +128,7 @@ enum Opcodes
    CMSG_CANCEL_TRADE                                        = 0x1D32, // 5.4.7 18019
    CMSG_CAST_SPELL                                          = 0x1E5B, // 5.4.7 18019
    CMSG_CHALLANGES_INFO                                     = 0x0,
-   CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE                  = 0x0,
+   CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE                  = 0x053B, // 5.4.7 18019
    CMSG_CHANNEL_ANNOUNCEMENTS                               = 0x0,
    CMSG_CHANNEL_BAN                                         = 0x0,
    CMSG_CHANNEL_DISPLAY_LIST                                = 0x0,
@@ -188,7 +188,7 @@ enum Opcodes
    CMSG_DEL_IGNORE                                          = 0x0,
    CMSG_DEL_VOICE_IGNORE                                    = 0x0,
    CMSG_DESTROY_ITEM                                        = 0x1F12, // 5.4.7 18019
-   CMSG_DISMISS_CONTROLLED_VEHICLE                          = 0x0,
+   CMSG_DISMISS_CONTROLLED_VEHICLE                          = 0x0979, // 5.4.7 18019
    CMSG_DISMISS_CRITTER                                     = 0x0,
    CMSG_DUEL_ACCEPTED                                       = 0x0,
    CMSG_DUEL_CANCELLED                                      = 0x0,
@@ -485,10 +485,10 @@ enum Opcodes
    CMSG_REQUEST_RATED_BG_INFO                               = 0x0,
    CMSG_REQUEST_RATED_BG_STATS                              = 0x0,
    CMSG_REQUEST_RESEARCH_HISTORY                            = 0x0,
-   CMSG_REQUEST_VEHICLE_EXIT                                = 0x0,
-   CMSG_REQUEST_VEHICLE_NEXT_SEAT                           = 0x0,
-   CMSG_REQUEST_VEHICLE_PREV_SEAT                           = 0x0,
-   CMSG_REQUEST_VEHICLE_SWITCH_SEAT                         = 0x0,
+   CMSG_REQUEST_VEHICLE_EXIT                                = 0x15EB, // 5.4.7 18019
+   CMSG_REQUEST_VEHICLE_NEXT_SEAT                           = 0x11EA, // 5.4.7 18019
+   CMSG_REQUEST_VEHICLE_PREV_SEAT                           = 0x1C32, // 5.4.7 18019
+   CMSG_REQUEST_VEHICLE_SWITCH_SEAT                         = 0x16EB, // 5.4.7 18019
    CMSG_RESET_FACTION_CHEAT                                 = 0x0,
    CMSG_RESET_INSTANCES                                     = 0x169B, // 5.4.7 18019
    CMSG_RESURRECT_RESPONSE                                  = 0x0,
@@ -1119,7 +1119,7 @@ enum Opcodes
    SMSG_NPC_TEXT_UPDATE                                     = 0x10E0, // 5.4.7 18019
    SMSG_NPC_WONT_TALK                                       = 0x0,
    SMSG_OFFER_PETITION_ERROR                                = 0x0,
-   SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA                = 0x0,
+   SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA                = 0x0C0A, // 5.4.7 18019
    SMSG_OPEN_BROWSER                                        = 0x0,
    SMSG_OPEN_CONTAINER                                      = 0x0,
    SMSG_OPEN_LFG_DUNGEON_FINDER                             = 0x0,
@@ -1162,7 +1162,7 @@ enum Opcodes
    SMSG_PLAYER_MOVE                                         = 0x1CB2, // 5.4.7 18019
    SMSG_PLAYER_SKINNED                                      = 0x0,
    SMSG_PLAYER_UNK_DEAD_ALIVE                               = 0x0,
-   SMSG_PLAYER_VEHICLE_DATA                                 = 0x0,
+   SMSG_PLAYER_VEHICLE_DATA                                 = 0x1F29, // 5.4.7 18019
    SMSG_PLAY_DANCE                                          = 0x0,
    SMSG_PLAY_MUSIC                                          = 0x0,
    SMSG_PLAY_OBJECT_SOUND                                   = 0x0C43, // 5.4.7 18019
