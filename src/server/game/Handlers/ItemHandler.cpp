@@ -742,7 +742,7 @@ void WorldSession::SendListInventory(uint64 vendorGuid)
         rawItemCount = MAX_VENDOR_ITEMS; // !Keep in mind client cap is 300 but uint8 max value is 255.
 
     ByteBuffer itemsData(40 * rawItemCount); // 10 * 4.
-    bool hasExtendedCost[rawItemCount];
+    bool hasExtendedCost[MAX_VENDOR_ITEMS];
 
     const float discountMod = _player->GetReputationPriceDiscount(vendor);
     uint8 count = 0;
@@ -1602,7 +1602,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
 
     for (uint8 i = 0; i < count; ++i)
     {
-        if (hasItemGuid2)
+        if (hasItemGuid2[i])
         {
             recvData.ReadByteSeq(targetItemGuid[i][4]);
             recvData.ReadByteSeq(targetItemGuid[i][0]);
@@ -1614,7 +1614,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             recvData.ReadByteSeq(targetItemGuid[i][3]);
         }
 
-        if (hasItemGuid1)
+        if (hasItemGuid1[i])
         {
             recvData.ReadByteSeq(originalItemGuid[i][3]);
             recvData.ReadByteSeq(originalItemGuid[i][6]);
@@ -1640,7 +1640,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         // Slot of the transmogrified item.
         if (slots[i] < EQUIPMENT_SLOT_START || slots[i] >= EQUIPMENT_SLOT_END)
         {
-            TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an item (lowguid: %u) with a wrong slot (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName().c_str(), GUID_LOPART(itemGuids[i]), slots[i]);
+            TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an item (lowguid: %u) with a wrong slot (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName().c_str(), GUID_LOPART(originalItemGuid[i]), slots[i]);
             return;
         }
 
@@ -1661,12 +1661,12 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         Item* itemTransmogrifier = NULL;
 
         // Guid of the transmogrifier item, if it's not 0.
-        if (itemGuids[i])
+        if (targetItemGuid[i])
         {
-            itemTransmogrifier = player->GetItemByGuid(itemGuids[i]);
+            itemTransmogrifier = player->GetItemByGuid(targetItemGuid[i]);
             if (!itemTransmogrifier)
             {
-                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify with an invalid item (lowguid: %u).", player->GetGUIDLow(), player->GetName().c_str(), GUID_LOPART(itemGuids[i]));
+                TC_LOG_DEBUG("network", "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify with an invalid item (lowguid: %u).", player->GetGUIDLow(), player->GetName().c_str(), GUID_LOPART(targetItemGuid[i]));
                 return;
             }
         }
