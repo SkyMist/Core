@@ -261,7 +261,7 @@ Item::Item()
     m_paidMoney = 0;
     m_paidExtendedCost = 0;
 
-    _dynamicTabCount = ITEM_DYNAMIC_END; // Should be 32 here.
+    _dynamicTabCount = ITEM_DYNAMIC_END;
 }
 
 bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)

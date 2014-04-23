@@ -56,7 +56,7 @@ enum EItemFields
 enum EItemDynamicArrays // New Dynamic Flag Update system.
 {
     ITEM_DYNAMIC_MODIFIERS                                   = 0x0,
-    ITEM_DYNAMIC_END                                         = 0x48
+    ITEM_DYNAMIC_END                                         = 0x1
 };
 
 enum EContainerFields
@@ -154,8 +154,8 @@ enum EUnitFields
 enum EUnitDynamicArrays // New Dynamic Flag Update System.
 {
     UNIT_DYNAMIC_PASSIVE_SPELLS                              = 0x0,
-    UNIT_DYNAMIC_WORLD_EFFECTS                               = 0x101,
-    UNIT_DYNAMIC_END                                         = 0x202
+    UNIT_DYNAMIC_WORLD_EFFECTS                               = 0x1,
+    UNIT_DYNAMIC_END                                         = 0x2
 };
 
 enum EPlayerFields
@@ -267,9 +267,10 @@ enum EPlayerFields
 
 enum EPlayerDynamicArrays // New Dynamic Flag Update system.
 {
-    PLAYER_DYNAMIC_RESEARCH_SITES                            = 0x0,
-    PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED                    = 0x2,
-    PLAYER_DYNAMIC_END                                       = 0x4
+    PLAYER_DYNAMIC_RESEARCH_SITES                            = 0x2,
+    PLAYER_DYNAMIC_RESEARCH_SITE_PROGRESS                    = 0x3,
+    PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED                    = 0x4,
+    PLAYER_DYNAMIC_END                                       = 0x5
 };
 
 enum EGameObjectFields

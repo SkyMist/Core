@@ -3928,7 +3928,9 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
     }
 
     PlayerTalentMap::iterator itr = GetTalentMap(spec)->find(spellId);
-    if (itr == GetTalentMap(spec)->end())
+    if (itr != GetTalentMap(spec)->end())
+        itr->second->state = PLAYERSPELL_UNCHANGED;
+    else
     {
         PlayerSpellState state = learning ? PLAYERSPELL_NEW : PLAYERSPELL_UNCHANGED;
         PlayerTalent* newtalent = new PlayerTalent();
@@ -3939,8 +3941,6 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
         (*GetTalentMap(spec))[spellId] = newtalent;
         return true;
     }
-    else 
-        itr->second->state = PLAYERSPELL_UNCHANGED;
 
     return false;
 }
@@ -4954,20 +4954,23 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
 
     if (resetTalents)
     {
-        for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+        for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
         {
-            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(talent->first);
+            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo((*talent).first);
             if (!spellEntry)
                 continue;
 
-            removeSpell(talent->first, true);
+            removeSpell((*talent).first, true);
 
             // search for spells that the talent teaches and unlearn them
             for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                 if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                     removeSpell(spellEntry->Effects[i].TriggerSpell, true);
 
-            talent->second->state = PLAYERSPELL_REMOVED;
+            // if this talent rank can be found in the PlayerTalentMap, mark the talent as removed so it gets deleted
+            PlayerTalentMap::iterator plrTalent = GetTalentMap(GetActiveSpec())->find((*talent).first);
+            if (plrTalent != GetTalentMap(GetActiveSpec())->end())
+                plrTalent->second->state = PLAYERSPELL_REMOVED;
         }
     }
 
@@ -5021,25 +5024,27 @@ void Player::SetTalentSpecialization(uint8 spec, uint32 specId)
 
 bool Player::RemoveTalent(uint32 talentId)
 {
-    TalentEntry const* talent = sTalentStore.LookupEntry(talentId);
-    if (!talent)
-        return false;
-
-    PlayerTalentMap::iterator itr = GetTalentMap(GetActiveSpec())->find(talent->SpellId);
-
-    if (itr != GetTalentMap(GetActiveSpec())->end())
+    for (PlayerTalentMap::iterator itr = (*GetTalentMap(GetActiveSpec())).begin(); itr != (*GetTalentMap(GetActiveSpec())).end(); itr++)
     {
-        SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(itr->first);
+        SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo((*itr).first);
         if (!unlearnSpellProto)
-            return false;
+            continue;
 
-        removeSpell(itr->first, true);
+        TalentEntry const* talent = sTalentStore.LookupEntry(unlearnSpellProto->talentId);
+        if (!talent)
+            continue;
 
+        if (unlearnSpellProto->talentId != talentId)
+            continue;
+
+        removeSpell((*itr).first, true);
+
+        // search for spells that the talent teaches and unlearn them
         for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                 removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
 
-        itr->second->state = PLAYERSPELL_REMOVED;
+        (*itr).second->state = PLAYERSPELL_REMOVED;
 
         // Needs to be executed orthewise the talents will be screwed
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -18938,9 +18943,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
-    // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
-    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
-    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
+    // This shows digsites on map for Archaeology - left here to use as reference in implementation.
+    // SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
 
     return true;
 }
@@ -27782,15 +27786,15 @@ void Player::ActivateSpec(uint8 spec)
     SendActionButtons(2);
     // m_actionButtons.clear() is called in the next _LoadActionButtons
 
-    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+    for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
     {
-        removeSpell(talent->first, true); // Remove the talent.
+        removeSpell((*talent).first, true); // Remove the talent.
 
         // Search through SpellInfo for valid trigger spells and remove any spells that the talent teaches.
-        if (const SpellInfo* _spellEntry = sSpellMgr->GetSpellInfo(talent->first))
+        if (SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo((*talent).first))
             for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                if (_spellEntry->Effects[i].TriggerSpell > 0 && _spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
-                    removeSpell(_spellEntry->Effects[i].TriggerSpell, true);
+                if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
+                    removeSpell(spellEntry->Effects[i].TriggerSpell, true);
     }
 
     // Remove spec specific spells.
@@ -27806,9 +27810,9 @@ void Player::ActivateSpec(uint8 spec)
     SetActiveSpec(spec);
     uint32 spentTalents = 0;
 
-    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+    for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
     {
-        learnSpell(talent->first, false); // Add the talent to the PlayerSpellMap.
+        learnSpell((*talent).first, false); // Add the talent to the PlayerSpellMap.
         spentTalents++; // Increase spentTalents count.
     }
 

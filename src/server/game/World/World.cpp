@@ -2412,7 +2412,7 @@ namespace Trinity
 
                 while (char* line = lineFromMessage(pos))
                 {
-                    WorldPacket* data = new WorldPacket();
+                    WorldPacket* data = new WorldPacket(SMSG_MESSAGECHAT, 200);
 
                     /*** Build Packet. ***/
                     ChatHandler::FillMessageData(data, NULL, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, NULL, 0, line, NULL);
