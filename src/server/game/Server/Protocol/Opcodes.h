@@ -200,7 +200,7 @@ enum Opcodes
    CMSG_EQUIPMENT_SET_DELETE                                = 0x0,
    CMSG_EQUIPMENT_SET_SAVE                                  = 0x0,
    CMSG_EQUIPMENT_SET_USE                                   = 0x0,
-   CMSG_FAR_SIGHT                                           = 0x0,
+   CMSG_FAR_SIGHT                                           = 0x01D5, // 5.4.7 18019
    CMSG_FORCE_MOVE_ROOT_ACK                                 = 0x0,
    CMSG_FORCE_MOVE_UNROOT_ACK                               = 0x0,
    CMSG_GAMEOBJECT_QUERY                                    = 0x14EA, // 5.4.7 18019
@@ -509,7 +509,7 @@ enum Opcodes
    CMSG_SETSHEATHED                                         = 0x0,
    CMSG_SET_ACTIONBAR_TOGGLES                               = 0x03F5, // 5.4.7 18019
    CMSG_SET_ACTION_BUTTON                                   = 0x1393, // 5.4.7 18019
-   CMSG_SET_ACTIVE_MOVER                                    = 0x0,
+   CMSG_SET_ACTIVE_MOVER                                    = 0x09B1, // 5.4.7 18019
    CMSG_SET_ACTIVE_VOICE_CHANNEL                            = 0x0,
    CMSG_SET_ALLOW_LOW_LEVEL_RAID1                           = 0x0,
    CMSG_SET_ALLOW_LOW_LEVEL_RAID2                           = 0x0,
@@ -543,7 +543,7 @@ enum Opcodes
    CMSG_SHOWING_CLOAK                                       = 0x1276, // 5.4.7 18019
    CMSG_SHOWING_HELM                                        = 0x117F, // 5.4.7 18019
    CMSG_SOCKET_GEMS                                         = 0x0,
-   CMSG_SPELLCLICK                                          = 0x0,
+   CMSG_SPELLCLICK                                          = 0x11FF, // 5.4.7 18019
    CMSG_SPIRIT_HEALER_ACTIVATE                              = 0x0,
    CMSG_SPLIT_ITEM                                          = 0x0,
    CMSG_STANDSTATECHANGE                                    = 0x0,

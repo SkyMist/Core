@@ -1690,8 +1690,7 @@ void WorldSession::HandleFarSightOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_FAR_SIGHT");
 
-    bool apply;
-    recvData >> apply;
+    bool apply = recvData.ReadBit();
 
     if (apply)
     {
