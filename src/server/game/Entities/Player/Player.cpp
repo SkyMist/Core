@@ -24404,18 +24404,36 @@ Player* Player::GetSelectedPlayer() const
 void Player::SendComboPoints()
 {
     Unit* combotarget = ObjectAccessor::GetUnit(*this, m_comboTarget);
+
     if (combotarget)
     {
-        WorldPacket data;
-        if (m_mover != this)
-        {
-            data.Initialize(SMSG_PET_UPDATE_COMBO_POINTS, m_mover->GetPackGUID().size()+combotarget->GetPackGUID().size()+1);
-            data.append(m_mover->GetPackGUID());
-        }
-        else
-            data.Initialize(SMSG_UPDATE_COMBO_POINTS, combotarget->GetPackGUID().size()+1);
-        data.append(combotarget->GetPackGUID());
+        ObjectGuid guid = combotarget->GetGUID();
+
+        WorldPacket data(SMSG_UPDATE_COMBO_POINTS);
+
+        data.WriteBit(guid[0]);
+        data.WriteBit(guid[2]);
+        data.WriteBit(guid[7]);
+        data.WriteBit(guid[5]);
+        data.WriteBit(guid[6]);
+        data.WriteBit(guid[3]);
+        data.WriteBit(guid[4]);
+        data.WriteBit(guid[1]);
+
+        data.FlushBits();
+
+        data.WriteByteSeq(guid[0]);
+        data.WriteByteSeq(guid[6]);
+
         data << uint8(m_comboPoints);
+
+        data.WriteByteSeq(guid[3]);
+        data.WriteByteSeq(guid[4]);
+        data.WriteByteSeq(guid[1]);
+        data.WriteByteSeq(guid[5]);
+        data.WriteByteSeq(guid[7]);
+        data.WriteByteSeq(guid[2]);
+
         GetSession()->SendPacket(&data);
     }
 }

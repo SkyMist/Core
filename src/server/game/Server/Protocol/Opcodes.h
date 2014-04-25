@@ -162,7 +162,7 @@ enum Opcodes
    CMSG_CHAT_IGNORED                                        = 0x0,
    CMSG_CLICK_TO_MOVE                                       = 0x0,
    CMSG_CLEAR_CHANNEL_WATCH                                 = 0x0,
-   CMSG_CLEAR_RAID_MARKER                                   = 0x0,
+   CMSG_CLEAR_RAID_MARKER                                   = 0x14E9, // 5.4.7 18019
    CMSG_CLEAR_TRADE_ITEM                                    = 0x0,
    CMSG_CLOSE_BROWSER                                       = 0x0,
    CMSG_COMMENTATOR_ENABLE                                  = 0x169A, // 5.4.7 18019
@@ -179,7 +179,7 @@ enum Opcodes
    CMSG_COMPLETE_MOVIE                                      = 0x0,
    CMSG_CONNECT_TO_FAILED                                   = 0x0,
    CMSG_CONTACT_LIST                                        = 0x0,
-   CMSG_CORPSE_MAP_POSITION_QUERY                           = 0x0,
+   CMSG_CORPSE_MAP_POSITION_QUERY                           = 0x0152, // 5.4.7 18019
    CMSG_CORPSE_QUERY                                        = 0x129B, // 5.4.7 18019
    CMSG_CREATURE_QUERY                                      = 0x1E72, // 5.4.7 18019
    CMSG_DANCE_QUERY                                         = 0x0,
@@ -235,7 +235,7 @@ enum Opcodes
    CMSG_GROUP_INVITE                                        = 0x1990, // 5.4.7 18019
    CMSG_GROUP_INVITE_RESPONSE                               = 0x1C51, // 5.4.7 18019
    CMSG_GROUP_RAID_CONVERT                                  = 0x19A0, // 5.4.7 18019
-   CMSG_GROUP_REQUEST_JOIN_UPDATES                          = 0x0,
+   CMSG_GROUP_REQUEST_JOIN_UPDATES                          = 0x1792, // 5.4.7 18019
    CMSG_GROUP_SET_LEADER                                    = 0x1383, // 5.4.7 18019
    CMSG_GROUP_SET_ROLES                                     = 0x1C93, // 5.4.7 18019
    CMSG_GROUP_SWAP_SUB_GROUP                                = 0x0,
@@ -506,7 +506,7 @@ enum Opcodes
    CMSG_SEND_SOR_REQUEST_VIA_BNET_ACCOUNT_ID                = 0x0,
    CMSG_SERVERTIME                                          = 0x0,
    CMSG_SETDEATHBINDPOINT                                   = 0x0,
-   CMSG_SETSHEATHED                                         = 0x0,
+   CMSG_SETSHEATHED                                         = 0x007D, // 5.4.7 18019
    CMSG_SET_ACTIONBAR_TOGGLES                               = 0x03F5, // 5.4.7 18019
    CMSG_SET_ACTION_BUTTON                                   = 0x1393, // 5.4.7 18019
    CMSG_SET_ACTIVE_MOVER                                    = 0x0,
@@ -514,13 +514,14 @@ enum Opcodes
    CMSG_SET_ALLOW_LOW_LEVEL_RAID1                           = 0x0,
    CMSG_SET_ALLOW_LOW_LEVEL_RAID2                           = 0x0,
    CMSG_SET_CHANNEL_WATCH                                   = 0x0,
-   CMSG_SET_CONTACT_NOTES                                   = 0x0,
+   CMSG_SET_CONTACT_NOTES                                   = 0x03A4, // 5.4.7 18019
    CMSG_SET_CURRENCY_FLAGS                                  = 0x0,
    CMSG_SET_DUNGEON_DIFFICULTY                              = 0x1898, // 5.4.7 18019
    CMSG_SET_EVERYONE_IS_ASSISTANT                           = 0x0,
-   CMSG_SET_FACTION_ATWAR                                   = 0x0,
+   CMSG_SET_FACTION_ATWAR                                   = 0x03F6, // 5.4.7 18019
+   CMSG_UNSET_FACTION_ATWAR                                 = 0x0077, // 5.4.7 18019
    CMSG_SET_FACTION_CHEAT                                   = 0x0,
-   CMSG_SET_FACTION_INACTIVE                                = 0x0,
+   CMSG_SET_FACTION_INACTIVE                                = 0x057C, // 5.4.7 18019
    CMSG_SET_GUILD_BANK_TEXT                                 = 0x0,
    CMSG_SET_LFG_COMMENT                                     = 0x0,
    CMSG_SET_PET_SLOT                                        = 0x0,
@@ -568,7 +569,7 @@ enum Opcodes
    CMSG_TIME_ADJUSTMENT_RESPONSE                            = 0x0,
    CMSG_TIME_SYNC_RESP                                      = 0x0413, // 5.4.7 18019
    CMSG_TIME_SYNC_RESP_FAILED                               = 0x0,
-   CMSG_TOGGLE_PVP                                          = 0x0,
+   CMSG_TOGGLE_PVP                                          = 0x16BA, // 5.4.7 18019
    CMSG_TOTEM_DESTROYED                                     = 0x0,
    CMSG_TRAINER_BUY_SPELL                                   = 0x0274, // 5.4.7 18019
    CMSG_TRAINER_LIST                                        = 0x075E, // 5.4.7 18019
@@ -579,13 +580,13 @@ enum Opcodes
    CMSG_TUTORIAL_FLAG                                       = 0x07A4, // 5.4.7 18019
    CMSG_TUTORIAL_RESET                                      = 0x0,
    CMSG_UNACCEPT_TRADE                                      = 0x0,
-   CMSG_UNLEARN_SKILL                                       = 0x0,
+   CMSG_UNLEARN_SKILL                                       = 0x025D, // 5.4.7 18019
    CMSG_UNLEARN_SPECIALIZATION                              = 0x0,
    CMSG_UNREGISTER_ALL_ADDON_PREFIXES                       = 0x0,
    CMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
    CMSG_UPDATE_MISSILE_TRAJECTORY                           = 0x0,
    CMSG_UPDATE_PROJECTILE_POSITION                          = 0x0,
-   CMSG_UPGRADE_ITEM                                        = 0x0,
+   CMSG_UPGRADE_ITEM                                        = 0x0, // 0x11E9 - 5.4.7 18019
    CMSG_USED_FOLLOW                                         = 0x0,
    CMSG_USE_ITEM                                            = 0x15E3, // 5.4.7 18019
    CMSG_VIOLENCE_LEVEL                                      = 0x05A0, // 5.4.7 18019
@@ -818,7 +819,7 @@ enum Opcodes
    SMSG_CORPSE_RECLAIM_DELAY                                = 0x1E73, // 5.4.7 18019
    SMSG_CREATURE_QUERY_RESPONSE                             = 0x00E0, // 5.4.7 18019
    SMSG_CRITERIA_DELETED                                    = 0x0,
-   SMSG_CRITERIA_UPDATE                                     = 0x0,
+   SMSG_CRITERIA_UPDATE                                     = 0x0, // 0x13B2 - 5.4.7 18019
    SMSG_CROSSED_INEBRIATION_THRESHOLD                       = 0x0,
    SMSG_CURRENCY_LOOT_REMOVED                               = 0x0,
    SMSG_CURRENCY_LOOT_RESTORED                              = 0x0,
@@ -871,7 +872,7 @@ enum Opcodes
    SMSG_FORCE_SEND_QUEUED_PACKETS                           = 0x0,
    SMSG_FORCE_SET_VEHICLE_REC_ID                            = 0x0,
    SMSG_FORGE_MASTER_SET                                    = 0x0,
-   SMSG_FRIEND_STATUS                                       = 0x0,
+   SMSG_FRIEND_STATUS                                       = 0x0707, // 5.4.7 18019
    SMSG_GAMEOBJECT_CUSTOM_ANIM                              = 0x0,
    SMSG_GAMEOBJECT_DESPAWN_ANIM                             = 0x0,
    SMSG_GAMEOBJECT_PAGETEXT                                 = 0x0,
@@ -992,7 +993,7 @@ enum Opcodes
    SMSG_ITEM_SEND_PASSIVE                                   = 0x0,
    SMSG_ITEM_TEXT_QUERY_RESPONSE                            = 0x0,
    SMSG_ITEM_TIME_UPDATE                                    = 0x0,
-   SMSG_ITEM_UPGRADE_RESULT                                 = 0x0,
+   SMSG_ITEM_UPGRADE_RESULT                                 = 0x0888, // 5.4.7 18019
    SMSG_JOINED_BATTLEGROUND_QUEUE                           = 0x0,
    SMSG_KICK_REASON                                         = 0x0,
    SMSG_LEARNED_DANCE_MOVES                                 = 0x0,
@@ -1124,7 +1125,7 @@ enum Opcodes
    SMSG_OPEN_CONTAINER                                      = 0x0,
    SMSG_OPEN_LFG_DUNGEON_FINDER                             = 0x0,
    SMSG_OVERRIDE_LIGHT                                      = 0x0,
-   SMSG_PAGE_TEXT_QUERY_RESPONSE                            = 0x0,
+   SMSG_PAGE_TEXT_QUERY_RESPONSE                            = 0x1653, // 5.4.7 18019
    SMSG_PARTYKILLLOG                                        = 0x0,
    SMSG_PARTY_COMMAND_RESULT                                = 0x1787, // 5.4.7 18019
    SMSG_PARTY_MEMBER_STATS                                  = 0x0,
@@ -1154,7 +1155,6 @@ enum Opcodes
    SMSG_PET_SLOT_UPDATED                                    = 0x0,
    SMSG_PET_SPELLS                                          = 0x0,
    SMSG_PET_TAME_FAILURE                                    = 0x0,
-   SMSG_PET_UPDATE_COMBO_POINTS                             = 0x0,
    SMSG_PLAYED_TIME                                         = 0x1C69, // 5.4.7 18019
    SMSG_PLAYERBINDERROR                                     = 0x0,
    SMSG_PLAYERBOUND                                         = 0x00E8, // 5.4.7 18019
@@ -1206,7 +1206,7 @@ enum Opcodes
    SMSG_RAID_GROUP_ONLY                                     = 0x0,
    SMSG_RAID_INSTANCE_INFO                                  = 0x0C21, // 5.4.7 18019
    SMSG_RAID_INSTANCE_MESSAGE                               = 0x0,
-   SMSG_RAID_MARKERS_CHANGED                                = 0x0,
+   SMSG_RAID_MARKERS_CHANGED                                = 0x14E0, // 5.4.7 18019
    SMSG_RAID_READY_CHECK                                    = 0x072A, // 5.4.7 18019
    SMSG_RAID_READY_CHECK_CONFIRM                            = 0x1641, // 5.4.7 18019
    SMSG_RAID_READY_CHECK_THROTTLED_ERROR                    = 0x0,
@@ -1365,7 +1365,7 @@ enum Opcodes
    SMSG_UNIT_SPELLCAST_START                                = 0x0,
    SMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
    SMSG_UPDATE_ACCOUNT_DATA_COMPLETE                        = 0x0,
-   SMSG_UPDATE_COMBO_POINTS                                 = 0x0,
+   SMSG_UPDATE_COMBO_POINTS                                 = 0x0C88, // 5.4.7 18019
    SMSG_UPDATE_CURRENCY                                     = 0x173B, // 5.4.7 18019
    SMSG_UPDATE_CURRENCY_WEEK_LIMIT                          = 0x0F42, // 5.4.7 18019
    SMSG_UPDATE_DUNGEON_ENCOUNTER_FOR_LOOT                   = 0x0,
@@ -1394,7 +1394,7 @@ enum Opcodes
    SMSG_WARDEN_DATA                                         = 0x14EB, // 5.4.7 18019
    SMSG_WARGAME_CHECK_ENTRY                                 = 0x0,
    SMSG_WARGAME_REQUEST_SENT                                = 0x0,
-   SMSG_WEATHER                                             = 0x0,
+   SMSG_WEATHER                                             = 0x0F41, // 5.4.7 18019
    SMSG_WEEKLY_LAST_RESET                                   = 0x0,
    SMSG_WEEKLY_RESET_CURRENCY                               = 0x0620, // 5.4.7 18019
    SMSG_WEEKLY_SPELL_USAGE                                  = 0x0,

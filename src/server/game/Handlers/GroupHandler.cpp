@@ -1545,3 +1545,17 @@ void WorldSession::HandleOptOutOfLootOpcode(WorldPacket& recvData)
 
     GetPlayer()->SetPassOnGroupLoot(passOnLoot);
 }
+
+void WorldSession::HandleRequestJoinUpdates(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_REQUEST_JOIN_UPDATES");
+
+    uint8 unk;
+    recvData >> unk;
+
+    Group* group = GetPlayer()->GetGroup();
+    if (!group)
+        return;
+
+    group->SendUpdate();
+}

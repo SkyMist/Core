@@ -145,8 +145,9 @@ class boss_ossirian : public CreatureScript
                     if (!map->IsDungeon())
                         return;
 
-                    WorldPacket data(SMSG_WEATHER, (4+4+4));
-                    data << uint32(WEATHER_STATE_HEAVY_SANDSTORM) << float(1) << uint8(0);
+                    WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
+                    data.WriteBit(0);
+                    data << float(1) << uint32(WEATHER_STATE_HEAVY_SANDSTORM);
                     map->SendToPlayers(&data);
 
                     for (uint8 i = 0; i < NUM_TORNADOS; ++i)
