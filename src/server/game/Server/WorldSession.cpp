@@ -1042,7 +1042,6 @@ void WorldSession::SendAddonsInfo()
             for (int32 i = 0; i < 8; i++)
                 data << uint32(0);
 
-            // Those 3 might be in wrong order
             data << uint32(itr->Id);
             data << uint32(itr->Timestamp);
             data << uint32(1);  // IsBanned
