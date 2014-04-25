@@ -2412,7 +2412,7 @@ namespace Trinity
 
                 while (char* line = lineFromMessage(pos))
                 {
-                    WorldPacket* data = new WorldPacket();
+                    WorldPacket* data = new WorldPacket(SMSG_MESSAGECHAT, 200);
 
                     /*** Build Packet. ***/
                     ChatHandler::FillMessageData(data, NULL, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, NULL, 0, line, NULL);
@@ -2922,25 +2922,33 @@ void World::SendAutoBroadcast()
 
     uint32 abcenter = sWorld->getIntConfig(CONFIG_AUTOBROADCAST_CENTER);
 
-    if (abcenter == 0)
-        sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
-    else if (abcenter == 1)
+    switch (abcenter)
     {
-        WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-        data.WriteBits(msg.length(), 13);
-        data.FlushBits();
-        data.WriteString(msg);
-        sWorld->SendGlobalMessage(&data);
-    }
-    else if (abcenter == 2)
-    {
-        sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+        case 0:
+            sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+            break;
+        case 2: // 2 has this SendWorldText extra from 1.
+        {
+            sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
 
-        WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-        data.WriteBits(msg.length(), 13);
-        data.FlushBits();
-        data.WriteString(msg);
-        sWorld->SendGlobalMessage(&data);
+            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
+            notification.WriteBits(msg.length(), 11);
+            notification.FlushBits();
+            notification.WriteString(msg);
+            sWorld->SendGlobalMessage(&notification);
+            break;
+        }
+        case 1:
+        {
+            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
+            notification.WriteBits(msg.length(), 11);
+            notification.FlushBits();
+            notification.WriteString(msg);
+            sWorld->SendGlobalMessage(&notification);
+            break;
+        }
+
+        default: break;
     }
 
     TC_LOG_DEBUG("misc", "AutoBroadcast: '%s'", msg.c_str());

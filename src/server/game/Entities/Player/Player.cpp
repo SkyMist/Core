@@ -3928,7 +3928,9 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
     }
 
     PlayerTalentMap::iterator itr = GetTalentMap(spec)->find(spellId);
-    if (itr == GetTalentMap(spec)->end())
+    if (itr != GetTalentMap(spec)->end())
+        itr->second->state = PLAYERSPELL_UNCHANGED;
+    else
     {
         PlayerSpellState state = learning ? PLAYERSPELL_NEW : PLAYERSPELL_UNCHANGED;
         PlayerTalent* newtalent = new PlayerTalent();
@@ -3939,8 +3941,6 @@ bool Player::AddTalent(uint32 spellId, uint8 spec, bool learning)
         (*GetTalentMap(spec))[spellId] = newtalent;
         return true;
     }
-    else 
-        itr->second->state = PLAYERSPELL_UNCHANGED;
 
     return false;
 }
@@ -4954,20 +4954,23 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
 
     if (resetTalents)
     {
-        for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+        for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
         {
-            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo(talent->first);
+            SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo((*talent).first);
             if (!spellEntry)
                 continue;
 
-            removeSpell(talent->first, true);
+            removeSpell((*talent).first, true);
 
             // search for spells that the talent teaches and unlearn them
             for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
                 if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                     removeSpell(spellEntry->Effects[i].TriggerSpell, true);
 
-            talent->second->state = PLAYERSPELL_REMOVED;
+            // if this talent rank can be found in the PlayerTalentMap, mark the talent as removed so it gets deleted
+            PlayerTalentMap::iterator plrTalent = GetTalentMap(GetActiveSpec())->find((*talent).first);
+            if (plrTalent != GetTalentMap(GetActiveSpec())->end())
+                plrTalent->second->state = PLAYERSPELL_REMOVED;
         }
     }
 
@@ -5021,25 +5024,27 @@ void Player::SetTalentSpecialization(uint8 spec, uint32 specId)
 
 bool Player::RemoveTalent(uint32 talentId)
 {
-    TalentEntry const* talent = sTalentStore.LookupEntry(talentId);
-    if (!talent)
-        return false;
-
-    PlayerTalentMap::iterator itr = GetTalentMap(GetActiveSpec())->find(talent->SpellId);
-
-    if (itr != GetTalentMap(GetActiveSpec())->end())
+    for (PlayerTalentMap::iterator itr = (*GetTalentMap(GetActiveSpec())).begin(); itr != (*GetTalentMap(GetActiveSpec())).end(); itr++)
     {
-        SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo(itr->first);
+        SpellInfo const* unlearnSpellProto = sSpellMgr->GetSpellInfo((*itr).first);
         if (!unlearnSpellProto)
-            return false;
+            continue;
 
-        removeSpell(itr->first, true);
+        TalentEntry const* talent = sTalentStore.LookupEntry(unlearnSpellProto->talentId);
+        if (!talent)
+            continue;
 
+        if (unlearnSpellProto->talentId != talentId)
+            continue;
+
+        removeSpell((*itr).first, true);
+
+        // search for spells that the talent teaches and unlearn them
         for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             if (unlearnSpellProto->Effects[i].TriggerSpell > 0 && unlearnSpellProto->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
                 removeSpell(unlearnSpellProto->Effects[i].TriggerSpell, true);
 
-        itr->second->state = PLAYERSPELL_REMOVED;
+        (*itr).second->state = PLAYERSPELL_REMOVED;
 
         // Needs to be executed orthewise the talents will be screwed
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
@@ -5372,8 +5377,8 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
                             do
                             {
                                 Field* itemFields = resultItems->Fetch();
-                                uint32 item_guidlow = itemFields[11].GetUInt32();
-                                uint32 item_template = itemFields[12].GetUInt32();
+                                uint32 item_guidlow = itemFields[14].GetUInt32();
+                                uint32 item_template = itemFields[15].GetUInt32();
 
                                 ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(item_template);
                                 if (!itemProto)
@@ -13143,13 +13148,13 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
     if (pItem)
     {
         SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + (slot * 2), pItem->GetVisibleEntry());
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS + (slot * 2), 0, pItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS + (slot * 2), 1, pItem->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT));
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS + (slot * 2), 0, pItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS + (slot * 2), 1, pItem->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT));
     }
     else
     {
         SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + (slot * 2), 0);
-        SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS + (slot * 2), 0);
+        SetUInt32Value(PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS + (slot * 2), 0);
     }
 }
 
@@ -14616,7 +14621,7 @@ void Player::ApplyReforgeEnchantment(Item* item, bool apply)
     if (!item)
         return;
 
-    ItemReforgeEntry const* reforge = sItemReforgeStore.LookupEntry(item->GetEnchantmentId(REFORGE_ENCHANTMENT_SLOT));
+    ItemReforgeEntry const* reforge = sItemReforgeStore.LookupEntry(item->GetReforgeId());
     if (!reforge)
         return;
 
@@ -14859,7 +14864,7 @@ void Player::ApplyItemUpgrade(Item* item, bool apply)
     if (!item)
         return;
 
-    ItemUpgradeEntry const* itemUpgrade = sItemUpgradeStore.LookupEntry(item->GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2));
+    ItemUpgradeEntry const* itemUpgrade = sItemUpgradeStore.LookupEntry(item->GetUpgradeId());
     if (!itemUpgrade || itemUpgrade->itemLevelUpgrade == 0)
         return;
 
@@ -15004,15 +15009,9 @@ void Player::ApplyItemUpgrade(Item* item, bool apply)
 void Player::ApplyEnchantment(Item* item, bool apply)
 {
     for (uint32 slot = 0; slot < MAX_ENCHANTMENT_SLOT; ++slot)
-    {
-        // Apply reforge as last enchant
-        if (slot == REFORGE_ENCHANTMENT_SLOT)
-            continue;
-
         ApplyEnchantment(item, EnchantmentSlot(slot), apply);
-    }
 
-    ApplyEnchantment(item, REFORGE_ENCHANTMENT_SLOT, apply);
+    ApplyReforgeEnchantment(item, apply);
     ApplyItemUpgrade(item, apply);
 }
 
@@ -15023,15 +15022,6 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
 
     if (slot >= MAX_ENCHANTMENT_SLOT)
         return;
-
-    if (slot == TRANSMOGRIFY_ENCHANTMENT_SLOT)
-        return;
-
-    if (slot == REFORGE_ENCHANTMENT_SLOT)
-    {
-        ApplyReforgeEnchantment(item, apply);
-        return;
-    }
 
     uint32 enchant_id = item->GetEnchantmentId(slot);
     if (!enchant_id)
@@ -15369,10 +15359,10 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
 
     // visualize enchantment at player and equipped items
     if (slot == PERM_ENCHANTMENT_SLOT)
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS + (item->GetSlot() * 2), 0, apply ? item->GetEnchantmentId(slot) : 0);
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS + (item->GetSlot() * 2), 0, apply ? item->GetEnchantmentId(slot) : 0);
 
     if (slot == TEMP_ENCHANTMENT_SLOT)
-        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS + (item->GetSlot() * 2), 1, apply ? item->GetEnchantmentId(slot) : 0);
+        SetUInt16Value(PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS + (item->GetSlot() * 2), 1, apply ? item->GetEnchantmentId(slot) : 0);
 
     if (apply_dur)
     {
@@ -18953,9 +18943,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     _LoadCUFProfiles(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES));
 
-    // SetDynamicFieldUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, 18); // digsite number and entry - For testing purposes!
-    SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
-    SetFlag(PLAYER_DYNAMIC_RESEARCH_SITES, 1);
+    // This shows digsites on map for Archaeology - left here to use as reference in implementation.
+    // SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, 18);
 
     return true;
 }
@@ -19212,8 +19201,8 @@ void Player::_LoadInventory(PreparedQueryResult result, uint32 timeDiff)
             Field* fields = result->Fetch();
             if (Item* item = _LoadItem(trans, zoneId, timeDiff, fields))
             {
-                uint32 bagGuid  = fields[11].GetUInt32();
-                uint8  slot     = fields[12].GetUInt8();
+                uint32 bagGuid  = fields[14].GetUInt32();
+                uint8  slot     = fields[15].GetUInt8();
 
                 uint8 err = EQUIP_ERR_OK;
                 // Item is not in bag
@@ -19326,15 +19315,18 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
 
     do
     {
-        // SELECT itemid, itemEntry, slot, creatorGuid FROM character_void_storage WHERE playerGuid = ?
+        // SELECT itemId, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor FROM character_void_storage WHERE playerGuid = ?
         Field* fields = result->Fetch();
 
-        uint64 itemId = fields[0].GetUInt64();
-        uint32 itemEntry = fields[1].GetUInt32();
-        uint8 slot = fields[2].GetUInt8();
-        uint32 creatorGuid = fields[3].GetUInt32();
+        uint64 itemId         = fields[0].GetUInt64();
+        uint32 itemEntry      = fields[1].GetUInt32();
+        uint8 slot            = fields[2].GetUInt8();
+        uint32 creatorGuid    = fields[3].GetUInt32();
         uint32 randomProperty = fields[4].GetUInt32();
-        uint32 suffixFactor = fields[5].GetUInt32();
+        uint32 reforgeId      = fields[5].GetUInt32();
+        uint32 transmogrifyId = fields[6].GetUInt32();
+        uint32 upgradeId      = fields[7].GetUInt32();
+        uint32 suffixFactor   = fields[8].GetUInt32();
 
         if (!itemId)
         {
@@ -19361,7 +19353,7 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
             creatorGuid = 0;
         }
 
-        _voidStorageItems[slot] = new VoidStorageItem(itemId, itemEntry, creatorGuid, randomProperty, suffixFactor);
+        _voidStorageItems[slot] = new VoidStorageItem(itemId, itemEntry, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor);
     }
     while (result->NextRow());
 }
@@ -19369,8 +19361,8 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
 Item* Player::_LoadItem(SQLTransaction& trans, uint32 zoneId, uint32 timeDiff, Field* fields)
 {
     Item* item = NULL;
-    uint32 itemGuid  = fields[13].GetUInt32();
-    uint32 itemEntry = fields[14].GetUInt32();
+    uint32 itemGuid  = fields[16].GetUInt32();
+    uint32 itemEntry = fields[17].GetUInt32();
     if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemEntry))
     {
         bool remove = false;
@@ -19507,8 +19499,8 @@ void Player::_LoadMailedItems(Mail* mail)
     {
         Field* fields = result->Fetch();
 
-        uint32 itemGuid = fields[11].GetUInt32();
-        uint32 itemTemplate = fields[12].GetUInt32();
+        uint32 itemGuid = fields[14].GetUInt32();
+        uint32 itemTemplate = fields[15].GetUInt32();
 
         mail->AddItem(itemGuid, itemTemplate);
 
@@ -19530,7 +19522,7 @@ void Player::_LoadMailedItems(Mail* mail)
 
         Item* item = NewItemOrBag(proto);
 
-        if (!item->LoadFromDB(itemGuid, MAKE_NEW_GUID(fields[13].GetUInt32(), 0, HIGHGUID_PLAYER), fields, itemTemplate))
+        if (!item->LoadFromDB(itemGuid, MAKE_NEW_GUID(fields[16].GetUInt32(), 0, HIGHGUID_PLAYER), fields, itemTemplate))
         {
             TC_LOG_ERROR("entities.player", "Player::_LoadMailedItems - Item in mail (%u) doesn't exist !!!! - item guid: %u, deleted from mail", mail->messageID, itemGuid);
 
@@ -20989,7 +20981,7 @@ void Player::_SaveVoidStorage(SQLTransaction& trans)
         }
         else
         {
-            // REPLACE INTO character_inventory (itemId, playerGuid, itemEntry, slot, creatorGuid) VALUES (?, ?, ?, ?, ?)
+            // REPLACE INTO character_void_storage (itemId, playerGuid, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor)...
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CHAR_VOID_STORAGE_ITEM);
             stmt->setUInt64(0, _voidStorageItems[i]->ItemId);
             stmt->setUInt32(1, lowGuid);
@@ -20997,7 +20989,10 @@ void Player::_SaveVoidStorage(SQLTransaction& trans)
             stmt->setUInt8(3, i);
             stmt->setUInt32(4, _voidStorageItems[i]->CreatorGuid);
             stmt->setInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
-            stmt->setUInt32(6, _voidStorageItems[i]->ItemSuffixFactor);
+            stmt->setUInt32(6, _voidStorageItems[i]->ItemReforgeId);
+            stmt->setUInt32(7, _voidStorageItems[i]->ItemTransmogrifyId);
+            stmt->setUInt32(8, _voidStorageItems[i]->ItemUpgradeId);
+            stmt->setUInt32(9, _voidStorageItems[i]->ItemSuffixFactor);
         }
 
         trans->Append(stmt);
@@ -24409,18 +24404,36 @@ Player* Player::GetSelectedPlayer() const
 void Player::SendComboPoints()
 {
     Unit* combotarget = ObjectAccessor::GetUnit(*this, m_comboTarget);
+
     if (combotarget)
     {
-        WorldPacket data;
-        if (m_mover != this)
-        {
-            data.Initialize(SMSG_PET_UPDATE_COMBO_POINTS, m_mover->GetPackGUID().size()+combotarget->GetPackGUID().size()+1);
-            data.append(m_mover->GetPackGUID());
-        }
-        else
-            data.Initialize(SMSG_UPDATE_COMBO_POINTS, combotarget->GetPackGUID().size()+1);
-        data.append(combotarget->GetPackGUID());
+        ObjectGuid guid = combotarget->GetGUID();
+
+        WorldPacket data(SMSG_UPDATE_COMBO_POINTS);
+
+        data.WriteBit(guid[0]);
+        data.WriteBit(guid[2]);
+        data.WriteBit(guid[7]);
+        data.WriteBit(guid[5]);
+        data.WriteBit(guid[6]);
+        data.WriteBit(guid[3]);
+        data.WriteBit(guid[4]);
+        data.WriteBit(guid[1]);
+
+        data.FlushBits();
+
+        data.WriteByteSeq(guid[0]);
+        data.WriteByteSeq(guid[6]);
+
         data << uint8(m_comboPoints);
+
+        data.WriteByteSeq(guid[3]);
+        data.WriteByteSeq(guid[4]);
+        data.WriteByteSeq(guid[1]);
+        data.WriteByteSeq(guid[5]);
+        data.WriteByteSeq(guid[7]);
+        data.WriteByteSeq(guid[2]);
+
         GetSession()->SendPacket(&data);
     }
 }
@@ -27791,15 +27804,15 @@ void Player::ActivateSpec(uint8 spec)
     SendActionButtons(2);
     // m_actionButtons.clear() is called in the next _LoadActionButtons
 
-    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+    for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
     {
-        removeSpell(talent->first, true); // Remove the talent.
+        removeSpell((*talent).first, true); // Remove the talent.
 
         // Search through SpellInfo for valid trigger spells and remove any spells that the talent teaches.
-        if (const SpellInfo* _spellEntry = sSpellMgr->GetSpellInfo(talent->first))
+        if (SpellInfo const* spellEntry = sSpellMgr->GetSpellInfo((*talent).first))
             for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                if (_spellEntry->Effects[i].TriggerSpell > 0 && _spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
-                    removeSpell(_spellEntry->Effects[i].TriggerSpell, true);
+                if (spellEntry->Effects[i].TriggerSpell > 0 && spellEntry->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL)
+                    removeSpell(spellEntry->Effects[i].TriggerSpell, true);
     }
 
     // Remove spec specific spells.
@@ -27815,9 +27828,9 @@ void Player::ActivateSpec(uint8 spec)
     SetActiveSpec(spec);
     uint32 spentTalents = 0;
 
-    for (PlayerTalentMap::iterator talent = GetTalentMap(GetActiveSpec())->begin(); talent != GetTalentMap(GetActiveSpec())->end(); talent++)
+    for (PlayerTalentMap::iterator talent = (*GetTalentMap(GetActiveSpec())).begin(); talent != (*GetTalentMap(GetActiveSpec())).end(); talent++)
     {
-        learnSpell(talent->first, false); // Add the talent to the PlayerSpellMap.
+        learnSpell((*talent).first, false); // Add the talent to the PlayerSpellMap.
         spentTalents++; // Increase spentTalents count.
     }
 
@@ -28277,8 +28290,9 @@ uint8 Player::AddVoidStorageItem(const VoidStorageItem& item)
         return 255;
     }
 
-    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemEntry,
-        item.CreatorGuid, item.ItemRandomPropertyId, item.ItemSuffixFactor);
+    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemEntry, item.CreatorGuid, item.ItemRandomPropertyId,
+        item.ItemReforgeId, item.ItemTransmogrifyId, item.ItemUpgradeId, item.ItemSuffixFactor);
+
     return slot;
 }
 
@@ -28297,8 +28311,8 @@ void Player::AddVoidStorageItemAtSlot(uint8 slot, const VoidStorageItem& item)
         return;
     }
 
-    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemId,
-        item.CreatorGuid, item.ItemRandomPropertyId, item.ItemSuffixFactor);
+    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemId, item.CreatorGuid, item.ItemRandomPropertyId,
+        item.ItemReforgeId, item.ItemTransmogrifyId, item.ItemUpgradeId, item.ItemSuffixFactor);
 }
 
 void Player::DeleteVoidStorageItem(uint8 slot)

@@ -33,8 +33,8 @@ class AddonHandler
 
     public:
         ~AddonHandler();
-                                                            //build addon packet
-        bool BuildAddonPacket(WorldPacket* Source, WorldPacket* Target);
+
+        // bool BuildAddonPacket(WorldPacket* Source, WorldPacket* Target); // build addon packet
 };
 #define sAddOnHandler ACE_Singleton<AddonHandler, ACE_Null_Mutex>::instance()
 #endif

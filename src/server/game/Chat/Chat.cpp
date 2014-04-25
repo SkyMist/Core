@@ -678,16 +678,19 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_BG_SYSTEM_HORDE:
         case CHAT_MSG_INSTANCE_CHAT:
         case CHAT_MSG_INSTANCE_CHAT_LEADER:
-            target_guid = speakerPlayer ? speakerPlayer->GetGUID() : 0; // Original target_guid preserved for certain message types (ex. CHAT_MSG_WHISPER_INFORM).
+            // target_guid controls chat bubbles and receiver message building.
+            if (!target_guid) target_guid = speakerPlayer ? speakerPlayer->GetGUID() : 0; // Original target_guid preserved for certain message types (ex. CHAT_MSG_WHISPER_INFORM).
             break;
         case CHAT_MSG_MONSTER_SAY:
-        case CHAT_MSG_MONSTER_PARTY:
         case CHAT_MSG_MONSTER_YELL:
-        case CHAT_MSG_MONSTER_WHISPER:
+        case CHAT_MSG_MONSTER_PARTY:
         case CHAT_MSG_MONSTER_EMOTE:
-        case CHAT_MSG_RAID_BOSS_WHISPER:
-        case CHAT_MSG_RAID_BOSS_EMOTE:
-        case CHAT_MSG_BATTLENET:
+            // target_guid controls chat bubbles and receiver message building.
+            if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
+            break;
+        case CHAT_MSG_MONSTER_WHISPER:   // Should already have a target guid / target guid not needed for entire raid sending.
+        case CHAT_MSG_RAID_BOSS_WHISPER: // Should already have a target guid / target guid not needed for entire raid sending.
+        case CHAT_MSG_RAID_BOSS_EMOTE:   // Should already have a target guid / target guid not needed for entire raid sending.
             break;
 
         default: break;
@@ -700,7 +703,15 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     else if (session)
         speakerNameLength = session ? session->GetPlayer()->GetName().size() : 0;
 
-    std::string speakerName = speaker ? (localizedName ? localizedName : speaker->GetName()) : (session ? session->GetPlayer()->GetName() : 0);
+    std::string speakerName;
+    if (speaker)
+    {
+        if (localizedName)
+            speakerName = localizedName;
+        else speakerName = speaker->GetName();
+    }
+    else if (session)
+        speakerName = session->GetPlayer()->GetName();
 
     if (speaker && speaker->GetTypeId() == TYPEID_UNIT)
         chatTag = 32; // Seems like all creature chats have this tag (Taken from sniffs).
@@ -720,8 +731,8 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     /*** Packet building. ***/
 
     // First establish what GUIDs to use.
-    ObjectGuid source = speaker ? speaker->GetGUID() : (session ? session->GetPlayer()->GetGUID() : 0);
-    ObjectGuid target = target_guid;
+    ObjectGuid sourceGuid = speaker ? speaker->GetGUID() : (session ? session->GetPlayer()->GetGUID() : 0);
+    ObjectGuid targetGuid = target_guid;
 
     ObjectGuid groupGuid = 0;
     if (type == CHAT_MSG_PARTY   || type == CHAT_MSG_PARTY_LEADER
@@ -742,8 +753,10 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     bool HasAddonPrefix = addonPrefixLength > 0;
     bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0);
     bool HasChatTag = chatTag != 0;
-    bool HasConstantTime = true;
+    bool HasConstantTime = true;  // This represents the current time (or the time at which the text is sent).
     bool ShowInChatWindow = true; // Toggle show in chat window - show in chat bubble.
+    bool HasSecondTime = true;    // This is in relation to HasConstantTime. Represents text duration and is sent as HasConstantTime + text duration. !ToDo: Implement.
+    bool HasLimitedFloatRange = false; // This represents the distance at which the chat can be "heard / read", and is already limited sv-side throughout the core. !ToDo: Implement.
 
     // Now build the actual packet.
     data->Initialize(SMSG_MESSAGECHAT);
@@ -761,18 +774,18 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(guildGuid[3]);
 
     data->WriteBit(!HasChatTag);
-    data->WriteBit(!HasLanguage);                   // Send Language
+    data->WriteBit(!HasLanguage);
 
-    data->WriteBit(target[2]);
-    data->WriteBit(target[7]);
-    data->WriteBit(target[0]);
-    data->WriteBit(target[3]);
-    data->WriteBit(target[4]);
-    data->WriteBit(target[6]);
-    data->WriteBit(target[1]);
-    data->WriteBit(target[5]);
+    data->WriteBit(targetGuid[2]);
+    data->WriteBit(targetGuid[7]);
+    data->WriteBit(targetGuid[0]);
+    data->WriteBit(targetGuid[3]);
+    data->WriteBit(targetGuid[4]);
+    data->WriteBit(targetGuid[6]);
+    data->WriteBit(targetGuid[1]);
+    data->WriteBit(targetGuid[5]);
 
-    data->WriteBit(!ShowInChatWindow);               // Show in chat log - false for showing only in bubble (inversed - set bool false->true here for bubble showing).
+    data->WriteBit(!ShowInChatWindow);
     data->WriteBit(!HasAchievement);
     data->WriteBit(!HasReceiver);
     data->WriteBit(!HasSpeaker);
@@ -780,16 +793,16 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     data->WriteBit(0);
 
-    data->WriteBit(source[5]);
-    data->WriteBit(source[7]);
-    data->WriteBit(source[6]);
-    data->WriteBit(source[4]);
-    data->WriteBit(source[3]);
-    data->WriteBit(source[2]);
-    data->WriteBit(source[1]);
-    data->WriteBit(source[0]);
+    data->WriteBit(sourceGuid[5]);
+    data->WriteBit(sourceGuid[7]);
+    data->WriteBit(sourceGuid[6]);
+    data->WriteBit(sourceGuid[4]);
+    data->WriteBit(sourceGuid[3]);
+    data->WriteBit(sourceGuid[2]);
+    data->WriteBit(sourceGuid[1]);
+    data->WriteBit(sourceGuid[0]);
 
-    data->WriteBit(1);                              // HasDword38, some kind of time
+    data->WriteBit(!HasSecondTime);
 
     if (HasReceiver)
         data->WriteBits(targetNameLength, 11);
@@ -808,7 +821,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(groupGuid[0]);
     data->WriteBit(groupGuid[4]);
 
-    data->WriteBit(1);                              // HasUnkFloat
+    data->WriteBit(!HasLimitedFloatRange);
 
     if (HasChatTag)
         data->WriteBits(chatTag, 9);
@@ -816,7 +829,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasMessage)
         data->WriteBits(messageLength, 12);
 
-    data->WriteBit(0);                              // byte1499
+    data->WriteBit(0);                              // Unk byte1499.
     data->WriteBit(!HasAddonPrefix);
     data->WriteBit(!HasChannel);
 
@@ -826,7 +839,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasChannel)
         data->WriteBits(channelLength, 7);
 
-    data->WriteBit(!HasConstantTime);               // HasConstantTime
+    data->WriteBit(!HasConstantTime);
 
     data->FlushBits();
 
@@ -850,32 +863,32 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
 
     *data << uint8(type);
 
-    //if (HasDword38)
-    //  *data << uint32(0);
+    if (HasSecondTime)
+        *data << uint32(time(NULL)); // Add text duration here for creatures (check CreatureTextMgr packet building).
 
     if (HasAddonPrefix)
         data->WriteString(std::string(addonPrefix));
 
-    //if (HasUnkFloat)
-    //  *data << float(0);
+    if (HasLimitedFloatRange)
+        *data << float(0); // Add max text range here (see building of each chat type). 
 
-    data->WriteByteSeq(target[4]);
-    data->WriteByteSeq(target[2]);
-    data->WriteByteSeq(target[3]);
-    data->WriteByteSeq(target[0]);
-    data->WriteByteSeq(target[6]);
-    data->WriteByteSeq(target[7]);
-    data->WriteByteSeq(target[5]);
-    data->WriteByteSeq(target[1]);
+    data->WriteByteSeq(targetGuid[4]);
+    data->WriteByteSeq(targetGuid[2]);
+    data->WriteByteSeq(targetGuid[3]);
+    data->WriteByteSeq(targetGuid[0]);
+    data->WriteByteSeq(targetGuid[6]);
+    data->WriteByteSeq(targetGuid[7]);
+    data->WriteByteSeq(targetGuid[5]);
+    data->WriteByteSeq(targetGuid[1]);
 
-    data->WriteByteSeq(source[6]);
-    data->WriteByteSeq(source[1]);
-    data->WriteByteSeq(source[0]);
-    data->WriteByteSeq(source[2]);
-    data->WriteByteSeq(source[4]);
-    data->WriteByteSeq(source[5]);
-    data->WriteByteSeq(source[7]);
-    data->WriteByteSeq(source[3]);
+    data->WriteByteSeq(sourceGuid[6]);
+    data->WriteByteSeq(sourceGuid[1]);
+    data->WriteByteSeq(sourceGuid[0]);
+    data->WriteByteSeq(sourceGuid[2]);
+    data->WriteByteSeq(sourceGuid[4]);
+    data->WriteByteSeq(sourceGuid[5]);
+    data->WriteByteSeq(sourceGuid[7]);
+    data->WriteByteSeq(sourceGuid[3]);
 
     if (HasAchievement)
         *data << achievementId;

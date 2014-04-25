@@ -7628,7 +7628,7 @@ void Spell::EffectRemoveTalent(SpellEffIndex effIndex)
 
     Player* player = GetCaster()->ToPlayer();
 
-    // Blizz sends talentId as glyphIndex
+    // TalentId is sent as glyphIndex.
     if (player)
         player->RemoveTalent(m_glyphIndex);
 }

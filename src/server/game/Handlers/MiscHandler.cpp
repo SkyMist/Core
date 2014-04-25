@@ -627,8 +627,8 @@ void WorldSession::HandleTogglePvP(WorldPacket& recvData)
     // this opcode can be used in two ways: Either set explicit new status or toggle old status
     if (recvData.size() == 1)
     {
-        bool newPvPStatus;
-        recvData >> newPvPStatus;
+        bool newPvPStatus = recvData.ReadBit();
+
         GetPlayer()->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP, newPvPStatus);
         GetPlayer()->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_PVP_TIMER, !newPvPStatus);
     }

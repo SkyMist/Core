@@ -56,7 +56,7 @@ enum EItemFields
 enum EItemDynamicArrays // New Dynamic Flag Update system.
 {
     ITEM_DYNAMIC_MODIFIERS                                   = 0x0,
-    ITEM_DYNAMIC_END                                         = 0x48
+    ITEM_DYNAMIC_END                                         = 0x1
 };
 
 enum EContainerFields
@@ -154,8 +154,8 @@ enum EUnitFields
 enum EUnitDynamicArrays // New Dynamic Flag Update System.
 {
     UNIT_DYNAMIC_PASSIVE_SPELLS                              = 0x0,
-    UNIT_DYNAMIC_WORLD_EFFECTS                               = 0x101,
-    UNIT_DYNAMIC_END                                         = 0x202
+    UNIT_DYNAMIC_WORLD_EFFECTS                               = 0x1,
+    UNIT_DYNAMIC_END                                         = 0x2
 };
 
 enum EPlayerFields
@@ -172,7 +172,7 @@ enum EPlayerFields
     PLAYER_FIELD_GUILD_TIME_STAMP                            = UNIT_END + 0x00A, // Size: 1, Flags: UF_FLAG_PUBLIC
     PLAYER_FIELD_QUEST_LOG                                   = UNIT_END + 0x00B, // Size: 750, Flags: UF_FLAG_PARTY
     PLAYER_FIELD_VISIBLE_ITEMS                               = UNIT_END + 0x2F9, // Size: 19, Flags: UF_FLAG_PUBLIC
-    PLAYER_FIELD_VISIBLE_ITEM_NCHANTMENTS                    = UNIT_END + 0x30D, // Size: 19, Flags: UF_FLAG_PARTY
+    PLAYER_FIELD_VISIBLE_ITEM_ENCHANTMENTS                   = UNIT_END + 0x30D, // Size: 19, Flags: UF_FLAG_PARTY
     PLAYER_FIELD_PLAYER_TITLE                                = UNIT_END + 0x31F, // Size: 1, Flags: UF_FLAG_PUBLIC
     PLAYER_FIELD_FAKE_INEBRIATION                            = UNIT_END + 0x320, // Size: 1, Flags: UF_FLAG_PUBLIC
     PLAYER_FIELD_VIRTUAL_PLAYER_REALM                        = UNIT_END + 0x321, // Size: 1, Flags: UF_FLAG_PUBLIC
@@ -267,9 +267,10 @@ enum EPlayerFields
 
 enum EPlayerDynamicArrays // New Dynamic Flag Update system.
 {
-    PLAYER_DYNAMIC_RESEARCH_SITES                            = 0x0,
-    PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED                    = 0x2,
-    PLAYER_DYNAMIC_END                                       = 0x4
+    PLAYER_DYNAMIC_RESEARCH_SITES                            = 0x2,
+    PLAYER_DYNAMIC_RESEARCH_SITE_PROGRESS                    = 0x3,
+    PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED                    = 0x4,
+    PLAYER_DYNAMIC_END                                       = 0x5
 };
 
 enum EGameObjectFields

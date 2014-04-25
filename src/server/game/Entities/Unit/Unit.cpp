@@ -12547,7 +12547,7 @@ void Unit::SetPower(Powers power, int32 val)
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[1]);
 
-        data << uint8(powerIndex);
+        data << uint8(power);
         data << int32(val);
 
         data.WriteByteSeq(guid[0]);

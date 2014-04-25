@@ -373,55 +373,56 @@ void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
         return;
     }
 
-    uint32 dynamicTabMask = 0;
-    std::vector<uint32> dynamicFieldsMask;
+    uint32 dynamicTabMask = 0;                      // Mask for changed fields.
+    std::vector<uint32> dynamicFieldsMask;          // Mask for changed offsets.
+
     dynamicFieldsMask.resize(_dynamicTabCount);
 
-    for (uint32 i = 0; i < _dynamicTabCount; ++i)
+    for (uint32 i = 0; i < _dynamicTabCount; ++i) // For all fields.
     {
         dynamicFieldsMask[i] = 0;
 
-        for (uint32 index = 0; index < DynamicFields::Count; ++index)
+        for (uint32 index = 0; index < DynamicFields::Count; ++index) // For all offsets.
         {
-            if (!_dynamicFields[i]._dynamicChangedFields[index])
+            if (!_dynamicFields[i]._dynamicChangedFields[index]) // Continue if offset didn't change.
                 continue;
 
-            dynamicTabMask |= 1 << i;
-            dynamicFieldsMask[i] |= 1 << index;
+            dynamicTabMask |= 1 << i; // Set fields updated.
+            dynamicFieldsMask[i] |= 1 << index; // Set offsets updated.
         }
     }
 
-    *data << uint8(bool(dynamicTabMask)); // Signal an update needed (GetBlockCount()).
+    bool fieldChanged = dynamicTabMask > 0 ? true : false;
+    *data << uint8(fieldChanged); // Signal an update needed for the changed field count (GetBlockCount()).
 
-    if (dynamicTabMask)
+    if (fieldChanged) // If at least one field changed.
     {
-        *data << uint32(dynamicTabMask); // Send the index (SetBit(index)).
+        *data << uint32(dynamicTabMask); // Send the field index (SetBit(index)).
 
-        bool SizeChanged = DynamicFields::Count > 32; // (or is it default field size???).
-        std::size_t FieldMaskSize = (DynamicFields::Count + 31) / 32;
-
-        data->WriteBit(SizeChanged);
-        data->WriteBits(FieldMaskSize, 7);
-        data->FlushBits();
-
-        if (SizeChanged)
-            *data << uint16(DynamicFields::Count); // New size. unk value, size of all values or field indexes (offsets) ?
-
-        for (uint32 i = 0; i < _dynamicTabCount; ++i)
+        for (uint32 i = 0; i < _dynamicTabCount; ++i) // For all fields.
         {
-            if (dynamicTabMask & (1 << i)) // if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )
+            if (dynamicTabMask & (1 << i)) // If the field changed.
             {
-                *data << uint8(1);                     // Signal an update needed.
-                *data << uint32(dynamicFieldsMask[i]); // Send the field index.
+                *data << uint8(1);  // Send the changed offsets count.
+                *data << uint32(dynamicFieldsMask[i]); // Send the field offset index.
 
-                for (uint32 index = 0; index < DynamicFields::Count; index++)
-                {
-                    if (dynamicFieldsMask[i] & (1 << index))
-                        *data << uint32(_dynamicFields[i]._dynamicValues[index]);  // Send the field index values.
-                }
+                for (uint32 index = 0; index < DynamicFields::Count; index++) // For all offsets.
+                    if (dynamicFieldsMask[i] & (1 << index)) // If the offset changed.
+                        *data << uint32(_dynamicFields[i]._dynamicValues[index]);  // Send the field offset value.
             }
         }
     }
+
+    /* This SizeChanged thing needs more research.
+       bool SizeChanged = DynamicFields::Count > 32; // (or is it default field size???).
+       std::size_t FieldMaskSize = (DynamicFields::Count + 31) / 32;
+
+       data->WriteBit(SizeChanged);
+       data->WriteBits(FieldMaskSize, 7);
+       data->FlushBits();
+
+       if (SizeChanged)
+           *data << uint16(DynamicFields::Count); // New size. unk value, size of all values or field indexes (offsets) ? */
 }
 
 void Object::ClearUpdateMask(bool remove)

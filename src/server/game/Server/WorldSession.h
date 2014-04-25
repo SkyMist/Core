@@ -516,6 +516,7 @@ class WorldSession
         void HandleAreaTriggerOpcode(WorldPacket& recvPacket);
 
         void HandleSetFactionAtWar(WorldPacket& recvData);
+        void HandleUnsetFactionAtWar(WorldPacket& recvData);
         void HandleSetFactionCheat(WorldPacket& recvData);
         void HandleSetWatchedFactionOpcode(WorldPacket& recvData);
         void HandleSetFactionInactiveOpcode(WorldPacket& recvData);
@@ -1002,6 +1003,8 @@ class WorldSession
         void HandleSetAllowLowLevelRaid2(WorldPacket& recvData);
         void HandleResetFactionCheat(WorldPacket& recvData);
         void HandleRolePollBegin(WorldPacket& recvData);
+        void HandleRequestJoinUpdates(WorldPacket& recvData);
+
         void SendStreamingMovie();
 
         void SendBroadcastText(uint32 entry);

@@ -247,7 +247,7 @@ void SocialMgr::MakeFriendStatusPacket(FriendsResult result, uint32 guid, WorldP
 {
     data->Initialize(SMSG_FRIEND_STATUS, 9);
     *data << uint8(result);
-    *data << uint64(guid);
+    *data << uint64(MAKE_NEW_GUID(guid, 0, HIGHGUID_PLAYER));
 }
 
 void SocialMgr::SendFriendStatus(Player* player, FriendsResult result, uint32 friendGuid, bool broadcast)
