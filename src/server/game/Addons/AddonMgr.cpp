@@ -104,11 +104,11 @@ void SaveAddon(AddonInfo const& addon)
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ADDON);
 
     stmt->setString(0, name);
-    stmt->setUInt32(1, addon.CRC);
+    stmt->setUInt32(1, addon.PublicKeyCRC);
 
     CharacterDatabase.Execute(stmt);
 
-    m_knownAddons.push_back(SavedAddon(addon.Name, addon.CRC));
+    m_knownAddons.push_back(SavedAddon(addon.Name, addon.PublicKeyCRC));
 }
 
 SavedAddon const* GetAddonInfo(const std::string& name)

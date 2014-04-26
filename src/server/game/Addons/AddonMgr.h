@@ -24,17 +24,24 @@
 #include <string>
 #include <list>
 
+enum AddonStates // Needs a check.
+{
+    ADDON_STATE_NONE     = 0,
+
+    ADDON_STATE_DISABLED = 1,
+    ADDON_STATE_ENABLED  = 2
+};
+
 struct AddonInfo
 {
-    AddonInfo(const std::string& name, uint8 enabled, uint32 crc, uint8 state, bool crcOrPubKey)
-        : Name(name), Enabled(enabled), CRC(crc), State(state), UsePublicKeyOrCRC(crcOrPubKey)
-        { }
+    AddonInfo(const std::string& name, uint8 hasPublicKey, uint32 publicKeyCRC, uint32 urlCRC, uint8 state)
+        : Name(name), HasPublicKey(hasPublicKey), PublicKeyCRC(publicKeyCRC), UrlCRC(urlCRC), State(state) { }
 
     std::string Name;
-    uint8 Enabled;
-    uint32 CRC;
+    uint8 HasPublicKey;
+    uint32 PublicKeyCRC;
+    uint32 UrlCRC;
     uint8 State;
-    bool UsePublicKeyOrCRC;
 };
 
 struct SavedAddon
@@ -56,7 +63,7 @@ struct BannedAddon
     uint32 Timestamp;
 };
 
-#define STANDARD_ADDON_CRC 0x4C1C776D
+#define STANDARD_ADDON_CRC 0x60687BAB
 
 namespace AddonMgr
 {
