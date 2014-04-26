@@ -900,8 +900,8 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
         for (uint32 i = 0; i < addonsCount; ++i)
         {
             std::string addonName;
-            uint8 enabled;
-            uint32 crc, urlFile;
+            uint8 HasPublicKey;
+            uint32 PublicKeyCRC, UrlCRC;
 
             // check next addon data format correctness
             if (addonInfo.rpos() + 1 > addonInfo.size())
@@ -909,19 +909,18 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
             addonInfo >> addonName;
 
-            addonInfo >> enabled >> crc >> urlFile;
+            addonInfo >> HasPublicKey >> PublicKeyCRC >> UrlCRC;
 
-            TC_LOG_INFO("misc", "ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, UrlFile: %i", addonName.c_str(), enabled, crc, urlFile);
+            TC_LOG_INFO("misc", "ADDON: Name: %s, Has Public Key: 0x%x, Public Key CRC: 0x%x, Url CRC: %i", addonName.c_str(), HasPublicKey, PublicKeyCRC, UrlCRC);
 
-            bool usePublicKeyOrCrc = (enabled && (crc == STANDARD_ADDON_CRC || crc != STANDARD_ADDON_CRC)) ? true : false;
-            uint8 addonState = enabled ? 2 : 1; // Out of Date or not.
+            uint8 addonState = HasPublicKey ? ADDON_STATE_ENABLED : ADDON_STATE_DISABLED;
 
-            AddonInfo addon(addonName, enabled, crc, addonState, usePublicKeyOrCrc);
+            AddonInfo addon(addonName, HasPublicKey, PublicKeyCRC, UrlCRC, addonState);
 
             SavedAddon const* savedAddon = AddonMgr::GetAddonInfo(addonName);
             if (savedAddon)
             {
-                if (addon.CRC != savedAddon->CRC)
+                if (addon.PublicKeyCRC != savedAddon->CRC)
                     TC_LOG_INFO("misc", "ADDON: %s was known, but didn't match known CRC (0x%x)!", addon.Name.c_str(), savedAddon->CRC);
                 else
                     TC_LOG_INFO("misc", "ADDON: %s was known, CRC is correct (0x%x)", addon.Name.c_str(), savedAddon->CRC);
@@ -930,16 +929,16 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
             {
                 AddonMgr::SaveAddon(addon);
 
-                TC_LOG_INFO("misc", "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.CRC);
+                TC_LOG_INFO("misc", "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.PublicKeyCRC);
             }
 
             /// @todo Find out when to not use CRC/pubkey, and other possible states.
             m_addonsList.push_back(addon);
         }
 
-        uint32 currentTime;
-        addonInfo >> currentTime;
-        TC_LOG_DEBUG("network", "ADDON: CurrentTime: %u", currentTime);
+        uint32 bannedTimeStamp;
+        addonInfo >> bannedTimeStamp; // Latest Banned Addon TimeStamp.
+        TC_LOG_DEBUG("network", "ADDON: Banned Time: %u", bannedTimeStamp);
     }
     else
         TC_LOG_ERROR("misc", "Addon packet uncompress error!");
@@ -993,16 +992,20 @@ void WorldSession::SendAddonsInfo()
 
     for (AddonsList::iterator itr = m_addonsList.begin(); itr != m_addonsList.end(); ++itr)
     {
-        bool useCRCorPublicKey = itr->UsePublicKeyOrCRC ? true : false;
-        bool usePublicKey = (useCRCorPublicKey && itr->CRC != STANDARD_ADDON_CRC) ? true : false;
-        bool hasURLString = false;
+        bool UsePublicKeyCRC = itr->HasPublicKey ? true : false;
+        bool HasPublicKey = (UsePublicKeyCRC && itr->PublicKeyCRC != STANDARD_ADDON_CRC) ? true : false;
+        bool HasURL = itr->UrlCRC ? true : false;
 
-        data.WriteBit(useCRCorPublicKey); // Use CRC / Public key.
-        data.WriteBit(hasURLString); // Has URL.
-        data.WriteBit(usePublicKey); // Use Public key.
+        // bool UsePublicKeyCRC = (itr->PublicKeyCRC == STANDARD_ADDON_CRC) ? true : false;
+        // bool HasPublicKey = itr->HasPublicKey ? true : false;
+        // bool HasURL = itr->UrlCRC ? true : false;
 
-        if (hasURLString)
-            data.WriteBits(0, 8); // URL String size
+        data.WriteBit(UsePublicKeyCRC);      // Use standard Public key CRC.
+        data.WriteBit(HasURL);               // Has URL.
+        data.WriteBit(!HasPublicKey);        // Can use extra Public key. (HasPublicKey)
+
+        if (HasURL)
+            data.WriteBits(0, 8); // URL String size NYI
     }
 
     AddonMgr::BannedAddonList const* bannedAddons = AddonMgr::GetBannedAddons();
@@ -1010,26 +1013,54 @@ void WorldSession::SendAddonsInfo()
     uint32 bannedAddonsSize = bannedAddons->size() ? bannedAddons->size() : 0;
 
     data.WriteBits(bannedAddonsSize, 18);
+
     data.FlushBits();
 
     for (AddonsList::iterator itr = m_addonsList.begin(); itr != m_addonsList.end(); ++itr)
     {
-        bool useCRCorPublicKey = itr->UsePublicKeyOrCRC ? true : false;
-        bool usePublicKey = (useCRCorPublicKey && itr->CRC != STANDARD_ADDON_CRC) ? true : false;
-        bool hasURLString = false;
+        bool UsePublicKeyCRC = itr->HasPublicKey ? true : false;
+        bool HasPublicKey = (UsePublicKeyCRC && itr->PublicKeyCRC != STANDARD_ADDON_CRC) ? true : false;
+        bool HasURL = itr->UrlCRC ? true : false;
 
-        if (usePublicKey)
-            data.append(addonPublicKey, sizeof(pubKeyOrder));
+        // bool UsePublicKeyCRC = (itr->PublicKeyCRC == STANDARD_ADDON_CRC) ? true : false;
+        // bool HasPublicKey = itr->HasPublicKey ? true : false;
+        // bool HasURL = itr->UrlCRC ? true : false;
 
-        if (useCRCorPublicKey)
+        if (UsePublicKeyCRC)
         {
-            data << uint32(itr->CRC);
-            data << uint8(itr->Enabled);
+            if (HasPublicKey)
+            {
+                size_t pos = data.wpos();
+                for (int i = 0; i < 256; i++)
+                    data << uint8(0);
+
+                for (int i = 0; i < 256; i++)
+                    data.put(pos + pubKeyOrder[i], addonPublicKey[i]); // Assign Public Key.
+            }
+
+            data << uint32(itr->PublicKeyCRC); // Sniffs show 0 for client Standard Addons, but client sends it anyway, so we can check it.
+            data << uint8(HasPublicKey);
         }
+
+        // if (HasPublicKey)
+        // {
+        //     size_t pos = data.wpos();
+        //     for (int i = 0; i < 256; i++)
+        //         data << uint8(0);
+        // 
+        //     for (int i = 0; i < 256; i++)
+        //         data.put(pos + pubKeyOrder[i], addonPublicKey[i]); // Assign Public Key.
+        // }
+
+        // if (UsePublicKeyCRC)
+        // {
+        //     data << uint32(itr->PublicKeyCRC); // Sniffs show 0 for client Standard Addons, but client sends it anyway, so we can check it.
+        //     data << uint8(HasPublicKey);
+        // }
 
         data << uint8(itr->State);
 
-        if (hasURLString)
+        if (HasURL)
             data.WriteString(""); // URL String
     }
 
@@ -1042,9 +1073,11 @@ void WorldSession::SendAddonsInfo()
             for (int32 i = 0; i < 8; i++)
                 data << uint32(0);
 
+            bool IsBanned = itr->Timestamp ? true : false; // If it's banned, it has a TimeStamp.
+
             data << uint32(itr->Id);
             data << uint32(itr->Timestamp);
-            data << uint32(1);  // IsBanned
+            data << uint32(IsBanned);
         }
     }
 
