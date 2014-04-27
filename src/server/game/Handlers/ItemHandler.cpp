@@ -1858,43 +1858,41 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
     uint32 upgradeEntry = 0;
     uint32 item_bag = 0;
 
-    recvData >> item_slot >> upgradeEntry >> item_bag;
+    recvData >> item_bag >> item_slot >> upgradeEntry;
 
-    npcGuid[6] = recvData.ReadBit();
+    itemGuid[7] = recvData.ReadBit();
     itemGuid[4] = recvData.ReadBit();
-    itemGuid[3] = recvData.ReadBit();
-    itemGuid[5] = recvData.ReadBit();
-    npcGuid[5] = recvData.ReadBit();
-    itemGuid[1] = recvData.ReadBit();
-    npcGuid[7] = recvData.ReadBit();
     npcGuid[3] = recvData.ReadBit();
-    itemGuid[6] = recvData.ReadBit();
+    itemGuid[0] = recvData.ReadBit();
+    npcGuid[5] = recvData.ReadBit();
+    npcGuid[0] = recvData.ReadBit();
+    itemGuid[1] = recvData.ReadBit();
     itemGuid[2] = recvData.ReadBit();
     npcGuid[2] = recvData.ReadBit();
+    itemGuid[3] = recvData.ReadBit();
     npcGuid[4] = recvData.ReadBit();
-    itemGuid[7] = recvData.ReadBit();
+    npcGuid[6] = recvData.ReadBit();
+    itemGuid[5] = recvData.ReadBit();
+    npcGuid[7] = recvData.ReadBit();
     npcGuid[1] = recvData.ReadBit();
-    npcGuid[0] = recvData.ReadBit();
-    itemGuid[0] = recvData.ReadBit();
+    itemGuid[6] = recvData.ReadBit();
 
-    recvData.FlushBits();
-
-    recvData.ReadByteSeq(itemGuid[4]);
-    recvData.ReadByteSeq(itemGuid[5]);
-    recvData.ReadByteSeq(npcGuid[3]);
-    recvData.ReadByteSeq(npcGuid[0]);
+    recvData.ReadByteSeq(itemGuid[6]);
     recvData.ReadByteSeq(itemGuid[1]);
-    recvData.ReadByteSeq(itemGuid[3]);
-    recvData.ReadByteSeq(itemGuid[7]);
     recvData.ReadByteSeq(npcGuid[7]);
+    recvData.ReadByteSeq(itemGuid[5]);
+    recvData.ReadByteSeq(itemGuid[4]);
     recvData.ReadByteSeq(npcGuid[6]);
-    recvData.ReadByteSeq(itemGuid[2]);
-    recvData.ReadByteSeq(npcGuid[1]);
+    recvData.ReadByteSeq(itemGuid[0]);
+    recvData.ReadByteSeq(npcGuid[3]);
+    recvData.ReadByteSeq(itemGuid[7]);
+    recvData.ReadByteSeq(npcGuid[2]);
     recvData.ReadByteSeq(npcGuid[4]);
     recvData.ReadByteSeq(npcGuid[5]);
-    recvData.ReadByteSeq(itemGuid[0]);
-    recvData.ReadByteSeq(itemGuid[6]);
-    recvData.ReadByteSeq(npcGuid[2]);
+    recvData.ReadByteSeq(itemGuid[3]);
+    recvData.ReadByteSeq(npcGuid[1]);
+    recvData.ReadByteSeq(npcGuid[0]);
+    recvData.ReadByteSeq(itemGuid[2]);
 
     if (!player->GetNPCIfCanInteractWithFlag2(npcGuid, UNIT_NPC_FLAG2_ITEM_UPGRADE))
     {
