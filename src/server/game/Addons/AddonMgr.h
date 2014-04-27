@@ -26,10 +26,10 @@
 
 enum AddonStates // Needs a check.
 {
-    ADDON_STATE_NONE     = 0,
+    ADDON_STATE_NONE                 = 0,
 
-    ADDON_STATE_DISABLED = 1,
-    ADDON_STATE_ENABLED  = 2
+    ADDON_STATE_DISABLED_OUT_OF_DATE = 1,
+    ADDON_STATE_ENABLED              = 2
 };
 
 struct AddonInfo
@@ -63,7 +63,7 @@ struct BannedAddon
     uint32 Timestamp;
 };
 
-#define STANDARD_ADDON_CRC 0x60687BAB
+#define STANDARD_ADDON_CRC 0x4C1C776D
 
 namespace AddonMgr
 {
