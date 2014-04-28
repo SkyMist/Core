@@ -1391,6 +1391,8 @@ class Unit : public WorldObject
         Powers getPowerType() const { return Powers(GetUInt32Value(UNIT_FIELD_DISPLAY_POWER)); }
         void SetFieldPowerType(uint32 powerType) { SetUInt32Value(UNIT_FIELD_DISPLAY_POWER, powerType); }
 
+        void SetOverrideDisplayPowerId(uint32 powerType) { SetUInt32Value(UNIT_FIELD_OVERRIDE_DISPLAY_POWER_ID, powerType); } // Second power display.
+
         void setPowerType(Powers power);
         int32 GetPower(Powers power) const;
         int32 GetMinPower(Powers power) const { return power == POWER_ECLIPSE ? -100 : 0; }

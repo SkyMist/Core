@@ -68,12 +68,12 @@ enum Opcodes
    CMSG_AUCTION_REMOVE_ITEM                                 = 0x0,
    CMSG_AUCTION_SELL_ITEM                                   = 0x0,
    CMSG_AUTH_SESSION                                        = 0x1A51, // 5.4.7 18019
-   CMSG_AUTOBANK_ITEM                                       = 0x0,
+   CMSG_AUTOBANK_ITEM                                       = 0x1C42, // 5.4.7 18019
    CMSG_AUTOEQUIP_GROUND_ITEM                               = 0x0,
    CMSG_AUTOEQUIP_ITEM                                      = 0x166B, // 5.4.7 18019
    CMSG_AUTOEQUIP_ITEM_SLOT                                 = 0x0,
-   CMSG_AUTOSTORE_BAG_ITEM                                  = 0x0,
-   CMSG_AUTOSTORE_BANK_ITEM                                 = 0x0,
+   CMSG_AUTOSTORE_BAG_ITEM                                  = 0x162B, // 5.4.7 18019
+   CMSG_AUTOSTORE_BANK_ITEM                                 = 0x176A, // 5.4.7 18019
    CMSG_AUTOSTORE_GROUND_ITEM                               = 0x0,
    CMSG_AUTOSTORE_LOOT_ITEM                                 = 0x1F7A, // 5.4.7 18018
    CMSG_AUTO_DECLINE_GUILD_INVITES                          = 0x0174, // 5.4.7 18019
@@ -546,7 +546,7 @@ enum Opcodes
    CMSG_SOCKET_GEMS                                         = 0x0,
    CMSG_SPELLCLICK                                          = 0x11FF, // 5.4.7 18019
    CMSG_SPIRIT_HEALER_ACTIVATE                              = 0x0,
-   CMSG_SPLIT_ITEM                                          = 0x0,
+   CMSG_SPLIT_ITEM                                          = 0x140A, // 5.4.7 18019
    CMSG_STANDSTATECHANGE                                    = 0x0,
    CMSG_START_QUEST                                         = 0x0,
    CMSG_STOP_DANCE                                          = 0x0,

@@ -5463,10 +5463,8 @@ void Spell::TakePower()
 
     // Don't take power if the spell is cast while .cheat power is enabled.
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
-    {
         if (m_caster->ToPlayer()->GetCommandStatus(CHEAT_POWER))
             return;
-    }
 
     if (!m_spellPowerData)
         return;
@@ -5500,7 +5498,7 @@ void Spell::TakePower()
     }
 
     // In Spell::HandleHolyPower
-    if (m_spellPowerData && m_spellPowerData->powerType == POWER_HOLY_POWER)
+    if (powerType == POWER_HOLY_POWER)
     {
         if (m_spellInfo->Id == 85222)
         {

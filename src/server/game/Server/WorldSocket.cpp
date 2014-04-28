@@ -757,7 +757,6 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
     ACE_Auto_Ptr<WorldPacket> aptr(new_pct);
 
     Opcodes opcode = PacketFilter::DropHighBytes(new_pct->GetOpcode());
-    
 
     if (closing_)
         return -1;
@@ -769,7 +768,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
     std::string opcodeName = GetOpcodeNameForLogging(opcode, false);
     if (m_Session)
         TC_LOG_TRACE("network.opcode", "C->S: %s %s", m_Session->GetPlayerInfo().c_str(), opcodeName.c_str());
-     
+
     try
     {
         switch (opcode)

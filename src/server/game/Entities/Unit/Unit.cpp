@@ -8143,7 +8143,6 @@ void Unit::setPowerType(Powers new_powertype)
 
     switch (new_powertype)
     {
-        default:
         case POWER_MANA:
             break;
         case POWER_RAGE:
@@ -8203,6 +8202,8 @@ void Unit::setPowerType(Powers new_powertype)
             SetMaxPower(POWER_ARCANE_CHARGES, GetCreatePowers(POWER_ARCANE_CHARGES));
             SetPower(POWER_ARCANE_CHARGES, 0);
             break;
+
+        default: break;
     }
 }
 
@@ -12675,6 +12676,24 @@ uint32 Unit::GetPowerIndex(uint32 powerType) const
     uint32 classId = getClass();
     if (ToPet() && ToPet()->getPetType() == HUNTER_PET)
         classId = CLASS_HUNTER;
+
+    if (powerType == POWER_ENERGY)
+    {
+        // if (ToPet() && ToPet()->IsWarlockPet())
+        //     return 0;
+
+        switch (this->GetEntry())
+        {
+            case 26125:
+            case 59915:
+            case 60043:
+            case 60047:
+            case 60051:
+                return 0;
+
+            default: break;
+        }
+    }
 
     return GetPowerIndexByClass(powerType, classId);
 }

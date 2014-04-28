@@ -7307,7 +7307,7 @@ void Spell::EffectCastButtons(SpellEffIndex effIndex)
             continue;
 
         int32 cost = spellInfo->CalcPowerCost(m_caster, spellInfo->GetSchoolMask(), m_spellPowerData);
-        if (m_caster->GetPower(POWER_MANA) < cost)
+        if (m_caster->GetPower(Powers(m_spellPowerData->powerType)) < cost)
             continue;
 
         TriggerCastFlags triggerFlags = TriggerCastFlags(TRIGGERED_IGNORE_GCD | TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_CAST_DIRECTLY);
