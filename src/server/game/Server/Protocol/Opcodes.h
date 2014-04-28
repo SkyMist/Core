@@ -586,7 +586,7 @@ enum Opcodes
    CMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
    CMSG_UPDATE_MISSILE_TRAJECTORY                           = 0x0,
    CMSG_UPDATE_PROJECTILE_POSITION                          = 0x0,
-   CMSG_UPGRADE_ITEM                                        = 0x0, // 0x11E9 - 5.4.7 18019
+   CMSG_UPGRADE_ITEM                                        = 0x11E9, // 5.4.7 18019
    CMSG_USED_FOLLOW                                         = 0x0,
    CMSG_USE_ITEM                                            = 0x15E3, // 5.4.7 18019
    CMSG_VIOLENCE_LEVEL                                      = 0x05A0, // 5.4.7 18019
