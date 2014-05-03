@@ -900,8 +900,9 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
 
     uint32 count = 0;
 
-    WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 4 + 8 + 4);
-    data << uint32(count);                                  // placeholder
+    ByteBuffer data;
+    ByteBuffer BitPart;
+    ByteBuffer BytePart;
 
     for (Player::ClientGUIDs::const_iterator itr = _player->m_clientGUIDs.begin(); itr != _player->m_clientGUIDs.end(); ++itr)
     {
@@ -920,8 +921,26 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
                 questStatus = getDialogStatus(_player, questgiver);
 
-            data << uint64(questgiver->GetGUID());
-            data << uint32(questStatus);
+            ObjectGuid NPCGuid = questgiver->GetGUID();
+
+            BitPart.WriteBit(NPCGuid[7]);
+            BitPart.WriteBit(NPCGuid[0]);
+            BitPart.WriteBit(NPCGuid[6]);
+            BitPart.WriteBit(NPCGuid[2]);
+            BitPart.WriteBit(NPCGuid[5]);
+            BitPart.WriteBit(NPCGuid[1]);
+            BitPart.WriteBit(NPCGuid[4]);
+            BitPart.WriteBit(NPCGuid[3]);
+
+            BytePart.WriteByteSeq(NPCGuid[5]);
+            BytePart << uint32(questStatus);
+            BytePart.WriteByteSeq(NPCGuid[4]);
+            BytePart.WriteByteSeq(NPCGuid[2]);
+            BytePart.WriteByteSeq(NPCGuid[3]);
+            BytePart.WriteByteSeq(NPCGuid[6]);
+            BytePart.WriteByteSeq(NPCGuid[1]);
+            BytePart.WriteByteSeq(NPCGuid[7]);
+            BytePart.WriteByteSeq(NPCGuid[0]);
             ++count;
         }
         else if (IS_GAMEOBJECT_GUID(*itr))
@@ -934,14 +953,38 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
                 questStatus = getDialogStatus(_player, questgiver);
 
-            data << uint64(questgiver->GetGUID());
-            data << uint32(questStatus);
+            ObjectGuid GOGuid = questgiver->GetGUID();
+
+            BitPart.WriteBit(GOGuid[7]);
+            BitPart.WriteBit(GOGuid[0]);
+            BitPart.WriteBit(GOGuid[6]);
+            BitPart.WriteBit(GOGuid[2]);
+            BitPart.WriteBit(GOGuid[5]);
+            BitPart.WriteBit(GOGuid[1]);
+            BitPart.WriteBit(GOGuid[4]);
+            BitPart.WriteBit(GOGuid[3]);
+
+            BytePart.WriteByteSeq(GOGuid[5]);
+            BytePart << uint32(questStatus);
+            BytePart.WriteByteSeq(GOGuid[4]);
+            BytePart.WriteByteSeq(GOGuid[2]);
+            BytePart.WriteByteSeq(GOGuid[3]);
+            BytePart.WriteByteSeq(GOGuid[6]);
+            BytePart.WriteByteSeq(GOGuid[1]);
+            BytePart.WriteByteSeq(GOGuid[7]);
+            BytePart.WriteByteSeq(GOGuid[0]);
             ++count;
         }
     }
 
-    data.put<uint32>(0, count);                             // write real count
-    SendPacket(&data);
+    data.WriteBits(count, 21);
+    data.append(BitPart);
+    data.FlushBits();
+    data.append(BytePart);
+
+    WorldPacket Status(SMSG_QUESTGIVER_STATUS_MULTIPLE, data.size());
+    Status.append(data);
+    SendPacket(&Status);
 }
 
 void WorldSession::HandleQueryQuestsCompleted(WorldPacket& /*recvData*/)
@@ -957,3 +1000,37 @@ void WorldSession::HandleQueryQuestsCompleted(WorldPacket& /*recvData*/)
 
     SendPacket(&data);
 }
+
+void WorldSession::HandleQuestNPCQuery(WorldPacket& recvData)
+{
+    size_t RequestCount = recvData.ReadBits(22);
+    size_t ResponseCount = 0;
+    WorldPacket Response(SMSG_QUEST_NPC_QUERY_RESPONSE);
+    QuestRelations* NPCRelations = sObjectMgr->GetCreatureQuestInvolvedMap();
+    ByteBuffer BitPart;
+    ByteBuffer BytePart;
+
+    for (size_t i = 0; i < RequestCount; i++)
+    {
+        size_t NPCCount = 0;
+        uint32 QuestID = recvData.read<uint32>();
+
+        for (QuestRelations::const_iterator itr = NPCRelations->begin(); itr != NPCRelations->end(); ++itr)
+        {
+            if (itr->second == QuestID)
+            {
+                NPCCount++;
+                BytePart << uint32(itr->first);
+            }
+        }
+        ResponseCount++;
+        BitPart.WriteBits(NPCCount, 22);
+    }
+
+    Response.WriteBits(ResponseCount, 21);
+    Response.append(BitPart);
+    Response.FlushBits();
+    Response.append(BytePart);
+    SendPacket(&Response);
+}
+
