@@ -2411,13 +2411,9 @@ void Player::RegenerateAll()
 
     if (m_regenTimerCount >= 2000)
     {
-        // Not in combat or they have regeneration
-        if (!IsInCombat() || IsPolymorphed() || m_baseHealthRegen ||
-            HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT) ||
-            HasAuraType(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT))
-        {
+        // Not in combat or player has regen aura.
+        if (!IsInCombat() || IsPolymorphed() || m_baseHealthRegen || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT) || HasAuraType(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT))
             RegenerateHealth();
-        }
 
         Regenerate(POWER_RAGE);
         if (getClass() == CLASS_DEATH_KNIGHT)
@@ -2725,7 +2721,10 @@ void Player::Regenerate(Powers power)
             m_powerFraction[powerIndex] = addvalue - integerValue;
     }
 
-    SetPower(power, curValue);
+    if (m_regenTimerCount >= 2000 || power == POWER_DEMONIC_FURY)
+        SetPower(power, curValue);
+    else
+        UpdateUInt32Value(UNIT_FIELD_POWER + powerIndex, curValue);
 }
 
 void Player::RegenerateHealth()
@@ -7077,6 +7076,13 @@ void Player::SetSkill(uint16 id, uint16 step, uint16 newVal, uint16 maxVal)
                 return;
             }
         }
+    }
+    else if (itr == mSkillStatus.end() && !newVal)    // Some spells can be without skills, clean.
+    {
+        for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
+            if (SkillLineAbilityEntry const* pAbility = sSkillLineAbilityStore.LookupEntry(j))
+                if (pAbility->skillId == id)
+                    removeSpell(sSpellMgr->GetFirstSpellInChain(pAbility->spellId), false, false);
     }
 }
 
@@ -17067,38 +17073,30 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg)
     return true;
 }
 
-bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
+bool Player::SatisfyQuestDay(Quest const* qInfo, bool /*msg*/)
 {
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
 
+    // Normal Daily Quests.
+    if (!m_dailyCompletedQuests.empty())
+    {
+        for (std::set<uint32>::iterator itr = m_dailyCompletedQuests.begin(); itr != m_dailyCompletedQuests.end(); itr++)
+        {
+            uint32 completedQuestId = *itr;
+
+            if (qInfo->GetQuestId() == completedQuestId)
+                return false;
+        }
+    }
+
+    // Dungeon Finder Quest.
     if (qInfo->IsDFQuest())
     {
         if (!m_DFQuests.empty())
             return false;
 
         return true;
-    }
-
-    bool have_slot = false;
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    {
-        uint32 id = 0;//GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx);
-        if (qInfo->GetQuestId() == id)
-            return false;
-
-        if (!id)
-            have_slot = true;
-    }
-
-    if (!have_slot)
-    {
-        if (msg)
-        {
-            SendCanTakeQuestResponse(INVALIDREASON_DAILY_QUESTS_REMAINING);
-            TC_LOG_DEBUG("misc", "SatisfyQuestDay: Sent INVALIDREASON_DAILY_QUESTS_REMAINING (questId: %u) because player already did all possible quests today.", qInfo->GetQuestId());
-        }
-        return false;
     }
 
     return true;
@@ -19758,12 +19756,10 @@ void Player::_LoadQuestStatusRewarded(PreparedQueryResult result)
 
 void Player::_LoadDailyQuestStatus(PreparedQueryResult result)
 {
-    //for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-        //SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, 0);
+    m_dailyCompletedQuests.clear(); // Normal Daily Quests.
+    m_DFQuests.clear(); // Dungeon Finder Quest.
 
-    m_DFQuests.clear();
-
-    //QueryResult* result = CharacterDatabase.PQuery("SELECT quest, time FROM character_queststatus_daily WHERE guid = '%u'", GetGUIDLow());
+    // QueryResult* result = CharacterDatabase.PQuery("SELECT quest, time FROM character_queststatus_daily WHERE guid = '%u'", GetGUIDLow());
 
     if (result)
     {
@@ -19782,12 +19778,6 @@ void Player::_LoadDailyQuestStatus(PreparedQueryResult result)
                 }
             }
 
-            if (quest_daily_idx >= PLAYER_MAX_DAILY_QUESTS)  // max amount with exist data in query
-            {
-                TC_LOG_ERROR("entities.player", "Player (GUID: %u) have more 25 daily quest records in `charcter_queststatus_daily`", GetGUIDLow());
-                break;
-            }
-
             uint32 quest_id = fields[0].GetUInt32();
 
             // save _any_ from daily quest times (it must be after last reset anyway)
@@ -19797,7 +19787,9 @@ void Player::_LoadDailyQuestStatus(PreparedQueryResult result)
             if (!quest)
                 continue;
 
-            //SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, quest_id);
+            m_dailyCompletedQuests.insert(quest_id);
+
+            SetDynamicUInt32Value(PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED, quest_daily_idx, quest_id);
             ++quest_daily_idx;
 
             TC_LOG_DEBUG("entities.player.loading", "Daily quest (%u) cooldown for player (GUID: %u)", quest_id, GetGUIDLow());
@@ -21217,18 +21209,21 @@ void Player::_SaveDailyQuestStatus(SQLTransaction& trans)
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_DAILY_CHAR);
     stmt->setUInt32(0, GetGUIDLow());
     trans->Append(stmt);
-    /*for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
+
+    if (!m_dailyCompletedQuests.empty())
     {
-        if (GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
+        for (std::set<uint32>::iterator itr = m_dailyCompletedQuests.begin(); itr != m_dailyCompletedQuests.end(); itr++)
         {
+            uint32 completedQuestId = *itr;
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_DAILYQUESTSTATUS);
             stmt->setUInt32(0, GetGUIDLow());
-            stmt->setUInt32(1, GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx));
+            stmt->setUInt32(1, completedQuestId);
             stmt->setUInt64(2, uint64(m_lastDailyQuestTime));
             trans->Append(stmt);
         }
     }
-    */
+
     if (!m_DFQuests.empty())
     {
         for (DFQuestsDoneList::iterator itr = m_DFQuests.begin(); itr != m_DFQuests.end(); ++itr)
@@ -25135,16 +25130,11 @@ void Player::SetDailyQuestStatus(uint32 quest_id)
     {
         if (!qQuest->IsDFQuest())
         {
-            for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-            {
-                /*if (!GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
-                {
-                    SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, quest_id);
-                    m_lastDailyQuestTime = time(NULL);              // last daily quest time
-                    m_DailyQuestChanged = true;
-                    break;
-                }*/
-            }
+            m_dailyCompletedQuests.insert(quest_id);
+            m_lastDailyQuestTime = time(NULL);              // last daily quest time
+            m_DailyQuestChanged = true;
+
+            SetDynamicUInt32Value(PLAYER_DYNAMIC_DAILY_QUESTS_COMPLETED, m_dailyCompletedQuests.size() - 1, quest_id);
         } else
         {
             m_DFQuests.insert(quest_id);
@@ -25178,9 +25168,7 @@ void Player::SetMonthlyQuestStatus(uint32 quest_id)
 
 void Player::ResetDailyQuestStatus()
 {
-    //for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    //    SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, 0);
-
+    m_dailyCompletedQuests.clear(); // Normal Daily Quests.
     m_DFQuests.clear(); // Dungeon Finder Quests.
 
     // DB data deleted in caller
@@ -26728,11 +26716,14 @@ void Player::_LoadSkills(PreparedQueryResult result)
                 case SKILL_RANGE_LANGUAGE:                      // 300..300
                     value = max = 300;
                     break;
-                case SKILL_RANGE_MONO:                          // 1..1, grey monolite bar
-                    value = max = 1;
+                case SKILL_RANGE_MONO:                          // 1..1, grey monolite bar / non-profession skills.
+                    if (pSkill->id == SKILL_RUNEFORGING)
+                        value = max = 500;// DK has 500 RF in MOP.
+                    else
+                        value = max = 1;
                     break;
-                default:
-                    break;
+
+                default: break;
             }
             if (value == 0)
             {
@@ -26761,7 +26752,7 @@ void Player::_LoadSkills(PreparedQueryResult result)
             {
                 step = max / 75;
 
-                if (professionCount < 2)
+                if (professionCount < DEFAULT_MAX_PRIMARY_TRADE_SKILL)
                     SetUInt32Value(PLAYER_FIELD_PROFESSION_SKILL_LINE + professionCount++, skill);
             }
 

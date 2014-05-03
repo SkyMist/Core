@@ -63,7 +63,7 @@ class PhaseMgr;
 typedef std::deque<Mail*> PlayerMails;
 
 #define PLAYER_MAX_SKILLS           128
-#define PLAYER_MAX_DAILY_QUESTS     750
+#define DEFAULT_MAX_PRIMARY_TRADE_SKILL 2
 #define PLAYER_EXPLORED_ZONES_SIZE  200
 
 struct ActionButtonPACKET
@@ -2787,6 +2787,9 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_grantableLevels;
 
         CUFProfile* _CUFProfiles[MAX_CUF_PROFILES];
+
+        typedef std::set<uint32> DailyCompletedQuestsList;
+        DailyCompletedQuestsList m_dailyCompletedQuests;
 
     private:
         // internal common parts for CanStore/StoreItem functions
