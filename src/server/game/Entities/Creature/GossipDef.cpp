@@ -340,15 +340,24 @@ void QuestMenu::ClearMenu()
 
 void PlayerMenu::SendQuestGiverQuestList(QEmote const& eEmote, const std::string& Title, uint64 npcGUID)
 {
-    WorldPacket data(SMSG_QUESTGIVER_QUEST_LIST, 100);    // guess size
-    data << uint64(npcGUID);
-    data << Title;
-    data << uint32(eEmote._Delay);                         // player emote
-    data << uint32(eEmote._Emote);                         // NPC emote
-
-    size_t count_pos = data.wpos();
-    data << uint8 (0);
+    WorldPacket data(SMSG_QUESTGIVER_QUEST_LIST);
+    ByteBuffer BitPart;
+    ByteBuffer BytePart;
+    ObjectGuid NPCGuid = npcGUID;
     uint32 count = 0;
+
+    data << uint32(eEmote._Emote);                         // NPC emote
+    data << uint32(eEmote._Delay);                         // player emote
+
+    BitPart.WriteBit(NPCGuid[5]);
+    BitPart.WriteBit(NPCGuid[3]);
+    BitPart.WriteBit(NPCGuid[4]);
+    BitPart.WriteBit(NPCGuid[2]);
+    BitPart.WriteBit(NPCGuid[6]);
+    BitPart.WriteBit(NPCGuid[1]);
+    BitPart.WriteBits(Title.size(), 11);
+    BitPart.WriteBit(NPCGuid[0]);
+    BitPart.WriteBits(_questMenu.GetMenuItemCount(), 19);
 
     // Store this instead of checking the Singleton every loop iteration
     bool questLevelInTitle = sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS);
@@ -366,22 +375,38 @@ void PlayerMenu::SendQuestGiverQuestList(QEmote const& eEmote, const std::string
 
             int32 locale = _session->GetSessionDbLocaleIndex();
             if (locale >= 0)
-                if (QuestLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
-                    ObjectMgr::GetLocaleString(localeData->Title, locale, title);
+            if (QuestLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
+                ObjectMgr::GetLocaleString(localeData->Title, locale, title);
 
             if (questLevelInTitle)
                 AddQuestLevelToTitle(title, quest->GetQuestLevel());
 
-            data << uint32(questID);
-            data << uint32(qmi.QuestIcon);
-            data << int32(quest->GetQuestLevel());
-            data << uint32(quest->GetFlags());             // 3.3.3 quest flags
-            data << uint8(0);                              // 3.3.3 changes icon: blue question or yellow exclamation
-            data << title;
+            BitPart.WriteBit(0);                            //unk
+            BitPart.WriteBits(title.size(), 9);
+
+            BytePart << int32(quest->GetQuestLevel());
+            BytePart << uint32(quest->GetFlags());
+            BytePart.WriteString(title);
+            BytePart << uint32(qmi.QuestIcon);
+            BytePart << uint32(0);                          //unk2
+            BytePart << uint32(questID);
         }
     }
 
-    data.put<uint8>(count_pos, count);
+    BitPart.WriteBit(NPCGuid[7]);
+    BitPart.FlushBits();
+    data.append(BitPart);
+    data.WriteByteSeq(NPCGuid[3]);
+    BytePart.WriteByteSeq(NPCGuid[1]);
+    BytePart.WriteByteSeq(NPCGuid[5]);
+    BytePart.WriteByteSeq(NPCGuid[2]);
+    BytePart.WriteByteSeq(NPCGuid[0]);
+    BytePart.WriteString(Title);
+    BytePart.WriteByteSeq(NPCGuid[4]);
+    BytePart.WriteByteSeq(NPCGuid[6]);
+    BytePart.WriteByteSeq(NPCGuid[7]);
+    data.append(BytePart);
+
     _session->SendPacket(&data);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_LIST NPC Guid=%u", GUID_LOPART(npcGUID));
 }

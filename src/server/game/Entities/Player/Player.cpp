@@ -18033,17 +18033,18 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
         moneyReward = uint32(quest->GetRewOrReqMoney() + int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY)));
     }
 
-    WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, (4+4+4+4+4));
+    WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, 6*4+1);
 
-    data << uint32(quest->GetBonusTalents());              // bonus talents (not verified for 4.x)
+    
     data << uint32(quest->GetRewardSkillPoints());         // 4.x bonus skill points
+    data << uint32(questId);
+    data << uint32(quest->GetBonusTalents());              // bonus talents (not verified for 4.x)
+    data << uint32(quest->GetRewardSkillId());             // 4.x bonus skill id
     data << uint32(moneyReward);
     data << uint32(xp);
-    data << uint32(questId);
-    data << uint32(quest->GetRewardSkillId());             // 4.x bonus skill id
-
-    data.WriteBit(0);                                      // FIXME: unknown bits, common values sent
-    data.WriteBit(1);
+    
+    data.WriteBit(0);                                      // HasNextQuestInChain, negated, false if there's another quest
+    data.WriteBit(1);                                      // NextQuestOpenWindow, open the gossip windows for the next quest 
     data.FlushBits();
 
     GetSession()->SendPacket(&data);
@@ -18147,17 +18148,36 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
     ASSERT(old_count + add_count < 65536 && "mob/GO count store in 16 bits 2^16 = 65536 (0..65536)");
 
     int32 entry = quest->RequiredNpcOrGo[ creatureOrGO_idx ];
+    ObjectGuid NPCGuid = guid;
     if (entry < 0)
         // client expected gameobject template id in form (id|0x80000000)
         entry = (-entry) | 0x80000000;
 
-    WorldPacket data(SMSG_QUESTUPDATE_ADD_KILL, (4*4+8));
+    WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 9+2*4+2*2+1);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_KILL");
+
+    data.WriteBit(NPCGuid[5]);
+    data.WriteBit(NPCGuid[3]);
+    data.WriteBit(NPCGuid[6]);
+    data.WriteBit(NPCGuid[7]);
+    data.WriteBit(NPCGuid[4]);
+    data.WriteBit(NPCGuid[1]);
+    data.WriteBit(NPCGuid[2]);
+    data.WriteBit(NPCGuid[0]);
+    data.FlushBits();
+    data.WriteByteSeq(NPCGuid[4]);
+    data << uint16(quest->RequiredNpcOrGoCount[creatureOrGO_idx]);
+    data << uint8(0);                                               // Requirement Type, check the enum in the parser
+    data.WriteByteSeq(NPCGuid[6]);
+    data << uint32(entry);                                          // Requirement ID, this can be an entry, currency ID if currency and so on, consult the parser again :D
+    data.WriteByteSeq(NPCGuid[0]);
+    data.WriteByteSeq(NPCGuid[3]);
+    data.WriteByteSeq(NPCGuid[1]);
+    data.WriteByteSeq(NPCGuid[5]);
+    data.WriteByteSeq(NPCGuid[2]);
+    data << uint16(old_count + add_count);
     data << uint32(quest->GetQuestId());
-    data << uint32(entry);
-    data << uint32(old_count + add_count);
-    data << uint32(quest->RequiredNpcOrGoCount[ creatureOrGO_idx ]);
-    data << uint64(guid);
+    data.WriteByteSeq(NPCGuid[7]);
     GetSession()->SendPacket(&data);
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
@@ -18172,8 +18192,7 @@ void Player::SendQuestUpdateAddPlayer(Quest const* quest, uint16 old_count, uint
     WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, (3*4));
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
     data << uint32(quest->GetQuestId());
-    data << uint32(old_count + add_count);
-    data << uint32(quest->GetPlayersSlain());
+    data << uint16(old_count + add_count);
     GetSession()->SendPacket(&data);
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
