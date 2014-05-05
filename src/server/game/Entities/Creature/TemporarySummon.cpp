@@ -26,8 +26,7 @@
 #include "Player.h"
 
 TempSummon::TempSummon(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) :
-Creature(isWorldObject), m_Properties(properties), m_type(TEMPSUMMON_MANUAL_DESPAWN),
-m_timer(0), m_lifetime(0)
+Creature(isWorldObject), m_Properties(properties), m_type(TEMPSUMMON_MANUAL_DESPAWN), m_timer(0), m_lifetime(0)
 {
     m_summonerGUID = owner ? owner->GetGUID() : 0;
     m_unitTypeMask |= UNIT_MASK_SUMMON;
@@ -165,6 +164,7 @@ void TempSummon::Update(uint32 diff)
                 m_timer = m_lifetime;
             break;
         }
+
         default:
             UnSummon();
             TC_LOG_ERROR("entities.unit", "Temporary summoned creature (entry: %u) have unknown type %u of ", GetEntry(), m_type);
@@ -243,10 +243,12 @@ void TempSummon::UnSummon(uint32 msTime)
         return;
     }
 
-    //ASSERT(!IsPet());
     if (IsPet())
     {
-        ((Pet*)this)->Remove(PET_SAVE_NOT_IN_SLOT);
+        if (ToPet()->getPetType() == HUNTER_PET)
+            ToPet()->Remove(PET_SLOT_ACTUAL_PET_SLOT, false, ToPet()->m_Stampeded);
+        else
+            ToPet()->Remove(PET_SLOT_OTHER_PET, false, ToPet()->m_Stampeded);
         ASSERT(!IsInWorld());
         return;
     }
@@ -284,8 +286,7 @@ void TempSummon::RemoveFromWorld()
     Creature::RemoveFromWorld();
 }
 
-Minion::Minion(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject)
-    : TempSummon(properties, owner, isWorldObject), m_owner(owner)
+Minion::Minion(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) : TempSummon(properties, owner, isWorldObject), m_owner(owner)
 {
     ASSERT(m_owner);
     m_unitTypeMask |= UNIT_MASK_MINION;
@@ -303,7 +304,7 @@ void Minion::InitStats(uint32 duration)
     SetCreatorGUID(GetOwner()->GetGUID());
     setFaction(GetOwner()->getFaction());
 
-    GetOwner()->SetMinion(this, true);
+    GetOwner()->SetMinion(this, true, PET_SLOT_UNK_SLOT);
 }
 
 void Minion::RemoveFromWorld()
@@ -311,7 +312,7 @@ void Minion::RemoveFromWorld()
     if (!IsInWorld())
         return;
 
-    GetOwner()->SetMinion(this, false);
+    GetOwner()->SetMinion(this, false, PET_SLOT_UNK_SLOT);
     TempSummon::RemoveFromWorld();
 }
 
@@ -320,10 +321,19 @@ bool Minion::IsGuardianPet() const
     return IsPet() || (m_Properties && m_Properties->Category == SUMMON_CATEGORY_PET);
 }
 
-Guardian::Guardian(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) : Minion(properties, owner, isWorldObject)
-, m_bonusSpellDamage(0)
+bool Minion::IsWarlockPet() const
 {
-    memset(m_statFromOwner, 0, sizeof(float)*MAX_STATS);
+    return IsPet() && 
+    (GetEntry() == ENTRY_IMP || GetEntry() == ENTRY_VOIDWALKER || GetEntry() == ENTRY_SUCCUBUS || GetEntry() == ENTRY_FELHUNTER || 
+    GetEntry() == ENTRY_FELGUARD || GetEntry() == ENTRY_INFERNAL || GetEntry() == ENTRY_DOOMGUARD || // Normal Pets.
+    GetEntry() == ENTRY_FEL_IMP || GetEntry() == ENTRY_VOIDLORD || GetEntry() == ENTRY_SHIVARRA || GetEntry() == ENTRY_OBSERVER ||
+    GetEntry() == ENTRY_WRATHGUARD || GetEntry() == ENTRY_ABYSSAL || GetEntry() == ENTRY_TERRORGUARD || // With Grimoire of Supremacy.
+    GetEntry() == ENTRY_WILD_IMP); // Extra. :))
+}
+
+Guardian::Guardian(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) : Minion(properties, owner, isWorldObject), m_bonusSpellDamage(0)
+{
+    memset(m_statFromOwner, 0, sizeof(float) * MAX_STATS);
     m_unitTypeMask |= UNIT_MASK_GUARDIAN;
     if (properties && properties->Type == SUMMON_TYPE_PET)
     {
@@ -349,17 +359,15 @@ void Guardian::InitSummon()
     TempSummon::InitSummon();
 
     if (GetOwner()->GetTypeId() == TYPEID_PLAYER
-            && GetOwner()->GetMinionGUID() == GetGUID()
-            && !GetOwner()->GetCharmGUID())
-    {
+        && GetOwner()->GetMinionGUID() == GetGUID()
+        && !GetOwner()->GetCharmGUID())
         GetOwner()->ToPlayer()->CharmSpellInitialize();
-    }
 }
 
-Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner)
-    : Minion(properties, owner, false) //maybe true?
+Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner) : Minion(properties, owner, false) // maybe true?
 {
-    ASSERT(m_owner->GetTypeId() == TYPEID_PLAYER);
+    ASSERT(owner->GetTypeId() == TYPEID_PLAYER);
+    m_owner = owner->ToPlayer();
     m_unitTypeMask |= UNIT_MASK_PUPPET;
 }
 
@@ -380,15 +388,9 @@ void Puppet::InitSummon()
 void Puppet::Update(uint32 time)
 {
     Minion::Update(time);
-    //check if caster is channelling?
-    if (IsInWorld())
-    {
-        if (!IsAlive())
-        {
-            UnSummon();
-            /// @todo why long distance .die does not remove it
-        }
-    }
+    // Check if caster is channelling?
+    if (IsInWorld()) if (!IsAlive())
+        UnSummon(); // @todo why long distance .die does not remove it
 }
 
 void Puppet::RemoveFromWorld()

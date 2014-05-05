@@ -119,7 +119,7 @@ public:
             targetPlayer->learnSpell(spell, false);
 
         if (sSpellMgr->IsTalent(spellInfo->GetFirstRankSpell()->Id))
-            targetPlayer->SendTalentsInfoData();
+            targetPlayer->SendTalentsInfoData(false);
 
         return true;
     }
@@ -291,7 +291,7 @@ public:
             pet->learnSpellHighRank(spellId);
         }
 
-        pet->SetFreeTalentPoints(0);
+        // pet->SetFreeTalentPoints(0);
 
         handler->SendSysMessage(LANG_COMMAND_LEARN_PET_TALENTS);
         return true;
@@ -465,7 +465,7 @@ public:
             handler->SendSysMessage(LANG_FORGET_SPELL);
 
         if (sSpellMgr->IsTalent(spellId))
-            target->SendTalentsInfoData();
+            target->SendTalentsInfoData(false);
 
         return true;
     }

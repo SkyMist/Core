@@ -593,7 +593,8 @@ enum MirrorTimerType
     BREATH_TIMER       = 1,
     FIRE_TIMER         = 2 // feign death
 };
-#define MAX_TIMERS      3
+
+#define MAX_TIMERS               3
 #define DISABLED_MIRROR_TIMER   -1
 
 // 2^n values
@@ -872,39 +873,65 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_GROUP                   = 1,
     PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES         = 2,
     PLAYER_LOGIN_QUERY_LOAD_AURAS                   = 3,
-    PLAYER_LOGIN_QUERY_LOAD_SPELLS                  = 4,
-    PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS            = 5,
-    PLAYER_LOGIN_QUERY_LOAD_DAILY_QUEST_STATUS      = 6,
-    PLAYER_LOGIN_QUERY_LOAD_REPUTATION              = 7,
-    PLAYER_LOGIN_QUERY_LOAD_INVENTORY               = 8,
-    PLAYER_LOGIN_QUERY_LOAD_ACTIONS                 = 9,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_COUNT              = 10,
-    PLAYER_LOGIN_QUERY_LOAD_MAIL_DATE               = 11,
-    PLAYER_LOGIN_QUERY_LOAD_SOCIAL_LIST             = 12,
-    PLAYER_LOGIN_QUERY_LOAD_HOME_BIND               = 13,
-    PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS         = 14,
-    PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES          = 15,
-    PLAYER_LOGIN_QUERY_LOAD_GUILD                   = 16,
-    PLAYER_LOGIN_QUERY_LOAD_ARENA_INFO              = 17,
-    PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS            = 18,
-    PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS       = 19,
-    PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 20,
-    PLAYER_LOGIN_QUERY_LOAD_BG_DATA                 = 21,
-    PLAYER_LOGIN_QUERY_LOAD_GLYPHS                  = 22,
-    PLAYER_LOGIN_QUERY_LOAD_TALENTS                 = 23,
-    PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA            = 24,
-    PLAYER_LOGIN_QUERY_LOAD_SKILLS                  = 25,
-    PLAYER_LOGIN_QUERY_LOAD_WEEKLY_QUEST_STATUS     = 26,
-    PLAYER_LOGIN_QUERY_LOAD_RANDOM_BG               = 27,
-    PLAYER_LOGIN_QUERY_LOAD_BANNED                  = 28,
-    PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_REW        = 29,
-    PLAYER_LOGIN_QUERY_LOAD_INSTANCE_LOCK_TIMES     = 30,
-    PLAYER_LOGIN_QUERY_LOAD_SEASONAL_QUEST_STATUS   = 31,
-    PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS    = 32,
-    PLAYER_LOGIN_QUERY_LOAD_VOID_STORAGE            = 33,
-    PLAYER_LOGIN_QUERY_LOAD_CURRENCY                = 34,
-    PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES            = 35,
+    PLAYER_LOGIN_QUERY_LOAD_AURAS_EFFECTS           = 4,
+    PLAYER_LOGIN_QUERY_LOAD_SPELLS                  = 5,
+    PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS            = 6,
+    PLAYER_LOGIN_QUERY_LOAD_DAILY_QUEST_STATUS      = 7,
+    PLAYER_LOGIN_QUERY_LOAD_REPUTATION              = 8,
+    PLAYER_LOGIN_QUERY_LOAD_INVENTORY               = 9,
+    PLAYER_LOGIN_QUERY_LOAD_ACTIONS                 = 10,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_COUNT              = 11,
+    PLAYER_LOGIN_QUERY_LOAD_MAIL_DATE               = 12,
+    PLAYER_LOGIN_QUERY_LOAD_SOCIAL_LIST             = 13,
+    PLAYER_LOGIN_QUERY_LOAD_HOME_BIND               = 14,
+    PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS         = 15,
+    PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES          = 16,
+    PLAYER_LOGIN_QUERY_LOAD_GUILD                   = 17,
+    PLAYER_LOGIN_QUERY_LOAD_ARENA_INFO              = 18,
+    PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS            = 19,
+    PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS       = 20,
+    PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 21,
+    PLAYER_LOGIN_QUERY_LOAD_BG_DATA                 = 22,
+    PLAYER_LOGIN_QUERY_LOAD_GLYPHS                  = 23,
+    PLAYER_LOGIN_QUERY_LOAD_TALENTS                 = 24,
+    PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA            = 25,
+    PLAYER_LOGIN_QUERY_LOAD_SKILLS                  = 26,
+    PLAYER_LOGIN_QUERY_LOAD_WEEKLY_QUEST_STATUS     = 27,
+    PLAYER_LOGIN_QUERY_LOAD_RANDOM_BG               = 28,
+    PLAYER_LOGIN_QUERY_LOAD_BANNED                  = 29,
+    PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_REW        = 30,
+    PLAYER_LOGIN_QUERY_LOAD_INSTANCE_LOCK_TIMES     = 31,
+    PLAYER_LOGIN_QUERY_LOAD_SEASONAL_QUEST_STATUS   = 32,
+    PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS    = 33,
+    PLAYER_LOGIN_QUERY_LOAD_VOID_STORAGE            = 34,
+    PLAYER_LOGIN_QUERY_LOAD_CURRENCY                = 35,
+    PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES            = 36,
+
     MAX_PLAYER_LOGIN_QUERY
+};
+
+class PetLoginQueryHolder : public SQLQueryHolder
+{
+    private:
+        uint32 m_guid;
+        PreparedQueryResult m_petResult;
+
+    public:
+        PetLoginQueryHolder(uint32 guid, PreparedQueryResult result) : m_guid(guid), m_petResult(result) { }
+
+        uint32 GetGuid() const { return m_guid; }
+        PreparedQueryResult GetPetResult() const { return m_petResult; }
+        bool Initialize();
+};
+
+enum PetLoginQueryIndex
+{
+    PET_LOGIN_QUERY_LOADAURA                        = 0,
+    PET_LOGIN_QUERY_LOADAURAEFFECT                  = 1,
+    PET_LOGIN_QUERY_LOADSPELL                       = 2,
+    PET_LOGIN_QUERY_LOADSPELLCOOLDOWN               = 3,
+
+    MAX_PET_LOGIN_QUERY                             = 4
 };
 
 enum PlayerDelayedOperations
@@ -984,6 +1011,16 @@ enum PlayerCommandStates
     CHEAT_COOLDOWN  = 0x04,
     CHEAT_POWER     = 0x08,
     CHEAT_WATERWALK = 0x10
+};
+
+struct auraEffectData
+{
+    auraEffectData(uint8 slot, uint8 effect, uint32 amount, uint32 baseamount) : _slot(slot), _effect(effect), _amount(amount), _baseamount(amount)  { }
+
+    uint8 _slot;
+    uint8 _effect;
+    uint32 _amount;
+    uint32 _baseamount;
 };
 
 class PlayerTaxi
@@ -1338,8 +1375,8 @@ class Player : public Unit, public GridObject<Player>
         void UpdateInnerTime (time_t time) { time_inn_enter = time; }
 
         Pet* GetPet() const;
-        Pet* SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 despwtime);
-        void RemovePet(Pet* pet, PetSaveMode mode, bool returnreagent = false);
+        Pet* SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 despwtime, PetSlot slotID = PET_SLOT_UNK_SLOT, bool stampeded = false);
+        void RemovePet(Pet* pet, PetSlot mode, bool returnreagent = false, bool stampeded = false);
 
         PhaseMgr& GetPhaseMgr() { return phaseMgr; }
 
@@ -1514,7 +1551,7 @@ class Player : public Unit, public GridObject<Player>
         void RemoveItemDurations(Item* item);
         void SendItemDurations();
         void LoadCorpse();
-        void LoadPet();
+        void LoadPet(PreparedQueryResult result);
 
         bool AddItem(uint32 itemId, uint32 count);
 
@@ -1690,7 +1727,6 @@ class Player : public Unit, public GridObject<Player>
 
         void SetBindPoint(uint64 guid);
         void SendTalentWipeConfirm(uint64 guid);
-        void ResetPetTalents();
         void CalcRage(uint32 damage, bool attacker);
         void RegenerateAll();
         void Regenerate(Powers power);
@@ -1811,10 +1847,8 @@ class Player : public Unit, public GridObject<Player>
         void InitSpellsForLevel();
         void RemoveSpecializationSpells();
         void BuildPlayerTalentsInfoData(WorldPacket* data);
-        void BuildPetTalentsInfoData(WorldPacket* data);
-        void SendTalentsInfoData();
+        void SendTalentsInfoData(bool pet);
         bool LearnTalent(uint32 talentId);
-        void LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank);
         bool AddTalent(uint32 spellId, uint8 spec, bool learning);
         bool HasTalent(uint32 spell_id, uint8 spec) const;
         uint32 CalculateTalentsPoints() const;
@@ -1999,7 +2033,7 @@ class Player : public Unit, public GridObject<Player>
         void UpdateRating(CombatRating cr);
         void UpdateAllRatings();
 
-        void UpdateMastery();
+        void UpdateMasteryPercentage();
         bool CanUseMastery() const { return HasAuraType(SPELL_AURA_MASTERY); }
         bool IsCurrentSpecMasterySpell(SpellInfo const* spellInfo) const;
 
@@ -2328,6 +2362,8 @@ class Player : public Unit, public GridObject<Player>
         void StopCastingCharm();
         void StopCastingBindSight();
 
+        void SendPetTameResult(PetTameResult result);
+
         uint32 GetSaveTimer() const { return m_nextSave; }
         void SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
@@ -2484,7 +2520,7 @@ class Player : public Unit, public GridObject<Player>
         void SetChampioningFaction(uint32 faction) { m_ChampioningFaction = faction; }
         Spell* m_spellModTakingSpell;
 
-        float GetAverageItemLevel();
+        uint32 GetAverageItemLevel();
         bool isDebugAreaTriggers;
 
         void ClearWhisperWhiteList() { WhisperList.clear(); }
@@ -2563,7 +2599,7 @@ class Player : public Unit, public GridObject<Player>
         /*********************************************************/
 
         void _LoadActions(PreparedQueryResult result);
-        void _LoadAuras(PreparedQueryResult result, uint32 timediff);
+        void _LoadAuras(PreparedQueryResult result, PreparedQueryResult resultEffect, uint32 timediff);
         void _LoadGlyphAuras();
         void _LoadBoundInstances(PreparedQueryResult result);
         void _LoadInventory(PreparedQueryResult result, uint32 timeDiff);
@@ -2752,6 +2788,8 @@ class Player : public Unit, public GridObject<Player>
         bool m_canTitanGrip;
         uint8 m_swingErrorMsg;
 
+        bool m_needSummonPetAfterStopFlying;
+
         ////////////////////Rest System/////////////////////
 
         time_t time_inn_enter;
@@ -2847,6 +2885,12 @@ class Player : public Unit, public GridObject<Player>
         uint32 _maxPersonalArenaRate;
 
         PhaseMgr phaseMgr;
+
+        // Pet callback
+        bool m_initializeCallback;
+
+        PreparedQueryResultFuture _petPreloadCallback;
+        QueryResultHolderFuture _petLoginCallback;
 
         /*** Movement functions - Handled by PlayerMovement or locally. ***/
     public:
@@ -2951,6 +2995,42 @@ class Player : public Unit, public GridObject<Player>
 
         // Start position.
         WorldLocation GetStartPosition() const;
+
+        // Pet slots.
+        PetSlot m_currentPetSlot;
+        uint32 m_petSlotUsed;
+
+        void setPetSlotUsed(PetSlot slot, bool used)
+        {
+            if (used)
+                m_petSlotUsed |= (1 << int32(slot));
+            else
+                m_petSlotUsed &= ~(1 << int32(slot));
+        }
+
+        PetSlot getSlotForNewPet()
+        {
+            uint32 last_known = 0;
+            // Call Pet Spells
+            // 883 83242 83243 83244 83245
+            //  1    2     3     4     5
+            if (HasSpell(83245))
+                last_known = 5;
+            else if (HasSpell(83244))
+                last_known = 4;
+            else if (HasSpell(83243))
+                last_known = 3;
+            else if (HasSpell(83242))
+                last_known = 2;
+            else if (HasSpell(883))
+                last_known = 1;
+
+            for (uint32 i = uint32(PET_SLOT_HUNTER_FIRST); i < last_known; ++i)
+                if ((m_petSlotUsed & (1 << i)) == 0)
+                    return PetSlot(i);
+
+            return PET_SLOT_FULL_LIST;
+        }
 
     protected:
         // Inn and Resting system.

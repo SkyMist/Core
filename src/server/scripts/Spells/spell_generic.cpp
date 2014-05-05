@@ -3162,7 +3162,13 @@ class spell_gen_summon_elemental : public SpellScriptLoader
                 if (GetCaster())
                     if (Unit* owner = GetCaster()->GetOwner())
                         if (owner->GetTypeId() == TYPEID_PLAYER) /// @todo this check is maybe wrong
-                            owner->ToPlayer()->RemovePet(NULL, PET_SAVE_NOT_IN_SLOT, true);
+                            if (Player* player = owner->ToPlayer())
+                            {
+                                if (Pet* pet = player->ToPet())
+                                    player->RemovePet(pet, PET_SLOT_OTHER_PET, true, pet->m_Stampeded);
+                                else
+                                    player->RemovePet(NULL, PET_SLOT_OTHER_PET, true, true);
+                            }
             }
 
             void Register() OVERRIDE
@@ -3472,6 +3478,30 @@ class spell_gen_vehicle_scaling : public SpellScriptLoader
     public:
         spell_gen_vehicle_scaling() : SpellScriptLoader("spell_gen_vehicle_scaling") { }
 
+        class spell_gen_vehicle_scaling_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_gen_vehicle_scaling_SpellScript);
+
+            SpellCastResult CheckCast() OVERRIDE
+            {
+                if (Unit* target = GetExplTargetUnit())
+                    if (target->GetTypeId() == TYPEID_PLAYER)
+                        return SPELL_FAILED_DONT_REPORT;
+
+                return SPELL_CAST_OK;
+            }
+
+            void Register() OVERRIDE
+            {
+                OnCheckCast += SpellCheckCastFn(spell_gen_vehicle_scaling_SpellScript::CheckCast);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_gen_vehicle_scaling_SpellScript();
+        }
+
         class spell_gen_vehicle_scaling_AuraScript : public AuraScript
         {
             PrepareAuraScript(spell_gen_vehicle_scaling_AuraScript);
@@ -3492,15 +3522,15 @@ class spell_gen_vehicle_scaling : public SpellScriptLoader
                 {
                     case SPELL_GEAR_SCALING:
                         factor = 1.0f;
-                        baseItemLevel = 205;
+                        baseItemLevel = 405;
                         break;
                     default:
                         factor = 1.0f;
-                        baseItemLevel = 170;
+                        baseItemLevel = 405;
                         break;
                 }
 
-                float avgILvl = caster->ToPlayer()->GetAverageItemLevel();
+                uint16 avgILvl = caster->ToPlayer()->GetAverageItemLevel();
                 if (avgILvl < baseItemLevel)
                     return;                     /// @todo Research possibility of scaling down
 

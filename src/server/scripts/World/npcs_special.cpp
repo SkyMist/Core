@@ -1848,10 +1848,8 @@ public:
                 }
                 break;
             case GOSSIP_ACTION_INFO_DEF + 3:
-                {
-                    player->ResetPetTalents();
-                    player->CLOSE_GOSSIP_MENU();
-                }
+                // player->ResetPetTalents();
+                player->CLOSE_GOSSIP_MENU();
                 break;
         }
         return true;

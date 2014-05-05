@@ -35,6 +35,27 @@
 #include "../DynamicObject/DynamicObject.h"
 #include "../AreaTrigger/AreaTrigger.h"
 
+// Stored in character_pet.slot
+enum PetSlot
+{
+    // Some not-in-db slots.
+    PET_SLOT_FULL_LIST       =  -4,        // Used when there is no slot free for taming.
+    PET_SLOT_UNK_SLOT        =  -3,        // Used in some scripts.
+
+    PET_SLOT_ACTUAL_PET_SLOT =  -2,        // Save the pet in it's actual slot.
+    PET_SLOT_DELETED         =  -1,        // Delete the pet.
+
+    // Hunter pet slots, sent to client at stabling / unstabling pets.
+    PET_SLOT_HUNTER_FIRST    =   0,        // PetType == HUNTER_PET
+    PET_SLOT_HUNTER_LAST     =   4,        // PetType == HUNTER_PET
+
+    PET_SLOT_STABLE_FIRST    =   5,
+    PET_SLOT_STABLE_LAST     =  24,
+
+    // Non-hunter pet slot.
+    PET_SLOT_OTHER_PET       = 100         // PetType != HUNTER_PET
+};
+
 #define WORLD_TRIGGER   12999
 
 enum SpellInterruptFlags
@@ -1643,7 +1664,7 @@ class Unit : public WorldObject
         Player* GetCharmerOrOwnerPlayerOrPlayerItself() const;
         Player* GetAffectingPlayer() const;
 
-        void SetMinion(Minion *minion, bool apply);
+        void SetMinion(Minion *minion, bool apply, PetSlot slot, bool stampeded = false);
         void GetAllMinionsByEntry(std::list<Creature*>& Minions, uint32 entry);
         void RemoveAllMinionsByEntry(uint32 entry);
         void SetCharm(Unit* target, bool apply);
@@ -2101,6 +2122,11 @@ class Unit : public WorldObject
         void SetDamageDone(DamageDone* dmgDone) { m_dmgDone.push_back(dmgDone); }
         void SetDamageTaken(DamageTaken* dmgTaken) { m_dmgTaken.push_back(dmgTaken); }
 
+        // Helper for dark simulacrum spell
+        Unit* GetSimulacrumTarget();
+        void setSimulacrumTarget(uint64 guid) { simulacrumTargetGUID = guid; }
+        void removeSimulacrumTarget() { simulacrumTargetGUID = 0; }
+
     protected:
         explicit Unit (bool isWorldObject);
 
@@ -2206,6 +2232,8 @@ class Unit : public WorldObject
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
+
+        uint64 simulacrumTargetGUID;
 
         Diminishing m_Diminishing;
         // Manage all Units that are threatened by us
