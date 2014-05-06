@@ -682,7 +682,7 @@ void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
         if (questSlot != MAX_QUEST_LOG_SIZE)
             questOk = _player->GetQuestSlotQuestId(questSlot) == questId;
 
-        if(questOk)
+        if (questOk)
         {
             ++ResponseSize;
 

@@ -1129,6 +1129,20 @@ enum PetTameResult
     PET_TAME_ERROR_INVALID_SLOT             = 13
 };
 
+enum CombatPetType
+{
+    PET_TYPE_HUMANOID   = 0,
+    PET_TYPE_DRAGONKIN  = 1,
+    PET_TYPE_FLYING     = 2,
+    PET_TYPE_UNDEAD     = 3,
+    PET_TYPE_CRITTER    = 4,
+    PET_TYPE_MAGIC      = 5,
+    PET_TYPE_ELEMENTAL  = 6,
+    PET_TYPE_BEAST      = 7,
+    PET_TYPE_AQUATIC    = 8,
+    PET_TYPE_MECHANICAL = 9
+}
+
 enum SpellCastResult
 {
     SPELL_FAILED_SUCCESS                          = 0,

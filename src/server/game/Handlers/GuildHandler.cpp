@@ -364,7 +364,9 @@ void WorldSession::HandleGuildDelRankOpcode(WorldPacket& recvPacket)
 void WorldSession::HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket)
 {
     uint32 length = recvPacket.ReadBits(12);
-    std::string info = recvPacket.ReadString(length);
+    recvPacket.FlushBits();
+
+    std::string info = recvPacket.ReadString(length / 2);
 
     TC_LOG_DEBUG("guild", "CMSG_GUILD_INFO_TEXT [%s]: %s", GetPlayerInfo().c_str(), info.c_str());
 
@@ -679,7 +681,7 @@ void WorldSession::HandleQueryGuildBankTabText(WorldPacket &recvPacket)
     uint8 tabId;
     recvPacket >> tabId;
 
-    TC_LOG_DEBUG("guild", "MSG_QUERY_GUILD_BANK_TEXT [%s]: TabId: %u", GetPlayerInfo().c_str(), tabId);
+    TC_LOG_DEBUG("guild", "CMSG_GUILD_BANK_QUERY_TEXT [%s]: TabId: %u", GetPlayerInfo().c_str(), tabId);
 
     if (Guild* guild = GetPlayer()->GetGuild())
         guild->SendBankTabText(this, tabId);

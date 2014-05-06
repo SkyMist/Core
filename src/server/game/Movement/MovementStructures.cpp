@@ -5049,46 +5049,54 @@ MovementStatusElements const MoveNormalFall[] =
 
 MovementStatusElements const MoveRoot[] =
 {
-    MSEHasGuidByte2,
-    MSEHasGuidByte7,
+    MSEHasGuidByte5,
+    MSEHasGuidByte3,
     MSEHasGuidByte6,
     MSEHasGuidByte0,
-    MSEHasGuidByte5,
-    MSEHasGuidByte4,
     MSEHasGuidByte1,
-    MSEHasGuidByte3,
+    MSEHasGuidByte4,
+    MSEHasGuidByte2,
+    MSEHasGuidByte7,
+
     MSEGuidByte1,
-    MSEGuidByte0,
     MSEGuidByte2,
-    MSEGuidByte5,
-    MSECounter,
-    MSEGuidByte3,
-    MSEGuidByte4,
-    MSEGuidByte7,
     MSEGuidByte6,
-    MSEEnd,
+    MSEGuidByte4,
+    MSEGuidByte3,
+    MSEGuidByte5,
+
+    MSECounter,
+
+    MSEGuidByte7,
+    MSEGuidByte0,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveUnroot[] =
 {
     MSEHasGuidByte0,
+    MSEHasGuidByte6,
+    MSEHasGuidByte4,
     MSEHasGuidByte1,
+    MSEHasGuidByte2,
     MSEHasGuidByte3,
     MSEHasGuidByte7,
     MSEHasGuidByte5,
-    MSEHasGuidByte2,
-    MSEHasGuidByte4,
-    MSEHasGuidByte6,
+
+    MSEGuidByte1,
+    MSEGuidByte0,
     MSEGuidByte3,
     MSEGuidByte6,
-    MSEGuidByte1,
-    MSECounter,
-    MSEGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte7,
     MSEGuidByte4,
+
+    MSECounter,
+
     MSEGuidByte5,
-    MSEEnd,
+    MSEGuidByte7,
+    MSEGuidByte2,
+
+    MSEEnd
 };
 
 MovementStatusElements const ChangeSeatsOnControlledVehicle[] =
@@ -5579,10 +5587,10 @@ MovementStatusElements const* GetMovementStatusElementsSequence(Opcodes opcode)
         //    return MoveFeatherFall;
         //case SMSG_MOVE_NORMAL_FALL:
         //    return MoveNormalFall;
-        //case SMSG_MOVE_ROOT:
-        //    return MoveRoot;
-        //case SMSG_MOVE_UNROOT:
-        //    return MoveUnroot;
+        case SMSG_MOVE_ROOT:
+            return MoveRoot;
+        case SMSG_MOVE_UNROOT:
+            return MoveUnroot;
         case CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE:
             return ChangeSeatsOnControlledVehicle;
         //case CMSG_CAST_SPELL:

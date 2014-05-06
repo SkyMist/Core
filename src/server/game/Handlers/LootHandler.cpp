@@ -604,3 +604,13 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     loot->NotifyItemRemoved(slotid);
     --loot->unlootedCount;
 }
+
+void WorldSession::HandleSetLootSpecialization(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "CSG_SET_LOOT_SPECIALIZATION");
+
+    uint32 lootSpec;
+    recvData >> lootSpec;
+
+    // ToDo: Implement MoP instance loot handling, based on spec.
+}

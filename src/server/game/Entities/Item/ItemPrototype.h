@@ -119,7 +119,7 @@ enum ItemProtoFlags
     ITEM_PROTO_FLAG_HEROIC                      = 0x00000008, // Makes green "Heroic" text appear on item
     ITEM_PROTO_FLAG_DEPRECATED                  = 0x00000010, // Cannot equip or use
     ITEM_PROTO_FLAG_INDESTRUCTIBLE              = 0x00000020, // Item can not be destroyed, except by using spell (item can be reagent for spell)
-    ITEM_PROTO_FLAG_UNK2                        = 0x00000040, // ?
+    ITEM_PROTO_FLAG_CONSUMABLE                  = 0x00000040, // Consumable item
     ITEM_PROTO_FLAG_NO_EQUIP_COOLDOWN           = 0x00000080, // No default 30 seconds cooldown when equipped
     ITEM_PROTO_FLAG_UNK3                        = 0x00000100, // ?
     ITEM_PROTO_FLAG_WRAPPER                     = 0x00000200, // Item can wrap other items

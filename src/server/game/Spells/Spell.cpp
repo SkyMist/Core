@@ -5323,7 +5323,7 @@ void Spell::SendChannelUpdate(uint32 time)
         m_caster->SetUInt32Value(UNIT_FIELD_CHANNEL_SPELL, 0);
     }
 
-    WorldPacket data(MSG_CHANNEL_UPDATE, 8+4);
+    WorldPacket data(SMSG_CHANNEL_UPDATE, 8 + 4);
     data.append(m_caster->GetPackGUID());
     data << uint32(time);
 
@@ -5337,20 +5337,22 @@ void Spell::SendChannelStart(uint32 duration)
         if (m_UniqueTargetInfo.size() + m_UniqueGOTargetInfo.size() == 1)   // this is for TARGET_SELECT_CATEGORY_NEARBY
             channelTarget = !m_UniqueTargetInfo.empty() ? m_UniqueTargetInfo.front().targetGUID : m_UniqueGOTargetInfo.front().targetGUID;
 
-    WorldPacket data(MSG_CHANNEL_START, (8+4+4));
+    WorldPacket data(SMSG_CHANNEL_START, 8 + 4 + 4);
     data.append(m_caster->GetPackGUID());
     data << uint32(m_spellInfo->Id);
     data << uint32(duration);
+
+    /* DEPRECATED since 4.0.6a
     data << uint8(0);                           // immunity (castflag & 0x04000000)
-    /*
+
     if (immunity)
     {
         data << uint32();                       // CastSchoolImmunities
         data << uint32();                       // CastImmunities
     }
-    */
+
     data << uint8(0);                           // healPrediction (castflag & 0x40000000)
-    /*
+
     if (healPrediction)
     {
         data.appendPackGUID(channelTarget);     // target packguid
@@ -5360,6 +5362,7 @@ void Spell::SendChannelStart(uint32 duration)
             data.append();                      // unk packed guid (unused ?)
     }
     */
+
     m_caster->SendMessageToSet(&data, true);
 
     m_timer = duration;

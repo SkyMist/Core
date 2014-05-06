@@ -563,6 +563,7 @@ class WorldSession
         void HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData);
         void HandleGroupSetRolesOpcode(WorldPacket& recvData);
         void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
+        void HandleSetLootSpecialization(WorldPacket& recvData);
         void HandleOptOutOfLootOpcode(WorldPacket& recvData);
         void HandleLootMethodOpcode(WorldPacket& recvPacket);
         void HandleLootRoll(WorldPacket& recvData);
