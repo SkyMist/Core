@@ -584,6 +584,11 @@ void WorldSession::HandleQuestLogRemoveQuest(WorldPacket& recvData)
                     _player->pvpInfo.IsHostile = _player->pvpInfo.IsInHostileArea || _player->HasPvPForcingQuest();
                     _player->UpdatePvPState();
                 }
+
+                // Destroy items received during the quest.
+                for (uint8 i = 0; i < QUEST_SOURCE_ITEM_IDS_COUNT; ++i)
+                    if (quest->RequiredSourceItemId[i] > 0 && quest->RequiredSourceItemCount[i] > 0)
+                        _player->DestroyItemCount(quest->RequiredSourceItemId[i], quest->RequiredSourceItemCount[i], true, true);
             }
 
             _player->TakeQuestSourceItem(questId, true); // remove quest src item from player

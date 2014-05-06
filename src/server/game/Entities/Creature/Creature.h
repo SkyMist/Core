@@ -39,6 +39,66 @@ class Player;
 class SpellInfo;
 class WorldSession;
 
+// Creature / Player Pet entries.
+enum CreaturePetEntry
+{
+    // Paladin
+    ENTRY_GUARDIAN_KINGS_H  = 46499, // Temp Summon. - Holy.
+    ENTRY_GUARDIAN_KINGS_P  = 46490, // Temp Summon. - Protection.
+    ENTRY_GUARDIAN_KINGS_D  = 46506, // Temp Summon. - Retribution.
+
+    // Warlock
+    // -- Normal Pets.
+    ENTRY_IMP               = 416,
+    ENTRY_VOIDWALKER        = 1860,
+    ENTRY_SUCCUBUS          = 1863,
+    ENTRY_FELHUNTER         = 417,
+    ENTRY_FELGUARD          = 17252,
+    ENTRY_INFERNAL          = 89,    // Temp Summon.
+    ENTRY_DOOMGUARD         = 11859, // Temp Summon.
+
+    // -- With Grimoire of Supremacy.
+    ENTRY_FEL_IMP           = 58959,
+    ENTRY_VOIDLORD          = 58960,
+    ENTRY_SHIVARRA          = 58963,
+    ENTRY_OBSERVER          = 58964,
+    ENTRY_WRATHGUARD        = 58965,
+    ENTRY_ABYSSAL           = 58997, // Temp Summon.
+    ENTRY_TERRORGUARD       = 59000, // Temp Summon.
+
+    ENTRY_WILD_IMP          = 55659, // Temp Summon.
+
+    // Mage
+    ENTRY_WATER_ELEMENTAL   = 510,
+    ENTRY_MIRROR_IMAGE      = 31216, // Temp Summon.
+
+    // Priest
+    ENTRY_SHADOWFIEND       = 19668, // Temp Summon.
+
+    // Hunter
+    ENTRY_VIPER             = 19921, // Temp Summon.
+    ENTRY_VENOMOUS_SNAKE    = 19833, // Temp Summon.
+
+    // Druid
+    ENTRY_TREANT_GUARDIAN   = 54985,
+    ENTRY_TREANT_FERAL      = 54984,
+    ENTRY_TREANT_RESTO      = 54983,
+    ENTRY_TREANT_BALANCE    = 1964,
+
+    // Shaman
+    ENTRY_EARTH_ELEMENTAL   = 15352,
+    ENTRY_FIRE_ELEMENTAL    = 15438,
+    ENTRY_SPIRIT_WOLF       = 29264,
+
+    // Death Knight
+    ENTRY_GHOUL             = 26125,
+    ENTRY_BLOODWORM         = 28017,
+    ENTRY_GARGOYLE          = 27829,
+
+    // Monk
+    ENTRY_XUEN_WHITE_TIGER  = 63508  // Temp Summon.
+};
+
 enum CreatureFlagsExtra
 {
     CREATURE_FLAG_EXTRA_INSTANCE_BIND   = 0x00000001,       // creature kill bind instance with killer and killer's group

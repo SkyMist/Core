@@ -24,26 +24,8 @@ enum PetType
 {
     SUMMON_PET              = 0,
     HUNTER_PET              = 1,
+
     MAX_PET_TYPE            = 4
-};
-
-#define MAX_PET_STABLES         4
-
-// stored in character_pet.slot
-enum PetSaveMode
-{
-    PET_SAVE_AS_DELETED        = -1,                        // not saved in fact
-    PET_SAVE_AS_CURRENT        =  0,                        // in current slot (with player)
-    PET_SAVE_FIRST_STABLE_SLOT =  1,
-    PET_SAVE_LAST_STABLE_SLOT  =  MAX_PET_STABLES,          // last in DB stable slot index (including), all higher have same meaning as PET_SAVE_NOT_IN_SLOT
-    PET_SAVE_NOT_IN_SLOT       =  100                       // for avoid conflict with stable size grow will use 100
-};
-
-enum HappinessState
-{
-    UNHAPPY = 1,
-    CONTENT = 2,
-    HAPPY   = 3
 };
 
 enum PetSpellState
@@ -75,7 +57,27 @@ enum PetTalk
     PET_TALK_ATTACK         = 1
 };
 
+
+enum StableResultCode // For SMSG_STABLE_RESULT.
+{
+    STABLE_ERR_NONE         = 0x00,                         // Does nothing, just resets stable states.
+    STABLE_ERR_MONEY        = 0x01,                         // "You don't have enough money"
+    STABLE_ERR_INVALID_SLOT = 0x03,                         // "That slot is locked"
+    STABLE_SUCCESS_STABLE   = 0x08,                         // Stable success
+    STABLE_SUCCESS_UNSTABLE = 0x09,                         // Unstable / Swap success
+    STABLE_SUCCESS_BUY_SLOT = 0x0A,                         // Buy slot success
+    STABLE_ERR_EXOTIC       = 0x0B,                         // "You are unable to control exotic creatures"
+    STABLE_ERR_STABLE       = 0x0C                          // "Internal pet error"
+};
+
+// Stable Slots.
+#define MAX_PET_STABLES         PET_SLOT_STABLE_LAST
+
+// Movement defines.
 #define PET_FOLLOW_DIST  1.0f
 #define PET_FOLLOW_ANGLE (M_PI/2)
+
+// Focus Regen.
+#define PET_FOCUS_REGEN_INTERVAL 4 * IN_MILLISECONDS
 
 #endif

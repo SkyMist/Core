@@ -211,6 +211,22 @@ void WorldSession::HandlePetActionHelper(Unit* pet, uint64 guid1, uint32 spellid
                         if (pet->GetVictim())
                             pet->AttackStop();
 
+                        // Summon gargoyle should attack the same target as ghoul - Custom MOP Script.
+                        if (Unit* owner = pet->GetOwner())
+                        {
+                            if (owner->getClass() == CLASS_DEATH_KNIGHT)
+                            {
+                                for (Unit::ControlList::iterator itr = owner->m_Controlled.begin(); itr != owner->m_Controlled.end(); ++itr)
+                                {
+                                    if ((*itr)->GetEntry() == 27829 && !(*itr)->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
+                                    {
+                                        owner->AddAura(49206, TargetUnit);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
                         if (pet->GetTypeId() != TYPEID_PLAYER && pet->ToCreature()->IsAIEnabled)
                         {
                             charmInfo->SetIsCommandAttack(true);
@@ -255,8 +271,8 @@ void WorldSession::HandlePetActionHelper(Unit* pet, uint64 guid1, uint32 spellid
                         ASSERT(pet->GetTypeId() == TYPEID_UNIT);
                         if (pet->IsPet())
                         {
-                            if (((Pet*)pet)->getPetType() == HUNTER_PET)
-                                GetPlayer()->RemovePet((Pet*)pet, PET_SAVE_AS_DELETED);
+                            if (pet->ToPet()->getPetType() == HUNTER_PET)
+                                GetPlayer()->RemovePet(pet->ToPet(), PET_SLOT_DELETED, false, pet->ToPet()->m_Stampeded);
                             else
                                 //dismissing a summoned pet is like killing them (this prevents returning a soulshard...)
                                 pet->setDeathState(CORPSE);
@@ -473,8 +489,8 @@ void WorldSession::SendPetNameQuery(ObjectGuid petGuid, uint64 petNumber)
     }
 
     WorldPacket data(SMSG_PET_NAME_QUERY_RESPONSE, (8 + 1 + 1 + 5 + pet->GetName().size() + 4));
-    data.WriteBit(1);                               // has data
-    data.WriteBit(0);                               // unknown
+    data.WriteBit(pet->IsPet() ? 1 : 0);                               // has data
+    data.WriteBit(0);                                                  // unknown
 
     bool declinedNames = pet->IsPet() && ((Pet*)pet)->GetDeclinedNames();
 
@@ -741,7 +757,7 @@ void WorldSession::HandlePetAbandon(WorldPacket& recvData)
     if (pet)
     {
         if (pet->IsPet())
-            _player->RemovePet((Pet*)pet, PET_SAVE_AS_DELETED);
+            _player->RemovePet(pet->ToPet(), PET_SLOT_DELETED, false, pet->ToPet()->m_Stampeded);
         else if (pet->GetGUID() == _player->GetCharmGUID())
             _player->StopCastingCharm();
     }
@@ -888,12 +904,48 @@ void WorldSession::SendPetNameInvalid(uint32 error, const std::string& name, Dec
     SendPacket(&data);
 }
 
-void WorldSession::HandlePetLearnTalent(WorldPacket& recvData)
+void WorldSession::HandleSetPetSpecialization(WorldPacket& recvData)
 {
-    TC_LOG_DEBUG("network", "WORLD: CMSG_PET_LEARN_TALENT");
-}
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_SET_PET_SPECIALIZATION");
 
-void WorldSession::HandleLearnPreviewTalentsPet(WorldPacket& recvData)
-{
-    TC_LOG_DEBUG("network", "CMSG_LEARN_PREVIEW_TALENTS_PET");
+    uint32 index;
+
+    recvData >> index;
+
+    if (_player->IsInCombat())
+        return;
+
+    uint32 specializationId = 0;
+
+    switch(index)
+    {
+        case 0:
+            specializationId = SPEC_PET_FEROCITY; // Ferocity
+            break;
+        case 1:
+            specializationId = SPEC_PET_TENACITY; // Tenacity
+            break;
+        case 2:
+            specializationId = SPEC_PET_CUNNING; // Cunning
+            break;
+
+        default: break;
+    }
+
+    if (!specializationId)
+        return;
+
+    Pet* pet = _player->GetPet();
+    if (!pet)
+        return;
+
+    if (pet->getPetType() != HUNTER_PET)
+        return;
+
+    if (pet->GetSpecializationId())
+        pet->LearnSpecializationSpell(false);
+
+    pet->SetSpecializationId(specializationId);
+    pet->LearnSpecializationSpell(true);
+    _player->SendTalentsInfoData(true);
 }

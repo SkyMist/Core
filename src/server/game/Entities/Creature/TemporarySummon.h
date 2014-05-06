@@ -72,8 +72,11 @@ class Minion : public TempSummon
         Unit* GetOwner() const { return m_owner; }
         float GetFollowAngle() const { return m_followAngle; }
         void SetFollowAngle(float angle) { m_followAngle = angle; }
-        bool IsPetGhoul() const {return GetEntry() == 26125;} // Ghoul may be guardian or pet
-        bool IsSpiritWolf() const {return GetEntry() == 29264;} // Spirit wolf from feral spirits
+        bool IsPetGhoul() const {return GetEntry() == ENTRY_GHOUL;} // Ghoul may be guardian or pet
+        bool IsPetGargoyle() const { return GetEntry() == ENTRY_GARGOYLE; }
+        bool IsTreant() const { return GetEntry() == ENTRY_TREANT_GUARDIAN || GetEntry() == ENTRY_TREANT_FERAL || GetEntry() == ENTRY_TREANT_BALANCE || GetEntry() == ENTRY_TREANT_RESTO; }
+        bool IsWarlockPet() const;
+        bool IsSpiritWolf() const {return GetEntry() == ENTRY_SPIRIT_WOLF;} // Spirit wolf from feral spirits
         bool IsGuardianPet() const;
     protected:
         Unit* const m_owner;
@@ -108,10 +111,13 @@ class Puppet : public Minion
 {
     public:
         Puppet(SummonPropertiesEntry const* properties, Unit* owner);
+        Player* GetOwner() { return m_owner; }
         void InitStats(uint32 duration);
         void InitSummon();
         void Update(uint32 time);
         void RemoveFromWorld();
+    protected:
+        Player* m_owner;
 };
 
 class ForcedUnsummonDelayEvent : public BasicEvent

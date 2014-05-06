@@ -1559,6 +1559,9 @@ void WorldSession::HandleMirrorImageDataRequest(WorldPacket& recvData)
     if (!creator)
         return;
 
+    if (creator->GetSimulacrumTarget())
+        creator = creator->GetSimulacrumTarget();
+
     WorldPacket data(SMSG_MIRRORIMAGE_DATA, 68);
     data << uint64(guid);
     data << uint32(creator->GetDisplayId());

@@ -61,10 +61,11 @@ void WorldSession::HandeSetTalentSpecialization(WorldPacket& recvData)
     if (specializationId)
     {
         _player->SetTalentSpecialization(_player->GetActiveSpec(), specializationId);
-        _player->SendTalentsInfoData();
+        _player->SendTalentsInfoData(false);
         if (specializationSpell)
             _player->learnSpell(specializationSpell, false);
         _player->InitSpellsForLevel();
+        _player->UpdateMasteryPercentage();
         _player->SaveToDB();
 	}
 }
@@ -83,12 +84,7 @@ void WorldSession::HandleLearnTalentOpcode(WorldPacket& recvData)
     }
 
     if (anythingLearned)
-        _player->SendTalentsInfoData();
-}
-
-void WorldSession::HandleLearnPreviewTalents(WorldPacket& recvPacket)
-{
-    TC_LOG_DEBUG("network", "CMSG_LEARN_PREVIEW_TALENTS");
+        _player->SendTalentsInfoData(false);
 }
 
 void WorldSession::HandleTalentWipeConfirmOpcode(WorldPacket& recvData)
@@ -120,7 +116,7 @@ void WorldSession::HandleTalentWipeConfirmOpcode(WorldPacket& recvData)
         return;
     }
 
-    _player->SendTalentsInfoData();
+    _player->SendTalentsInfoData(false);
     unit->CastSpell(_player, 14867, true);                  //spell: "Untalent Visual Effect"
 }
 

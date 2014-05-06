@@ -21,10 +21,8 @@
 #define TRINITYCORE_PET_H
 
 #include "PetDefines.h"
+#include "Unit.h"
 #include "TemporarySummon.h"
-
-#define PET_FOCUS_REGEN_INTERVAL 4 * IN_MILLISECONDS
-#define HAPPINESS_LEVEL_SIZE        333000
 
 struct PetSpell
 {
@@ -37,6 +35,7 @@ typedef UNORDERED_MAP<uint32, PetSpell> PetSpellMap;
 typedef std::vector<uint32> AutoSpellList;
 
 class Player;
+class PetLoginQueryHolder;
 
 class Pet : public Guardian
 {
@@ -60,10 +59,11 @@ class Pet : public Guardian
         bool CreateBaseAtCreature(Creature* creature);
         bool CreateBaseAtCreatureInfo(CreatureTemplate const* cinfo, Unit* owner);
         bool CreateBaseAtTamed(CreatureTemplate const* cinfo, Map* map, uint32 phaseMask);
-        bool LoadPetFromDB(Player* owner, uint32 petentry = 0, uint32 petnumber = 0, bool current = false);
+        bool LoadPetFromDB(Player* owner, uint32 petentry = 0, uint32 petnumber = 0, bool current = false, PetSlot slotID = PET_SLOT_UNK_SLOT, 
+                           bool stampeded = false, PetLoginQueryHolder* holder = NULL, bool login = false);
         bool isBeingLoaded() const { return m_loading;}
-        void SavePetToDB(PetSaveMode mode);
-        void Remove(PetSaveMode mode, bool returnreagent = false);
+        void SavePetToDB(PetSlot mode, bool stampeded = false);
+        void Remove(PetSlot mode, bool returnreagent = false, bool stampeded = false);
         static void DeleteFromDB(uint32 guidlow);
 
         void setDeathState(DeathState s);                   // overwrite virtual Creature::setDeathState and Unit::setDeathState
@@ -77,6 +77,9 @@ class Pet : public Guardian
             else
                 return m_autospells[pos];
         }
+
+        void SetSlot(uint8 slot) { m_slot = slot; }
+        uint8 GetSlot() { return m_slot; }
 
         void GivePetXP(uint32 xp);
         void GivePetLevel(uint8 level);
@@ -106,11 +109,11 @@ class Pet : public Guardian
         void CastPetAura(PetAura const* aura);
         bool IsPetAura(Aura const* aura);
 
-        void _LoadSpellCooldowns();
+        void _LoadSpellCooldowns(PreparedQueryResult result, bool login = false);
         void _SaveSpellCooldowns(SQLTransaction& trans);
-        void _LoadAuras(uint32 timediff);
+        void _LoadAuras(PreparedQueryResult auraResult, PreparedQueryResult auraEffectResult, uint32 timediff, bool login = false);
         void _SaveAuras(SQLTransaction& trans);
-        void _LoadSpells();
+        void _LoadSpells(PreparedQueryResult result, bool login = false);
         void _SaveSpells(SQLTransaction& trans);
 
         bool addSpell(uint32 spellId, ActiveStates active = ACT_DECIDE, PetSpellState state = PETSPELL_NEW, PetSpellType type = PETSPELL_NORMAL);
@@ -124,18 +127,9 @@ class Pet : public Guardian
 
         PetSpellMap     m_spells;
         AutoSpellList   m_autospells;
+        bool            m_Stampeded;
 
         void InitPetCreateSpells();
-
-        bool resetTalents();
-        static void resetTalentsForAllPetsOf(Player* owner, Pet* online_pet = NULL);
-        void InitTalentForLevel();
-
-        uint8 GetMaxTalentPointsForLevel(uint8 level);
-        uint8 GetFreeTalentPoints() { return GetByteValue(UNIT_FIELD_ANIM_TIER, 1); }
-        void SetFreeTalentPoints(uint8 points) { SetByteValue(UNIT_FIELD_ANIM_TIER, 1, points); }
-
-        uint32  m_usedTalentCount;
 
         uint64 GetAuraUpdateMaskForRaid() const { return m_auraRaidUpdateMask; }
         void SetAuraUpdateMaskForRaid(uint8 slot) { m_auraRaidUpdateMask |= (uint64(1) << slot); }
@@ -147,12 +141,18 @@ class Pet : public Guardian
 
         Player* GetOwner() const;
 
+        uint32 GetSpecializationId() const { return m_specialization; }
+        void SetSpecializationId(uint32 id) { m_specialization = id; }
+        void LearnSpecializationSpell(bool learn);
+
     protected:
         PetType m_petType;
         int32   m_duration;                                 // time until unsummon (used mostly for summoned guardians and not used for controlled pets)
         uint64  m_auraRaidUpdateMask;
         bool    m_loading;
         uint32  m_regenTimer;
+        uint32  m_specialization;
+        uint8   m_slot;
 
         DeclinedName *m_declinedname;
 

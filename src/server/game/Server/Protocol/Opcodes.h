@@ -297,10 +297,9 @@ enum Opcodes
    CMSG_ITEM_TEXT_QUERY                                     = 0x0,
    CMSG_JOIN_CHANNEL                                        = 0x1D20, // 5.4.7 18019
    CMSG_KEEP_ALIVE                                          = 0x0,
-   CMSG_LEARN_PREVIEW_TALENTS                               = 0x0,
-   CMSG_LEARN_PREVIEW_TALENTS_PET                           = 0x0,
    CMSG_LEARN_TALENT                                        = 0x1F5A, // 5.4.7 18019
    CMSG_LEAVE_CHANNEL                                       = 0x0,
+   CMSG_SET_PET_SPECIALIZATION                              = 0x0,
    CMSG_LFG_GET_STATUS                                      = 0x19AA, // 5.4.7 18019
    CMSG_LFG_JOIN                                            = 0x18B8, // 5.4.7 18019
    CMSG_LFG_LEAVE                                           = 0x0,
@@ -321,6 +320,7 @@ enum Opcodes
    CMSG_LF_GUILD_REMOVE_RECRUIT                             = 0x0,
    CMSG_LF_GUILD_SET_GUILD_POST                             = 0x0,
    CMSG_LIST_INVENTORY                                      = 0x10DD, // 5.4.7 18019
+   CMSG_LIST_STABLED_PETS                                   = 0x0,
    CMSG_LOAD_SCREEN                                         = 0x1691, // 5.4.7 18019
    CMSG_LOGOUT_CANCEL                                       = 0x11D4, // 5.4.7 18019
    CMSG_LOGOUT_REQUEST                                      = 0x0476, // 5.4.7 18019
@@ -415,7 +415,6 @@ enum Opcodes
    CMSG_PET_BATTLE_QUEUE_LEAVE                              = 0x0,
    CMSG_PET_CANCEL_AURA                                     = 0x0,
    CMSG_PET_CAST_SPELL                                      = 0x0,
-   CMSG_PET_LEARN_TALENT                                    = 0x0,
    CMSG_PET_NAME_CACHE                                      = 0x0,
    CMSG_PET_NAME_QUERY                                      = 0x16A3, // 5.4.7 18019
    CMSG_PET_RENAME                                          = 0x0,
@@ -556,7 +555,7 @@ enum Opcodes
    CMSG_SUGGESTION_SUBMIT                                   = 0x0,
    CMSG_SUMMON_RESPONSE                                     = 0x0,
    CMSG_SUSPEND_TOKEN                                       = 0x0,
-   CMSG_SWAP_INV_ITEM                                       = 0x0,
+   CMSG_SWAP_INV_ITEM                                       = 0x1403, // 5.4.7 18019
    CMSG_SWAP_ITEM                                           = 0x150A, // 5.4.7 18019
    CMSG_SYNC_DANCE                                          = 0x0,
    CMSG_TAXICLEARALLNODES                                   = 0x0,
@@ -610,7 +609,6 @@ enum Opcodes
    MSG_GM_SHOWLABEL                                         = 0x0,
    MSG_GM_SUMMON                                            = 0x0,
    MSG_INSPECT_ARENA_TEAMS                                  = 0x0,
-   MSG_LIST_STABLED_PETS                                    = 0x0,
    MSG_MOVE_CHARM_TELEPORT_CHEAT                            = 0x0,
    MSG_MOVE_FALL_LAND                                       = 0x055B, // 5.4.7 18019
    MSG_MOVE_HEARTBEAT                                       = 0x017B, // 5.4.7 18019
@@ -1025,6 +1023,7 @@ enum Opcodes
    SMSG_LF_GUILD_POST_UPDATED                               = 0x0,
    SMSG_LF_GUILD_RECRUIT_LIST_UPDATED                       = 0x0,
    SMSG_LIST_INVENTORY                                      = 0x0D2A, // 5.4.7 18019
+   SMSG_LIST_STABLED_PETS                                   = 0x0,
    SMSG_LOAD_CUF_PROFILES                                   = 0x0,
    SMSG_LOGIN_SETTIMESPEED                                  = 0x0F4A, // 5.4.7 18019
    SMSG_LOGIN_VERIFY_WORLD                                  = 0x0603, // 5.4.7 18019
@@ -1258,6 +1257,7 @@ enum Opcodes
    SMSG_SET_MELEE_ANIM_KIT                                  = 0x0,
    SMSG_SET_MOVEMENT_ANIM_KIT                               = 0x0,
    SMSG_SET_PCT_SPELL_MODIFIER                              = 0x0,
+   SMSG_SET_PET_SPECIALIZATION                              = 0x0,
    SMSG_SET_PHASE_SHIFT                                     = 0x1D52, // 5.4.7 18019
    SMSG_SET_PLAYER_DECLINED_NAMES_RESULT                    = 0x0,
    SMSG_SET_PLAY_HOVER_ANIM                                 = 0x0,

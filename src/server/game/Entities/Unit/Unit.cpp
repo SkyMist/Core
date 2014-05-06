@@ -239,6 +239,8 @@ Unit::Unit(bool isWorldObject) :
 
     m_CombatTimer = 0;
 
+    simulacrumTargetGUID = NULL;
+
     for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
         m_threatModifier[i] = 1.0f;
 
@@ -605,7 +607,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         }
     }
     // Spirit Hunt - 58879 : Feral Spirit heal their owner for 150% of their damage
-    if (GetOwner() && GetTypeId() == TYPEID_UNIT && GetEntry() == 29264 && damage > 0)
+    if (GetOwner() && GetTypeId() == TYPEID_UNIT && GetEntry() == ENTRY_SPIRIT_WOLF && damage > 0)
     {
         int32 basepoints = 0;
 
@@ -8826,7 +8828,7 @@ Unit* Unit::GetCharmerOrOwnerOrSelf() const
     return (Unit*)this;
 }
 
-void Unit::SetMinion(Minion *minion, bool apply)
+void Unit::SetMinion(Minion *minion, bool apply, PetSlot slot, bool stampeded)
 {
     TC_LOG_DEBUG("entities.unit", "SetMinion %u for %u, apply %u", minion->GetEntry(), GetEntry(), apply);
 
@@ -8853,11 +8855,11 @@ void Unit::SetMinion(Minion *minion, bool apply)
         {
             if (Guardian* oldPet = GetGuardianPet())
             {
-                if (oldPet != minion && (oldPet->IsPet() || minion->IsPet() || oldPet->GetEntry() != minion->GetEntry()))
+                if (oldPet != minion && (oldPet->IsPet() || minion->IsPet() || oldPet->GetEntry() != minion->GetEntry()) && !stampeded)
                 {
                     // remove existing minion pet
                     if (oldPet->IsPet())
-                        ((Pet*)oldPet)->Remove(PET_SAVE_AS_CURRENT);
+                        oldPet->ToPet()->Remove(PET_SLOT_ACTUAL_PET_SLOT, false, oldPet->ToPet()->m_Stampeded);
                     else
                         oldPet->UnSummon();
                     SetPetGUID(minion->GetGUID());
@@ -8871,17 +8873,29 @@ void Unit::SetMinion(Minion *minion, bool apply)
             }
         }
 
-        if (minion->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
+        if (slot == PET_SLOT_UNK_SLOT)
+            slot = PET_SLOT_OTHER_PET;
+
+        if (GetTypeId() == TYPEID_PLAYER)
         {
-            if (AddUInt64Value(UNIT_FIELD_SUMMON, minion->GetGUID()))
+            if (!minion->IsHunterPet() && getClass() != CLASS_HUNTER) // If its not a hunter pet, well lets not try to use it for hunter then
             {
+                ToPlayer()->m_currentPetSlot = slot;
+                ToPlayer()->m_petSlotUsed = 3452816845; // the same as 100 so that the pet is only that and nothing more
+            }
+
+            if (slot >= PET_SLOT_HUNTER_FIRST && slot <= PET_SLOT_HUNTER_LAST && !stampeded) // Always save thoose spots where hunter is correct
+            {
+                ToPlayer()->m_currentPetSlot = slot;
+                ToPlayer()->setPetSlotUsed(slot, true);
             }
         }
 
+        if (minion->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
+            AddUInt64Value(UNIT_FIELD_SUMMON, minion->GetGUID());
+
         if (minion->m_Properties && minion->m_Properties->Type == SUMMON_TYPE_MINIPET)
-        {
             SetCritterGUID(minion->GetGUID());
-        }
 
         // PvP, FFAPvP
         minion->SetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1, GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 1));
@@ -8892,7 +8906,7 @@ void Unit::SetMinion(Minion *minion, bool apply)
                 minion->SetSpeed(UnitMoveType(i), m_speed_rate[i], true);
 
         // Ghoul pets have energy instead of mana (is anywhere better place for this code?)
-        if (minion->IsPetGhoul())
+        if (minion->IsPetGhoul() || (minion->GetOwner() && minion->GetOwner()->getClass() == CLASS_WARLOCK))
             minion->setPowerType(POWER_ENERGY);
 
         if (GetTypeId() == TYPEID_PLAYER)
@@ -8928,14 +8942,22 @@ void Unit::SetMinion(Minion *minion, bool apply)
         else if (minion->IsTotem())
         {
             // All summoned by totem minions must disappear when it is removed.
-        if (SpellInfo const* spInfo = sSpellMgr->GetSpellInfo(minion->ToTotem()->GetSpell()))
-            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (SpellInfo const* spInfo = sSpellMgr->GetSpellInfo(minion->ToTotem()->GetSpell()))
             {
-                if (spInfo->Effects[i].Effect != SPELL_EFFECT_SUMMON)
-                    continue;
+                for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                {
+                    if (spInfo->Effects[i].Effect != SPELL_EFFECT_SUMMON)
+                        continue;
 
-                RemoveAllMinionsByEntry(spInfo->Effects[i].MiscValue);
+                    RemoveAllMinionsByEntry(spInfo->Effects[i].MiscValue);
+                }
             }
+
+            // Custom MOP Script.
+            if (minion->GetEntry() == 15439 && minion->GetOwner() && minion->GetOwner()->HasAura(117013))
+                RemoveAllMinionsByEntry(61029);
+            else if (minion->GetEntry() == 15430 && minion->GetOwner() && minion->GetOwner()->HasAura(117013))
+                RemoveAllMinionsByEntry(61056);
         }
 
         if (GetTypeId() == TYPEID_PLAYER)
@@ -9075,11 +9097,9 @@ void Unit::SetCharm(Unit* charm, bool apply)
             charm->SetWalk(_isWalkingBeforeCharm);
 
         if (charm->GetTypeId() == TYPEID_PLAYER
-                || !charm->ToCreature()->HasUnitTypeMask(UNIT_MASK_MINION)
-                || charm->GetOwnerGUID() != GetGUID())
-        {
+            || !charm->ToCreature()->HasUnitTypeMask(UNIT_MASK_MINION)
+            || charm->GetOwnerGUID() != GetGUID())
             m_Controlled.erase(charm);
-        }
     }
 }
 
@@ -12679,12 +12699,12 @@ uint32 Unit::GetPowerIndex(uint32 powerType) const
 
     if (powerType == POWER_ENERGY)
     {
-        // if (ToPet() && ToPet()->IsWarlockPet())
-        //     return 0;
+        if (ToPet() && ToPet()->IsWarlockPet())
+            return 0;
 
         switch (this->GetEntry())
         {
-            case 26125:
+            case ENTRY_GHOUL:
             case 59915:
             case 60043:
             case 60047:
@@ -16818,6 +16838,19 @@ uint32 Unit::GetDamageTakenInPastSecs(uint32 secs)
     }
 
     return damage;
+}
+
+Unit* Unit::GetSimulacrumTarget()
+{
+    if (Unit* simulacrumTarget = sObjectAccessor->FindUnit(simulacrumTargetGUID))
+    {
+        if (simulacrumTarget->IsInWorld())
+            return simulacrumTarget;
+        else
+            return NULL;
+    }
+    else
+        return NULL;
 }
 
 void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const

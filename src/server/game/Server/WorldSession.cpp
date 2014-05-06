@@ -39,6 +39,7 @@
 #include "Group.h"
 #include "Guild.h"
 #include "World.h"
+#include "Pet.h"
 #include "ObjectAccessor.h"
 #include "BattlegroundMgr.h"
 #include "OutdoorPvPMgr.h"
@@ -521,7 +522,7 @@ void WorldSession::LogoutPlayer(bool save)
 
         sOutdoorPvPMgr->HandlePlayerLeaveZone(_player, _player->GetZoneId());
 
-        for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+        for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
         {
             if (BattlegroundQueueTypeId bgQueueTypeId = _player->GetBattlegroundQueueTypeId(i))
             {
@@ -541,7 +542,18 @@ void WorldSession::LogoutPlayer(bool save)
             guild->HandleMemberLogout(this);
 
         ///- Remove pet
-        _player->RemovePet(NULL, PET_SAVE_AS_CURRENT, true);
+        if (_player->getClass() != CLASS_WARLOCK)
+        {
+            if (Pet* _pet = _player->GetPet())
+                _player->RemovePet(_pet, PET_SLOT_ACTUAL_PET_SLOT, true, _pet->m_Stampeded);
+            else
+                _player->RemovePet(NULL, PET_SLOT_ACTUAL_PET_SLOT, true, true);
+        }
+        else
+        {
+            if (Pet* _pet = _player->GetPet())
+                _pet->SavePetToDB(PET_SLOT_ACTUAL_PET_SLOT);
+        }
 
         ///- Clear whisper whitelist
         _player->ClearWhisperWhiteList();
@@ -1209,30 +1221,13 @@ void WorldSession::ProcessQueryCallbacks()
         _sendStabledPetCallback.FreeResult();
     }
 
-    //- HandleStablePet
-    if (_stablePetCallback.ready())
-    {
-        _stablePetCallback.get(result);
-        HandleStablePetCallback(result);
-        _stablePetCallback.cancel();
-    }
-
-    //- HandleUnstablePet
-    if (_unstablePetCallback.IsReady())
-    {
-        uint32 param = _unstablePetCallback.GetParam();
-        _unstablePetCallback.GetResult(result);
-        HandleUnstablePetCallback(result, param);
-        _unstablePetCallback.FreeResult();
-    }
-
     //- HandleStableSwapPet
-    if (_stableSwapCallback.IsReady())
+    if (_setPetSlotCallback.IsReady())
     {
-        uint32 param = _stableSwapCallback.GetParam();
-        _stableSwapCallback.GetResult(result);
-        HandleStableSwapPetCallback(result, param);
-        _stableSwapCallback.FreeResult();
+        uint32 param = _setPetSlotCallback.GetParam();
+        _setPetSlotCallback.GetResult(result);
+        HandleStableSetPetSlotCallback(result, param);
+        _setPetSlotCallback.FreeResult();
     }
 }
 

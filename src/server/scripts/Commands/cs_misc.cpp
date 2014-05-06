@@ -2284,10 +2284,10 @@ public:
             {
                 if (Pet* pet = player->GetPet())
                 {
-                    pet->SavePetToDB(PET_SAVE_AS_CURRENT);
-                    // not let dismiss dead pet
+                    pet->SavePetToDB(PET_SLOT_ACTUAL_PET_SLOT);
+                    // can't dismiss dead pet
                     if (pet->IsAlive())
-                        player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
+                        player->RemovePet(pet, PET_SLOT_HUNTER_FIRST, false, pet->m_Stampeded);
                 }
             }
 
