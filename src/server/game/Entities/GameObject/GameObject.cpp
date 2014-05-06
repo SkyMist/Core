@@ -1247,8 +1247,27 @@ void GameObject::Use(Unit* user)
 
                 if (info->goober.pageId)                    // show page...
                 {
-                    WorldPacket data(SMSG_GAMEOBJECT_PAGETEXT, 8);
-                    data << GetGUID();
+                    WorldPacket data(SMSG_GAMEOBJECT_PAGETEXT, 9);
+                    ObjectGuid guid = GetGUID();
+
+                    data.WriteBit(guid[2]);
+                    data.WriteBit(guid[0]);
+                    data.WriteBit(guid[7]);
+                    data.WriteBit(guid[4]);
+                    data.WriteBit(guid[5]);
+                    data.WriteBit(guid[6]);
+                    data.WriteBit(guid[1]);
+                    data.WriteBit(guid[3]);
+                    data.FlushBits();
+                    data.WriteByteSeq(guid[1]);
+                    data.WriteByteSeq(guid[6]);
+                    data.WriteByteSeq(guid[4]);
+                    data.WriteByteSeq(guid[5]);
+                    data.WriteByteSeq(guid[7]);
+                    data.WriteByteSeq(guid[0]);
+                    data.WriteByteSeq(guid[3]);
+                    data.WriteByteSeq(guid[2]);
+
                     player->SendDirectMessage(&data);
                 }
                 else if (info->goober.gossipID)
@@ -1735,8 +1754,26 @@ void GameObject::CastSpell(Unit* target, uint32 spellId)
 void GameObject::SendCustomAnim(uint32 anim)
 {
     WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 8+4);
-    data << GetGUID();
+    ObjectGuid GOGuid = GetGUID();
+    data.WriteBit(0);               // atm unk
+    data.WriteBit(GOGuid[4]);
+    data.WriteBit(GOGuid[2]);
+    data.WriteBit(GOGuid[7]);
+    data.WriteBit(GOGuid[6]);
+    data.WriteBit(GOGuid[3]);
+    data.WriteBit(GOGuid[1]);
+    data.WriteBit(GOGuid[0]);
+    data.WriteBit(GOGuid[5]);
+    data.FlushBits();
+    data.WriteByteSeq(GOGuid[6]);
+    data.WriteByteSeq(GOGuid[1]);
+    data.WriteByteSeq(GOGuid[7]);
+    data.WriteByteSeq(GOGuid[2]);
     data << uint32(anim);
+    data.WriteByteSeq(GOGuid[5]);
+    data.WriteByteSeq(GOGuid[0]);
+    data.WriteByteSeq(GOGuid[4]);
+    data.WriteByteSeq(GOGuid[3]);
     SendMessageToSet(&data, true);
 }
 

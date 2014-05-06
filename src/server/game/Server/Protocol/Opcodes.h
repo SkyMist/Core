@@ -177,7 +177,7 @@ enum Opcodes
    CMSG_COMPLAIN                                            = 0x0,
    CMSG_COMPLETE_CINEMATIC                                  = 0x0,
    CMSG_COMPLETE_MOVIE                                      = 0x0,
-   CMSG_CONNECT_TO_FAILED                                   = 0x0,
+   CMSG_CONNECT_TO_FAILED                                   = 0x16C8, // 5.4.7 18019
    CMSG_CONTACT_LIST                                        = 0x0,
    CMSG_CORPSE_MAP_POSITION_QUERY                           = 0x0152, // 5.4.7 18019
    CMSG_CORPSE_QUERY                                        = 0x129B, // 5.4.7 18019
@@ -427,7 +427,7 @@ enum Opcodes
    CMSG_PLAYER_DIFFICULTY_CHANGE                            = 0x0,
    CMSG_PLAYER_LOGIN                                        = 0x17D3, // 5.4.7 18019
    CMSG_PLAYER_LOGOUT                                       = 0x0,
-   CMSG_PLAYER_VEHICLE_ENTER                                = 0x0,
+   CMSG_PLAYER_VEHICLE_ENTER                                = 0x13E8, // 5.4.7 18019
    CMSG_PLAY_DANCE                                          = 0x0,
    CMSG_PUSHQUESTTOPARTY                                    = 0x0,
    CMSG_PVP_LOG_DATA                                        = 0x0,
@@ -873,9 +873,9 @@ enum Opcodes
    SMSG_FORCE_SET_VEHICLE_REC_ID                            = 0x0,
    SMSG_FORGE_MASTER_SET                                    = 0x0,
    SMSG_FRIEND_STATUS                                       = 0x0707, // 5.4.7 18019
-   SMSG_GAMEOBJECT_CUSTOM_ANIM                              = 0x0,
-   SMSG_GAMEOBJECT_DESPAWN_ANIM                             = 0x0,
-   SMSG_GAMEOBJECT_PAGETEXT                                 = 0x0,
+   SMSG_GAMEOBJECT_CUSTOM_ANIM                              = 0x0462, // 5.4.7 18019
+   SMSG_GAMEOBJECT_DESPAWN_ANIM                             = 0x1E52, // 5.4.7 18019
+   SMSG_GAMEOBJECT_PAGETEXT                                 = 0x0549, // 5.4.7 18019
    SMSG_GAMEOBJECT_QUERY_RESPONSE                           = 0x066A, // 5.4.7 18019
    SMSG_GAMEOBJECT_RESET_STATE                              = 0x0,
    SMSG_GAMESPEED_SET                                       = 0x0,
