@@ -1141,7 +1141,7 @@ enum CombatPetType
     PET_TYPE_BEAST      = 7,
     PET_TYPE_AQUATIC    = 8,
     PET_TYPE_MECHANICAL = 9
-}
+};
 
 enum SpellCastResult
 {

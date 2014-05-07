@@ -1087,7 +1087,8 @@ void WorldObject::SendMessageToSet(WorldPacket* data, Player const* skipped_rcvr
 
 void WorldObject::SendObjectDeSpawnAnim(uint64 guid)
 {
-    WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 4+9+1);
+    WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 4 + 9 + 1);
+
     ObjectGuid Guid = guid;
     bool HasAnim = false;
 
@@ -1098,16 +1099,14 @@ void WorldObject::SendObjectDeSpawnAnim(uint64 guid)
     data.WriteBit(Guid[1]);
     data.WriteBit(Guid[7]);
     data.WriteBit(Guid[5]);
-    data.WriteBit(0);               //unk atm
+    data.WriteBit(0);               // unk atm
     data.WriteBit(Guid[3]);
     data.WriteBit(Guid[2]);
     data.FlushBits();
     data.WriteByteSeq(Guid[1]);
 
     if (HasAnim)
-    {
-        data << uint32(0);          //anim here
-    }
+        data << uint32(0);          // anim here
 
     data.WriteByteSeq(Guid[6]);
     data.WriteByteSeq(Guid[7]);
@@ -1124,16 +1123,20 @@ void WorldObject::SetMap(Map* map)
 {
     ASSERT(map);
     ASSERT(!IsInWorld() || GetTypeId() == TYPEID_CORPSE);
+
     if (m_currMap == map) // command add npc: first create, than loadfromdb
         return;
+
     if (m_currMap)
     {
         TC_LOG_FATAL("misc", "WorldObject::SetMap: obj %u new map %u %u, old map %u %u", (uint32)GetTypeId(), map->GetId(), map->GetInstanceId(), m_currMap->GetId(), m_currMap->GetInstanceId());
         ASSERT(false);
     }
+
     m_currMap = map;
     m_mapId = map->GetId();
     m_InstanceId = map->GetInstanceId();
+
     if (IsWorldObject())
         m_currMap->AddWorldObject(this);
 }
