@@ -20,15 +20,16 @@
 #ifndef TRINITY_DB2SFRM_H
 #define TRINITY_DB2SFRM_H
 
-char const BroadcastTextfmt[] ="nxssxxxxxxixx";
-char const Itemfmt[] ="niiiiiii";
-char const ItemCurrencyCostfmt[]="xn";
-char const ItemSparsefmt[]="nixiiffiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiifiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiisssssiiiiiiiiiiiiiiiiiiiiiifiiifii";
-char const ItemExtendedCostEntryfmt[]="nxxiiiiiiiiiiiixiiiiiiiiiiiiiii";
+char const BroadcastTextfmt[] = "nxssxxxxxxixx";
+char const Itemfmt[] = "niiiiiii";
+char const ItemCurrencyCostfmt[]= "xn";
+char const ItemSparsefmt[]= "nixiiffiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiifiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiisssssiiiiiiiiiiiiiiiiiiiiiifiiifii";
+char const ItemExtendedCostEntryfmt[]= "nxxiiiiiiiiiiiixiiiiiiiiiiiiiii";
 char const KeyChainfmt[] = "nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+char const QuestPackageItemfmt[] = "niiii";
 char const SceneScriptfmt[] = "nssii";
 char const SpellReagentsfmt[] = "diiiiiiiiiiiiiiiiii";
-const char ItemUpgradeEntryfmt[] = "niiiii";
-const char RulesetItemUpgradeEntryfmt[] = "niii";
+char const ItemUpgradeEntryfmt[] = "niiiii";
+char const RulesetItemUpgradeEntryfmt[] = "niii";
 
 #endif

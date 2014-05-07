@@ -30,10 +30,11 @@ extern DB2Storage<ItemCurrencyCostEntry> sItemCurrencyCostStore;
 extern DB2Storage<ItemExtendedCostEntry> sItemExtendedCostStore;
 extern DB2Storage<ItemSparseEntry> sItemSparseStore;
 extern DB2Storage<KeyChainEntry> sKeyChainStore;
+extern DB2Storage<QuestPackageItemEntry> sQuestPackageItemStore;
 extern DB2Storage<SceneScriptEntry> sSceneScriptStore;
 extern DB2Storage<SpellReagentsEntry> sSpellReagentsStore;
-extern DB2Storage <ItemUpgradeEntry> sItemUpgradeStore;
-extern DB2Storage <RulesetItemUpgradeEntry> sRulesetItemUpgradeStore;
+extern DB2Storage<ItemUpgradeEntry> sItemUpgradeStore;
+extern DB2Storage<RulesetItemUpgradeEntry> sRulesetItemUpgradeStore;
 
 void LoadDB2Stores(std::string const& dataPath);
 

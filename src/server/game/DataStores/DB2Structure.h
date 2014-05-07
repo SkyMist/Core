@@ -144,16 +144,16 @@ struct ItemSparseEntry
 
 struct ItemExtendedCostEntry
 {
-    uint32      ID;                                         // 0 extended-cost entry id
-    //uint32    reqhonorpoints;                             // 1 required honor points
-    //uint32    reqarenapoints;                             // 2 required arena points
-    uint32      RequiredArenaSlot;                          // 3 arena slot restrictions (min slot value)
-    uint32      RequiredItem[MAX_ITEM_EXT_COST_ITEMS];      // 4-8 required item id
-    uint32      RequiredItemCount[MAX_ITEM_EXT_COST_ITEMS]; // 9-13 required count of 1st item
-    uint32      RequiredPersonalArenaRating;                // 14 required personal arena rating
-    //uint32    ItemPurchaseGroup;                          // 15
-    uint32      RequiredCurrency[MAX_ITEM_EXT_COST_CURRENCIES];// 16-20 required curency id
-    uint32      RequiredCurrencyCount[MAX_ITEM_EXT_COST_CURRENCIES];// 21-25 required curency count
+    uint32      ID;                                                  // 0 extended-cost entry id
+    //uint32    reqhonorpoints;                                      // 1 required honor points
+    //uint32    reqarenapoints;                                      // 2 required arena points
+    uint32      RequiredArenaSlot;                                   // 3 arena slot restrictions (min slot value)
+    uint32      RequiredItem[MAX_ITEM_EXT_COST_ITEMS];               // 4-8 required item id
+    uint32      RequiredItemCount[MAX_ITEM_EXT_COST_ITEMS];          // 9-13 required count of 1st item
+    uint32      RequiredPersonalArenaRating;                         // 14 required personal arena rating
+    //uint32    ItemPurchaseGroup;                                   // 15
+    uint32      RequiredCurrency[MAX_ITEM_EXT_COST_CURRENCIES];      // 16-20 required curency id
+    uint32      RequiredCurrencyCount[MAX_ITEM_EXT_COST_CURRENCIES]; // 21-25 required curency count
     uint32      RequiredFactionId;
     uint32      RequiredFactionStanding;
     uint32      RequirementFlags;
@@ -167,6 +167,16 @@ struct KeyChainEntry
 {
     uint32      Id;
     uint8       Key[KEYCHAIN_SIZE];
+};
+
+// QuestPackageItem.db2
+struct QuestPackageItemEntry
+{
+    uint32      ID;                                          // 0
+    uint32      QuestPackageID;                              // 1
+    uint32      ItemID;                                      // 2
+    uint32      Unk1;                                        // 3
+    uint32      Unk2;                                        // 4
 };
 
 // SceneScript.db2
@@ -190,21 +200,21 @@ struct SpellReagentsEntry
 // ItemUpgrade.db2
 struct ItemUpgradeEntry
 {
-    uint32 Id;
-    uint32 itemUpgradePath;
-    uint32 itemLevelUpgrade;
-    uint32 precItemUpgradeId;
-    uint32 currencyId;
-    uint32 currencyCost;
+    uint32 Id;                                               // 0         m_ID
+    uint32 itemUpgradePath;                                  // 1         Upgrade Path
+    uint32 itemLevelUpgrade;                                 // 2         Upgrade Level
+    uint32 precItemUpgradeId;                                // 3         Upgrade Id
+    uint32 currencyId;                                       // 4         Currency Id
+    uint32 currencyCost;                                     // 5         Currency Ammount
 };
 
 // RulesetItemUpgrade.db2
 struct RulesetItemUpgradeEntry
 {
-    uint32 Id;
-    uint32 unk;
-    uint32 itemUpgradeId;
-    uint32 itemid;
+    uint32 Id;                                               // 0         m_ID
+    uint32 unk;                                              // 1         Unk
+    uint32 itemUpgradeId;                                    // 2         Upgrade Id
+    uint32 itemid;                                           // 3         Item Id
 };
 
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform
