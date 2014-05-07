@@ -313,6 +313,9 @@ namespace Movement
             MoveSplineFlag const& splineFlags = moveSpline.splineflags;
             MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
+            if (type == MonsterMoveFacingTarget)
+                *hasTarget = true;
+
             data << float(1.f);                             // splineInfo.duration_mod_next; added in 3.1
 
             uint32 nodes = moveSpline.getPath().size();
@@ -335,7 +338,7 @@ namespace Movement
             if ((splineFlags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration())
                 data << moveSpline.vertical_acceleration;   // added in 3.1
 
-            if (type = MonsterMoveFacingAngle)
+            if (type == MonsterMoveFacingAngle)
                 data << moveSpline.facing.angle;
 
             data << moveSpline.Duration();
@@ -366,6 +369,7 @@ namespace Movement
             data.WriteBit(facingGuid[1]);
             data.WriteBit(facingGuid[4]);
             data.WriteBit(facingGuid[2]);
+            data.FlushBits();
 
             data.WriteByteSeq(facingGuid[4]);
             data.WriteByteSeq(facingGuid[2]);
