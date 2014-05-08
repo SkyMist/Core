@@ -1190,10 +1190,10 @@ enum Opcodes
    SMSG_QUESTLOG_FULL                                       = 0x0B19, // 5.4.7 18019
    SMSG_QUESTUPDATE_ADD_OBJECTIVE                           = 0x0232, // 5.4.7 18019
    SMSG_QUESTUPDATE_UPDATE_OBJECTIVE                        = 0x0B1A, // 5.4.7 18019
-   SMSG_QUESTUPDATE_ADD_PVP_KILL                            = 0x0F4D, // 5.4.7 18019
-   SMSG_QUESTUPDATE_COMPLETE                                = 0x0,
-   SMSG_QUESTUPDATE_FAILED                                  = 0x0,
-   SMSG_QUESTUPDATE_FAILEDTIMER                             = 0x0,
+   SMSG_QUESTUPDATE_ADD_PVP_KILL                            = 0x1E21, // 5.4.7 18019
+   SMSG_QUESTUPDATE_COMPLETE                                = 0x0E23, // 5.4.7 18019
+   SMSG_QUESTUPDATE_FAILED                                  = 0x1C68, // 5.4.7 18019
+   SMSG_QUESTUPDATE_FAILEDTIMER                             = 0x1F69, // 5.4.7 18019
    SMSG_QUEST_NPC_QUERY_RESPONSE                            = 0x0957, // 5.4.7 18019
    SMSG_QUEST_CONFIRM_ACCEPT                                = 0x0351, // 5.4.7 18019
    SMSG_QUEST_FORCE_REMOVE                                  = 0x0,
