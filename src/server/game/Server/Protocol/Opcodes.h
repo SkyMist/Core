@@ -1183,7 +1183,7 @@ enum Opcodes
    SMSG_QUESTGIVER_QUEST_DETAILS                            = 0x0966, // 5.4.7 18019
    SMSG_QUESTGIVER_QUEST_FAILED                             = 0x0B70, // 5.4.7 18019
    SMSG_QUESTGIVER_QUEST_INVALID                            = 0x0F4D, // 5.4.7 18019
-   SMSG_QUESTGIVER_QUEST_LIST                               = 0x0733, // 5.4.7 18019
+   SMSG_QUESTGIVER_QUEST_LIST                               = 0x0758, // 5.4.7 18019
    SMSG_QUESTGIVER_REQUEST_ITEMS                            = 0x0A32, // 5.4.7 18019
    SMSG_QUESTGIVER_STATUS                                   = 0x0D7E, // 5.4.7 18019
    SMSG_QUESTGIVER_STATUS_MULTIPLE                          = 0x0F79, // 5.4.7 18019
