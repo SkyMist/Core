@@ -18148,7 +18148,7 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
 {
     ASSERT(old_count + add_count < 65536 && "mob/GO count store in 16 bits 2^16 = 65536 (0..65536)");
 
-    int32 entry = quest->RequiredNpcOrGo[ creatureOrGO_idx ];
+    int32 entry = quest->RequiredNpcOrGo[creatureOrGO_idx];
 
     if (entry < 0)
         entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id|0x80000000)
@@ -18159,7 +18159,7 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
     bool isCreature = (hasObjective && entry > 0) ? true : false;
     bool isGameObject = (hasObjective && entry < 0) ? true : false;
 
-    WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 9 + 2 * 4 + 2 * 2 + 1);
+    WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 1 + 2 * 4 + 2 * 2 + 1);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
 
     data.WriteBit(NPCGuid[5]);

@@ -56,6 +56,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(guid[7]);
 
     uint32 questStatus = DIALOG_STATUS_NONE;
+    uint32 defstatus = DIALOG_STATUS_NONE;
 
     Object* questgiver = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT|TYPEMASK_GAMEOBJECT);
     if (!questgiver)
@@ -69,26 +70,27 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
         case TYPEID_UNIT:
         {
             TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_STATUS_QUERY for npc, guid = %u", uint32(GUID_LOPART(guid)));
+
             Creature* cr_questgiver = questgiver->ToCreature();
-            if (!cr_questgiver->IsHostileTo(_player))       // do not show quest status to enemies
+            if (!cr_questgiver->IsHostileTo(_player)) // do not show quest status to enemies
             {
                 questStatus = sScriptMgr->GetDialogStatus(_player, cr_questgiver);
-
-                if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
-                    questStatus = getDialogStatus(_player, cr_questgiver);
+                if (questStatus > 6)
+                    questStatus = getDialogStatus(_player, cr_questgiver, defstatus);
             }
             break;
         }
         case TYPEID_GAMEOBJECT:
         {
             TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_STATUS_QUERY for GameObject guid = %u", uint32(GUID_LOPART(guid)));
-            GameObject* go_questgiver = questgiver->ToGameObject();
-            questStatus = sScriptMgr->GetDialogStatus(_player, go_questgiver);
 
-            if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
-                questStatus = getDialogStatus(_player, go_questgiver);
+            GameObject* go_questgiver = (GameObject*)questgiver;
+            questStatus = sScriptMgr->GetDialogStatus(_player, go_questgiver);
+            if (questStatus > 6)
+                questStatus = getDialogStatus(_player, go_questgiver, defstatus);
             break;
         }
+
         default:
             TC_LOG_ERROR("network", "QuestGiver called for unexpected type %u", questgiver->GetTypeId());
             break;
@@ -817,9 +819,9 @@ void WorldSession::HandleQuestPushResult(WorldPacket& recvPacket)
     }
 }
 
-uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver)
+uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver, uint32 defstatus)
 {
-    uint32 result = DIALOG_STATUS_NONE;
+    uint32 result = defstatus;
 
     QuestRelationBounds qr;
     QuestRelationBounds qir;
@@ -828,18 +830,19 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver)
     {
         case TYPEID_GAMEOBJECT:
         {
-            qr  = sObjectMgr->GetGOQuestRelationBounds(questgiver->GetEntry());
+            qr = sObjectMgr->GetGOQuestRelationBounds(questgiver->GetEntry());
             qir = sObjectMgr->GetGOQuestInvolvedRelationBounds(questgiver->GetEntry());
             break;
         }
+
         case TYPEID_UNIT:
         {
-            qr  = sObjectMgr->GetCreatureQuestRelationBounds(questgiver->GetEntry());
+            qr = sObjectMgr->GetCreatureQuestRelationBounds(questgiver->GetEntry());
             qir = sObjectMgr->GetCreatureQuestInvolvedRelationBounds(questgiver->GetEntry());
             break;
         }
-        default:
-            //its imposible, but check ^)
+
+        default:  //its imposible, but check ^)
             TC_LOG_ERROR("network", "Warning: GetDialogStatus called for unexpected type %u", questgiver->GetTypeId());
             return DIALOG_STATUS_NONE;
     }
@@ -860,7 +863,7 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver)
         if ((status == QUEST_STATUS_COMPLETE && !player->GetQuestRewardStatus(quest_id)) ||
             (quest->IsAutoComplete() && player->CanTakeQuest(quest, false)))
         {
-            if (quest->IsAutoComplete() && quest->IsRepeatable() && !quest->IsDailyOrWeekly())
+            if (quest->IsAutoComplete() && quest->IsRepeatable())
                 result2 = DIALOG_STATUS_REWARD_REP;
             else
                 result2 = DIALOG_STATUS_REWARD;
@@ -891,11 +894,11 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver)
             {
                 if (player->SatisfyQuestLevel(quest, false))
                 {
-                    if (quest->IsAutoComplete())
+                    if (quest->IsAutoComplete() || (quest->IsRepeatable() && player->IsQuestRewarded(quest_id)))
                         result2 = DIALOG_STATUS_REWARD_REP;
                     else if (player->getLevel() <= ((player->GetQuestLevel(quest) == -1) ? player->getLevel() : player->GetQuestLevel(quest) + sWorld->getIntConfig(CONFIG_QUEST_LOW_LEVEL_HIDE_DIFF)))
                     {
-                        if (quest->IsDaily())
+                        if (quest->HasFlag(QUEST_FLAGS_DAILY) || quest->HasFlag(QUEST_FLAGS_WEEKLY))
                             result2 = DIALOG_STATUS_AVAILABLE_REP;
                         else
                             result2 = DIALOG_STATUS_AVAILABLE;
@@ -920,14 +923,12 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_STATUS_MULTIPLE_QUERY");
 
     uint32 count = 0;
-
-    ByteBuffer data;
-    ByteBuffer BitPart;
-    ByteBuffer BytePart;
+    ByteBuffer bitData, byteData;
 
     for (Player::ClientGUIDs::const_iterator itr = _player->m_clientGUIDs.begin(); itr != _player->m_clientGUIDs.end(); ++itr)
     {
         uint32 questStatus = DIALOG_STATUS_NONE;
+        uint32 defstatus = DIALOG_STATUS_NONE;
 
         if (IS_CRE_OR_VEH_OR_PET_GUID(*itr))
         {
@@ -937,81 +938,75 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
                 continue;
             if (!questgiver->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER))
                 continue;
-
             questStatus = sScriptMgr->GetDialogStatus(_player, questgiver);
-            if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
-                questStatus = getDialogStatus(_player, questgiver);
+            if (questStatus > 6)
+                questStatus = getDialogStatus(_player, questgiver, defstatus);
 
-            ObjectGuid NPCGuid = questgiver->GetGUID();
+            ObjectGuid guid = questgiver->GetGUID();
 
-            BitPart.WriteBit(NPCGuid[7]);
-            BitPart.WriteBit(NPCGuid[0]);
-            BitPart.WriteBit(NPCGuid[6]);
-            BitPart.WriteBit(NPCGuid[2]);
-            BitPart.WriteBit(NPCGuid[5]);
-            BitPart.WriteBit(NPCGuid[1]);
-            BitPart.WriteBit(NPCGuid[4]);
-            BitPart.WriteBit(NPCGuid[3]);
+            bitData.WriteBit(guid[7]);
+            bitData.WriteBit(guid[0]);
+            bitData.WriteBit(guid[6]);
+            bitData.WriteBit(guid[2]);
+            bitData.WriteBit(guid[5]);
+            bitData.WriteBit(guid[1]);
+            bitData.WriteBit(guid[4]);
+            bitData.WriteBit(guid[3]);
 
-            BytePart.WriteByteSeq(NPCGuid[5]);
-
-            BytePart << uint32(questStatus);
-
-            BytePart.WriteByteSeq(NPCGuid[4]);
-            BytePart.WriteByteSeq(NPCGuid[2]);
-            BytePart.WriteByteSeq(NPCGuid[3]);
-            BytePart.WriteByteSeq(NPCGuid[6]);
-            BytePart.WriteByteSeq(NPCGuid[1]);
-            BytePart.WriteByteSeq(NPCGuid[7]);
-            BytePart.WriteByteSeq(NPCGuid[0]);
+            byteData.WriteByteSeq(guid[5]);
+            byteData << uint32(questStatus);
+            byteData.WriteByteSeq(guid[4]);
+            byteData.WriteByteSeq(guid[2]);
+            byteData.WriteByteSeq(guid[3]);
+            byteData.WriteByteSeq(guid[6]);
+            byteData.WriteByteSeq(guid[1]);
+            byteData.WriteByteSeq(guid[7]);
+            byteData.WriteByteSeq(guid[0]);
 
             ++count;
         }
         else if (IS_GAMEOBJECT_GUID(*itr))
         {
             GameObject* questgiver = GetPlayer()->GetMap()->GetGameObject(*itr);
-            if (!questgiver || questgiver->GetGoType() != GAMEOBJECT_TYPE_QUESTGIVER)
+            if (!questgiver)
                 continue;
-
+            if (questgiver->GetGoType() != GAMEOBJECT_TYPE_QUESTGIVER)
+                continue;
             questStatus = sScriptMgr->GetDialogStatus(_player, questgiver);
-            if (questStatus == DIALOG_STATUS_SCRIPTED_NO_STATUS)
-                questStatus = getDialogStatus(_player, questgiver);
+            if (questStatus > 6)
+                questStatus = getDialogStatus(_player, questgiver, defstatus);
 
-            ObjectGuid GOGuid = questgiver->GetGUID();
+            ObjectGuid guid = questgiver->GetGUID();
 
-            BitPart.WriteBit(GOGuid[7]);
-            BitPart.WriteBit(GOGuid[0]);
-            BitPart.WriteBit(GOGuid[6]);
-            BitPart.WriteBit(GOGuid[2]);
-            BitPart.WriteBit(GOGuid[5]);
-            BitPart.WriteBit(GOGuid[1]);
-            BitPart.WriteBit(GOGuid[4]);
-            BitPart.WriteBit(GOGuid[3]);
+            bitData.WriteBit(guid[7]);
+            bitData.WriteBit(guid[0]);
+            bitData.WriteBit(guid[6]);
+            bitData.WriteBit(guid[2]);
+            bitData.WriteBit(guid[5]);
+            bitData.WriteBit(guid[1]);
+            bitData.WriteBit(guid[4]);
+            bitData.WriteBit(guid[3]);
 
-            BytePart.WriteByteSeq(GOGuid[5]);
-
-            BytePart << uint32(questStatus);
-
-            BytePart.WriteByteSeq(GOGuid[4]);
-            BytePart.WriteByteSeq(GOGuid[2]);
-            BytePart.WriteByteSeq(GOGuid[3]);
-            BytePart.WriteByteSeq(GOGuid[6]);
-            BytePart.WriteByteSeq(GOGuid[1]);
-            BytePart.WriteByteSeq(GOGuid[7]);
-            BytePart.WriteByteSeq(GOGuid[0]);
+            byteData.WriteByteSeq(guid[5]);
+            byteData << uint32(questStatus);
+            byteData.WriteByteSeq(guid[4]);
+            byteData.WriteByteSeq(guid[2]);
+            byteData.WriteByteSeq(guid[3]);
+            byteData.WriteByteSeq(guid[6]);
+            byteData.WriteByteSeq(guid[1]);
+            byteData.WriteByteSeq(guid[7]);
+            byteData.WriteByteSeq(guid[0]);
 
             ++count;
         }
     }
 
+    WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 3 + count * (1 + 8 + 4));
     data.WriteBits(count, 21);
-    data.append(BitPart);
-    data.FlushBits();
-    data.append(BytePart);
+    data.append(bitData);
+    data.append(byteData);
 
-    WorldPacket Status(SMSG_QUESTGIVER_STATUS_MULTIPLE, data.size());
-    Status.append(data);
-    SendPacket(&Status);
+    SendPacket(&data);
 }
 
 void WorldSession::HandleQueryQuestsCompleted(WorldPacket& /*recvData*/)
