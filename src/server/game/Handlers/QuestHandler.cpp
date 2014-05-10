@@ -942,26 +942,30 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, questgiver, defstatus);
 
-            ObjectGuid guid = questgiver->GetGUID();
+            ObjectGuid NPCGuid = questgiver->GetGUID();
 
-            bitData.WriteBit(guid[7]);
-            bitData.WriteBit(guid[0]);
-            bitData.WriteBit(guid[6]);
-            bitData.WriteBit(guid[2]);
-            bitData.WriteBit(guid[5]);
-            bitData.WriteBit(guid[1]);
-            bitData.WriteBit(guid[4]);
-            bitData.WriteBit(guid[3]);
+            bitData.WriteBit(NPCGuid[7]);
+            bitData.WriteBit(NPCGuid[0]);
+            bitData.WriteBit(NPCGuid[6]);
+            bitData.WriteBit(NPCGuid[2]);
+            bitData.WriteBit(NPCGuid[5]);
+            bitData.WriteBit(NPCGuid[1]);
+            bitData.WriteBit(NPCGuid[4]);
+            bitData.WriteBit(NPCGuid[3]);
 
-            byteData.WriteByteSeq(guid[5]);
+            data.FlushBits();
+
+            byteData.WriteByteSeq(NPCGuid[5]);
+
             byteData << uint32(questStatus);
-            byteData.WriteByteSeq(guid[4]);
-            byteData.WriteByteSeq(guid[2]);
-            byteData.WriteByteSeq(guid[3]);
-            byteData.WriteByteSeq(guid[6]);
-            byteData.WriteByteSeq(guid[1]);
-            byteData.WriteByteSeq(guid[7]);
-            byteData.WriteByteSeq(guid[0]);
+
+            byteData.WriteByteSeq(NPCGuid[4]);
+            byteData.WriteByteSeq(NPCGuid[2]);
+            byteData.WriteByteSeq(NPCGuid[3]);
+            byteData.WriteByteSeq(NPCGuid[6]);
+            byteData.WriteByteSeq(NPCGuid[1]);
+            byteData.WriteByteSeq(NPCGuid[7]);
+            byteData.WriteByteSeq(NPCGuid[0]);
 
             ++count;
         }
@@ -976,26 +980,30 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, questgiver, defstatus);
 
-            ObjectGuid guid = questgiver->GetGUID();
+            ObjectGuid NPCGuid = questgiver->GetGUID();
 
-            bitData.WriteBit(guid[7]);
-            bitData.WriteBit(guid[0]);
-            bitData.WriteBit(guid[6]);
-            bitData.WriteBit(guid[2]);
-            bitData.WriteBit(guid[5]);
-            bitData.WriteBit(guid[1]);
-            bitData.WriteBit(guid[4]);
-            bitData.WriteBit(guid[3]);
+            bitData.WriteBit(NPCGuid[7]);
+            bitData.WriteBit(NPCGuid[0]);
+            bitData.WriteBit(NPCGuid[6]);
+            bitData.WriteBit(NPCGuid[2]);
+            bitData.WriteBit(NPCGuid[5]);
+            bitData.WriteBit(NPCGuid[1]);
+            bitData.WriteBit(NPCGuid[4]);
+            bitData.WriteBit(NPCGuid[3]);
 
-            byteData.WriteByteSeq(guid[5]);
+            data.FlushBits();
+
+            byteData.WriteByteSeq(NPCGuid[5]);
+
             byteData << uint32(questStatus);
-            byteData.WriteByteSeq(guid[4]);
-            byteData.WriteByteSeq(guid[2]);
-            byteData.WriteByteSeq(guid[3]);
-            byteData.WriteByteSeq(guid[6]);
-            byteData.WriteByteSeq(guid[1]);
-            byteData.WriteByteSeq(guid[7]);
-            byteData.WriteByteSeq(guid[0]);
+
+            byteData.WriteByteSeq(NPCGuid[4]);
+            byteData.WriteByteSeq(NPCGuid[2]);
+            byteData.WriteByteSeq(NPCGuid[3]);
+            byteData.WriteByteSeq(NPCGuid[6]);
+            byteData.WriteByteSeq(NPCGuid[1]);
+            byteData.WriteByteSeq(NPCGuid[7]);
+            byteData.WriteByteSeq(NPCGuid[0]);
 
             ++count;
         }
