@@ -81,12 +81,11 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasTransportData;
     bool hasTransportTime2;
     bool hasTransportTime3;
-    bool hasSplineFinalTarget;
     bool hasTimestamp;
     bool hasMovementCounter;
+    bool hasSpline;
     uint32 movementFlags;
     uint32 movementFlagsExtra;
-    ByteBuffer SplineFinalTargetGUID(9);
 
     data->WriteBit(0);                                              //has Unk dword676
     data->WriteBit(hasVehicle);
@@ -142,9 +141,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         hasTransportTime3 = self->m_movementInfo.transport.time3 != 0;
         hasTimestamp = self->m_movementInfo.time != 0;
         hasMovementCounter = self->GetMovementCounter() != 0;
+        hasSpline = self->IsSplineEnabled();
         movementFlags = self->GetUnitMovementFlags();
         movementFlagsExtra = self->GetExtraUnitMovementFlags();
-        
+
         if (GetTypeId() == TYPEID_UNIT)
             movementFlags &= MOVEMENTFLAG_MASK_CREATURE_ALLOWED;
 
@@ -199,9 +199,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
         data->WriteBits(0, 22);
         data->WriteBit(guid[7]);
-        data->WriteBit(self->IsSplineEnabled());                                //HasSplineData
+        data->WriteBit(hasSpline);                                //HasSplineData
         data->WriteBit(guid[3]);
-        if (self->IsSplineEnabled())
+
+        if (hasSpline)
             Movement::PacketBuilder::WriteCreateBits(*self->movespline, *data);
     }
 
@@ -251,8 +252,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             *data << uint32(self->m_movementInfo.jump.fallTime);
         }
 
-        if (self->IsSplineEnabled())
-            Movement::PacketBuilder::WriteCreateData(*self->movespline, *data, &hasSplineFinalTarget, &SplineFinalTargetGUID);
+        if (hasSpline)
+            Movement::PacketBuilder::WriteCreateData(*self->movespline, *data);
 
         *data << float(self->GetPositionZMinusOffset());
 
@@ -429,7 +430,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     if (hasLiving)
     {
-        if (ToUnit()->IsSplineEnabled() && hasSplineFinalTarget)
+        if (hasLiving && hasSpline)
             Movement::PacketBuilder::WriteFacingTargetPart(*ToUnit()->movespline, *data);
     }
 }
