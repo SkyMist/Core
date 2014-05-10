@@ -13776,10 +13776,27 @@ void Unit::SendPetAIReaction(uint64 guid)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_AI_REACTION, 8 + 4);
-    data << uint64(guid);
+    WorldPacket data(SMSG_AI_REACTION, 9 + 4);
+    ObjectGuid NPCGuid = guid;
+    data.WriteBit(NPCGuid[2]);
+    data.WriteBit(NPCGuid[1]);
+    data.WriteBit(NPCGuid[4]);
+    data.WriteBit(NPCGuid[3]);
+    data.WriteBit(NPCGuid[6]);
+    data.WriteBit(NPCGuid[5]);
+    data.WriteBit(NPCGuid[7]);
+    data.WriteBit(NPCGuid[0]);
+    data.FlushBits();
+    data.WriteByteSeq(NPCGuid[1]);
     data << uint32(AI_REACTION_HOSTILE);
-    owner->ToPlayer()->GetSession()->SendPacket(&data);
+    data.WriteByteSeq(NPCGuid[0]);
+    data.WriteByteSeq(NPCGuid[2]);
+    data.WriteByteSeq(NPCGuid[4]);
+    data.WriteByteSeq(NPCGuid[6]);
+    data.WriteByteSeq(NPCGuid[7]);
+    data.WriteByteSeq(NPCGuid[3]);
+    data.WriteByteSeq(NPCGuid[5]);
+    owner->ToPlayer()->SendDirectMessage(&data);
 }
 
 ///----------End of Pet responses methods----------
