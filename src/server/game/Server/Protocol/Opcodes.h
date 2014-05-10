@@ -1149,7 +1149,7 @@ enum Opcodes
    SMSG_PET_REMOVED_SPELL                                   = 0x0,
    SMSG_PET_RENAMEABLE                                      = 0x0,
    SMSG_PET_SLOT_UPDATED                                    = 0x0,
-   SMSG_PET_SPELLS                                          = 0x0,
+   SMSG_PET_SPELLS                                          = 0x0D79, // 5.4.7 18019
    SMSG_PET_TAME_FAILURE                                    = 0x0,
    SMSG_PLAYED_TIME                                         = 0x1C69, // 5.4.7 18019
    SMSG_PLAYERBINDERROR                                     = 0x0,
