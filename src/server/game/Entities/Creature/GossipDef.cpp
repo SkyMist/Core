@@ -227,7 +227,7 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, uint64 objectGUID) const
         data << int32(item.QuestId);
         data << int32(quest->GetQuestLevel());
         data << int32(item.QuestIcon);
-        data << int32(quest->GetFlags());
+        data << int32(quest->GetSpecialFlags());
         data.WriteString(updatedQuestTitles[i]);
     }
 
@@ -340,25 +340,24 @@ void QuestMenu::ClearMenu()
 
 void PlayerMenu::SendQuestGiverQuestList(QEmote const& eEmote, const std::string& Title, uint64 npcGUID)
 {
-    WorldPacket data(SMSG_QUESTGIVER_QUEST_LIST);
+    ByteBuffer questData;
+    ObjectGuid guid = npcGUID;
 
-    ByteBuffer BitPart;
-    ByteBuffer BytePart;
-    ObjectGuid NPCGuid = npcGUID;
+    WorldPacket data(SMSG_QUESTGIVER_QUEST_LIST, 100); // guess size
+    data << uint32(eEmote._Emote); // NPC emote
+    data << uint32(eEmote._Delay); // player emote
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[1]);
+    data.WriteBits(Title.size(), 11);
+    data.WriteBit(guid[0]);
+
     uint32 count = 0;
-
-    data << uint32(eEmote._Emote);                         // NPC emote
-    data << uint32(eEmote._Delay);                         // player emote
-
-    BitPart.WriteBit(NPCGuid[5]);
-    BitPart.WriteBit(NPCGuid[3]);
-    BitPart.WriteBit(NPCGuid[4]);
-    BitPart.WriteBit(NPCGuid[2]);
-    BitPart.WriteBit(NPCGuid[6]);
-    BitPart.WriteBit(NPCGuid[1]);
-    BitPart.WriteBits(Title.size(), 11);
-    BitPart.WriteBit(NPCGuid[0]);
-    BitPart.WriteBits(_questMenu.GetMenuItemCount(), 19);
+    size_t countPos = data.bitwpos();
+    data.WriteBits(count, 19);
 
     // Store this instead of checking the Singleton every loop iteration
     bool questLevelInTitle = sWorld->getBoolConfig(CONFIG_UI_QUESTLEVELS_IN_DIALOGS);
@@ -376,46 +375,41 @@ void PlayerMenu::SendQuestGiverQuestList(QEmote const& eEmote, const std::string
 
             int32 locale = _session->GetSessionDbLocaleIndex();
             if (locale >= 0)
-            if (QuestLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
-                ObjectMgr::GetLocaleString(localeData->Title, locale, title);
+                if (QuestLocale const* localeData = sObjectMgr->GetQuestLocale(questID))
+                    ObjectMgr::GetLocaleString(localeData->Title, locale, title);
 
             if (questLevelInTitle)
                 AddQuestLevelToTitle(title, quest->GetQuestLevel());
 
-            BitPart.WriteBit(0);                            // unk
-            BitPart.WriteBits(title.size(), 9);
+            data.WriteBit(0); // unknown bit
+            data.WriteBits(title.size(), 9);
 
-            BytePart << int32(quest->GetQuestLevel());
-            BytePart << uint32(quest->GetFlags());
-            BytePart.WriteString(title);
-            BytePart << uint32(qmi.QuestIcon);
-            BytePart << uint32(quest->GetFlags2());
-            BytePart << uint32(questID);
+            questData << uint32(quest->GetQuestLevel());
+            questData << uint32(quest->GetFlags());
+            questData.WriteString(title);
+            questData << uint32(qmi.QuestIcon);
+            questData << uint32(quest->GetFlags2());
+            questData << uint32(questID);
         }
     }
 
-    BitPart.WriteBit(NPCGuid[7]);
+    data.WriteBit(guid[7]);
+    data.PutBits(countPos, count, 19);
+    data.FlushBits();
 
-    BitPart.FlushBits();
-
-    data.append(BitPart);
-
-    data.WriteByteSeq(NPCGuid[3]);
-
-    BytePart.WriteByteSeq(NPCGuid[1]);
-    BytePart.WriteByteSeq(NPCGuid[5]);
-    BytePart.WriteByteSeq(NPCGuid[2]);
-    BytePart.WriteByteSeq(NPCGuid[0]);
-
-    BytePart.WriteString(Title);
-
-    BytePart.WriteByteSeq(NPCGuid[4]);
-    BytePart.WriteByteSeq(NPCGuid[6]);
-    BytePart.WriteByteSeq(NPCGuid[7]);
-
-    data.append(BytePart);
+    data.WriteByteSeq(guid[3]);
+    data.append(questData);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteString(Title);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[7]);
 
     _session->SendPacket(&data);
+
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_LIST NPC Guid=%u", GUID_LOPART(npcGUID));
 }
 

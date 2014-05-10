@@ -327,8 +327,8 @@ void WorldSession::HandleQuestgiverQueryQuestOpcode(WorldPacket& recvData)
 
     guid[5] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
-    guid[7] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
 
     recvData.ReadByteSeq(guid[5]);
