@@ -1,21 +1,21 @@
 /*
-* Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-* Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
-* Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the
-* Free Software Foundation; either version 3 of the License, or (at your
-* option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "MovementPacketBuilder.h"
 #include "MoveSpline.h"
@@ -163,7 +163,7 @@ namespace Movement
         data << float(0.f); // Most likely transport Z
         data << float(0.f); // Most likely transport X
         data << moveSpline.spline.getPoint(moveSpline.spline.first());
-
+        
         data.WriteBit(guid[3]);
         data.WriteBit(!moveSpline.splineflags.raw());
         data.WriteBit(guid[6]);
@@ -192,7 +192,7 @@ namespace Movement
 
         data.WriteBit(1);
         data.WriteBit(guid[4]);
-
+        
         int32 compressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? 0 : moveSpline.spline.getPointCount() - 3;
         data.WriteBits(compressedSplineCount, 22); // WP count
         data.WriteBit(1);
@@ -213,7 +213,7 @@ namespace Movement
         data.WriteBit(1);
 
         uint32 uncompressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? moveSpline.splineflags.cyclic ? moveSpline.spline.getPointCount() - 2 : moveSpline.spline.getPointCount() - 3 : 1;
-        data.WriteBits(uncompressedSplineCount, 20);
+        data.WriteBits(uncompressedSplineCount,  20);
 
         data.WriteBit(guid[1]);
         data.WriteBit(0); // Send no block
@@ -280,7 +280,6 @@ namespace Movement
 
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
-
     }
 
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)
@@ -293,17 +292,31 @@ namespace Movement
         data.WriteBits(moveSpline.getPath().size(), 20);
         data.WriteBits(moveSpline.splineflags.raw(), 25);
         data.WriteBit((moveSpline.splineflags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration());
-        data.WriteBit(0); // NYI Block
+
+        bool hasUnkPart = false;
+        
+        data.WriteBit(hasUnkPart);
+
+        if (hasUnkPart)
+        {
+            data.WriteBits(0, 2);                            //unk word300
+            data.WriteBits(0, 21);                           //unk dword284
+        }
     }
 
-    void PacketBuilder::WriteCreateData(MoveSpline const& moveSpline, ByteBuffer& data)
+    void PacketBuilder::WriteCreateData(MoveSpline const& moveSpline, ByteBuffer& data, bool* hasTarget, ByteBuffer* targetGUID)
     {
+        *hasTarget = false;                                 // set it to false by default
+
         if (!moveSpline.Finalized())
         {
             MoveSplineFlag const& splineFlags = moveSpline.splineflags;
             MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
-            data << float(1.f); // splineInfo.duration_mod_next; added in 3.1
+            if (type == MonsterMoveFacingTarget)
+                *hasTarget = true;
+
+            data << float(1.f);                             // splineInfo.duration_mod_next; added in 3.1
 
             uint32 nodes = moveSpline.getPath().size();
             for (uint32 i = 0; i < nodes; ++i)
@@ -314,15 +327,16 @@ namespace Movement
             }
 
             data << uint8(type);
-            data << float(1.f); // splineInfo.duration_mod; added in 3.1
 
-            // NYI block here
+            data << float(1.f);                             // splineInfo.duration_mod; added in 3.1
 
-            if (type == MonsterMoveFacingPoint)
+            //unk part goes here
+
+            if(type == MonsterMoveFacingPoint)
                 data << moveSpline.facing.f.x << moveSpline.facing.f.y << moveSpline.facing.f.z;
 
             if ((splineFlags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration())
-                data << moveSpline.vertical_acceleration; // added in 3.1
+                data << moveSpline.vertical_acceleration;   // added in 3.1
 
             if (type == MonsterMoveFacingAngle)
                 data << moveSpline.facing.angle;
@@ -330,13 +344,15 @@ namespace Movement
             data << moveSpline.Duration();
 
             if (splineFlags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation))
-                data << moveSpline.effect_start_time; // added in 3.1
+                data << moveSpline.effect_start_time;       // added in 3.1
 
             data << moveSpline.timePassed();
         }
 
         data << moveSpline.GetId();
+
         Vector3 destination = moveSpline.isCyclic() ? Vector3::zero() : moveSpline.FinalDestination();
+
         data << destination;
     }
 
@@ -353,6 +369,8 @@ namespace Movement
             data.WriteBit(facingGuid[1]);
             data.WriteBit(facingGuid[4]);
             data.WriteBit(facingGuid[2]);
+            data.FlushBits();
+
             data.WriteByteSeq(facingGuid[4]);
             data.WriteByteSeq(facingGuid[2]);
             data.WriteByteSeq(facingGuid[5]);

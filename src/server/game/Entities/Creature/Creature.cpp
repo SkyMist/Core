@@ -1857,12 +1857,29 @@ Player* Creature::SelectNearestPlayer(float distance) const
 
 void Creature::SendAIReaction(AiReaction reactionType)
 {
-    WorldPacket data(SMSG_AI_REACTION, 12);
+    WorldPacket data(SMSG_AI_REACTION, 13);
+    ObjectGuid NPCGuid = GetGUID();
 
-    data << uint64(GetGUID());
-    data << uint32(reactionType);
+    data.WriteBit(NPCGuid[2]);
+    data.WriteBit(NPCGuid[1]);
+    data.WriteBit(NPCGuid[4]);
+    data.WriteBit(NPCGuid[3]);
+    data.WriteBit(NPCGuid[6]);
+    data.WriteBit(NPCGuid[5]);
+    data.WriteBit(NPCGuid[7]);
+    data.WriteBit(NPCGuid[0]);
+    data.FlushBits();
+    data.WriteByteSeq(NPCGuid[1]);
+    data << uint32(AI_REACTION_HOSTILE);
+    data.WriteByteSeq(NPCGuid[0]);
+    data.WriteByteSeq(NPCGuid[2]);
+    data.WriteByteSeq(NPCGuid[4]);
+    data.WriteByteSeq(NPCGuid[6]);
+    data.WriteByteSeq(NPCGuid[7]);
+    data.WriteByteSeq(NPCGuid[3]);
+    data.WriteByteSeq(NPCGuid[5]);
 
-    ((WorldObject*)this)->SendMessageToSet(&data, true);
+    static_cast<WorldObject*>(this)->SendMessageToSet(&data, true);
 
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_AI_REACTION, type %u.", reactionType);
 }
