@@ -243,6 +243,8 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
     SetGoState(go_state);
     SetGoArtKit(artKit);
 
+    SetGoHealth(0xFF);
+
     switch (goinfo->type)
     {
         case GAMEOBJECT_TYPE_FISHINGHOLE:

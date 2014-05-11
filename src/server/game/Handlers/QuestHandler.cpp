@@ -58,7 +58,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
     uint32 questStatus = DIALOG_STATUS_NONE;
     uint32 defstatus = DIALOG_STATUS_NONE;
 
-    Object* questgiver = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT|TYPEMASK_GAMEOBJECT);
+    Object* questgiver = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT | TYPEMASK_GAMEOBJECT);
     if (!questgiver)
     {
         TC_LOG_INFO("network", "Error in CMSG_QUESTGIVER_STATUS_QUERY, called for non-existing questgiver (Typeid: %u GUID: %u)", GuidHigh2TypeId(GUID_HIPART(guid)), GUID_LOPART(guid));
@@ -84,7 +84,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket& recvData)
         {
             TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_STATUS_QUERY for GameObject guid = %u", uint32(GUID_LOPART(guid)));
 
-            GameObject* go_questgiver = (GameObject*)questgiver;
+            GameObject* go_questgiver = questgiver->ToGameObject();
             questStatus = sScriptMgr->GetDialogStatus(_player, go_questgiver);
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, go_questgiver, defstatus);
@@ -938,6 +938,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
                 continue;
             if (!questgiver->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER))
                 continue;
+
             questStatus = sScriptMgr->GetDialogStatus(_player, questgiver);
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, questgiver, defstatus);
@@ -952,8 +953,6 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             bitData.WriteBit(NPCGuid[1]);
             bitData.WriteBit(NPCGuid[4]);
             bitData.WriteBit(NPCGuid[3]);
-
-            data.FlushBits();
 
             byteData.WriteByteSeq(NPCGuid[5]);
 
@@ -976,6 +975,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
                 continue;
             if (questgiver->GetGoType() != GAMEOBJECT_TYPE_QUESTGIVER)
                 continue;
+
             questStatus = sScriptMgr->GetDialogStatus(_player, questgiver);
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, questgiver, defstatus);
@@ -990,8 +990,6 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             bitData.WriteBit(NPCGuid[1]);
             bitData.WriteBit(NPCGuid[4]);
             bitData.WriteBit(NPCGuid[3]);
-
-            data.FlushBits();
 
             byteData.WriteByteSeq(NPCGuid[5]);
 
@@ -1012,6 +1010,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
     WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 3 + count * (1 + 8 + 4));
     data.WriteBits(count, 21);
     data.append(bitData);
+    data.FlushBits();
     data.append(byteData);
 
     SendPacket(&data);

@@ -4888,7 +4888,9 @@ void Player::RemoveAllSpellCooldown()
 {
     if (!m_spellCooldowns.empty())
     {
-        SendClearAllCooldowns(this);
+        for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); ++itr)
+            SendClearCooldown(itr->first, this);
+
         m_spellCooldowns.clear();
     }
 }
@@ -18150,14 +18152,14 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
 
     int32 entry = quest->RequiredNpcOrGo[creatureOrGO_idx];
 
-    if (entry < 0)
-        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id|0x80000000)
-
-    ObjectGuid NPCGuid = guid;
-
     bool hasObjective = (entry != 0) ? true : false;
     bool isCreature = (hasObjective && entry > 0) ? true : false;
     bool isGameObject = (hasObjective && entry < 0) ? true : false;
+
+    if (isGameObject)
+        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id|0x80000000)
+
+    ObjectGuid NPCGuid = guid;
 
     WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 1 + 2 * 4 + 2 * 2 + 1);
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
@@ -27576,23 +27578,14 @@ void Player::RemoveAtLoginFlag(AtLoginFlags flags, bool persist /*= false*/)
 
 void Player::SendClearCooldown(uint32 spell_id, Unit* target)
 {
-    WorldPacket data(SMSG_CLEAR_COOLDOWN, 4+8);
-    data << uint32(spell_id);
-    data << uint64(target->GetGUID());
-    SendDirectMessage(&data);
-}
-
-void Player::SendClearAllCooldowns(Unit* target)
-{
-    uint32 spellCount = m_spellCooldowns.size();
     ObjectGuid guid = target ? target->GetGUID() : 0;
 
-    WorldPacket data(SMSG_CLEAR_COOLDOWNS, 4 + 8 + 1 + spellCount * 4);
+    WorldPacket data(SMSG_CLEAR_COOLDOWN);
 
     data.WriteBit(guid[6]);
     data.WriteBit(guid[4]);
 
-    data.WriteBits(spellCount, 22); // Spell Count
+    data.WriteBits(1, 22); // Spell Count.
 
     data.WriteBit(guid[5]);
     data.WriteBit(guid[0]);
@@ -27609,8 +27602,7 @@ void Player::SendClearAllCooldowns(Unit* target)
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[5]);
 
-    for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); itr++)
-        data << uint32(itr->first); // Spell ID
+    data << uint32(spell_id); // Spell ID
 
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[7]);

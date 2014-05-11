@@ -671,7 +671,7 @@ enum Opcodes
    SMSG_ACTIVATETAXIREPLY                                   = 0x0,
    SMSG_ADDON_INFO                                          = 0x10E2, // 5.4.7 18019
    SMSG_ADD_RUNE_POWER                                      = 0x0,
-   SMSG_AI_REACTION                                         = 0x0721, // 5.4.7 18019 NYI
+   SMSG_AI_REACTION                                         = 0x0721, // 5.4.7 18019
    SMSG_ALL_ACHIEVEMENT_DATA                                = 0x072B, // 5.4.7 18019
    SMSG_AREA_SPIRIT_HEALER_TIME                             = 0x0,
    SMSG_AREA_TRIGGER_MESSAGE                                = 0x0,
@@ -784,8 +784,7 @@ enum Opcodes
    SMSG_CHAT_WRONG_FACTION                                  = 0x0,
    SMSG_CHECK_FOR_BOTS                                      = 0x0,
    SMSG_CLEAR_BOSS_EMOTES                                   = 0x0,
-   SMSG_CLEAR_COOLDOWN                                      = 0x0,
-   SMSG_CLEAR_COOLDOWNS                                     = 0x1926, // 5.4.7 18019
+   SMSG_CLEAR_COOLDOWN                                      = 0x1926, // 5.4.7 18019
    SMSG_CLEAR_FAR_SIGHT_IMMEDIATE                           = 0x0,
    SMSG_CLEAR_TARGET                                        = 0x0,
    SMSG_CLIENTCACHE_VERSION                                 = 0x1E41, // 5.4.7 18019

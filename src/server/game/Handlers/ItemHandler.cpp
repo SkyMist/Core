@@ -730,7 +730,7 @@ void WorldSession::SendListInventory(uint64 vendorGuid)
     if (rawItemCount > MAX_VENDOR_ITEMS)
         rawItemCount = MAX_VENDOR_ITEMS; // !Keep in mind client cap is 300 but uint8 max value is 255.
 
-    ByteBuffer itemsData(40 * rawItemCount); // 10 * 4.
+    ByteBuffer itemsData(32 * rawItemCount);
     bool hasExtendedCost[MAX_VENDOR_ITEMS];
 
     const float discountMod = _player->GetReputationPriceDiscount(vendor);
@@ -796,11 +796,8 @@ void WorldSession::SendListInventory(uint64 vendorGuid)
             itemsData << uint32(0);
             itemsData << uint32(itemTemplate->DisplayInfoID);
 
-            if (count++ >= MAX_VENDOR_ITEMS)
+            if (++count >= MAX_VENDOR_ITEMS)
                 break;
-
-            // Increase count.
-            count++;
         }
 
         else if (vendorItem->Type == ITEM_VENDOR_TYPE_CURRENCY)
@@ -826,11 +823,8 @@ void WorldSession::SendListInventory(uint64 vendorGuid)
             itemsData << uint32(0);
             itemsData << uint32(0);                                 // displayId
 
-            if (count++ >= MAX_VENDOR_ITEMS)
+            if (++count >= MAX_VENDOR_ITEMS)
                 break;
-
-            // Increase count.
-            count++;
         }
 
         else // Else error, neither item or currency.
