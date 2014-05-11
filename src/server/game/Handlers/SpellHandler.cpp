@@ -1509,7 +1509,7 @@ void WorldSession::HandleSpellClick(WorldPacket& recvData)
 
     guid[5] = recvData.ReadBit();
 
-    bool UnkBool = recvData.ReadBit();
+    bool CanAutoDismount = recvData.ReadBit();
 
     guid[0] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
