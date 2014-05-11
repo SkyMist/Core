@@ -521,7 +521,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_SHOWING_CLOAK,                           STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleShowingCloakOpcode        );
     DEFINE_OPCODE_HANDLER(CMSG_SHOWING_HELM,                            STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleShowingHelmOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_SOCKET_GEMS,                             STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSocketOpcode              );
-    DEFINE_OPCODE_HANDLER(CMSG_SPELLCLICK,                              STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleSpellClick);
+    DEFINE_OPCODE_HANDLER(CMSG_SPELLCLICK,                              STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleSpellClick                );
     DEFINE_OPCODE_HANDLER(CMSG_SPIRIT_HEALER_ACTIVATE,                  STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleSpiritHealerActivateOpcode);
     DEFINE_OPCODE_HANDLER(CMSG_SPLIT_ITEM,                              STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleSplitItemOpcode           );
     DEFINE_OPCODE_HANDLER(CMSG_STANDSTATECHANGE,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleStandStateChangeOpcode    );

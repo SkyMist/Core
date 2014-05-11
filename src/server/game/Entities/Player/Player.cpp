@@ -21986,7 +21986,7 @@ void Player::RemovePet(Pet* pet, PetSlot mode, bool returnreagent, bool stampede
         data.WriteBit(NPCGuid[3]);
         data.WriteBit(NPCGuid[7]);
         data.WriteBit(NPCGuid[4]);
-        data.WriteBits(0, 22);          //auras count
+        data.WriteBits(0, 22);          //spells count
         data.FlushBits();
         data.WriteByteSeq(NPCGuid[2]);
         data.WriteByteSeq(NPCGuid[4]);
@@ -22249,8 +22249,6 @@ void Player::PetSpellInitialize()
         }
     }
 
-    data.append(Spells);
-
     //pet spell history block here
 
     data.WriteByteSeq(NPCGuid[2]);
@@ -22263,8 +22261,11 @@ void Player::PetSpellInitialize()
     data.WriteByteSeq(NPCGuid[3]);
     data.WriteByteSeq(NPCGuid[1]);
     data << uint16(pet->GetCreatureTemplate()->family);         // creature family (required for pet talents)
+
     // action bar loop
     charmInfo->BuildActionBar(&data);
+    data.append(Spells);
+
     data.WriteByteSeq(NPCGuid[6]);
     data << uint32(pet->GetDuration());
     data.WriteByteSeq(NPCGuid[7]);
@@ -22342,7 +22343,7 @@ void Player::VehicleSpellInitialize()
     data.WriteBit(NPCGuid[3]);
     data.WriteBit(NPCGuid[7]);
     data.WriteBit(NPCGuid[4]);
-    data.WriteBits(0, 22);          //spells count
+    data.WriteBits(0, 22);                      //spells count
     data.FlushBits();
 
     for (CreatureSpellCooldowns::const_iterator itr = vehicle->m_CreatureSpellCooldowns.begin(); itr != vehicle->m_CreatureSpellCooldowns.end(); itr++)
@@ -22476,14 +22477,14 @@ void Player::CharmSpellInitialize()
     data.WriteBit(NPCGuid[2]);
     data.WriteBit(NPCGuid[6]);
     data.WriteBit(NPCGuid[1]);
-    data.WriteBits(0, 21);          //pet spell history, new for mop
-    data.WriteBits(0, 20);          //pet cooldown count
+    data.WriteBits(0, 21);                      //pet spell history, new for mop
+    data.WriteBits(0, 20);                      //pet cooldown count
     data.WriteBit(NPCGuid[3]);
     data.WriteBit(NPCGuid[7]);
     data.WriteBit(NPCGuid[4]);
-    data.WriteBits(SpellsCount, 22);          //auras count
+    data.WriteBits(SpellsCount, 22);            //auras count
     data.FlushBits();
-    data.append(Spells);
+    
     data.WriteByteSeq(NPCGuid[2]);
     data.WriteByteSeq(NPCGuid[4]);
     data.WriteByteSeq(NPCGuid[5]);
@@ -22496,14 +22497,15 @@ void Player::CharmSpellInitialize()
     data.WriteByteSeq(NPCGuid[0]);
     data.WriteByteSeq(NPCGuid[3]);
     data.WriteByteSeq(NPCGuid[1]);
-    data << uint16(0);              // pet family
+    data << uint16(0);                          // pet family
 
     charmInfo->BuildActionBar(&data);
+    data.append(Spells);
 
     data.WriteByteSeq(NPCGuid[6]);
-    data << uint32(0);              //duration
+    data << uint32(0);                          //duration
     data.WriteByteSeq(NPCGuid[7]);
-    data << uint16(0);              //unk word, new to mop
+    data << uint16(0);                          //unk word, new to mop
 
     GetSession()->SendPacket(&data);
 }
@@ -22522,7 +22524,7 @@ void Player::SendRemoveControlBar()
     data.WriteBit(NPCGuid[3]);
     data.WriteBit(NPCGuid[7]);
     data.WriteBit(NPCGuid[4]);
-    data.WriteBits(0, 22);          //auras count
+    data.WriteBits(0, 22);          //spells count
     data.FlushBits();
     data.WriteByteSeq(NPCGuid[2]);
     data.WriteByteSeq(NPCGuid[4]);
