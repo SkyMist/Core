@@ -519,6 +519,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void InitializeReactState();
 
         /// @todo Rename these properly
+        bool isCanTrainingOf(Player* player, bool msg) const;
         bool isCanInteractWithBattleMaster(Player* player, bool msg) const;
         bool isCanTrainingAndResetTalentsOf(Player* player) const;
         bool CanCreatureAttack(Unit const* victim, bool force = true) const;

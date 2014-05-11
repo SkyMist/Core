@@ -15721,10 +15721,9 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                     canTalk = false;
                     break;
                 case GOSSIP_OPTION_TRAINER:
-                    if (getClass() != creature->GetCreatureTemplate()->trainer_class && creature->GetCreatureTemplate()->trainer_type == TRAINER_TYPE_CLASS)
-                        TC_LOG_ERROR("sql.sql", "GOSSIP_OPTION_TRAINER:: Player %s (GUID: %u) request wrong gossip menu: %u with wrong class: %u at Creature: %s (Entry: %u, Trainer Class: %u)",
-                        GetName().c_str(), GetGUIDLow(), menu->GetGossipMenu().GetMenuId(), getClass(), creature->GetName().c_str(), creature->GetEntry(), creature->GetCreatureTemplate()->trainer_class);
-                    // no break;
+                    if (!creature->isCanTrainingOf(this, false))
+                        canTalk = false;
+                    break;
                 case GOSSIP_OPTION_GOSSIP:
                 case GOSSIP_OPTION_SPIRITGUIDE:
                 case GOSSIP_OPTION_INNKEEPER:
@@ -22190,7 +22189,7 @@ void Player::PetSpellInitialize()
     WorldPacket data(SMSG_PET_SPELLS);
     time_t curTime = time(NULL);
     ByteBuffer Spells;
-    size_t SpellsCount;
+    size_t SpellsCount = 0;
 
     if (pet->IsPermanentPetFor(this))
     {
@@ -22455,7 +22454,7 @@ void Player::CharmSpellInitialize()
 
     WorldPacket data(SMSG_PET_SPELLS);
     ByteBuffer Spells;
-    size_t SpellsCount;
+    size_t SpellsCount = 0;
 
     if (charm->GetTypeId() != TYPEID_PLAYER)
     {

@@ -16911,8 +16911,16 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                 uint32 appendValue = m_uint32Values[UNIT_FIELD_NPC_FLAGS];
 
                 if (creature)
+                {
                     if (!target->CanSeeSpellClickOn(creature))
                         appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
+
+                    if (appendValue & UNIT_NPC_FLAG_TRAINER)
+                    {
+                        if (!this->ToCreature()->isCanTrainingOf(target, false))
+                            appendValue &= ~(UNIT_NPC_FLAG_TRAINER | UNIT_NPC_FLAG_TRAINER_CLASS | UNIT_NPC_FLAG_TRAINER_PROFESSION);
+                    }
+                }
 
                 fieldBuffer << uint32(appendValue);
             }

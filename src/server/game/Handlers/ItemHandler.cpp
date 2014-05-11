@@ -1286,6 +1286,14 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
         // tried to put cogwheel gem in normal socket
         if (itemProto->Socket[i].Color != SOCKET_COLOR_COGWHEEL && GemProps[i]->color == SOCKET_COLOR_COGWHEEL)
             return;
+
+        // tried to put normal gem in sha socket
+        if (itemProto->Socket[i].Color == SOCKET_COLOR_SHA && GemProps[i]->color != SOCKET_COLOR_SHA)
+            return;
+
+        // tried to put sha gem in normal socket
+        if (itemProto->Socket[i].Color != SOCKET_COLOR_SHA && GemProps[i]->color == SOCKET_COLOR_SHA)
+            return;
     }
 
     uint32 GemEnchants[MAX_GEM_SOCKETS];
