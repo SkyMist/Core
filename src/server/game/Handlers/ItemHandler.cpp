@@ -359,7 +359,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
     itemguid[7] = recvData.ReadBit();
     vendorguid[0] = recvData.ReadBit();
     vendorguid[3] = recvData.ReadBit();
-    itemguid[2] = recvData.ReadBit();
+    itemguid[3] = recvData.ReadBit();
     vendorguid[7] = recvData.ReadBit();
     vendorguid[6] = recvData.ReadBit();
     vendorguid[5] = recvData.ReadBit();
@@ -1557,7 +1557,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         hasItemGuid1[i] = recvData.ReadBit();
         hasItemGuid2[i] = recvData.ReadBit();
 
-        if (hasItemGuid1[i])
+        if (hasItemGuid2[i])
         {
             originalItemGuid[i][5] = recvData.ReadBit();
             originalItemGuid[i][6] = recvData.ReadBit();
@@ -1569,7 +1569,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             originalItemGuid[i][2] = recvData.ReadBit();
         }
 
-        if (hasItemGuid2[i])
+        if (hasItemGuid1[i])
         {
             targetItemGuid[i][3] = recvData.ReadBit();
             targetItemGuid[i][6] = recvData.ReadBit();
@@ -1601,7 +1601,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
 
     for (uint8 i = 0; i < count; ++i)
     {
-        if (hasItemGuid2[i])
+        if (hasItemGuid1[i])
         {
             recvData.ReadByteSeq(targetItemGuid[i][4]);
             recvData.ReadByteSeq(targetItemGuid[i][0]);
@@ -1613,7 +1613,7 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             recvData.ReadByteSeq(targetItemGuid[i][3]);
         }
 
-        if (hasItemGuid1[i])
+        if (hasItemGuid2[i])
         {
             recvData.ReadByteSeq(originalItemGuid[i][3]);
             recvData.ReadByteSeq(originalItemGuid[i][6]);

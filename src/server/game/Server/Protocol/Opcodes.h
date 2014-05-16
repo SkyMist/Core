@@ -379,7 +379,7 @@ enum Opcodes
    CMSG_MOVE_GRAVITY_ENABLE_ACK                             = 0x0,
    CMSG_MOVE_HOVER_ACK                                      = 0x0,
    CMSG_MOVE_KNOCK_BACK_ACK                                 = 0x0,
-   CMSG_MOVE_NOT_ACTIVE_MOVER                               = 0x0,
+   CMSG_MOVE_NOT_ACTIVE_MOVER                               = 0x091B, // 5.4.7 18019 NYI
    CMSG_MOVE_SET_CAN_FLY                                    = 0x0,
    CMSG_MOVE_SET_CAN_FLY_ACK                                = 0x0,
    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK    = 0x0,
@@ -871,7 +871,7 @@ enum Opcodes
    SMSG_EQUIPMENT_SET_SAVED                                 = 0x0,
    SMSG_EQUIPMENT_SET_USE_RESULT                            = 0x12AA, // 5.4.7 18019 NYI
    SMSG_EXPECTED_SPAM_RECORDS                               = 0x0,
-   SMSG_EXPLORATION_EXPERIENCE                              = 0x0,
+   SMSG_EXPLORATION_EXPERIENCE                              = 0x13A1, // 5.4.7 18019
    SMSG_FAILED_PLAYER_CONDITION                             = 0x0,
    SMSG_FEATURE_SYSTEM_STATUS                               = 0x1560, // 5.4.7 18019
    SMSG_FEIGN_DEATH_RESISTED                                = 0x0,
@@ -1280,7 +1280,7 @@ enum Opcodes
    SMSG_SET_DF_FAST_LAUNCH_RESULT                           = 0x0,
    SMSG_SET_DUNGEON_DIFFICULTY                              = 0x1500, // 5.4.7 18019
    SMSG_SET_FACTION_ATWAR                                   = 0x0,
-   SMSG_SET_FACTION_STANDING                                = 0x0,
+   SMSG_SET_FACTION_STANDING                                = 0x0E6B, // 5.4.7 18019
    SMSG_SET_FACTION_VISIBLE                                 = 0x0,
    SMSG_SET_FLAT_SPELL_MODIFIER                             = 0x0179, // 5.4.7 18019 NYI
    SMSG_SET_FORCED_REACTIONS                                = 0x0,

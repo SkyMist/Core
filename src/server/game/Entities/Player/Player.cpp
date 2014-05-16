@@ -3216,7 +3216,7 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     ObjectGuid guid = victim ? victim->GetGUID() : 0;
 
     WorldPacket data(SMSG_LOG_XPGAIN, 1 + 1 + 8 + 4 + 4 + 4 + 1);
-    data.WriteBit(0);                                       // has XP + bonus
+    data.WriteBit(0);                                       // has XP
     data.WriteBit(guid[6]);
     data.WriteBit(guid[3]);
     data.WriteBit(0);                                       // has group bonus
@@ -3239,8 +3239,8 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[6]);
 
-    data << uint32(GivenXP + BonusXP);                      // given experience
     data << uint32(GivenXP);                                // experience without bonus
+    data << uint32(GivenXP + BonusXP);                      // given experience
 
     data.WriteByteSeq(guid[0]);
 
@@ -16840,6 +16840,7 @@ bool Player::SatisfyQuestLog(bool msg)
     {
         WorldPacket data(SMSG_QUESTLOG_FULL, 0);
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTLOG_FULL");
     }
 
@@ -18005,8 +18006,11 @@ void Player::SendQuestComplete(Quest const* quest)
     if (quest)
     {
         WorldPacket data(SMSG_QUESTUPDATE_COMPLETE, 4);
+
         data << uint32(quest->GetQuestId());
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_COMPLETE quest = %u", quest->GetQuestId());
     }
 }
@@ -18014,7 +18018,7 @@ void Player::SendQuestComplete(Quest const* quest)
 void Player::SendQuestReward(Quest const* quest, uint32 XP)
 {
     uint32 questId = quest->GetQuestId();
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_COMPLETE quest = %u", questId);
+
     sGameEventMgr->HandleQuestComplete(questId);
 
     uint32 xp;
@@ -18049,6 +18053,8 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
     data.FlushBits();
 
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_COMPLETE quest = %u", questId);
 }
 
 void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
@@ -18056,9 +18062,12 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
     if (questId)
     {
         WorldPacket data(SMSG_QUESTGIVER_QUEST_FAILED, 4 + 4);
+
         data << uint32(questId);
         data << uint32(reason);                             // failed reason (valid reasons: 4, 16, 50, 17, 74, other values show default message)
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
     }
 }
@@ -18068,8 +18077,11 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
     if (quest_id)
     {
         WorldPacket data(SMSG_QUESTUPDATE_FAILEDTIMER, 4);
+
         data << uint32(quest_id);
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_FAILEDTIMER");
     }
 }
@@ -18077,8 +18089,11 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
 void Player::SendCanTakeQuestResponse(QuestFailedReason msg) const
 {
     WorldPacket data(SMSG_QUESTGIVER_QUEST_INVALID, 4);
+
     data << uint32(msg);
+
     GetSession()->SendPacket(&data);
+
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_INVALID");
 }
 
@@ -18086,7 +18101,9 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 {
     if (pReceiver)
     {
+        // Define data usage.
         std::string strTitle = quest->GetTitle();
+        bool hasQuestName = strTitle.size() ? true: false;
 
         int loc_idx = pReceiver->GetSession()->GetSessionDbLocaleIndex();
         if (loc_idx >= 0)
@@ -18095,6 +18112,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 
         ObjectGuid PlayerGuid = GetGUID();
 
+        // Send packet.
         WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT);
         
         data.WriteBit(PlayerGuid[3]);
@@ -18102,10 +18120,12 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteBit(PlayerGuid[7]);
         data.WriteBit(PlayerGuid[0]);
         data.WriteBit(PlayerGuid[1]);
-        data.WriteBit(strTitle.size() != 0);                    // hasQuestName
+
+        data.WriteBit(hasQuestName);
+
         data.WriteBit(PlayerGuid[6]);
 
-        if (strTitle.size() != 0)
+        if (hasQuestName)
             data.WriteBits(strTitle.size(), 10);
 
         data.WriteBit(PlayerGuid[5]);
@@ -18118,7 +18138,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteByteSeq(PlayerGuid[0]);
         data.WriteByteSeq(PlayerGuid[6]);
 
-        if (strTitle.size() != 0)
+        if (hasQuestName)
             data.WriteString(strTitle);
 
         data.WriteByteSeq(PlayerGuid[4]);
@@ -18127,6 +18147,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteByteSeq(PlayerGuid[6]);
 
         data << quest->GetQuestId();
+
         pReceiver->GetSession()->SendPacket(&data);
 
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_CONFIRM_ACCEPT");
@@ -18147,21 +18168,24 @@ void Player::SendPushToPartyResponse(Player* player, uint8 msg)
 
 void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uint32 creatureOrGO_idx, uint16 old_count, uint16 add_count)
 {
-    ASSERT(old_count + add_count < 65536 && "mob/GO count store in 16 bits 2^16 = 65536 (0..65536)");
+    // Check for client overflow.
+    ASSERT(old_count + add_count < 65536 && "mob / GO count store in 16 bits 2^16 = 65536 (0..65536)");
 
+    // Define data usage.
     int32 entry = quest->RequiredNpcOrGo[creatureOrGO_idx];
+    uint32 killedCreaturesOrUsedGobs = old_count + add_count;
 
     bool hasObjective = (entry != 0) ? true : false;
     bool isCreature = (hasObjective && entry > 0) ? true : false;
     bool isGameObject = (hasObjective && entry < 0) ? true : false;
 
     if (isGameObject)
-        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id|0x80000000)
+        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id | 0x80000000)
 
     ObjectGuid NPCGuid = guid;
 
+    // Send packet.
     WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 1 + 2 * 4 + 2 * 2 + 1);
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
 
     data.WriteBit(NPCGuid[5]);
     data.WriteBit(NPCGuid[3]);
@@ -18189,12 +18213,15 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
     data.WriteByteSeq(NPCGuid[5]);
     data.WriteByteSeq(NPCGuid[2]);
 
-    data << uint16(old_count + add_count);
-    data << uint32(quest->GetQuestId());
+    data << uint16(killedCreaturesOrUsedGobs);
 
     data.WriteByteSeq(NPCGuid[7]);
 
+    data << uint32(quest->GetQuestId());
+
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -18203,13 +18230,21 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
 
 void Player::SendQuestUpdateAddPlayer(Quest const* quest, uint16 old_count, uint16 add_count)
 {
+    // Check for client overflow.
     ASSERT(old_count + add_count < 65536 && "player count store in 16 bits");
 
+    // Get killed players total count.
+    uint16 killedPlayersCount = old_count + add_count;
+
+    // Send packet.
     WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, 3 * 4);
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
+
     data << uint32(quest->GetQuestId());
-    data << uint16(old_count + add_count);
+    data << uint16(killedPlayersCount);
+
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
