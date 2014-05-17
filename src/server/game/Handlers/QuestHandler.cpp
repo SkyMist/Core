@@ -860,8 +860,7 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver, uint32 
             continue;
 
         QuestStatus status = player->GetQuestStatus(quest_id);
-        if ((status == QUEST_STATUS_COMPLETE && !player->GetQuestRewardStatus(quest_id)) ||
-            (quest->IsAutoComplete() && player->CanTakeQuest(quest, false)))
+        if ((status == QUEST_STATUS_COMPLETE && !player->GetQuestRewardStatus(quest_id)) || (quest->IsAutoComplete() && player->CanTakeQuest(quest, false)))
         {
             if (quest->IsAutoComplete() && quest->IsRepeatable())
                 result2 = DIALOG_STATUS_REWARD_REP;
@@ -923,7 +922,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_STATUS_MULTIPLE_QUERY");
 
     uint32 count = 0;
-    ByteBuffer bitData;
+    ByteBuffer bitData, byteData;
 
     for (Player::ClientGUIDs::const_iterator itr = _player->m_clientGUIDs.begin(); itr != _player->m_clientGUIDs.end(); ++itr)
     {
@@ -954,19 +953,21 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             bitData.WriteBit(NPCGuid[4]);
             bitData.WriteBit(NPCGuid[3]);
 
-            bitData.FlushBits();
+            byteData.WriteByteSeq(NPCGuid[5]);
 
-            bitData.WriteByteSeq(NPCGuid[5]);
+            byteData << uint32(questStatus);
 
-            bitData << uint32(questStatus);
+            byteData.WriteByteSeq(NPCGuid[4]);
+            byteData.WriteByteSeq(NPCGuid[2]);
+            byteData.WriteByteSeq(NPCGuid[3]);
+            byteData.WriteByteSeq(NPCGuid[6]);
+            byteData.WriteByteSeq(NPCGuid[1]);
+            byteData.WriteByteSeq(NPCGuid[7]);
+            byteData.WriteByteSeq(NPCGuid[0]);
 
-            bitData.WriteByteSeq(NPCGuid[4]);
-            bitData.WriteByteSeq(NPCGuid[2]);
-            bitData.WriteByteSeq(NPCGuid[3]);
-            bitData.WriteByteSeq(NPCGuid[6]);
-            bitData.WriteByteSeq(NPCGuid[1]);
-            bitData.WriteByteSeq(NPCGuid[7]);
-            bitData.WriteByteSeq(NPCGuid[0]);
+            // inform client about status of quest
+            if (questStatus > DIALOG_STATUS_NONE)
+                _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, NPCGuid);
 
             ++count;
         }
@@ -993,19 +994,21 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             bitData.WriteBit(GOGuid[4]);
             bitData.WriteBit(GOGuid[3]);
 
-            bitData.FlushBits();
+            byteData.WriteByteSeq(GOGuid[5]);
 
-            bitData.WriteByteSeq(GOGuid[5]);
+            byteData << uint32(questStatus);
 
-            bitData << uint32(questStatus);
+            byteData.WriteByteSeq(GOGuid[4]);
+            byteData.WriteByteSeq(GOGuid[2]);
+            byteData.WriteByteSeq(GOGuid[3]);
+            byteData.WriteByteSeq(GOGuid[6]);
+            byteData.WriteByteSeq(GOGuid[1]);
+            byteData.WriteByteSeq(GOGuid[7]);
+            byteData.WriteByteSeq(GOGuid[0]);
 
-            bitData.WriteByteSeq(GOGuid[4]);
-            bitData.WriteByteSeq(GOGuid[2]);
-            bitData.WriteByteSeq(GOGuid[3]);
-            bitData.WriteByteSeq(GOGuid[6]);
-            bitData.WriteByteSeq(GOGuid[1]);
-            bitData.WriteByteSeq(GOGuid[7]);
-            bitData.WriteByteSeq(GOGuid[0]);
+            // inform client about status of quest
+            if (questStatus > DIALOG_STATUS_NONE)
+                _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, GOGuid);
 
             ++count;
         }
@@ -1014,7 +1017,10 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
     WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 3 + count * (1 + 8 + 4));
 
     data.WriteBits(count, 21);
+
     data.append(bitData);
+    data.FlushBits();
+    data.append(byteData);
 
     SendPacket(&data);
 }

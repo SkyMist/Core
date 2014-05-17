@@ -849,6 +849,12 @@ class ObjectMgr
         }
 
         void LoadQuests();
+
+        void LoadGameobjectQuestStarters();
+        void LoadGameobjectQuestEnders();
+        void LoadCreatureQuestStarters();
+        void LoadCreatureQuestEnders();
+
         void LoadQuestStartersAndEnders()
         {
             TC_LOG_INFO("server.loading", "Loading GO Start Quest Data...");
@@ -860,10 +866,6 @@ class ObjectMgr
             TC_LOG_INFO("server.loading", "Loading Creature End Quest Data...");
             LoadCreatureQuestEnders();
         }
-        void LoadGameobjectQuestStarters();
-        void LoadGameobjectQuestEnders();
-        void LoadCreatureQuestStarters();
-        void LoadCreatureQuestEnders();
 
         QuestRelations* GetGOQuestRelationMap()
         {

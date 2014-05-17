@@ -447,7 +447,7 @@ void PlayerMenu::SendQuestGiverStatus(uint32 questStatus, uint64 npcGUID) const
     data.WriteByteSeq(guid[0]);
     data.WriteByteSeq(guid[4]);
 
-    data << questStatus;
+    data << uint32(questStatus);
 
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[1]);
