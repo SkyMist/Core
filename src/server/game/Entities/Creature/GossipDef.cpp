@@ -826,7 +826,10 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     WorldPacket data(SMSG_QUEST_QUERY_RESPONSE, 100);       // guess size
     data << uint32(quest->GetQuestId());
 
-    data.WriteBit(1); // has data
+    bool HasData = true; // Quest is not AutoComplete.
+
+    data.WriteBit(HasData);
+
     data.WriteBits(questEndText.size(), 9);
     data.WriteBits(questTitle.size(), 9);
     data.WriteBits(questGiverTextWindow.size(), 10);
