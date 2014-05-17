@@ -1,22 +1,8 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright (C) 2013 Skymist Project
+*
+* This file is NOT free software. You may NOT copy, redistribute it or modify it.
+*/
 
 /* ScriptData
 SDName: Mulgore
@@ -25,16 +11,9 @@ SDComment: Support for quest: 11129, 861
 SDCategory: Mulgore
 EndScriptData */
 
-/* ContentData
-npc_skorn_whitecloud
-npc_kyle_frenzied
-EndContentData */
-
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
-#include "Player.h"
-#include "SpellInfo.h"
 
 /*######
 # npc_skorn_whitecloud
@@ -47,7 +26,7 @@ class npc_skorn_whitecloud : public CreatureScript
 public:
     npc_skorn_whitecloud() : CreatureScript("npc_skorn_whitecloud") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_INFO_DEF)
@@ -56,7 +35,7 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
         if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
@@ -77,6 +56,7 @@ public:
 
 enum KyleFrenzied
 {
+    //emote signed for 7780 but propably thats wrong id.
     EMOTE_SEE_LUNCH         = 0,
     EMOTE_EAT_LUNCH         = 1,
     EMOTE_DANCE             = 2,
@@ -99,7 +79,7 @@ public:
 
     struct npc_kyle_frenziedAI : public ScriptedAI
     {
-        npc_kyle_frenziedAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_kyle_frenziedAI(Creature* creature) : ScriptedAI(creature) {}
 
         bool EventActive;
         bool IsMovingToLunch;
@@ -119,7 +99,7 @@ public:
                 me->UpdateEntry(NPC_KYLE_FRENZIED);
         }
 
-        void SpellHit(Unit* Caster, SpellInfo const* Spell)
+        void SpellHit(Unit* Caster, SpellInfo const* Spell) OVERRIDE
         {
             if (!me->GetVictim() && !EventActive && Spell->Id == SPELL_LUNCH)
             {
@@ -135,16 +115,16 @@ public:
 
                 EventActive = true;
                 Talk(EMOTE_SEE_LUNCH);
-                me->HandleEmote(EMOTE_ONESHOT_CREATURE_SPECIAL);
+                me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_ONESHOT_CREATURE_SPECIAL);
             }
         }
 
-        void MovementInform(uint32 type, uint32 pointId) OVERRIDE
+        void MovementInform(uint32 Type, uint32 PointId) OVERRIDE
         {
-            if (type != POINT_MOTION_TYPE || !EventActive)
+            if (Type != POINT_MOTION_TYPE || !EventActive)
                 return;
 
-            if (pointId == POINT_ID)
+            if (PointId == POINT_ID)
                 IsMovingToLunch = false;
         }
 
@@ -163,7 +143,7 @@ public:
                     switch (EventPhase)
                     {
                         case 1:
-                            if (Unit* unit = ObjectAccessor::GetUnit(*me, PlayerGUID))
+                            if (Unit* unit = Unit::GetUnit(*me, PlayerGUID))
                             {
                                 if (GameObject* go = unit->GetGameObject(SPELL_LUNCH))
                                 {
@@ -174,21 +154,20 @@ public:
                             break;
                         case 2:
                             Talk(EMOTE_EAT_LUNCH);
-                            me->HandleEmote(EMOTE_STATE_USE_STANDING);
+                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_USE_STANDING);
                             break;
                         case 3:
-                            if (Player* unit = ObjectAccessor::GetPlayer(*me, PlayerGUID))
+                            if (Player* unit = Unit::GetPlayer(*me, PlayerGUID))
                                 unit->TalkedToCreature(me->GetEntry(), me->GetGUID());
-
                             me->UpdateEntry(NPC_KYLE_FRIENDLY);
                             break;
                         case 4:
                             EventTimer = 30000;
                             Talk(EMOTE_DANCE);
-                            me->HandleEmote(EMOTE_STATE_DANCESPECIAL);
+                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_DANCESPECIAL);
                             break;
                         case 5:
-                            me->HandleEmote(EMOTE_STATE_NONE);
+                            me->SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, EMOTE_STATE_NONE);
                             Reset();
                             me->GetMotionMaster()->Clear();
                             break;
@@ -202,8 +181,268 @@ public:
 
 };
 
+enum TribeImprisoned
+{
+    QUEST_TRIBE_IMPRISONED = 24852,
+    GO_QUILBOAR_CAGE       = 202112,
+    NPC_BRAVE_CAPTIVE      = 38345,
+
+    EVENT_DESPAWN          = 1,
+    POINT_INIT             = 1
+};
+
+/*######
+# npc_brave_captive
+######*/
+
+class npc_brave_captive : public CreatureScript
+{
+    public:
+        npc_brave_captive() : CreatureScript("npc_brave_captive") { }
+
+        struct npc_brave_captiveAI : public ScriptedAI
+        {
+            npc_brave_captiveAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void Reset() OVERRIDE
+            {
+                if (GameObject* cage = me->FindNearestGameObject(GO_QUILBOAR_CAGE, 5.0f))
+                {
+                    cage->SetLootState(GO_JUST_DEACTIVATED);
+                    cage->SetGoState(GO_STATE_READY);
+                }
+
+                _events.Reset();
+                _player = NULL;
+                _movementComplete = false;
+            }
+
+            void StartMoving(Player* owner) OVERRIDE
+            {
+                if (owner)
+                {
+                    switch(urand(0, 2))
+                    {
+                        case 0: me->MonsterSay("The quilboar will pay!", LANG_UNIVERSAL, 0); break;
+                        case 1: me->MonsterSay("Thank the Earth Mother!", LANG_UNIVERSAL, 0); break;
+                        case 2: me->MonsterSay("I can move again!", LANG_UNIVERSAL, 0); break;
+                        default: break;
+                    }
+
+                    _player = owner;
+                }
+
+                Position pos;
+                me->GetNearPosition(pos, 3.0f, 0.0f);
+                me->GetMotionMaster()->MovePoint(POINT_INIT, pos);
+            }
+
+            void MovementInform(uint32 type, uint32 id) OVERRIDE
+            {
+                if (type != POINT_MOTION_TYPE || id != POINT_INIT)
+                    return;
+
+                if (_player)
+                    _player->KilledMonsterCredit(me->GetEntry(), me->GetGUID());
+
+                _movementComplete = true;
+                _events.ScheduleEvent(EVENT_DESPAWN, 3500);
+            }
+
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
+                if (!_movementComplete)
+                    return;
+
+                _events.Update(diff);
+
+                if (_events.ExecuteEvent() == EVENT_DESPAWN)
+                    me->DespawnOrUnsummon();
+            }
+
+        private:
+            Player* _player;
+            EventMap _events;
+            bool _movementComplete;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return new npc_brave_captiveAI(creature);
+        }
+};
+
+/*######
+# go_quilboar_cage
+######*/
+
+class go_quilboar_cage : public GameObjectScript
+{
+    public:
+        go_quilboar_cage() : GameObjectScript("go_quilboar_cage") { }
+
+        bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
+        {
+            if (player->GetQuestStatus(QUEST_TRIBE_IMPRISONED) == QUEST_STATUS_INCOMPLETE)
+            {
+                if (Creature* captive = go->FindNearestCreature(NPC_BRAVE_CAPTIVE, 5.0f, true))
+                {
+                    go->ResetDoorOrButton();
+                    CAST_AI(npc_brave_captive::npc_brave_captiveAI, captive->AI())->StartMoving(player);
+                    return false;
+                }
+            }
+            return true;
+        }
+};
+
+/*######
+## npc_wounded_brave
+######*/
+
+class npc_wounded_brave : public CreatureScript
+{
+public:
+    npc_wounded_brave() : CreatureScript("npc_wounded_brave") { }
+
+    struct npc_wounded_braveAI : public ScriptedAI
+    {
+        npc_wounded_braveAI(Creature* creature) : ScriptedAI(creature) { }
+
+        bool IsHealed;
+
+        void Reset() OVERRIDE
+        {
+            IsHealed = false;
+        }
+
+        void SpellHit(Unit* caster, const SpellInfo* spell) OVERRIDE
+        {
+            if ((spell->Id == 2061 || spell->Id == 774) && !IsHealed)
+            {
+                switch(urand(0, 2))
+                {
+                    case 0: me->MonsterSay("For the Earthmother!", LANG_UNIVERSAL, 0); break;
+                    case 1: me->MonsterSay("Blessings to you!", LANG_UNIVERSAL, 0); break;
+                    case 2: me->MonsterSay("Ahh, I feel better already. Thank you!", LANG_UNIVERSAL, 0); break;
+                    default: break;
+                }
+
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+                me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                me->DespawnOrUnsummon(3000);
+                IsHealed = true;
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_wounded_braveAI (creature);
+    }
+};
+
+/*######
+## npc_agitated_earth_spirit
+######*/
+
+enum AgitatedEarth
+{
+    EVENT_ROCK_BARRAGE = 1,
+    SPELL_ROCK_BARRAGE = 81305
+};
+
+class npc_agitated_earth_spirit : public CreatureScript
+{
+public:
+    npc_agitated_earth_spirit() : CreatureScript("npc_agitated_earth_spirit") { }
+
+    struct npc_agitated_earth_spiritAI : public ScriptedAI
+    {
+        npc_agitated_earth_spiritAI(Creature* creature) : ScriptedAI(creature) { }
+
+        EventMap events;
+        bool IsCalmed;
+
+        void Reset() OVERRIDE
+        {
+            events.Reset();
+            IsCalmed = false;
+        }
+
+        void EnterCombat(Unit* /*who*/) OVERRIDE
+        {
+            events.ScheduleEvent(EVENT_ROCK_BARRAGE, urand(2000, 5000));
+        }
+
+        void EnterEvadeMode() OVERRIDE
+        {
+            me->RemoveAllAuras();
+            events.Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            me->GetMotionMaster()->MoveTargetedHome();
+        }
+
+        void SpellHit(Unit* caster, const SpellInfo* spell) OVERRIDE
+        {
+            if (spell->Id == 69453 && !IsCalmed) // Drum of the Soothed Earth
+            {
+                switch(urand(0, 1))
+                {
+                    case 0:
+                        me->MonsterTextEmote("The spirit is pleased and calms itself!", caster->GetGUID(), true);
+                        if (caster->ToPlayer())
+                            caster->ToPlayer()->KilledMonsterCredit(36872, 0); // Quest credit.
+                        me->setFaction(35);
+                        if (me->IsInCombat()) EnterEvadeMode();
+                        me->DespawnOrUnsummon(5000);
+                        break;
+                    case 1:
+                        me->MonsterTextEmote("The spirit is displeased and attacks!", caster->GetGUID(), true);
+                        me->setFaction(14);
+                        me->AI()->AttackStart(caster);
+                        break;
+                    default: break;
+                }
+
+                IsCalmed = true;
+            }
+        }
+
+        void KilledUnit(Unit* victim) OVERRIDE
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                IsCalmed = false; // Reset hit if kills player.
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+
+            if (events.ExecuteEvent() == EVENT_ROCK_BARRAGE)
+            {
+                DoCast(me->GetVictim(), SPELL_ROCK_BARRAGE);
+                events.ScheduleEvent(EVENT_ROCK_BARRAGE, urand(6000, 9000));
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_agitated_earth_spiritAI (creature);
+    }
+};
+
 void AddSC_mulgore()
 {
     new npc_skorn_whitecloud();
     new npc_kyle_frenzied();
+    new npc_brave_captive();
+    new go_quilboar_cage();
+    new npc_wounded_brave();
+    new npc_agitated_earth_spirit();
 }

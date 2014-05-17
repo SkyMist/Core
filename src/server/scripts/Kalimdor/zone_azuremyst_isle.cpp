@@ -324,10 +324,93 @@ public:
 
         void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
 
-
         void UpdateAI(uint32 /*diff*/) OVERRIDE { }
     };
 
+};
+
+/*######
+## npc_nestlewood_owlkin
+######*/
+
+enum OwlkinEvents
+{
+    EVENT_INOCULATED    = 1
+};
+
+class npc_nestlewood_owlkin : public CreatureScript
+{
+public:
+    npc_nestlewood_owlkin() : CreatureScript("npc_nestlewood_owlkin") { }
+
+    struct npc_nestlewood_owlkinAI : public ScriptedAI
+    {
+        npc_nestlewood_owlkinAI(Creature* creature) : ScriptedAI(creature) { }
+
+        EventMap events;
+        Player* PlayerCaster;
+        bool IsInoculated;
+
+        void Reset() OVERRIDE
+        {
+            PlayerCaster = NULL;
+            IsInoculated = false;
+            events.Reset();
+        }
+
+        void SpellHit(Unit* caster, const SpellInfo* spell) OVERRIDE
+        {
+            if (spell->Id == 29528 && !IsInoculated)
+            {
+                events.ScheduleEvent(EVENT_INOCULATED, 3500);
+                if (caster->GetTypeId() == TYPEID_PLAYER)
+                    PlayerCaster = caster->ToPlayer();
+                IsInoculated = true;
+            }
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            events.Update(diff);
+
+            if (uint32 eventId = events.ExecuteEvent())
+            {
+                switch (eventId)
+                {
+                    case EVENT_INOCULATED:
+                    {
+                        switch(urand(0, 6))
+                        {
+                            case 0: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin didn't like what just happened.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE); break;
+                            case 1: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin looks confused.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_CHICKEN); break;
+                            case 2: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin nods appreciatively.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_YES); break;
+                            case 3: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin doesn't look like it minds the crystal's effect.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_WAVE); break;
+                            case 4: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin is agitated by the inoculation.", 0, false); me->HandleEmoteCommand(EMOTE_STATE_DANCE); break;
+                            case 5: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin seems disoriented.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_COWER); break;
+                            case 6: me->MonsterTextEmote("The Inoculated Nestlewood Owlkin wanders aimlessly.", 0, false); me->HandleEmoteCommand(EMOTE_ONESHOT_JUMPLANDRUN); break;
+                            default: break;
+                        }
+
+                        if (PlayerCaster)
+                            PlayerCaster->KilledMonsterCredit(16518, 0);
+                        me->UpdateEntry(16534);
+                        me->DespawnOrUnsummon(8000);
+                        break;
+                    }
+                }
+            }
+
+            if (!UpdateVictim())
+                return;
+
+			DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_nestlewood_owlkinAI (creature);
+    }
 };
 
 /*######
@@ -401,174 +484,6 @@ public:
         }
 
         void Reset() OVERRIDE { }
-    };
-
-};
-
-/*######
-## npc_geezle
-######*/
-
-enum Geezle
-{
-    QUEST_TREES_COMPANY = 9531,
-
-    SPELL_TREE_DISGUISE = 30298,
-
-    GEEZLE_SAY_1    = 0,
-    SPARK_SAY_2     = 3,
-    SPARK_SAY_3     = 4,
-    GEEZLE_SAY_4    = 1,
-    SPARK_SAY_5     = 5,
-    SPARK_SAY_6     = 6,
-    GEEZLE_SAY_7    = 2,
-
-    EMOTE_SPARK     = 7,
-
-    NPC_SPARK       = 17243,
-    GO_NAGA_FLAG    = 181694
-};
-
-Position const SparkPos = {-5029.91f, -11291.79f, 8.096f, 0.0f};
-
-class npc_geezle : public CreatureScript
-{
-public:
-    npc_geezle() : CreatureScript("npc_geezle") { }
-
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new npc_geezleAI(creature);
-    }
-
-    struct npc_geezleAI : public ScriptedAI
-    {
-        npc_geezleAI(Creature* creature) : ScriptedAI(creature) { }
-
-        uint64 SparkGUID;
-
-        uint8 Step;
-        uint32 SayTimer;
-
-        bool EventStarted;
-
-        void Reset() OVERRIDE
-        {
-            SparkGUID = 0;
-            Step = 0;
-            StartEvent();
-        }
-
-        void EnterCombat(Unit* /*who*/)OVERRIDE { }
-
-        void StartEvent()
-        {
-            Step = 0;
-            EventStarted = true;
-            if (Creature* Spark = me->SummonCreature(NPC_SPARK, SparkPos, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
-            {
-                SparkGUID = Spark->GetGUID();
-                Spark->setActive(true);
-                Spark->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-            }
-            SayTimer = 8000;
-        }
-
-        uint32 NextStep(uint8 Step)
-        {
-            Creature* Spark = Unit::GetCreature(*me, SparkGUID);
-            if (!Spark)
-                return 99999999;
-
-            switch (Step)
-            {
-                case 0:
-                    Spark->GetMotionMaster()->MovePoint(0, -5080.70f, -11253.61f, 0.56f);
-                    me->GetMotionMaster()->MovePoint(0, -5092.26f, -11252, 0.71f);
-                    return 9000;
-                case 1:
-                    DespawnNagaFlag(true);
-                    Spark->AI()->Talk(EMOTE_SPARK);
-                    return 1000;
-                case 2:
-                    Talk(GEEZLE_SAY_1, SparkGUID);
-                    Spark->SetInFront(me);
-                    me->SetInFront(Spark);
-                    return 5000;
-                case 3:
-                    Spark->AI()->Talk(SPARK_SAY_2);
-                    return 7000;
-                case 4:
-                    Spark->AI()->Talk(SPARK_SAY_3);
-                    return 8000;
-                case 5:
-                    Talk(GEEZLE_SAY_4, SparkGUID);
-                    return 8000;
-                case 6:
-                    Spark->AI()->Talk(SPARK_SAY_5);
-                    return 9000;
-                case 7:
-                    Spark->AI()->Talk(SPARK_SAY_6);
-                    return 8000;
-                case 8:
-                    Talk(GEEZLE_SAY_7, SparkGUID);
-                    return 2000;
-                case 9:
-                    me->GetMotionMaster()->MoveTargetedHome();
-                     Spark->GetMotionMaster()->MovePoint(0, SparkPos);
-                    CompleteQuest();
-                    return 9000;
-                case 10:
-                    Spark->DisappearAndDie();
-                    DespawnNagaFlag(false);
-                    me->DisappearAndDie();
-                default: return 99999999;
-            }
-        }
-
-        // will complete Tree's company quest for all nearby players that are disguised as trees
-        void CompleteQuest()
-        {
-            float radius = 50.0f;
-            std::list<Player*> players;
-            Trinity::AnyPlayerInObjectRangeCheck checker(me, radius);
-            Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
-            me->VisitNearbyWorldObject(radius, searcher);
-
-            for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                if ((*itr)->GetQuestStatus(QUEST_TREES_COMPANY) == QUEST_STATUS_INCOMPLETE && (*itr)->HasAura(SPELL_TREE_DISGUISE))
-                    (*itr)->KilledMonsterCredit(NPC_SPARK, 0);
-        }
-
-        void DespawnNagaFlag(bool despawn)
-        {
-            std::list<GameObject*> FlagList;
-            me->GetGameObjectListWithEntryInGrid(FlagList, GO_NAGA_FLAG, 100.0f);
-
-            if (!FlagList.empty())
-            {
-                for (std::list<GameObject*>::const_iterator itr = FlagList.begin(); itr != FlagList.end(); ++itr)
-                {
-                    if (despawn)
-                        (*itr)->SetLootState(GO_JUST_DEACTIVATED);
-                    else
-                        (*itr)->Respawn();
-                }
-            }
-            else
-                TC_LOG_ERROR("scripts", "SD2 ERROR: FlagList is empty!");
-        }
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if (SayTimer <= diff)
-            {
-                if (EventStarted)
-                    SayTimer = NextStep(Step++);
-            }
-            else
-                SayTimer -= diff;
-        }
     };
 
 };
@@ -687,6 +602,7 @@ class npc_stillpine_capitive : public CreatureScript
                     cage->SetLootState(GO_JUST_DEACTIVATED);
                     cage->SetGoState(GO_STATE_READY);
                 }
+
                 _events.Reset();
                 _player = NULL;
                 _movementComplete = false;
@@ -699,6 +615,7 @@ class npc_stillpine_capitive : public CreatureScript
                     Talk(CAPITIVE_SAY, owner->GetGUID());
                     _player = owner;
                 }
+
                 Position pos;
                 me->GetNearPosition(pos, 3.0f, 0.0f);
                 me->GetMotionMaster()->MovePoint(POINT_INIT, pos);
@@ -760,14 +677,55 @@ class go_bristlelimb_cage : public GameObjectScript
         }
 };
 
+/*########
+## Quest: Tree's Company - disguise spell.
+########*/
+
+class spell_tree_disguise : public SpellScriptLoader
+{
+public:
+    spell_tree_disguise() : SpellScriptLoader("spell_tree_disguise") { }
+
+    class spell_tree_disguise_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_tree_disguise_SpellScript);
+
+        void HandleSendEvent(SpellEffIndex effIndex) OVERRIDE
+        {
+            PreventHitDefaultEffect(effIndex);
+
+            if (Unit* caster = GetCaster())
+            {
+                caster->SummonCreature(17318, -5087.56f, -11253.2f, 0.5225f, 6.276f, TEMPSUMMON_MANUAL_DESPAWN); // Geezle
+                if (Creature* overgrind = caster->SummonCreature(17243, -5055.514f, -11264.48f, 0.90457f, 2.744f, TEMPSUMMON_TIMED_DESPAWN, 80000)) // Engineer "Spark" Overgrind
+                    overgrind->GetMotionMaster()->MovePoint(0, -5078.191f, -11253.187f, 0.662f);
+
+                caster->ToPlayer()->KilledMonsterCredit(17243, 0); // Quest credit.
+            }
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHit += SpellEffectFn(spell_tree_disguise_SpellScript::HandleSendEvent, EFFECT_2, SPELL_EFFECT_SEND_EVENT);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_tree_disguise_SpellScript();
+    }
+};
+
 void AddSC_azuremyst_isle()
 {
     new npc_draenei_survivor();
     new npc_engineer_spark_overgrind();
     new npc_injured_draenei();
+    new npc_nestlewood_owlkin();
     new npc_magwin();
     new npc_death_ravager();
     new go_ravager_cage();
     new npc_stillpine_capitive();
     new go_bristlelimb_cage();
+    new spell_tree_disguise();
 }

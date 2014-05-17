@@ -1,38 +1,12 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2013 Skymist Project.
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * This program is not free software. You may not redistribute it or modify it.
  */
-
-/* ScriptData
-SDName: Teldrassil
-SD%Complete: 100
-SDComment: Quest support: 938
-SDCategory: Teldrassil
-EndScriptData */
-
-/* ContentData
-npc_mist
-EndContentData */
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedFollowerAI.h"
-#include "Player.h"
 
 /*####
 # npc_mist
@@ -42,8 +16,10 @@ enum Mist
 {
     SAY_AT_HOME             = 0,
     EMOTE_AT_HOME           = 1,
+
     QUEST_MIST              = 938,
     NPC_ARYNIA              = 3519,
+
     FACTION_DARNASSUS       = 79
 };
 
@@ -73,21 +49,20 @@ public:
         void Reset() OVERRIDE { }
 
         void MoveInLineOfSight(Unit* who) OVERRIDE
-
         {
             FollowerAI::MoveInLineOfSight(who);
 
             if (!me->GetVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_ARYNIA)
             {
-                if (me->IsWithinDistInMap(who, 10.0f))
+                if (me->IsWithinDistInMap(who, 10.0f) && who->ToCreature())
                 {
-                    Talk(SAY_AT_HOME, who->GetGUID());
+                    who->ToCreature()->AI()->Talk(SAY_AT_HOME);
                     DoComplete();
                 }
             }
         }
 
-        void DoComplete()
+        void DoComplete() OVERRIDE
         {
             Talk(EMOTE_AT_HOME);
 
@@ -99,19 +74,54 @@ public:
             SetFollowComplete();
         }
 
-        //call not needed here, no known abilities
-        /*void UpdateFollowerAI(const uint32 Diff) OVERRIDE
+        void UpdateFollowerAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
 
             DoMeleeAttackIfReady();
-        }*/
+        }
     };
 
+};
+
+class npc_wounded_sentinel : public CreatureScript
+{
+public:
+    npc_wounded_sentinel() : CreatureScript("npc_wounded_sentinel") { }
+
+    struct npc_wounded_sentinelAI : public ScriptedAI
+    {
+        npc_wounded_sentinelAI(Creature* creature) : ScriptedAI(creature) { }
+
+        bool IsHealed;
+
+        void Reset() OVERRIDE
+        {
+            IsHealed = false;
+        }
+
+        void SpellHit(Unit* caster, const SpellInfo* spell) OVERRIDE
+        {
+            if ((spell->Id == 774 || spell->Id == 2061) && !IsHealed)
+            {
+                Talk(urand(0,2));
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+                me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                me->DespawnOrUnsummon(4000);
+                IsHealed = true;
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_wounded_sentinelAI (creature);
+    }
 };
 
 void AddSC_teldrassil()
 {
     new npc_mist();
+    new npc_wounded_sentinel();
 }
