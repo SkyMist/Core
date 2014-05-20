@@ -240,14 +240,14 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     if (hasCastFlags)
         castFlags = recvPacket.ReadBits(5);
 
-    itemTargetGuid[0] = recvPacket.ReadBit();
-    itemTargetGuid[4] = recvPacket.ReadBit();
-    itemTargetGuid[6] = recvPacket.ReadBit();
-    itemTargetGuid[1] = recvPacket.ReadBit();
-    itemTargetGuid[3] = recvPacket.ReadBit();
-    itemTargetGuid[5] = recvPacket.ReadBit();
-    itemTargetGuid[2] = recvPacket.ReadBit();
-    itemTargetGuid[7] = recvPacket.ReadBit();
+    targetGuid[0] = recvPacket.ReadBit();
+    targetGuid[4] = recvPacket.ReadBit();
+    targetGuid[6] = recvPacket.ReadBit();
+    targetGuid[1] = recvPacket.ReadBit();
+    targetGuid[3] = recvPacket.ReadBit();
+    targetGuid[5] = recvPacket.ReadBit();
+    targetGuid[2] = recvPacket.ReadBit();
+    targetGuid[7] = recvPacket.ReadBit();
 
     if (hasTargetMask)
         targetMask = recvPacket.ReadBits(20);
