@@ -18042,8 +18042,7 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
 
     WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, 6 * 4 + 1);
 
-    uint32 nextQuestID = quest->GetNextQuestInChain();
-    bool hasMoreQuestsInChain = (nextQuestID > 0) ? true : false;
+    bool hasMoreQuestsInChain = quest->GetNextQuestInChain() ? true : false;
 
     data << uint32(quest->GetRewardSkillPoints());         // 4.x bonus skill points
     data << uint32(questId);

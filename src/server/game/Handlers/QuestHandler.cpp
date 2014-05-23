@@ -966,7 +966,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             byteData.WriteByteSeq(NPCGuid[0]);
 
             // inform client about status of quest
-            if (questStatus > DIALOG_STATUS_NONE)
+            if (questStatus >= DIALOG_STATUS_NONE)
                 _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, NPCGuid);
 
             ++count;
@@ -1007,7 +1007,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             byteData.WriteByteSeq(GOGuid[0]);
 
             // inform client about status of quest
-            if (questStatus > DIALOG_STATUS_NONE)
+            if (questStatus >= DIALOG_STATUS_NONE)
                 _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, GOGuid);
 
             ++count;

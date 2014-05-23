@@ -213,6 +213,14 @@ enum QuestObjectiveType
     QUEST_OBJECTIVE_TYPE_PLAYER       = 9
 };
 
+enum QuestPOITypes
+{
+    QUEST_POI_NUMERIC = 1,            // number within a circle
+    QUEST_POI_COMPLETE_IN = 2,        // completed quest icon within a normal circle
+    QUEST_POI_COMPLETE_OUT = 3,       // completed quest icon within a darker circle (quest outside current zone)
+    QUEST_POI_COMPLETE_SWAP = 4       // completed quest icon without a circle that needs to be swapped on selection (for map)
+};
+
 struct QuestLocale
 {
     QuestLocale() { ObjectiveText.resize(QUEST_OBJECTIVES_COUNT); }
