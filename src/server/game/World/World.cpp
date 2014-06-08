@@ -2931,20 +2931,20 @@ void World::SendAutoBroadcast()
         {
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
 
-            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
-            notification.WriteBits(msg.length(), 11);
-            notification.FlushBits();
-            notification.WriteString(msg);
-            sWorld->SendGlobalMessage(&notification);
+            WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
+            data.WriteBits(msg.length(), 12);
+            data.FlushBits();
+            data.WriteString(msg);
+            sWorld->SendGlobalMessage(&data);
             break;
         }
         case 1:
         {
-            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
-            notification.WriteBits(msg.length(), 11);
-            notification.FlushBits();
-            notification.WriteString(msg);
-            sWorld->SendGlobalMessage(&notification);
+            WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
+            data.WriteBits(msg.length(), 12);
+            data.FlushBits();
+            data.WriteString(msg);
+            sWorld->SendGlobalMessage(&data);
             break;
         }
 

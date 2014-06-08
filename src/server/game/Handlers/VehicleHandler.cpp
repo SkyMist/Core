@@ -135,6 +135,8 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket& recvData)
             guid[2] = recvData.ReadBit();
             guid[7] = recvData.ReadBit();
 
+            recvData.FlushBits();
+
             recvData.ReadByteSeq(guid[6]);
             recvData.ReadByteSeq(guid[4]);
             recvData.ReadByteSeq(guid[1]);
@@ -161,6 +163,7 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket& data)
 {
     // Read guid
     ObjectGuid guid;
+
     guid[4] = data.ReadBit();
     guid[0] = data.ReadBit();
     guid[3] = data.ReadBit();
@@ -169,6 +172,8 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket& data)
     guid[7] = data.ReadBit();
     guid[5] = data.ReadBit();
     guid[6] = data.ReadBit();
+
+    data.FlushBits();
 
     data.ReadByteSeq(guid[0]);
     data.ReadByteSeq(guid[4]);

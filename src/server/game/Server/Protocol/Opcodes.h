@@ -37,8 +37,8 @@ enum Opcodes
 
    CMSG_ACCEPT_LEVEL_GRANT                                  = 0x0,
    CMSG_ACCEPT_TRADE                                        = 0x0,
-   CMSG_ACTIVATETAXI                                        = 0x0,
-   CMSG_ACTIVATETAXIEXPRESS                                 = 0x0,
+   CMSG_ACTIVATETAXI                                        = 0x0756, // 5.4.7 18019
+   CMSG_ACTIVATETAXIEXPRESS                                 = 0x0576, // 5.4.7 18019
    CMSG_ADDON_REGISTERED_PREFIXES                           = 0x1C40, // 5.4.7 18019 NYI
    CMSG_ADD_FRIEND                                          = 0x064F, // 5.4.7 18019
    CMSG_ADD_IGNORE                                          = 0x126D, // 5.4.7 18019
@@ -191,9 +191,8 @@ enum Opcodes
    CMSG_DESTROY_ITEM                                        = 0x1F12, // 5.4.7 18019
    CMSG_DISMISS_CONTROLLED_VEHICLE                          = 0x0979, // 5.4.7 18019
    CMSG_DISMISS_CRITTER                                     = 0x0,
-   CMSG_DUEL_ACCEPTED                                       = 0x0,
-   CMSG_DUEL_CANCELLED                                      = 0x0,
    CMSG_DUEL_PROPOSED                                       = 0x19B3, // 5.4.7 18019
+   CMSG_DUEL_RESPONSE                                       = 0x07FC, // 5.4.7 18019
    CMSG_EJECT_PASSENGER                                     = 0x0,
    CMSG_EMOTE                                               = 0x12C5, // 5.4.7 18019
    CMSG_ENABLETAXI                                          = 0x0,
@@ -386,7 +385,7 @@ enum Opcodes
    CMSG_MOVE_SET_COLLISION_HEIGHT_ACK                       = 0x0,
    CMSG_MOVE_SET_RELATIVE_POSITION                          = 0x0,
    CMSG_MOVE_SET_VEHICLE_REC_ID_ACK                         = 0x0,
-   CMSG_MOVE_SPLINE_DONE                                    = 0x0,
+   CMSG_MOVE_SPLINE_DONE                                    = 0x0833, // 5.4.7 18019
    CMSG_MOVE_TIME_SKIPPED                                   = 0x0,
    CMSG_MOVE_TOGGLE_COLLISION_ACK                           = 0x0,
    CMSG_MOVE_WATER_WALK_ACK                                 = 0x0,
@@ -401,7 +400,7 @@ enum Opcodes
    CMSG_OPEN_BROWSER                                        = 0x0,
    CMSG_OPEN_ITEM                                           = 0x146C, // 5.4.7 18019
    CMSG_OPT_OUT_OF_LOOT                                     = 0x0,
-   CMSG_PAGE_TEXT_QUERY                                     = 0x13B1, // 5.4.7 18019 NYI
+   CMSG_PAGE_TEXT_QUERY                                     = 0x13B1, // 5.4.7 18019
    CMSG_PARTY_SILENCE                                       = 0x0,
    CMSG_PARTY_UNSILENCE                                     = 0x0,
    CMSG_PETITION_BUY                                        = 0x0,
@@ -409,18 +408,18 @@ enum Opcodes
    CMSG_PETITION_SHOWLIST                                   = 0x0,
    CMSG_PETITION_SHOW_SIGNATURES                            = 0x0,
    CMSG_PETITION_SIGN                                       = 0x0,
-   CMSG_PET_ABANDON                                         = 0x0,
-   CMSG_PET_ACTION                                          = 0x04D4, // 5.4.7 18019 NYI
+   CMSG_PET_ABANDON                                         = 0x05D7, // 5.4.7 18019
+   CMSG_PET_ACTION                                          = 0x04D4, // 5.4.7 18019
    CMSG_PET_BATTLE_QUEUE_JOIN                               = 0x13B0, // 5.4.7 18019 NYI
    CMSG_PET_BATTLE_QUEUE_LEAVE                              = 0x1C73, // 5.4.7 18019 NYI
-   CMSG_PET_CANCEL_AURA                                     = 0x0,
+   CMSG_PET_CANCEL_AURA                                     = 0x01F5, // 5.4.7 18019
    CMSG_PET_CAST_SPELL                                      = 0x0,
    CMSG_PET_NAME_CACHE                                      = 0x0,
    CMSG_PET_NAME_QUERY                                      = 0x16A3, // 5.4.7 18019
-   CMSG_PET_RENAME                                          = 0x0,
-   CMSG_PET_SET_ACTION                                      = 0x0,
-   CMSG_PET_SPELL_AUTOCAST                                  = 0x07DE, // 5.4.7 18019 NYI
-   CMSG_PET_STOP_ATTACK                                     = 0x0,
+   CMSG_PET_RENAME                                          = 0x133A, // 5.4.7 18019
+   CMSG_PET_SET_ACTION                                      = 0x07DE, // 5.4.7 18019
+   CMSG_PET_SPELL_AUTOCAST                                  = 0x0,
+   CMSG_PET_STOP_ATTACK                                     = 0x07F7, // 5.4.7 18019
    CMSG_PING                                                = 0x1070, // 5.4.7 18019
    CMSG_PLAYED_TIME                                         = 0x173A, // 5.4.7 18019
    CMSG_PLAYER_DIFFICULTY_CHANGE                            = 0x0,
@@ -470,7 +469,7 @@ enum Opcodes
    CMSG_REPORT_PVP_AFK                                      = 0x0,
    CMSG_REQUEST_ACCOUNT_DATA                                = 0x0,
    CMSG_REQUEST_CATEGORY_COOLDOWNS                          = 0x0,
-   CMSG_REQUEST_CEMETERY_LIST                               = 0x0,
+   CMSG_REQUEST_CEMETERY_LIST                               = 0x14A9, // 5.4.7 18019 NYI
    CMSG_REQUEST_HOTFIX                                      = 0x16C2, // 5.4.7 18019
    CMSG_REQUEST_INSPECT_RATED_BG_STATS                      = 0x0,
    CMSG_REQUEST_PARTY_MEMBER_STATS                          = 0x1333, // 5.4.7 18019 NYI
@@ -654,7 +653,7 @@ enum Opcodes
    MSG_PETITION_DECLINE                                     = 0x0,
    MSG_PETITION_RENAME                                      = 0x0,
    MSG_PVP_LOG_DATA                                         = 0x0,
-   MSG_QUERY_NEXT_MAIL_TIME                                 = 0x0,
+   MSG_QUERY_NEXT_MAIL_TIME                                 = 0x05F7, // 5.4.7 18019 NYI
    MSG_QUEST_PUSH_RESULT                                    = 0x0,
    MSG_RAID_READY_CHECK_FINISHED                            = 0x0,
    MSG_RAID_TARGET_UPDATE                                   = 0x0,
@@ -669,7 +668,7 @@ enum Opcodes
    SMSG_ACHIEVEMENT_DELETED                                 = 0x0,
    SMSG_ACHIEVEMENT_EARNED                                  = 0x0,
    SMSG_ACTION_BUTTONS                                      = 0x1768, // 5.4.7 18019
-   SMSG_ACTIVATETAXIREPLY                                   = 0x0,
+   SMSG_ACTIVATETAXIREPLY                                   = 0x1D72, // 5.4.7 18019
    SMSG_ADDON_INFO                                          = 0x10E2, // 5.4.7 18019
    SMSG_ADD_RUNE_POWER                                      = 0x0,
    SMSG_AI_REACTION                                         = 0x0721, // 5.4.7 18019
@@ -891,13 +890,13 @@ enum Opcodes
    SMSG_GAMEOBJECT_PAGETEXT                                 = 0x0549, // 5.4.7 18019
    SMSG_GAMEOBJECT_QUERY_RESPONSE                           = 0x066A, // 5.4.7 18019
    SMSG_GAMEOBJECT_RESET_STATE                              = 0x0,
-   SMSG_GAMESPEED_SET                                       = 0x0,
+   SMSG_GAMESPEED_SET                                       = 0x1D73, // 5.4.7 18019 NYI
    SMSG_GAME_STORE_AUTH_BUY_FAILED                          = 0x0C40, // 5.4.7 18019
    SMSG_GAME_STORE_BUY_RESULT                               = 0x12AB, // 5.4.7 18019
    SMSG_GAME_STORE_INGAME_BUY_FAILED                        = 0x145A, // 5.4.7 18019
    SMSG_GAME_STORE_LIST                                     = 0x1C29, // 5.4.7 18019
-   SMSG_GAMETIME_SET                                        = 0x0,
-   SMSG_GAMETIME_UPDATE                                     = 0x0,
+   SMSG_GAMETIME_SET                                        = 0x037E, // 5.4.7 18019 NYI
+   SMSG_GAMETIME_UPDATE                                     = 0x00A3, // 5.4.7 18019 NYI
    SMSG_GAME_EVENT_DEBUG_LOG                                = 0x0,
    SMSG_GAME_OBJECT_ACTIVATE_ANIM_KIT                       = 0x0,
    SMSG_GMRESPONSE_DB_ERROR                                 = 0x0,
@@ -1091,7 +1090,7 @@ enum Opcodes
    SMSG_MOVE_SET_ACTIVE_MOVER                               = 0x129A, // 5.4.7 18019
    SMSG_MOVE_SET_CAN_FLY                                    = 0x01F4, // 5.4.7 18019
    SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY        = 0x0,
-   SMSG_MOVE_SET_COLLISION_HEIGHT                           = 0x0,
+   SMSG_MOVE_SET_COLLISION_HEIGHT                           = 0x0DB0, // 5.4.7 18019
    SMSG_MOVE_SET_COMPOUND_STATE                             = 0x0,
    SMSG_MOVE_SET_FLIGHT_BACK_SPEED                          = 0x0,
    SMSG_MOVE_SET_FLIGHT_SPEED                               = 0x02DC, // 5.4.7 18019
@@ -1221,7 +1220,7 @@ enum Opcodes
    SMSG_QUESTUPDATE_ADD_OBJECTIVE                           = 0x0232, // 5.4.7 18019
    SMSG_QUESTUPDATE_UPDATE_OBJECTIVE                        = 0x0B1A, // 5.4.7 18019
    SMSG_QUESTUPDATE_ADD_PVP_KILL                            = 0x1E21, // 5.4.7 18019
-   SMSG_QUESTUPDATE_COMPLETE                                = 0x0E23, // 5.4.7 18019
+   SMSG_QUESTUPDATE_COMPLETE                                = 0x0,
    SMSG_QUESTUPDATE_FAILED                                  = 0x1C68, // 5.4.7 18019
    SMSG_QUESTUPDATE_FAILEDTIMER                             = 0x1F69, // 5.4.7 18019
    SMSG_QUEST_NPC_QUERY_RESPONSE                            = 0x0957, // 5.4.7 18019
@@ -1271,7 +1270,7 @@ enum Opcodes
    SMSG_SELL_ITEM                                           = 0x0,
    SMSG_SEND_MAIL_RESULT                                    = 0x0,
    SMSG_SEND_UNLEARN_SPELLS                                 = 0x1B3E, // 5.4.7 18019 NYI
-   SMSG_SERVERTIME                                          = 0x0,
+   SMSG_SERVERTIME                                          = 0x047E, // 5.4.7 18019 NYI
    SMSG_SERVER_FIRST_ACHIEVEMENT                            = 0x0,
    SMSG_SERVER_INFO_RESPONSE                                = 0x0,
    SMSG_SERVER_MESSAGE                                      = 0x026E, // 5.4.7 18019
@@ -1298,7 +1297,7 @@ enum Opcodes
    SMSG_SHOP_BUY                                            = 0x0,
    SMSG_SHOP_BUY_ERROR                                      = 0x0,
    SMSG_SHOP_ITEM                                           = 0x0,
-   SMSG_SHOWTAXINODES                                       = 0x0,
+   SMSG_SHOWTAXINODES                                       = 0x14A3, // 5.4.7 18019
    SMSG_SHOW_BANK                                           = 0x060B, // 5.4.7 18019
    SMSG_SHOW_RATINGS                                        = 0x0,
    SMSG_SOCKET_GEMS_RESULT                                  = 0x0,
@@ -1369,7 +1368,7 @@ enum Opcodes
    SMSG_TALENTS_ERROR                                       = 0x0,
    SMSG_TALENTS_INFO                                        = 0x0C68, // 5.4.7 18019
    SMSG_TALENTS_INVOLUNTARILY_RESET                         = 0x0,
-   SMSG_TAXINODE_STATUS                                     = 0x0,
+   SMSG_TAXINODE_STATUS                                     = 0x0E23, // 5.4.7 18019
    SMSG_TEST_DROP_RATE_RESULT                               = 0x0,
    SMSG_TEXT_EMOTE                                          = 0x0522, // 5.4.7 18019
    SMSG_THREAT_CLEAR                                        = 0x1D7A, // 5.4.7 18019
@@ -1393,7 +1392,7 @@ enum Opcodes
    SMSG_TUTORIAL_FLAGS                                      = 0x10A7, // 5.4.7 18019
    SMSG_UNIT_HEALTH_FREQUENT                                = 0x0,
    SMSG_UNIT_SPELLCAST_START                                = 0x0,
-   SMSG_UPDATE_ACCOUNT_DATA                                 = 0x0,
+   SMSG_UPDATE_ACCOUNT_DATA                                 = 0x13B9, // 5.4.7 18019 NYI
    SMSG_UPDATE_ACCOUNT_DATA_COMPLETE                        = 0x0,
    SMSG_UPDATE_COMBO_POINTS                                 = 0x0C88, // 5.4.7 18019
    SMSG_UPDATE_CURRENCY                                     = 0x173B, // 5.4.7 18019

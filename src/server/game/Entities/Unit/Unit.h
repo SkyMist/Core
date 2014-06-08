@@ -1524,8 +1524,6 @@ class Unit : public WorldObject
 
         virtual uint32 GetBlockPercent() const { return 30; }
 
-        uint32 GetUnitMeleeSkill(Unit const* target = NULL) const;
-
         float GetWeaponProcChance() const;
         float GetPPMProcChance(uint32 WeaponSpeed, float PPM,  const SpellInfo* spellProto) const;
 
@@ -1760,6 +1758,8 @@ class Unit : public WorldObject
         void RemoveAurasWithFamily(SpellFamilyNames family, uint32 familyFlag1, uint32 familyFlag2, uint32 familyFlag3, uint64 casterGUID);
         void RemoveAurasWithMechanic(uint32 mechanic_mask, AuraRemoveMode removemode = AURA_REMOVE_BY_DEFAULT, uint32 except=0);
         void RemoveMovementImpairingAuras();
+        void RemoveAurasBreakableByDamage();
+        void RemoveBGFlagsAuras();
 
         void RemoveAreaAurasDueToLeaveWorld();
         void RemoveAllAuras();

@@ -87,9 +87,13 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
     data.WriteBit(guid2[5]);
     data.WriteBit(guid3[3]);
     data.WriteBit(guid2[4]);
+
     data.WriteBit(0);
+
     data.WriteBit(guid3[6]);
+
     data.WriteBits(nameData->m_name.size(), 6);
+
     data.WriteBit(guid2[2]);
     data.WriteBit(guid2[6]);
     data.WriteBit(guid2[0]);
@@ -123,7 +127,9 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
     data.WriteByteSeq(guid3[6]);
     data.WriteByteSeq(guid3[2]);
     data.WriteByteSeq(guid3[3]);
+
     data.WriteString(nameData->m_name);
+
     data.WriteByteSeq(guid2[3]);
     data.WriteByteSeq(guid2[6]);
 
@@ -139,7 +145,9 @@ void WorldSession::HandleNameQueryOpcode(WorldPacket& recvData)
     uint32 unk, unk1;
 
     guid[4] = recvData.ReadBit();
+
     bit20 = recvData.ReadBit();
+
     guid[2] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
@@ -147,7 +155,10 @@ void WorldSession::HandleNameQueryOpcode(WorldPacket& recvData)
     guid[6] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
+
     bit28 = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[0]);
@@ -186,6 +197,7 @@ void WorldSession::SendRealmNameQueryOpcode(uint32 realmId)
         data.WriteBits(realmName.length(), 8);
         data.WriteBit(realmId == realmID);
         data.WriteBits(realmName.length(), 8);
+
         data.FlushBits();
 
         data.WriteString(realmName);
@@ -390,6 +402,8 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
     guid[6] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[1]);
@@ -521,6 +535,8 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
 
     data.WriteBit(corpseGuid[7]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(corpseGuid[3]);
     data.WriteByteSeq(corpseGuid[2]);
     data.WriteByteSeq(corpseGuid[1]);
@@ -547,8 +563,8 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
-    uint32 textID;
     ObjectGuid guid;
+    uint32 textID;
 
     recvData >> textID;
 
@@ -563,6 +579,8 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     guid[7] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[4]);
@@ -572,23 +590,21 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(guid[5]);
     recvData.ReadByteSeq(guid[7]);
 
-    GossipText const* pGossip = sObjectMgr->GetGossipText(textID);
+    GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
-    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 1 + 4 + 64);
+    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 64 + 4 + 1);
 
     data << uint32(64);                                 // size (8 * 4) * 2
 
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
-        data << float(pGossip ? pGossip->Options[i].Probability : 0);
-
-    data << textID;                                     // should be a broadcast id
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
+        data << float(gossip ? gossip->Options[i].Probability : 0);
 
     for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-        data << uint32(0);
+        data << uint32(0);                               // Broadcast Text Id
 
     data << textID;
 
-    data.WriteBit(1);                                   // has data
+    data.WriteBit(gossip ? 1 : 0);                       // has data
     data.FlushBits();
 
     SendPacket(&data);
@@ -601,9 +617,30 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_PAGE_TEXT_QUERY");
 
+    ObjectGuid guid;
     uint32 pageID;
+
     recvData >> pageID;
-    recvData.read_skip<uint64>();                          // guid
+
+    guid[1] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+
+    recvData.FlushBits();
+
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[1]);
 
     while (pageID)
     {

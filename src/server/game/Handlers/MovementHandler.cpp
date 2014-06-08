@@ -641,6 +641,12 @@ void WorldSession::HandleSetCollisionHeightAck(WorldPacket& recvPacket)
 
     static MovementStatusElements const heightElement = MSEExtraFloat;
     Movement::ExtraMovementStatusElement extra(&heightElement);
+
+    // Read the CMSG.
     MovementInfo movementInfo;
     GetPlayer()->ReadMovementInfo(recvPacket, &movementInfo, &extra);
+
+    // Send the responses.
+    GetPlayer()->SendMovementSetCollisionHeight(extra.Data.floatData);
+    Movement::PacketSender(GetPlayer(), NULL_OPCODE, NULL_OPCODE, SMSG_MOVE_UPDATE_COLLISION_HEIGHT, &extra).Send();
 }

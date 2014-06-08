@@ -3239,6 +3239,42 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     spellInfo->Effects[0].TriggerSpell = 0;
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     break;
+
+                // PANDARIA DUNGEONS
+
+                // Stormstout Brewery.
+                case 106807: // Ook-Ook Ground Pound
+                case 112944: // Hoptallus Carrot Breath
+                case 112992: // Hoptallus Furlwind
+                case 115003: // Yan-zhu Carbonation
+                    spellInfo->AuraInterruptFlags = 0x0;
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    break;
+
+                case 112945: // Hoptallus Carrot Breath damage
+                case 106560: // Yan-zhu Bloat damage
+                    spellInfo->ExcludeCasterAuraSpell = 0;
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    break;
+
+                case 106546: // Yan-zhu Bloat
+                case 106851: // Yan-zhu Blackout Brew
+                case 106563: // Yan-zhu Bubble Shield
+                    spellInfo->ExcludeCasterAuraSpell = 0;
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    spellInfo->AuraInterruptFlags = 0x0;
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    break;
+
+                // PANDARIA WORLD BOSSES
+
+                // Chi-ji, The Red Crane
+                case 144474: // Beacon of Hope
+                    spellInfo->Effects[0].Amplitude = 2000;
+                    break;
+
                 // SPELLS
                 case 688:   // Summon Imp
                     spellInfo->OverrideSpellList.push_back(112866); // Summon Fel Imp

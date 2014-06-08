@@ -692,11 +692,11 @@ void WorldSession::SendNotification(uint32 string_id, ...)
 
 void WorldSession::_SendNotificationPacket(const char* message)
 {
-    WorldPacket notification(SMSG_NOTIFICATION, 2 + strlen(message));
-    notification.WriteBits(strlen(message), 11);
-    notification.FlushBits();
-    notification.WriteString(std::string(message));
-    SendPacket(&notification);
+    WorldPacket data(SMSG_NOTIFICATION, 2 + strlen(message));
+    data.WriteBits(strlen(message), 12);
+    data.FlushBits();
+    data.WriteString(std::string(message));
+    SendPacket(&data);
 }
 
 const char *WorldSession::GetTrinityString(int32 entry) const

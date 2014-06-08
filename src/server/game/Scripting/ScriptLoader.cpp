@@ -115,6 +115,7 @@ void AddSC_boss_alizabal();
 void AddSC_boss_occuthar();
 void AddSC_boss_pit_lord_argaloth();
 void AddSC_instance_baradin_hold();
+void AddSC_baradin_hold();
 
 // Blackrock Depths
 void AddSC_blackrock_depths();
@@ -818,6 +819,13 @@ void AddSC_boss_sha_of_fear();
 void AddSC_terrace_of_endless_spring();
 void AddSC_instance_terrace_of_endless_spring();
 
+// Stormstout Brewery
+void AddSC_boss_ook_ook();
+void AddSC_boss_hoptallus();
+void AddSC_boss_yan_zhu_the_uncasked();
+void AddSC_stormstout_brewery();
+void AddSC_instance_stormstout_brewery();
+
 // Events
 void AddSC_event_childrens_week();
 
@@ -975,6 +983,7 @@ void AddEasternKingdomsScripts()
     AddSC_boss_occuthar();
     AddSC_boss_pit_lord_argaloth();
     AddSC_instance_baradin_hold();
+    AddSC_baradin_hold();
 
     // Blackrock Depths
     AddSC_blackrock_depths();
@@ -1697,6 +1706,13 @@ void AddPandariaScripts()
     AddSC_boss_sha_of_fear();
     AddSC_terrace_of_endless_spring();
 	AddSC_instance_terrace_of_endless_spring();
+
+    // Stormstout Brewery
+    AddSC_boss_ook_ook();
+    AddSC_boss_hoptallus();
+    AddSC_boss_yan_zhu_the_uncasked();
+    AddSC_stormstout_brewery();
+    AddSC_instance_stormstout_brewery();
 #endif
 }
 

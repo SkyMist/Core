@@ -24,7 +24,7 @@
 #include "Define.h"
 #include <cassert>
 
-#define MAX_CREATURE_BASE_HP 4
+#define MAX_CREATURE_BASE_HP 5
 
 enum SpellEffIndex
 {
@@ -417,7 +417,7 @@ enum SpellAttr0
     SPELL_ATTR0_CASTABLE_WHILE_SITTING           = 0x08000000, // 27 castable while sitting
     SPELL_ATTR0_CANT_USED_IN_COMBAT              = 0x10000000, // 28 Cannot be used in combat
     SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY    = 0x20000000, // 29 unaffected by invulnerability (hmm possible not...)
-    SPELL_ATTR0_HEARTBEAT_RESIST_CHECK           = 0x40000000, // 30 random chance the effect will end TODO: implement core support
+    SPELL_ATTR0_BREAKABLE_BY_DAMAGE              = 0x40000000, // 30 random chance the effect will end.
     SPELL_ATTR0_CANT_CANCEL                      = 0x80000000  // 31 positive aura can't be canceled
 };
 
@@ -779,6 +779,11 @@ enum SpellAttr10
     SPELL_ATTR10_UNK29                            = 0x20000000, // 29 SPELL_ATTR10_MOUNT_CHARACTER
     SPELL_ATTR10_UNK30                            = 0x40000000, // 30
     SPELL_ATTR10_UNK31                            = 0x80000000  // 31
+};
+
+enum SpellAttr11
+{
+    SPELL_ATTR11_UNK0                             = 0x00000001, // Some AOE effect spells like Ook-ook Ground Pound etc.
 };
 
 #define MIN_TALENT_SPEC         0
@@ -2189,7 +2194,8 @@ enum TextEmotes
     TEXT_EMOTE_OBJECT               = 450,
     TEXT_EMOTE_SWEAT                = 451,
     TEXT_EMOTE_YW                   = 453,
-    TEXT_EMOTE_READ                 = 456
+    TEXT_EMOTE_READ                 = 456,
+	TEXT_EMOTE_BOOT                 = 506
 };
 
 // Emotes.dbc
@@ -4386,19 +4392,22 @@ enum RemoveMethod
 
 enum ActivateTaxiReply
 {
-    ERR_TAXIOK                      = 0,
-    ERR_TAXIUNSPECIFIEDSERVERERROR  = 1,
-    ERR_TAXINOSUCHPATH              = 2,
-    ERR_TAXINOTENOUGHMONEY          = 3,
-    ERR_TAXITOOFARAWAY              = 4,
-    ERR_TAXINOVENDORNEARBY          = 5,
-    ERR_TAXINOTVISITED              = 6,
-    ERR_TAXIPLAYERBUSY              = 7,
-    ERR_TAXIPLAYERALREADYMOUNTED    = 8,
-    ERR_TAXIPLAYERSHAPESHIFTED      = 9,
-    ERR_TAXIPLAYERMOVING            = 10,
-    ERR_TAXISAMENODE                = 11,
-    ERR_TAXINOTSTANDING             = 12
+    ERR_TAXI_PLAYER_ALREADY_MOUNTED     = 0,
+    ERR_TAXI_NOT_ENOUGH_MONEY           = 1,
+    //                                  = 2,
+    ERR_TAXI_NOT_VISITED                = 3,
+    ERR_TAXI_UNSPECIFIED_SERVER_ERROR   = 4,
+    ERR_TAXI_PLAYER_BUSY                = 5,
+    ERR_TAXI_SAME_NODE                  = 6,
+    ERR_TAXI_NOT_STANDING               = 7,
+    ERR_TAXI_TOO_FAR_AWAY               = 8,
+    ERR_TAXI_PLAYER_MOVING              = 9,
+    //                                  = 10,
+    //                                  = 11,
+    ERR_TAXI_PLAYER_SHAPESHIFTED        = 12,
+    ERR_TAXI_NO_VENDOR_NEARBY           = 13,
+    ERR_TAXI_NO_SUCH_PATH               = 14,
+    ERR_TAXI_OK                         = 15  // No error.
 };
 
 enum ProfessionUI

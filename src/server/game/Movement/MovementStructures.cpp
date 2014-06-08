@@ -4510,31 +4510,6 @@ MovementStatusElements const MoveSetPitchRate[] =
     MSEEnd,
 };
 
-MovementStatusElements const MoveSetCollisionHeight[] =
-{
-    MSEZeroBit,
-    MSEZeroBit,
-    MSEHasGuidByte6,
-    MSEHasGuidByte1,
-    MSEHasGuidByte4,
-    MSEHasGuidByte7,
-    MSEHasGuidByte5,
-    MSEHasGuidByte2,
-    MSEHasGuidByte0,
-    MSEHasGuidByte3,
-    MSEGuidByte6,
-    MSEGuidByte0,
-    MSEGuidByte4,
-    MSEGuidByte3,
-    MSEGuidByte5,
-    MSECounter,
-    MSEGuidByte1,
-    MSEGuidByte2,
-    MSEGuidByte7,
-    MSEExtraElement,
-    MSEEnd,
-};
-
 MovementStatusElements const SplineMoveSetWalkMode[] =
 {
     MSEHasGuidByte7,
@@ -5479,8 +5454,6 @@ MovementStatusElements const* GetMovementStatusElementsSequence(Opcodes opcode)
         //    return MovementSetCanFlyAck;
         //case CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK:
         //    return MovementSetCanTransitionBetweenSwimAndFlyAck;
-        //case SMSG_MOVE_SET_COLLISION_HEIGHT:
-        //    return MoveSetCollisionHeight;
         //case CMSG_MOVE_SET_COLLISION_HEIGHT_ACK:
         //    return MovementSetCollisionHeightAck;
         //case SMSG_MOVE_UPDATE_COLLISION_HEIGHT:
@@ -5593,13 +5566,14 @@ MovementStatusElements const* GetMovementStatusElementsSequence(Opcodes opcode)
             return MoveUnroot;
         case CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE:
             return ChangeSeatsOnControlledVehicle;
-        //case CMSG_CAST_SPELL:
-        //case CMSG_PET_CAST_SPELL:
-        //case CMSG_USE_ITEM:
-        //    return CastSpellEmbeddedMovement;*/
-        default:
-            break;
+
+        default: break;
     }
 
     return NULL;
 }
+
+// Implemented in corresponding handlers case CMSG_CAST_SPELL:
+// Implemented in corresponding handlers case CMSG_PET_CAST_SPELL:
+// Implemented in corresponding handlers case CMSG_USE_ITEM:
+// Implemented in corresponding handlers     return CastSpellEmbeddedMovement;*/

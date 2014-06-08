@@ -198,18 +198,19 @@ void PlayerTaxi::LoadTaxiMask(std::string const &data)
     }
 }
 
-void PlayerTaxi::AppendTaximaskTo(ByteBuffer& data, bool all)
+void PlayerTaxi::AppendTaximaskTo(ByteBuffer& data, ByteBuffer& dataBuffer, bool all)
 {
-    data << uint32(TaxiMaskSize);
+    data.WriteBits(TaxiMaskSize, 24);
+
     if (all)
     {
         for (uint8 i = 0; i < TaxiMaskSize; ++i)
-            data << uint8(sTaxiNodesMask[i]);              // all existed nodes
+            dataBuffer << uint8(sTaxiNodesMask[i]);              // all existed nodes
     }
     else
     {
         for (uint8 i = 0; i < TaxiMaskSize; ++i)
-            data << uint8(m_taximask[i]);                  // known nodes
+            dataBuffer << uint8(m_taximask[i]);                  // known nodes
     }
 }
 
@@ -15655,7 +15656,7 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
     if (source->GetTypeId() == TYPEID_UNIT)
     {
         npcflags = source->GetUInt32Value(UNIT_FIELD_NPC_FLAGS);
-        if (showQuests && npcflags & UNIT_NPC_FLAG_QUESTGIVER)
+        if (showQuests && (npcflags & UNIT_NPC_FLAG_QUESTGIVER))
             PrepareQuestMenu(source->GetGUID());
     }
     else if (source->GetTypeId() == TYPEID_GAMEOBJECT)
@@ -20510,9 +20511,21 @@ bool Player::CheckInstanceLoginValid()
     }
     else
     {
-        // cannot be in normal instance without a group and more players than 1 in instance
-        if (!GetGroup() && GetMap()->GetPlayersCountExceptGMs() > 1)
-            return false;
+        // cannot be in normal instance without a group and more players than 1 in instance (Allow for older expansion maps).
+        if (!GetGroup())
+        {
+        	if (GetMap()->GetPlayersCountExceptGMs() > 1 && GetMap()->IsDungeon())
+                return false;
+        }
+        else
+        {
+            uint32 maxPlayers = ((InstanceMap*)GetMap())->GetMaxPlayers();
+            if (GetMap()->GetPlayersCountExceptGMs() >= maxPlayers)
+            {
+                SendTransferAborted(GetMap()->GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                return false;
+            }
+        }
     }
 
     // do checks for satisfy accessreqs, instance full, encounter in progress (raid), perm bind group != perm bind player
@@ -22384,6 +22397,7 @@ void Player::VehicleSpellInitialize()
     data.WriteBit(NPCGuid[7]);
     data.WriteBit(NPCGuid[4]);
     data.WriteBits(0, 22);                      //spells count
+
     data.FlushBits();
 
     for (CreatureSpellCooldowns::const_iterator itr = vehicle->m_CreatureSpellCooldowns.begin(); itr != vehicle->m_CreatureSpellCooldowns.end(); itr++)
@@ -22931,7 +22945,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // not let cheating with start flight in time of logout process || while in combat || has type state: stunned || has type state: root
     if (GetSession()->isLogingOut() || IsInCombat() || HasUnitState(UNIT_STATE_STUNNED) || HasUnitState(UNIT_STATE_ROOT))
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_BUSY);
         return false;
     }
 
@@ -22944,20 +22958,20 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         // not let cheating with start flight mounted
         if (IsMounted())
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERALREADYMOUNTED);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_ALREADY_MOUNTED);
             return false;
         }
 
         if (IsInDisallowedMountForm())
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERSHAPESHIFTED);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_SHAPESHIFTED);
             return false;
         }
 
         // not let cheating with start flight in time of logout process || if casting not finished || while in combat || if not use Spell's with EffectSendTaxi
         if (IsNonMeleeSpellCasted(false))
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_BUSY);
             return false;
         }
     }
@@ -22988,7 +23002,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(sourcenode);
     if (!node)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXINOSUCHPATH);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_NO_SUCH_PATH);
         return false;
     }
 
@@ -23001,14 +23015,14 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
             (node->z - GetPositionZ())*(node->z - GetPositionZ()) >
             (2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE))
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXITOOFARAWAY);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_TOO_FAR_AWAY);
             return false;
         }
     }
     // node must have pos if taxi master case (npc != NULL)
     else if (npc)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_UNSPECIFIED_SERVER_ERROR);
         return false;
     }
 
@@ -23071,7 +23085,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // in spell case allow 0 model
     if ((mount_display_id == 0 && spellid == 0) || sourcepath == 0)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_UNSPECIFIED_SERVER_ERROR);
         m_taxi.ClearTaxiDestinations();
         return false;
     }
@@ -23083,7 +23097,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
 
     if (money < totalcost)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXINOTENOUGHMONEY);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_NOT_ENOUGH_MONEY);
         m_taxi.ClearTaxiDestinations();
         return false;
     }
@@ -23105,7 +23119,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     }
     else
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIOK);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_OK);
         GetSession()->SendDoFlight(mount_display_id, sourcepath);
     }
     return true;

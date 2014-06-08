@@ -242,6 +242,27 @@ void AreaTrigger::Update(uint32 p_time)
             break;
         }
 
+        case 144692: // Pool of Fire Ordos
+        {
+            std::list<Player*> targetList;
+            radius = 15.0f;
+
+            GetPlayerListInGrid(targetList, 200.0f);
+
+            if (!targetList.empty())
+            {
+                for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                {
+                    // Pool of Fire - Periodic Damage
+                    if ((*itr)->GetDistance(this) > radius)
+                        (*itr)->RemoveAurasDueToSpell(144693);
+                    else if (!(*itr)->HasAura(144693))
+                        caster->AddAura(144693, *itr);
+                }
+            }
+            break;
+        }
+
         case 116546: // Draw Power
         {
             std::list<Unit*> targetList;
@@ -417,12 +438,22 @@ void AreaTrigger::Remove()
 
         switch (m_spellInfo->Id)
         {
-            case 116011:// Rune of Power : Remove the buff if caster is still in radius
+            case 116011: // Rune of Power : Remove the buff if caster is still in radius
                 if (m_caster && m_caster->HasAura(116014))
                     m_caster->RemoveAura(116014);
                 break;
-            default:
+
+            case 144692: // Pool of Fire Ordos
+            {
+                std::list<Player*> targetList;
+                GetPlayerListInGrid(targetList, 100.0f);
+                if (!targetList.empty())
+                    for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                        (*itr)->RemoveAurasDueToSpell(144693); // Pool of Fire - Periodic Damage Remove.
                 break;
+            }
+
+            default: break;
         }
 
         SendObjectDeSpawnAnim(GetGUID());

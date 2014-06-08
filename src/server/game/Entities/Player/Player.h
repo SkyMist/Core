@@ -1049,7 +1049,7 @@ class PlayerTaxi
             else
                 return false;
         }
-        void AppendTaximaskTo(ByteBuffer& data, bool all);
+        void AppendTaximaskTo(ByteBuffer& data, ByteBuffer& dataBuffer, bool all);
 
         // Destinations
         bool LoadTaxiDestinationsFromString(std::string const& values, uint32 team);
