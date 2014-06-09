@@ -399,7 +399,7 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         break;
 
                     case 28865: // Consumption
-                        damage = (((InstanceMap*)m_caster->GetMap())->GetDifficulty() == REGULAR_DIFFICULTY ? 2750 : 4250);
+                        damage = (((InstanceMap*)m_caster->GetMap())->GetDifficulty() == DUNGEON_DIFFICULTY_NORMAL ? 2750 : 4250);
                         break;
 
                     case 25599: // Thundercrash
@@ -4939,7 +4939,7 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                             m_originalCaster->CastSpell(unitTarget, 58689, true);
                             m_originalCaster->CastSpell(unitTarget, 58692, true);
                         }
-                        if (((InstanceMap*)m_originalCaster->GetMap())->GetDifficulty() == REGULAR_DIFFICULTY)
+                        if (((InstanceMap*)m_originalCaster->GetMap())->GetDifficulty() == DUNGEON_DIFFICULTY_NORMAL)
                         {
                             m_originalCaster->CastSpell(unitTarget, 58695, true);
                             m_originalCaster->CastSpell(unitTarget, 58696, true);

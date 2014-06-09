@@ -273,6 +273,22 @@ struct ScriptedAI : public CreatureAI
     bool Is25ManRaid() const { return (_difficulty == RAID_DIFFICULTY_25MAN_NORMAL || _difficulty == RAID_DIFFICULTY_25MAN_HEROIC || _difficulty == RAID_DIFFICULTY_25MAN_LFR); }
 
     template<class T> inline
+    const T& DUNGEON_MODE(const T& normal5, const T& heroic5) const
+    {
+        switch (_difficulty)
+        {
+            case DUNGEON_DIFFICULTY_NORMAL:
+                return normal5;
+            case DUNGEON_DIFFICULTY_HEROIC:
+                return heroic5;
+
+            default: break;
+        }
+
+        return normal5; // Return Normal Difficulty spell by default.
+    }
+
+    template<class T> inline
     const T& DUNGEON_MODE(const T& normal5, const T& heroic5, const T& challenge5) const
     {
         switch (_difficulty)
@@ -322,7 +338,7 @@ struct ScriptedAI : public CreatureAI
         return normal10; // Return Normal Difficulty spell by default.
     }
 
-    template<class T> inline
+    template<class T> inline // Also can use with 10 - 25n and 10-25hc (instead of flex and lfr).
     const T& RAID_MODE(const T& normal10, const T& normal25, const T& flex, const T& lfr) const
     {
         switch (_difficulty)
@@ -335,6 +351,10 @@ struct ScriptedAI : public CreatureAI
                 return flex;
             case RAID_DIFFICULTY_25MAN_LFR:
                 return lfr;
+            case RAID_DIFFICULTY_10MAN_HEROIC:
+                return flex;
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                return lfr;
 
             default: break;
         }
@@ -343,7 +363,7 @@ struct ScriptedAI : public CreatureAI
     }
 
     template<class T> inline
-        const T& RAID_MODE(const T& normal10, const T& normal25, const T& heroic10, const T& heroic25, const T& flex, const T& lfr) const
+    const T& RAID_MODE(const T& normal10, const T& normal25, const T& heroic10, const T& heroic25, const T& flex, const T& lfr) const
     {
         switch (_difficulty)
         {

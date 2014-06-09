@@ -547,35 +547,40 @@ void Unit::DisableSpline()
 void Unit::SendMoveKnockBack(Player* player, float speedXY, float speedZ, float vcos, float vsin)
 {
     ObjectGuid guid = GetGUID();
-    WorldPacket data(SMSG_MOVE_KNOCK_BACK, (1+8+4+4+4+4+4));
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[6]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[2]);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[1]);
+    WorldPacket data(SMSG_MOVE_KNOCK_BACK, (1 + 8 + 4 + 4 + 4 + 4 + 4));
+
     data.WriteBit(guid[4]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[2]);
 
-    data.WriteByteSeq(guid[1]);
+    data.FlushBits();
 
-    data << float(vsin);
     data << uint32(0);
 
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[7]);
-
-    data << float(speedXY);
-
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[3]);
 
-    data << float(speedZ);
     data << float(vcos);
 
-    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[7]);
+
+    data << float(speedZ);
+
+    data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[5]);
+
+    data << float(vsin);
+
+    data.WriteByteSeq(guid[4]);
+
+    data << float(speedXY);
 
     player->GetSession()->SendPacket(&data);
 }
@@ -937,8 +942,7 @@ void Unit::SetRooted(bool apply, bool packetOnly /*= false*/)
         if (apply)
         {
             // MOVEMENTFLAG_ROOT cannot be used in conjunction with MOVEMENTFLAG_MASK_MOVING (tested 3.3.5a)
-            // this will freeze clients. That's why we remove MOVEMENTFLAG_MASK_MOVING before
-            // setting MOVEMENTFLAG_ROOT
+            // this will freeze clients. That's why we remove MOVEMENTFLAG_MASK_MOVING before setting MOVEMENTFLAG_ROOT.
             RemoveUnitMovementFlag(MOVEMENTFLAG_MASK_MOVING);
             AddUnitMovementFlag(MOVEMENTFLAG_ROOT);
         }

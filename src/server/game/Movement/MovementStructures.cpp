@@ -20,7 +20,7 @@
 #include "MovementStructures.h"
 #include "Player.h"
 
-MovementStatusElements const PlayerMove[] =
+MovementStatusElements const PlayerMove[] = // 5.4.7 18019
 {
     MSEHasMovementFlags,       // 24
     MSEMovementFlags,          // 24
@@ -92,6 +92,7 @@ MovementStatusElements const PlayerMove[] =
     MSEPositionZ,              // 44
     MSEGuidByte7,              // 23
     MSEOrientation,            // 48
+
     MSEEnd
 
 };
@@ -170,6 +171,7 @@ MovementStatusElements const MovementFallLand[] = // 5.4.7 18019
     MSESplineElevation,        // 144
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -247,6 +249,7 @@ MovementStatusElements const MovementHeartBeat[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSETimestamp,              // 32
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -324,6 +327,7 @@ MovementStatusElements const MovementJump[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSEUnkTime,                // 168
     MSEPitch,                  // 112
+
     MSEEnd
 };
 
@@ -401,6 +405,7 @@ MovementStatusElements const MovementSetFacing[] = // 5.4.7 18019
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
     MSEOrientation,            // 48
+
     MSEEnd
 };
 
@@ -477,6 +482,7 @@ MovementStatusElements const MovementSetPitch[] = // 5.4.7 18019
     MSESplineElevation,        // 144
     MSEPitch,                  // 112
     MSEOrientation,            // 48
+
     MSEEnd
 };
 
@@ -554,6 +560,7 @@ MovementStatusElements const MovementStartBackward[] = // 5.4.7 18019
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -631,6 +638,7 @@ MovementStatusElements const MovementStartForward[] = // 5.4.7 18019
     MSEPitch,                  // 112
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -708,6 +716,7 @@ MovementStatusElements const MovementStartStrafeLeft[] = // 5.4.7 18019
     MSEPitch,                  // 112
     MSEUnkTime,                // 168
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -785,6 +794,7 @@ MovementStatusElements const MovementStartStrafeRight[] = // 5.4.7 18019
     MSEPitch,                  // 112
     MSETimestamp,              // 32
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -862,6 +872,7 @@ MovementStatusElements const MovementStartTurnLeft[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSETimestamp,              // 32
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -939,6 +950,7 @@ MovementStatusElements const MovementStartTurnRight[] = // 5.4.7  18019
     MSEUnkTime,                // 168
     MSEPitch,                  // 112
     MSESplineElevation,        // 144
+
     MSEEnd
 };
 
@@ -1016,6 +1028,7 @@ MovementStatusElements const MovementStop[] = // 5.4.7 18019
     MSEPitch,                  // 112
     MSESplineElevation,        // 144
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -1093,6 +1106,7 @@ MovementStatusElements const MovementStopStrafe[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSESplineElevation,        // 144
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -1170,6 +1184,7 @@ MovementStatusElements const MovementStopTurn[] = // 5.4.7 18019
     MSEFallVerticalSpeed,      // 120
     MSEFallTime,               // 116
     MSETimestamp,              // 32
+
     MSEEnd
 };
 
@@ -1247,6 +1262,7 @@ MovementStatusElements const MovementStartAscend[] = // 5.4.7 18019
     MSETimestamp,              // 32
     MSEPitch,                  // 112
     MSEOrientation,            // 48
+
     MSEEnd
 };
 
@@ -1324,6 +1340,7 @@ MovementStatusElements const MovementStartDescend[] = // 5.4.7 18019
     MSEPitch,                  // 112
     MSEOrientation,            // 48
     MSETimestamp,              // 32
+
     MSEEnd
 };
 
@@ -1401,6 +1418,7 @@ MovementStatusElements const MovementStartSwim[] = // 5.4.7 18019
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
     MSEPitch,                  // 112
+
     MSEEnd
 };
 
@@ -1478,6 +1496,7 @@ MovementStatusElements const MovementStopSwim[] = // 5.4.7 18019
     MSESplineElevation,        // 144
     MSEOrientation,            // 48
     MSEPitch,                  // 112
+
     MSEEnd
 };
 
@@ -1555,6 +1574,7 @@ MovementStatusElements const MovementStopAscend[] = // 5.4.7 18019
     MSEFallVerticalSpeed,      // 120
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -1632,6 +1652,7 @@ MovementStatusElements const MovementStopPitch[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSETimestamp,              // 32
     MSEPitch,                  // 112
+
     MSEEnd
 };
 
@@ -1709,6 +1730,7 @@ MovementStatusElements const MovementStartPitchDown[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSETimestamp,              // 32
     MSEPitch,                  // 112
+
     MSEEnd
 };
 
@@ -1786,6 +1808,7 @@ MovementStatusElements const MovementStartPitchUp[] = // 5.4.7 18019
     MSEOrientation,            // 48
     MSETimestamp,              // 32
     MSEUnkTime,                // 168
+
     MSEEnd
 };
 
@@ -2024,7 +2047,7 @@ MovementStatusElements const MoveNotActiveMover[] =
     MSEEnd,
 };
 
-MovementStatusElements const DismissControlledVehicle[] =
+MovementStatusElements const DismissControlledVehicle[] = // 5.4.7 18019
 {
     MSEPositionX,
     MSEPositionY,
@@ -2104,7 +2127,8 @@ MovementStatusElements const DismissControlledVehicle[] =
     MSETimestamp,
     MSESplineElevation,
     MSEOrientation,
-    MSEEnd,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveUpdateTeleport[] =
@@ -4105,202 +4129,234 @@ MovementStatusElements const MovementUpdateKnockBack[] =
     MSEEnd,
 };
 
-MovementStatusElements const SplineMoveSetWalkSpeed[] =
+MovementStatusElements const SplineMoveSetWalkSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte0,
     MSEHasGuidByte6,
     MSEHasGuidByte7,
-    MSEHasGuidByte3,
     MSEHasGuidByte5,
+    MSEHasGuidByte4,
+    MSEHasGuidByte3,
+    MSEHasGuidByte0,
     MSEHasGuidByte1,
     MSEHasGuidByte2,
-    MSEHasGuidByte4,
-    MSEGuidByte0,
-    MSEGuidByte4,
-    MSEGuidByte7,
-    MSEGuidByte1,
-    MSEGuidByte5,
+
     MSEGuidByte3,
-    MSEExtraElement,
+    MSEGuidByte0,
     MSEGuidByte6,
+    MSEGuidByte4,
     MSEGuidByte2,
-    MSEEnd,
+    MSEGuidByte5,
+
+    MSEExtraElement,
+
+    MSEGuidByte1,
+    MSEGuidByte7,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetRunSpeed[] =
+MovementStatusElements const SplineMoveSetRunSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte4,
-    MSEHasGuidByte0,
-    MSEHasGuidByte5,
-    MSEHasGuidByte7,
-    MSEHasGuidByte6,
-    MSEHasGuidByte3,
-    MSEHasGuidByte1,
     MSEHasGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte7,
+    MSEHasGuidByte7,
+    MSEHasGuidByte3,
+    MSEHasGuidByte5,
+    MSEHasGuidByte4,
+    MSEHasGuidByte1,
+    MSEHasGuidByte6,
+    MSEHasGuidByte0,
+
     MSEGuidByte6,
-    MSEGuidByte5,
+    MSEGuidByte7,
     MSEGuidByte3,
-    MSEGuidByte4,
+
     MSEExtraElement,
+
+    MSEGuidByte4,
+    MSEGuidByte0,
     MSEGuidByte2,
     MSEGuidByte1,
-    MSEEnd,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetRunBackSpeed[] =
+MovementStatusElements const SplineMoveSetRunBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte1,
+    MSEHasGuidByte5,
+    MSEHasGuidByte0,
+    MSEHasGuidByte7,
     MSEHasGuidByte2,
     MSEHasGuidByte6,
-    MSEHasGuidByte0,
-    MSEHasGuidByte3,
-    MSEHasGuidByte7,
-    MSEHasGuidByte5,
+    MSEHasGuidByte1,
     MSEHasGuidByte4,
-    MSEGuidByte1,
-    MSEExtraElement,
-    MSEGuidByte2,
-    MSEGuidByte4,
-    MSEGuidByte0,
-    MSEGuidByte3,
+    MSEHasGuidByte3,
+
     MSEGuidByte6,
-    MSEGuidByte5,
+
+    MSEExtraElement,
+
+    MSEGuidByte4,
+    MSEGuidByte2,
+    MSEGuidByte3,
     MSEGuidByte7,
-    MSEEnd,
+    MSEGuidByte1,
+    MSEGuidByte5,
+    MSEGuidByte0,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetSwimSpeed[] =
+MovementStatusElements const SplineMoveSetSwimSpeed[] = // 5.4.7 18019
 {
+    MSEHasGuidByte6,
     MSEHasGuidByte4,
-    MSEHasGuidByte2,
     MSEHasGuidByte5,
     MSEHasGuidByte0,
-    MSEHasGuidByte7,
-    MSEHasGuidByte6,
     MSEHasGuidByte3,
+    MSEHasGuidByte2,
+    MSEHasGuidByte7,
     MSEHasGuidByte1,
-    MSEGuidByte5,
-    MSEGuidByte6,
-    MSEGuidByte1,
-    MSEGuidByte0,
-    MSEGuidByte2,
-    MSEGuidByte4,
-    MSEExtraElement,
-    MSEGuidByte7,
+
     MSEGuidByte3,
-    MSEEnd,
+    MSEGuidByte0,
+    MSEGuidByte1,
+    MSEGuidByte6,
+    MSEGuidByte5,
+    MSEGuidByte4,
+
+    MSEExtraElement,
+
+    MSEGuidByte7,
+    MSEGuidByte2,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetSwimBackSpeed[] =
+MovementStatusElements const SplineMoveSetSwimBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte0,
-    MSEHasGuidByte1,
-    MSEHasGuidByte3,
-    MSEHasGuidByte6,
     MSEHasGuidByte4,
+    MSEHasGuidByte3,
     MSEHasGuidByte5,
-    MSEHasGuidByte7,
+    MSEHasGuidByte1,
     MSEHasGuidByte2,
+    MSEHasGuidByte6,
+    MSEHasGuidByte0,
+    MSEHasGuidByte7,
+
     MSEGuidByte5,
     MSEGuidByte3,
-    MSEGuidByte1,
     MSEGuidByte0,
-    MSEGuidByte7,
-    MSEGuidByte6,
-    MSEExtraElement,
-    MSEGuidByte4,
     MSEGuidByte2,
-    MSEEnd,
+    MSEExtraElement,
+    MSEGuidByte7,
+    MSEGuidByte4,
+    MSEGuidByte1,
+    MSEGuidByte6,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetTurnRate[] =
+MovementStatusElements const SplineMoveSetTurnRate[] = // 5.4.7 18019
 {
-    MSEHasGuidByte2,
-    MSEHasGuidByte4,
-    MSEHasGuidByte6,
-    MSEHasGuidByte1,
-    MSEHasGuidByte3,
-    MSEHasGuidByte5,
     MSEHasGuidByte7,
+    MSEHasGuidByte2,
+    MSEHasGuidByte1,
     MSEHasGuidByte0,
-    MSEExtraElement,
-    MSEGuidByte1,
-    MSEGuidByte5,
-    MSEGuidByte3,
-    MSEGuidByte2,
-    MSEGuidByte7,
+    MSEHasGuidByte5,
+    MSEHasGuidByte6,
+    MSEHasGuidByte3,
+    MSEHasGuidByte4,
+
     MSEGuidByte4,
+    MSEGuidByte1,
     MSEGuidByte6,
+    MSEGuidByte2,
     MSEGuidByte0,
-    MSEEnd,
+
+    MSEExtraElement,
+
+    MSEGuidByte7,
+    MSEGuidByte3,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetFlightSpeed[] =
+MovementStatusElements const SplineMoveSetFlightSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte7,
-    MSEHasGuidByte4,
-    MSEHasGuidByte0,
-    MSEHasGuidByte1,
-    MSEHasGuidByte3,
-    MSEHasGuidByte6,
-    MSEHasGuidByte5,
     MSEHasGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte5,
-    MSEGuidByte4,
-    MSEGuidByte7,
+    MSEHasGuidByte7,
+    MSEHasGuidByte0,
+    MSEHasGuidByte5,
+    MSEHasGuidByte6,
+    MSEHasGuidByte3,
+    MSEHasGuidByte4,
+    MSEHasGuidByte1,
+
     MSEGuidByte3,
+    MSEGuidByte4,
+    MSEGuidByte6,
     MSEGuidByte2,
     MSEGuidByte1,
-    MSEGuidByte6,
+    MSEGuidByte7,
+
     MSEExtraElement,
-    MSEEnd,
+
+    MSEGuidByte0,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetFlightBackSpeed[] =
+MovementStatusElements const SplineMoveSetFlightBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte2,
-    MSEHasGuidByte1,
-    MSEHasGuidByte6,
-    MSEHasGuidByte5,
     MSEHasGuidByte0,
-    MSEHasGuidByte3,
     MSEHasGuidByte4,
+    MSEHasGuidByte3,
+    MSEHasGuidByte6,
+    MSEHasGuidByte1,
     MSEHasGuidByte7,
-    MSEGuidByte5,
+    MSEHasGuidByte2,
+    MSEHasGuidByte5,
+
     MSEExtraElement,
-    MSEGuidByte6,
-    MSEGuidByte1,
-    MSEGuidByte0,
+
     MSEGuidByte2,
+    MSEGuidByte5,
+    MSEGuidByte4,
+    MSEGuidByte0,
     MSEGuidByte3,
     MSEGuidByte7,
-    MSEGuidByte4,
-    MSEEnd,
+    MSEGuidByte1,
+    MSEGuidByte6,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetPitchRate[] =
+MovementStatusElements const SplineMoveSetPitchRate[] = // 5.4.7 18019
 {
-    MSEHasGuidByte3,
+    MSEExtraElement,
+
     MSEHasGuidByte5,
+    MSEHasGuidByte3,
+    MSEHasGuidByte4,
+    MSEHasGuidByte2,
     MSEHasGuidByte6,
     MSEHasGuidByte1,
     MSEHasGuidByte0,
-    MSEHasGuidByte4,
     MSEHasGuidByte7,
-    MSEHasGuidByte2,
+
+    MSEGuidByte2,
+    MSEGuidByte3,
+    MSEGuidByte4,
+    MSEGuidByte6,
     MSEGuidByte1,
-    MSEGuidByte5,
     MSEGuidByte7,
     MSEGuidByte0,
-    MSEGuidByte6,
-    MSEGuidByte3,
-    MSEGuidByte2,
-    MSEExtraElement,
-    MSEGuidByte4,
-    MSEEnd,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveSetWalkSpeed[] = // 5.4.7 18019
@@ -4313,17 +4369,22 @@ MovementStatusElements const MoveSetWalkSpeed[] = // 5.4.7 18019
     MSEHasGuidByte4,
     MSEHasGuidByte7,
     MSEHasGuidByte2,
+
     MSEExtraElement,
+
     MSEGuidByte6,
     MSEGuidByte1,
     MSEGuidByte5,
+
     MSECounter,
+
     MSEGuidByte2,
     MSEGuidByte4,
     MSEGuidByte3,
     MSEGuidByte0,
     MSEGuidByte7,
-    MSEEnd,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveSetRunSpeed[] = // 5.4.7 18019
@@ -4336,46 +4397,59 @@ MovementStatusElements const MoveSetRunSpeed[] = // 5.4.7 18019
     MSEHasGuidByte3,
     MSEHasGuidByte7,
     MSEHasGuidByte6,
+
     MSEGuidByte3,
     MSEGuidByte2,
     MSEGuidByte6,
     MSEGuidByte0,
+
     MSECounter,
+
     MSEGuidByte5,
+
     MSEExtraElement,
+
     MSEGuidByte7,
     MSEGuidByte4,
     MSEGuidByte1,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetRunBackSpeed[] =
+MovementStatusElements const MoveSetRunBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte0,
-    MSEHasGuidByte6,
+    MSEHasGuidByte7,
     MSEHasGuidByte2,
+    MSEHasGuidByte6,
     MSEHasGuidByte1,
+    MSEHasGuidByte5,
+    MSEHasGuidByte0,
     MSEHasGuidByte3,
     MSEHasGuidByte4,
-    MSEHasGuidByte5,
-    MSEHasGuidByte7,
-    MSEGuidByte5,
-    MSECounter,
-    MSEExtraElement,
-    MSEGuidByte0,
-    MSEGuidByte4,
-    MSEGuidByte7,
+
     MSEGuidByte3,
-    MSEGuidByte1,
+
+    MSEExtraElement,
+
     MSEGuidByte2,
+    MSEGuidByte5,
+    MSEGuidByte7,
+    MSEGuidByte0,
     MSEGuidByte6,
-    MSEEnd,
+
+    MSECounter,
+
+    MSEGuidByte1,
+    MSEGuidByte4,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveSetSwimSpeed[] = // 5.4.7 18019
 {
     MSEExtraElement,
     MSECounter,
+
     MSEHasGuidByte4,
     MSEHasGuidByte7,
     MSEHasGuidByte6,
@@ -4384,6 +4458,7 @@ MovementStatusElements const MoveSetSwimSpeed[] = // 5.4.7 18019
     MSEHasGuidByte2,
     MSEHasGuidByte0,
     MSEHasGuidByte1,
+
     MSEGuidByte1,
     MSEGuidByte6,
     MSEGuidByte5,
@@ -4392,56 +4467,66 @@ MovementStatusElements const MoveSetSwimSpeed[] = // 5.4.7 18019
     MSEGuidByte3,
     MSEGuidByte4,
     MSEGuidByte7,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetSwimBackSpeed[] =
+MovementStatusElements const MoveSetSwimBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte4,
-    MSEHasGuidByte2,
-    MSEHasGuidByte3,
-    MSEHasGuidByte6,
-    MSEHasGuidByte5,
-    MSEHasGuidByte1,
-    MSEHasGuidByte0,
-    MSEHasGuidByte7,
     MSECounter,
-    MSEGuidByte0,
+    MSEExtraElement,
+
+    MSEHasGuidByte2,
+    MSEHasGuidByte0,
+    MSEHasGuidByte3,
+    MSEHasGuidByte5,
+    MSEHasGuidByte4,
+    MSEHasGuidByte7,
+    MSEHasGuidByte1,
+    MSEHasGuidByte6,
+
     MSEGuidByte3,
     MSEGuidByte4,
-    MSEGuidByte6,
+    MSEGuidByte0,
     MSEGuidByte5,
-    MSEGuidByte1,
-    MSEExtraElement,
-    MSEGuidByte7,
+    MSEGuidByte6,
     MSEGuidByte2,
-    MSEEnd,
+    MSEGuidByte1,
+    MSEGuidByte7,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetTurnRate[] =
+MovementStatusElements const MoveSetTurnRate[] = // 5.4.7 18019
 {
-    MSEHasGuidByte7,
-    MSEHasGuidByte2,
-    MSEHasGuidByte1,
     MSEHasGuidByte0,
+    MSEHasGuidByte1,
     MSEHasGuidByte4,
-    MSEHasGuidByte5,
-    MSEHasGuidByte6,
     MSEHasGuidByte3,
+    MSEHasGuidByte5,
+    MSEHasGuidByte2,
+    MSEHasGuidByte7,
+    MSEHasGuidByte6,
+
+    MSEGuidByte6,
+
+    MSEExtraElement,
+
     MSEGuidByte5,
     MSEGuidByte7,
     MSEGuidByte2,
-    MSEExtraElement,
     MSEGuidByte3,
-    MSEGuidByte1,
-    MSEGuidByte0,
+
     MSECounter,
-    MSEGuidByte6,
+
+    MSEGuidByte0,
+    MSEGuidByte1,
     MSEGuidByte4,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetFlightSpeed[] = //5.4.7 18019
+MovementStatusElements const MoveSetFlightSpeed[] = // 5.4.7 18019
 {
     MSEHasGuidByte2,
     MSEHasGuidByte1,
@@ -4451,105 +4536,125 @@ MovementStatusElements const MoveSetFlightSpeed[] = //5.4.7 18019
     MSEHasGuidByte3,
     MSEHasGuidByte0,
     MSEHasGuidByte4,
+
     MSEGuidByte7,
     MSEGuidByte4,
     MSEGuidByte3,
+
     MSEUintCount,
+
     MSEGuidByte5,
+
     MSEExtraElement,
+
     MSEGuidByte6,
     MSEGuidByte2,
     MSEGuidByte0,
     MSEGuidByte1,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetFlightBackSpeed[] =
+MovementStatusElements const MoveSetFlightBackSpeed[] = // 5.4.7 18019
 {
-    MSEHasGuidByte1,
-    MSEHasGuidByte2,
-    MSEHasGuidByte6,
-    MSEHasGuidByte4,
-    MSEHasGuidByte7,
     MSEHasGuidByte3,
-    MSEHasGuidByte0,
     MSEHasGuidByte5,
-    MSEGuidByte3,
+    MSEHasGuidByte4,
+    MSEHasGuidByte0,
+    MSEHasGuidByte6,
+    MSEHasGuidByte2,
+    MSEHasGuidByte1,
+    MSEHasGuidByte7,
+
+    MSEGuidByte4,
+
+    MSEExtraElement,
+
+    MSEGuidByte0,
+
     MSECounter,
-    MSEGuidByte6,
-    MSEExtraElement,
-    MSEGuidByte1,
+
     MSEGuidByte2,
-    MSEGuidByte4,
-    MSEGuidByte0,
+    MSEGuidByte3,
+    MSEGuidByte1,
+    MSEGuidByte6,
     MSEGuidByte5,
     MSEGuidByte7,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveSetPitchRate[] =
+MovementStatusElements const MoveSetPitchRate[] = // 5.4.7 18019
 {
-    MSEHasGuidByte1,
-    MSEHasGuidByte2,
-    MSEHasGuidByte6,
-    MSEHasGuidByte7,
-    MSEHasGuidByte0,
     MSEHasGuidByte3,
     MSEHasGuidByte5,
+    MSEHasGuidByte2,
+    MSEHasGuidByte1,
+    MSEHasGuidByte6,
+    MSEHasGuidByte0,
+    MSEHasGuidByte7,
     MSEHasGuidByte4,
-    MSEExtraElement,
+
     MSEGuidByte6,
     MSEGuidByte4,
-    MSEGuidByte0,
+    MSEGuidByte5,
+    MSEGuidByte7,
+    MSEGuidByte1,
+
+    MSEExtraElement,
     MSECounter,
-    MSEGuidByte1,
+
     MSEGuidByte2,
-    MSEGuidByte7,
     MSEGuidByte3,
-    MSEGuidByte5,
-    MSEEnd,
+    MSEGuidByte0,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetWalkMode[] =
+MovementStatusElements const SplineMoveSetWalkMode[] = // 5.4.7 18019
 {
+    MSEHasGuidByte0,
+    MSEHasGuidByte2,
+    MSEHasGuidByte4,
+    MSEHasGuidByte3,
     MSEHasGuidByte7,
-    MSEHasGuidByte6,
     MSEHasGuidByte5,
     MSEHasGuidByte1,
-    MSEHasGuidByte3,
-    MSEHasGuidByte4,
     MSEHasGuidByte2,
-    MSEHasGuidByte0,
-    MSEGuidByte4,
-    MSEGuidByte2,
-    MSEGuidByte1,
-    MSEGuidByte6,
+
     MSEGuidByte5,
-    MSEGuidByte0,
-    MSEGuidByte7,
     MSEGuidByte3,
-    MSEEnd,
+    MSEGuidByte7,
+    MSEGuidByte1,
+    MSEGuidByte4,
+    MSEGuidByte0,
+    MSEGuidByte6,
+    MSEGuidByte2,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetRunMode[] =
+MovementStatusElements const SplineMoveSetRunMode[] = // 5.4.7 18019
 {
+    MSEHasGuidByte0,
     MSEHasGuidByte5,
-    MSEHasGuidByte6,
+    MSEHasGuidByte4,
     MSEHasGuidByte3,
     MSEHasGuidByte7,
-    MSEHasGuidByte2,
-    MSEHasGuidByte0,
-    MSEHasGuidByte4,
     MSEHasGuidByte1,
+    MSEHasGuidByte6,
+    MSEHasGuidByte2,
+
+    MSEGuidByte3,
     MSEGuidByte7,
+    MSEGuidByte2,
     MSEGuidByte0,
-    MSEGuidByte4,
     MSEGuidByte6,
     MSEGuidByte5,
     MSEGuidByte1,
-    MSEGuidByte2,
-    MSEGuidByte3,
-    MSEEnd,
+    MSEGuidByte4,
+
+    MSEEnd
 };
 
 MovementStatusElements const SplineMoveGravityDisable[] =
@@ -4594,46 +4699,50 @@ MovementStatusElements const SplineMoveGravityEnable[] =
     MSEEnd,
 };
 
-MovementStatusElements const SplineMoveSetHover[] =
+MovementStatusElements const SplineMoveSetHover[] = // 5.4.7 18019
 {
-    MSEHasGuidByte3,
-    MSEHasGuidByte7,
-    MSEHasGuidByte0,
-    MSEHasGuidByte1,
-    MSEHasGuidByte4,
+    MSEHasGuidByte5,
     MSEHasGuidByte6,
     MSEHasGuidByte2,
-    MSEHasGuidByte5,
-    MSEGuidByte2,
-    MSEGuidByte4,
+    MSEHasGuidByte7,
+    MSEHasGuidByte4,
+    MSEHasGuidByte1,
+    MSEHasGuidByte0,
+    MSEHasGuidByte3,
+
     MSEGuidByte3,
+    MSEGuidByte4,
+    MSEGuidByte0,
+    MSEGuidByte2,
     MSEGuidByte1,
     MSEGuidByte7,
-    MSEGuidByte0,
-    MSEGuidByte5,
     MSEGuidByte6,
-    MSEEnd,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveUnsetHover[] =
+MovementStatusElements const SplineMoveUnsetHover[] = // 5.4.7 18019
 {
-    MSEHasGuidByte6,
-    MSEHasGuidByte7,
-    MSEHasGuidByte4,
     MSEHasGuidByte0,
-    MSEHasGuidByte3,
-    MSEHasGuidByte1,
-    MSEHasGuidByte5,
     MSEHasGuidByte2,
-    MSEGuidByte4,
-    MSEGuidByte5,
-    MSEGuidByte3,
-    MSEGuidByte0,
+    MSEHasGuidByte7,
+    MSEHasGuidByte3,
+    MSEHasGuidByte5,
+    MSEHasGuidByte6,
+    MSEHasGuidByte1,
+    MSEHasGuidByte4,
+
     MSEGuidByte2,
-    MSEGuidByte7,
+    MSEGuidByte5,
+    MSEGuidByte0,
     MSEGuidByte6,
+    MSEGuidByte3,
+    MSEGuidByte7,
     MSEGuidByte1,
-    MSEEnd,
+    MSEGuidByte4,
+
+    MSEEnd
 };
 
 MovementStatusElements const SplineMoveStartSwim[] =
@@ -4678,172 +4787,188 @@ MovementStatusElements const SplineMoveStopSwim[] =
     MSEEnd,
 };
 
-MovementStatusElements const SplineMoveSetFlying[] =
+MovementStatusElements const SplineMoveSetFlying[] = // 5.4.7 18019
 {
-    MSEHasGuidByte0,
     MSEHasGuidByte4,
-    MSEHasGuidByte1,
-    MSEHasGuidByte6,
-    MSEHasGuidByte7,
     MSEHasGuidByte2,
-    MSEHasGuidByte3,
     MSEHasGuidByte5,
+    MSEHasGuidByte6,
+    MSEHasGuidByte0,
+    MSEHasGuidByte3,
+    MSEHasGuidByte1,
+    MSEHasGuidByte7,
+
+    MSEGuidByte6,
+    MSEGuidByte5,
+    MSEGuidByte2,
+    MSEGuidByte3,
     MSEGuidByte7,
     MSEGuidByte0,
-    MSEGuidByte5,
-    MSEGuidByte6,
     MSEGuidByte4,
     MSEGuidByte1,
-    MSEGuidByte3,
-    MSEGuidByte2,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveUnsetFlying[] =
+MovementStatusElements const SplineMoveUnsetFlying[] = // 5.4.7 18019
 {
     MSEHasGuidByte5,
-    MSEHasGuidByte0,
-    MSEHasGuidByte4,
-    MSEHasGuidByte7,
-    MSEHasGuidByte2,
     MSEHasGuidByte3,
-    MSEHasGuidByte1,
+    MSEHasGuidByte4,
+    MSEHasGuidByte0,
+    MSEHasGuidByte2,
     MSEHasGuidByte6,
-    MSEGuidByte7,
-    MSEGuidByte2,
-    MSEGuidByte3,
-    MSEGuidByte4,
+    MSEHasGuidByte1,
+    MSEHasGuidByte7,
+
     MSEGuidByte5,
+    MSEGuidByte4,
+    MSEGuidByte3,
     MSEGuidByte1,
-    MSEGuidByte6,
+    MSEGuidByte7,
     MSEGuidByte0,
-    MSEEnd,
+    MSEGuidByte2,
+    MSEGuidByte6,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetWaterWalk[] =
+MovementStatusElements const SplineMoveSetWaterWalk[] = // 5.4.7 18019
 {
-    MSEHasGuidByte6,
-    MSEHasGuidByte1,
-    MSEHasGuidByte4,
-    MSEHasGuidByte2,
-    MSEHasGuidByte3,
-    MSEHasGuidByte7,
     MSEHasGuidByte5,
+    MSEHasGuidByte1,
+    MSEHasGuidByte3,
     MSEHasGuidByte0,
-    MSEGuidByte0,
-    MSEGuidByte6,
+    MSEHasGuidByte4,
+    MSEHasGuidByte6,
+    MSEHasGuidByte7,
+    MSEHasGuidByte2,
+
     MSEGuidByte3,
     MSEGuidByte7,
-    MSEGuidByte4,
-    MSEGuidByte2,
-    MSEGuidByte5,
     MSEGuidByte1,
-    MSEEnd,
+    MSEGuidByte4,
+    MSEGuidByte5,
+    MSEGuidByte2,
+    MSEGuidByte0,
+    MSEGuidByte6,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetLandWalk[] =
+MovementStatusElements const SplineMoveSetLandWalk[] = // 5.4.7 18019
 {
-    MSEHasGuidByte5,
-    MSEHasGuidByte0,
-    MSEHasGuidByte4,
     MSEHasGuidByte6,
+    MSEHasGuidByte3,
+    MSEHasGuidByte4,
+    MSEHasGuidByte0,
+    MSEHasGuidByte5,
+    MSEHasGuidByte1,
     MSEHasGuidByte7,
     MSEHasGuidByte2,
-    MSEHasGuidByte3,
-    MSEHasGuidByte1,
-    MSEGuidByte5,
-    MSEGuidByte7,
-    MSEGuidByte3,
-    MSEGuidByte4,
-    MSEGuidByte1,
-    MSEGuidByte2,
-    MSEGuidByte0,
+
     MSEGuidByte6,
-    MSEEnd,
+    MSEGuidByte0,
+    MSEGuidByte4,
+    MSEGuidByte7,
+    MSEGuidByte2,
+    MSEGuidByte3,
+    MSEGuidByte1,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetFeatherFall[] =
+MovementStatusElements const SplineMoveSetFeatherFall[] = // 5.4.7 18019
 {
-    MSEHasGuidByte3,
-    MSEHasGuidByte2,
+    MSEHasGuidByte6,
     MSEHasGuidByte7,
+    MSEHasGuidByte0,
+    MSEHasGuidByte2,
+    MSEHasGuidByte3,
+    MSEHasGuidByte1,
     MSEHasGuidByte5,
     MSEHasGuidByte4,
-    MSEHasGuidByte6,
-    MSEHasGuidByte1,
-    MSEHasGuidByte0,
-    MSEGuidByte1,
-    MSEGuidByte4,
-    MSEGuidByte7,
-    MSEGuidByte6,
+
     MSEGuidByte2,
-    MSEGuidByte0,
     MSEGuidByte5,
+    MSEGuidByte6,
+    MSEGuidByte4,
     MSEGuidByte3,
-    MSEEnd,
+    MSEGuidByte0,
+    MSEGuidByte1,
+    MSEGuidByte7,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveSetNormalFall[] =
+MovementStatusElements const SplineMoveSetNormalFall[] = // 5.4.7 18019
 {
-    MSEHasGuidByte3,
-    MSEHasGuidByte5,
-    MSEHasGuidByte1,
-    MSEHasGuidByte0,
-    MSEHasGuidByte7,
-    MSEHasGuidByte6,
-    MSEHasGuidByte2,
     MSEHasGuidByte4,
-    MSEGuidByte7,
-    MSEGuidByte6,
-    MSEGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte5,
-    MSEGuidByte4,
+    MSEHasGuidByte0,
+    MSEHasGuidByte1,
+    MSEHasGuidByte3,
+    MSEHasGuidByte2,
+    MSEHasGuidByte5,
+    MSEHasGuidByte6,
+    MSEHasGuidByte7,
+
     MSEGuidByte3,
     MSEGuidByte1,
-    MSEEnd,
+    MSEGuidByte4,
+    MSEGuidByte2,
+    MSEGuidByte7,
+    MSEGuidByte6,
+    MSEGuidByte5,
+    MSEGuidByte0,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveRoot[] =
+MovementStatusElements const SplineMoveRoot[] = // 5.4.7 18019
 {
-    MSEHasGuidByte5,
     MSEHasGuidByte4,
-    MSEHasGuidByte6,
-    MSEHasGuidByte1,
     MSEHasGuidByte3,
-    MSEHasGuidByte7,
+    MSEHasGuidByte5,
+    MSEHasGuidByte6,
     MSEHasGuidByte2,
+    MSEHasGuidByte1,
     MSEHasGuidByte0,
+    MSEHasGuidByte7,
+
     MSEGuidByte2,
-    MSEGuidByte1,
-    MSEGuidByte7,
-    MSEGuidByte3,
-    MSEGuidByte5,
     MSEGuidByte0,
-    MSEGuidByte6,
+    MSEGuidByte3,
+    MSEGuidByte7,
     MSEGuidByte4,
-    MSEEnd,
+    MSEGuidByte1,
+    MSEGuidByte5,
+    MSEGuidByte6,
+
+    MSEEnd
 };
 
-MovementStatusElements const SplineMoveUnroot[] =
+MovementStatusElements const SplineMoveUnroot[] = // 5.4.7 18019
 {
-    MSEHasGuidByte0,
-    MSEHasGuidByte1,
-    MSEHasGuidByte6,
-    MSEHasGuidByte5,
-    MSEHasGuidByte3,
-    MSEHasGuidByte2,
     MSEHasGuidByte7,
     MSEHasGuidByte4,
-    MSEGuidByte6,
-    MSEGuidByte3,
-    MSEGuidByte1,
-    MSEGuidByte5,
-    MSEGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte7,
+    MSEHasGuidByte6,
+    MSEHasGuidByte2,
+    MSEHasGuidByte0,
+    MSEHasGuidByte1,
+    MSEHasGuidByte3,
+    MSEHasGuidByte5,
+
     MSEGuidByte4,
-    MSEEnd,
+    MSEGuidByte2,
+    MSEGuidByte6,
+    MSEGuidByte0,
+    MSEGuidByte5,
+    MSEGuidByte3,
+    MSEGuidByte7,
+    MSEGuidByte1,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveSetCanFly[] = // 5.4.7 18019 
@@ -4856,16 +4981,20 @@ MovementStatusElements const MoveSetCanFly[] = // 5.4.7 18019
     MSEHasGuidByte1,
     MSEHasGuidByte7,
     MSEHasGuidByte6,
+
     MSEGuidByte0,
     MSEGuidByte5,
+
     MSEUintCount,
+
     MSEGuidByte2,
     MSEGuidByte1,
     MSEGuidByte6,
     MSEGuidByte3,
     MSEGuidByte4,
     MSEGuidByte7,
-    MSEEnd,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveUnsetCanFly[] = // 5.4.7 18019
@@ -4878,16 +5007,20 @@ MovementStatusElements const MoveUnsetCanFly[] = // 5.4.7 18019
     MSEHasGuidByte1,
     MSEHasGuidByte0,
     MSEHasGuidByte6,
+
     MSEGuidByte4,
     MSEGuidByte5,
+
     MSECounter,
+
     MSEGuidByte1,
     MSEGuidByte3,
     MSEGuidByte7,
     MSEGuidByte2,
     MSEGuidByte6,
     MSEGuidByte0,
-    MSEEnd,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveSetHover[] =
@@ -4934,95 +5067,107 @@ MovementStatusElements const MoveUnsetHover[] =
     MSEEnd,
 };
 
-MovementStatusElements const MoveWaterWalk[] =
+MovementStatusElements const MoveWaterWalk[] = // 5.4.7 18019
 {
-    MSEHasGuidByte4,
+    MSEHasGuidByte2,
+    MSEHasGuidByte3,
     MSEHasGuidByte7,
     MSEHasGuidByte6,
-    MSEHasGuidByte0,
+    MSEHasGuidByte4,
     MSEHasGuidByte1,
-    MSEHasGuidByte3,
     MSEHasGuidByte5,
-    MSEHasGuidByte2,
-    MSEGuidByte0,
-    MSEGuidByte5,
+    MSEHasGuidByte0,
+ 
     MSEGuidByte2,
-    MSECounter,
+    MSEGuidByte6,
+    MSEGuidByte0,
     MSEGuidByte7,
+    MSEGuidByte5,
     MSEGuidByte3,
     MSEGuidByte4,
+
+    MSECounter,
+
     MSEGuidByte1,
-    MSEGuidByte6,
+
     MSEEnd,
 };
 
-MovementStatusElements const MoveLandWalk[] =
+MovementStatusElements const MoveLandWalk[] =  // 5.4.7 18019
 {
+    MSEHasGuidByte7,
     MSEHasGuidByte5,
     MSEHasGuidByte1,
-    MSEHasGuidByte6,
+    MSEHasGuidByte3,
     MSEHasGuidByte2,
+    MSEHasGuidByte0,
+    MSEHasGuidByte6,
+    MSEHasGuidByte4,
+
+    MSEGuidByte6,
+    MSEGuidByte5,
+    MSEGuidByte1,
+    MSEGuidByte0,
+    MSEGuidByte7,
+    MSEGuidByte3,
+    MSEGuidByte2,
+    MSEGuidByte4,
+
+    MSECounter,
+
+    MSEEnd
+};
+
+MovementStatusElements const MoveFeatherFall[] =  // 5.4.7 18019
+{
+    MSECounter,
+
+    MSEHasGuidByte0,
+    MSEHasGuidByte5,
     MSEHasGuidByte3,
     MSEHasGuidByte4,
-    MSEHasGuidByte0,
+    MSEHasGuidByte1,
     MSEHasGuidByte7,
-    MSEGuidByte6,
-    MSEGuidByte1,
-    MSEGuidByte7,
+    MSEHasGuidByte6,
+    MSEHasGuidByte2,
+
+    MSEGuidByte2,
     MSEGuidByte5,
     MSEGuidByte4,
     MSEGuidByte0,
-    MSEGuidByte3,
-    MSEGuidByte2,
-    MSECounter,
-    MSEEnd,
-};
-
-MovementStatusElements const MoveFeatherFall[] =
-{
-    MSEHasGuidByte3,
-    MSEHasGuidByte1,
-    MSEHasGuidByte7,
-    MSEHasGuidByte0,
-    MSEHasGuidByte4,
-    MSEHasGuidByte2,
-    MSEHasGuidByte5,
-    MSEHasGuidByte6,
-    MSEGuidByte5,
-    MSEGuidByte7,
-    MSEGuidByte2,
-    MSECounter,
-    MSEGuidByte0,
-    MSEGuidByte3,
-    MSEGuidByte4,
     MSEGuidByte1,
     MSEGuidByte6,
-    MSEEnd,
+    MSEGuidByte3,
+    MSEGuidByte7,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveNormalFall[] =
+MovementStatusElements const MoveNormalFall[] = // 5.4.7 18019
 {
-    MSECounter,
-    MSEHasGuidByte3,
-    MSEHasGuidByte0,
-    MSEHasGuidByte1,
-    MSEHasGuidByte5,
     MSEHasGuidByte7,
     MSEHasGuidByte4,
-    MSEHasGuidByte6,
     MSEHasGuidByte2,
-    MSEGuidByte2,
-    MSEGuidByte7,
-    MSEGuidByte1,
+    MSEHasGuidByte0,
+    MSEHasGuidByte3,
+    MSEHasGuidByte5,
+    MSEHasGuidByte1,
+    MSEHasGuidByte6,
+
     MSEGuidByte4,
-    MSEGuidByte5,
     MSEGuidByte0,
+    MSECounter,
+    MSEGuidByte2,
+    MSEGuidByte1,
+    MSEGuidByte5,
+    MSEGuidByte7,
     MSEGuidByte3,
     MSEGuidByte6,
-    MSEEnd,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveRoot[] =
+MovementStatusElements const MoveRoot[] = // 5.4.7 18019
 {
     MSEHasGuidByte5,
     MSEHasGuidByte3,
@@ -5048,7 +5193,7 @@ MovementStatusElements const MoveRoot[] =
     MSEEnd
 };
 
-MovementStatusElements const MoveUnroot[] =
+MovementStatusElements const MoveUnroot[] = // 5.4.7 18019
 {
     MSEHasGuidByte0,
     MSEHasGuidByte6,
@@ -5074,7 +5219,7 @@ MovementStatusElements const MoveUnroot[] =
     MSEEnd
 };
 
-MovementStatusElements const ChangeSeatsOnControlledVehicle[] =
+MovementStatusElements const ChangeSeatsOnControlledVehicle[] = // 5.4.7 18019
 {
     MSEPositionX,
     MSEPositionZ,
@@ -5164,9 +5309,11 @@ MovementStatusElements const ChangeSeatsOnControlledVehicle[] =
     MSEOrientation,
     MSEUnkTime,
     MSEPitch,
-    MSEEnd,
+
+    MSEEnd
 };
 
+/* Implemented in corresponding opcodes.
 MovementStatusElements const CastSpellEmbeddedMovement[] =
 {
     MSEPositionZ,
@@ -5238,6 +5385,7 @@ MovementStatusElements const CastSpellEmbeddedMovement[] =
     MSEPitch,
     MSEEnd,
 };
+*/
 
 void Movement::ExtraMovementStatusElement::ReadNextElement(ByteBuffer& packet)
 {
@@ -5476,90 +5624,90 @@ MovementStatusElements const* GetMovementStatusElementsSequence(Opcodes opcode)
         //    return MovementUpdateSwimSpeed;
         //case SMSG_MOVE_UPDATE_WALK_SPEED:
         //    return MovementUpdateWalkSpeed;
-        //case SMSG_SPLINE_MOVE_SET_WALK_SPEED:
-        //    return SplineMoveSetWalkSpeed;
-        //case SMSG_SPLINE_MOVE_SET_RUN_SPEED:
-        //    return SplineMoveSetRunSpeed;
-        //case SMSG_SPLINE_MOVE_SET_RUN_BACK_SPEED:
-        //    return SplineMoveSetRunBackSpeed;
-        //case SMSG_SPLINE_MOVE_SET_SWIM_SPEED:
-        //    return SplineMoveSetSwimSpeed;
-        //case SMSG_SPLINE_MOVE_SET_SWIM_BACK_SPEED:
-        //    return SplineMoveSetSwimBackSpeed;
-        //case SMSG_SPLINE_MOVE_SET_TURN_RATE:
-        //    return SplineMoveSetTurnRate;
-        //case SMSG_SPLINE_MOVE_SET_FLIGHT_SPEED:
-        //    return SplineMoveSetFlightSpeed;
-        //case SMSG_SPLINE_MOVE_SET_FLIGHT_BACK_SPEED:
-        //    return SplineMoveSetFlightBackSpeed;
-        //case SMSG_SPLINE_MOVE_SET_PITCH_RATE:
-        //    return SplineMoveSetPitchRate;
+        case SMSG_SPLINE_MOVE_SET_WALK_SPEED:
+            return SplineMoveSetWalkSpeed;
+        case SMSG_SPLINE_MOVE_SET_RUN_SPEED:
+            return SplineMoveSetRunSpeed;
+        case SMSG_SPLINE_MOVE_SET_RUN_BACK_SPEED:
+            return SplineMoveSetRunBackSpeed;
+        case SMSG_SPLINE_MOVE_SET_SWIM_SPEED:
+            return SplineMoveSetSwimSpeed;
+        case SMSG_SPLINE_MOVE_SET_SWIM_BACK_SPEED:
+            return SplineMoveSetSwimBackSpeed;
+        case SMSG_SPLINE_MOVE_SET_TURN_RATE:
+            return SplineMoveSetTurnRate;
+        case SMSG_SPLINE_MOVE_SET_FLIGHT_SPEED:
+            return SplineMoveSetFlightSpeed;
+        case SMSG_SPLINE_MOVE_SET_FLIGHT_BACK_SPEED:
+            return SplineMoveSetFlightBackSpeed;
+        case SMSG_SPLINE_MOVE_SET_PITCH_RATE:
+            return SplineMoveSetPitchRate;
         case SMSG_MOVE_SET_WALK_SPEED:
             return MoveSetWalkSpeed;
         case SMSG_MOVE_SET_RUN_SPEED:
             return MoveSetRunSpeed;
-        //case SMSG_MOVE_SET_RUN_BACK_SPEED:
-        //    return MoveSetRunBackSpeed;
+        case SMSG_MOVE_SET_RUN_BACK_SPEED:
+            return MoveSetRunBackSpeed;
         case SMSG_MOVE_SET_SWIM_SPEED:
             return MoveSetSwimSpeed;
-        //case SMSG_MOVE_SET_SWIM_BACK_SPEED:
-        //    return MoveSetSwimBackSpeed;
-        //case SMSG_MOVE_SET_TURN_RATE:
-        //    return MoveSetTurnRate;
+        case SMSG_MOVE_SET_SWIM_BACK_SPEED:
+            return MoveSetSwimBackSpeed;
+        case SMSG_MOVE_SET_TURN_RATE:
+            return MoveSetTurnRate;
         case SMSG_MOVE_SET_FLIGHT_SPEED:
            return MoveSetFlightSpeed;
-        //case SMSG_MOVE_SET_FLIGHT_BACK_SPEED:
-        //    return MoveSetFlightBackSpeed;
-        //case SMSG_MOVE_SET_PITCH_RATE:
-        //    return MoveSetPitchRate;
-        //case SMSG_SPLINE_MOVE_SET_WALK_MODE:
-        //    return SplineMoveSetWalkMode;
-        //case SMSG_SPLINE_MOVE_SET_RUN_MODE:
-        //    return SplineMoveSetRunMode;
+        case SMSG_MOVE_SET_FLIGHT_BACK_SPEED:
+            return MoveSetFlightBackSpeed;
+        case SMSG_MOVE_SET_PITCH_RATE:
+            return MoveSetPitchRate;
+        case SMSG_SPLINE_MOVE_SET_WALK_MODE:
+            return SplineMoveSetWalkMode;
+        case SMSG_SPLINE_MOVE_SET_RUN_MODE:
+            return SplineMoveSetRunMode;
         //case SMSG_SPLINE_MOVE_GRAVITY_DISABLE:
         //    return SplineMoveGravityDisable;
         //case SMSG_SPLINE_MOVE_GRAVITY_ENABLE:
         //    return SplineMoveGravityEnable;
-        //case SMSG_SPLINE_MOVE_SET_HOVER:
-        //    return SplineMoveSetHover;
-        //case SMSG_SPLINE_MOVE_UNSET_HOVER:
-        //    return SplineMoveUnsetHover;
+        case SMSG_SPLINE_MOVE_SET_HOVER:
+            return SplineMoveSetHover;
+        case SMSG_SPLINE_MOVE_UNSET_HOVER:
+            return SplineMoveUnsetHover;
         //case SMSG_SPLINE_MOVE_START_SWIM:
         //    return SplineMoveStartSwim;
         //case SMSG_SPLINE_MOVE_STOP_SWIM:
         //    return SplineMoveStopSwim;
-        //case SMSG_SPLINE_MOVE_SET_FLYING:
-        //    return SplineMoveSetFlying;
-        //case SMSG_SPLINE_MOVE_UNSET_FLYING:
-        //    return SplineMoveUnsetFlying;
-        //case SMSG_SPLINE_MOVE_SET_WATER_WALK:
-        //    return SplineMoveSetWaterWalk;
-        //case SMSG_SPLINE_MOVE_SET_LAND_WALK:
-        //    return SplineMoveSetLandWalk;
-        //case SMSG_SPLINE_MOVE_SET_FEATHER_FALL:
-        //    return SplineMoveSetFeatherFall;
-        //case SMSG_SPLINE_MOVE_SET_NORMAL_FALL:
-        //    return SplineMoveSetNormalFall;
-        //case SMSG_SPLINE_MOVE_ROOT:
-        //    return SplineMoveRoot;
-        //case SMSG_SPLINE_MOVE_UNROOT:
-        //    return SplineMoveUnroot;
+        case SMSG_SPLINE_MOVE_SET_FLYING:
+            return SplineMoveSetFlying;
+        case SMSG_SPLINE_MOVE_UNSET_FLYING:
+            return SplineMoveUnsetFlying;
+        case SMSG_SPLINE_MOVE_SET_WATER_WALK:
+            return SplineMoveSetWaterWalk;
+        case SMSG_SPLINE_MOVE_SET_LAND_WALK:
+            return SplineMoveSetLandWalk;
+        case SMSG_SPLINE_MOVE_SET_FEATHER_FALL:
+            return SplineMoveSetFeatherFall;
+        case SMSG_SPLINE_MOVE_SET_NORMAL_FALL:
+            return SplineMoveSetNormalFall;
+        case SMSG_SPLINE_MOVE_ROOT:
+            return SplineMoveRoot;
+        case SMSG_SPLINE_MOVE_UNROOT:
+            return SplineMoveUnroot;
         case SMSG_MOVE_SET_CAN_FLY:
             return MoveSetCanFly;
         case SMSG_MOVE_UNSET_CAN_FLY:
             return MoveUnsetCanFly;
-        //case SMSG_MOVE_SET_HOVER:
-        //    return MoveSetHover;
-        //case SMSG_MOVE_UNSET_HOVER:
-        //    return MoveUnsetHover;
-        //case SMSG_MOVE_WATER_WALK:
-        //    return MoveWaterWalk;
-        //case SMSG_MOVE_LAND_WALK:
-        //    return MoveLandWalk;
-        //case SMSG_MOVE_FEATHER_FALL:
-        //    return MoveFeatherFall;
-        //case SMSG_MOVE_NORMAL_FALL:
-        //    return MoveNormalFall;
+        case SMSG_MOVE_SET_HOVER:
+            return MoveSetHover;
+        case SMSG_MOVE_UNSET_HOVER:
+            return MoveUnsetHover;
+        case SMSG_MOVE_WATER_WALK:
+            return MoveWaterWalk;
+        case SMSG_MOVE_LAND_WALK:
+            return MoveLandWalk;
+        case SMSG_MOVE_FEATHER_FALL:
+            return MoveFeatherFall;
+        case SMSG_MOVE_NORMAL_FALL:
+            return MoveNormalFall;
         case SMSG_MOVE_ROOT:
             return MoveRoot;
         case SMSG_MOVE_UNROOT:

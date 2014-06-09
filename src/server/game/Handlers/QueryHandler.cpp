@@ -561,6 +561,11 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
     SendPacket(&data);
 }
 
+void WorldSession::HandleCemeteryListOpcode(WorldPacket& /*recvData*/)
+{
+    GetPlayer()->SendCemeteryList(false);
+}
+
 void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
@@ -592,19 +597,21 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 
     GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
-    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 64 + 4 + 1);
+    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 32 + 32 + 4 + 1);
 
-    data << uint32(64);                                 // size (8 * 4) * 2
+    data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2.
 
     for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
         data << float(gossip ? gossip->Options[i].Probability : 0);
 
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-        data << uint32(0);                               // Broadcast Text Id
+    data << uint32(textID);                              // Send the Text Id as first broadcast id.
 
-    data << textID;
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
+        data << uint32(0);                               // Broadcast Text Id for all other slots.
 
-    data.WriteBit(gossip ? 1 : 0);                       // has data
+    data << uint32(textID);
+
+    data.WriteBit(gossip ? 1 : 0);                       // Has data - controls gossip window opening.
     data.FlushBits();
 
     SendPacket(&data);
