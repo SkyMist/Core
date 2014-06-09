@@ -1865,7 +1865,7 @@ void WorldSession::HandleEquipmentSetUse(WorldPacket& recvData)
 
     ObjectGuid itemGuid[EQUIPMENT_SLOT_END];
 
-    EquipmentSlots startSlot = _player->isInCombat() ? EQUIPMENT_SLOT_MAINHAND : EQUIPMENT_SLOT_START;
+    EquipmentSlots startSlot = _player->IsInCombat() ? EQUIPMENT_SLOT_MAINHAND : EQUIPMENT_SLOT_START;
 
     for (uint8 i = 0; i < EQUIPMENT_SLOT_END; ++i)
         recvData >> srcslot[i] >> srcbag[i];
@@ -1910,14 +1910,14 @@ void WorldSession::HandleEquipmentSetUse(WorldPacket& recvData)
             continue;
 
         // check if item slot is set to "ignored" (raw value == 1), must not be unequipped then
-        if (itemGuid == 1)
+        if (itemGuid[i] == 1)
             continue;
 
         // Only equip weapons in combat
         if (_player->IsInCombat() && i != EQUIPMENT_SLOT_MAINHAND && i != EQUIPMENT_SLOT_OFFHAND)
             continue;
 
-        Item* item = _player->GetItemByGuid(itemGuid);
+        Item* item = _player->GetItemByGuid(itemGuid[i]);
 
         uint16 dstpos = i | (INVENTORY_SLOT_BAG_0 << 8);
 

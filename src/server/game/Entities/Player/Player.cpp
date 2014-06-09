@@ -22312,9 +22312,9 @@ void Player::PetSpellInitialize()
 
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint32(itr->first);
         data << uint32(cooldown);
-        
+        data << uint32(itr->first);
+
         CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != pet->m_CreatureCategoryCooldowns.end())
         {
@@ -22442,8 +22442,8 @@ void Player::VehicleSpellInitialize()
 
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint32(itr->first);
         data << uint32(cooldown);
+        data << uint32(itr->first);
 
         CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != vehicle->m_CreatureCategoryCooldowns.end())

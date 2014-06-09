@@ -5023,48 +5023,55 @@ MovementStatusElements const MoveUnsetCanFly[] = // 5.4.7 18019
     MSEEnd
 };
 
-MovementStatusElements const MoveSetHover[] =
+MovementStatusElements const MoveSetHover[] = // 5.4.7 18019
 {
     MSEHasGuidByte1,
-    MSEHasGuidByte4,
-    MSEHasGuidByte2,
     MSEHasGuidByte3,
     MSEHasGuidByte0,
     MSEHasGuidByte5,
-    MSEHasGuidByte6,
     MSEHasGuidByte7,
-    MSEGuidByte5,
-    MSEGuidByte4,
-    MSEGuidByte1,
-    MSEGuidByte2,
-    MSEGuidByte3,
-    MSEGuidByte6,
-    MSEGuidByte0,
-    MSEGuidByte7,
+    MSEHasGuidByte4,
+    MSEHasGuidByte6,
+    MSEHasGuidByte2,
+
     MSECounter,
-    MSEEnd,
+
+    MSEGuidByte5,
+    MSEGuidByte1,
+    MSEGuidByte6,
+    MSEGuidByte3,
+    MSEGuidByte4,
+    MSEGuidByte7,
+    MSEGuidByte0,
+    MSEGuidByte2,
+
+    MSEEnd
 };
 
-MovementStatusElements const MoveUnsetHover[] =
+MovementStatusElements const MoveUnsetHover[] = // 5.4.7 18019
 {
-    MSEHasGuidByte4,
-    MSEHasGuidByte6,
+    MSEHasGuidByte5,
     MSEHasGuidByte3,
+    MSEHasGuidByte7,
+    MSEHasGuidByte0,
+    MSEHasGuidByte6,
+    MSEHasGuidByte4,
     MSEHasGuidByte1,
     MSEHasGuidByte2,
-    MSEHasGuidByte7,
-    MSEHasGuidByte5,
-    MSEHasGuidByte0,
-    MSEGuidByte4,
-    MSEGuidByte5,
-    MSEGuidByte3,
-    MSEGuidByte6,
-    MSEGuidByte7,
-    MSEGuidByte1,
+
     MSEGuidByte2,
-    MSEGuidByte0,
+    MSEGuidByte7,
+    MSEGuidByte3,
+
     MSECounter,
-    MSEEnd,
+
+    MSEGuidByte0,
+    MSEGuidByte4,
+    MSEGuidByte6,
+    MSEGuidByte1,
+    MSEGuidByte5,
+
+    MSEEnd
 };
 
 MovementStatusElements const MoveWaterWalk[] = // 5.4.7 18019
