@@ -73,32 +73,68 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_SWAP_INV_ITEM");
 
-    uint8 srcslot, dstslot;
+    uint8 srcBag, srcSlot, dstBag, dstSlot, isrcBagAlt, isrcSlotAlt, idstBagAlt, idstSlotAlt;
+    bool movedToEmpty = false;
 
-    recvData >> dstslot >> srcslot;
+    // First bag item to second.
+    recvData >> srcBag >> dstBag >> srcSlot >> dstSlot;
+
+    if (dstSlot == 0) // Check for moving item to wrong position etc.
+        movedToEmpty = true;
+
+    uint32 count = recvData.ReadBits(2);
+
+    // Two items always changed.
+    if (count != 2)
+        return;
+
+    // Second bag item to first.
+    if (movedToEmpty)
+        recvData >> isrcBagAlt >> idstBagAlt >> idstSlotAlt;
+    else
+        recvData >> isrcBagAlt >> isrcSlotAlt >> idstBagAlt >> idstSlotAlt; // No original slot, or first item dest slot 0.
 
     // TC_LOG_DEBUG("network", "STORAGE: Received Inventory Item swap: srcslot = %u, dstslot = %u", srcslot, dstslot);
 
-    // prevent attempting to swap same item to current position - cheating.
-    if (srcslot == dstslot)
+    // First bag item to second.
+    uint16 src = ((srcBag << 8) | srcSlot);
+    uint16 dst = ((dstBag << 8) | dstSlot);
+    // Second bag item to first.
+    uint16 isrc = ((isrcBagAlt << 8) | isrcSlotAlt);
+    uint16 idst = ((idstBagAlt << 8) | idstSlotAlt);
+
+    // Prevent attempting to swap same item to current position - cheating.
+    if (srcSlot == dstSlot || isrcSlotAlt == idstSlotAlt)
         return;
 
-    if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, srcslot, true))
+    if (!_player->IsValidPos(srcBag, srcSlot, true))
     {
         _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
         return;
     }
 
-    if (!_player->IsValidPos(INVENTORY_SLOT_BAG_0, dstslot, true))
+    if (!_player->IsValidPos(isrcBagAlt, isrcSlotAlt, true))
+    {
+        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+        return;
+    }
+
+    if (!_player->IsValidPos(dstBag, dstSlot, true))
     {
         _player->SendEquipError(EQUIP_ERR_WRONG_SLOT, NULL, NULL);
         return;
     }
 
-    uint16 src = ((INVENTORY_SLOT_BAG_0 << 8) | srcslot);
-    uint16 dst = ((INVENTORY_SLOT_BAG_0 << 8) | dstslot);
+    if (!_player->IsValidPos(idstBagAlt, idstSlotAlt, true))
+    {
+        _player->SendEquipError(EQUIP_ERR_WRONG_SLOT, NULL, NULL);
+        return;
+    }
 
+    // First bag item to second.
     _player->SwapItem(src, dst);
+    // Second bag item to first.
+    _player->SwapItem(isrc, idst);
 }
 
 void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recvData)

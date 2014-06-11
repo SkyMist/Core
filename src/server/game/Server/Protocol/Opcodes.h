@@ -319,7 +319,7 @@ enum Opcodes
    CMSG_LF_GUILD_REMOVE_RECRUIT                             = 0x0,
    CMSG_LF_GUILD_SET_GUILD_POST                             = 0x0,
    CMSG_LIST_INVENTORY                                      = 0x10DD, // 5.4.7 18019
-   CMSG_LIST_STABLED_PETS                                   = 0x0,
+   CMSG_LIST_STABLED_PETS                                   = 0x045D, // 5.4.7 18019
    CMSG_LOAD_SCREEN                                         = 0x1691, // 5.4.7 18019
    CMSG_LOGOUT_CANCEL                                       = 0x11D4, // 5.4.7 18019
    CMSG_LOGOUT_REQUEST                                      = 0x0476, // 5.4.7 18019
@@ -519,7 +519,7 @@ enum Opcodes
    CMSG_SET_GUILD_BANK_TEXT                                 = 0x0,
    CMSG_SET_LFG_COMMENT                                     = 0x0,
    CMSG_SET_LOOT_SPECIALIZATION                             = 0x0176, // 5.4.7 18019
-   CMSG_SET_PET_SLOT                                        = 0x0,
+   CMSG_SET_PET_SLOT                                        = 0x12A2, // 5.4.7 18019
    CMSG_SET_PET_SPECIALIZATION                              = 0x145B, // 5.4.7 18019
    CMSG_SET_PLAYER_DECLINED_NAMES                           = 0x0,
    CMSG_SET_PREFERED_CEMETERY                               = 0x0,
@@ -1037,7 +1037,7 @@ enum Opcodes
    SMSG_LF_GUILD_POST_UPDATED                               = 0x0,
    SMSG_LF_GUILD_RECRUIT_LIST_UPDATED                       = 0x0,
    SMSG_LIST_INVENTORY                                      = 0x0D2A, // 5.4.7 18019
-   SMSG_LIST_STABLED_PETS                                   = 0x0,
+   SMSG_LIST_STABLED_PETS                                   = 0x0F09, // 5.4.7 18019
    SMSG_LOAD_CUF_PROFILES                                   = 0x0,
    SMSG_LOGIN_SETTIMESPEED                                  = 0x0F4A, // 5.4.7 18019
    SMSG_LOGIN_VERIFY_WORLD                                  = 0x0603, // 5.4.7 18019
@@ -1351,7 +1351,7 @@ enum Opcodes
    SMSG_SPLINE_MOVE_UNROOT                                  = 0x1698, // 5.4.7 18019
    SMSG_SPLINE_MOVE_UNSET_FLYING                            = 0x1798, // 5.4.7 18019
    SMSG_SPLINE_MOVE_UNSET_HOVER                             = 0x0076, // 5.4.7 18019
-   SMSG_STABLE_RESULT                                       = 0x0,
+   SMSG_STABLE_RESULT                                       = 0x0E0B, // 5.4.7 18019
    SMSG_STANDSTATE_UPDATE                                   = 0x0,
    SMSG_START_MIRROR_TIMER                                  = 0x0,
    SMSG_START_TIMER                                         = 0x0,

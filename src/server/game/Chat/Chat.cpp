@@ -685,9 +685,9 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_MONSTER_YELL:
         case CHAT_MSG_MONSTER_PARTY:
         case CHAT_MSG_MONSTER_EMOTE:
-            // target_guid controls chat bubbles and receiver message building.
-            if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
-            break;
+            // // target_guid controls chat bubbles and receiver message building.
+            // if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
+            // break; -- No need for this anymore, handling is done by specific function argumentation.
         case CHAT_MSG_MONSTER_WHISPER:   // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_WHISPER: // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_EMOTE:   // Should already have a target guid / target guid not needed for entire raid sending.
@@ -745,8 +745,12 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         guildGuid = (speakerPlayer && speakerPlayer->GetGuild()) ? speakerPlayer->GetGuild()->GetGUID() : 0;
 
     // Then establish the variables needed.
-    bool HasSpeaker = ((speaker || speakerPlayer) && speakerNameLength > 0);
-    bool HasReceiver = (target_guid && targetNameLength > 0);
+    bool HasGuildGUID = guildGuid ? true : false;
+    bool HasGroupGUID = groupGuid ? true : false;
+    bool HasSpeakerGUID = sourceGuid ? true : false;
+    bool HasReceiverGUID = targetGuid ? true : false;
+    bool HasSpeaker = (sourceGuid && speakerNameLength > 0);
+    bool HasReceiver = (targetGuid && targetNameLength > 0);
     bool HasMessage = messageLength > 0;
     bool HasLanguage = language ? true : false;
     bool HasChannel = (type == CHAT_MSG_CHANNEL && channelLength > 0);
@@ -761,8 +765,8 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     // Now build the actual packet.
     data->Initialize(SMSG_MESSAGECHAT);
 
-    data->WriteBit(0);
-    data->WriteBit(0);
+    data->WriteBit(!HasGuildGUID); // True if no guildGuid.
+    data->WriteBit(!HasSpeakerGUID); // True no speakerGuid (like in BG announcements).
 
     data->WriteBit(guildGuid[4]);
     data->WriteBit(guildGuid[5]);
@@ -776,14 +780,14 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(!HasChatTag);
     data->WriteBit(!HasLanguage);
 
-    data->WriteBit(targetGuid[2]);
-    data->WriteBit(targetGuid[7]);
-    data->WriteBit(targetGuid[0]);
-    data->WriteBit(targetGuid[3]);
-    data->WriteBit(targetGuid[4]);
-    data->WriteBit(targetGuid[6]);
-    data->WriteBit(targetGuid[1]);
-    data->WriteBit(targetGuid[5]);
+    data->WriteBit(sourceGuid[2]);
+    data->WriteBit(sourceGuid[7]);
+    data->WriteBit(sourceGuid[0]);
+    data->WriteBit(sourceGuid[3]);
+    data->WriteBit(sourceGuid[4]);
+    data->WriteBit(sourceGuid[6]);
+    data->WriteBit(sourceGuid[1]);
+    data->WriteBit(sourceGuid[5]);
 
     data->WriteBit(!ShowInChatWindow);
     data->WriteBit(!HasAchievement);
@@ -791,16 +795,16 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(!HasSpeaker);
     data->WriteBit(!HasMessage);
 
-    data->WriteBit(0);
+    data->WriteBit(!HasReceiverGUID); // True if no ReceiverGUID.
 
-    data->WriteBit(sourceGuid[5]);
-    data->WriteBit(sourceGuid[7]);
-    data->WriteBit(sourceGuid[6]);
-    data->WriteBit(sourceGuid[4]);
-    data->WriteBit(sourceGuid[3]);
-    data->WriteBit(sourceGuid[2]);
-    data->WriteBit(sourceGuid[1]);
-    data->WriteBit(sourceGuid[0]);
+    data->WriteBit(targetGuid[5]);
+    data->WriteBit(targetGuid[7]);
+    data->WriteBit(targetGuid[6]);
+    data->WriteBit(targetGuid[4]);
+    data->WriteBit(targetGuid[3]);
+    data->WriteBit(targetGuid[2]);
+    data->WriteBit(targetGuid[1]);
+    data->WriteBit(targetGuid[0]);
 
     data->WriteBit(!HasSecondTime);
 
@@ -810,7 +814,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasSpeaker)
         data->WriteBits(speakerNameLength, 11);
 
-    data->WriteBit(0);
+    data->WriteBit(!HasGroupGUID); // True if no groupGuid.
 
     data->WriteBit(groupGuid[5]);
     data->WriteBit(groupGuid[2]);
@@ -829,7 +833,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasMessage)
         data->WriteBits(messageLength, 12);
 
-    data->WriteBit(0);                              // Unk byte1499.
+    data->WriteBit(0);                              // Unk byte1499. Always seems false.
     data->WriteBit(!HasAddonPrefix);
     data->WriteBit(!HasChannel);
 

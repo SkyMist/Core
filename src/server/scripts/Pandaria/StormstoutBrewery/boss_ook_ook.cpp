@@ -224,6 +224,11 @@ class npc_barrel : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
+            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            {
+                Reset();
+            }
+
             void Reset() OVERRIDE
             {
                 events.Reset();

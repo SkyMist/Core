@@ -81,6 +81,8 @@ void WorldSession::HandleBankerActivateOpcode(WorldPacket& recvData)
     guid[5] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[0]);
     recvData.ReadByteSeq(guid[2]);
     recvData.ReadByteSeq(guid[4]);
@@ -117,6 +119,8 @@ void WorldSession::SendShowBank(ObjectGuid guid)
     data.WriteBit(guid[0]);
     data.WriteBit(guid[2]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[0]);
     data.WriteByteSeq(guid[7]);
@@ -141,6 +145,8 @@ void WorldSession::HandleTrainerListOpcode(WorldPacket& recvData)
     guid[5] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
     guid[6] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[0]);
@@ -211,6 +217,7 @@ void WorldSession::SendTrainerList(uint64 guid, const std::string& strTitle)
     data.WriteBits(strTitle.size(), 11);
     data.WriteBit(oGuid[6]);
     data.WriteBit(oGuid[4]);
+
     data.FlushBits();
 
     data.WriteByteSeq(oGuid[3]);
@@ -306,6 +313,8 @@ void WorldSession::HandleTrainerBuySpellOpcode(WorldPacket& recvData)
     guid[3] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[0]);
@@ -409,6 +418,8 @@ void WorldSession::HandleGossipHelloOpcode(WorldPacket& recvData)
     guid[7] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[0]);
@@ -527,6 +538,8 @@ void WorldSession::HandleBinderActivateOpcode(WorldPacket& recvData)
     npcGuid[6] = recvData.ReadBit();
     npcGuid[1] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(npcGuid[6]);
     recvData.ReadByteSeq(npcGuid[3]);
     recvData.ReadByteSeq(npcGuid[7]);
@@ -575,9 +588,28 @@ void WorldSession::SendBindPoint(Creature* npc)
 void WorldSession::HandleListStabledPetsOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Recv CMSG_LIST_STABLED_PETS");
-    uint64 npcGUID;
 
-    recvData >> npcGUID;
+    ObjectGuid npcGUID;
+
+    npcGUID[6] = recvData.ReadBit();
+    npcGUID[4] = recvData.ReadBit();
+    npcGUID[0] = recvData.ReadBit();
+    npcGUID[5] = recvData.ReadBit();
+    npcGUID[7] = recvData.ReadBit();
+    npcGUID[2] = recvData.ReadBit();
+    npcGUID[1] = recvData.ReadBit();
+    npcGUID[3] = recvData.ReadBit();
+
+    recvData.FlushBits();
+
+    recvData.ReadByteSeq(npcGUID[5]);
+    recvData.ReadByteSeq(npcGUID[0]);
+    recvData.ReadByteSeq(npcGUID[2]);
+    recvData.ReadByteSeq(npcGUID[3]);
+    recvData.ReadByteSeq(npcGUID[6]);
+    recvData.ReadByteSeq(npcGUID[4]);
+    recvData.ReadByteSeq(npcGUID[1]);
+    recvData.ReadByteSeq(npcGUID[7]);
 
     if (!CheckStableMaster(npcGUID))
         return;
@@ -616,13 +648,14 @@ void WorldSession::SendStablePetCallback(PreparedQueryResult result, uint64 guid
     ObjectGuid npcGuid = guid;
     ByteBuffer dataBuffer;
 
-    data.WriteBit(npcGuid[6]);
-    data.WriteBit(npcGuid[1]);
     data.WriteBit(npcGuid[5]);
+    data.WriteBit(npcGuid[1]);
+    data.WriteBit(npcGuid[6]);
+    data.WriteBit(npcGuid[0]);
     data.WriteBit(npcGuid[4]);
-    data.WriteBit(npcGuid[2]);
     data.WriteBits(result ? result->GetRowCount() : 0, 19);
     data.WriteBit(npcGuid[7]);
+    data.WriteBit(npcGuid[2]);
 
     if (result)
     {
@@ -634,18 +667,17 @@ void WorldSession::SendStablePetCallback(PreparedQueryResult result, uint64 guid
 
             data.WriteBits(name.size(), 8);
 
-            dataBuffer << uint32(fields[3].GetUInt32());          // creature entry
-            dataBuffer << uint32(fields[2].GetUInt32());          // petnumber
-            dataBuffer << uint32(fields[4].GetUInt16());          // level
-            dataBuffer << uint8(fields[1].GetUInt8() < uint8(PET_SLOT_STABLE_FIRST) ? 1 : 3);       // 1 = current, 2/3 = in stable (any from 4, 5, ... create problems with proper show)
-
             uint32 modelId = 0;
 
             if (CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(fields[3].GetUInt32()))
                 modelId = cInfo->Modelid1 ? cInfo->Modelid1 : cInfo->Modelid2;
 
-            dataBuffer << uint32(fields[1].GetUInt8());           // slot
             dataBuffer << uint32(modelId);                        // creature modelid
+            dataBuffer << uint8(fields[1].GetUInt8() < uint8(PET_SLOT_STABLE_FIRST) ? 1 : 3);       // 1 = current, 2/3 = in stable (any from 4, 5, ... create problems with proper show)
+            dataBuffer << uint32(fields[2].GetUInt32());          // petnumber
+            dataBuffer << uint32(fields[3].GetUInt32());          // creature entry
+            dataBuffer << uint32(fields[1].GetUInt8());           // slot
+            dataBuffer << uint32(fields[4].GetUInt16());          // level
 
             if (name.size())
                 dataBuffer.append(name.c_str(), name.size());
@@ -654,20 +686,20 @@ void WorldSession::SendStablePetCallback(PreparedQueryResult result, uint64 guid
     }
 
     data.WriteBit(npcGuid[3]);
-    data.WriteBit(npcGuid[0]);
+
     data.FlushBits();
 
     if (dataBuffer.size())
         data.append(dataBuffer);
 
     data.WriteByteSeq(npcGuid[2]);
-    data.WriteByteSeq(npcGuid[0]);
     data.WriteByteSeq(npcGuid[6]);
-    data.WriteByteSeq(npcGuid[1]);
-    data.WriteByteSeq(npcGuid[7]);
     data.WriteByteSeq(npcGuid[5]);
+    data.WriteByteSeq(npcGuid[1]);
     data.WriteByteSeq(npcGuid[3]);
     data.WriteByteSeq(npcGuid[4]);
+    data.WriteByteSeq(npcGuid[7]);
+    data.WriteByteSeq(npcGuid[0]);
 
     SendPacket(&data);
 }
@@ -691,21 +723,23 @@ void WorldSession::HandleStableSetPetSlot(WorldPacket& recvData)
 
     npcGuid[3] = recvData.ReadBit();
     npcGuid[2] = recvData.ReadBit();
+    npcGuid[5] = recvData.ReadBit();
+    npcGuid[7] = recvData.ReadBit();
     npcGuid[4] = recvData.ReadBit();
-    npcGuid[6] = recvData.ReadBit();
     npcGuid[0] = recvData.ReadBit();
     npcGuid[1] = recvData.ReadBit();
-    npcGuid[7] = recvData.ReadBit();
-    npcGuid[5] = recvData.ReadBit();
+    npcGuid[6] = recvData.ReadBit();
 
-    recvData.ReadByteSeq(npcGuid[5]);
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(npcGuid[3]);
-    recvData.ReadByteSeq(npcGuid[2]);
-    recvData.ReadByteSeq(npcGuid[0]);
+    recvData.ReadByteSeq(npcGuid[6]);
     recvData.ReadByteSeq(npcGuid[1]);
     recvData.ReadByteSeq(npcGuid[4]);
+    recvData.ReadByteSeq(npcGuid[2]);
+    recvData.ReadByteSeq(npcGuid[5]);
+    recvData.ReadByteSeq(npcGuid[0]);
     recvData.ReadByteSeq(npcGuid[7]);
-    recvData.ReadByteSeq(npcGuid[6]);
 
     if (!CheckStableMaster(npcGuid))
     {
@@ -838,6 +872,8 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recvData)
     npcGUID[1] = recvData.ReadBit();
     itemGUID[1] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(itemGUID[6]);
     recvData.ReadByteSeq(npcGUID[1]);
     recvData.ReadByteSeq(npcGUID[0]);
@@ -883,4 +919,3 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recvData)
         _player->DurabilityRepairAll(true, discountMod, guildBank);
     }
 }
-

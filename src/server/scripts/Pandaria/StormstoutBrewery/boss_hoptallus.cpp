@@ -47,6 +47,7 @@ enum Events
     EVENT_CARROT_BREATH          = 1,
     EVENT_FURLWIND,
     EVENT_SUMMON_NPCS,
+    EVENT_SET_COMBAT,
 
     // NPCs
     EVENT_EXPLOSIVE_BREW,
@@ -54,6 +55,7 @@ enum Events
 };
 
 Position const bunnySummonPosition     = { -713.955f, 1254.574f, 164.790f }; // Bunny adds summon position.
+Position const hoptallusMovePosition   = { -692.524f, 1247.556f, 162.793f }; // Hoptallus move position after summoned.
 
 class boss_hoptallus : public CreatureScript
 {
@@ -66,11 +68,14 @@ class boss_hoptallus : public CreatureScript
             {
                 instance = creature->GetInstanceScript();
                 creature->ApplySpellImmune(0, IMMUNITY_ID, 111666, true); // Immune to Smash.
+                introStarted = false;
+                introDone    = false;
             }
 
             EventMap events;
             InstanceScript* instance;
             SummonList summons;
+            bool introStarted, introDone;
 
             void InitializeAI() OVERRIDE
             {
@@ -87,6 +92,22 @@ class boss_hoptallus : public CreatureScript
                     instance->SetData(DATA_HOPTALLUS_EVENT, NOT_STARTED);
 
                 _Reset();
+
+                if (!introStarted)
+                {
+                    me->SetReactState(REACT_PASSIVE);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    me->GetMotionMaster()->MovePoint(1, hoptallusMovePosition);
+                    introStarted = true;
+                }
+            }
+
+            void MovementInform(uint32 type, uint32 id) OVERRIDE
+            {
+                if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
+                    return;
+
+                events.ScheduleEvent(EVENT_SET_COMBAT, 200);
             }
 
             void EnterCombat(Unit* /*who*/) OVERRIDE
@@ -153,7 +174,7 @@ class boss_hoptallus : public CreatureScript
 
             void UpdateAI(uint32 diff) OVERRIDE
             {
-                if (!UpdateVictim())
+                if (!UpdateVictim() && introDone)
                     return;
 
                 events.Update(diff);
@@ -183,11 +204,21 @@ class boss_hoptallus : public CreatureScript
                             events.ScheduleEvent(EVENT_SUMMON_NPCS, urand(48000, 52000)); // Constant.
                             break;
 
+                        case EVENT_SET_COMBAT:
+                            me->SetFacingTo(1.879f);
+                            me->SetReactState(REACT_AGGRESSIVE);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                            me->GetMotionMaster()->MovementExpired();
+                            me->GetMotionMaster()->Clear();
+                            introDone = true;
+                            break;
+
                         default: break;
                     }
                 }
 
-                DoMeleeAttackIfReady();
+                if (introDone && me->IsInCombat())
+                    DoMeleeAttackIfReady();
             }
 
         // Special functions here.

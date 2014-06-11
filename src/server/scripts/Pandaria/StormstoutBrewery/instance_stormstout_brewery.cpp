@@ -131,7 +131,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                             {
                                 if (Aura* bananas = player->GetAura(SPELL_BANANA_BAR))
                                 {
-                                    if (player->GetPower(POWER_ALTERNATE_POWER) < 40)
+                                    if (player->GetPower(POWER_ALTERNATE_POWER) + 1 < 40) // We check the player's power in advance to summon Ook-Ook at right value.
                                         player->SetPower(POWER_ALTERNATE_POWER, player->GetPower(POWER_ALTERNATE_POWER) + 1); // // Update player power.
                                     else
                                     {

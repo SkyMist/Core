@@ -233,6 +233,7 @@ enum Events
     EVENT_SAY_NEW_OOK,
     EVENT_SAY_PARTY,
     EVENT_RUN_AND_CRASH,
+    EVENT_BOUNCER_DIE,
 
     // Chen Stormstout / Auntie Stormstout intro event.
     EVENT_AUNTIE_ENTRANCE_SAY_1,
@@ -687,7 +688,7 @@ class npc_hozen_bouncer : public CreatureScript
                 if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
-                me->Kill(me); // Die.
+                events.ScheduleEvent(EVENT_BOUNCER_DIE, 200);
             }
 
             void UpdateAI(uint32 diff) OVERRIDE
@@ -739,11 +740,16 @@ class npc_hozen_bouncer : public CreatureScript
                             me->GetMotionMaster()->MovePoint(1, -747.929f, 1323.334f, 146.715f);
                             break;
 
+                        case EVENT_BOUNCER_DIE:
+                            me->Kill(me); // Die.
+                            break;
+
                         default: break;
                     }
                 }
 
-                DoMeleeAttackIfReady();
+                if (isInCombat)
+                    DoMeleeAttackIfReady();
             }
         };
 

@@ -3860,13 +3860,17 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
             owner = m_originalCaster->GetCharmerOrOwnerPlayerOrPlayerItself();
     }
 
-    uint32 petentry = m_spellInfo->Effects[effIndex].MiscValue;
+    uint32 petEntry = m_spellInfo->Effects[effIndex].MiscValue;
+
+    PetSlot slot = PetSlot(m_spellInfo->Effects[effIndex].BasePoints);
+    if (petEntry)
+        slot = PET_SLOT_UNK_SLOT;
 
     if (!owner)
     {
         SummonPropertiesEntry const* properties = sSummonPropertiesStore.LookupEntry(67);
         if (properties)
-            SummonGuardian(effIndex, petentry, properties, 1);
+            SummonGuardian(effIndex, petEntry, properties, 1);
         return;
     }
 
@@ -3875,7 +3879,7 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
     // if pet requested type already exist
     if (OldSummon)
     {
-        if (petentry == 0 || OldSummon->GetEntry() == petentry)
+        if (petEntry == 0 || OldSummon->GetEntry() == petEntry)
         {
             // pet in corpse state can't be summoned
             if (OldSummon->isDead())
@@ -3907,7 +3911,7 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
 
     float x, y, z;
     owner->GetClosePoint(x, y, z, owner->GetObjectSize());
-    Pet* pet = owner->SummonPet(petentry, x, y, z, owner->GetOrientation(), SUMMON_PET, 0);
+    Pet* pet = owner->SummonPet(petEntry, x, y, z, owner->GetOrientation(), SUMMON_PET, (petEntry == 19668 || petEntry == 62982)  ? m_spellInfo->GetDuration() : 0, PetSlot(slot));
     if (!pet)
         return;
 
@@ -3951,9 +3955,9 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
     }
 
     // generate new name for summon pet
-    if (petentry)
+    if (petEntry)
     {
-        std::string new_name = sObjectMgr->GeneratePetName(petentry);
+        std::string new_name = sObjectMgr->GeneratePetName(petEntry);
         if (!new_name.empty())
             pet->SetName(new_name);
     }
