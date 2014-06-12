@@ -270,26 +270,35 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
             if (!instance)
                 return true;
 
-            // Add the Hozen Counter aura.
-            if (player->GetGroup())
+            if (instance->GetData(DATA_HOZEN_KILLED) < HOZEN_KILLS_NEEDED && instance->GetData(DATA_OOKOOK_EVENT) != DONE)
             {
-                if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
-                    for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                        if (Player* member = itr->GetSource())
-                            if (!member->HasAura(SPELL_BANANA_BAR))
-                            member->AddAura(SPELL_BANANA_BAR, player);
-            }
-            else
-                player->AddAura(SPELL_BANANA_BAR, player);
-
-            // Make the intro event start, once.
-            if (Creature* auntieStormstout = player->FindNearestCreature(NPC_AUNTIE_STORMSTOUT, 100.0f, true))
-            {
-                if (!auntieStormstout->HasAura(SPELL_AUNTIE_VISUAL))
+                // Add the Hozen Counter aura.
+                if (player->GetGroup())
                 {
-                    auntieStormstout->AddAura(SPELL_AUNTIE_VISUAL, auntieStormstout);
-                    if (Creature* chenStormstout = player->FindNearestCreature(NPC_CHEN_STORMSTOUT_ENTRANCE, 100.0f, true))
-                        chenStormstout->AI()->DoAction(ACTION_START_INTRO);
+                    if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
+                        for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
+                            if (Player* member = itr->GetSource())
+                                if (!member->HasAura(SPELL_BANANA_BAR))
+                                {
+                                    member->AddAura(SPELL_BANANA_BAR, member);
+                                    member->SetPower(POWER_ALTERNATE_POWER, instance->GetData(DATA_HOZEN_KILLED));
+                                }
+                }
+                else
+                {
+                    player->AddAura(SPELL_BANANA_BAR, player);
+                    player->SetPower(POWER_ALTERNATE_POWER, instance->GetData(DATA_HOZEN_KILLED));
+                }
+
+                // Make the intro event start, once.
+                if (Creature* auntieStormstout = player->FindNearestCreature(NPC_AUNTIE_STORMSTOUT, 100.0f, true))
+                {
+                    if (!auntieStormstout->HasAura(SPELL_AUNTIE_VISUAL))
+                    {
+                        auntieStormstout->AddAura(SPELL_AUNTIE_VISUAL, auntieStormstout);
+                        if (Creature* chenStormstout = player->FindNearestCreature(NPC_CHEN_STORMSTOUT_ENTRANCE, 100.0f, true))
+                            chenStormstout->AI()->DoAction(ACTION_START_INTRO);
+                    }
                 }
             }
 

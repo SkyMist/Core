@@ -519,7 +519,7 @@ enum Opcodes
    CMSG_SET_LOOT_SPECIALIZATION                             = 0x0176, // 5.4.7 18019
    CMSG_SET_PET_SLOT                                        = 0x12A2, // 5.4.7 18019
    CMSG_SET_PET_SPECIALIZATION                              = 0x145B, // 5.4.7 18019
-   CMSG_SET_PLAYER_DECLINED_NAMES                           = 0x0,
+   CMSG_SET_PLAYER_DECLINED_NAMES                           = 0x1281, // 5.4.7 18019
    CMSG_SET_PREFERED_CEMETERY                               = 0x0,
    CMSG_SET_PRIMARY_TALENT_TREE                             = 0x04AA, // 5.4.7 18019
    CMSG_SET_RAID_DIFFICULTY                                 = 0x16A6, // 5.4.7 18019
@@ -533,7 +533,7 @@ enum Opcodes
    CMSG_SET_TRADE_GOLD                                      = 0x0C93, // 5.4.7 18019
    CMSG_SET_TRADE_ITEM                                      = 0x0,
    CMSG_SET_VEHICLE_REC_ID_ACK                              = 0x0,
-   CMSG_SET_WATCHED_FACTION                                 = 0x0,
+   CMSG_SET_WATCHED_FACTION                                 = 0x12D5, // 5.4.7 18019
    CMSG_SHOP_CATEGORY                                       = 0x0,
    CMSG_SHOWING_CLOAK                                       = 0x1276, // 5.4.7 18019
    CMSG_SHOWING_HELM                                        = 0x117F, // 5.4.7 18019
@@ -1284,7 +1284,7 @@ enum Opcodes
    SMSG_SET_PCT_SPELL_MODIFIER                              = 0x193C, // 5.4.7 18019 NYI
    SMSG_SET_PET_SPECIALIZATION                              = 0x1761, // 5.4.7 18019
    SMSG_SET_PHASE_SHIFT                                     = 0x1D52, // 5.4.7 18019
-   SMSG_SET_PLAYER_DECLINED_NAMES_RESULT                    = 0x0,
+   SMSG_SET_PLAYER_DECLINED_NAMES_RESULT                    = 0x00E9, // 5.4.7 18019
    SMSG_SET_PLAY_HOVER_ANIM                                 = 0x0,
    SMSG_SET_PROFICIENCY                                     = 0x1E3B, // 5.4.7 18019
    SMSG_SET_PROJECTILE_POSITION                             = 0x0,

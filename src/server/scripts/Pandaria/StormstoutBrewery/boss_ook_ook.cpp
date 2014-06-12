@@ -209,14 +209,14 @@ class boss_ook_ook : public CreatureScript
 };
 
 // Brew Barrel 56682.
-class npc_barrel : public CreatureScript
+class npc_ook_barrel : public CreatureScript
 {
     public:
-        npc_barrel() : CreatureScript("npc_barrel") { }
+        npc_ook_barrel() : CreatureScript("npc_ook_barrel") { }
 
-        struct npc_barrel_AI : public ScriptedAI
+        struct npc_ook_barrel_AI : public ScriptedAI
         {
-            npc_barrel_AI(Creature* creature) : ScriptedAI(creature)
+            npc_ook_barrel_AI(Creature* creature) : ScriptedAI(creature)
             {
                 instance = creature->GetInstanceScript();
             }
@@ -319,7 +319,7 @@ class npc_barrel : public CreatureScript
 
         CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return new npc_barrel_AI(creature);
+            return new npc_ook_barrel_AI(creature);
         }
 };
 
@@ -446,7 +446,7 @@ class spell_ook_ook_barrel_ride : public SpellScriptLoader
 void AddSC_boss_ook_ook()
 {
 	new boss_ook_ook();
-    new npc_barrel();
+    new npc_ook_barrel();
     new spell_ook_ook_going_bananas_summon();
     new spell_ook_ook_barrel_ride();
     new spell_ook_ook_ground_pound_dmg();

@@ -30,6 +30,9 @@ class instance_stormstout_brewery : public InstanceMapScript
             bool OokOokSummoned;
             bool HoptallusSummoned;
 
+            // Hozen killed for Ook-Ook summon.
+            uint32 HozenKilled;
+
             void Initialize()
             {
                 SetBossNumber(MAX_ENCOUNTERS);
@@ -40,6 +43,9 @@ class instance_stormstout_brewery : public InstanceMapScript
                 uiYanzhuTheUncasked = 0;
                 OokOokSummoned = false;
                 HoptallusSummoned = false;
+
+                // Hozen killed for Ook-Ook summon.
+                HozenKilled = 0;
 
                 for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
                     SetBossState(i, NOT_STARTED);
@@ -91,6 +97,9 @@ class instance_stormstout_brewery : public InstanceMapScript
                     case NPC_DRUNKEN_HOZEN_BRAWLER:
                     case NPC_HOZEN_BOUNCER:
                     case NPC_HOZEN_PARTY_ANIMAL:
+                        // Increase Hozen killed count.
+                        HozenKilled++;
+                        // Increase player powers.
 						if (Player* player = killed->FindNearestPlayer(20.0f))
                         {
                             if (player->GetGroup())
@@ -99,16 +108,16 @@ class instance_stormstout_brewery : public InstanceMapScript
                                 {
                                     if (Aura* bananas = Leader->GetAura(SPELL_BANANA_BAR))
                                     {
-                                        if (Leader->GetPower(POWER_ALTERNATE_POWER) + 1 < 40) // We check the leader's power in advance to summon Ook-Ook at right value.
+                                        if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
                                         {
                                             // Update Leader power.
-                                            Leader->SetPower(POWER_ALTERNATE_POWER, Leader->GetPower(POWER_ALTERNATE_POWER) + 1);
+                                            Leader->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
 
                                             // Update group members.
                                             for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
                                                 if (Player* member = itr->GetSource())
                                                     if (member != Leader)
-                                                        member->SetPower(POWER_ALTERNATE_POWER, Leader->GetPower(POWER_ALTERNATE_POWER));
+                                                        member->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
                                         }
                                         else
                                         {
@@ -131,8 +140,8 @@ class instance_stormstout_brewery : public InstanceMapScript
                             {
                                 if (Aura* bananas = player->GetAura(SPELL_BANANA_BAR))
                                 {
-                                    if (player->GetPower(POWER_ALTERNATE_POWER) + 1 < 40) // We check the player's power in advance to summon Ook-Ook at right value.
-                                        player->SetPower(POWER_ALTERNATE_POWER, player->GetPower(POWER_ALTERNATE_POWER) + 1); // // Update player power.
+                                    if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
+                                        player->SetPower(POWER_ALTERNATE_POWER, HozenKilled); // // Update player power.
                                     else
                                     {
                                         if (!OokOokSummoned)
@@ -188,6 +197,10 @@ class instance_stormstout_brewery : public InstanceMapScript
 
             uint32 GetData(uint32 type) const OVERRIDE
             {
+                // First check for type.
+                if (type == DATA_HOZEN_KILLED)
+                    return HozenKilled;
+
                 return GetBossState(type);
             }
 
@@ -228,7 +241,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                 OUT_SAVE_INST_DATA;
 
                 std::ostringstream saveStream;
-                saveStream << "S B " << GetBossSaveData();
+                saveStream << "S B " << GetBossSaveData() << ' ' << HozenKilled;
 
                 OUT_SAVE_INST_DATA_COMPLETE;
                 return saveStream.str();
@@ -263,6 +276,11 @@ class instance_stormstout_brewery : public InstanceMapScript
                         // Like, say an unbound player joins the party and he tries to enter the dungeon / raid.
                         // This makes sure binding-to-instance-on-entrance confirmation box will properly display bosses defeated / available.
                         SetBossState(i, EncounterState(tmpState));
+
+                        // Load killed Hozen counter.
+                        uint32 temp = 0;
+                        loadStream >> temp;
+                        HozenKilled = temp;
                     }
                 }
                 else OUT_LOAD_INST_DATA_FAIL;

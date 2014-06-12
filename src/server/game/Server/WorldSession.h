@@ -299,7 +299,7 @@ class WorldSession
         void SendAuthWaitQue(uint32 position);
 
         void SendNameQueryOpcode(ObjectGuid guid);
-
+        void SendPlayerDeclinedNamesResult(ObjectGuid guid, uint32 result);
         void SendRealmNameQueryOpcode(uint32 realmId);
 
         void SendTrainerList(uint64 guid);
