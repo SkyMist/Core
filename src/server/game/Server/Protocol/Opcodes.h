@@ -414,7 +414,6 @@ enum Opcodes
    CMSG_PET_BATTLE_QUEUE_LEAVE                              = 0x1C73, // 5.4.7 18019 NYI
    CMSG_PET_CANCEL_AURA                                     = 0x01F5, // 5.4.7 18019
    CMSG_PET_CAST_SPELL                                      = 0x0,
-   CMSG_PET_NAME_CACHE                                      = 0x0,
    CMSG_PET_NAME_QUERY                                      = 0x16A3, // 5.4.7 18019
    CMSG_PET_RENAME                                          = 0x133A, // 5.4.7 18019
    CMSG_PET_SET_ACTION                                      = 0x07DE, // 5.4.7 18019
@@ -490,7 +489,6 @@ enum Opcodes
    CMSG_RETURN_TO_GRAVEYARD                                 = 0x0257, // 5.4.7 18019
    CMSG_ROLE_POLL_BEGIN                                     = 0x0,
    CMSG_SAVE_CUF_PROFILES                                   = 0x0,
-   CMSG_SAVE_PLAYER                                         = 0x0,
    CMSG_SEARCH_LFG_JOIN                                     = 0x0,
    CMSG_SEARCH_LFG_LEAVE                                    = 0x0,
    CMSG_SELF_RES                                            = 0x0,
@@ -824,7 +822,7 @@ enum Opcodes
    SMSG_CORPSE_RECLAIM_DELAY                                = 0x1E73, // 5.4.7 18019
    SMSG_CREATURE_QUERY_RESPONSE                             = 0x00E0, // 5.4.7 18019
    SMSG_CRITERIA_DELETED                                    = 0x0,
-   SMSG_CRITERIA_UPDATE                                     = 0x13B2, // 5.4.7 18019 NYI
+   SMSG_CRITERIA_UPDATE                                     = 0x13B2, // 5.4.7 18019
    SMSG_CROSSED_INEBRIATION_THRESHOLD                       = 0x0,
    SMSG_CURRENCY_LOOT_REMOVED                               = 0x0,
    SMSG_CURRENCY_LOOT_RESTORED                              = 0x0,
@@ -931,7 +929,6 @@ enum Opcodes
    SMSG_GUILD_BANK_LOG_QUERY_RESULT                         = 0x0,
    SMSG_GUILD_BANK_MONEY_WITHDRAWN                          = 0x0,
    SMSG_GUILD_BANK_QUERY_TEXT_RESULT                        = 0x0,
-   SMSG_GUILD_CANCEL                                        = 0x0,
    SMSG_GUILD_CHALLENGE_COMPLETED                           = 0x0,
    SMSG_GUILD_CHALLENGE_UPDATED                             = 0x0,
    SMSG_GUILD_CHANGE_NAME_RESULT                            = 0x0,
@@ -972,7 +969,6 @@ enum Opcodes
    SMSG_GUILD_UPDATE_ROSTER                                 = 0x0,
    SMSG_GUILD_XP                                            = 0x1A51, // 5.4.7 18019
    SMSG_GUILD_XP_GAIN                                       = 0x1A11, // 5.4.7 18019
-   SMSG_GUILD_XP_UPDATE                                     = 0x0,
    SMSG_HEALTH_UPDATE                                       = 0x0,
    SMSG_HIGHEST_THREAT_UPDATE                               = 0x0761, // 5.4.7 18019
    SMSG_HOTFIX_INFO                                         = 0x0C81, // 5.4.7 18019 NYI
@@ -1046,7 +1042,7 @@ enum Opcodes
    SMSG_LOGOUT_RESPONSE                                     = 0x0D2B, // 5.4.7 18019
    SMSG_LOG_XPGAIN                                          = 0x1613, // 5.4.7 18019
    SMSG_LOOT_ALL_PASSED                                     = 0x0,
-   SMSG_LOOT_CLEAR_MONEY                                    = 0x0C89, // 5.4.7 180119
+   SMSG_LOOT_CLEAR_MONEY                                    = 0x0C89, // 5.4.7 18019
    SMSG_LOOT_CONTENTS                                       = 0x0,
    SMSG_LOOT_ITEM_NOTIFY                                    = 0x0,
    SMSG_LOOT_LIST                                           = 0x0,
@@ -1194,7 +1190,7 @@ enum Opcodes
    SMSG_PLAY_ONE_SHOT_ANIM_KIT                              = 0x0,
    SMSG_PLAY_SOUND                                          = 0x0E22, // 5.4.7 18019
    SMSG_PLAY_SPELL_VISUAL                                   = 0x0,
-   SMSG_PLAY_SPELL_VISUAL_KIT                               = 0x0500, // 5.4.7 18019 NYI
+   SMSG_PLAY_SPELL_VISUAL_KIT                               = 0x0500, // 5.4.7 18019
    SMSG_PLAY_TIME_WARNING                                   = 0x0,
    SMSG_PONG                                                = 0x15B1, // 5.4.7 18019
    SMSG_POWER_UPDATE                                        = 0x1441, // 5.4.7 18019

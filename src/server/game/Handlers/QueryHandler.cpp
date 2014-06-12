@@ -570,6 +570,7 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
     uint32 textID;
+    bool hasGossip;
 
     recvData >> textID;
 
@@ -597,6 +598,15 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 
     GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
+    if (Unit* interactionUnit = ObjectAccessor::FindUnit(guid))
+    {
+        if (interactionUnit->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+            hasGossip = true;
+        else
+            hasGossip = false;
+    }
+    else hasGossip = false;
+
     WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 32 + 32 + 4 + 1);
 
     data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2.
@@ -611,7 +621,7 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 
     data << uint32(textID);
 
-    data.WriteBit(gossip ? 1 : 0);                       // Has data - controls gossip window opening.
+    data.WriteBit(hasGossip);                            // Has gossip data - controls gossip window opening.
     data.FlushBits();
 
     SendPacket(&data);

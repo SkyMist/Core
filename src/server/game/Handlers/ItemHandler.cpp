@@ -73,14 +73,14 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_SWAP_INV_ITEM");
 
-    uint8 srcBag, srcSlot, dstBag, dstSlot, isrcBagAlt, isrcSlotAlt, idstBagAlt, idstSlotAlt;
-    bool movedToEmpty = false;
+    // bool movedToEmpty = false;
+    uint8 srcBag, srcSlot, dstBag, dstSlot;  // isrcBagAlt, isrcSlotAlt, idstBagAlt, idstSlotAlt;
 
-    // First bag item to second.
+    // First enum of bags and slots (first item?).
     recvData >> srcBag >> dstBag >> srcSlot >> dstSlot;
 
-    if (dstSlot == 0) // Check for moving item to wrong position etc.
-        movedToEmpty = true;
+    // if (dstSlot == 0) // Check for moving item to wrong position etc.
+    //     movedToEmpty = true;
 
     uint32 count = recvData.ReadBits(2);
 
@@ -88,23 +88,25 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
     if (count != 2)
         return;
 
-    // Second bag item to first.
-    if (movedToEmpty)
-        recvData >> isrcBagAlt >> idstBagAlt >> idstSlotAlt;
-    else
-        recvData >> isrcBagAlt >> isrcSlotAlt >> idstBagAlt >> idstSlotAlt; // No original slot, or first item dest slot 0.
+    recvData.rfinish(); // Don't read second item changes, not needed.
+    // Second enum of bags and slots (second item?).
+    // if (movedToEmpty)
+    //     recvData >> isrcBagAlt >> idstBagAlt >> idstSlotAlt;
+    // else
+    //     recvData >> isrcBagAlt >> isrcSlotAlt >> idstBagAlt >> idstSlotAlt; // No original slot, or first item dest slot 0.
 
     // TC_LOG_DEBUG("network", "STORAGE: Received Inventory Item swap: srcslot = %u, dstslot = %u", srcslot, dstslot);
 
     // First bag item to second.
     uint16 src = ((srcBag << 8) | srcSlot);
     uint16 dst = ((dstBag << 8) | dstSlot);
+
     // Second bag item to first.
-    uint16 isrc = ((isrcBagAlt << 8) | isrcSlotAlt);
-    uint16 idst = ((idstBagAlt << 8) | idstSlotAlt);
+    // uint16 isrc = ((isrcBagAlt << 8) | isrcSlotAlt);
+    // uint16 idst = ((idstBagAlt << 8) | idstSlotAlt);
 
     // Prevent attempting to swap same item to current position - cheating.
-    if (srcSlot == dstSlot || isrcSlotAlt == idstSlotAlt)
+    if (srcSlot == dstSlot) // || isrcSlotAlt == idstSlotAlt
         return;
 
     if (!_player->IsValidPos(srcBag, srcSlot, true))
@@ -113,11 +115,11 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (!_player->IsValidPos(isrcBagAlt, isrcSlotAlt, true))
-    {
-        _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
-        return;
-    }
+    // if (!_player->IsValidPos(isrcBagAlt, isrcSlotAlt, true))
+    // {
+    //     _player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
+    //     return;
+    // }
 
     if (!_player->IsValidPos(dstBag, dstSlot, true))
     {
@@ -125,16 +127,17 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (!_player->IsValidPos(idstBagAlt, idstSlotAlt, true))
-    {
-        _player->SendEquipError(EQUIP_ERR_WRONG_SLOT, NULL, NULL);
-        return;
-    }
+    // if (!_player->IsValidPos(idstBagAlt, idstSlotAlt, true))
+    // {
+    //     _player->SendEquipError(EQUIP_ERR_WRONG_SLOT, NULL, NULL);
+    //     return;
+    // }
 
     // First bag item to second.
     _player->SwapItem(src, dst);
+
     // Second bag item to first.
-    _player->SwapItem(isrc, idst);
+    // _player->SwapItem(isrc, idst);
 }
 
 void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recvData)
