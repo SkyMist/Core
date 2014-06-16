@@ -687,7 +687,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_MONSTER_EMOTE:
             // // target_guid controls chat bubbles and receiver message building.
             // if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
-            // break; -- No need for this anymore, handling is done by specific function argumentation.
+            // break; // No need for this anymore, handling is done by specific function argumentation.
         case CHAT_MSG_MONSTER_WHISPER:   // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_WHISPER: // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_EMOTE:   // Should already have a target guid / target guid not needed for entire raid sending.
@@ -749,16 +749,16 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     bool HasGroupGUID = groupGuid ? true : false;
     bool HasSpeakerGUID = sourceGuid ? true : false;
     bool HasReceiverGUID = targetGuid ? true : false;
-    bool HasSpeaker = (sourceGuid && speakerNameLength > 0);
-    bool HasReceiver = (targetGuid && targetNameLength > 0);
-    bool HasMessage = messageLength > 0;
-    bool HasLanguage = language ? true : false;
-    bool HasChannel = (type == CHAT_MSG_CHANNEL && channelLength > 0);
-    bool HasAddonPrefix = addonPrefixLength > 0;
-    bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0);
-    bool HasChatTag = chatTag != 0;
+    bool HasSpeaker = (sourceGuid && speakerNameLength > 0) ? true : false;
+    bool HasReceiver = (targetGuid && targetNameLength > 0) ? true : false;
+    bool HasMessage = (messageLength > 0) ? true : false;
+    bool HasLanguage = (language > LANG_UNIVERSAL) ? true : false;
+    bool HasChannel = (type == CHAT_MSG_CHANNEL && channelLength > 0) ? true : false;
+    bool HasAddonPrefix = (addonPrefixLength > 0) ? true : false;
+    bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0) ? true : false;
+    bool HasChatTag = (chatTag > CHAT_TAG_NONE) ? true : false;
     bool HasConstantTime = true;  // This represents the current time (or the time at which the text is sent).
-    bool ShowInChatWindow = true; // Toggle show in chat window - show in chat bubble.
+    bool ShowInChatBubble = true; // Toggle show in chat window - show in chat bubble.
     bool HasSecondTime = true;    // This is in relation to HasConstantTime. Represents text duration and is sent as HasConstantTime + text duration. !ToDo: Implement.
     bool HasLimitedFloatRange = false; // This represents the distance at which the chat can be "heard / read", and is already limited sv-side throughout the core. !ToDo: Implement.
 
@@ -789,7 +789,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     data->WriteBit(sourceGuid[1]);
     data->WriteBit(sourceGuid[5]);
 
-    data->WriteBit(!ShowInChatWindow);
+    data->WriteBit(!ShowInChatBubble);
     data->WriteBit(!HasAchievement);
     data->WriteBit(!HasReceiver);
     data->WriteBit(!HasSpeaker);

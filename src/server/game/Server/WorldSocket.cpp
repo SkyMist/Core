@@ -781,12 +781,11 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                     TC_LOG_ERROR("network", "WorldSocket::ProcessIncoming: received duplicate CMSG_AUTH_SESSION from %s", m_Session->GetPlayerInfo().c_str());
                     return -1;
                 }
-
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
                 return HandleAuthSession(*new_pct);
-            //case CMSG_KEEP_ALIVE:
-            //    sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
-            //    return 0;
+            case CMSG_KEEP_ALIVE:
+                sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
+                return 0;
             case CMSG_LOG_DISCONNECT:
                 new_pct->rfinish(); // contains uint32 disconnectReason;
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));

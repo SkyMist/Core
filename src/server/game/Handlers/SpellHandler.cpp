@@ -1489,9 +1489,29 @@ void WorldSession::HandleTotemDestroyed(WorldPacket& recvPacket)
         return;
 
     uint8 slotId;
-    uint64 guid;
     recvPacket >> slotId;
-    recvPacket >> guid;
+
+    ObjectGuid totemGuid;
+
+    totemGuid[6] = recvPacket.ReadBit();
+    totemGuid[5] = recvPacket.ReadBit();
+    totemGuid[3] = recvPacket.ReadBit();
+    totemGuid[7] = recvPacket.ReadBit();
+    totemGuid[0] = recvPacket.ReadBit();
+    totemGuid[4] = recvPacket.ReadBit();
+    totemGuid[2] = recvPacket.ReadBit();
+    totemGuid[1] = recvPacket.ReadBit();
+
+	recvPacket.FlushBits();
+
+    recvPacket.ReadByteSeq(totemGuid[7]);
+    recvPacket.ReadByteSeq(totemGuid[6]);
+    recvPacket.ReadByteSeq(totemGuid[3]);
+    recvPacket.ReadByteSeq(totemGuid[1]);
+    recvPacket.ReadByteSeq(totemGuid[2]);
+    recvPacket.ReadByteSeq(totemGuid[4]);
+    recvPacket.ReadByteSeq(totemGuid[5]);
+    recvPacket.ReadByteSeq(totemGuid[0]);
 
     ++slotId;
     if (slotId >= MAX_TOTEM_SLOT)
@@ -1501,7 +1521,7 @@ void WorldSession::HandleTotemDestroyed(WorldPacket& recvPacket)
         return;
 
     Creature* totem = GetPlayer()->GetMap()->GetCreature(_player->m_SummonSlot[slotId]);
-    if (totem && totem->IsTotem() && totem->GetGUID() == guid)
+    if (totem && totem->IsTotem() && totem->GetGUID() == totemGuid)
         totem->ToTotem()->UnSummon();
 }
 

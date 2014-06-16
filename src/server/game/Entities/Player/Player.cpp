@@ -8165,15 +8165,21 @@ void Player::SendCurrencies() const
 
 void Player::SendPvpRewards() const
 {
+    uint32 ArenaWinReward   = sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD);
+    uint32 RatedBGWinReward = 400;
+
     WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
 
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);
+    packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
+    packet << uint32(0);                                                   // Conquest points cap from Rated BGs.
+    packet << uint32(0);                                                   // Count of all Conquest points earned from Rated BGs during week.
+    packet << uint32(RatedBGWinReward);                                    // Count of Conquest points earned for a Rated BG Win.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);  // Count of all Conquest points earned from Arenas during week.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
 
     GetSession()->SendPacket(&packet);
 }
@@ -10152,10 +10158,12 @@ void Player::SendNotifyCurrencyLootRestored(uint8 lootSlot)
 
 void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 {
-    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
+    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4 + 4 + 1);
     data.WriteBit(0);                   //unk bit
     data.FlushBits();
-    data << Value << Field;
+    data << uint32(Value);
+    data << uint32(Field);
+
     GetSession()->SendPacket(&data);
 }
 
@@ -24914,7 +24922,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // guild bank list wtf?
 
     // Homebind
-    WorldPacket data(SMSG_BINDPOINTUPDATE, 5*4);
+    WorldPacket data(SMSG_BINDPOINTUPDATE, 5 * 4);
     data << uint32(m_homebindAreaId);
     data << m_homebindX;
     data << m_homebindZ;
@@ -24974,13 +24982,12 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // SMSG_SET_FORCED_REACTIONS
     GetReputationMgr().SendForceReactions();
 
-    // MSG_LIST_STABLED_PETS
+    // SMSG_SET_PET_SLOT
     // SMSG_WEEKLY_SPELL_USAGE
 
     // SMSG_WORLD_SERVER_INFO
     GetSession()->SendServerWorldInfo();
 
-    // SMSG_TALENTS_INFO x 2 for pet (unspent points and talents in separate packets...)
     // SMSG_PET_GUIDS
     // SMSG_UPDATE_WORLD_STATE
     // SMSG_POWER_UPDATE

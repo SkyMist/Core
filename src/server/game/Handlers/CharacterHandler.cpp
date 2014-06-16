@@ -906,7 +906,12 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     pCurrChar->GetMotionMaster()->Initialize();
 
-    WorldPacket data(SMSG_LOGIN_VERIFY_WORLD, 20);
+    WorldPacket data(SMSG_RESUME_TOKEN, 5);
+    data << uint32(0); // Also seen 2 and 3.
+    data << uint8(0);
+    SendPacket(&data);
+
+    data.Initialize(SMSG_LOGIN_VERIFY_WORLD, 20);
     data << pCurrChar->GetOrientation();
     data << pCurrChar->GetMapId();
     data << pCurrChar->GetPositionZ();
@@ -960,13 +965,13 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         data.Initialize(SMSG_MOTD, 50);                     // new in 2.0.1
         data.WriteBits(0, 4);
 
-        uint32 linecount=0;
+        uint32 linecount = 0;
         std::string str_motd = sWorld->GetMotd();
         std::string::size_type pos, nextpos;
         ByteBuffer stringBuffer;
 
         pos = 0;
-        while ((nextpos= str_motd.find('@', pos)) != std::string::npos)
+        while ((nextpos = str_motd.find('@', pos)) != std::string::npos)
         {
             if (nextpos != pos)
             {
@@ -1105,7 +1110,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     // Place character in world (and load zone) before some object loading
     pCurrChar->LoadCorpse();
 
-    // setting Ghost+speed if dead
+    // setting Ghost + speed if dead
     if (pCurrChar->m_deathState != ALIVE)
     {
         // not blizz like, we must correctly save and load player instead...
@@ -1117,10 +1122,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     pCurrChar->ContinueTaxiFlight();
-
-    // reset for all pets before pet loading
-    // if (pCurrChar->HasAtLoginFlag(AT_LOGIN_RESET_PET_TALENTS))
-    //     Pet::resetTalentsForAllPetsOf(pCurrChar);
 
     // Load pet if any (if player not alive and in taxi flight or another then pet will remember as temporary unsummoned)
     // pCurrChar->LoadPet();

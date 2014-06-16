@@ -51,7 +51,6 @@ namespace Movement
 
     void PacketBuilder::WriteStopMovement(Vector3 const& pos, uint32 splineId, ByteBuffer& data, Unit* unit)
     {
-
         ObjectGuid guid = unit->GetGUID();
         ObjectGuid transport = unit->GetTransGUID();
 
@@ -118,6 +117,11 @@ namespace Movement
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[1]);
         data.WriteByteSeq(guid[2]);
+
+        data << float(pos.x);
+        data << float(pos.y);
+        data << float(pos.z);
+
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
@@ -280,7 +284,6 @@ namespace Movement
 
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
-
     }
 
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)

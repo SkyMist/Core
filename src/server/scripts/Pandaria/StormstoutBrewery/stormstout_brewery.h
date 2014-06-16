@@ -15,7 +15,7 @@
 
 #define HOZEN_KILLS_NEEDED 40 // Hozen kills needed to spawn Ook-Ook.
 
-enum DataTypes // Events / Encounters.
+enum Data     // Events / Encounters.
 {
 	DATA_OOKOOK_EVENT               = 0,
     DATA_HOPTALLUS_EVENT            = 1,
@@ -25,7 +25,7 @@ enum DataTypes // Events / Encounters.
     DATA_HOZEN_KILLED               = 3
 };
 
-enum Data     // GUID handling.
+enum Data64   // GUID handling.
 {
 	DATA_OOKOOK                     = 0,
     DATA_HOPTALLUS                  = 1,

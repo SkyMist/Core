@@ -5,11 +5,12 @@
 
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
-#include "stormstout_brewery.h"
 #include "ObjectAccessor.h"
 #include "Group.h"
 #include "Unit.h"
 #include "Player.h"
+
+#include "stormstout_brewery.h"
 
 class instance_stormstout_brewery : public InstanceMapScript
 {

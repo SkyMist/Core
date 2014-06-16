@@ -279,27 +279,47 @@ Unit::~Unit()
 {
     // set current spells as deletable
     for (uint8 i = 0; i < CURRENT_MAX_SPELL; ++i)
+    {
         if (m_currentSpells[i])
         {
             m_currentSpells[i]->SetReferencedFromCurrent(false);
             m_currentSpells[i] = NULL;
         }
+    }
 
     _DeleteRemovedAuras();
 
-    for (HealDoneList::iterator itr = m_healDone.begin(); itr != m_healDone.end(); itr++)
-        delete (*itr);
-    for (HealTakenList::iterator itr = m_healTaken.begin(); itr != m_healTaken.end(); itr++)
-        delete (*itr);
-    for (DmgDoneList::iterator itr = m_dmgDone.begin(); itr != m_dmgDone.end(); itr++)
-        delete (*itr);
-    for (DmgTakenList::iterator itr = m_dmgTaken.begin(); itr != m_dmgTaken.end(); itr++)
-        delete (*itr);
+    if (!m_healDone.empty())
+    {
+        for (HealDoneList::iterator itr = m_healDone.begin(); itr != m_healDone.end(); itr++)
+            delete (*itr);
 
-    m_healDone.clear();
-    m_healTaken.clear();
-    m_dmgDone.clear();
-    m_dmgTaken.clear();
+        m_healDone.clear();
+    }
+
+    if (!m_healTaken.empty())
+    {
+        for (HealTakenList::iterator itr = m_healTaken.begin(); itr != m_healTaken.end(); itr++)
+            delete (*itr);
+
+        m_healTaken.clear();
+    }
+
+    if (!m_dmgDone.empty())
+    {
+        for (DmgDoneList::iterator itr = m_dmgDone.begin(); itr != m_dmgDone.end(); itr++)
+            delete (*itr);
+
+        m_dmgDone.clear();
+    }
+
+    if (!m_dmgTaken.empty())
+    {
+        for (DmgTakenList::iterator itr = m_dmgTaken.begin(); itr != m_dmgTaken.end(); itr++)
+            delete (*itr);
+
+        m_dmgTaken.clear();
+    }
 
     delete i_motionMaster;
     delete m_charmInfo;

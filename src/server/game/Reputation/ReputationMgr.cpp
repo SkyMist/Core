@@ -139,29 +139,31 @@ uint32 ReputationMgr::GetDefaultStateFlags(FactionEntry const* factionEntry) con
 
     uint32 raceMask = _player->getRaceMask();
     uint32 classMask = _player->getClassMask();
-    for (int i=0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
-        if ((factionEntry->BaseRepRaceMask[i] & raceMask  ||
-            (factionEntry->BaseRepRaceMask[i] == 0  &&
-             factionEntry->BaseRepClassMask[i] != 0)) &&
-            (factionEntry->BaseRepClassMask[i] & classMask ||
-             factionEntry->BaseRepClassMask[i] == 0))
+        if ((factionEntry->BaseRepRaceMask[i] & raceMask  || (factionEntry->BaseRepRaceMask[i] == 0  && factionEntry->BaseRepClassMask[i] != 0)) &&
+            (factionEntry->BaseRepClassMask[i] & classMask || factionEntry->BaseRepClassMask[i] == 0))
 
             return factionEntry->ReputationFlags[i];
     }
+
     return 0;
 }
 
 void ReputationMgr::SendForceReactions()
 {
-    WorldPacket data;
-    data.Initialize(SMSG_SET_FORCED_REACTIONS, 4+_forcedReactions.size()*(4+4));
-    data << uint32(_forcedReactions.size());
+    WorldPacket data(SMSG_SET_FORCED_REACTIONS, 6 + _forcedReactions.size() * (4 + 4));
+
+    data.WriteBits(_forcedReactions.size(), 6);
+
+    data.FlushBits();
+
     for (ForcedReactions::const_iterator itr = _forcedReactions.begin(); itr != _forcedReactions.end(); ++itr)
     {
-        data << uint32(itr->first);                         // faction_id (Faction.dbc)
         data << uint32(itr->second);                        // reputation rank
+        data << uint32(itr->first);                         // faction_id (Faction.dbc)
     }
+
     _player->SendDirectMessage(&data);
 }
 

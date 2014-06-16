@@ -811,6 +811,13 @@ void AddSC_kezan();
 
 /*** Pandaria ***/
 
+// Stormstout Brewery
+void AddSC_boss_ook_ook();
+void AddSC_boss_hoptallus();
+void AddSC_boss_yan_zhu_the_uncasked();
+void AddSC_stormstout_brewery();
+void AddSC_instance_stormstout_brewery();
+
 // Terrace of Endless Spring
 void AddSC_boss_protectors_of_the_endless();
 void AddSC_boss_tsulong();
@@ -819,12 +826,12 @@ void AddSC_boss_sha_of_fear();
 void AddSC_terrace_of_endless_spring();
 void AddSC_instance_terrace_of_endless_spring();
 
-// Stormstout Brewery
-void AddSC_boss_ook_ook();
-void AddSC_boss_hoptallus();
-void AddSC_boss_yan_zhu_the_uncasked();
-void AddSC_stormstout_brewery();
-void AddSC_instance_stormstout_brewery();
+// Heart Of Fear
+void AddSC_boss_imperial_vizier_zorlok();
+void AddSC_boss_blade_lord_tayak();
+void AddSC_boss_garalon();
+void AddSC_heart_of_fear();
+void AddSC_instance_heart_of_fear();
 
 // Events
 void AddSC_event_childrens_week();
@@ -1699,6 +1706,13 @@ void AddMaelstromScripts()
 void AddPandariaScripts()
 {
 #ifdef SCRIPTS
+    // Stormstout Brewery
+    AddSC_boss_ook_ook();
+    AddSC_boss_hoptallus();
+    AddSC_boss_yan_zhu_the_uncasked();
+    AddSC_stormstout_brewery();
+    AddSC_instance_stormstout_brewery();
+
     // Terrace of Endless Spring
     AddSC_boss_protectors_of_the_endless();
     AddSC_boss_tsulong();
@@ -1707,12 +1721,12 @@ void AddPandariaScripts()
     AddSC_terrace_of_endless_spring();
 	AddSC_instance_terrace_of_endless_spring();
 
-    // Stormstout Brewery
-    AddSC_boss_ook_ook();
-    AddSC_boss_hoptallus();
-    AddSC_boss_yan_zhu_the_uncasked();
-    AddSC_stormstout_brewery();
-    AddSC_instance_stormstout_brewery();
+    // Heart Of Fear
+    AddSC_boss_imperial_vizier_zorlok();
+    AddSC_boss_blade_lord_tayak();
+    AddSC_boss_garalon();
+    AddSC_heart_of_fear();
+    AddSC_instance_heart_of_fear();
 #endif
 }
 

@@ -692,10 +692,12 @@ void WorldSession::SendNotification(uint32 string_id, ...)
 
 void WorldSession::_SendNotificationPacket(const char* message)
 {
+    uint32 length = strlen(message) + 1;
+
     WorldPacket data(SMSG_NOTIFICATION, 2 + strlen(message));
-    data.WriteBits(strlen(message), 12);
+    data.WriteBits(length, 12);
     data.FlushBits();
-    data.WriteString(std::string(message));
+    data << message;
     SendPacket(&data);
 }
 

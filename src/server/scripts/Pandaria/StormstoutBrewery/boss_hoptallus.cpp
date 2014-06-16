@@ -107,6 +107,7 @@ class boss_hoptallus : public CreatureScript
                 if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
+                me->SetHomePosition(hoptallusMovePosition);
                 events.ScheduleEvent(EVENT_SET_COMBAT, 200);
             }
 

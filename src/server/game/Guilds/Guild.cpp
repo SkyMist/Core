@@ -2235,9 +2235,9 @@ void Guild::HandleGuildPartyRequest(WorldSession* session)
     WorldPacket data(SMSG_GUILD_PARTY_STATE_RESPONSE, 13);
     data.WriteBit(player->GetMap()->GetOwnerGuildId(player->GetTeam()) == GetId()); // Is guild group
     data.FlushBits();
-    data << float(0.f);                                                             // Guild XP multiplier
-    data << uint32(0);                                                              // Current guild members
+    data << float(sWorld->getRate(RATE_XP_GUILD_MODIFIER));                         // Guild XP multiplier
     data << uint32(0);                                                              // Needed guild members
+    data << uint32(0);                                                              // Current guild members
 
     session->SendPacket(&data);
     TC_LOG_DEBUG("guild", "SMSG_GUILD_PARTY_STATE_RESPONSE [%s]", session->GetPlayerInfo().c_str());

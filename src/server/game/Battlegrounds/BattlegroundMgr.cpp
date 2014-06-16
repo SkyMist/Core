@@ -673,7 +673,9 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
 
 void BattlegroundMgr::BuildUpdateWorldStatePacket(WorldPacket* data, uint32 field, uint32 value)
 {
-    data->Initialize(SMSG_UPDATE_WORLD_STATE, 4+4);
+    data->Initialize(SMSG_UPDATE_WORLD_STATE, 4 + 4 + 1);
+    data->WriteBit(0);                   //unk bit
+    data->FlushBits();
     *data << uint32(field);
     *data << uint32(value);
 }
@@ -1146,58 +1148,75 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     uint32 winnerHonor = (player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_LAST)) / CURRENCY_PRECISION;
     uint32 loserHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_LAST)) / CURRENCY_PRECISION;
 
+    // ToDo: Check Min / Max Level and hasWonCallToArmsBG / hasWonRandomBG fields.
     ObjectGuid guidBytes = guid;
 
     data->Initialize(SMSG_BATTLEFIELD_LIST);
-    *data << uint32(winnerConquest)             // Winner Conquest Reward or Random Winner Conquest Reward
-          << uint32(winnerConquest)             // Winner Conquest Reward or Random Winner Conquest Reward
-          << uint32(loserHonor)                 // Loser Honor Reward or Random Loser Honor Reward
-          << uint32(bgTypeId)                   // battleground id
-          << uint32(loserHonor)                 // Loser Honor Reward or Random Loser Honor Reward
-          << uint32(winnerHonor)                // Winner Honor Reward or Random Winner Honor Reward
-          << uint32(winnerHonor)                // Winner Honor Reward or Random Winner Honor Reward
-          << uint8(bracketEntry->maxLevel)      // max level
-          << uint8(bracketEntry->minLevel);     // min level
 
+    data->WriteBit(1);                         // Unk TRUE.
+
+    data->WriteBit(guidBytes[2]);
+    data->WriteBit(guidBytes[3]);
     data->WriteBit(guidBytes[0]);
-    data->WriteBit(guidBytes[1]);
+
+    data->WriteBit(0);                         // hasWonCallToArmsBG - daily
+
+    data->WriteBit(guidBytes[4]);
     data->WriteBit(guidBytes[7]);
-    data->WriteBit(0);                                      // unk
-    data->WriteBit(0);                                      // unk
+    data->WriteBit(guidBytes[5]);
+
+    data->WriteBit(1);                         // Signals EVENT_PVPQUEUE_ANYWHERE_SHOW if set. TRUE.
+
+    data->WriteBit(guidBytes[6]);
+    data->WriteBit(guidBytes[1]);
 
     data->FlushBits();
     size_t count_pos = data->bitwpos();
-    data->WriteBits(0, 24);                                 // placeholder
+    data->WriteBits(0, 22);                    // Placeholder for BG count.
 
-    data->WriteBit(guidBytes[6]);
-    data->WriteBit(guidBytes[4]);
-    data->WriteBit(guidBytes[2]);
-    data->WriteBit(guidBytes[3]);
-    data->WriteBit(0);                                      // unk
-    data->WriteBit(guidBytes[5]);
-    data->WriteBit(0);                                      // unk
+    data->WriteBit(player->GetRandomWinner() ? 1 : 0); // hasWonRandomBG - daily.
 
     data->FlushBits();
 
-    data->WriteByteSeq(guidBytes[6]);
+    *data << uint32(winnerConquest);           // Winner Conquest Reward or Random Winner Conquest Reward.
+    *data << uint8(bracketEntry->maxLevel);    // Max level.
+
     data->WriteByteSeq(guidBytes[1]);
-    data->WriteByteSeq(guidBytes[7]);
-    data->WriteByteSeq(guidBytes[5]);
+    data->WriteByteSeq(guidBytes[4]);
 
     uint32 count = 0;
-    BattlegroundBracketId bracketId = bracketEntry->GetBracketId();
-    BattlegroundClientIdsContainer& clientIds = it->second.m_ClientBattlegroundIds[bracketId];
-    for (BattlegroundClientIdsContainer::const_iterator itr = clientIds.begin(); itr != clientIds.end(); ++itr)
-    {
-        *data << uint32(*itr);
-        ++count;
-    }
-    data->PutBits(count_pos, count, 24);                    // bg instance count
 
+    if (bgTypeId != BATTLEGROUND_AA)           // Not Arena.
+    {
+        BattlegroundBracketId bracketId = bracketEntry->GetBracketId();
+        BattlegroundClientIdsContainer& clientIds = it->second.m_ClientBattlegroundIds[bracketId];
+        for (BattlegroundClientIdsContainer::const_iterator itr = clientIds.begin(); itr != clientIds.end(); itr++)
+        {
+            *data << uint32(*itr);
+            count++;
+        }
+    }
+    data->PutBits(count_pos, count, 22);       // Bg instance count.
+
+    *data << uint8(bracketEntry->minLevel);    // Min level.
+    *data << uint32(loserHonor);               // Loser Honor Reward or Random Loser Honor Reward
+
+    data->WriteByteSeq(guidBytes[7]);
     data->WriteByteSeq(guidBytes[0]);
-    data->WriteByteSeq(guidBytes[2]);
-    data->WriteByteSeq(guidBytes[4]);
+
+    *data << uint32(bgTypeId);                 // Battleground Type Id.
+
+    data->WriteByteSeq(guidBytes[6]);
+    data->WriteByteSeq(guidBytes[5]);
     data->WriteByteSeq(guidBytes[3]);
+
+    *data << uint32(winnerHonor);              // Winner Honor Reward or Random Winner Honor Reward.
+    *data << uint32(winnerHonor);              // Winner Honor Reward or Random Winner Honor Reward.
+
+    data->WriteByteSeq(guidBytes[2]);
+
+    *data << uint32(winnerConquest);           // Winner Conquest Reward or Random Winner Conquest Reward.
+    *data << uint32(loserHonor);               // Loser Honor Reward or Random Loser Honor Reward.
 }
 
 void BattlegroundMgr::SendToBattleground(Player* player, uint32 instanceId, BattlegroundTypeId bgTypeId)

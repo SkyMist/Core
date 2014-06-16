@@ -1255,38 +1255,106 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_SOCKET_GEMS");
 
-    uint64 item_guid;
-    uint64 gem_guids[MAX_GEM_SOCKETS];
+    ObjectGuid item_guid;
+    ObjectGuid gem_guids[MAX_GEM_SOCKETS];
 
-    recvData >> item_guid;
+    // The next is totally fucked up ...!
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][1] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][5] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][7] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][4] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][3] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][0] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][6] = recvData.ReadBit();
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        gem_guids[i][2] = recvData.ReadBit();
+
+    item_guid[3] = recvData.ReadBit();
+    item_guid[2] = recvData.ReadBit();
+    item_guid[7] = recvData.ReadBit();
+    item_guid[6] = recvData.ReadBit();
+    item_guid[1] = recvData.ReadBit();
+    item_guid[0] = recvData.ReadBit();
+    item_guid[4] = recvData.ReadBit();
+    item_guid[5] = recvData.ReadBit();
+
+    recvData.FlushBits();
+
+    recvData.ReadByteSeq(item_guid[7]);
+    
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][3]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][6]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][0]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][7]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][1]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][5]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][4]);
+
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+        recvData.ReadByteSeq(gem_guids[i][2]);
+
+    recvData.ReadByteSeq(item_guid[1]);
+    recvData.ReadByteSeq(item_guid[5]);
+    recvData.ReadByteSeq(item_guid[2]);
+    recvData.ReadByteSeq(item_guid[4]);
+    recvData.ReadByteSeq(item_guid[6]);
+    recvData.ReadByteSeq(item_guid[3]);
+    recvData.ReadByteSeq(item_guid[0]);
+
     if (!item_guid)
         return;
 
-    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
-        recvData >> gem_guids[i];
-
-    //cheat -> tried to socket same gem multiple times
+    // Cheat -> tried to socket same gem multiple times
     if ((gem_guids[0] && (gem_guids[0] == gem_guids[1] || gem_guids[0] == gem_guids[2])) ||
         (gem_guids[1] && (gem_guids[1] == gem_guids[2])))
         return;
 
+    // Missing item to socket
     Item* itemTarget = _player->GetItemByGuid(item_guid);
-    if (!itemTarget)                                         //missing item to socket
+    if (!itemTarget)
         return;
 
     ItemTemplate const* itemProto = itemTarget->GetTemplate();
     if (!itemProto)
         return;
 
-    //this slot is excepted when applying / removing meta gem bonus
+    // This slot is excepted when applying / removing meta gem bonus
     uint8 slot = itemTarget->IsEquipped() ? itemTarget->GetSlot() : uint8(NULL_SLOT);
 
     Item* Gems[MAX_GEM_SOCKETS];
     for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
         Gems[i] = gem_guids[i] ? _player->GetItemByGuid(gem_guids[i]) : NULL;
 
+    // Get GemInfo from DBC storage
     GemPropertiesEntry const* GemProps[MAX_GEM_SOCKETS];
-    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)                //get geminfo from dbc storage
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
         GemProps[i] = (Gems[i]) ? sGemPropertiesStore.LookupEntry(Gems[i]->GetTemplate()->GemProperties) : NULL;
 
     // Find first prismatic socket
@@ -1294,7 +1362,8 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
     while (firstPrismatic < MAX_GEM_SOCKETS && itemProto->Socket[firstPrismatic].Color)
         ++firstPrismatic;
 
-    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)                //check for hack maybe
+    // Check for hack maybe
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
     {
         if (!GemProps[i])
             continue;
@@ -1335,29 +1404,31 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
             return;
     }
 
+    // Get new and old enchantments
     uint32 GemEnchants[MAX_GEM_SOCKETS];
     uint32 OldEnchants[MAX_GEM_SOCKETS];
-    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)                //get new and old enchantments
+    for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
     {
         GemEnchants[i] = (GemProps[i]) ? GemProps[i]->spellitemenchantement : 0;
         OldEnchants[i] = itemTarget->GetEnchantmentId(EnchantmentSlot(SOCK_ENCHANTMENT_SLOT+i));
     }
 
-    // check unique-equipped conditions
+    // Check unique-equipped conditions
     for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
     {
         if (!Gems[i])
             continue;
 
-        // continue check for case when attempt add 2 similar unique equipped gems in one item.
+        // Continue check for case when attempt add 2 similar unique equipped gems in one item.
         ItemTemplate const* iGemProto = Gems[i]->GetTemplate();
 
-        // unique item (for new and already placed bit removed enchantments
+        // Unique item (for new and already placed bit removed enchantments
         if (iGemProto->Flags & ITEM_PROTO_FLAG_UNIQUE_EQUIPPED)
         {
             for (int j = 0; j < MAX_GEM_SOCKETS; ++j)
             {
-                if (i == j)                                    // skip self
+                // Skip self
+                if (i == j)
                     continue;
 
                 if (Gems[j])
@@ -1382,7 +1453,7 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
             }
         }
 
-        // unique limit type item
+        // Unique limit type item
         int32 limit_newcount = 0;
         if (iGemProto->ItemLimitCategory)
         {
@@ -1393,13 +1464,13 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
                 {
                     if (Gems[j])
                     {
-                        // new gem
+                        // New gem
                         if (iGemProto->ItemLimitCategory == Gems[j]->GetTemplate()->ItemLimitCategory)
                             ++limit_newcount;
                     }
                     else if (OldEnchants[j])
                     {
-                        // existing gem
+                        // Existing gem
                         if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(OldEnchants[j]))
                             if (ItemTemplate const* jProto = sObjectMgr->GetItemTemplate(enchantEntry->GemID))
                                 if (iGemProto->ItemLimitCategory == jProto->ItemLimitCategory)
@@ -1426,12 +1497,12 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
         }
     }
 
-    bool SocketBonusActivated = itemTarget->GemsFitSockets();    //save state of socketbonus
-    _player->ToggleMetaGemsActive(slot, false);             //turn off all metagems (except for the target item)
+    // Save state of socketbonus
+    bool SocketBonusActivated = itemTarget->GemsFitSockets();
+    // Turn off all metagems (except for the target item)
+    _player->ToggleMetaGemsActive(slot, false);
 
-    //if a meta gem is being equipped, all information has to be written to the item before testing if the conditions for the gem are met
-
-    //remove ALL enchants
+    // If a meta gem is being equipped, all information has to be written to the item before testing if the conditions for the gem are met remove ALL enchants
     for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS; ++enchant_slot)
         _player->ApplyEnchantment(itemTarget, EnchantmentSlot(enchant_slot), false);
 
@@ -1448,22 +1519,37 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
         }
     }
 
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
+    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS; ++enchant_slot)
         _player->ApplyEnchantment(itemTarget, EnchantmentSlot(enchant_slot), true);
 
-    bool SocketBonusToBeActivated = itemTarget->GemsFitSockets();//current socketbonus state
-    if (SocketBonusActivated ^ SocketBonusToBeActivated)     //if there was a change...
+    // Current socketbonus state
+    bool SocketBonusToBeActivated = itemTarget->GemsFitSockets();
+    uint32 socketBonus = 0;
+
+    // If there was a change...
+    if (SocketBonusActivated ^ SocketBonusToBeActivated)
     {
+        socketBonus = SocketBonusToBeActivated ? itemTarget->GetTemplate()->socketBonus : 0;
+
         _player->ApplyEnchantment(itemTarget, BONUS_ENCHANTMENT_SLOT, false);
-        itemTarget->SetEnchantment(BONUS_ENCHANTMENT_SLOT, (SocketBonusToBeActivated ? itemTarget->GetTemplate()->socketBonus : 0), 0, 0, _player->GetGUID());
+        itemTarget->SetEnchantment(BONUS_ENCHANTMENT_SLOT, socketBonus, 0, 0, _player->GetGUID());
         _player->ApplyEnchantment(itemTarget, BONUS_ENCHANTMENT_SLOT, true);
-        //it is not displayed, client has an inbuilt system to determine if the bonus is activated
+        // It is not displayed, client has an inbuilt system to determine if the bonus is activated
     }
 
-    _player->ToggleMetaGemsActive(slot, true);              //turn on all metagems (except for target item)
+    // Turn on all metagems (except for target item)
+    _player->ToggleMetaGemsActive(slot, true);
 
+    // Clear Tradeable + flag
     _player->RemoveTradeableItem(itemTarget);
-    itemTarget->ClearSoulboundTradeable(_player);           // clear tradeable flag
+    itemTarget->ClearSoulboundTradeable(_player);           
+
+    // for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
+    //     if (GemEnchants[i])
+    //         _player->GetSession()->SendEnchantmentLog(itemTarget->GetGUID(), _player->GetGUID(), itemTarget->GetEntry(), GemEnchants[i], SOCK_ENCHANTMENT_SLOT + i);
+    //
+    // if (socketBonus)
+    //     _player->GetSession()->SendEnchantmentLog(itemTarget->GetGUID(), _player->GetGUID(), itemTarget->GetEntry(), socketBonus, BONUS_ENCHANTMENT_SLOT);
 
     itemTarget->SendUpdateSockets();
 }
