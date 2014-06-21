@@ -3580,8 +3580,6 @@ Aura* Unit::_TryStackingOrRefreshingExistingAura(SpellInfo const* newAura, uint3
                 foundAura->RefreshTimers();
             }
 
-            // try to increase stack amount
-            foundAura->ModStackAmount(1);
             return foundAura;
         }
     }

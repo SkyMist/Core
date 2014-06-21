@@ -171,8 +171,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, NOT_STARTED);
 
                 RandomWheatAbility = RAND(ABILITY_BLOAT, ABILITY_BLACKOUT_BREW);
-                RandomStoutAbility = RAND(ABILITY_BUBBLE_SHIELD, ABILITY_YEASTY_BREW_ELEMENTALS);
-                RandomAleAbility   = RAND(ABILITY_CARBONATION, ABILITY_WALL_OF_SUDS);
+                RandomAleAbility   = RAND(ABILITY_BUBBLE_SHIELD, ABILITY_YEASTY_BREW_ELEMENTALS);
+                RandomStoutAbility = RAND(ABILITY_CARBONATION, ABILITY_WALL_OF_SUDS);
 
                 _Reset();
             }
@@ -201,7 +201,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                 }
 
                 // Bremastery: Ale.
-                if (RandomWheatAbility == ABILITY_BUBBLE_SHIELD)
+                if (RandomAleAbility == ABILITY_BUBBLE_SHIELD)
                 {
                     me->AddAura(SPELL_BUBBLE_SHIELD_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_BUBBLE_SHIELD, urand(16000, 19000));
@@ -213,7 +213,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                 }
 
                 // Brewmastery: Stout.
-                if (RandomWheatAbility == ABILITY_CARBONATION)
+                if (RandomStoutAbility == ABILITY_CARBONATION)
                 {
                     me->AddAura(SPELL_CARBONATION_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_CARBONATION, urand(22500, 24500));
@@ -471,7 +471,10 @@ class npc_bubble_shield_yanzhu : public CreatureScript
             void IsSummonedBy(Unit* summoner) OVERRIDE
             {
                 if (summoner)
+                {
                     bossYanzhu = summoner->ToCreature();
+                    me->SetFacingTo(summoner->GetOrientation());
+                }
                 else
                     bossYanzhu = NULL;
 
@@ -481,7 +484,6 @@ class npc_bubble_shield_yanzhu : public CreatureScript
             void Reset() OVERRIDE
             {
                 me->SetReactState(REACT_PASSIVE);
-                me->SetFacingTo(bossYanzhu->GetOrientation());
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
             }
 

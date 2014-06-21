@@ -3275,6 +3275,24 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     spellInfo->Effects[0].Amplitude = 2000;
                     break;
 
+                // PANDARIA RAIDS
+
+                // Heart of Fear
+                case 122336: // Sonic Rings Zor'lok.
+                    spellInfo->ExcludeCasterAuraSpell = 0;
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(73); // 1.5 Yards
+                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(73); // 1.5 Yards
+                    break;
+                case 124673: // Sonic Discs Zor'lok.
+                    spellInfo->ExcludeCasterAuraSpell = 0;
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(73); // 1.5 Yards
+                    break;
+                case 122760: // Exhale stun and damage.
+                    spellInfo->MaxAffectedTargets = 1;
+                    break;
+
                 // SPELLS
                 case 688:   // Summon Imp
                     spellInfo->OverrideSpellList.push_back(112866); // Summon Fel Imp

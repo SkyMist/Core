@@ -93,6 +93,13 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
         case 116235:// Amethyst Pool
             SetVisualRadius(3.5f);
             break;
+        case 123811: // Pheromones of Zeal Zor'lok
+            SetVisualRadius(100.0f);
+            SetDuration(5000000);
+            break;
+        case 122731: // Noise Cancelling Zor'lok
+            SetVisualRadius(4.0f);
+            break;
 
         default: break;
     }
@@ -424,6 +431,84 @@ void AreaTrigger::Update(uint32 p_time)
             break;
         }
 
+        case 123811: // Pheromones of Zeal Zor'lok
+        {
+            std::list<Player*> targetList;
+            radius = 100.0f;
+            float zPos = 407.0f;
+
+            GetPlayerListInGrid(targetList, 100.0f);
+
+            if (!targetList.empty())
+            {
+                for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                {
+                    // Pheromones of Zeal - Periodic Damage
+                    if ((*itr)->GetDistance(this) > radius || (*itr)->GetPositionZ() > zPos)
+                        (*itr)->RemoveAurasDueToSpell(123812);
+                    else
+                    {
+					    if (!(*itr)->HasAura(123812))
+                            caster->AddAura(123812, *itr);
+                    }
+                }
+            }
+            break;
+        }
+
+        case 122731: // Noise Cancelling Zor'lok
+        {
+            std::list<Player*> targetList;
+            radius = 3.5f;
+            uint32 playersInside = 0;
+            uint32 maxPlayersInside = 0;
+            Difficulty difficulty = caster->GetMap()->GetDifficulty();
+
+            GetPlayerListInGrid(targetList, 5.0f);
+
+            if (!targetList.empty())
+            {
+                for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                {
+                    // Check and increase player number having the aura.
+                    if ((*itr)->HasAura(122706))
+                        ++playersInside;
+
+                    switch(difficulty)
+                    {
+                        case RAID_DIFFICULTY_10MAN_NORMAL:
+                            maxPlayersInside = 4;
+                            break;
+                        case RAID_DIFFICULTY_25MAN_NORMAL:
+                            maxPlayersInside = 9;
+                            break;
+                        case RAID_DIFFICULTY_10MAN_HEROIC:
+                            maxPlayersInside = 3;
+                            break;
+                        case RAID_DIFFICULTY_25MAN_HEROIC:
+                            maxPlayersInside = 7;
+                            break;
+                    }
+
+                    // Noise Cancelling - Apply damage reduction buff.
+                    if ((*itr)->GetDistance(this) > radius)
+                    {
+                        (*itr)->RemoveAurasDueToSpell(122706);
+                        --playersInside;
+                    }
+                    else
+                    {
+					    if (!(*itr)->HasAura(122706) && playersInside <= maxPlayersInside)
+                        {
+                            caster->AddAura(122706, *itr);
+                            ++playersInside;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
         default: break;
     }
 }
@@ -450,6 +535,26 @@ void AreaTrigger::Remove()
                 if (!targetList.empty())
                     for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                         (*itr)->RemoveAurasDueToSpell(144693); // Pool of Fire - Periodic Damage Remove.
+                break;
+            }
+
+            case 123811: // Pheromones of Zeal Zor'lok
+            {
+                std::list<Player*> targetList;
+                GetPlayerListInGrid(targetList, 100.0f);
+                if (!targetList.empty())
+                    for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                        (*itr)->RemoveAurasDueToSpell(123812); // Pheromones of Zeal - Periodic Damage Remove.
+                break;
+            }
+
+            case 122731: // Noise Cancelling Zor'lok
+            {
+                std::list<Player*> targetList;
+                GetPlayerListInGrid(targetList, 100.0f);
+                if (!targetList.empty())
+                    for (std::list<Player*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
+                        (*itr)->RemoveAurasDueToSpell(122706); // Noise Cancelling - Buff Remove.
                 break;
             }
 

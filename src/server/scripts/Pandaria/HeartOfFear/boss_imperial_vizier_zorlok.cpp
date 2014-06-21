@@ -1,9 +1,7 @@
 /*Copyright (C) 2014 Buli.
 *
 * !NOTES: 
-*    1) - Noise Cancelling and Pheromones of Zeal Areatriggers need to be added to SpellEffects.cpp / AreaTrigger.cpp, 
-*         to allow them to execute actions properly and cast the auras etc. on near players on activation.
-*    2) - Attenuation ring spiral is made, on off. servers, by an invisible Zor'lok spawned at the location of the boss, and using 4 diagonal summon spells.
+*    1) - Attenuation ring spiral is made, on off., by an invisible Zor'lok spawned at the location of the boss, and using 4 diagonal summon spells + others (total about 16 spells).
 *
 * This file is NOT free software. Third-party users may NOT redistribute it or modify it :).
 */
@@ -120,10 +118,16 @@ enum Events
     EVENT_MOVE_PLATFORM,
     EVENT_SONG_OF_THE_EMPRESS,
 
+    EVENT_REACHED_NEW_PLATFORM,
+
     EVENT_MOVE_PHASE_2,
     EVENT_PHASE_2,
 
     EVENT_BERSERK,
+
+    // Sonic Rings / Discs.
+    EVENT_CHANGE_ORIENTATION,
+    EVENT_MOVE_SPIRAL,
 
     // Echo of Force And Verve.
     EVENT_CLEAR_THROAT
@@ -164,6 +168,7 @@ enum Platforms
 {
     // Vizier Zor'lok.
     PLATFORM_NONE              = 0,
+
     PLATFORM_RIGHT,
     PLATFORM_MID,
     PLATFORM_LEFT
@@ -174,7 +179,12 @@ Position const PlatformPoint1     = {-2315.945f, 300.597f, 409.9f}; // Right, 5.
 Position const PlatformPoint2     = {-2313.428f, 220.207f, 409.9f}; // Mid,   0.785f Orientation.
 Position const PlatformPoint3     = {-2238.010f, 222.054f, 409.9f}; // Left,  2.391f Orientation.
 
-Position const MidPoint           = {-2276.036f, 258.319f, 413.027f}; // Orientation: 0.801f.
+Position const MidPoint           = {-2276.036f, 258.319f, 414.027f}; // Orientation: 0.801f.
+
+float platformOrientations[4] =
+{
+    0.801f, 5.403f, 0.785f, 2.391f
+};
 
 // Imperial Vizier Zor'lok: 62980.
 class boss_imperial_vizier_zorlok : public CreatureScript
@@ -194,7 +204,7 @@ public:
         SummonList summons;
         EventMap events;
         Unit* ExhaleTarget;
-        bool introDone, phaseChanged, rightPlatformVisited, midPlatformVisited, leftPlatformVisited;
+        bool introDone, phaseChanged, rightPlatformVisited, midPlatformVisited, leftPlatformVisited, reachedNewPlatform;
         uint32 currentPlatform, platformsVisited;
 
         /*** Regular AI calls. ***/
@@ -218,6 +228,8 @@ public:
             rightPlatformVisited = false;
             midPlatformVisited = false;
             leftPlatformVisited = false;
+
+            reachedNewPlatform = false;
 
             ExhaleTarget = NULL;
 
@@ -268,10 +280,18 @@ public:
 
         void EnterEvadeMode() OVERRIDE
         {
+            me->RemoveAreaTrigger(SPELL_PHEROMONES);
+            if (instance)
+            {
+                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_PHEROMONES_DMG);
+                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_CONVERT);
+            }
+
             me->RemoveAllAuras();
             Reset();
             me->DeleteThreatList();
             me->CombatStop(false);
+            me->GetMotionMaster()->MoveTargetedHome();
 
             if (instance)
             {
@@ -300,6 +320,7 @@ public:
             {
                 instance->SetData(DATA_VIZIER_ZORLOK_EVENT, DONE);
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_CONVERT);
             }
 
             _JustDied();
@@ -337,11 +358,6 @@ public:
             if (!me->IsAlive() || type != POINT_MOTION_TYPE)
                 return;
 
-            static float platformOrientations[4] =
-            {
-                0.801f, 5.403f, 0.785f, 2.391f
-            };
-
             switch (pointId)
             {
                 case POINT_MID_UP:
@@ -364,9 +380,7 @@ public:
                 case POINT_PLATFORM1:
                 case POINT_PLATFORM2:
                 case POINT_PLATFORM3:
-                    me->SetFacingTo(platformOrientations[currentPlatform]);
-                    SetLand();
-                    events.ScheduleEvent(EVENT_SONG_OF_THE_EMPRESS, 1500);
+                    events.ScheduleEvent(EVENT_REACHED_NEW_PLATFORM, 100);
                     break;
 
                 default: break;
@@ -392,13 +406,13 @@ public:
             }
 
             // Song of The Empress + Platform combat handling.
-            if (me->GetReactState() == REACT_DEFENSIVE && me->HasAura(SPELL_SONG_OF_EMPRESS))
+            if (me->GetReactState() == REACT_DEFENSIVE && reachedNewPlatform)
             {
-                if (who && who->IsWithinDistInMap(me, 5)) // Engaged in melee combat!
+                if (who && who->IsWithinDistInMap(me, MELEE_RANGE)) // Engaged in melee combat!
                 {
+                    events.CancelEvent(EVENT_SONG_OF_THE_EMPRESS);
                     me->RemoveAurasDueToSpell(SPELL_SONG_OF_EMPRESS);
                     me->SetReactState(REACT_AGGRESSIVE);
-                    me->AI()->AttackStart(who);
 
                     // Time to schedule the events for each platform.
                     switch(currentPlatform)
@@ -415,9 +429,10 @@ public:
 
                         default: break;
                     }
-                }
 
-                events.ScheduleEvent(EVENT_INHALE, 15000);
+                    events.ScheduleEvent(EVENT_INHALE, 15000);
+                    reachedNewPlatform = false;
+                }
             }
         }
 
@@ -449,10 +464,13 @@ public:
                         break;
 
                     case EVENT_EXHALE:
+                        ExhaleTarget = NULL;
                         // Set the target first.
-                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 50.0f, true))
+                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 50.0f, true, -SPELL_CONVERT))
+                        {
                             ExhaleTarget = target;
-                        DoCast(me, SPELL_EXHALE);
+                            DoCast(target, SPELL_EXHALE);
+                        }
                         break;
 
                     case EVENT_ATTENUATION:
@@ -462,9 +480,25 @@ public:
 
                     case EVENT_NOISE_CANCELLING:
                     {
-                        // Create the two Noise Cancelling zones at the position of the two farthest players on the platform.
+                        uint32 neededTargets = 0;
+                        Difficulty difficulty = me->GetMap()->GetDifficulty();
+                        switch(difficulty)
+                        {
+                            case RAID_DIFFICULTY_10MAN_NORMAL:
+                                neededTargets = 2;
+                                break;
+                            case RAID_DIFFICULTY_25MAN_NORMAL:
+                            case RAID_DIFFICULTY_10MAN_HEROIC:
+                                neededTargets = 3;
+                                break;
+                            case RAID_DIFFICULTY_25MAN_HEROIC:
+                                neededTargets = 4;
+                                break;
+                        }
+
+                        // Create the Noise Cancelling zones at the position of the two farthest players on the platform.
                         std::list<Unit*> playerList;
-                        SelectTargetList(playerList, 2, SELECT_TARGET_FARTHEST, 20.0f,true);
+                        SelectTargetList(playerList, neededTargets, SELECT_TARGET_FARTHEST, 20.0f, true);
                         if (!playerList.empty())
                             for (std::list<Unit*>::const_iterator itr = playerList.begin(); itr != playerList.end(); ++itr)
                                 if (Unit* target = (*itr))
@@ -478,14 +512,27 @@ public:
                     case EVENT_FORCE_AND_VERVE:
                         Talk(ANN_FORCE_AND_VERVE);
                         DoCast(me, SPELL_FORCE_AND_VERVE);
-                        events.ScheduleEvent(EVENT_FORCE_AND_VERVE, urand(35000, 45000));
                         break;
 
                     case EVENT_CONVERT:
-                        Talk(SAY_CONVERT);
-                        Talk(ANN_CONVERT);
-                        DoCast(me, SPELL_CONVERT);
-                        events.ScheduleEvent(EVENT_CONVERT, urand(33000, 43000));
+                    {
+                        // Don't use this if there's a single player attacking Zor'lok, so as to not evade.
+                        uint32 numb = 0;
+                        Map::PlayerList const &PlayerList = me->GetMap()->GetPlayers();
+                        if (!PlayerList.isEmpty())
+                            for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                                if (Player* player = i->GetSource())
+                                    if (!player->HasAura(SPELL_CONVERT))
+                                        ++numb;
+
+                        if (numb > 1)
+                        {
+                            Talk(SAY_CONVERT);
+                            Talk(ANN_CONVERT);
+                            DoCast(me, SPELL_CONVERT);
+                            events.ScheduleEvent(EVENT_CONVERT, urand(33000, 43000));
+                        }
+                    }
                         break;
 
                     case EVENT_SPLIT:
@@ -519,9 +566,22 @@ public:
                             me->GetMotionMaster()->MovePoint(POINT_PLATFORM3, PlatformPoint3);
                         break;
 
+                    case EVENT_REACHED_NEW_PLATFORM:
+                        me->SetFacingTo(platformOrientations[currentPlatform]);
+                        SetLand();
+                        events.ScheduleEvent(EVENT_SONG_OF_THE_EMPRESS, 10000);
+                        reachedNewPlatform = true;
+                        break;
+
                     case EVENT_SONG_OF_THE_EMPRESS:
-                        Talk(SAY_SONG_OF_EMPRESS);
-                        DoCast(me, SPELL_SONG_OF_EMPRESS);
+                    {
+                        Player* nearPlayer = me->FindNearestPlayer(100.0f);
+                        if (!nearPlayer || !nearPlayer->IsWithinDistInMap(me, MELEE_RANGE))
+                        {
+                            Talk(SAY_SONG_OF_EMPRESS);
+                            DoCast(me, SPELL_SONG_OF_EMPRESS);
+                        }
+                    }
                         break;
 
                     case EVENT_MOVE_PHASE_2:
@@ -533,6 +593,10 @@ public:
                     case EVENT_PHASE_2:
                         Talk(ANN_PHASE2);
                         DoCast(me, SPELL_INHALE_PHEROMONES);
+                        me->RemoveAreaTrigger(SPELL_PHEROMONES);
+                        if (instance)
+                            instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_PHEROMONES_DMG);
+
                         events.ScheduleEvent(EVENT_INHALE, 5000);
                         events.ScheduleEvent(EVENT_ATTENUATION, 54000);
                         events.ScheduleEvent(EVENT_NOISE_CANCELLING, 27000);
@@ -555,8 +619,8 @@ public:
 
         void SetFlight()
         {
-            me->GetMotionMaster()->MovementExpired();
-            me->GetMotionMaster()->Clear();
+            // me->GetMotionMaster()->MovementExpired();
+            // me->GetMotionMaster()->Clear();
             me->SetReactState(REACT_PASSIVE);
             me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
             me->SetDisableGravity(true);
@@ -570,8 +634,8 @@ public:
             me->SetDisableGravity(false);
             me->RemoveByteFlag(UNIT_FIELD_ANIM_TIER, 3, UNIT_BYTE1_FLAG_HOVER);
             me->RemoveUnitMovementFlag(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_FLYING);
-            me->GetMotionMaster()->MovementExpired();
-            me->GetMotionMaster()->Clear();
+            // me->GetMotionMaster()->MovementExpired();
+            // me->GetMotionMaster()->Clear();
             me->SetReactState(REACT_DEFENSIVE);
         }
 
@@ -779,24 +843,68 @@ public:
     {
         npc_zorlok_sonic_ringAI(Creature* creature) : ScriptedAI(creature)
         {
-            timerMove = 100;
-            creature->SetReactState(REACT_PASSIVE);
-            creature->AddAura(SPELL_SONIC_RING_AURA, creature);
+            instance = creature->GetInstanceScript();
         }
 
-        uint32 timerMove;
+        InstanceScript* instance;
+        EventMap events;
+        uint32 movePointReached;
+
+        void IsSummonedBy(Unit* summoner) OVERRIDE
+        {
+            Reset();
+        }
+
+        void Reset() OVERRIDE 
+        {
+            events.Reset();
+            movePointReached = 1;
+
+            me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+            me->SetReactState(REACT_PASSIVE);
+            me->AddAura(SPELL_SONIC_RING_AURA, me);
+            me->SetSpeed(MOVE_WALK, 0.9f);
+            me->SetSpeed(MOVE_RUN, 0.9f);
+
+            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 10);
+        }
+
+        void MovementInform(uint32 type, uint32 pointId) OVERRIDE
+        {
+            if (!me->IsAlive() || type != POINT_MOTION_TYPE)
+                return;
+
+            events.ScheduleEvent(EVENT_CHANGE_ORIENTATION, 10);
+            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 20);
+        }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {
-            if (timerMove <= diff) // move forward
+            events.Update(diff);
+
+            while (uint32 eventId = events.ExecuteEvent())
             {
-                me->GetMotionMaster()->MovementExpired();
-                me->GetMotionMaster()->Clear();
-                float x, y, z;
-                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 100.0f);
-                me->GetMotionMaster()->MovePoint(1, x, y, z);
-                timerMove = -1;
-            } else timerMove -= diff;
+                switch (eventId)
+                {
+                    case EVENT_CHANGE_ORIENTATION:
+                    {
+                        // Check next orientation to move to in order to create a "spiral" motion feeling. If it's lower then 0, it should reset to 6.
+                        float nextOrientation = me->GetOrientation() - 0.5f >= 0.0f ? me->GetOrientation() - 0.5f : 6.0f;
+                        me->SetFacingTo(nextOrientation);
+                        break;
+                    }
+
+                    case EVENT_MOVE_SPIRAL:
+                    {
+                        float x, y, z;
+                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 3.0f);
+                        me->GetMotionMaster()->MovePoint(movePointReached, x, y, z);
+                        movePointReached++;
+                    }
+
+                    default: break;
+                }
+            }
         }
     };
 
@@ -816,24 +924,68 @@ public:
     {
         npc_zorlok_sonic_pulseAI(Creature* creature) : ScriptedAI(creature)
         {
-            timerMove = 100;
-            creature->SetReactState(REACT_PASSIVE);
-            creature->AddAura(SPELL_SONIC_PULSE_AURA, creature);
+            instance = creature->GetInstanceScript();
         }
 
-        uint32 timerMove;
+        InstanceScript* instance;
+        EventMap events;
+        uint32 movePointReached;
+
+        void IsSummonedBy(Unit* summoner) OVERRIDE
+        {
+            Reset();
+        }
+
+        void Reset() OVERRIDE 
+        {
+            events.Reset();
+            movePointReached = 1;
+
+            me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+            me->SetReactState(REACT_PASSIVE);
+            me->AddAura(SPELL_SONIC_PULSE_AURA, me);
+            me->SetSpeed(MOVE_WALK, 0.9f);
+            me->SetSpeed(MOVE_RUN, 0.9f);
+
+            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 10);
+        }
+
+        void MovementInform(uint32 type, uint32 pointId) OVERRIDE
+        {
+            if (!me->IsAlive() || type != POINT_MOTION_TYPE)
+                return;
+
+            events.ScheduleEvent(EVENT_CHANGE_ORIENTATION, 10);
+            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 20);
+        }
 
         void UpdateAI(uint32 diff) OVERRIDE
         {
-            if (timerMove <= diff) // move forward
+            events.Update(diff);
+
+            while (uint32 eventId = events.ExecuteEvent())
             {
-                me->GetMotionMaster()->MovementExpired();
-                me->GetMotionMaster()->Clear();
-                float x, y, z;
-                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 100.0f);
-                me->GetMotionMaster()->MovePoint(1, x, y, z);
-                timerMove = -1;
-            } else timerMove -= diff;
+                switch (eventId)
+                {
+                    case EVENT_CHANGE_ORIENTATION:
+                    {
+                        // Check next orientation to move to in order to create a "spiral" motion feeling. If it's lower then 0, it should reset to 6.
+                        float nextOrientation = me->GetOrientation() - 0.5f >= 0.0f ? me->GetOrientation() - 0.5f : 6.0f;
+                        me->SetFacingTo(nextOrientation);
+                        break;
+                    }
+
+                    case EVENT_MOVE_SPIRAL:
+                    {
+                        float x, y, z;
+                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 3.0f);
+                        me->GetMotionMaster()->MovePoint(movePointReached, x, y, z);
+                        movePointReached++;
+                    }
+
+                    default: break;
+                }
+            }
         }
     };
 
@@ -843,44 +995,122 @@ public:
     }
 };
 
-class ExhaleTargetFilter : public std::unary_function<Unit*, bool>
-{
-    public:
-        explicit ExhaleTargetFilter(Unit* caster) : _caster(caster) { }
-
-        bool operator()(WorldObject* object) const
-        {
-            Unit* exhaleTarget = CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, _caster->ToCreature()->AI())->ExhaleTarget;
-
-            if (!exhaleTarget)
-                return false;
-
-            // Remove all the other players (stun only Exhale target).
-            return (object == exhaleTarget) ? false : true;
-        }
-
-    private:
-        Unit* _caster;
-};
-
 // Exhale: 122761
 class spell_zorlok_exhale : public SpellScriptLoader
 {
     public:
         spell_zorlok_exhale() : SpellScriptLoader("spell_zorlok_exhale") { }
 
+        // First handle the cast.
         class spell_zorlok_exhale_SpellScript : public SpellScript
         {
             PrepareSpellScript(spell_zorlok_exhale_SpellScript);
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(ExhaleTargetFilter(GetCaster()));
+                if (!GetCaster())
+                    return;
+
+                // Clear the targets.
+                if (!targets.empty())
+                    targets.clear();
+
+                // When first cast, this spell selects as target just the Exhale target of the boss (for the aura apply and the stun).
+                if (GetCaster()->ToCreature() && GetCaster()->ToCreature()->AI() && GetCaster()->ToCreature()->GetEntry() == BOSS_GRAND_VIZIER_ZORLOK)
+                {
+                    Unit* exhaleTarget = CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, GetCaster()->ToCreature()->AI())->ExhaleTarget;
+                    if (exhaleTarget)
+                        targets.push_back(target);
+                }
+            }
+
+            void HandleScript(SpellEffIndex /*effIndex*/)
+            {
+                if (!GetCaster())
+                    return;
+
+                // Check Inhale stacks - If boss has at least 3 stacks, remove the aura.
+                if (GetCaster()->ToCreature()->GetEntry() == BOSS_GRAND_VIZIER_ZORLOK)
+                    if (GetCaster()->HasAura(SPELL_INHALE))
+                        if (Aura* Inhale = GetCaster()->GetAura(SPELL_INHALE))
+                            if (Inhale->GetStackAmount() >= 3)
+                                GetCaster()->RemoveAurasDueToSpell(SPELL_INHALE);
             }
 
             void Register() OVERRIDE
             {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_exhale_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_exhale_SpellScript::FilterTargets, EFFECT_2, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnEffectHitTarget += SpellEffectFn(spell_zorlok_exhale_SpellScript::HandleScript, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
+        };
+
+        // Then handle the aura and periodic ticks.
+        class spell_zorlok_exhale_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_zorlok_exhale_AuraScript)
+
+            bool Load() OVERRIDE
+            {
+                foundNewExhaleVictim = false;
+                newExhaleVictim = NULL;
+                return true;
+            }
+
+            void PeriodicTick(AuraEffect const* /*aurEff*/)
+            {
+                if (!GetCaster())
+                    return;
+
+                if (GetCaster()->ToCreature() && GetCaster()->ToCreature()->AI() && GetCaster()->ToCreature()->GetEntry() == BOSS_GRAND_VIZIER_ZORLOK)
+                {
+                    PreventDefaultAction();
+
+                    Unit* exhaleTarget = CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, GetCaster()->ToCreature()->AI())->ExhaleTarget;
+
+                    // Check for existing target.
+                    if (exhaleTarget)
+                    {
+                        if (!foundNewExhaleVictim)
+                        {
+                            Map::PlayerList const& playerList = GetCaster()->GetMap()->GetPlayers();
+                            if (!playerList.isEmpty())
+                            {
+                                for (Map::PlayerList::const_iterator c_iter = playerList.begin(); c_iter != playerList.end(); ++c_iter)
+                                {
+                                    if (Player* player = c_iter->GetSource())
+                                    {
+                                        // Check for players between boss and target.
+                                        if (player->IsInBetween(GetCaster(), exhaleTarget, 1.0f))
+                                        {
+                                            // Found a new player to damage, so remove old player stun.
+                                            if (exhaleTarget->ToPlayer()->HasAura(SPELL_EXHALE))
+                                                exhaleTarget->ToPlayer()->RemoveAurasDueToSpell(SPELL_EXHALE);
+                            
+                                            // New channel victim found, so change to it and break the loop, we have what we need.
+                                            newExhaleVictim = player->ToUnit();
+                                            foundNewExhaleVictim = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (foundNewExhaleVictim)
+                            GetCaster()->CastSpell(newExhaleVictim, GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, true);
+                        else
+                            GetCaster()->CastSpell(exhaleTarget, GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, true);
+                    }
+                }
+
+                bool foundNewExhaleVictim;
+                Unit* newExhaleVictim;
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_zorlok_exhale_AuraScript::PeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
@@ -888,32 +1118,11 @@ class spell_zorlok_exhale : public SpellScriptLoader
         {
             return new spell_zorlok_exhale_SpellScript();
         }
-};
 
-class ExhaleDamageTargetFilter : public std::unary_function<Unit*, bool>
-{
-    public:
-        explicit ExhaleDamageTargetFilter(Unit* caster) : _caster(caster) { }
-
-        bool operator()(WorldObject* object) const
+        AuraScript* GetAuraScript() const OVERRIDE
         {
-            Unit* exhaleTarget = CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, _caster->ToCreature()->AI())->ExhaleTarget;
-
-            if (!exhaleTarget)
-                return false;
-
-            // Don't remove his target.
-            if (object == exhaleTarget)
-                return false;
-
-            if (!object->IsInBetween(_caster, exhaleTarget, 1.0f))
-                return true; // Remove players not between Zor'lok and his Exhale target.
-
-            return false; // Players between Zor'lok and the Exhale target are added to the list and sorted afterwards by distance.
+            return new spell_zorlok_exhale_AuraScript();
         }
-
-    private:
-        Unit* _caster;
 };
 
 // Exhale (damage): 122760
@@ -926,29 +1135,28 @@ class spell_zorlok_exhale_damage : public SpellScriptLoader
         {
             PrepareSpellScript(spell_zorlok_exhale_damage_SpellScript);
 
-            void FilterTargets(std::list<WorldObject*>& targets)
+            // void FilterTargets(std::list<WorldObject*>& targets)
+            // {
+            //     if (!GetCaster() || targets.empty())
+            //         return;
+            // }
+
+            void CalculateDamage(SpellEffIndex /*effIndex*/)
             {
-                if (targets.empty())
+                if (!GetCaster() || !GetHitUnit())
                     return;
 
-                // Remove players not between Zorlok and his target.
-                targets.remove_if(ExhaleDamageTargetFilter(GetCaster()));
-
-                if (targets.size() > 1) // Two or more targets, means there's someone between Zor'lok and his target.
-                {
-                    // Select first target between Zor'lok and the Exhale target.
-                    targets.sort(Trinity::ObjectDistanceOrderPred(GetCaster()));
-                    WorldObject* target = targets.front();
-                    targets.clear();
-                    targets.push_back(target);
-                    // Set Zor'lok's current Exhale target to that nearest player.
-					CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, GetCaster()->ToCreature()->AI())->ExhaleTarget = target->ToUnit();
-                }
+                // Add Inhale stacks amount to damage done.
+                if (GetCaster()->ToCreature()->GetEntry() == BOSS_GRAND_VIZIER_ZORLOK)
+                    if (GetCaster()->HasAura(SPELL_INHALE))
+                        if (Aura* Inhale = GetCaster()->GetAura(SPELL_INHALE))
+                            SetHitDamage(int32(GetHitDamage() + (GetHitDamage()  * (0.5 * Inhale->GetStackAmount()))));
             }
 
             void Register() OVERRIDE
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_exhale_damage_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_129);
+                // OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_exhale_damage_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_129);
+                OnEffectHitTarget += SpellEffectFn(spell_zorlok_exhale_damage_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 
@@ -970,6 +1178,9 @@ class spell_zorlok_attenuation : public SpellScriptLoader
 
             void HandlePeriodic(AuraEffect const* aurEff)
             {
+                if (!GetCaster())
+                    return;
+
                 // Create the spiral for the sonic rings.
                 if (Unit* caster = GetCaster())
                 {
@@ -998,10 +1209,10 @@ class spell_zorlok_attenuation : public SpellScriptLoader
                         caster->SummonCreature(NPC_SONIC_RING, X, FinalY, Z, degree, TEMPSUMMON_TIMED_DESPAWN, 20000);
                     }
 
-                    // Summon also 8 Sonic Pulses on Heroic, which go straight.
+                    // Summon also 4 Sonic Pulses on Heroic, which go straighter a bit.
                     if (caster->GetMap()->IsHeroic())
-                        for (uint8 i = 0; i < 8; i++)
-                            caster->SummonCreature(NPC_SONIC_PULSE, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 0.75f * (i + 1), TEMPSUMMON_TIMED_DESPAWN, 20000);
+                        for (uint8 i = 0; i < 4; i++)
+                            caster->SummonCreature(NPC_SONIC_PULSE, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 0.0f + (1.5f * i), TEMPSUMMON_TIMED_DESPAWN, 20000);
                 }
             }
 
@@ -1049,6 +1260,88 @@ class spell_zorlok_force_and_verve: public SpellScriptLoader
         }
 };
 
+class ConvertCheck : public std::unary_function<Unit*, bool>
+{
+    public:
+        explicit ConvertCheck(Unit* _caster) : caster(_caster) { }
+
+        bool operator()(WorldObject* object) const
+        {
+            if (object->GetTypeId() != TYPEID_PLAYER)
+                return true;
+
+            if (object->ToPlayer()->HasAura(SPELL_CONVERT))
+                return true;
+
+            return false;
+        }
+
+    private:
+        Unit* caster;
+};
+
+// Convert: 122740
+class spell_zorlok_convert : public SpellScriptLoader
+{
+    public:
+        spell_zorlok_convert() : SpellScriptLoader("spell_zorlok_convert") { }
+
+        class spell_zorlok_convert_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_zorlok_convert_SpellScript);
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                if (!GetCaster() || targets.empty())
+                    return;
+
+                targets.remove_if(ConvertCheck(GetCaster()));
+
+                if (targets.empty())
+                    return;
+
+                uint32 neededTargets = 0;
+
+                Difficulty difficulty = GetCaster()->GetMap()->GetDifficulty();
+                switch(difficulty)
+                {
+                    case RAID_DIFFICULTY_10MAN_NORMAL:
+                        neededTargets = 2;
+                        break;
+                    case RAID_DIFFICULTY_25MAN_NORMAL:
+                        neededTargets = 5;
+                        break;
+                    case RAID_DIFFICULTY_10MAN_HEROIC:
+                        neededTargets = 3;
+                        break;
+                    case RAID_DIFFICULTY_25MAN_HEROIC:
+                        neededTargets = 6;
+                        break;
+                }
+
+                if (targets.size() > neededTargets)
+                    targets.resize(neededTargets);
+                else if (targets.size() <= neededTargets && targets.size() > 1)
+                    targets.resize(neededTargets - 1);
+                else return; // This should never get called.
+            }
+
+            void Register() OVERRIDE
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_convert_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_convert_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_convert_SpellScript::FilterTargets, EFFECT_2, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_convert_SpellScript::FilterTargets, EFFECT_3, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_convert_SpellScript::FilterTargets, EFFECT_4, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_zorlok_convert_SpellScript();
+        }
+};
+
 void AddSC_boss_imperial_vizier_zorlok()
 {
     new boss_imperial_vizier_zorlok();
@@ -1060,4 +1353,5 @@ void AddSC_boss_imperial_vizier_zorlok()
     new spell_zorlok_exhale_damage();
     new spell_zorlok_attenuation();
     new spell_zorlok_force_and_verve();
+    new spell_zorlok_convert();
 }

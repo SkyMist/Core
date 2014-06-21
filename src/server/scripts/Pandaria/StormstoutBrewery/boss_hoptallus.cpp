@@ -411,9 +411,13 @@ class PositionCheck : public std::unary_function<Unit*, bool>
 {
     public:
         explicit PositionCheck(Unit* _caster) : caster(_caster) { }
-        bool operator()(WorldObject* object)
+
+        bool operator()(WorldObject* object) const
         {
-            return !caster->HasInArc(M_PI / 6, object);
+            if (!caster->HasInArc(M_PI / 6, object))
+                return true;
+
+            return false;
         }
 
     private:
@@ -424,9 +428,13 @@ class PlayerCheck : public std::unary_function<Unit*, bool>
 {
     public:
         explicit PlayerCheck(Unit* _caster) : caster(_caster) { }
-        bool operator()(WorldObject* object)
+
+        bool operator()(WorldObject* object) const
         {
-            return object->GetTypeId() != TYPEID_PLAYER;
+            if (object->GetTypeId() != TYPEID_PLAYER)
+                return true;
+
+            return false;
         }
 
     private:

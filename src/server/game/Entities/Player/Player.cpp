@@ -8170,7 +8170,7 @@ void Player::SendPvpRewards() const
 
     WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
 
-    packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
     packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
     packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
     packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
@@ -8179,7 +8179,7 @@ void Player::SendPvpRewards() const
     packet << uint32(RatedBGWinReward);                                    // Count of Conquest points earned for a Rated BG Win.
     packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
     packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);  // Count of all Conquest points earned from Arenas during week.
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
+    packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
 
     GetSession()->SendPacket(&packet);
 }
@@ -20337,7 +20337,7 @@ void Player::SendRaidInfo()
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
-                bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
+                bool isHeroic = save->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 uint32 completedEncounters = 0;
 
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
