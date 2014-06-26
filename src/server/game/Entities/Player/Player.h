@@ -69,7 +69,7 @@ typedef std::deque<Mail*> PlayerMails;
 struct ActionButtonPACKET
 {
     uint32 id;
-    uint32 unk; // default 1 (maybe)
+    uint32 type;
 };
 
 // Note: SPELLMOD_* values is aura types in fact

@@ -830,6 +830,7 @@ void AddSC_instance_terrace_of_endless_spring();
 void AddSC_boss_imperial_vizier_zorlok();
 void AddSC_boss_blade_lord_tayak();
 void AddSC_boss_garalon();
+void AddSC_boss_wind_lord_meljarak();
 void AddSC_heart_of_fear();
 void AddSC_instance_heart_of_fear();
 
@@ -1725,6 +1726,7 @@ void AddPandariaScripts()
     AddSC_boss_imperial_vizier_zorlok();
     AddSC_boss_blade_lord_tayak();
     AddSC_boss_garalon();
+    AddSC_boss_wind_lord_meljarak();
     AddSC_heart_of_fear();
     AddSC_instance_heart_of_fear();
 #endif

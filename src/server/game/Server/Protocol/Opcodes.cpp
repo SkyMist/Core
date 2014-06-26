@@ -527,7 +527,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_SPELLCLICK,                              STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleSpellClick                );
     DEFINE_OPCODE_HANDLER(CMSG_SPIRIT_HEALER_ACTIVATE,                  STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleSpiritHealerActivateOpcode);
     DEFINE_OPCODE_HANDLER(CMSG_SPLIT_ITEM,                              STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleSplitItemOpcode           );
-    DEFINE_OPCODE_HANDLER(CMSG_STANDSTATECHANGE,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleStandStateChangeOpcode    );
+    DEFINE_OPCODE_HANDLER(CMSG_STANDSTATECHANGE,                        STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleStandStateChangeOpcode    );
     DEFINE_OPCODE_HANDLER(CMSG_STOP_DANCE,                              STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_SUBMIT_BUG,                              STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_SUBMIT_COMPLAIN,                         STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
@@ -1045,6 +1045,7 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_SET_SWIM_SPEED,                     STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_SET_TURN_RATE,                      STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_SET_WALK_SPEED,                     STATUS_NEVER    );
+    DEFINE_OPCODE_HANDLER(SMSG_MOVE_TELEPORT,                           STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_UNROOT,                             STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_UNSET_CAN_FLY,                      STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY, STATUS_UNHANDLED);
@@ -1282,7 +1283,7 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_SPLINE_MOVE_UNSET_FLYING,                STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_SPLINE_MOVE_UNSET_HOVER,                 STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_STABLE_RESULT,                           STATUS_NEVER    );
-    DEFINE_OPCODE_HANDLER(SMSG_STANDSTATE_UPDATE,                       STATUS_UNHANDLED);
+    DEFINE_OPCODE_HANDLER(SMSG_STANDSTATE_UPDATE,                       STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_START_MIRROR_TIMER,                      STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_START_TIMER,                             STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_STOP_DANCE,                              STATUS_UNHANDLED);
@@ -1364,6 +1365,5 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_XP_GAIN_ABORTED,                         STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_ZONE_UNDER_ATTACK,                       STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(MSG_VERIFY_CONNECTIVITY,                      STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(MSG_MOVE_TELEPORT,                            STATUS_NEVER    );
     #undef DEFINE_OPCODE_HANDLER
 };

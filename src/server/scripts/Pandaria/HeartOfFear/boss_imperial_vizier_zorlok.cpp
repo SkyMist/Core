@@ -20,6 +20,8 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CreatureTextMgr.h"
+#include "MoveSplineInit.h"
+#include "MoveSplineInitArgs.h"
 #include "Unit.h"
 #include "Player.h"
 #include "Weather.h"
@@ -126,8 +128,9 @@ enum Events
     EVENT_BERSERK,
 
     // Sonic Rings / Discs.
-    EVENT_CHANGE_ORIENTATION,
-    EVENT_MOVE_SPIRAL,
+    EVENT_MOVE_CIRCLE,
+    EVENT_SUMMON_RING,
+    EVENT_MOVE_FORWARD,
 
     // Echo of Force And Verve.
     EVENT_CLEAR_THROAT
@@ -258,7 +261,7 @@ public:
 
             DoCast(me, SPELL_PHEROMONES); // Create Areatrigger (TARGET_DEST_DB);
 
-            events.ScheduleEvent(EVENT_BERSERK, 11 * MINUTE * IN_MILLISECONDS); // 11 minute berserk.
+            events.ScheduleEvent(EVENT_BERSERK, 10 * MINUTE * IN_MILLISECONDS); // 10 minute berserk.
 
             ChangePlatform(); // Move to first, random platform.
             platformsVisited++; // Increase visited platforms count.
@@ -848,8 +851,26 @@ public:
 
         InstanceScript* instance;
         EventMap events;
-        uint32 movePointReached;
+        uint32 discsSummoned;
+        bool IsFirstRing;
 
+        // Particular AI functions
+        void FillCirclePath(Position const& centerPos, float radius, float z, Movement::PointsArray& path)
+        {
+            float step = -M_PI / 8.0f; // Clockwise.
+            float angle = centerPos.GetAngle(me->GetPositionX(), me->GetPositionY());
+
+            for (uint8 i = 0; i < 16; angle += step, ++i)
+            {
+                G3D::Vector3 point;
+                point.x = centerPos.GetPositionX() + radius * cosf(angle);
+                point.y = centerPos.GetPositionY() + radius * sinf(angle);
+                point.z = z;
+                path.push_back(point);
+            }
+        }
+
+        // General AI.
         void IsSummonedBy(Unit* summoner) OVERRIDE
         {
             Reset();
@@ -858,24 +879,18 @@ public:
         void Reset() OVERRIDE 
         {
             events.Reset();
-            movePointReached = 1;
+
+            discsSummoned = 0;
 
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
             me->SetReactState(REACT_PASSIVE);
             me->AddAura(SPELL_SONIC_RING_AURA, me);
-            me->SetSpeed(MOVE_WALK, 0.9f);
-            me->SetSpeed(MOVE_RUN, 0.9f);
+            me->SetSpeed(MOVE_WALK, 0.8f);
+            me->SetSpeed(MOVE_RUN, 0.8f);
 
-            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 10);
-        }
-
-        void MovementInform(uint32 type, uint32 pointId) OVERRIDE
-        {
-            if (!me->IsAlive() || type != POINT_MOTION_TYPE)
-                return;
-
-            events.ScheduleEvent(EVENT_CHANGE_ORIENTATION, 10);
-            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 20);
+            // Move straight.
+            events.ScheduleEvent(EVENT_MOVE_CIRCLE, 10);
+            events.ScheduleEvent(EVENT_SUMMON_RING, 500);
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -886,20 +901,34 @@ public:
             {
                 switch (eventId)
                 {
-                    case EVENT_CHANGE_ORIENTATION:
+                    case EVENT_MOVE_CIRCLE:
                     {
-                        // Check next orientation to move to in order to create a "spiral" motion feeling. If it's lower then 0, it should reset to 6.
-                        float nextOrientation = me->GetOrientation() - 0.5f >= 0.0f ? me->GetOrientation() - 0.5f : 6.0f;
-                        me->SetFacingTo(nextOrientation);
+                        if (Creature* Zorlok = me->FindNearestCreature(BOSS_GRAND_VIZIER_ZORLOK, 100.0f, true))
+                        {
+                            Movement::MoveSplineInit init(me);
+                            FillCirclePath(*Zorlok, me->GetDistance(Zorlok), me->GetPositionZ() + 0.1f, init.Path());
+                            init.SetWalk(true);
+                            init.SetCyclic();
+                            init.SetSmooth();
+                            init.Launch();
+                        }
                         break;
                     }
 
-                    case EVENT_MOVE_SPIRAL:
+                    case EVENT_SUMMON_RING:
                     {
-                        float x, y, z;
-                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 3.0f);
-                        me->GetMotionMaster()->MovePoint(movePointReached, x, y, z);
-                        movePointReached++;
+                        if (IsFirstRing && discsSummoned < 5)
+                        {
+                            discsSummoned++;
+
+                            float x, y, z;
+                            me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 2.0f * discsSummoned);
+                            if (Creature* disc = me->SummonCreature(NPC_SONIC_RING, x, y, z, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 12000 - (500 * discsSummoned)))
+                                CAST_AI(npc_zorlok_sonic_ring::npc_zorlok_sonic_ringAI, disc->AI())->IsFirstRing = false;
+
+                            events.ScheduleEvent(EVENT_SUMMON_RING, 500);
+                        }
+                        break;
                     }
 
                     default: break;
@@ -929,7 +958,6 @@ public:
 
         InstanceScript* instance;
         EventMap events;
-        uint32 movePointReached;
 
         void IsSummonedBy(Unit* summoner) OVERRIDE
         {
@@ -939,24 +967,14 @@ public:
         void Reset() OVERRIDE 
         {
             events.Reset();
-            movePointReached = 1;
 
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
             me->SetReactState(REACT_PASSIVE);
             me->AddAura(SPELL_SONIC_PULSE_AURA, me);
-            me->SetSpeed(MOVE_WALK, 0.9f);
-            me->SetSpeed(MOVE_RUN, 0.9f);
+            me->SetSpeed(MOVE_WALK, 0.8f);
+            me->SetSpeed(MOVE_RUN, 0.8f);
 
-            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 10);
-        }
-
-        void MovementInform(uint32 type, uint32 pointId) OVERRIDE
-        {
-            if (!me->IsAlive() || type != POINT_MOTION_TYPE)
-                return;
-
-            events.ScheduleEvent(EVENT_CHANGE_ORIENTATION, 10);
-            events.ScheduleEvent(EVENT_MOVE_SPIRAL, 20);
+            events.ScheduleEvent(EVENT_MOVE_FORWARD, 10);
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -967,20 +985,11 @@ public:
             {
                 switch (eventId)
                 {
-                    case EVENT_CHANGE_ORIENTATION:
-                    {
-                        // Check next orientation to move to in order to create a "spiral" motion feeling. If it's lower then 0, it should reset to 6.
-                        float nextOrientation = me->GetOrientation() - 0.5f >= 0.0f ? me->GetOrientation() - 0.5f : 6.0f;
-                        me->SetFacingTo(nextOrientation);
-                        break;
-                    }
-
-                    case EVENT_MOVE_SPIRAL:
+                    case EVENT_MOVE_FORWARD:
                     {
                         float x, y, z;
-                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 3.0f);
-                        me->GetMotionMaster()->MovePoint(movePointReached, x, y, z);
-                        movePointReached++;
+                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 50.0f);
+                        me->GetMotionMaster()->MovePoint(1, x, y, z);
                     }
 
                     default: break;
@@ -1020,7 +1029,7 @@ class spell_zorlok_exhale : public SpellScriptLoader
                 {
                     Unit* exhaleTarget = CAST_AI(boss_imperial_vizier_zorlok::boss_imperial_vizier_zorlokAI, GetCaster()->ToCreature()->AI())->ExhaleTarget;
                     if (exhaleTarget)
-                        targets.push_back(target);
+                        targets.push_back(exhaleTarget);
                 }
             }
 
@@ -1049,6 +1058,9 @@ class spell_zorlok_exhale : public SpellScriptLoader
         class spell_zorlok_exhale_AuraScript : public AuraScript
         {
             PrepareAuraScript(spell_zorlok_exhale_AuraScript)
+
+            bool foundNewExhaleVictim;
+            Unit* newExhaleVictim;
 
             bool Load() OVERRIDE
             {
@@ -1103,9 +1115,6 @@ class spell_zorlok_exhale : public SpellScriptLoader
                             GetCaster()->CastSpell(exhaleTarget, GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, true);
                     }
                 }
-
-                bool foundNewExhaleVictim;
-                Unit* newExhaleVictim;
             }
 
             void Register() OVERRIDE
@@ -1135,12 +1144,6 @@ class spell_zorlok_exhale_damage : public SpellScriptLoader
         {
             PrepareSpellScript(spell_zorlok_exhale_damage_SpellScript);
 
-            // void FilterTargets(std::list<WorldObject*>& targets)
-            // {
-            //     if (!GetCaster() || targets.empty())
-            //         return;
-            // }
-
             void CalculateDamage(SpellEffIndex /*effIndex*/)
             {
                 if (!GetCaster() || !GetHitUnit())
@@ -1155,7 +1158,6 @@ class spell_zorlok_exhale_damage : public SpellScriptLoader
 
             void Register() OVERRIDE
             {
-                // OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_zorlok_exhale_damage_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_129);
                 OnEffectHitTarget += SpellEffectFn(spell_zorlok_exhale_damage_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
@@ -1176,43 +1178,41 @@ class spell_zorlok_attenuation : public SpellScriptLoader
         {
             PrepareAuraScript(spell_zorlok_attenuation_AuraScript);
 
+            bool ringsSummoned;
+
+            bool Load() OVERRIDE
+            {
+                ringsSummoned = false;
+                return true;
+            }
+
             void HandlePeriodic(AuraEffect const* aurEff)
             {
                 if (!GetCaster())
                     return;
 
-                // Create the spiral for the sonic rings.
+                // Summon the sonic rings.
                 if (Unit* caster = GetCaster())
                 {
-                    // We calculate Y variations depending on the tick number.
+                    // We calculate variations depending on the tick number.
                     uint32 tickNumber = aurEff->GetTickNumber();
 
-                    float X;
-                    float Y;
-                    float Z;
-                    float FinalY;
-                    float degree = 0.0f;
-                    float width = 0.0f;
-
-                    // Calculate the summon points in the spiral. Seems like 8 rings are summoned each tick.
-                    for (uint8 i = 0; i < 8; i++)
+                    // Calculate the summon points in the spiral.
+                    if (!ringsSummoned)
                     {
-                        degree += 0.18f * (tickNumber > 1 ? tickNumber : tickNumber / 2); // Modify the Y position a little, so the outcome is a spiral.
-                        width += 0.785f;
-                        if (degree >= 6.28f) degree -= 6.28f;
-
-                        X = caster->GetPositionX();
-                        Y = sin(degree) * width;
-                        FinalY = caster->GetPositionY() + Y;
-                        Z = caster->GetMap()->GetHeight(X, FinalY, caster->GetPositionZ());
-
-                        caster->SummonCreature(NPC_SONIC_RING, X, FinalY, Z, degree, TEMPSUMMON_TIMED_DESPAWN, 20000);
+                        for (uint8 i = 0; i < 4; i++)
+                            if (Creature* disc = caster->SummonCreature(NPC_SONIC_RING, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 1.5f * i, TEMPSUMMON_TIMED_DESPAWN, 11000))
+                                CAST_AI(npc_zorlok_sonic_ring::npc_zorlok_sonic_ringAI, disc->AI())->IsFirstRing = true;
+                        ringsSummoned = true;
                     }
 
-                    // Summon also 4 Sonic Pulses on Heroic, which go straighter a bit.
-                    if (caster->GetMap()->IsHeroic())
+                    // Only summon pulses once each three ticks.
+                    if (caster->GetMap()->IsHeroic() && (tickNumber == 2 || tickNumber == 5 || tickNumber == 8 || tickNumber == 11))
+                    {
+                        // Summon also 4 Sonic Pulses on Heroic, which go straighter a bit.
                         for (uint8 i = 0; i < 4; i++)
-                            caster->SummonCreature(NPC_SONIC_PULSE, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 0.0f + (1.5f * i), TEMPSUMMON_TIMED_DESPAWN, 20000);
+                            caster->SummonCreature(NPC_SONIC_PULSE, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 0.0f + (1.5f * i), TEMPSUMMON_TIMED_DESPAWN, 12000 - (1000 * tickNumber));
+                    }
                 }
             }
 
@@ -1336,9 +1336,37 @@ class spell_zorlok_convert : public SpellScriptLoader
             }
         };
 
+        class spell_zorlok_convert_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_zorlok_convert_AuraScript);
+
+            void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* player = GetTarget()->ToPlayer())
+                    player->setFaction(14);
+            }
+
+            void OnRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* player = GetOwner()->ToPlayer())
+                    player->setFactionForRace(player->getRace());
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectApply += AuraEffectApplyFn(spell_zorlok_convert_AuraScript::OnApply, EFFECT_0, SPELL_AURA_AOE_CHARM, AURA_EFFECT_HANDLE_REAL);
+                AfterEffectRemove += AuraEffectRemoveFn(spell_zorlok_convert_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_AOE_CHARM, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
         SpellScript* GetSpellScript() const OVERRIDE
         {
             return new spell_zorlok_convert_SpellScript();
+        }
+
+        AuraScript* GetAuraScript() const OVERRIDE
+        {
+            return new spell_zorlok_convert_AuraScript();
         }
 };
 

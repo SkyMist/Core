@@ -3805,6 +3805,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     RemoveByteFlag(UNIT_FIELD_SHAPESHIFT_FORM, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY);
 
     // restore if need some important flags
+    SetUInt32Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0);                   // flags empty by default
     //SetUInt32Value(PLAYER_FIELD_LIFETIME_MAX_RANK2, 0);                 // flags empty by default
 
     if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
@@ -4887,13 +4888,11 @@ void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
 
 void Player::RemoveAllSpellCooldown()
 {
-    if (!m_spellCooldowns.empty())
-    {
-        for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); ++itr)
-            SendClearCooldown(itr->first, this);
+    const SpellCooldowns& cm = GetSpellCooldownMap();
 
-        m_spellCooldowns.clear();
-    }
+    if (!cm.empty())
+        for (SpellCooldowns::const_iterator itr = cm.begin(); itr != cm.end(); itr++)
+            RemoveSpellCooldown(itr->first, true);
 }
 
 void Player::_LoadSpellCooldowns(PreparedQueryResult result)
@@ -7341,6 +7340,13 @@ void Player::SendActionButtons(uint32 state) const
 {
     WorldPacket data(SMSG_ACTION_BUTTONS, 1 + (MAX_ACTION_BUTTONS * 8));
 
+    /*
+        state can be 0, 1, 2
+        0 - Sends initial action buttons, client does not validate if we have the spell or not
+        1 - Used used after spec swaps, client validates if a spell is known.
+        2 - Clears the action bars client sided. This is sent during spec swap before unlearning and before sending the new buttons
+    */
+
     uint8 buttons [MAX_ACTION_BUTTONS][8];
     ActionButtonPACKET* buttonsTab = (ActionButtonPACKET*)buttons;
     memset(buttons, 0, MAX_ACTION_BUTTONS * 8);
@@ -7351,12 +7357,12 @@ void Player::SendActionButtons(uint32 state) const
         if (!ab)
         {
             buttonsTab[i].id = 0;
-            buttonsTab[i].unk = 0;
+            buttonsTab[i].type = 0;
             continue;
         }
 
         buttonsTab[i].id = ab->GetAction();
-        buttonsTab[i].unk = uint32(ab->GetType());
+        buttonsTab[i].type = uint32(ab->GetType());
     }
 
     // Bits
@@ -7383,6 +7389,8 @@ void Player::SendActionButtons(uint32 state) const
 
     for (uint8 i = 0; i < MAX_ACTION_BUTTONS; ++i)
         data.WriteBit(buttons[i][5]);
+
+    data.FlushBits();
 
     // Data
     for (uint8 i = 0; i < MAX_ACTION_BUTTONS; ++i)

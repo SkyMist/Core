@@ -874,7 +874,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         data->WriteString(std::string(addonPrefix));
 
     if (HasLimitedFloatRange)
-        *data << float(0); // Add max text range here (see building of each chat type). 
+        *data << float(sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY)); // Add max text range here (see building of each chat type). 
 
     data->WriteByteSeq(targetGuid[4]);
     data->WriteByteSeq(targetGuid[2]);

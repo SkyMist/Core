@@ -541,7 +541,7 @@ enum Opcodes
    CMSG_SPELLCLICK                                          = 0x11FF, // 5.4.7 18019
    CMSG_SPIRIT_HEALER_ACTIVATE                              = 0x05D4, // 5.4.7 18019
    CMSG_SPLIT_ITEM                                          = 0x140A, // 5.4.7 18019
-   CMSG_STANDSTATECHANGE                                    = 0x0,
+   CMSG_STANDSTATECHANGE                                    = 0x157A, // 5.4.7 18019
    CMSG_START_QUEST                                         = 0x0,
    CMSG_STOP_DANCE                                          = 0x0,
    CMSG_STORE_LOOT_IN_SLOT                                  = 0x0,
@@ -637,7 +637,6 @@ enum Opcodes
    MSG_MOVE_STOP_STRAFE                                     = 0x0171, // 5.4.7 18019
    MSG_MOVE_STOP_SWIM                                       = 0x0578, // 5.4.7 18019
    MSG_MOVE_STOP_TURN                                       = 0x0530, // 5.4.7 18019
-   MSG_MOVE_TELEPORT                                        = 0x00D5, // 5.4.7 18019
    MSG_MOVE_TELEPORT_ACK                                    = 0x0978, // 5.4.7 18019
    MSG_MOVE_TELEPORT_CHEAT                                  = 0x0,
    MSG_MOVE_TIME_SKIPPED                                    = 0x0,
@@ -1100,6 +1099,7 @@ enum Opcodes
    SMSG_MOVE_SET_VEHICLE_REC_ID                             = 0x0,
    SMSG_MOVE_SET_WALK_IN_AIR                                = 0x0,
    SMSG_MOVE_SET_WALK_SPEED                                 = 0x00A0, // 5.4.7 18019
+   SMSG_MOVE_TELEPORT                                       = 0x00D5, // 5.4.7 18019
    SMSG_MOVE_UNROOT                                         = 0x1D8A, // 5.4.7 18019
    SMSG_MOVE_UNSET_CAN_FLY                                  = 0x1D81, // 5.4.7 18019
    SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY      = 0x0,
@@ -1349,7 +1349,7 @@ enum Opcodes
    SMSG_SPLINE_MOVE_UNSET_FLYING                            = 0x1798, // 5.4.7 18019
    SMSG_SPLINE_MOVE_UNSET_HOVER                             = 0x0076, // 5.4.7 18019
    SMSG_STABLE_RESULT                                       = 0x0E0B, // 5.4.7 18019
-   SMSG_STANDSTATE_UPDATE                                   = 0x0,
+   SMSG_STANDSTATE_UPDATE                                   = 0x0C48, // 5.4.7 18019
    SMSG_START_MIRROR_TIMER                                  = 0x0,
    SMSG_START_TIMER                                         = 0x0,
    SMSG_STOP_DANCE                                          = 0x0,

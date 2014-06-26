@@ -1314,7 +1314,7 @@ void WorldSession::HandleSetActionButtonOpcode(WorldPacket& recvData)
     if (!button->id)
         GetPlayer()->removeActionButton(slotId);
     else
-        GetPlayer()->addActionButton(slotId, button->id, button->unk);
+        GetPlayer()->addActionButton(slotId, button->id, button->type);
 }
 
 void WorldSession::HandleCompleteCinematic(WorldPacket& /*recvData*/)

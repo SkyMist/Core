@@ -27,6 +27,7 @@ set(scripts_STAT_SRCS
   Pandaria/HeartOfFear/boss_imperial_vizier_zorlok.cpp
   Pandaria/HeartOfFear/boss_blade_lord_tayak.cpp
   Pandaria/HeartOfFear/boss_garalon.cpp
+  Pandaria/HeartOfFear/boss_wind_lord_meljarak.cpp
 )
 
 message("  -> Prepared: Pandaria")

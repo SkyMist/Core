@@ -278,7 +278,7 @@ void Player::ReadMovementInfo(WorldPacket& data, MovementInfo* mi, Movement::Ext
                 break;
             case MSECounter:
                 for (int i = 0; i != counterCount; i++)
-                    data.read_skip<uint32>();   /// @TODO: Maybe compare it with m_movementCounter to verify that packets are sent & received in order?
+                    data >> m_movementCounter;
                 break;
             case MSEHasUnkTime:
                 hasUnkTime = !data.ReadBit();

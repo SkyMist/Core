@@ -324,6 +324,10 @@ public:
 
                 Talk(SAY_STORM_UNLEASHED);
 
+                // Remove Intensify.
+                me->RemoveAurasDueToSpell(SPELL_INTENSIFY_AURA);
+                me->RemoveAurasDueToSpell(SPELL_INTENSIFY_BUFF);
+
                 // Cancel the P1 events.
                 events.CancelEvent(EVENT_TEMPEST_SLASH);
                 events.CancelEvent(EVENT_UNSEEN_STRIKE);
@@ -334,6 +338,8 @@ public:
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->Clear();
                 me->SetReactState(REACT_PASSIVE);
+
+                summons.DespawnAll();
 
                 // Teleport players and move to P2 first point.
                 TeleportPlayers();
@@ -352,6 +358,9 @@ public:
                 me->RemoveAurasDueToSpell(SPELL_STORM_UNLEASHED_D);
                 me->RemoveAurasDueToSpell(SPELL_SU_DMG_AURA);
                 events.CancelEvent(EVENT_SUMMON_TORNADOES);
+
+                summons.DespawnAll();
+                tornadoSummonCounter = 0;
 
                 // Teleport players and move to P2 second point.
                 TeleportPlayers();
@@ -374,18 +383,21 @@ public:
                         break;
 
                     case EVENT_UNSEEN_STRIKE:
-                        unseenTank = me->GetVictim();
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                         {
+                            unseenTank = me->GetVictim();
+
                             Talk(ANN_UNSEEN, target->GetGUID());
+
                             DoCast(target, SPELL_UNSEEN_STRIKE_TR);
                             me->AddAura(SPELL_UNSEEN_STRIKE_MKR, target);
                             me->GetMotionMaster()->MovementExpired();
                             me->GetMotionMaster()->Clear();
                             me->GetMotionMaster()->MoveChase(target);
                             me->SetReactState(REACT_PASSIVE);
+
+                            events.ScheduleEvent(EVENT_UNSEEN_STRIKE_RETURN, 5500);
                         }
-                        events.ScheduleEvent(EVENT_UNSEEN_STRIKE_RETURN, 5500);
                         events.ScheduleEvent(EVENT_UNSEEN_STRIKE, urand(53000, 61000));
                         break;
 
@@ -413,8 +425,9 @@ public:
                     case EVENT_WIND_STEP_RETURN: // Return to old target.
                         if (currentTank)
                         {
-                            if (currentTank->IsAlive()) DoCast(currentTank, SPELL_WIND_STEP_TP_BACK);
-                            currentTank = NULL;
+                            if (currentTank->IsAlive())
+                                DoCast(currentTank, SPELL_WIND_STEP_TP_BACK);
+                                currentTank = NULL;
                         }
                         break;
 
@@ -537,7 +550,7 @@ public:
                     case EVENT_MOVE_RANDOM:
                         me->GetMotionMaster()->MovementExpired();
                         me->GetMotionMaster()->Clear();
-                        me->GetMotionMaster()->MoveRandom(4.0f);
+                        me->GetMotionMaster()->MoveRandom(7.0f);
                         break;
 
                     default: break;
@@ -573,8 +586,8 @@ public:
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
             me->SetReactState(REACT_PASSIVE);
 
-            me->SetSpeed(MOVE_WALK, 1.1f, true);
-            me->SetSpeed(MOVE_RUN, 1.1f, true);
+            me->SetSpeed(MOVE_WALK, 1.0f, true);
+            me->SetSpeed(MOVE_RUN, 1.0f, true);
             Movement::MoveSplineInit init(me);
             init.SetOrientationFixed(true);
             init.Launch();
