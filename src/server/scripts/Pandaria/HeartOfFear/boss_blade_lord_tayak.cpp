@@ -455,7 +455,7 @@ public:
                         // Reset it at 3, to start over.
                         if (tornadoSummonCounter >= 3)
                             tornadoSummonCounter = 0;
-                        events.ScheduleEvent(EVENT_SUMMON_TORNADOES, 1000);
+                        events.ScheduleEvent(EVENT_SUMMON_TORNADOES, 1500);
                         break;
 
                     case EVENT_BERSERK: // Nasty if you're here!
@@ -499,6 +499,9 @@ public:
 
             me->AddAura(SPELL_TEMP_SLASH_AURA, me); // Damage + Visual aura.
             me->DespawnOrUnsummon(120000);
+
+            me->SetSpeed(MOVE_WALK, 0.9f, true);
+            me->SetSpeed(MOVE_RUN, 0.9f, true);
 
             if (CAST_AI(boss_blade_lord_tayak::boss_blade_lord_tayakAI, summoner->ToCreature()->AI())->tempestTarget != NULL)
             {
@@ -586,8 +589,8 @@ public:
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
             me->SetReactState(REACT_PASSIVE);
 
-            me->SetSpeed(MOVE_WALK, 1.0f, true);
-            me->SetSpeed(MOVE_RUN, 1.0f, true);
+            me->SetSpeed(MOVE_WALK, 1.1f, true);
+            me->SetSpeed(MOVE_RUN, 1.1f, true);
             Movement::MoveSplineInit init(me);
             init.SetOrientationFixed(true);
             init.Launch();
