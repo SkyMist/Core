@@ -22417,7 +22417,7 @@ void Player::VehicleSpellInitialize()
     }
 
     for (uint32 i = CREATURE_MAX_SPELLS; i < MAX_SPELL_CONTROL_BAR; ++i)
-        data << uint32(0);
+        data << uint32(MAKE_UNIT_ACTION_BUTTON(0, i + 8));
 
     data.WriteByteSeq(NPCGuid[6]);
     data << uint32(vehicle->IsSummon() ? vehicle->ToTempSummon()->GetTimer() : 0); // Duration
