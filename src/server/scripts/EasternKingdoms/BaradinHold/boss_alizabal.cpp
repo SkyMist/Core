@@ -50,7 +50,7 @@ enum Actions
     ACTION_INTRO            = 1
 };
 
-    enum Points
+enum Points
 {
     POINT_STORM             = 1
 };
@@ -89,6 +89,8 @@ class boss_alizabal : public CreatureScript
                 _intro = false;
             }
 
+            bool _intro, _hate, _skewer;
+
             void Reset() OVERRIDE
             {
                 _Reset();
@@ -98,10 +100,12 @@ class boss_alizabal : public CreatureScript
 
             void EnterCombat(Unit* /*who*/) OVERRIDE
             {
-                _EnterCombat();
                 Talk(SAY_AGGRO);
+
                 instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 events.ScheduleEvent(EVENT_RANDOM_CAST, 10000);
+
+                _EnterCombat();
             }
 
             void JustDied(Unit* /*killer*/) OVERRIDE
@@ -252,12 +256,6 @@ class boss_alizabal : public CreatureScript
 
                 DoMeleeAttackIfReady();
             }
-
-        private:
-            bool _intro;
-            bool _hate;
-            bool _skewer;
-
         };
 
         CreatureAI* GetAI(Creature* creature) const OVERRIDE

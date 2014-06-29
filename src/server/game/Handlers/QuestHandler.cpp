@@ -177,7 +177,7 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
 
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_QUESTGIVER_ACCEPT_QUEST npc = %u, quest = %u, unk1 = %u", uint32(GUID_LOPART(guid)), questId, unk1);
 
-    Object* object = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT|TYPEMASK_GAMEOBJECT|TYPEMASK_ITEM|TYPEMASK_PLAYER);
+    Object* object = ObjectAccessor::GetObjectByTypeMask(*_player, guid, TYPEMASK_UNIT | TYPEMASK_GAMEOBJECT | TYPEMASK_ITEM|TYPEMASK_PLAYER);
 
 #define CLOSE_GOSSIP_CLEAR_DIVIDER() \
     do { \
@@ -406,7 +406,8 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
     ObjectGuid guid;
     uint32 questId, reward;
 
-    recvData >> reward >> questId; // 5.x - reward value is now an item ID and not slot ID
+    recvData >> reward;     // 5.x - reward value is now an item ID and not slot ID
+    recvData >> questId;
 
     guid[2] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
@@ -451,8 +452,7 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
             return;
     }
 
-    if ((!_player->CanSeeStartQuest(quest) &&  _player->GetQuestStatus(questId) == QUEST_STATUS_NONE) ||
-        (_player->GetQuestStatus(questId) != QUEST_STATUS_COMPLETE && !quest->IsAutoComplete()))
+    if ((!_player->CanSeeStartQuest(quest) &&  _player->GetQuestStatus(questId) == QUEST_STATUS_NONE) || (_player->GetQuestStatus(questId) != QUEST_STATUS_COMPLETE && !quest->IsAutoComplete()))
     {
         TC_LOG_ERROR("network", "Error in QUEST_STATUS_COMPLETE: player %s (guid %u) tried to complete quest %u, but is not allowed to do so (possible packet-hacking or high latency)",
                         _player->GetName().c_str(), _player->GetGUIDLow(), questId);
@@ -830,19 +830,19 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver, uint32 
     {
         case TYPEID_GAMEOBJECT:
         {
-            qr = sObjectMgr->GetGOQuestRelationBounds(questgiver->GetEntry());
+            qr  = sObjectMgr->GetGOQuestRelationBounds(questgiver->GetEntry());
             qir = sObjectMgr->GetGOQuestInvolvedRelationBounds(questgiver->GetEntry());
             break;
         }
 
         case TYPEID_UNIT:
         {
-            qr = sObjectMgr->GetCreatureQuestRelationBounds(questgiver->GetEntry());
+            qr  = sObjectMgr->GetCreatureQuestRelationBounds(questgiver->GetEntry());
             qir = sObjectMgr->GetCreatureQuestInvolvedRelationBounds(questgiver->GetEntry());
             break;
         }
 
-        default:  //its imposible, but check ^)
+        default:  // it's impossible, but check ^)
             TC_LOG_ERROR("network", "Warning: GetDialogStatus called for unexpected type %u", questgiver->GetTypeId());
             return DIALOG_STATUS_NONE;
     }
@@ -860,8 +860,7 @@ uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver, uint32 
             continue;
 
         QuestStatus status = player->GetQuestStatus(quest_id);
-        if ((status == QUEST_STATUS_COMPLETE && !player->GetQuestRewardStatus(quest_id)) ||
-            (quest->IsAutoComplete() && player->CanTakeQuest(quest, false)))
+        if ((status == QUEST_STATUS_COMPLETE && !player->GetQuestRewardStatus(quest_id)) || (quest->IsAutoComplete() && player->CanTakeQuest(quest, false)))
         {
             if (quest->IsAutoComplete() && quest->IsRepeatable())
                 result2 = DIALOG_STATUS_REWARD_REP;
@@ -966,6 +965,10 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             byteData.WriteByteSeq(NPCGuid[7]);
             byteData.WriteByteSeq(NPCGuid[0]);
 
+            // inform client about status of quest
+            if (questStatus >= DIALOG_STATUS_NONE)
+                _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, NPCGuid);
+
             ++count;
         }
         else if (IS_GAMEOBJECT_GUID(*itr))
@@ -980,35 +983,41 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (questStatus > 6)
                 questStatus = getDialogStatus(_player, questgiver, defstatus);
 
-            ObjectGuid NPCGuid = questgiver->GetGUID();
+            ObjectGuid GOGuid = questgiver->GetGUID();
 
-            bitData.WriteBit(NPCGuid[7]);
-            bitData.WriteBit(NPCGuid[0]);
-            bitData.WriteBit(NPCGuid[6]);
-            bitData.WriteBit(NPCGuid[2]);
-            bitData.WriteBit(NPCGuid[5]);
-            bitData.WriteBit(NPCGuid[1]);
-            bitData.WriteBit(NPCGuid[4]);
-            bitData.WriteBit(NPCGuid[3]);
+            bitData.WriteBit(GOGuid[7]);
+            bitData.WriteBit(GOGuid[0]);
+            bitData.WriteBit(GOGuid[6]);
+            bitData.WriteBit(GOGuid[2]);
+            bitData.WriteBit(GOGuid[5]);
+            bitData.WriteBit(GOGuid[1]);
+            bitData.WriteBit(GOGuid[4]);
+            bitData.WriteBit(GOGuid[3]);
 
-            byteData.WriteByteSeq(NPCGuid[5]);
+            byteData.WriteByteSeq(GOGuid[5]);
 
             byteData << uint32(questStatus);
 
-            byteData.WriteByteSeq(NPCGuid[4]);
-            byteData.WriteByteSeq(NPCGuid[2]);
-            byteData.WriteByteSeq(NPCGuid[3]);
-            byteData.WriteByteSeq(NPCGuid[6]);
-            byteData.WriteByteSeq(NPCGuid[1]);
-            byteData.WriteByteSeq(NPCGuid[7]);
-            byteData.WriteByteSeq(NPCGuid[0]);
+            byteData.WriteByteSeq(GOGuid[4]);
+            byteData.WriteByteSeq(GOGuid[2]);
+            byteData.WriteByteSeq(GOGuid[3]);
+            byteData.WriteByteSeq(GOGuid[6]);
+            byteData.WriteByteSeq(GOGuid[1]);
+            byteData.WriteByteSeq(GOGuid[7]);
+            byteData.WriteByteSeq(GOGuid[0]);
+
+            // inform client about status of quest
+            if (questStatus >= DIALOG_STATUS_NONE)
+                _player->PlayerTalkClass->SendQuestGiverStatus(questStatus, GOGuid);
 
             ++count;
         }
     }
 
     WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 3 + count * (1 + 8 + 4));
+
     data.WriteBits(count, 21);
+
     data.append(bitData);
     data.FlushBits();
     data.append(byteData);
@@ -1024,8 +1033,10 @@ void WorldSession::HandleQueryQuestsCompleted(WorldPacket& /*recvData*/)
     data << uint32(rew_count);
 
     const RewardedQuestSet &rewQuests = _player->getRewardedQuests();
-    for (RewardedQuestSet::const_iterator itr = rewQuests.begin(); itr != rewQuests.end(); ++itr)
-        data << uint32(*itr);
+
+    if (rewQuests.size())
+        for (RewardedQuestSet::const_iterator itr = rewQuests.begin(); itr != rewQuests.end(); ++itr)
+            data << uint32(*itr);
 
     SendPacket(&data);
 }
@@ -1034,32 +1045,48 @@ void WorldSession::HandleQuestNPCQuery(WorldPacket& recvData)
 {
     size_t RequestCount = recvData.ReadBits(22);
     size_t ResponseCount = 0;
-    WorldPacket Response(SMSG_QUEST_NPC_QUERY_RESPONSE);
-    QuestRelations* NPCRelations = sObjectMgr->GetCreatureQuestInvolvedMap();
-    ByteBuffer BitPart;
-    ByteBuffer BytePart;
 
-    for (size_t i = 0; i < RequestCount; i++)
+    if (RequestCount)
     {
-        size_t NPCCount = 0;
-        uint32 QuestID = recvData.read<uint32>();
+        WorldPacket Response(SMSG_QUEST_NPC_QUERY_RESPONSE);
 
-        for (QuestRelations::const_iterator itr = NPCRelations->begin(); itr != NPCRelations->end(); ++itr)
+        QuestRelations* NPCRelations = sObjectMgr->GetCreatureQuestInvolvedMap();
+        ByteBuffer BitPart;
+        ByteBuffer BytePart;
+
+        for (size_t i = 0; i < RequestCount; i++)
         {
-            if (itr->second == QuestID)
-            {
-                NPCCount++;
-                BytePart << uint32(itr->first);
-            }
-        }
-        ResponseCount++;
-        BitPart.WriteBits(NPCCount, 22);
-    }
+            size_t NPCCount = 0;
+            uint32 QuestID;
 
-    Response.WriteBits(ResponseCount, 21);
-    Response.append(BitPart);
-    Response.FlushBits();
-    Response.append(BytePart);
-    SendPacket(&Response);
+            recvData >> QuestID;
+
+            if (NPCRelations->size())
+            {
+                for (QuestRelations::const_iterator itr = NPCRelations->begin(); itr != NPCRelations->end(); ++itr)
+                {
+                    if (itr->second == QuestID)
+                    {
+                        BytePart << uint32(itr->first);
+                        NPCCount++;
+                    }
+                }
+            }
+
+            ResponseCount++;
+            BitPart.WriteBits(NPCCount, 22);
+        }
+
+        Response.WriteBits(ResponseCount, 21);
+
+        if (ResponseCount) // Failproof :P.
+        {
+            Response.append(BitPart);
+            Response.FlushBits();
+            Response.append(BytePart);
+        }
+
+        SendPacket(&Response);
+    }
 }
 

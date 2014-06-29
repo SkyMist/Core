@@ -157,6 +157,8 @@ void LoadDisables()
                             flags -= SCENARIO_STATUSFLAG_NORMAL;
                         if (flags & SCENARIO_STATUSFLAG_HEROIC && !GetMapDifficultyData(entry, SCENARIO_DIFFICULTY_HEROIC))
                             flags -= SCENARIO_STATUSFLAG_HEROIC;
+                        if (!flags)
+                            isFlagInvalid = true;
                         break;
                     case MAP_BATTLEGROUND:
                     case MAP_ARENA:

@@ -1611,14 +1611,18 @@ struct NameGenEntry
     uint32 gender;
 };
 
-#define MAX_OVERRIDE_SPELL 10
+#define MAX_OVERRIDE_SPELL 6
 
 struct OverrideSpellDataEntry
 {
-    uint32      id;                                         // 0
-    uint32      spellId[MAX_OVERRIDE_SPELL];                // 1-10
-    //uint32      unk0;                                     // 11
-    //char*     SpellBarName;                               // 12
+    uint32     id;                                         // 0
+    uint32     spellId[MAX_OVERRIDE_SPELL];                // 1-6
+    //float    unk1                                        // 7
+    //float    unk2                                        // 8
+    //float    unk3                                        // 9
+    //uint32   unk0;                                       // 10 Unk - something related to removal, not a spell. Just entry 201 - has 69310.
+    //uint32   unk1;                                       // 11 Unk - fixed numbers - 0, 1, 3, 4, 7, 8, 15. Maybe some kind of flags.
+    //uint32   unk2;                                       // 12 Unk - fixed big numbers.
 };
 
 struct PvPDifficultyEntry
@@ -2320,18 +2324,16 @@ struct VehicleEntry
 {
     uint32  m_ID;                                           // 0
     uint32  m_flags;                                        // 1
-    float   m_turnSpeed;                                    // 2
-    //char* unkName                                         // 4 - Panradia
-    float   m_pitchSpeed;                                   // 5
-    float   m_pitchMin;                                     // 6
-    float   m_pitchMax;                                     // 7
-    uint32  m_seatID[MAX_VEHICLE_SEATS];                    // 8-14
+    //uint32    unk_1                                       // 2 - Pandaria.
+    float   m_turnSpeed;                                    // 3
+    float   m_pitchSpeed;                                   // 4
+    float   m_pitchMin;                                     // 5
+    float   m_pitchMax;                                     // 6
+    uint32  m_seatID[MAX_VEHICLE_SEATS];                    // 7-14
     float   m_mouseLookOffsetPitch;                         // 15
     float   m_cameraFadeDistScalarMin;                      // 16
     float   m_cameraFadeDistScalarMax;                      // 17
     float   m_cameraPitchOffset;                            // 18
-    //int     m_powerType[3];                               //       removed in 3.1
-    //int     m_powerToken[3];                              //       removed in 3.1
     float   m_facingLimitRight;                             // 19
     float   m_facingLimitLeft;                              // 20
     float   m_msslTrgtTurnLingering;                        // 21
@@ -2342,16 +2344,16 @@ struct VehicleEntry
     float   m_msslTrgtArcRepeat;                            // 26
     float   m_msslTrgtArcWidth;                             // 27
     float   m_msslTrgtImpactRadius[2];                      // 28-29
-    char* m_msslTrgtArcTexture;                             // 30
-    char* m_msslTrgtImpactTexture;                          // 31
-    char* m_msslTrgtImpactModel[2];                         // 32-33
+    char*   m_msslTrgtArcTexture;                           // 30
+    char*   m_msslTrgtImpactTexture;                        // 31
+    char*   m_msslTrgtImpactModel[2];                       // 32-33
     float   m_cameraYawOffset;                              // 34
     uint32  m_uiLocomotionType;                             // 35
     float   m_msslTrgtImpactTexRadius;                      // 36
     uint32  m_uiSeatIndicatorType;                          // 37
-    uint32  m_powerType;                                    // 38, new in 3.1
-                                                            // 39, new in 3.1
-                                                            // 40, new in 3.1
+    uint32  m_powerType;                                    // 38 new in 3.1
+    //float    unk_2                                        // 39 new in 3.1
+    //float    unk_3                                        // 40 new in 3.1
 };
 
 struct VehicleSeatEntry
@@ -2400,9 +2402,10 @@ struct VehicleSeatEntry
     uint32  m_vehicleAbilityDisplay;                        // 41
     uint32  m_enterUISoundID;                               // 42
     uint32  m_exitUISoundID;                                // 43
-    int32   m_uiSkin;                                       // 44
-    uint32  m_flagsB;                                       // 45
-                                                            // 46-57 added in 3.1, floats mostly
+    uint32  m_flagsB;                                       // 44
+                                                            // 45-56 added in 3.1, floats mostly
+                                                            // 57-64 int stuff unk.
+    int32   m_uiSkin;                                       // 65
 
     bool CanEnterOrExit() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_ENTER_OR_EXIT; }
     bool CanSwitchFromSeat() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_SWITCH; }

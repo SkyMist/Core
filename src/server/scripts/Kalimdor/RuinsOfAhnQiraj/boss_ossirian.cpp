@@ -146,8 +146,9 @@ class boss_ossirian : public CreatureScript
                         return;
 
                     WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
-                    data.WriteBit(0);
                     data << float(1) << uint32(WEATHER_STATE_HEAVY_SANDSTORM);
+                    data.WriteBit(0);
+                    data.FlushBits();
                     map->SendToPlayers(&data);
 
                     for (uint8 i = 0; i < NUM_TORNADOS; ++i)

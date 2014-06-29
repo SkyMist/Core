@@ -538,6 +538,7 @@ public:
     bool IsAllwaysStackModifers() const;
 
     bool IsIgnoringCombat() const;
+    bool IsInterruptSpell() const;
     bool IsCustomCheckedForHolyPower() const;
     bool IsRemoveLossControlEffects() const;
     bool DoesIgnoreGlobalCooldown(Unit* caster) const;

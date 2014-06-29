@@ -299,7 +299,7 @@ class WorldSession
         void SendAuthWaitQue(uint32 position);
 
         void SendNameQueryOpcode(ObjectGuid guid);
-
+        void SendPlayerDeclinedNamesResult(ObjectGuid guid, uint32 result);
         void SendRealmNameQueryOpcode(uint32 realmId);
 
         void SendTrainerList(uint64 guid);
@@ -648,8 +648,7 @@ class WorldSession
         void HandleStableSetPetSlotCallback(PreparedQueryResult result, uint32 petId);
         void SendTrainerBuyFailed(uint64 guid, uint32 spellId, uint32 reason);
 
-        void HandleDuelAcceptedOpcode(WorldPacket& recvPacket);
-        void HandleDuelCancelledOpcode(WorldPacket& recvPacket);
+        void HandleDuelResponseOpcode(WorldPacket& recvPacket);
         void HandleDuelProposedOpcode(WorldPacket& recvPacket);
 
         void HandleAcceptTradeOpcode(WorldPacket& recvPacket);
@@ -749,6 +748,7 @@ class WorldSession
 
         void HandleReclaimCorpseOpcode(WorldPacket& recvPacket);
         void HandleCorpseQueryOpcode(WorldPacket& recvPacket);
+        void HandleCemeteryListOpcode(WorldPacket& recvData);
         void HandleCorpseMapPositionQuery(WorldPacket& recvPacket);
         void HandleResurrectResponseOpcode(WorldPacket& recvPacket);
         void HandleSummonResponseOpcode(WorldPacket& recvData);

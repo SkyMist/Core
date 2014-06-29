@@ -69,7 +69,7 @@ typedef std::deque<Mail*> PlayerMails;
 struct ActionButtonPACKET
 {
     uint32 id;
-    uint32 unk; // default 1 (maybe)
+    uint32 type;
 };
 
 // Note: SPELLMOD_* values is aura types in fact
@@ -1049,7 +1049,7 @@ class PlayerTaxi
             else
                 return false;
         }
-        void AppendTaximaskTo(ByteBuffer& data, bool all);
+        void AppendTaximaskTo(ByteBuffer& data, ByteBuffer& dataBuffer, bool all);
 
         // Destinations
         bool LoadTaxiDestinationsFromString(std::string const& values, uint32 team);
@@ -2107,6 +2107,7 @@ class Player : public Unit, public GridObject<Player>
         void ResurrectPlayer(float restore_percent, bool applySickness = false);
         void BuildPlayerRepop();
         void RepopAtGraveyard();
+        void SendCemeteryList(bool onMap);
 
         void DurabilityLossAll(double percent, bool inventory);
         void DurabilityLoss(Item* item, double percent);

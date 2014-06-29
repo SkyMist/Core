@@ -22,6 +22,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/BaradinHold/boss_occuthar.cpp
   EasternKingdoms/BaradinHold/boss_pit_lord_argaloth.cpp
   EasternKingdoms/BaradinHold/instance_baradin_hold.cpp
+  EasternKingdoms/BaradinHold/baradin_hold.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/boss_high_interrogator_gerstahn.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/boss_gorosh_the_dervish.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/blackrock_depths.cpp
@@ -102,6 +103,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ZulGurub/instance_zulgurub.cpp
   EasternKingdoms/zone_wetlands.cpp
   EasternKingdoms/zone_arathi_highlands.cpp
+  EasternKingdoms/zone_elwynn_forest.cpp
   EasternKingdoms/Gnomeregan/instance_gnomeregan.cpp
   EasternKingdoms/Gnomeregan/gnomeregan.cpp
   EasternKingdoms/Gnomeregan/gnomeregan.h
@@ -191,6 +193,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_western_plaguelands.cpp
   EasternKingdoms/zone_alterac_mountains.cpp
   EasternKingdoms/zone_westfall.cpp
+  EasternKingdoms/zone_silvermoon_city.cpp
   EasternKingdoms/zone_silverpine_forest.cpp
   EasternKingdoms/Karazhan/instance_karazhan.cpp
   EasternKingdoms/Karazhan/boss_nightbane.cpp

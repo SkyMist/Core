@@ -87,9 +87,13 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
     data.WriteBit(guid2[5]);
     data.WriteBit(guid3[3]);
     data.WriteBit(guid2[4]);
+
     data.WriteBit(0);
+
     data.WriteBit(guid3[6]);
+
     data.WriteBits(nameData->m_name.size(), 6);
+
     data.WriteBit(guid2[2]);
     data.WriteBit(guid2[6]);
     data.WriteBit(guid2[0]);
@@ -123,7 +127,9 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
     data.WriteByteSeq(guid3[6]);
     data.WriteByteSeq(guid3[2]);
     data.WriteByteSeq(guid3[3]);
+
     data.WriteString(nameData->m_name);
+
     data.WriteByteSeq(guid2[3]);
     data.WriteByteSeq(guid2[6]);
 
@@ -139,7 +145,9 @@ void WorldSession::HandleNameQueryOpcode(WorldPacket& recvData)
     uint32 unk, unk1;
 
     guid[4] = recvData.ReadBit();
+
     bit20 = recvData.ReadBit();
+
     guid[2] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
@@ -147,7 +155,10 @@ void WorldSession::HandleNameQueryOpcode(WorldPacket& recvData)
     guid[6] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
+
     bit28 = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[0]);
@@ -186,6 +197,7 @@ void WorldSession::SendRealmNameQueryOpcode(uint32 realmId)
         data.WriteBits(realmName.length(), 8);
         data.WriteBit(realmId == realmID);
         data.WriteBits(realmName.length(), 8);
+
         data.FlushBits();
 
         data.WriteString(realmName);
@@ -390,6 +402,8 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
     guid[6] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[1]);
@@ -521,6 +535,8 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
 
     data.WriteBit(corpseGuid[7]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(corpseGuid[3]);
     data.WriteByteSeq(corpseGuid[2]);
     data.WriteByteSeq(corpseGuid[1]);
@@ -545,10 +561,16 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
     SendPacket(&data);
 }
 
+void WorldSession::HandleCemeteryListOpcode(WorldPacket& /*recvData*/)
+{
+    GetPlayer()->SendCemeteryList(false);
+}
+
 void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
-    uint32 textID;
     ObjectGuid guid;
+    uint32 textID;
+    bool hasGossip;
 
     recvData >> textID;
 
@@ -563,6 +585,8 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     guid[7] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
 
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[4]);
@@ -572,23 +596,32 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(guid[5]);
     recvData.ReadByteSeq(guid[7]);
 
-    GossipText const* pGossip = sObjectMgr->GetGossipText(textID);
+    GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
-    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 1 + 4 + 64);
+    if (Unit* interactionUnit = ObjectAccessor::FindUnit(guid))
+    {
+        if (interactionUnit->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+            hasGossip = true;
+        else
+            hasGossip = false;
+    }
+    else hasGossip = false;
 
-    data << uint32(64);                                 // size (8 * 4) * 2
+    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 32 + 32 + 4 + 1);
 
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
-        data << float(pGossip ? pGossip->Options[i].Probability : 0);
+    data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2.
 
-    data << textID;                                     // should be a broadcast id
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
+        data << float(gossip ? gossip->Options[i].Probability : 0);
 
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-        data << uint32(0);
+    data << uint32(textID);                              // Send the Text Id as first broadcast id.
 
-    data << textID;
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
+        data << uint32(0);                               // Broadcast Text Id for all other slots.
 
-    data.WriteBit(1);                                   // has data
+    data << uint32(textID);
+
+    data.WriteBit(hasGossip);                            // Has gossip data - controls gossip window opening.
     data.FlushBits();
 
     SendPacket(&data);
@@ -601,9 +634,30 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_PAGE_TEXT_QUERY");
 
+    ObjectGuid guid;
     uint32 pageID;
+
     recvData >> pageID;
-    recvData.read_skip<uint64>();                          // guid
+
+    guid[1] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[0] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+
+    recvData.FlushBits();
+
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[1]);
 
     while (pageID)
     {
@@ -634,7 +688,8 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recvData)
 
         data << uint32(pageID);
 
-        pageID = pageText->NextPage;
+        if (pageText)
+            pageID = pageText->NextPage;
 
         SendPacket(&data);
 
@@ -659,80 +714,93 @@ void WorldSession::HandleCorpseMapPositionQuery(WorldPacket& recvData)
 
 void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
 {
-    std::vector<uint32> RequestedQuests(50);
-    for(std::vector<uint32>::iterator itr = RequestedQuests.begin(); itr != RequestedQuests.end();++itr)
-    {
-        RequestedQuests.insert(itr, recvData.read<uint32>());
-    }
-    RequestedQuests.resize(recvData.read<uint32>());
+    // The CMSG sends the number of quests which are watched (you may have 10 quests and only watch 2), and the quest order in the tracklog, for which we store the player slot.
+    // The SMSG responds with the same count, and the data for each quest watched, using the questId retrieved from the player slot stored.
 
+    uint32 WatchedQuests = 0;
+
+    std::list<uint16> WatchedQuestsSlotList;
+
+    // Get the query data and store what is needed (CMSG sends 50 entries, but they are not valid, weird shit. Store the player slots for the valid tracked quests to use in SMSG).
+    for (uint8 count = 0; count < MAX_QUEST_LOG_SIZE; count++)
+        if (uint32 questId = recvData.read<uint32>())
+            if (uint16 questSlot = _player->FindQuestSlot(questId))
+                if (questId && questSlot && questSlot != MAX_QUEST_LOG_SIZE)
+                    WatchedQuestsSlotList.push_back(questSlot);
+
+    recvData >> WatchedQuests;
+
+    WatchedQuestsSlotList.resize(WatchedQuests);
+
+    if (WatchedQuests >= MAX_QUEST_LOG_SIZE || WatchedQuestsSlotList.empty())
+        return;
+
+    // Send the response.
     WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE);
-    uint32 ResponseSize = 0;
-    ByteBuffer BitPart;
-    ByteBuffer BytePart;
 
-    for(std::vector<uint32>::iterator itr = RequestedQuests.begin(); itr != RequestedQuests.end();++itr)
+    data.WriteBits(WatchedQuests, 20);
+
+    for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
     {
-        uint32 questId = (*itr);
+        uint16 watchedQuestSlot = (*itr);
+        uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
 
-        bool questOk = false;
+        QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
 
-        uint16 questSlot = _player->FindQuestSlot(questId);
-
-        if (questSlot != MAX_QUEST_LOG_SIZE)
-            questOk = _player->GetQuestSlotQuestId(questSlot) == questId;
-
-        if (questOk)
+        if (POI)
         {
-            ++ResponseSize;
+            data.WriteBits(POI->size(), 18);             // POI size
 
-            QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questId);
+            for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
+                data.WriteBits(itr->points.size(), 21);  // POI points size
+        }
+        else
+            data.WriteBits(0, 18);
+    }
 
-            if (POI)
+    for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
+    {
+        uint16 watchedQuestSlot = (*itr);
+        uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
+
+        QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
+
+        if (POI)
+        {
+            for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
             {
-                BitPart.WriteBits(POI->size(), 18);
+                data << uint32(itr->Unk4);              // Unk 4 (Ok).
+                data << uint32(0);                      // another unk
+                data << uint32(0);                      // another unk
+                data << uint32(0);                      // another unk - high numbers, 269151 ex., somehow ordered. Could be blobId, some repeat.
 
-                for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); ++itr)
+                for (std::vector<QuestPOIPoint>::const_iterator itr2 = itr->points.begin(); itr2 != itr->points.end(); itr2++)
                 {
-                    BitPart.WriteBits(itr->points.size(), 21);
-
-                    BytePart << uint32(itr->Unk3);              // unknown
-                    BytePart << uint32(0);                      // another unk
-                    BytePart << uint32(0);                      // another unk
-                    BytePart << uint32(itr->MapId);             // mapid
-
-                    for (std::vector<QuestPOIPoint>::const_iterator itr2 = itr->points.begin(); itr2 != itr->points.end(); ++itr2)
-                    {
-                        BytePart << int32(itr2->x);             // POI point x
-                        BytePart << int32(itr2->y);             // POI point y
-                    }
-
-                    BytePart << uint32(itr->AreaId);            // areaid
-                    BytePart << uint32(itr->Unk4);              // unknown
-                    BytePart << uint32(0);                      // another unk
-
-                    BytePart << uint32(itr->points.size());     // POI points count
-                    BytePart << uint32(itr->Unk2);              // FloorID
-                    BytePart << uint32(itr->Id);                // POI index
-                    BytePart << int32(itr->ObjectiveIndex);     // objective index
+                    data << int32(itr2->x);             // POI point x
+                    data << int32(itr2->y);             // POI point y
                 }
-                BytePart << uint32(POI->size());                // POI count
+
+                data << uint32(itr->MapId);             // MapId
+                data << uint32(itr->Unk2);              // FloorId
+                data << uint32(itr->Unk3);              // Unk 3 (Ok).
+
+                data << uint32(itr->points.size());     // POI points count
+                data << uint32(itr->AreaId);            // AreaId
+                data << uint32(itr->Id);                // POI index
+                data << int32(itr->ObjectiveIndex);     // objective index
             }
-            else
-            {
-                BitPart.WriteBits(0, 18);
-                BytePart << uint32(0);                          // POI count
-            }
-            BytePart << uint32(questId);                        // quest ID
+
+            data << uint32(POI->size());                // POI count
+            data << uint32(questID);                    // quest ID
+        }
+        else
+        {
+            data << uint32(0); // POI count
+            data << uint32(questID); // quest ID
         }
     }
 
-    BytePart << ResponseSize;
-
-    data.WriteBits(ResponseSize, 20);
-    data.append(BitPart);
-    data.FlushBits();
-    data.append(BytePart);
+    data << uint32(WatchedQuests);
 
     SendPacket(&data);
 }

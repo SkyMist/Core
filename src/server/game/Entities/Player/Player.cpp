@@ -198,18 +198,19 @@ void PlayerTaxi::LoadTaxiMask(std::string const &data)
     }
 }
 
-void PlayerTaxi::AppendTaximaskTo(ByteBuffer& data, bool all)
+void PlayerTaxi::AppendTaximaskTo(ByteBuffer& data, ByteBuffer& dataBuffer, bool all)
 {
-    data << uint32(TaxiMaskSize);
+    data.WriteBits(TaxiMaskSize, 24);
+
     if (all)
     {
         for (uint8 i = 0; i < TaxiMaskSize; ++i)
-            data << uint8(sTaxiNodesMask[i]);              // all existed nodes
+            dataBuffer << uint8(sTaxiNodesMask[i]);              // all existed nodes
     }
     else
     {
         for (uint8 i = 0; i < TaxiMaskSize; ++i)
-            data << uint8(m_taximask[i]);                  // known nodes
+            dataBuffer << uint8(m_taximask[i]);                  // known nodes
     }
 }
 
@@ -3216,7 +3217,7 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     ObjectGuid guid = victim ? victim->GetGUID() : 0;
 
     WorldPacket data(SMSG_LOG_XPGAIN, 1 + 1 + 8 + 4 + 4 + 4 + 1);
-    data.WriteBit(0);                                       // has XP + bonus
+    data.WriteBit(0);                                       // has XP
     data.WriteBit(guid[6]);
     data.WriteBit(guid[3]);
     data.WriteBit(0);                                       // has group bonus
@@ -3239,8 +3240,8 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[6]);
 
-    data << uint32(GivenXP + BonusXP);                      // given experience
     data << uint32(GivenXP);                                // experience without bonus
+    data << uint32(GivenXP + BonusXP);                      // given experience
 
     data.WriteByteSeq(guid[0]);
 
@@ -3804,6 +3805,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     RemoveByteFlag(UNIT_FIELD_SHAPESHIFT_FORM, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY);
 
     // restore if need some important flags
+    SetUInt32Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0);                   // flags empty by default
     //SetUInt32Value(PLAYER_FIELD_LIFETIME_MAX_RANK2, 0);                 // flags empty by default
 
     if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
@@ -4886,13 +4888,11 @@ void Player::RemoveArenaSpellCooldowns(bool removeActivePetCooldowns)
 
 void Player::RemoveAllSpellCooldown()
 {
-    if (!m_spellCooldowns.empty())
-    {
-        for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); ++itr)
-            SendClearCooldown(itr->first, this);
+    const SpellCooldowns& cm = GetSpellCooldownMap();
 
-        m_spellCooldowns.clear();
-    }
+    if (!cm.empty())
+        for (SpellCooldowns::const_iterator itr = cm.begin(); itr != cm.end(); itr++)
+            RemoveSpellCooldown(itr->first, true);
 }
 
 void Player::_LoadSpellCooldowns(PreparedQueryResult result)
@@ -6261,6 +6261,34 @@ void Player::RepopAtGraveyard()
         TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation());
 }
 
+void Player::SendCemeteryList(bool onMap)
+{
+    ByteBuffer buf(16);
+    uint32 count = 0;
+
+    uint32 zoneId = GetZoneId();
+    GraveYardContainer::const_iterator graveLow  = sObjectMgr->GraveYardStore.lower_bound(zoneId);
+    GraveYardContainer::const_iterator graveUp   = sObjectMgr->GraveYardStore.upper_bound(zoneId);
+
+    for (GraveYardContainer::const_iterator itr = graveLow; itr != graveUp; ++itr)
+    {
+        ++count;
+        buf << uint32(itr->second.safeLocId);
+    }
+
+    WorldPacket packet(SMSG_REQUEST_CEMETERY_LIST_RESPONSE, buf.wpos() + 4);
+
+    packet.WriteBits(count, 22);
+    packet.WriteBit(onMap);
+
+    packet.FlushBits();
+
+    if (buf.size())
+        packet.append(buf);
+
+    GetSession()->SendPacket(&packet);
+}
+
 bool Player::CanJoinConstantChannelInZone(ChatChannelsEntry const* channel, AreaTableEntry const* zone)
 {
     if (channel->flags & CHANNEL_DBC_FLAG_ZONE_DEP && zone->flags & AREA_FLAG_ARENA_INSTANCE)
@@ -7312,6 +7340,13 @@ void Player::SendActionButtons(uint32 state) const
 {
     WorldPacket data(SMSG_ACTION_BUTTONS, 1 + (MAX_ACTION_BUTTONS * 8));
 
+    /*
+        state can be 0, 1, 2
+        0 - Sends initial action buttons, client does not validate if we have the spell or not
+        1 - Used used after spec swaps, client validates if a spell is known.
+        2 - Clears the action bars client sided. This is sent during spec swap before unlearning and before sending the new buttons
+    */
+
     uint8 buttons [MAX_ACTION_BUTTONS][8];
     ActionButtonPACKET* buttonsTab = (ActionButtonPACKET*)buttons;
     memset(buttons, 0, MAX_ACTION_BUTTONS * 8);
@@ -7322,12 +7357,12 @@ void Player::SendActionButtons(uint32 state) const
         if (!ab)
         {
             buttonsTab[i].id = 0;
-            buttonsTab[i].unk = 0;
+            buttonsTab[i].type = 0;
             continue;
         }
 
         buttonsTab[i].id = ab->GetAction();
-        buttonsTab[i].unk = uint32(ab->GetType());
+        buttonsTab[i].type = uint32(ab->GetType());
     }
 
     // Bits
@@ -7354,6 +7389,8 @@ void Player::SendActionButtons(uint32 state) const
 
     for (uint8 i = 0; i < MAX_ACTION_BUTTONS; ++i)
         data.WriteBit(buttons[i][5]);
+
+    data.FlushBits();
 
     // Data
     for (uint8 i = 0; i < MAX_ACTION_BUTTONS; ++i)
@@ -8136,15 +8173,21 @@ void Player::SendCurrencies() const
 
 void Player::SendPvpRewards() const
 {
+    uint32 ArenaWinReward   = sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD);
+    uint32 RatedBGWinReward = 400;
+
     WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
 
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
+    packet << uint32(0);                                                   // Conquest points cap from Rated BGs.
+    packet << uint32(0);                                                   // Count of all Conquest points earned from Rated BGs during week.
+    packet << uint32(RatedBGWinReward);                                    // Count of Conquest points earned for a Rated BG Win.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);  // Count of all Conquest points earned from Arenas during week.
+    packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
 
     GetSession()->SendPacket(&packet);
 }
@@ -10123,10 +10166,12 @@ void Player::SendNotifyCurrencyLootRestored(uint8 lootSlot)
 
 void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 {
-    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4+4+1);
+    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 4 + 4 + 1);
     data.WriteBit(0);                   //unk bit
     data.FlushBits();
-    data << Value << Field;
+    data << uint32(Value);
+    data << uint32(Field);
+
     GetSession()->SendPacket(&data);
 }
 
@@ -15655,7 +15700,7 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
     if (source->GetTypeId() == TYPEID_UNIT)
     {
         npcflags = source->GetUInt32Value(UNIT_FIELD_NPC_FLAGS);
-        if (showQuests && npcflags & UNIT_NPC_FLAG_QUESTGIVER)
+        if (showQuests && (npcflags & UNIT_NPC_FLAG_QUESTGIVER))
             PrepareQuestMenu(source->GetGUID());
     }
     else if (source->GetTypeId() == TYPEID_GAMEOBJECT)
@@ -16536,6 +16581,11 @@ void Player::AddQuest(Quest const* quest, Object* questGiver)
 
     StartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_QUEST, quest_id);
 
+    PhaseUpdateData phaseUdateData;
+    phaseUdateData.AddQuestUpdate(quest_id);
+
+    phaseMgr.NotifyConditionChanged(phaseUdateData);
+
     UpdateForQuestWorldObjects();
 }
 
@@ -16573,8 +16623,7 @@ void Player::IncompleteQuest(uint32 quest_id)
 
 void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, bool announce)
 {
-    //this THING should be here to protect code from quest, which cast on player far teleport as a reward
-    //should work fine, cause far teleport will be executed in Player::Update()
+    // This THING should be here to protect code from quests which get player far teleports as a reward. Should work fine, cause far teleport will be executed in Player::Update().
     SetCanDelayTeleport(true);
 
     uint32 quest_id = quest->GetQuestId();
@@ -16708,9 +16757,10 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     else if (quest->IsSeasonal())
         SetSeasonalQuestStatus(quest_id);
 
-    RemoveActiveQuest(quest_id);
     m_RewardedQuests.insert(quest_id);
     m_RewardedQuestsSave[quest_id] = true;
+
+    RemoveActiveQuest(quest_id);
 
     PhaseUpdateData phaseUpdateData;
     phaseUpdateData.AddQuestUpdate(quest_id);
@@ -16840,6 +16890,7 @@ bool Player::SatisfyQuestLog(bool msg)
     {
         WorldPacket data(SMSG_QUESTLOG_FULL, 0);
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTLOG_FULL");
     }
 
@@ -17335,11 +17386,6 @@ void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
         m_QuestStatusSave[quest_id] = true;
     }
 
-    PhaseUpdateData phaseUpdateData;
-    phaseUpdateData.AddQuestUpdate(quest_id);
-
-    phaseMgr.NotifyConditionChanged(phaseUpdateData);
-
     uint32 zone = 0, area = 0;
 
     SpellAreaForQuestMapBounds saBounds = sSpellMgr->GetSpellAreaForQuestMapBounds(quest_id);
@@ -17363,6 +17409,11 @@ void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
             if (!itr->second->IsFitToRequirements(this, zone, area))
                 RemoveAurasDueToSpell(itr->second->spellId);
     }
+
+    PhaseUpdateData phaseUpdateData;
+    phaseUpdateData.AddQuestUpdate(quest_id);
+
+    phaseMgr.NotifyConditionChanged(phaseUpdateData);
 
     UpdateForQuestWorldObjects();
 }
@@ -18005,8 +18056,11 @@ void Player::SendQuestComplete(Quest const* quest)
     if (quest)
     {
         WorldPacket data(SMSG_QUESTUPDATE_COMPLETE, 4);
+
         data << uint32(quest->GetQuestId());
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_COMPLETE quest = %u", quest->GetQuestId());
     }
 }
@@ -18014,7 +18068,7 @@ void Player::SendQuestComplete(Quest const* quest)
 void Player::SendQuestReward(Quest const* quest, uint32 XP)
 {
     uint32 questId = quest->GetQuestId();
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_COMPLETE quest = %u", questId);
+
     sGameEventMgr->HandleQuestComplete(questId);
 
     uint32 xp;
@@ -18033,8 +18087,7 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
 
     WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, 6 * 4 + 1);
 
-    uint32 nextQuestID = quest->GetNextQuestInChain();
-    bool hasMoreQuestsInChain = (nextQuestID > 0) ? true : false;
+    bool hasMoreQuestsInChain = quest->GetNextQuestInChain() ? true : false;
 
     data << uint32(quest->GetRewardSkillPoints());         // 4.x bonus skill points
     data << uint32(questId);
@@ -18049,6 +18102,8 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
     data.FlushBits();
 
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_COMPLETE quest = %u", questId);
 }
 
 void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
@@ -18056,9 +18111,12 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
     if (questId)
     {
         WorldPacket data(SMSG_QUESTGIVER_QUEST_FAILED, 4 + 4);
+
         data << uint32(questId);
         data << uint32(reason);                             // failed reason (valid reasons: 4, 16, 50, 17, 74, other values show default message)
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
     }
 }
@@ -18068,8 +18126,11 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
     if (quest_id)
     {
         WorldPacket data(SMSG_QUESTUPDATE_FAILEDTIMER, 4);
+
         data << uint32(quest_id);
+
         GetSession()->SendPacket(&data);
+
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_FAILEDTIMER");
     }
 }
@@ -18077,8 +18138,11 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
 void Player::SendCanTakeQuestResponse(QuestFailedReason msg) const
 {
     WorldPacket data(SMSG_QUESTGIVER_QUEST_INVALID, 4);
+
     data << uint32(msg);
+
     GetSession()->SendPacket(&data);
+
     TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTGIVER_QUEST_INVALID");
 }
 
@@ -18086,7 +18150,9 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 {
     if (pReceiver)
     {
+        // Define data usage.
         std::string strTitle = quest->GetTitle();
+        bool hasQuestName = strTitle.size() ? true: false;
 
         int loc_idx = pReceiver->GetSession()->GetSessionDbLocaleIndex();
         if (loc_idx >= 0)
@@ -18095,6 +18161,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 
         ObjectGuid PlayerGuid = GetGUID();
 
+        // Send packet.
         WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT);
         
         data.WriteBit(PlayerGuid[3]);
@@ -18102,10 +18169,12 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteBit(PlayerGuid[7]);
         data.WriteBit(PlayerGuid[0]);
         data.WriteBit(PlayerGuid[1]);
-        data.WriteBit(strTitle.size() != 0);                    // hasQuestName
+
+        data.WriteBit(hasQuestName);
+
         data.WriteBit(PlayerGuid[6]);
 
-        if (strTitle.size() != 0)
+        if (hasQuestName)
             data.WriteBits(strTitle.size(), 10);
 
         data.WriteBit(PlayerGuid[5]);
@@ -18118,7 +18187,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteByteSeq(PlayerGuid[0]);
         data.WriteByteSeq(PlayerGuid[6]);
 
-        if (strTitle.size() != 0)
+        if (hasQuestName)
             data.WriteString(strTitle);
 
         data.WriteByteSeq(PlayerGuid[4]);
@@ -18127,6 +18196,7 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
         data.WriteByteSeq(PlayerGuid[6]);
 
         data << quest->GetQuestId();
+
         pReceiver->GetSession()->SendPacket(&data);
 
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUEST_CONFIRM_ACCEPT");
@@ -18147,21 +18217,24 @@ void Player::SendPushToPartyResponse(Player* player, uint8 msg)
 
 void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uint32 creatureOrGO_idx, uint16 old_count, uint16 add_count)
 {
-    ASSERT(old_count + add_count < 65536 && "mob/GO count store in 16 bits 2^16 = 65536 (0..65536)");
+    // Check for client overflow.
+    ASSERT(old_count + add_count < 65536 && "mob / GO count store in 16 bits 2^16 = 65536 (0..65536)");
 
+    // Define data usage.
     int32 entry = quest->RequiredNpcOrGo[creatureOrGO_idx];
+    uint32 killedCreaturesOrUsedGobs = old_count + add_count;
 
     bool hasObjective = (entry != 0) ? true : false;
     bool isCreature = (hasObjective && entry > 0) ? true : false;
     bool isGameObject = (hasObjective && entry < 0) ? true : false;
 
     if (isGameObject)
-        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id|0x80000000)
+        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id | 0x80000000)
 
     ObjectGuid NPCGuid = guid;
 
+    // Send packet.
     WorldPacket data(SMSG_QUESTUPDATE_UPDATE_OBJECTIVE, 1 + 2 * 4 + 2 * 2 + 1);
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
 
     data.WriteBit(NPCGuid[5]);
     data.WriteBit(NPCGuid[3]);
@@ -18189,12 +18262,15 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
     data.WriteByteSeq(NPCGuid[5]);
     data.WriteByteSeq(NPCGuid[2]);
 
-    data << uint16(old_count + add_count);
-    data << uint32(quest->GetQuestId());
+    data << uint16(killedCreaturesOrUsedGobs);
 
     data.WriteByteSeq(NPCGuid[7]);
 
+    data << uint32(quest->GetQuestId());
+
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_UPDATE_OBJECTIVE");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -18203,13 +18279,21 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 guid, uin
 
 void Player::SendQuestUpdateAddPlayer(Quest const* quest, uint16 old_count, uint16 add_count)
 {
+    // Check for client overflow.
     ASSERT(old_count + add_count < 65536 && "player count store in 16 bits");
 
+    // Get killed players total count.
+    uint16 killedPlayersCount = old_count + add_count;
+
+    // Send packet.
     WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, 3 * 4);
-    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
+
     data << uint32(quest->GetQuestId());
-    data << uint16(old_count + add_count);
+    data << uint16(killedPlayersCount);
+
     GetSession()->SendPacket(&data);
+
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -20261,7 +20345,7 @@ void Player::SendRaidInfo()
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
-                bool isHeroic = save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
+                bool isHeroic = save->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 uint32 completedEncounters = 0;
 
                 if (Map* map = sMapMgr->FindMap(save->GetMapId(), save->GetInstanceId()))
@@ -20271,7 +20355,7 @@ void Player::SendRaidInfo()
                 ObjectGuid InstanceID = save->GetInstanceId();
 
                 BitData.WriteBit(InstanceID[1]);
-                BitData.WriteBit(0);                                // expired
+                BitData.WriteBit(1);                                // expired
                 BitData.WriteBit(InstanceID[0]);
                 BitData.WriteBit(InstanceID[4]);
                 BitData.WriteBit(InstanceID[2]);
@@ -20471,9 +20555,21 @@ bool Player::CheckInstanceLoginValid()
     }
     else
     {
-        // cannot be in normal instance without a group and more players than 1 in instance
-        if (!GetGroup() && GetMap()->GetPlayersCountExceptGMs() > 1)
-            return false;
+        // cannot be in normal instance without a group and more players than 1 in instance (Allow for older expansion maps).
+        if (!GetGroup())
+        {
+        	if (GetMap()->GetPlayersCountExceptGMs() > 1 && GetMap()->IsDungeon())
+                return false;
+        }
+        else
+        {
+            uint32 maxPlayers = ((InstanceMap*)GetMap())->GetMaxPlayers();
+            if (GetMap()->GetPlayersCountExceptGMs() >= maxPlayers)
+            {
+                SendTransferAborted(GetMap()->GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                return false;
+            }
+        }
     }
 
     // do checks for satisfy accessreqs, instance full, encounter in progress (raid), perm bind group != perm bind player
@@ -22232,9 +22328,9 @@ void Player::PetSpellInitialize()
 
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint32(itr->first);
         data << uint32(cooldown);
-        
+        data << uint32(itr->first);
+
         CreatureSpellCooldowns::const_iterator categoryitr = pet->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != pet->m_CreatureCategoryCooldowns.end())
         {
@@ -22345,6 +22441,7 @@ void Player::VehicleSpellInitialize()
     data.WriteBit(NPCGuid[7]);
     data.WriteBit(NPCGuid[4]);
     data.WriteBits(0, 22);                      //spells count
+
     data.FlushBits();
 
     for (CreatureSpellCooldowns::const_iterator itr = vehicle->m_CreatureSpellCooldowns.begin(); itr != vehicle->m_CreatureSpellCooldowns.end(); itr++)
@@ -22361,8 +22458,8 @@ void Player::VehicleSpellInitialize()
 
         time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
 
-        data << uint32(itr->first);
         data << uint32(cooldown);
+        data << uint32(itr->first);
 
         CreatureSpellCooldowns::const_iterator categoryitr = vehicle->m_CreatureCategoryCooldowns.find(spellInfo->Category);
         if (categoryitr != vehicle->m_CreatureCategoryCooldowns.end())
@@ -22892,7 +22989,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // not let cheating with start flight in time of logout process || while in combat || has type state: stunned || has type state: root
     if (GetSession()->isLogingOut() || IsInCombat() || HasUnitState(UNIT_STATE_STUNNED) || HasUnitState(UNIT_STATE_ROOT))
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_BUSY);
         return false;
     }
 
@@ -22905,20 +23002,20 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
         // not let cheating with start flight mounted
         if (IsMounted())
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERALREADYMOUNTED);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_ALREADY_MOUNTED);
             return false;
         }
 
         if (IsInDisallowedMountForm())
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERSHAPESHIFTED);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_SHAPESHIFTED);
             return false;
         }
 
         // not let cheating with start flight in time of logout process || if casting not finished || while in combat || if not use Spell's with EffectSendTaxi
         if (IsNonMeleeSpellCasted(false))
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERBUSY);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_PLAYER_BUSY);
             return false;
         }
     }
@@ -22949,7 +23046,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(sourcenode);
     if (!node)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXINOSUCHPATH);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_NO_SUCH_PATH);
         return false;
     }
 
@@ -22962,14 +23059,14 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
             (node->z - GetPositionZ())*(node->z - GetPositionZ()) >
             (2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE))
         {
-            GetSession()->SendActivateTaxiReply(ERR_TAXITOOFARAWAY);
+            GetSession()->SendActivateTaxiReply(ERR_TAXI_TOO_FAR_AWAY);
             return false;
         }
     }
     // node must have pos if taxi master case (npc != NULL)
     else if (npc)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_UNSPECIFIED_SERVER_ERROR);
         return false;
     }
 
@@ -23032,7 +23129,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // in spell case allow 0 model
     if ((mount_display_id == 0 && spellid == 0) || sourcepath == 0)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIUNSPECIFIEDSERVERERROR);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_UNSPECIFIED_SERVER_ERROR);
         m_taxi.ClearTaxiDestinations();
         return false;
     }
@@ -23044,7 +23141,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
 
     if (money < totalcost)
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXINOTENOUGHMONEY);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_NOT_ENOUGH_MONEY);
         m_taxi.ClearTaxiDestinations();
         return false;
     }
@@ -23066,7 +23163,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     }
     else
     {
-        GetSession()->SendActivateTaxiReply(ERR_TAXIOK);
+        GetSession()->SendActivateTaxiReply(ERR_TAXI_OK);
         GetSession()->SendDoFlight(mount_display_id, sourcepath);
     }
     return true;
@@ -24833,7 +24930,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // guild bank list wtf?
 
     // Homebind
-    WorldPacket data(SMSG_BINDPOINTUPDATE, 5*4);
+    WorldPacket data(SMSG_BINDPOINTUPDATE, 5 * 4);
     data << uint32(m_homebindAreaId);
     data << m_homebindX;
     data << m_homebindZ;
@@ -24893,13 +24990,12 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // SMSG_SET_FORCED_REACTIONS
     GetReputationMgr().SendForceReactions();
 
-    // MSG_LIST_STABLED_PETS
+    // SMSG_SET_PET_SLOT
     // SMSG_WEEKLY_SPELL_USAGE
 
     // SMSG_WORLD_SERVER_INFO
     GetSession()->SendServerWorldInfo();
 
-    // SMSG_TALENTS_INFO x 2 for pet (unspent points and talents in separate packets...)
     // SMSG_PET_GUIDS
     // SMSG_UPDATE_WORLD_STATE
     // SMSG_POWER_UPDATE
@@ -25705,7 +25801,7 @@ void Player::UpdateForQuestWorldObjects()
     UpdateData udata(GetMapId());
     WorldPacket packet;
 
-    for (ClientGUIDs::iterator itr=m_clientGUIDs.begin(); itr != m_clientGUIDs.end(); itr++)
+    for (ClientGUIDs::iterator itr = m_clientGUIDs.begin(); itr != m_clientGUIDs.end(); itr++)
     {
         if (IS_GAMEOBJECT_GUID(*itr))
         {

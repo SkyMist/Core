@@ -578,7 +578,8 @@ void WorldSession::LogoutPlayer(bool save)
         _player->CleanupChannels();
 
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
-        _player->UninviteFromGroup();
+        if (_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket)
+            _player->UninviteFromGroup();
 
         // remove player from the group if he is:
         // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
@@ -692,11 +693,13 @@ void WorldSession::SendNotification(uint32 string_id, ...)
 
 void WorldSession::_SendNotificationPacket(const char* message)
 {
-    WorldPacket notification(SMSG_NOTIFICATION, 2 + strlen(message));
-    notification.WriteBits(strlen(message), 11);
-    notification.FlushBits();
-    notification.WriteString(std::string(message));
-    SendPacket(&notification);
+    uint32 length = strlen(message) + 1;
+
+    WorldPacket data(SMSG_NOTIFICATION, 2 + strlen(message));
+    data.WriteBits(length, 12);
+    data.FlushBits();
+    data << message;
+    SendPacket(&data);
 }
 
 const char *WorldSession::GetTrinityString(int32 entry) const

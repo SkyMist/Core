@@ -200,9 +200,9 @@ void Group::LoadGroupFromDB(Field* fields)
 
     uint32 r_diff = fields[14].GetUInt8();
     if (r_diff >= MAX_RAID_DIFFICULTY)
-       m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
+        m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
     else
-       m_raidDifficulty = Difficulty(r_diff);
+        m_raidDifficulty = Difficulty(r_diff);
 
     if (m_groupType & GROUPTYPE_LFG)
         sLFGMgr->_LoadFromDB(fields, GetGUID());
@@ -347,7 +347,7 @@ void Group::RemoveInvite(Player* player)
 
 void Group::RemoveAllInvites()
 {
-    for (InvitesList::iterator itr=m_invitees.begin(); itr != m_invitees.end(); ++itr)
+    for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
         if (*itr)
             (*itr)->SetGroupInvite(NULL);
 
@@ -371,6 +371,7 @@ Player* Group::GetInvited(const std::string& name) const
         if ((*itr) && (*itr)->GetName() == name)
             return (*itr);
     }
+
     return NULL;
 }
 
@@ -1844,7 +1845,7 @@ void Group::UpdatePlayerOutOfRange(Player* player)
     for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
     {
         member = itr->GetSource();
-        if (member && !member->IsWithinDist(player, member->GetSightRange(), false))
+        if (member && member != player && (!member->IsInMap(player) || !member->IsWithinDist(player, member->GetSightRange(), false)))
             member->GetSession()->SendPacket(&data);
     }
 }

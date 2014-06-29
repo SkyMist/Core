@@ -559,6 +559,7 @@ enum UnitState
     UNIT_STATE_POSSESSED       = 0x00010000,
     UNIT_STATE_CHARGING        = 0x00020000,
     UNIT_STATE_JUMPING         = 0x00040000,
+    UNIT_STATE_ONVEHICLE       = 0x00080000,
     UNIT_STATE_MOVE            = 0x00100000,
     UNIT_STATE_ROTATING        = 0x00200000,
     UNIT_STATE_EVADE           = 0x00400000,
@@ -568,7 +569,7 @@ enum UnitState
     UNIT_STATE_CHASE_MOVE      = 0x04000000,
     UNIT_STATE_FOLLOW_MOVE     = 0x08000000,
     UNIT_STATE_IGNORE_PATHFINDING = 0x10000000,                 // do not use pathfinding in any MovementGenerator
-    UNIT_STATE_UNATTACKABLE    = UNIT_STATE_IN_FLIGHT,
+    UNIT_STATE_UNATTACKABLE    = (UNIT_STATE_IN_FLIGHT | UNIT_STATE_ONVEHICLE),
     // for real move using movegen check and stop (except unstoppable flight)
     UNIT_STATE_MOVING          = UNIT_STATE_ROAMING_MOVE | UNIT_STATE_CONFUSED_MOVE | UNIT_STATE_FLEEING_MOVE | UNIT_STATE_CHASE_MOVE | UNIT_STATE_FOLLOW_MOVE,
     UNIT_STATE_CONTROLLED      = (UNIT_STATE_CONFUSED | UNIT_STATE_STUNNED | UNIT_STATE_FLEEING),
@@ -1524,8 +1525,6 @@ class Unit : public WorldObject
 
         virtual uint32 GetBlockPercent() const { return 30; }
 
-        uint32 GetUnitMeleeSkill(Unit const* target = NULL) const;
-
         float GetWeaponProcChance() const;
         float GetPPMProcChance(uint32 WeaponSpeed, float PPM,  const SpellInfo* spellProto) const;
 
@@ -1760,6 +1759,8 @@ class Unit : public WorldObject
         void RemoveAurasWithFamily(SpellFamilyNames family, uint32 familyFlag1, uint32 familyFlag2, uint32 familyFlag3, uint64 casterGUID);
         void RemoveAurasWithMechanic(uint32 mechanic_mask, AuraRemoveMode removemode = AURA_REMOVE_BY_DEFAULT, uint32 except=0);
         void RemoveMovementImpairingAuras();
+        void RemoveAurasBreakableByDamage();
+        void RemoveBGFlagsAuras();
 
         void RemoveAreaAurasDueToLeaveWorld();
         void RemoveAllAuras();

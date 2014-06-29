@@ -926,20 +926,44 @@ void AchievementMgr<T>::SendCriteriaUpdate(AchievementCriteriaEntry const* /*ent
 template<>
 void AchievementMgr<Player>::SendCriteriaUpdate(AchievementCriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const
 {
-    WorldPacket data(SMSG_CRITERIA_UPDATE, 8 + 4 + 8);
+    WorldPacket data(SMSG_CRITERIA_UPDATE, 4 + 4 + 4 + 4 + 8 + 4);
+    ObjectGuid playerGuid = GetOwner()->GetGUID();
+
+    data.AppendPackedTime(progress->date);
+    data << uint32(timeElapsed);    // time elapsed in seconds
+    data << uint32(0);              // unk - time remaining? NYI.
+
+    // The counter is packed like a packed Guid.
+    // data.appendPackGUID(progress->counter);
+    data << uint64(progress->counter);
     data << uint32(entry->ID);
 
-    // the counter is packed like a packed Guid
-    data.appendPackGUID(progress->counter);
-
-    data.appendPackGUID(GetOwner()->GetGUID());
+    // These are some flags, 1 is for keeping the counter at 0 in client.
     if (!entry->timeLimit)
         data << uint32(0);
     else
         data << uint32(timedCompleted ? 0 : 1); // this are some flags, 1 is for keeping the counter at 0 in client
-    data.AppendPackedTime(progress->date);
-    data << uint32(timeElapsed);    // time elapsed in seconds
-    data << uint32(0);              // unk
+
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(playerGuid[4]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[6]);
+    data.WriteBit(playerGuid[3]);
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(playerGuid[5]);
+    data.WriteBit(playerGuid[1]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(playerGuid[2]);
+    data.WriteByteSeq(playerGuid[6]);
+    data.WriteByteSeq(playerGuid[1]);
+    data.WriteByteSeq(playerGuid[7]);
+    data.WriteByteSeq(playerGuid[3]);
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[5]);
+
     SendPacket(&data);
 }
 
@@ -1004,7 +1028,7 @@ template<class T>
 void AchievementMgr<T>::CheckAllAchievementCriteria(Player* referencePlayer)
 {
     // suppress sending packets
-    for (uint32 i=0; i<ACHIEVEMENT_CRITERIA_TYPE_TOTAL; ++i)
+    for (uint32 i = 0; i < ACHIEVEMENT_CRITERIA_TYPE_TOTAL; ++i)
         UpdateAchievementCriteria(AchievementCriteriaTypes(i), 0, 0, 0, NULL, referencePlayer);
 }
 

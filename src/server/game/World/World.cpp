@@ -1231,9 +1231,9 @@ void World::LoadConfigSettings(bool reload)
 
     // Random Battleground Rewards
     m_int_configs[CONFIG_BG_REWARD_WINNER_HONOR_FIRST] = sConfigMgr->GetIntDefault("Battleground.RewardWinnerHonorFirst", 27000);
-    m_int_configs[CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST] = sConfigMgr->GetIntDefault("Battleground.RewardWinnerConquestFirst", 10000);
+    m_int_configs[CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST] = sConfigMgr->GetIntDefault("Battleground.RewardWinnerConquestFirst", 15000);
     m_int_configs[CONFIG_BG_REWARD_WINNER_HONOR_LAST]  = sConfigMgr->GetIntDefault("Battleground.RewardWinnerHonorLast", 13500);
-    m_int_configs[CONFIG_BG_REWARD_WINNER_CONQUEST_LAST]  = sConfigMgr->GetIntDefault("Battleground.RewardWinnerConquestLast", 5000);
+    m_int_configs[CONFIG_BG_REWARD_WINNER_CONQUEST_LAST]  = sConfigMgr->GetIntDefault("Battleground.RewardWinnerConquestLast", 7500);
     m_int_configs[CONFIG_BG_REWARD_LOSER_HONOR_FIRST]  = sConfigMgr->GetIntDefault("Battleground.RewardLoserHonorFirst", 4500);
     m_int_configs[CONFIG_BG_REWARD_LOSER_HONOR_LAST]   = sConfigMgr->GetIntDefault("Battleground.RewardLoserHonorLast", 3500);
 
@@ -2931,20 +2931,20 @@ void World::SendAutoBroadcast()
         {
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
 
-            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
-            notification.WriteBits(msg.length(), 11);
-            notification.FlushBits();
-            notification.WriteString(msg);
-            sWorld->SendGlobalMessage(&notification);
+            WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
+            data.WriteBits(msg.length(), 12);
+            data.FlushBits();
+            data.WriteString(msg);
+            sWorld->SendGlobalMessage(&data);
             break;
         }
         case 1:
         {
-            WorldPacket notification(SMSG_NOTIFICATION, 2 + msg.length());
-            notification.WriteBits(msg.length(), 11);
-            notification.FlushBits();
-            notification.WriteString(msg);
-            sWorld->SendGlobalMessage(&notification);
+            WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
+            data.WriteBits(msg.length(), 12);
+            data.FlushBits();
+            data.WriteString(msg);
+            sWorld->SendGlobalMessage(&data);
             break;
         }
 

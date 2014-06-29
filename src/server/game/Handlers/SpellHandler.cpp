@@ -240,14 +240,14 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     if (hasCastFlags)
         castFlags = recvPacket.ReadBits(5);
 
-    itemTargetGuid[0] = recvPacket.ReadBit();
-    itemTargetGuid[4] = recvPacket.ReadBit();
-    itemTargetGuid[6] = recvPacket.ReadBit();
-    itemTargetGuid[1] = recvPacket.ReadBit();
-    itemTargetGuid[3] = recvPacket.ReadBit();
-    itemTargetGuid[5] = recvPacket.ReadBit();
-    itemTargetGuid[2] = recvPacket.ReadBit();
-    itemTargetGuid[7] = recvPacket.ReadBit();
+    targetGuid[0] = recvPacket.ReadBit();
+    targetGuid[4] = recvPacket.ReadBit();
+    targetGuid[6] = recvPacket.ReadBit();
+    targetGuid[1] = recvPacket.ReadBit();
+    targetGuid[3] = recvPacket.ReadBit();
+    targetGuid[5] = recvPacket.ReadBit();
+    targetGuid[2] = recvPacket.ReadBit();
+    targetGuid[7] = recvPacket.ReadBit();
 
     if (hasTargetMask)
         targetMask = recvPacket.ReadBits(20);
@@ -1133,12 +1133,12 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    // can't use our own spells when we're in possession of another unit,
-    if (_player->isPossessing())
-    {
-        recvPacket.rfinish(); // prevent spam at ignore packet
-        return;
-    }
+    // !! Can't use our own spells when we're in possession of another unit.
+    // if (_player->isPossessing())
+    // {
+    //     recvPacket.rfinish(); // prevent spam at ignore packet
+    //     return;
+    // }
 
     // client provided targets
     SpellCastTargets targets(caster, targetMask, targetGuid, itemTargetGuid, srcTransportGuid, destTransportGuid, srcPos, destPos, elevation, missileSpeed, targetString);
@@ -1404,11 +1404,30 @@ void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandlePetCancelAuraOpcode(WorldPacket& recvPacket)
 {
-    uint64 guid;
+    ObjectGuid guid;
     uint32 spellId;
 
-    recvPacket >> guid;
     recvPacket >> spellId;
+
+    guid[0] = recvPacket.ReadBit();
+    guid[5] = recvPacket.ReadBit();
+    guid[4] = recvPacket.ReadBit();
+    guid[1] = recvPacket.ReadBit();
+    guid[2] = recvPacket.ReadBit();
+    guid[7] = recvPacket.ReadBit();
+    guid[6] = recvPacket.ReadBit();
+    guid[3] = recvPacket.ReadBit();
+
+	recvPacket.FlushBits();
+
+    recvPacket.ReadByteSeq(guid[6]);
+    recvPacket.ReadByteSeq(guid[1]);
+    recvPacket.ReadByteSeq(guid[0]);
+    recvPacket.ReadByteSeq(guid[7]);
+    recvPacket.ReadByteSeq(guid[4]);
+    recvPacket.ReadByteSeq(guid[5]);
+    recvPacket.ReadByteSeq(guid[2]);
+    recvPacket.ReadByteSeq(guid[3]);
 
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
     if (!spellInfo)
@@ -1417,7 +1436,7 @@ void WorldSession::HandlePetCancelAuraOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    Creature* pet=ObjectAccessor::GetCreatureOrPetOrVehicle(*_player, guid);
+    Creature* pet = ObjectAccessor::GetCreatureOrPetOrVehicle(*_player, guid);
 
     if (!pet)
     {
@@ -1470,9 +1489,29 @@ void WorldSession::HandleTotemDestroyed(WorldPacket& recvPacket)
         return;
 
     uint8 slotId;
-    uint64 guid;
     recvPacket >> slotId;
-    recvPacket >> guid;
+
+    ObjectGuid totemGuid;
+
+    totemGuid[6] = recvPacket.ReadBit();
+    totemGuid[5] = recvPacket.ReadBit();
+    totemGuid[3] = recvPacket.ReadBit();
+    totemGuid[7] = recvPacket.ReadBit();
+    totemGuid[0] = recvPacket.ReadBit();
+    totemGuid[4] = recvPacket.ReadBit();
+    totemGuid[2] = recvPacket.ReadBit();
+    totemGuid[1] = recvPacket.ReadBit();
+
+	recvPacket.FlushBits();
+
+    recvPacket.ReadByteSeq(totemGuid[7]);
+    recvPacket.ReadByteSeq(totemGuid[6]);
+    recvPacket.ReadByteSeq(totemGuid[3]);
+    recvPacket.ReadByteSeq(totemGuid[1]);
+    recvPacket.ReadByteSeq(totemGuid[2]);
+    recvPacket.ReadByteSeq(totemGuid[4]);
+    recvPacket.ReadByteSeq(totemGuid[5]);
+    recvPacket.ReadByteSeq(totemGuid[0]);
 
     ++slotId;
     if (slotId >= MAX_TOTEM_SLOT)
@@ -1482,7 +1521,7 @@ void WorldSession::HandleTotemDestroyed(WorldPacket& recvPacket)
         return;
 
     Creature* totem = GetPlayer()->GetMap()->GetCreature(_player->m_SummonSlot[slotId]);
-    if (totem && totem->IsTotem() && totem->GetGUID() == guid)
+    if (totem && totem->IsTotem() && totem->GetGUID() == totemGuid)
         totem->ToTotem()->UnSummon();
 }
 

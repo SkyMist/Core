@@ -482,10 +482,10 @@ public:
             cInfo->SkinLootId         = fields[50].GetUInt32();
 
             for (uint8 i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
-                cInfo->resistance[i] = fields[51 + i -1].GetUInt16();
+                cInfo->resistance[i] = fields[51 + i - 1].GetUInt16();
 
             for (uint8 i = 0; i < CREATURE_MAX_SPELLS; ++i)
-                cInfo->spells[i] = fields[52 + i].GetUInt32();
+                cInfo->spells[i] = fields[57 + i].GetUInt32();
 
             cInfo->PetSpellDataId     = fields[65].GetUInt32();
             cInfo->VehicleId          = fields[66].GetUInt32();

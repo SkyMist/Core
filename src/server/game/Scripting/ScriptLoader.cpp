@@ -115,6 +115,7 @@ void AddSC_boss_alizabal();
 void AddSC_boss_occuthar();
 void AddSC_boss_pit_lord_argaloth();
 void AddSC_instance_baradin_hold();
+void AddSC_baradin_hold();
 
 // Blackrock Depths
 void AddSC_blackrock_depths();
@@ -315,6 +316,7 @@ void AddSC_blasted_lands();
 void AddSC_burning_steppes();
 void AddSC_duskwood();
 void AddSC_eastern_plaguelands();
+void AddSC_elwynn_forest();
 void AddSC_eversong_woods();
 void AddSC_ghostlands();
 void AddSC_hinterlands();
@@ -322,6 +324,7 @@ void AddSC_ironforge();
 void AddSC_isle_of_queldanas();
 void AddSC_loch_modan();
 void AddSC_redridge_mountains();
+void AddSC_silvermoon_city();
 void AddSC_silverpine_forest();
 void AddSC_stormwind_city();
 void AddSC_stranglethorn_vale();
@@ -808,6 +811,13 @@ void AddSC_kezan();
 
 /*** Pandaria ***/
 
+// Stormstout Brewery
+void AddSC_boss_ook_ook();
+void AddSC_boss_hoptallus();
+void AddSC_boss_yan_zhu_the_uncasked();
+void AddSC_stormstout_brewery();
+void AddSC_instance_stormstout_brewery();
+
 // Terrace of Endless Spring
 void AddSC_boss_protectors_of_the_endless();
 void AddSC_boss_tsulong();
@@ -815,6 +825,14 @@ void AddSC_boss_lei_shi();
 void AddSC_boss_sha_of_fear();
 void AddSC_terrace_of_endless_spring();
 void AddSC_instance_terrace_of_endless_spring();
+
+// Heart Of Fear
+void AddSC_boss_imperial_vizier_zorlok();
+void AddSC_boss_blade_lord_tayak();
+void AddSC_boss_garalon();
+void AddSC_boss_wind_lord_meljarak();
+void AddSC_heart_of_fear();
+void AddSC_instance_heart_of_fear();
 
 // Events
 void AddSC_event_childrens_week();
@@ -973,6 +991,7 @@ void AddEasternKingdomsScripts()
     AddSC_boss_occuthar();
     AddSC_boss_pit_lord_argaloth();
     AddSC_instance_baradin_hold();
+    AddSC_baradin_hold();
 
     // Blackrock Depths
     AddSC_blackrock_depths();
@@ -1173,6 +1192,7 @@ void AddEasternKingdomsScripts()
     AddSC_burning_steppes();
     AddSC_duskwood();
     AddSC_eastern_plaguelands();
+    AddSC_elwynn_forest();
     AddSC_eversong_woods();
     AddSC_ghostlands();
     AddSC_hinterlands();
@@ -1180,6 +1200,7 @@ void AddEasternKingdomsScripts()
     AddSC_isle_of_queldanas();
     AddSC_loch_modan();
     AddSC_redridge_mountains();
+    AddSC_silvermoon_city();
     AddSC_silverpine_forest();
     AddSC_stormwind_city();
     AddSC_stranglethorn_vale();
@@ -1686,6 +1707,13 @@ void AddMaelstromScripts()
 void AddPandariaScripts()
 {
 #ifdef SCRIPTS
+    // Stormstout Brewery
+    AddSC_boss_ook_ook();
+    AddSC_boss_hoptallus();
+    AddSC_boss_yan_zhu_the_uncasked();
+    AddSC_stormstout_brewery();
+    AddSC_instance_stormstout_brewery();
+
     // Terrace of Endless Spring
     AddSC_boss_protectors_of_the_endless();
     AddSC_boss_tsulong();
@@ -1693,6 +1721,14 @@ void AddPandariaScripts()
     AddSC_boss_sha_of_fear();
     AddSC_terrace_of_endless_spring();
 	AddSC_instance_terrace_of_endless_spring();
+
+    // Heart Of Fear
+    AddSC_boss_imperial_vizier_zorlok();
+    AddSC_boss_blade_lord_tayak();
+    AddSC_boss_garalon();
+    AddSC_boss_wind_lord_meljarak();
+    AddSC_heart_of_fear();
+    AddSC_instance_heart_of_fear();
 #endif
 }
 

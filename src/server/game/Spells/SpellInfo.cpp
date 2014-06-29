@@ -3580,6 +3580,28 @@ bool SpellInfo::CanBeDuplicated() const
     return true;
 }
 
+bool SpellInfo::IsInterruptSpell() const
+{
+    switch (Id)
+    {
+        case 78675:  // Solar Beam
+        case 80964:
+        case 80965:  // Skull Bash
+        case 93985:
+        case 97547:  // Solar Beam
+        case 106839: // Skull Bash
+        case 147362: // Counter Shot
+            return true;
+
+        default: break;
+    }
+
+    if (HasEffect(SPELL_EFFECT_INTERRUPT_CAST) || HasAura(SPELL_AURA_MOD_SILENCE))
+        return true;
+
+    return false;
+}
+
 bool SpellInfo::IsCustomCheckedForHolyPower() const
 {
     switch (Id)

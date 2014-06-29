@@ -242,9 +242,14 @@ void MotionMaster::MoveConfused()
 
 void MotionMaster::MoveChase(Unit* target, float dist, float angle)
 {
-    // ignore movement request if target not exist
+    // Ignore movement request if target not exist
     if (!target || target == _owner || _owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         return;
+
+    // Ignore if the owner is a hostile creature, chasing a player, and it's evading / moving home.
+    if (_owner->GetTypeId() != TYPEID_PLAYER && target->GetTypeId() == TYPEID_PLAYER && _owner->IsHostileTo(target))
+        if (_owner->HasUnitState(UNIT_STATE_EVADE) || Impl[MOTION_SLOT_ACTIVE] && Impl[MOTION_SLOT_ACTIVE]->GetMovementGeneratorType() == HOME_MOTION_TYPE)
+            return;
 
     //_owner->ClearUnitState(UNIT_STATE_FOLLOW);
     if (_owner->GetTypeId() == TYPEID_PLAYER)
@@ -267,9 +272,14 @@ void MotionMaster::MoveChase(Unit* target, float dist, float angle)
 
 void MotionMaster::MoveFollow(Unit* target, float dist, float angle, MovementSlot slot)
 {
-    // ignore movement request if target not exist
+    // Ignore movement request if target not exist
     if (!target || target == _owner || _owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         return;
+
+    // Ignore if the owner is a hostile creature, following a player, and it's evading / moving home.
+    if (_owner->GetTypeId() != TYPEID_PLAYER && target->GetTypeId() == TYPEID_PLAYER && _owner->IsHostileTo(target))
+        if (_owner->HasUnitState(UNIT_STATE_EVADE) || Impl[MOTION_SLOT_ACTIVE] && Impl[MOTION_SLOT_ACTIVE]->GetMovementGeneratorType() == HOME_MOTION_TYPE)
+            return;
 
     //_owner->AddUnitState(UNIT_STATE_FOLLOW);
     if (_owner->GetTypeId() == TYPEID_PLAYER)

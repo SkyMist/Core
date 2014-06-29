@@ -196,9 +196,10 @@ bool Weather::ReGenerate()
 void Weather::SendWeatherUpdateToPlayer(Player* player)
 {
     WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
-    data.WriteBit(0);
     data << float(m_grade);
     data << uint32(GetWeatherState());
+    data.WriteBit(0);
+    data.FlushBits();
 
     player->GetSession()->SendPacket(&data);
 }
@@ -215,9 +216,10 @@ bool Weather::UpdateWeather()
     WeatherState state = GetWeatherState();
 
     WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
-    data.WriteBit(0);
     data << float(m_grade);
     data << uint32(state);
+    data.WriteBit(0);
+    data.FlushBits();
 
     //- Returns false if there were no players found to update
     if (!sWorld->SendZoneMessage(m_zone, &data))

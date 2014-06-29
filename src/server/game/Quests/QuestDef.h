@@ -213,6 +213,14 @@ enum QuestObjectiveType
     QUEST_OBJECTIVE_TYPE_PLAYER       = 9
 };
 
+enum QuestPOITypes
+{
+    QUEST_POI_NUMERIC = 1,            // number within a circle
+    QUEST_POI_COMPLETE_IN = 2,        // completed quest icon within a normal circle
+    QUEST_POI_COMPLETE_OUT = 3,       // completed quest icon within a darker circle (quest outside current zone)
+    QUEST_POI_COMPLETE_SWAP = 4       // completed quest icon without a circle that needs to be swapped on selection (for map)
+};
+
 struct QuestLocale
 {
     QuestLocale() { ObjectiveText.resize(QUEST_OBJECTIVES_COUNT); }
@@ -368,6 +376,8 @@ class Quest
         uint32 GetRewItemsCount() const { return _rewItemsCount; }
         uint32 GetRewCurrencyCount() const { return _rewCurrencyCount; }
         uint32 GetReqCurrencyCount() const { return _reqCurrencyCount; }
+        // 5.x
+        uint32 GetRewardPackageItemId() const { return RewardPackageItemId; }
 
         typedef std::vector<int32> PrevQuests;
         PrevQuests prevQuests;
@@ -456,6 +466,7 @@ class Quest
         uint32 SoundTurnIn;
         // new in 5.x
         uint32 Flags2;
+        uint32 RewardPackageItemId;
 
         uint32 SpecialFlags; // custom flags, not sniffed / WDB
 };

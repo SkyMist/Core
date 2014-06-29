@@ -139,29 +139,31 @@ uint32 ReputationMgr::GetDefaultStateFlags(FactionEntry const* factionEntry) con
 
     uint32 raceMask = _player->getRaceMask();
     uint32 classMask = _player->getClassMask();
-    for (int i=0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
-        if ((factionEntry->BaseRepRaceMask[i] & raceMask  ||
-            (factionEntry->BaseRepRaceMask[i] == 0  &&
-             factionEntry->BaseRepClassMask[i] != 0)) &&
-            (factionEntry->BaseRepClassMask[i] & classMask ||
-             factionEntry->BaseRepClassMask[i] == 0))
+        if ((factionEntry->BaseRepRaceMask[i] & raceMask  || (factionEntry->BaseRepRaceMask[i] == 0  && factionEntry->BaseRepClassMask[i] != 0)) &&
+            (factionEntry->BaseRepClassMask[i] & classMask || factionEntry->BaseRepClassMask[i] == 0))
 
             return factionEntry->ReputationFlags[i];
     }
+
     return 0;
 }
 
 void ReputationMgr::SendForceReactions()
 {
-    WorldPacket data;
-    data.Initialize(SMSG_SET_FORCED_REACTIONS, 4+_forcedReactions.size()*(4+4));
-    data << uint32(_forcedReactions.size());
+    WorldPacket data(SMSG_SET_FORCED_REACTIONS, 6 + _forcedReactions.size() * (4 + 4));
+
+    data.WriteBits(_forcedReactions.size(), 6);
+
+    data.FlushBits();
+
     for (ForcedReactions::const_iterator itr = _forcedReactions.begin(); itr != _forcedReactions.end(); ++itr)
     {
-        data << uint32(itr->first);                         // faction_id (Faction.dbc)
         data << uint32(itr->second);                        // reputation rank
+        data << uint32(itr->first);                         // faction_id (Faction.dbc)
     }
+
     _player->SendDirectMessage(&data);
 }
 
@@ -169,13 +171,19 @@ void ReputationMgr::SendState(FactionState const* faction)
 {
     uint32 count = 1;
 
-    WorldPacket data(SMSG_SET_FACTION_STANDING, 17);
-    data << float(0);
-    data << uint8(_sendFactionIncreased);
-    _sendFactionIncreased = false; // Reset
+    WorldPacket data(SMSG_SET_FACTION_STANDING, 4 + 4 + 3 + 4 + 4);
 
-    size_t p_count = data.wpos();
-    data << uint32(count);
+    data << float(0);
+    data << float(0);
+
+    size_t countPos = data.bitwpos();
+    data.WriteBits(count, 21);
+
+    data.WriteBit(_sendFactionIncreased);
+
+    data.FlushBits();
+
+    _sendFactionIncreased = false; // Reset
 
     data << uint32(faction->ReputationListID);
     data << uint32(faction->Standing);
@@ -194,7 +202,7 @@ void ReputationMgr::SendState(FactionState const* faction)
         }
     }
 
-    data.put<uint32>(p_count, count);
+    data.PutBits(countPos, count, 21);
     _player->SendDirectMessage(&data);
 }
 

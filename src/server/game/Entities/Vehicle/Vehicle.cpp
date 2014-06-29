@@ -515,6 +515,9 @@ Vehicle* Vehicle::RemovePassenger(Unit* unit)
     if (seat->second.SeatInfo->m_flags & VEHICLE_SEAT_FLAG_PASSENGER_NOT_SELECTABLE && !seat->second.Passenger.IsUnselectable)
         unit->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 
+    if (seat->second.SeatInfo->m_flags & VEHICLE_SEAT_FLAG_HIDE_PASSENGER)
+        unit->ClearUnitState(UNIT_STATE_ONVEHICLE);
+
     seat->second.Passenger.Reset();
 
     if (_me->GetTypeId() == TYPEID_UNIT && unit->GetTypeId() == TYPEID_PLAYER && seat->second.SeatInfo->m_flags & VEHICLE_SEAT_FLAG_CAN_CONTROL)
@@ -803,6 +806,9 @@ bool VehicleJoinEvent::Execute(uint64, uint32)
                 Target->GetBase()->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
         }
     }
+
+    if (Seat->second.SeatInfo->m_flags & VEHICLE_SEAT_FLAG_HIDE_PASSENGER)
+        Passenger->AddUnitState(UNIT_STATE_ONVEHICLE);
 
     Passenger->InterruptNonMeleeSpells(false);
     Passenger->RemoveAurasByType(SPELL_AURA_MOUNTED);

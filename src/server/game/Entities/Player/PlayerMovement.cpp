@@ -278,7 +278,7 @@ void Player::ReadMovementInfo(WorldPacket& data, MovementInfo* mi, Movement::Ext
                 break;
             case MSECounter:
                 for (int i = 0; i != counterCount; i++)
-                    data.read_skip<uint32>();   /// @TODO: Maybe compare it with m_movementCounter to verify that packets are sent & received in order?
+                    data >> m_movementCounter;
                 break;
             case MSEHasUnkTime:
                 hasUnkTime = !data.ReadBit();
@@ -451,12 +451,55 @@ void Player::SendMovementSetCanTransitionBetweenSwimAndFly(bool apply)
 
 void Player::SendMovementSetCollisionHeight(float height)
 {
-    static MovementStatusElements const heightElement = MSEExtraFloat;
+    CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNT_DISPLAY_ID));
 
+    bool hasMountDisplayInfoScale = mountDisplayInfo ? true : false;
+
+    ObjectGuid guid = GetGUID();
+    WorldPacket data(SMSG_MOVE_SET_COLLISION_HEIGHT, 2 + 8 + 4 + 4);
+
+    data.WriteBit(!hasMountDisplayInfoScale); // mountDisplayInfo scale, inverse
+
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[1]);
+
+    data.WriteBits(3, 2);                     // Unk, 3 on retail sniff
+
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[4]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[2]);
+
+    data << float(hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f);
+    data << float(height);
+    data << uint32(m_movementCounter++);  // Packet counter - old sWorld->GetGameTime().
+
+    data.WriteByteSeq(guid[3]);
+
+    if (hasMountDisplayInfoScale)
+        data << uint32(mountDisplayInfo->Displayid);
+
+    data.WriteByteSeq(guid[0]);
+
+    SendDirectMessage(&data);
+
+    // Send the update.
+    static MovementStatusElements const heightElement = MSEExtraFloat;
     Movement::ExtraMovementStatusElement extra(&heightElement);
     extra.Data.floatData = height;
 
-    Movement::PacketSender(this, NULL_OPCODE, SMSG_MOVE_SET_COLLISION_HEIGHT, SMSG_MOVE_UPDATE_COLLISION_HEIGHT, &extra).Send();
+    Movement::PacketSender(this, NULL_OPCODE, NULL_OPCODE, SMSG_MOVE_UPDATE_COLLISION_HEIGHT, &extra).Send();
 }
 
 // Active mover set.
@@ -478,6 +521,8 @@ void Player::SetMover(Unit* target)
     data.WriteBit(guid[0]);
     data.WriteBit(guid[7]);
     data.WriteBit(guid[6]);
+
+    data.FlushBits();
 
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[1]);

@@ -3463,9 +3463,11 @@ void Map::SendZoneDynamicInfo(Player* player)
     if (uint32 weather = itr->second.WeatherId)
     {
         WorldPacket data(SMSG_WEATHER, 4 + 4 + 1);
-        data.WriteBit(0);
         data << float(itr->second.WeatherGrade);
         data << uint32(weather);
+        data.WriteBit(0);
+        data.FlushBits();
+
         player->SendDirectMessage(&data);
     }
 
@@ -3512,9 +3514,10 @@ void Map::SetZoneWeather(uint32 zoneId, uint32 weatherId, float weatherGrade)
     if (!players.isEmpty())
     {
         WorldPacket data(SMSG_WEATHER, 4 + 4 + 1);
-        data.WriteBit(0);
         data << float(weatherGrade);
         data << uint32(weatherId);
+        data.WriteBit(0);
+        data.FlushBits();
 
         for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
             if (Player* player = itr->GetSource())
