@@ -8176,18 +8176,18 @@ void Player::SendPvpRewards() const
     uint32 ArenaWinReward   = sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD);
     uint32 RatedBGWinReward = 400;
 
-    WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 24);
+    WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 10 * 4);
 
     packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
-    packet << uint32(0);                                                   // Conquest points cap from Rated BGs.
     packet << uint32(0);                                                   // Count of all Conquest points earned from Rated BGs during week.
     packet << uint32(RatedBGWinReward);                                    // Count of Conquest points earned for a Rated BG Win.
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
     packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);  // Count of all Conquest points earned from Arenas during week.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
     packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
+    packet << uint32(0);                                                   // Conquest points cap from Rated BGs.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
 
     GetSession()->SendPacket(&packet);
 }

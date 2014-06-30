@@ -78,7 +78,7 @@ enum Opcodes
    CMSG_AUTOSTORE_LOOT_ITEM                                 = 0x1F7A, // 5.4.7 18018
    CMSG_AUTO_DECLINE_GUILD_INVITES                          = 0x0174, // 5.4.7 18019
    CMSG_BANKER_ACTIVATE                                     = 0x02FD, // 5.4.7 18019
-   CMSG_BATTLEFIELD_JOIN                                    = 0x0,
+   CMSG_BATTLEFIELD_JOIN                                    = 0x06DD, // 5.4.7 18019
    CMSG_BATTLEFIELD_LEAVE                                   = 0x045F, // 5.4.7 18019 NYI
    CMSG_BATTLEFIELD_LIST                                    = 0x1412, // 5.4.7 18019
    CMSG_BATTLEFIELD_MGR_ENTRY_INVITE_RESPONSE               = 0x0,
@@ -718,7 +718,7 @@ enum Opcodes
    SMSG_BATTLEFIELD_STATUS                                  = 0x0,
    SMSG_BATTLEFIELD_STATUS_QUEUED                           = 0x15E8, // 5.4.7 18019 NYI
    SMSG_BATTLEFIELD_STATUS_ACTIVE                           = 0x0,
-   SMSG_BATTLEFIELD_STATUS_NEEDCONFIRMATION                 = 0x0,
+   SMSG_BATTLEFIELD_STATUS_CONFIRM                          = 0x0,
    SMSG_BATTLEFIELD_STATUS_WAITFORGROUPS                    = 0x0,
    SMSG_BATTLEFIELD_STATUS_FAILED                           = 0x0,
    SMSG_BATTLEGROUND_INFO_THROTTLED                         = 0x0,
