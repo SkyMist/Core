@@ -2932,7 +2932,7 @@ void World::SendAutoBroadcast()
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
 
             WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-            data.WriteBits(msg.length(), 12);
+            data.WriteBits(msg.length() + 1, 13);
             data.FlushBits();
             data.WriteString(msg);
             sWorld->SendGlobalMessage(&data);
@@ -2941,7 +2941,7 @@ void World::SendAutoBroadcast()
         case 1:
         {
             WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-            data.WriteBits(msg.length(), 12);
+            data.WriteBits(msg.length() + 1, 13);
             data.FlushBits();
             data.WriteString(msg);
             sWorld->SendGlobalMessage(&data);
@@ -3132,13 +3132,23 @@ void World::ResetDailyQuests()
     sPoolMgr->ChangeDailyQuests();
 }
 
-void World::ResetCurrencyWeekCap()
+void World::ResetCurrencyWeekCap() // ToDo: put here smsg for weekly_last_reset.
 {
     CharacterDatabase.Execute("UPDATE `character_currency` SET `week_count` = 0");
+    CharacterDatabase.Execute("UPDATE `character_currency` SET `total_count` = 0 WHERE currency IN (483, 484)"); // For Meta Arena / RBg currency.
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+    {
         if (itr->second->GetPlayer())
+        {
             itr->second->GetPlayer()->ResetCurrencyWeekCap();
+
+            // Reset Rated BG week also - Weekly won / played + worldstate.
+            itr->second->GetPlayer()->SetRatedBGsWonWeek(itr->second->GetPlayer()->GetGUID(), 0);
+            itr->second->GetPlayer()->SetRatedBGsPlayedWeek(itr->second->GetPlayer()->GetGUID(), 0);
+            CharacterDatabase.Execute("DELETE FROM worldstates WHERE entry = 20008");
+        }
+    }
 
     m_NextCurrencyReset = time_t(m_NextCurrencyReset + DAY * getIntConfig(CONFIG_CURRENCY_RESET_INTERVAL));
     sWorld->setWorldState(WS_CURRENCY_RESET_TIME, uint64(m_NextCurrencyReset));
@@ -3362,6 +3372,16 @@ uint64 World::getWorldState(uint32 index) const
 {
     WorldStatesMap::const_iterator it = m_worldstates.find(index);
     return it != m_worldstates.end() ? it->second : 0;
+}
+
+bool World::FindWorldState(uint32 index)
+{
+    WorldStatesMap::const_iterator it = m_worldstates.find(index);
+
+    if (it != m_worldstates.end())
+        return true;
+
+    return false;
 }
 
 void World::ProcessQueryCallbacks()

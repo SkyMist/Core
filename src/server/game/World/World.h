@@ -511,6 +511,7 @@ enum WorldStates
     WS_CLEANING_FLAGS           = 20004,                     // Cleaning Flags
     WS_GUILD_DAILY_RESET_TIME   = 20006,                     // Next guild cap reset time
     WS_MONTHLY_QUEST_RESET_TIME = 20007,                     // Next monthly reset time
+    WS_WEEKLY_SELECT_RATED_BG   = 20008,                     // The Rated BG selected it shows in the window.
     // Cata specific custom worldstates
     WS_GUILD_WEEKLY_RESET_TIME  = 20050,                     // Next guild week reset time
 };
@@ -767,6 +768,8 @@ class World
         bool GetEventKill() const { return isEventKillStart; }
 
         bool isEventKillStart;
+
+        bool FindWorldState(uint32 index); // Returns if a worldstate exists in the character database or not, useful for BF's and other stuff.
 
         CharacterNameData const* GetCharacterNameData(uint32 guid) const;
         void AddCharacterNameData(uint32 guid, std::string const& name, uint8 gender, uint8 race, uint8 playerClass, uint8 level);

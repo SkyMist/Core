@@ -118,11 +118,12 @@ void WorldSession::SendBfQueueInviteResponse(uint64 guid, uint32 ZoneId, bool Ca
     data.WriteBit(guidBytes[5]);
     data.WriteBit(guidBytes[2]);
     data.WriteBit(guidBytes[7]);
-    data.WriteBit(Full);  // Logging In, VERIFYME
+    data.WriteBit(Full);         // Logging In, VERIFYME
     data.WriteBit(guidBytes[3]);
     data.WriteBit(guidBytes[1]);
     data.WriteBit(guidBytes[0]);
     data.WriteBit(!hasSecondGuid);
+
     // if (hasSecondGuid) 7 3 0 4 2 6 1 5
 
     data.WriteBit(guidBytes[4]);

@@ -471,8 +471,8 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_PVP_OPTIONS_ENABLED,             STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::HandleRequestPvpOptions         );
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_PVP_REWARDS,                     STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleRequestPvpReward          );
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RAID_INFO,                       STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleRequestRaidInfoOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RATED_BG_INFO,                   STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::HandleRequestRatedBgInfo        );
-    DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RATED_BG_STATS,                  STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleRequestRatedBgStats       );
+    DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RATED_BG_INFO,                   STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleRequestRatedBgInfo        );
+    DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RATED_BG_STATS,                  STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleRequestRatedBgStats       );
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_RESEARCH_HISTORY,                STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_VEHICLE_EXIT,                    STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleRequestVehicleExit        );
     DEFINE_OPCODE_HANDLER(CMSG_REQUEST_VEHICLE_NEXT_SEAT,               STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleChangeSeatsOnControlledVehicle);

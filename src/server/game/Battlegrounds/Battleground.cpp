@@ -665,13 +665,9 @@ void Battleground::SendPacketToAll(WorldPacket* packet)
 void Battleground::SendPacketToTeam(uint32 TeamID, WorldPacket* packet, Player* sender, bool self)
 {
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-    {
         if (Player* player = _GetPlayerForTeam(TeamID, itr, "SendPacketToTeam"))
-        {
             if (self || sender != player)
                 player->SendDirectMessage(packet);
-        }
-    }
 }
 
 void Battleground::PlaySoundToAll(uint32 SoundID)
@@ -821,10 +817,10 @@ void Battleground::EndBattleground(uint32 winner)
             // Deduct 16 points from each teams arena-rating if there are no winners after 45+2 minutes
             else
             {
-                SetArenaTeamRatingChangeForTeam(ALLIANCE, ARENA_TIMELIMIT_POINTS_LOSS);
-                SetArenaTeamRatingChangeForTeam(HORDE, ARENA_TIMELIMIT_POINTS_LOSS);
-                winnerArenaTeam->FinishGame(ARENA_TIMELIMIT_POINTS_LOSS);
-                loserArenaTeam->FinishGame(ARENA_TIMELIMIT_POINTS_LOSS);
+                SetArenaTeamRatingChangeForTeam(ALLIANCE, -16);
+                SetArenaTeamRatingChangeForTeam(HORDE, -16);
+                winnerArenaTeam->FinishGame(-16);
+                loserArenaTeam->FinishGame(-16);
             }
         }
         else
@@ -919,13 +915,13 @@ void Battleground::EndBattleground(uint32 winner)
                 UpdatePlayerScore(player, SCORE_BONUS_HONOR, GetBonusHonorFromKill(winnerKills));
                 if (!player->GetRandomWinner())
                 {
-                    // 100cp awarded for the first random battleground won each day
-                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST));
+                    // 150cp awarded for the first random battleground won each day
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST));
                     player->SetRandomWinner(true);
                 }
+                else // 75cp awarded for each non-rated random battleground won
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_LAST));
             }
-            else // 50cp awarded for each non-rated battleground won
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_LAST));
 
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1);
             if (!guildAwarded)
@@ -939,11 +935,32 @@ void Battleground::EndBattleground(uint32 winner)
                             guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, std::max<uint32>(winnerArenaTeam->GetRating(), 1), 0, 0, NULL, player);
                     }
             }
+
+            if (!isArena() && isRated()) // Rated BG winners!
+            {
+                player->SetRatedBGsWon(player->GetGUID(), player->GetRatedBGsWon(player->GetGUID()) + 1);
+                player->SetRatedBGsWonWeek(player->GetGUID(), player->GetRatedBGsWonWeek(player->GetGUID()) + 1);
+                player->SetRatedBGsPlayed(player->GetGUID(), player->GetRatedBGsPlayed(player->GetGUID()) + 1);
+                player->SetRatedBGsPlayedWeek(player->GetGUID(), player->GetRatedBGsPlayedWeek(player->GetGUID()) + 1);
+
+                player->SetRatedBGRating(player->GetGUID(), player->GetRatedBGRating(player->GetGUID()) + 20); // 20 points on win.
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 400); // 400 CP on win.
+            }
         }
         else
         {
             if (IsRandom() || BattlegroundMgr::IsBGWeekend(GetTypeID()))
                 UpdatePlayerScore(player, SCORE_BONUS_HONOR, GetBonusHonorFromKill(loserKills));
+
+            if (!isArena() && isRated()) // Rated BG losers!
+            {
+                player->SetRatedBGsPlayed(player->GetGUID(), player->GetRatedBGsPlayed(player->GetGUID()) + 1);
+                player->SetRatedBGsPlayedWeek(player->GetGUID(), player->GetRatedBGsPlayedWeek(player->GetGUID()) + 1);
+
+                if (player->GetRatedBGRating(player->GetGUID()) > 1500)
+                    player->SetRatedBGRating(player->GetGUID(), player->GetRatedBGRating(player->GetGUID()) - 20); // -20 points on lose if rating  > 1500.
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 200); // 200 CP on loss.
+            }
         }
 
         player->ResetAllPowers();
@@ -1027,6 +1044,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
     else // try to resurrect the offline player. If he is alive nothing will happen
         sObjectAccessor->ConvertCorpseForPlayer(guid);
 
+    player->SetClientControl(player, 1);
     RemovePlayer(player, guid, team);                           // BG subclass specific code
 
     BattlegroundTypeId bgTypeId = GetTypeID();
@@ -1075,7 +1093,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         else
         // removing offline participant
         {
-            if (isRated() && GetStatus() == STATUS_IN_PROGRESS)
+            if (isRated() && isArena() && GetStatus() == STATUS_IN_PROGRESS)
             {
                 //left a rated match while the encounter was in progress, consider as loser
                 ArenaTeam* others_arena_team = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(GetOtherTeam(team)));
@@ -1132,6 +1150,9 @@ void Battleground::Reset()
     SetElapsedTime(0);
     SetRemainingTime(0);
     SetLastResurrectTime(0);
+    SetArenaType(0);
+    SetRated(false);
+
     m_Events = 0;
 
     if (m_InvitedAlliance > 0 || m_InvitedHorde > 0)
@@ -1712,9 +1733,7 @@ bool Battleground::DelObject(uint32 type)
 
 bool Battleground::AddSpiritGuide(uint32 type, float x, float y, float z, float o, uint32 team)
 {
-    uint32 entry = (team == ALLIANCE) ?
-        BG_CREATURE_ENTRY_A_SPIRITGUIDE :
-        BG_CREATURE_ENTRY_H_SPIRITGUIDE;
+    uint32 entry = (team == ALLIANCE) ? BG_CREATURE_ENTRY_A_SPIRITGUIDE : BG_CREATURE_ENTRY_H_SPIRITGUIDE;
 
     if (Creature* creature = AddCreature(entry, type, team, x, y, z, o))
     {

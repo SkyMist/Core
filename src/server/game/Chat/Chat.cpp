@@ -685,9 +685,9 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_MONSTER_YELL:
         case CHAT_MSG_MONSTER_PARTY:
         case CHAT_MSG_MONSTER_EMOTE:
-            // // target_guid controls chat bubbles and receiver message building.
+            // // target_guid controls chat bubbles and receiver message building. - No need for enforcing this here anymore, handling is done by specific function argumentation.
             // if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
-            // break; // No need for this anymore, handling is done by specific function argumentation.
+            // break;
         case CHAT_MSG_MONSTER_WHISPER:   // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_WHISPER: // Should already have a target guid / target guid not needed for entire raid sending.
         case CHAT_MSG_RAID_BOSS_EMOTE:   // Should already have a target guid / target guid not needed for entire raid sending.
@@ -765,7 +765,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     // Now build the actual packet.
     data->Initialize(SMSG_MESSAGECHAT);
 
-    data->WriteBit(!HasGuildGUID); // True if no guildGuid.
+    data->WriteBit(!HasGuildGUID);   // True if no guildGuid.
     data->WriteBit(!HasSpeakerGUID); // True no speakerGuid (like in BG announcements).
 
     data->WriteBit(guildGuid[4]);
@@ -814,7 +814,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasSpeaker)
         data->WriteBits(speakerNameLength, 11);
 
-    data->WriteBit(!HasGroupGUID); // True if no groupGuid.
+    data->WriteBit(!HasGroupGUID);    // True if no groupGuid.
 
     data->WriteBit(groupGuid[5]);
     data->WriteBit(groupGuid[2]);
@@ -833,7 +833,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     if (HasMessage)
         data->WriteBits(messageLength, 12);
 
-    data->WriteBit(0);                              // Unk byte1499. Always seems false.
+    data->WriteBit(0);                // Unknown byte1499. Seems related to B-Net Chat. Always false.
     data->WriteBit(!HasAddonPrefix);
     data->WriteBit(!HasChannel);
 
@@ -868,13 +868,13 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     *data << uint8(type);
 
     if (HasSecondTime)
-        *data << uint32(time(NULL)); // Add text duration here for creatures (check CreatureTextMgr packet building).
+        *data << uint32(time(NULL));  // Add text duration here for creatures (HasConstantTime + duration; check CreatureTextMgr packet building).
 
     if (HasAddonPrefix)
         data->WriteString(std::string(addonPrefix));
 
     if (HasLimitedFloatRange)
-        *data << float(sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY)); // Add max text range here (see building of each chat type). 
+        *data << float(sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY)); // Add max text range here (see building of each chat type - new Cata fields for ex. RAID_BOSS_EMOTE). 
 
     data->WriteByteSeq(targetGuid[4]);
     data->WriteByteSeq(targetGuid[2]);
@@ -913,7 +913,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         data->WriteString(std::string(channelName));
 
     if (HasConstantTime)
-        *data << uint32(time(NULL));
+        *data << uint32(time(NULL));  // The time at which the creature text is called.
 }
 
 Player* ChatHandler::getSelectedPlayer()

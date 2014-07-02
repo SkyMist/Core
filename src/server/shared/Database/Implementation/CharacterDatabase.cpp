@@ -269,6 +269,7 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_SEL_PLAYER_CURRENCY, "SELECT currency, week_count, total_count FROM character_currency WHERE guid = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_UPD_PLAYER_CURRENCY, "UPDATE character_currency SET week_count = ?, total_count = ? WHERE guid = ? AND currency = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_REP_PLAYER_CURRENCY, "REPLACE INTO character_currency (guid, currency, week_count, total_count) VALUES (?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_PLAYER_ALL_CURRENCY, "DELETE FROM character_currency WHERE guid = ?", CONNECTION_ASYNC);
 
     // Account data
     PrepareStatement(CHAR_SEL_ACCOUNT_DATA, "SELECT type, time, data FROM account_data WHERE accountId = ?", CONNECTION_SYNCH);
@@ -575,6 +576,7 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_SEL_CHAR_VOID_STORAGE, "SELECT itemId, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor FROM character_void_storage WHERE playerGuid = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_REP_CHAR_VOID_STORAGE_ITEM, "REPLACE INTO character_void_storage (itemId, playerGuid, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_CHAR_VOID_STORAGE_ITEM_BY_SLOT, "DELETE FROM character_void_storage WHERE slot = ? AND playerGuid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_CHAR_VOID_STORAGE_ITEMS, "DELETE FROM character_void_storage WHERE playerGuid = ?", CONNECTION_ASYNC);
 
     // CompactUnitFrame profiles
     PrepareStatement(CHAR_SEL_CHAR_CUF_PROFILES, "SELECT id, name, frameHeight, frameWidth, sortBy, healthText, boolOptions, unk146, unk147, unk148, unk150, unk152, unk154 FROM character_cuf_profiles WHERE guid = ?", CONNECTION_ASYNC);
@@ -642,4 +644,26 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_UPD_CHAR_PET_NAME, "UPDATE character_pet SET name = ?, renamed = 1 WHERE owner = ? AND id = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_UDP_CHAR_PET_SLOT_BY_SLOT_EXCLUDE_ID, "UPDATE character_pet SET slot = ? WHERE owner = ? AND slot = ? AND id <> ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID, "UPDATE character_pet SET slot = ? WHERE owner = ? AND id = ?", CONNECTION_ASYNC);
+
+    // Rated BG's
+    PrepareStatement(CHAR_SEL_PLAYER_BG_RATING, "SELECT rating FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_PLAYER_BG_RATING, "INSERT INTO character_rated_battlegrounds (guid, rating) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_BG_RATING, "UPDATE character_rated_battlegrounds SET rating = ? WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_PLAYER_RATED_BG_INFO, "DELETE FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_ASYNC);
+
+    PrepareStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS, "SELECT played FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_PLAYER_RATEGBG_PLAYS, "INSERT INTO character_rated_battlegrounds (guid, played) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_RATEGBG_PLAYS, "UPDATE character_rated_battlegrounds SET played = ? WHERE guid = ?", CONNECTION_ASYNC);
+
+    PrepareStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS_WEEK, "SELECT playedWeek FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_PLAYER_RATEGBG_PLAYS_WEEK, "INSERT INTO character_rated_battlegrounds (guid, playedWeek) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_RATEGBG_PLAYS_WEEK, "UPDATE character_rated_battlegrounds SET playedWeek = ? WHERE guid = ?", CONNECTION_ASYNC);
+
+    PrepareStatement(CHAR_SEL_PLAYER_RATEGBG_WINS, "SELECT won FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_PLAYER_RATEGBG_WINS, "INSERT INTO character_rated_battlegrounds (guid, won) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_RATEGBG_WINS, "UPDATE character_rated_battlegrounds SET won = ? WHERE guid = ?", CONNECTION_ASYNC);
+
+    PrepareStatement(CHAR_SEL_PLAYER_RATEGBG_WINS_WEEK, "SELECT wonWeek FROM character_rated_battlegrounds WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_PLAYER_RATEGBG_WINS_WEEK, "INSERT INTO character_rated_battlegrounds (guid, wonWeek) VALUES (?,?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_RATEGBG_WINS_WEEK, "UPDATE character_rated_battlegrounds SET wonWeek = ? WHERE guid = ?", CONNECTION_ASYNC);
 }

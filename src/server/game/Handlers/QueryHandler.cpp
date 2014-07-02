@@ -362,8 +362,8 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         if (info->IconName != "")
             data << info->IconName;                           // "Directions" for guard, string for Icons 2.3.0
 
-        data << uint32(info->type_flags2);                    // Flags2
         data << uint32(info->type_flags);                     // Flags
+        data << uint32(info->type_flags2);                    // Flags2
         data << uint32(info->KillCredit[0]);                  // New in 3.1, kill credit
         data << uint32(info->family);                         // CreatureFamily.dbc
         data << uint32(info->movementId);                     // CreatureMovementInfo.dbc
@@ -373,7 +373,7 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         data << uint32(info->rank);                           // Creature Rank (elite, boss, etc)
 
         if (SubName != "")
-            data << SubName;                                // Subname
+            data << SubName;                                  // Subname
 
         data << uint32(info->Modelid4);                       // Modelid4
 
@@ -459,7 +459,7 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
         for (uint32 i = 0; i < MAX_GAMEOBJECT_QUEST_ITEMS; ++i)
             data << uint32(info->questItems[i]);            // itemId[6], quest drop
 
-        data << int32(info->unkInt32);                      // 4.x, unknown
+        data << int32(info->expansion);                      // 4.x, expansion
 
         data.put(pos, uint32(data.wpos() - (pos + 4)));
         TC_LOG_DEBUG("network", "WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");

@@ -2156,7 +2156,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const* 
         if (memberBracketEntry != bracketEntry)
             return ERR_BATTLEGROUND_JOIN_RANGE_INDEX;
         // don't let join rated matches if the arena team id doesn't match
-        if (isRated && member->GetArenaTeamId(arenaSlot) != arenaTeamId)
+        if (isRated && bgOrTemplate->isArena() && member->GetArenaTeamId(arenaSlot) != arenaTeamId)
             return ERR_BATTLEGROUND_JOIN_FAILED;
         // don't let join if someone from the group is already in that bg queue
         if (member->InBattlegroundQueueForBattlegroundQueueType(bgQueueTypeId))
@@ -2167,6 +2167,9 @@ GroupJoinBattlegroundResult Group::CanJoinBattlegroundQueue(Battleground const* 
         // don't let join to bg queue random if someone from the group is already in bg queue
         if (bgOrTemplate->GetTypeID() == BATTLEGROUND_RB && member->InBattlegroundQueue())
             return ERR_IN_NON_RANDOM_BG;
+        // don't let join to bg queue rated if someone from the group is already in bg queue
+        if (bgOrTemplate->GetTypeID() == BATTLEGROUND_RATED_10_VS_10 && member->InBattlegroundQueue())
+            return ERR_BATTLEGROUND_CANNOT_QUEUE_FOR_RATED;
         // check for deserter debuff in case not arena queue
         if (bgOrTemplate->GetTypeID() != BATTLEGROUND_AA && !member->CanJoinToBattleground(bgOrTemplate))
             return ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS;

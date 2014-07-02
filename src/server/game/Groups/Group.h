@@ -25,9 +25,9 @@
 #include "LootMgr.h"
 #include "QueryResult.h"
 #include "SharedDefines.h"
+#include "Battleground.h"
+#include "Battlefield.h"
 
-class Battlefield;
-class Battleground;
 class Creature;
 class GroupReference;
 class InstanceSave;

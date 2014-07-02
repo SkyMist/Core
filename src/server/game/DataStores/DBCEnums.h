@@ -585,6 +585,7 @@ enum CurrencyTypes
     CURRENCY_TYPE_VALOR_POINTS                    = 396,
     CURRENCY_TYPE_CONQUEST_META_ARENA             = 483,
     CURRENCY_TYPE_CONQUEST_META_RBG               = 484,
+    CURRENCY_TYPE_CONQUEST_META_RANDOM_BG         = 692,
 
     // Professions.
     CURRENCY_TYPE_DALARAN_JEWELCRAFTERS_TOKEN     = 61,

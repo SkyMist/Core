@@ -31,13 +31,16 @@
 #include "BattlegroundWS.h"
 #include "BattlegroundNA.h"
 #include "BattlegroundBE.h"
+#include "BattlegroundAA.h"
 #include "BattlegroundRL.h"
 #include "BattlegroundSA.h"
 #include "BattlegroundDS.h"
 #include "BattlegroundRV.h"
 #include "BattlegroundIC.h"
+#include "BattlegroundRB.h"
 #include "BattlegroundTP.h"
 #include "BattlegroundBFG.h"
+#include "BattlegroundRatedBG.h"
 #include "Chat.h"
 #include "Map.h"
 #include "MapInstanced.h"
@@ -53,10 +56,7 @@
 /***            BATTLEGROUND MANAGER                   ***/
 /*********************************************************/
 
-BattlegroundMgr::BattlegroundMgr() :
-    m_NextRatedArenaUpdate(sWorld->getIntConfig(CONFIG_ARENA_RATED_UPDATE_TIMER)),
-    m_ArenaTesting(false), m_Testing(false)
-{ }
+BattlegroundMgr::BattlegroundMgr() : m_NextRatedArenaUpdate(sWorld->getIntConfig(CONFIG_ARENA_RATED_UPDATE_TIMER)), m_ArenaTesting(false), m_Testing(false) { }
 
 BattlegroundMgr::~BattlegroundMgr()
 {
@@ -151,19 +151,17 @@ void BattlegroundMgr::Update(uint32 diff)
 
 void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battleground* bg, Player* player, uint8 QueueSlot, uint8 StatusID, uint32 Time1, uint32 Time2, uint8 arenatype)
 {
-    ObjectGuid playerGuid = player->GetGUID();
-    ObjectGuid bgGuid;
+    // if (!bg) return;
 
-    if (bg)
-        bgGuid = bg->GetGUID();
-    else
-        return;
+    ObjectGuid playerGuid = player->GetGUID();
+    ObjectGuid bgGuid = bg ? bg->GetGUID() : 0;
 
     switch (StatusID)
     {
         case STATUS_NONE:
         {
-            // call BuildPacketFailed to send the error to the clients
+           // call BuildPacketFailed to send the error to the clients
+            break;
         }
         case STATUS_WAIT_QUEUE:
         {
@@ -173,9 +171,12 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(Time1);                     // Estimated Wait Time
             *data << uint32(QueueSlot);                 // Queue slot
             *data << uint32(GetMSTimeDiffToNow(Time2)); // Time since joined
-            *data << uint8(0);                          // Team Size
+            //if (bg->isRated())
+            //    *data << uint8(count for players in queue Rated Mode);
+            //else
+                *data << uint8(0);                      // Team Size
             *data << uint32(Time2);                     // Join Time
-            *data << uint8(bg->GetMinLevel());          // Min Level   
+            *data << uint8(bg->GetMinLevel());          // Min Level
             *data << uint32(bg->GetClientInstanceID()); // Client Instance ID
             *data << uint8(bg->GetMaxLevel());          // Max Level
 
@@ -215,9 +216,10 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(bgGuid[2]);
             data->WriteByteSeq(playerGuid[7]);
             data->WriteByteSeq(playerGuid[5]);
-            data->WriteByteSeq(playerGuid[3]);      
-            data->WriteByteSeq(bgGuid[4]);  
-            data->WriteByteSeq(bgGuid[0]);       
+            data->WriteByteSeq(playerGuid[3]);
+            data->WriteByteSeq(bgGuid[4]);
+            data->WriteByteSeq(bgGuid[0]);
+
             break;
         }
         case STATUS_WAIT_JOIN:
@@ -269,12 +271,16 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(playerGuid[1]);
             *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
-            *data << uint8(0);                          // TeamSize
+            //if (bg->isRated())
+            //    *data << uint8(count for players in queue Rated Mode);
+            //else
+                *data << uint8(0);                      // Team Size
             data->WriteByteSeq(bgGuid[4]);
             data->WriteByteSeq(bgGuid[2]);
             *data << uint32(Time1);                     // Time until closed
             data->WriteByteSeq(playerGuid[3]);
-            *data << uint8(bg->GetMinLevel());          // Min Level  
+            *data << uint8(bg->GetMinLevel());          // Min Level
+
             break;
         }
         case STATUS_ERROR:
@@ -307,7 +313,10 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[7]);
             data->WriteByteSeq(bgGuid[6]);
             data->WriteByteSeq(playerGuid[4]);
-            *data << uint8(0);                          // team size
+            //if (bg->isRated())
+            //    *data << uint8(count for players in queue Rated Mode);
+            //else
+                *data << uint8(0);                      // Team Size
             *data << uint8(0);                          // byte4C
             data->WriteByteSeq(playerGuid[2]);
             data->WriteByteSeq(playerGuid[3]);
@@ -326,10 +335,11 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(Time1);                     // Join Time
             *data << uint8(0);                          // byte4E
             *data << uint8(0);                          // byte4D
-            *data << uint8(bg->GetMinLevel());          // Min Level  
+            *data << uint8(bg->GetMinLevel());          // Min Level
             *data << uint8(bg->GetMaxLevel());          // Max Level
             data->WriteByteSeq(playerGuid[6]);
             *data << uint32(QueueSlot);                 // Queue slot
+
             break;
         }
         case STATUS_IN_PROGRESS:
@@ -355,7 +365,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteBit(playerGuid[2]);
             data->WriteBit(bgGuid[1]);
             data->WriteBit(0);                          // unk
-            
+
             data->FlushBits();
 
             data->WriteByteSeq(bgGuid[7]);
@@ -377,13 +387,17 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(QueueSlot);                 // Queue slot
             *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
             data->WriteByteSeq(playerGuid[4]);
-            *data << uint8(0);                          // Team Size
+            //if (bg->isRated())
+            //    *data << uint8(count for players in queue Rated Mode);
+            //else
+                *data << uint8(0);                      // Team Size
             data->WriteByteSeq(bgGuid[0]);
             *data << uint32(bg->GetMapId());            // Map Id
             data->WriteByteSeq(bgGuid[6]);
             data->WriteByteSeq(playerGuid[2]);
-            data->WriteByteSeq(playerGuid[1]);       
+            data->WriteByteSeq(playerGuid[1]);
             *data << uint32(Time2);                     // Elapsed Time
+
             break;
         }
         case STATUS_WAIT_LEAVE:
@@ -393,24 +407,25 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
 void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
 {
-    bool HasRatingsInfo = true;
-    uint8 isRated = (bg->isRated() ? 1 : 0);               // type (normal=0/rated=1) -- ATM arena or bg, RBG NYI
-    uint8 isArena = (bg->isArena() ? 1 : 0);               // Arena names
     ObjectGuid Guid1 = 0;
     ObjectGuid Guid2 = 0;
     ByteBuffer buff;
 
+    uint8 isRated = (bg->isRated() ? 1 : 0);               // Type (normal = 0 / rated = 1) -- Arena / Rated BG.
+    uint8 isArena = (bg->isArena() ? 1 : 0);               // Arena names
+
+    bool bgEnded = (bg->GetStatus() == STATUS_WAIT_LEAVE) ? true : false;
+
     data->Initialize(SMSG_PVP_LOG_DATA);
-    data->WriteBit(HasRatingsInfo);
-    data->WriteBit(isArena);
-    
+    data->WriteBit(isRated);                               // this is more like hasRatedPart
+    data->WriteBit(isArena);                               // actually is hasTeamNames
 
     if (isArena)
     {
         ArenaTeam* Team1 = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(0));
         ArenaTeam* Team2 = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(1));
 
-        //it is a bit hacky but no other way to do it atm
+        // It is a bit hacky but no other way to do it atm
         data->WriteBits(Team1->GetName().size(), 7);
         data->WriteBit(Guid2[3]);
         data->WriteBit(Guid2[2]);
@@ -466,67 +481,83 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         BattlegroundScore* score = itr->second;
         ByteBuffer scores;
 
+        // Rated BG rating stuff.
+        uint8 hasRatedBGRating = ((isRated && !isArena) ? 1 : 0); // Kinda like a rated bg check.
+        uint32 RatedBGRating = 0;
+
+        if (Player* player = ObjectAccessor::FindPlayer(playerGUID)) // Get the rating if player is online.
+            RatedBGRating = (bg->GetWinner() == player->GetBGTeam() ? (player->GetRatedBGRating(playerGUID) - 20) : 
+        (player->GetRatedBGRating(playerGUID) > 1500 ? (player->GetRatedBGRating(playerGUID) + 20) : player->GetRatedBGRating(playerGUID)));
+
+        uint8 hasBGRatingChange = (hasRatedBGRating ? 1 : 0);
+        int32 RatedBGRatingChange = 0;
+
+        if (Player* player = ObjectAccessor::FindPlayer(playerGUID)) // Get the rating change if player is online.
+            RatedBGRatingChange = (bg->GetWinner() == player->GetBGTeam() ? 20 : (player->GetRatedBGRating(playerGUID) > 1500 ? -20 : 0));
+
         data->WriteBit(playerGUID[4]);
-        data->WriteBit(0);              // Unk 1
+        data->WriteBit(0);                              // Unk 1
         data->WriteBit(playerGUID[0]);
-        data->WriteBit(!isArena);
+        data->WriteBit(bg->isBattleground());           // isBattleground or isNotArena
         data->WriteBit(playerGUID[7]);
         data->WriteBit(playerGUID[5]);
-        data->WriteBit(0);              // HasRatingChange
+        data->WriteBit(hasBGRatingChange);              // hasBGRatingChange
         data->WriteBit(playerGUID[1]);
-        data->WriteBit(0);              // HasMMRChange
-        data->WriteBit(team == HORDE ? 0 : 1);
+        data->WriteBit(0);                              // hasMMRChange  - After 4.2 update is always zero (number).
+        data->WriteBit(team == HORDE ? 0 : 1);          // isAlliancePlayer
 
-        switch (bg->GetTypeID(true))                             // Custom values
+        switch (bg->GetTypeID(true))                    // Custom values
         {
             case BATTLEGROUND_RB:
+            case BATTLEGROUND_RATED_10_VS_10:
                 switch (bg->GetMapId())
                 {
-                case 489:
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundWGScore*)score)->FlagCaptures);        // flag captures
-                    scores << uint32(((BattlegroundWGScore*)score)->FlagReturns);         // flag returns
-                    break;
-                case 566:
-                    data->WriteBits(0x00000001, 22);
-                    scores << uint32(((BattlegroundEYScore*)score)->FlagCaptures);        // flag captures
-                    break;
-                case 529:
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundABScore*)score)->BasesAssaulted);      // bases assaulted
-                    scores << uint32(((BattlegroundABScore*)score)->BasesDefended);       // bases defended
-                    break;
-                case 30:
-                    data->WriteBits(0x00000005, 22);
-                    scores << uint32(((BattlegroundAVScore*)score)->GraveyardsAssaulted); // GraveyardsAssaulted
-                    scores << uint32(((BattlegroundAVScore*)score)->GraveyardsDefended);  // GraveyardsDefended
-                    scores << uint32(((BattlegroundAVScore*)score)->TowersAssaulted);     // TowersAssaulted
-                    scores << uint32(((BattlegroundAVScore*)score)->TowersDefended);      // TowersDefended
-                    scores << uint32(((BattlegroundAVScore*)score)->MinesCaptured);       // MinesCaptured
-                    break;
-                case 607:
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundSAScore*)score)->demolishers_destroyed);
-                    scores << uint32(((BattlegroundSAScore*)score)->gates_destroyed);
-                    break;
-                case 628:                                   // IC
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundICScore*)score)->BasesAssaulted);       // bases assaulted
-                    scores << uint32(((BattlegroundICScore*)score)->BasesDefended);        // bases defended
-                    break;
-                case 726:
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundTPScore*)score)->FlagCaptures);         // flag captures
-                    scores << uint32(((BattlegroundTPScore*)score)->FlagReturns);          // flag returns
-                    break;
-                case 761:
-                    data->WriteBits(0x00000002, 22);
-                    scores << uint32(((BattlegroundBFGScore*)score)->BasesAssaulted);      // bases assaulted
-                    scores << uint32(((BattlegroundBFGScore*)score)->BasesDefended);       // bases defended
-                    break;
-                default:
-                    data->WriteBits(0, 22);
-                    break;
+                    case 30: // Alterac Valley
+                        data->WriteBits(0x00000005, 22);
+                        scores << uint32(((BattlegroundAVScore*)score)->GraveyardsAssaulted); // GraveyardsAssaulted
+                        scores << uint32(((BattlegroundAVScore*)score)->GraveyardsDefended);  // GraveyardsDefended
+                        scores << uint32(((BattlegroundAVScore*)score)->TowersAssaulted);     // TowersAssaulted
+                        scores << uint32(((BattlegroundAVScore*)score)->TowersDefended);      // TowersDefended
+                        scores << uint32(((BattlegroundAVScore*)score)->MinesCaptured);       // MinesCaptured
+                        break;
+                    case 489: // Warsong Gulch
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundWGScore*)score)->FlagCaptures);        // flag captures
+                        scores << uint32(((BattlegroundWGScore*)score)->FlagReturns);         // flag returns
+                        break;
+                    case 529: // Arathi Basin
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundABScore*)score)->BasesAssaulted);      // bases assaulted
+                        scores << uint32(((BattlegroundABScore*)score)->BasesDefended);       // bases defended
+                        break;
+                    case 566: // Eye of the Storm
+                        data->WriteBits(0x00000001, 22);
+                        scores << uint32(((BattlegroundEYScore*)score)->FlagCaptures);        // flag captures
+                        break;
+                    case 607: // Strand of the Ancients
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundSAScore*)score)->demolishers_destroyed);
+                        scores << uint32(((BattlegroundSAScore*)score)->gates_destroyed);
+                        break;
+                    case 628: // Isle of Conquest
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundICScore*)score)->BasesAssaulted);       // bases assaulted
+                        scores << uint32(((BattlegroundICScore*)score)->BasesDefended);        // bases defended
+                        break;
+                    case 726: // Twin Peaks
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundTPScore*)score)->FlagCaptures);         // flag captures
+                        scores << uint32(((BattlegroundTPScore*)score)->FlagReturns);          // flag returns
+                        break;
+                    case 761: // Battle for Gilneas
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundBFGScore*)score)->BasesAssaulted);      // bases assaulted
+                        scores << uint32(((BattlegroundBFGScore*)score)->BasesDefended);       // bases defended
+                        break;
+
+                    default:
+                        data->WriteBits(0, 22);
+                        break;
                 }
                 break;
             case BATTLEGROUND_AV:
@@ -586,43 +617,47 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
 
         data->WriteBit(playerGUID[2]);
         data->WriteBit(playerGUID[3]);
-        data->WriteBit(0);                              // HasPreMatchMMR
-        data->WriteBit(0);                              // HasBGRating
+        data->WriteBit(0);                              // hasPreMatchMMR  - After 4.2 update is always zero (number).
+        data->WriteBit(hasRatedBGRating);               // hasPersonalBGRating
         data->WriteBit(playerGUID[6]);
-       
-        
+
         buff.WriteByteSeq(playerGUID[5]);
         buff << uint32(score->HealingDone);             // healing done
 
-        if (!isArena)
+        if (bg->isBattleground())
         {
             buff << uint32(score->HonorableKills);
             buff << uint32(score->BonusHonor / 100);
-            buff << uint32(score->Deaths);   
+            buff << uint32(score->Deaths);
         }
 
         buff.WriteByteSeq(playerGUID[4]);
         buff.WriteByteSeq(playerGUID[0]);
-        //if (HasPreMatchMMR) 
-        //buff << uint32() PreMatchMMR
+
+        // if (hasPreMatchMMR) << uint32(preMatchMMR)
+
         buff.WriteByteSeq(playerGUID[2]);
         buff << uint32(score->DamageDone);              // damage done
         buff.WriteByteSeq(playerGUID[6]);
         buff.WriteByteSeq(playerGUID[7]);
-        buff << int32(primaryTree);
+        buff << int32(primaryTree);                     // primary talent tree
         buff.WriteByteSeq(playerGUID[3]);
         buff.WriteByteSeq(playerGUID[1]);
-        //if (HasBGRating) 
-        //buff << uint32() BGRating
-        //if (HasMMRChange) 
-        //buff << uint32() MMRChange
+
+        if (hasRatedBGRating) 
+            buff << uint32(RatedBGRating);              // rated bg rating
+
+        // if (hasMMRChange) << uint32(mmrChange) - 0 since 4.2.
+
         buff.append(scores);
-        //if (HasRatingChange) 
-        //buff << uint32() RatingChange
-        buff << uint32(score->KillingBlows);
+
+        if (hasBGRatingChange)
+            buff << int32(RatedBGRatingChange);         // rated bg rating change
+
+        buff << uint32(score->KillingBlows);            // killing blows
     }
 
-    data->WriteBit(isRated && bg->GetStatus() == STATUS_WAIT_LEAVE); // If Ended
+    data->WriteBit(bgEnded);                            // If the Bg ended
 
     data->FlushBits();
     data->append(buff);
@@ -655,43 +690,41 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         data->WriteString(Team1->GetName());
     }
 
-    if (isRated && bg->GetStatus() == STATUS_WAIT_LEAVE)
-        *data << uint8(bg->GetWinner());
+    if (bgEnded)
+        *data << uint8(bg->GetWinner()); // Who wins.
 
-    if (HasRatingsInfo)                                                // arena
+    if (isRated)                                             // arena
     {
         // it seems this must be according to BG_WINNER_A/H and _NOT_ BG_TEAM_A/H
-        /*for (int8 i = 0; i < BG_TEAMS_COUNT; ++i)
+        if (isArena)
         {
-            int32 rating_change = bg->GetArenaTeamRatingChangeByIndex(i);
+            ArenaTeam* Team1 = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(0));
+            ArenaTeam* Team2 = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdByIndex(1));
 
-            uint32 pointsLost = rating_change < 0 ? -rating_change : 0;
-            uint32 pointsGained = rating_change > 0 ? rating_change : 0;
-            uint32 MatchmakerRating = bg->GetArenaMatchmakerRatingByIndex(i);
+            uint32 MatchmakerRatingTeam1 = bg->GetArenaMatchmakerRatingByIndex(0);
+            uint32 MatchmakerRatingTeam2 = bg->GetArenaMatchmakerRatingByIndex(1);
 
-            *data << uint32(MatchmakerRating);              // Matchmaking Value
-            *data << uint32(pointsLost);                    // Rating Lost
-            *data << uint32(pointsGained);                  // Rating gained
+            int32 RatingChangeTeam1 = bg->GetArenaTeamRatingChangeByIndex(0);
+            int32 RatingChangeTeam2 = bg->GetArenaTeamRatingChangeByIndex(1);
 
-            TC_LOG_DEBUG("bg.battleground", "rating change: %d", rating_change);
-        }*/
-        int32 RatingChangeTeam1 = bg->GetArenaTeamRatingChangeByIndex(0);
-        int32 RatingChangeTeam2 = bg->GetArenaTeamRatingChangeByIndex(1);
-
-        *data << uint32(0);                                 // Team1 Old Rating
-        *data << uint32(0);                                 // Team2 MMR
-        *data << uint32(0);                                 // Team2 Old Rating
-        *data << uint32(0);                                 // Team1 MMR
-        *data << uint32(0);                                 // Team1 NewRating
-        *data << uint32(0);                                 // Team2 NewRating
+            *data << uint32(Team1->GetRating() - RatingChangeTeam1); // Team1 Old Rating
+            *data << uint32(MatchmakerRatingTeam2);                  // Team2 MMR
+            *data << uint32(Team2->GetRating() - RatingChangeTeam2); // Team2 Old Rating
+            *data << uint32(MatchmakerRatingTeam1);                  // Team1 MMR
+            *data << uint32(Team1->GetRating());                     // Team1 NewRating
+            *data << uint32(Team2->GetRating());                     // Team2 NewRating
+        }
+        else // Rated BG shit here, same as for arena but need to get the exact order and the unk values meaning of this sending to complete it.
+        {
+            *data << uint32(0) << uint32(0) << uint32(0) << uint32(0) << uint32(0) << uint32(0);   // Unk. Maybe related to hasPreMatchMMR / hasMMRChange deprecated in 4.2?
+        }
     }
-    
 }
 
 void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* bg, Player* player, uint8 QueueSlot, GroupJoinBattlegroundResult result)
 {
-    ObjectGuid PlayerReasonGuid = player->GetGUID(); // player who caused the error
-    ObjectGuid BattlegroundGuid = bg->GetGUID();
+    ObjectGuid PlayerReasonGuid = player ? player->GetGUID() : 0; // player who caused the error
+    ObjectGuid BattlegroundGuid = bg ? bg->GetGUID() : 0;
     ObjectGuid PlayerGuid = 0;
 
     data->Initialize(SMSG_BATTLEFIELD_STATUS);
@@ -724,6 +757,7 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     data->FlushBits();
 
     *data << uint32(player->GetBattlegroundQueueJoinTime(bg->GetTypeID())); // Join Time
+
     data->WriteByteSeq(PlayerReasonGuid[2]);
     data->WriteByteSeq(PlayerGuid[4]);
     data->WriteByteSeq(PlayerGuid[3]);
@@ -731,16 +765,22 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     data->WriteByteSeq(BattlegroundGuid[3]);
     data->WriteByteSeq(PlayerGuid[2]);
     data->WriteByteSeq(BattlegroundGuid[7]);
-    *data << uint32(bg->isArena() ? bg->GetArenaType() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
+
+    *data << uint32(bg->isArena() ? bg->GetArenaType() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5) // *data << uint32(bg->GetStatus()); // Status
+
     data->WriteByteSeq(PlayerReasonGuid[0]);
     data->WriteByteSeq(BattlegroundGuid[2]);
     data->WriteByteSeq(PlayerReasonGuid[4]);
     data->WriteByteSeq(PlayerReasonGuid[5]);
-    *data << uint32(QueueSlot);                 	// Queue slot
+
+    *data << uint32(QueueSlot);                     // Queue slot
+
     data->WriteByteSeq(PlayerGuid[1]);
     data->WriteByteSeq(BattlegroundGuid[1]);
     data->WriteByteSeq(PlayerReasonGuid[7]);
-    *data << uint32(result);                    // Result
+
+    *data << uint32(result);                        // Result
+
     data->WriteByteSeq(PlayerReasonGuid[6]);
     data->WriteByteSeq(BattlegroundGuid[0]);
     data->WriteByteSeq(BattlegroundGuid[6]);
@@ -881,10 +921,9 @@ Battleground* BattlegroundMgr::GetBattlegroundTemplate(BattlegroundTypeId bgType
 uint32 BattlegroundMgr::CreateClientVisibleInstanceId(BattlegroundTypeId bgTypeId, BattlegroundBracketId bracket_id)
 {
     if (IsArenaType(bgTypeId))
-        return 0;                                           //arenas don't have client-instanceids
+        return 0;                                           // Arenas don't have client-instanceids
 
-    // we create here an instanceid, which is just for
-    // displaying this to the client and without any other use..
+    // We create here an instanceid, which is just for displaying this to the client and without any other use.
     // the client-instanceIds are unique for each battleground-type
     // the instance-id just needs to be as low as possible, beginning with 1
     // the following works, because std::set is default ordered with "<"
@@ -899,35 +938,59 @@ uint32 BattlegroundMgr::CreateClientVisibleInstanceId(BattlegroundTypeId bgTypeI
         lastId = *itr;
     }
 
-    clientIds.insert(++lastId);
+    clientIds.insert(++lastId); // ! Could be lastId + 1. !
     return lastId;
 }
 
 // create a new battleground that will really be used to play
-Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId originalBgTypeId, PvPDifficultyEntry const* bracketEntry, uint8 arenaType, bool isRated)
+Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry, uint8 arenaType, bool isRated)
 {
-    BattlegroundTypeId bgTypeId = originalBgTypeId;
-    bool isRandom = false;
-
-    switch (originalBgTypeId)
-    {
-        case BATTLEGROUND_RB:
-            isRandom = true;
-            /// Intentional fallback, "All Arenas" is random too
-        case BATTLEGROUND_AA:
-            bgTypeId = GetRandomBG(originalBgTypeId);
-            break;
-        default:
-            break;
-    }
-
-    // get the template BG
+    // Get the template BG
     Battleground* bg_template = GetBattlegroundTemplate(bgTypeId);
 
     if (!bg_template)
     {
         TC_LOG_ERROR("bg.battleground", "Battleground: CreateNewBattleground - bg template not found for %u", bgTypeId);
         return NULL;
+    }
+
+    bool isRandom = false;
+    bool isRatedBG = false;
+
+    switch (bgTypeId)
+    {
+        case BATTLEGROUND_RB:
+            isRandom = true;
+        case BATTLEGROUND_AA: // Intentional missing break, "All Arenas" are handled by random selection too.
+            bgTypeId = GetRandomBG(bgTypeId);
+            break;
+
+        case BATTLEGROUND_RATED_10_VS_10:
+            if (!sWorld->FindWorldState(WS_WEEKLY_SELECT_RATED_BG)) // If we have no setting for selected rated bg in the db, select one.
+            {
+                switch (urand(0, 5))
+                {
+                    case 0: bgTypeId = BATTLEGROUND_WS; break;
+                    case 1: bgTypeId = BATTLEGROUND_AB; break;
+                    case 2: bgTypeId = BATTLEGROUND_EY; break;
+                    case 3: bgTypeId = BATTLEGROUND_SA; break;
+                    case 4: bgTypeId = BATTLEGROUND_BFG; break;
+                    case 5: bgTypeId = BATTLEGROUND_TP; break;
+                }
+
+                bg_template = GetBattlegroundTemplate(bgTypeId);
+                sWorld->setWorldState(WS_WEEKLY_SELECT_RATED_BG, bgTypeId); // Set it.
+                isRatedBG = true;
+            }
+            else
+            {
+                bgTypeId = BattlegroundTypeId(sWorld->getWorldState(WS_WEEKLY_SELECT_RATED_BG));
+                bg_template = GetBattlegroundTemplate(bgTypeId);
+                isRatedBG = true;
+            }
+            break;
+
+        default: break;
     }
 
     Battleground* bg = NULL;
@@ -948,6 +1011,9 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId original
             break;
         case BATTLEGROUND_BE:
             bg = new BattlegroundBE(*(BattlegroundBE*)bg_template);
+            break;
+        case BATTLEGROUND_AA:
+            bg = new BattlegroundAA(*(BattlegroundAA*)bg_template);
             break;
         case BATTLEGROUND_EY:
             bg = new BattlegroundEY(*(BattlegroundEY*)bg_template);
@@ -974,23 +1040,50 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId original
             bg = new BattlegroundBFG(*(BattlegroundBFG*)bg_template);
             break;
         case BATTLEGROUND_RB:
-        case BATTLEGROUND_AA:
-            bg = new Battleground(*bg_template);
+            bg = new BattlegroundRB(*(BattlegroundRB*)bg_template);
             break;
+        case BATTLEGROUND_RATED_10_VS_10:
+            bg = new BattlegroundRatedBG(*(BattlegroundRatedBG*)bg_template);
+            break;
+
         default:
             return NULL;
     }
 
+    // Set battleground difficulty before initialization
     bg->SetBracket(bracketEntry);
+
+    // Generate a new instance id
     bg->SetInstanceID(sMapMgr->GenerateInstanceId());
-    bg->SetClientInstanceID(CreateClientVisibleInstanceId(isRandom ? BATTLEGROUND_RB : bgTypeId, bracketEntry->GetBracketId()));
-    bg->Reset();                     // reset the new bg (set status to status_wait_queue from status_none)
-    bg->SetStatus(STATUS_WAIT_JOIN); // start the joining of the bg
+
+    if (isRatedBG)
+        bg->SetClientInstanceID(CreateClientVisibleInstanceId(BATTLEGROUND_RATED_10_VS_10, bracketEntry->GetBracketId()));
+    else
+        bg->SetClientInstanceID(CreateClientVisibleInstanceId(isRandom ? BATTLEGROUND_RB : bgTypeId, bracketEntry->GetBracketId()));
+
+    // Reset the new bg (set status to status_wait_queue from status_none)
+    bg->Reset();
+
+    // Start the joining of the bg
+    bg->SetStatus(STATUS_WAIT_JOIN);
     bg->SetArenaType(arenaType);
-    bg->SetTypeID(originalBgTypeId);
-    bg->SetRandomTypeID(bgTypeId);
-    bg->SetRated(isRated);
+
+    if (isRatedBG)
+    {
+        bg->SetArenaorBGType(false);
+        bg->SetRated(true);
+    }
+    else bg->SetRated(isRated);
+
     bg->SetRandom(isRandom);
+
+    if (isRatedBG)
+        bg->SetTypeID(BATTLEGROUND_RATED_10_VS_10);
+    else
+        bg->SetTypeID(isRandom ? BATTLEGROUND_RB : bgTypeId);
+
+    bg->SetRandomTypeID(bgTypeId);
+
     bg->SetGuid(MAKE_NEW_GUID(bgTypeId, 0, HIGHGUID_BATTLEGROUND));
 
     // Set up correct min/max player counts for scoreboards
@@ -1024,56 +1117,29 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
     Battleground* bg = NULL;
     switch (data.bgTypeId)
     {
-        case BATTLEGROUND_AV:
-            bg = new BattlegroundAV;
-            break;
-        case BATTLEGROUND_WS:
-            bg = new BattlegroundWS;
-            break;
-        case BATTLEGROUND_AB:
-            bg = new BattlegroundAB;
-            break;
-        case BATTLEGROUND_NA:
-            bg = new BattlegroundNA;
-            break;
-        case BATTLEGROUND_BE:
-            bg = new BattlegroundBE;
-            break;
-        case BATTLEGROUND_EY:
-            bg = new BattlegroundEY;
-            break;
-        case BATTLEGROUND_RL:
-            bg = new BattlegroundRL;
-            break;
-        case BATTLEGROUND_SA:
-            bg = new BattlegroundSA;
-            break;
-        case BATTLEGROUND_DS:
-            bg = new BattlegroundDS;
-            break;
-        case BATTLEGROUND_RV:
-            bg = new BattlegroundRV;
-            break;
-        case BATTLEGROUND_IC:
-            bg = new BattlegroundIC;
-            break;
-        case BATTLEGROUND_AA:
-            bg = new Battleground;
-            break;
-        case BATTLEGROUND_RB:
-            bg = new Battleground;
-            bg->SetRandom(true);
-            break;
-        case BATTLEGROUND_TP:
-            bg = new BattlegroundTP;
-            break;
-        case BATTLEGROUND_BFG:
-            bg = new BattlegroundBFG;
-            break;
+        case BATTLEGROUND_AV: bg = new BattlegroundAV; break;
+        case BATTLEGROUND_WS: bg = new BattlegroundWS; break;
+        case BATTLEGROUND_AB: bg = new BattlegroundAB; break;
+        case BATTLEGROUND_NA: bg = new BattlegroundNA; break;
+        case BATTLEGROUND_BE: bg = new BattlegroundBE; break;
+        case BATTLEGROUND_AA: bg = new BattlegroundAA; break;
+        case BATTLEGROUND_EY: bg = new BattlegroundEY; break;
+        case BATTLEGROUND_RL: bg = new BattlegroundRL; break;
+        case BATTLEGROUND_SA: bg = new BattlegroundSA; break;
+        case BATTLEGROUND_DS: bg = new BattlegroundDS; break;
+        case BATTLEGROUND_RV: bg = new BattlegroundRV; break;
+        case BATTLEGROUND_IC: bg = new BattlegroundIC; break;
+        case BATTLEGROUND_TP: bg = new BattlegroundTP; break;
+        case BATTLEGROUND_BFG: bg = new BattlegroundBFG; break;
+        case BATTLEGROUND_RB: bg = new BattlegroundRB; break;
+        case BATTLEGROUND_RATED_10_VS_10: bg = new BattlegroundRatedBG; break;
+
         default:
-            return false;
+            bg = new Battleground;
+            break;
     }
 
+    bg->SetGuid(MAKE_NEW_GUID(data.bgTypeId, 0, HIGHGUID_BATTLEGROUND));
     bg->SetMapId(data.MapID);
     bg->SetTypeID(data.bgTypeId);
     bg->SetInstanceID(0);
@@ -1088,7 +1154,6 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
     bg->SetStartMaxDist(data.StartMaxDist);
     bg->SetLevelRange(data.LevelMin, data.LevelMax);
     bg->SetScriptId(data.scriptId);
-    bg->SetGuid(MAKE_NEW_GUID(data.bgTypeId, 0, HIGHGUID_BATTLEGROUND));
 
     AddBattleground(bg);
 
@@ -1153,7 +1218,7 @@ void BattlegroundMgr::CreateInitialBattlegrounds()
             continue;
         }
 
-        if (data.bgTypeId == BATTLEGROUND_AA || data.bgTypeId == BATTLEGROUND_RB)
+        if (data.bgTypeId == BATTLEGROUND_AA || data.bgTypeId == BATTLEGROUND_RB || data.bgTypeId == BATTLEGROUND_RATED_10_VS_10)
         {
             data.Team1StartLocX = 0;
             data.Team1StartLocY = 0;
@@ -1230,7 +1295,7 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     uint32 winnerHonor = (player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_LAST)) / CURRENCY_PRECISION;
     uint32 loserHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_LAST)) / CURRENCY_PRECISION;
 
-    // ToDo: Check Min / Max Level and hasWonCallToArmsBG / hasWonRandomBG fields.
+    // ToDo: Check hasWonCallToArmsBG / hasWonRandomBG fields.
     ObjectGuid guidBytes = guid;
 
     data->Initialize(SMSG_BATTLEFIELD_LIST);
@@ -1308,8 +1373,10 @@ void BattlegroundMgr::SendToBattleground(Player* player, uint32 instanceId, Batt
         float x, y, z, O;
         uint32 mapid = bg->GetMapId();
         uint32 team = player->GetBGTeam();
-
+        if (team == 0)
+            team = player->GetTeam();
         bg->GetTeamStartLoc(team, x, y, z, O);
+
         TC_LOG_DEBUG("bg.battleground", "BattlegroundMgr::SendToBattleground: Sending %s to map %u, X %f, Y %f, Z %f, O %f (bgType %u)", player->GetName().c_str(), mapid, x, y, z, O, bgTypeId);
         player->TeleportTo(mapid, x, y, z, O);
     }
@@ -1341,12 +1408,16 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
 {
     switch (bgTypeId)
     {
+        case BATTLEGROUND_WS:
+            return BATTLEGROUND_QUEUE_WS;
         case BATTLEGROUND_AB:
             return BATTLEGROUND_QUEUE_AB;
         case BATTLEGROUND_AV:
             return BATTLEGROUND_QUEUE_AV;
         case BATTLEGROUND_EY:
             return BATTLEGROUND_QUEUE_EY;
+        case BATTLEGROUND_SA:
+            return BATTLEGROUND_QUEUE_SA;
         case BATTLEGROUND_IC:
             return BATTLEGROUND_QUEUE_IC;
         case BATTLEGROUND_TP:
@@ -1355,15 +1426,11 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
             return BATTLEGROUND_QUEUE_BFG;
         case BATTLEGROUND_RB:
             return BATTLEGROUND_QUEUE_RB;
-        case BATTLEGROUND_SA:
-            return BATTLEGROUND_QUEUE_SA;
-        case BATTLEGROUND_WS:
-            return BATTLEGROUND_QUEUE_WS;
         case BATTLEGROUND_AA:
-        case BATTLEGROUND_BE:
-        case BATTLEGROUND_DS:
         case BATTLEGROUND_NA:
         case BATTLEGROUND_RL:
+        case BATTLEGROUND_BE:
+        case BATTLEGROUND_DS:
         case BATTLEGROUND_RV:
             switch (arenaType)
             {
@@ -1376,6 +1443,9 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
                 default:
                     return BATTLEGROUND_QUEUE_NONE;
             }
+        case BATTLEGROUND_RATED_10_VS_10: // Rated bg's
+            return BATTLEGROUND_QUEUE_RATED_10_VS_10;
+
         default:
             return BATTLEGROUND_QUEUE_NONE;
     }
@@ -1385,7 +1455,7 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
 {
     switch (bgQueueTypeId)
     {
-        case BATTLEGROUND_QUEUE_WS:
+        case BATTLEGROUND_QUEUE_WS: // Normal bg
             return BATTLEGROUND_WS;
         case BATTLEGROUND_QUEUE_AB:
             return BATTLEGROUND_AB;
@@ -1401,14 +1471,20 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
             return BATTLEGROUND_TP;
         case BATTLEGROUND_QUEUE_BFG:
             return BATTLEGROUND_BFG;
-        case BATTLEGROUND_QUEUE_RB:
+
+        case BATTLEGROUND_QUEUE_RB: // Random bg
             return BATTLEGROUND_RB;
-        case BATTLEGROUND_QUEUE_2v2:
+
+        case BATTLEGROUND_QUEUE_2v2: // Arenas
         case BATTLEGROUND_QUEUE_3v3:
         case BATTLEGROUND_QUEUE_5v5:
             return BATTLEGROUND_AA;
+
+        case BATTLEGROUND_QUEUE_RATED_10_VS_10: // Rated bg's
+            return BATTLEGROUND_RATED_10_VS_10;
+
         default:
-            return BattlegroundTypeId(0);                   // used for unknown template (it existed and do nothing)
+            return BattlegroundTypeId(0);       // used for unknown templates (it exists and does nothing)
     }
 }
 
@@ -1585,6 +1661,7 @@ BattlegroundTypeId BattlegroundMgr::GetRandomBG(BattlegroundTypeId bgTypeId)
     {
         // Select a random value
         uint32 selectedWeight = urand(0, weight - 1);
+
         // Select the correct bg (if we have in DB A(10), B(20), C(10), D(15) --> [0---A---9|10---B---29|30---C---39|40---D---54])
         weight = 0;
         for (BattlegroundSelectionWeightMap::const_iterator it = selectionWeights.begin(); it != selectionWeights.end(); ++it)
@@ -1632,3 +1709,91 @@ void BattlegroundMgr::RemoveBattleground(BattlegroundTypeId bgTypeId, uint32 ins
 {
     bgDataStore[bgTypeId].m_Battlegrounds.erase(instanceId);
 }
+
+/* Wargames need implementation.
+void BattlegroundMgr::HandleWargameRequest(WargameRequest request)
+{
+    const BattlemasterListEntry* battleground = sBattlemasterListStore.LookupEntry(request.battlegroundId);
+
+    if(!battleground)
+        return;
+
+    Player* leaderChallenger = ObjectAccessor::FindPlayer(request.playerChallenger);
+    Player* leaderChallenged = ObjectAccessor::FindPlayer(request.playerChallenged);
+
+    if(!leaderChallenger || !leaderChallenged)
+        return;
+
+    Group* groupChallenger = leaderChallenger->GetGroup();
+    Group* groupChallenged = leaderChallenged->GetGroup();
+
+    if(!groupChallenged || !groupChallenger || (groupChallenger->GetMembersCount() < 2 && groupChallenged->GetMembersCount() < 2))
+        return;
+
+    m_wargamesRequests.insert(std::pair<uint32,WargameRequest>(m_wargamesCount,request));
+    m_wargamesCount++;
+
+    uint64 battlegroundGuid = MAKE_NEW_GUID(request.battlegroundId | 0x30000,0,HIGHGUID_BATTLEGROUND);
+
+    WorldPacket response(SMSG_WARGAME_REQUEST_SENT);
+    uint8 byteMask[] = { 6, 0, 3, 5, 2, 1, 4, 7 };
+    uint8 byteBytes[] = { 5, 6, 3, 0, 7, 4, 2, 1, };
+    response.WriteGuidMask(battlegroundGuid,byteMask,8);
+    response.WriteGuidBytes(battlegroundGuid,byteBytes,8,0);
+
+    leaderChallenger->GetSession()->SendPacket(&response);
+	
+	WorldPacket RequestWargame(SMSG_WARGAME_CHECK_ENTRY);
+
+    union WargamePacketInfoType
+    {
+      uint64 raw;
+      struct rawStructure
+      {
+        uint32 timeout;
+        uint16 gamesCount;
+        uint16 battlegroundID;
+      } data;
+    } info;
+
+    info.data.timeout = time(NULL) + 23; /// We add 3 because there is a buffer, we have to find the real timeout
+    info.data.gamesCount = m_wargamesCount;
+    info.data.battlegroundID = request.battlegroundId;
+
+	ObjectGuid PacketInfo = info.raw;
+	ObjectGuid ChallengerGuid = request.playerChallenger;
+	RequestWargame.WriteBit(ChallengerGuid[1]);
+	RequestWargame.WriteBit(ChallengerGuid[2]);
+	RequestWargame.WriteBit(PacketInfo[7]);
+	RequestWargame.WriteBit(PacketInfo[4]);
+	RequestWargame.WriteBit(ChallengerGuid[4]);
+	RequestWargame.WriteBit(PacketInfo[1]);
+	RequestWargame.WriteBit(ChallengerGuid[5]);
+	RequestWargame.WriteBit(PacketInfo[5]);
+	RequestWargame.WriteBit(ChallengerGuid[7]);
+	RequestWargame.WriteBit(PacketInfo[6]);
+	RequestWargame.WriteBit(PacketInfo[3]);
+	RequestWargame.WriteBit(ChallengerGuid[0]);
+	RequestWargame.WriteBit(ChallengerGuid[3]);
+	RequestWargame.WriteBit(PacketInfo[2]);
+	RequestWargame.WriteBit(ChallengerGuid[6]);
+	RequestWargame.WriteBit(PacketInfo[0]);
+	RequestWargame.FlushBits();
+	RequestWargame.WriteByteSeq(ChallengerGuid[2]);
+	RequestWargame.WriteByteSeq(PacketInfo[0]);
+	RequestWargame.WriteByteSeq(PacketInfo[2]);
+	RequestWargame.WriteByteSeq(PacketInfo[4]);
+	RequestWargame.WriteByteSeq(PacketInfo[6]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[0]);
+	RequestWargame.WriteByteSeq(PacketInfo[5]);
+	RequestWargame.WriteByteSeq(PacketInfo[7]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[3]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[5]);
+	RequestWargame.WriteByteSeq(PacketInfo[1]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[7]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[4]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[1]);
+	RequestWargame.WriteByteSeq(ChallengerGuid[6]);
+	RequestWargame.WriteByteSeq(PacketInfo[3]);
+	leaderChallenged->GetSession()->SendPacket(&RequestWargame);
+} */

@@ -746,6 +746,8 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_auraRaidUpdateMask = 0;
     m_bPassOnGroupLoot = false;
 
+    m_isGuildGroupMember = false;
+
     duel = NULL;
 
     m_GuildIdInvited = 0;
@@ -807,13 +809,13 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_lastpetnumber = 0;
 
     ////////////////////Rest System/////////////////////
-    time_inn_enter=0;
-    inn_pos_mapid=0;
-    inn_pos_x=0;
-    inn_pos_y=0;
-    inn_pos_z=0;
-    m_rest_bonus=0;
-    rest_type=REST_TYPE_NO;
+    time_inn_enter = 0;
+    inn_pos_mapid = 0;
+    inn_pos_x = 0;
+    inn_pos_y = 0;
+    inn_pos_z = 0;
+    m_rest_bonus = 0;
+    rest_type = REST_TYPE_NO;
     ////////////////////Rest System/////////////////////
 
     m_mailsLoaded = false;
@@ -856,7 +858,14 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     // Honor System
     m_lastHonorUpdateTime = time(NULL);
 
+    // Random BG's
     m_IsBGRandomWinner = false;
+
+    // Rated BG's
+    m_RatedBGsPlayed = 0;
+    m_RatedBGsWon    = 0;
+    m_RatedBGsPlayedWeek = 0;
+    m_RatedBGsWonWeek    = 0;
 
     // Player summoning
     m_summon_expire = 0;
@@ -903,6 +912,10 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
 
     _activeCheats = CHEAT_NONE;
     _maxPersonalArenaRate = 0;
+    _currentRatedBGRating = 0;
+
+    _RandomBgCurrencyWeekCap = 0;
+    _ConquestCurrencytotalWeekCap = 0;
 
     memset(_voidStorageItems, 0, VOID_STORAGE_MAX_SLOT * sizeof(VoidStorageItem*));
     memset(_CUFProfiles, 0, MAX_CUF_PROFILES * sizeof(CUFProfile*));
@@ -1054,6 +1067,8 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     SetUInt32Value(PLAYER_FIELD_YESTERDAY_HONORABLE_KILLS, 0);
     SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
 
+    // SetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING, 0);
+
     // set starting level
     uint32 start_level = getClass() != CLASS_DEATH_KNIGHT
         ? sWorld->getIntConfig(CONFIG_START_PLAYER_LEVEL)
@@ -1075,11 +1090,20 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     SetCurrency(CURRENCY_TYPE_JUSTICE_POINTS, sWorld->getIntConfig(CONFIG_CURRENCY_START_JUSTICE_POINTS));
     SetCurrency(CURRENCY_TYPE_CONQUEST_POINTS, sWorld->getIntConfig(CONFIG_CURRENCY_START_CONQUEST_POINTS));
 
+    // Calculate Currency Caps
+    uint32 arenaCap   = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, false);
+    uint32 ratedBgCap = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, false);
+
+    // For Random BG's it's the lower cap of the two.
+    _RandomBgCurrencyWeekCap = arenaCap <= ratedBgCap ? arenaCap : ratedBgCap;
+    // For all Conquest Points it's a sum of all three.
+    _ConquestCurrencytotalWeekCap = arenaCap + ratedBgCap + _RandomBgCurrencyWeekCap;
+
     // start with every map explored
     if (sWorld->getBoolConfig(CONFIG_START_ALL_EXPLORED))
     {
-        for (uint8 i=0; i<PLAYER_EXPLORED_ZONES_SIZE; i++)
-            SetFlag(PLAYER_FIELD_EXPLORED_ZONES+i, 0xFFFFFFFF);
+        for (uint8 i = 0; i < PLAYER_EXPLORED_ZONES_SIZE; i++)
+            SetFlag(PLAYER_FIELD_EXPLORED_ZONES + i, 0xFFFFFFFF);
     }
 
     // Reputations if "StartAllReputation" is enabled.
@@ -5668,6 +5692,10 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_RATED_BG_INFO);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
@@ -5675,11 +5703,11 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_REP);
             // stmt->setUInt32(0, guid);
             // trans->Append(stmt);
-            // 
-            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_CURRENCY);
-            // stmt->setUInt32(0, guid);
-            // trans->Append(stmt);
-            // 
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_CURRENCY);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_SITES);
             // stmt->setUInt32(0, guid);
             // trans->Append(stmt);
@@ -5691,10 +5719,10 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ALL_COMPLETED_PROJECT);
             // stmt->setUInt32(0, guid);
             // trans->Append(stmt);
-            //
-            // stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_VOID_STORAGE_ITEMS);
-            // stmt->setUInt32(0, guid);
-            // trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_VOID_STORAGE_ITEMS);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_CORPSES);
             stmt->setUInt32(0, guid);
@@ -8045,7 +8073,11 @@ void Player::_LoadCurrency(PreparedQueryResult result)
 
         _currencyStorage.insert(PlayerCurrenciesMap::value_type(currencyID, cur));
 
-    } while (result->NextRow());
+        // Check Conquest Points currency caps.
+        if (currencyID == CURRENCY_TYPE_CONQUEST_POINTS || currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
+            UpdateConquestCurrencyCap(currencyID);
+    }
+    while (result->NextRow());
 }
 
 void Player::_SaveCurrency(SQLTransaction& trans)
@@ -8178,16 +8210,16 @@ void Player::SendPvpRewards() const
 
     WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 10 * 4);
 
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);     // Max total Conquest points cap.
-    packet << uint32(0);                                                   // Count of all Conquest points earned from Rated BGs during week.
-    packet << uint32(RatedBGWinReward);                                    // Count of Conquest points earned for a Rated BG Win.
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);    // Count of all Conquest points earned from Random BGs during week.
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);  // Count of all Conquest points earned from Arenas during week.
-    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);      // Count of all Conquest points earned during week.
-    packet << uint32(ArenaWinReward);                                      // Count of Conquest points earned for an Arena Win.
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);   // Conquest points cap for Random BGs.
-    packet << uint32(0);                                                   // Conquest points cap from Rated BGs.
-    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true); // Conquest points cap for Arenas.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS, true);           // Max total Conquest points cap.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RBG, true);          // Count of all Conquest points earned from Rated BGs during week.
+    packet << uint32(RatedBGWinReward);                                          // Count of Conquest points earned for a Rated BG Win.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, true);    // Count of all Conquest points earned from Random BGs during week.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_META_ARENA, true);        // Count of all Conquest points earned from Arenas during week.
+    packet << GetCurrencyOnWeek(CURRENCY_TYPE_CONQUEST_POINTS, true);            // Count of all Conquest points earned during week.
+    packet << uint32(ArenaWinReward);                                            // Count of Conquest points earned for an Arena Win.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, true);   // Conquest points cap for Random BGs.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, true);         // Conquest points cap from Rated BGs.
+    packet << GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, true);       // Conquest points cap for Arenas.
 
     GetSession()->SendPacket(&packet);
 }
@@ -8299,9 +8331,28 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         if (count > 0)
             UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CURRENCY, id, count);
 
+        if (id == CURRENCY_TYPE_CONQUEST_POINTS) // Check Conquest Points cap against current.
+        {
+            if (weekCap > _ConquestCurrencytotalWeekCap)
+            {
+                _ConquestCurrencytotalWeekCap = weekCap;
+                UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_POINTS);
+            }
+        }
+
         if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
         {
-            // count was changed to week limit, now we can modify original points.
+            // Check Random BG Cap.
+            if (id == CURRENCY_TYPE_CONQUEST_META_RANDOM_BG)
+            {
+                if (weekCap > _RandomBgCurrencyWeekCap)
+                {
+                    _RandomBgCurrencyWeekCap = weekCap;
+                    UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG);
+                }
+            }
+
+            // The count was changed to the week limit, now we can modify original points.
             ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog);
             return;
         }
@@ -8377,20 +8428,33 @@ void Player::ResetCurrencyWeekCap()
 
 uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
 {
-    switch (currency->ID)
+    uint32 cap = currency->WeekCap;
+
+    if (!currency->WeekCap) // Conquest Points have no week cap in dbc files.
     {
-            //original conquest not have week cap
-        case CURRENCY_TYPE_CONQUEST_POINTS:
-            return std::max(GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, false), GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, false));
-        case CURRENCY_TYPE_CONQUEST_META_ARENA:
-            // should add precision mod = 100
-            return Trinity::Currency::ConquestRatingCalculator(_maxPersonalArenaRate) * CURRENCY_PRECISION;
-        case CURRENCY_TYPE_CONQUEST_META_RBG:
-            // should add precision mod = 100
-            return Trinity::Currency::BgConquestRatingCalculator(GetRBGPersonalRating()) * CURRENCY_PRECISION;
+        switch (currency->ID)
+        {
+                //original conquest does not have week cap
+            case CURRENCY_TYPE_CONQUEST_POINTS:
+                cap = _ConquestCurrencytotalWeekCap;
+                break;
+            case CURRENCY_TYPE_CONQUEST_META_ARENA:
+                // should add precision mod = 100
+                cap = Trinity::Currency::ConquestRatingCalculator(_maxPersonalArenaRate) * CURRENCY_PRECISION;
+                break;
+            case CURRENCY_TYPE_CONQUEST_META_RBG:
+                // should add precision mod = 100
+                cap = Trinity::Currency::BgConquestRatingCalculator(_currentRatedBGRating) * CURRENCY_PRECISION;
+                break;
+            case CURRENCY_TYPE_CONQUEST_META_RANDOM_BG:
+                cap = _RandomBgCurrencyWeekCap;
+                break;
+
+            default: break;
+        }
     }
 
-    return currency->WeekCap;
+    return cap;
 }
 
 uint32 Player::GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const
@@ -8413,6 +8477,8 @@ uint32 Player::GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const
                 cap = justicecap;
             break;
         }
+
+        default: break;
     }
 
     return cap;
@@ -18627,6 +18693,22 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     SetUInt16Value(PLAYER_FIELD_YESTERDAY_HONORABLE_KILLS, 0, fields[41].GetUInt16());
     SetUInt16Value(PLAYER_FIELD_YESTERDAY_HONORABLE_KILLS, 1, fields[42].GetUInt16());
 
+    // SetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING, GetRatedBGRating(GetGUID()));
+    _currentRatedBGRating = GetRatedBGRating(GetGUID());
+    m_RatedBGsPlayed = GetRatedBGsPlayed(GetGUID());
+    m_RatedBGsWon = GetRatedBGsWon(GetGUID());
+    m_RatedBGsPlayedWeek = GetRatedBGsPlayedWeek(GetGUID());
+    m_RatedBGsWonWeek = GetRatedBGsWonWeek(GetGUID());
+
+    // Calculate Currency Caps
+    uint32 arenaCap   = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA, false);
+    uint32 ratedBgCap = GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_RBG, false);
+
+    // For Random BG's it's the lower cap of the two.
+    _RandomBgCurrencyWeekCap = arenaCap <= ratedBgCap ? arenaCap : ratedBgCap;
+    // For all Conquest Points it's a sum of all three.
+    _ConquestCurrencytotalWeekCap = arenaCap + ratedBgCap + _RandomBgCurrencyWeekCap;
+
     _LoadBoundInstances(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES));
     _LoadInstanceTimeRestrictions(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_INSTANCE_LOCK_TIMES));
     _LoadBGData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_BG_DATA));
@@ -24377,6 +24459,18 @@ void Player::LeaveBattleground(bool teleportToEntryPoint)
 {
     if (Battleground* bg = GetBattleground())
     {
+        // if (bg->isArena() && bg->isRated() && bg->GetStatus() == STATUS_IN_PROGRESS)
+        // {
+        //     if(uint32 team = bg->GetPlayerTeam(GetGUID()))
+        //     {
+        //         //left a rated match while the encounter was in progress, consider as loser
+        //         ArenaTeam* winnerArenaTeam = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdForTeam(bg->GetOtherTeam(team)));
+        //         ArenaTeam* loserArenaTeam = sArenaTeamMgr->GetArenaTeamById(bg->GetArenaTeamIdForTeam(team));
+        //         if (winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
+        //             loserArenaTeam->SaveToDB();
+        //     }
+        // }
+
         bg->RemovePlayerAtLeave(GetGUID(), teleportToEntryPoint, true);
 
         // call after remove to be sure that player resurrected for correct cast
@@ -28677,6 +28771,14 @@ Guild* Player::GetGuild()
     return guildId ? sGuildMgr->GetGuildById(guildId) : NULL;
 }
 
+void Player::SetGuildGroupMember(bool guildGroupMember)
+{
+    if (guildGroupMember)
+       m_isGuildGroupMember = true;
+    else
+       m_isGuildGroupMember = false;
+}
+
 Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 duration, PetSlot slotID, bool stampeded)
 {
     Pet* pet = new Pet(this, petType);
@@ -28867,4 +28969,216 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetTy
         pet->SetDuration(duration);
 
     return pet;
+}
+
+// Rated BG system.
+
+void Player::SetRatedBGRating(uint64 guid, uint32 value)
+{
+    WorldPacket data(SMSG_RATED_BG_RATING, 4); // TODO: does this send the full rating to be put here or just gained/lost rating to be put in bg win/lose functions?
+    data << uint32(value);
+    GetSession()->SendPacket(&data);
+
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_BG_RATING);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) // There is a result, let's update it.
+    {
+        PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_BG_RATING);
+        stmt2->setUInt32(0, value);
+        stmt2->setUInt32(1, guid);
+        CharacterDatabase.Execute(stmt2);
+    }
+    else // We must insert it.
+    {
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_BG_RATING);
+        stmt3->setUInt32(0, guid);
+        stmt3->setUInt32(1, value);
+        trans->Append(stmt3);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    // SetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING, value);
+    _currentRatedBGRating = value;
+}
+
+uint32 Player::GetRatedBGRating(uint64 guid)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_BG_RATING);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) //load
+    {
+        Field* fields = result->Fetch();
+        uint32 rating = fields[0].GetUInt32();
+        return rating;
+    }
+    else
+        return 0;
+}
+
+void Player::SaveRatedBGRating(uint64 guid)
+{
+    SetRatedBGRating(guid, GetRatedBGRating(guid));
+}
+
+void Player::SetRatedBGsPlayed(uint64 guid, uint32 value)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) // There is a result, let's update it.
+    {
+        PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_RATEGBG_PLAYS);
+        stmt2->setUInt32(0, value);
+        stmt2->setUInt32(1, guid);
+        CharacterDatabase.Execute(stmt2);
+    }
+    else // We must insert it.
+    {
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_RATEGBG_PLAYS);
+        stmt3->setUInt32(0, guid);
+        stmt3->setUInt32(1, value);
+        trans->Append(stmt3);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    m_RatedBGsPlayed = value;
+}
+
+uint32 Player::GetRatedBGsPlayed(uint64 guid)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) //load
+    {
+        Field* fields = result->Fetch();
+        uint32 played = fields[0].GetUInt32();
+        return played;
+    }
+    else
+        return 0;
+}
+
+void Player::SetRatedBGsWon(uint64 guid, uint32 value)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_WINS);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) // There is a result, let's update it.
+    {
+        PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_RATEGBG_WINS);
+        stmt2->setUInt32(0, value);
+        stmt2->setUInt32(1, guid);
+        CharacterDatabase.Execute(stmt2);
+    }
+    else // We must insert it.
+    {
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_RATEGBG_WINS);
+        stmt3->setUInt32(0, guid);
+        stmt3->setUInt32(1, value);
+        trans->Append(stmt3);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    m_RatedBGsWon = value;
+}
+
+uint32 Player::GetRatedBGsWon(uint64 guid)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_WINS);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) //load
+    {
+        Field* fields = result->Fetch();
+        uint32 wins = fields[0].GetUInt32();
+        return wins;
+    }
+    else
+        return 0;
+}
+
+void Player::SetRatedBGsPlayedWeek(uint64 guid, uint32 value)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS_WEEK);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) // There is a result, let's update it.
+    {
+        PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_RATEGBG_PLAYS_WEEK);
+        stmt2->setUInt32(0, value);
+        stmt2->setUInt32(1, guid);
+        CharacterDatabase.Execute(stmt2);
+    }
+    else // We must insert it.
+    {
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_RATEGBG_PLAYS_WEEK);
+        stmt3->setUInt32(0, guid);
+        stmt3->setUInt32(1, value);
+        trans->Append(stmt3);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    m_RatedBGsPlayedWeek = value;
+}
+
+uint32 Player::GetRatedBGsPlayedWeek(uint64 guid)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_PLAYS);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) //load
+    {
+        Field* fields = result->Fetch();
+        uint32 played = fields[0].GetUInt32();
+        return played;
+    }
+    else
+        return 0;
+}
+
+void Player::SetRatedBGsWonWeek(uint64 guid, uint32 value)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_WINS_WEEK);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) // There is a result, let's update it.
+    {
+        PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_RATEGBG_WINS_WEEK);
+        stmt2->setUInt32(0, value);
+        stmt2->setUInt32(1, guid);
+        CharacterDatabase.Execute(stmt2);
+    }
+    else // We must insert it.
+    {
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_RATEGBG_WINS_WEEK);
+        stmt3->setUInt32(0, guid);
+        stmt3->setUInt32(1, value);
+        trans->Append(stmt3);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    m_RatedBGsWonWeek = value;
+}
+
+uint32 Player::GetRatedBGsWonWeek(uint64 guid)
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PLAYER_RATEGBG_WINS_WEEK);
+    stmt->setUInt32(0, guid);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+    if (result) //load
+    {
+        Field* fields = result->Fetch();
+        uint32 wins = fields[0].GetUInt32();
+        return wins;
+    }
+    else
+        return 0;
 }

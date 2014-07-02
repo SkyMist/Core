@@ -27,6 +27,7 @@
 #include "PlayerMovement.h"
 #include "Common.h"
 #include "Item.h"
+#include "Battleground.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"
 #include "QuestDef.h"
@@ -1995,7 +1996,9 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetArenaPersonalRating(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_PVP_INFO + (slot * ARENA_TEAM_END) + ARENA_TEAM_PERSONAL_RATING); }
         void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
         uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
-        uint32 GetRBGPersonalRating() const { return 0; }
+
+        uint32 GetRBGPersonalRating() const { return 0; } // GetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING);
+        // void SetRBGPersonalRating(uint32 rating) { SetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING, rating); }
 
         Difficulty GetDifficulty(bool isRaid) const { return isRaid ? m_raidDifficulty : m_dungeonDifficulty; }
         Difficulty GetDungeonDifficulty() const { return m_dungeonDifficulty; }
@@ -2533,7 +2536,10 @@ class Player : public Unit, public GridObject<Player>
         std::string GetMapAreaAndZoneString();
         std::string GetCoordsMapAreaAndZoneString();
 
-        // Void Storage
+        /*********************************************************/
+        /***             VOID STORAGE SYSTEM                   ***/
+        /*********************************************************/
+
         bool IsVoidStorageUnlocked() const { return HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_VOID_UNLOCKED); }
         void UnlockVoidStorage() { SetFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_VOID_UNLOCKED); }
         void LockVoidStorage() { RemoveFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_VOID_UNLOCKED); }
@@ -2545,6 +2551,41 @@ class Player : public Unit, public GridObject<Player>
         bool SwapVoidStorageItem(uint8 oldSlot, uint8 newSlot);
         VoidStorageItem* GetVoidStorageItem(uint8 slot) const;
         VoidStorageItem* GetVoidStorageItem(uint64 id, uint8& slot) const;
+
+        /*********************************************************/
+        /***              ARCHAEOLOGY SYSTEM                   ***/
+        /*********************************************************/
+
+        uint32 GetDigsiteEntry();
+
+        /*********************************************************/
+        /***              GUILD GROUP SYSTEM                   ***/
+        /*********************************************************/
+
+        // Guild Group checks.
+        void SetGuildGroupMember(bool guildGroupMember = false);
+        bool IsGuildGroupMember() const {return m_isGuildGroupMember;}
+
+        /*********************************************************/
+        /***            RATED BATTLEGROUNDS SYSTEM             ***/
+        /*********************************************************/
+
+        // Rated BG checks.
+        void SetRatedBGRating(uint64 guid, uint32 value);
+        uint32 GetRatedBGRating(uint64 guid);
+        void SaveRatedBGRating(uint64 guid);
+
+        uint32 GetRatedBGsPlayed(uint64 guid);
+        void SetRatedBGsPlayed(uint64 guid, uint32 value);
+
+        uint32 GetRatedBGsPlayedWeek(uint64 guid);
+        void SetRatedBGsPlayedWeek(uint64 guid, uint32 value);
+
+        uint32 GetRatedBGsWon(uint64 guid);
+        void SetRatedBGsWon(uint64 guid, uint32 value);
+
+        uint32 GetRatedBGsWonWeek(uint64 guid);
+        void SetRatedBGsWonWeek(uint64 guid, uint32 value);
 
     protected:
         // Gamemaster whisper whitelist
@@ -2558,6 +2599,7 @@ class Player : public Unit, public GridObject<Player>
         uint32 m_demonicFuryPowerRegenTimerCount;
         float m_powerFraction[MAX_POWERS_PER_CLASS];
         uint32 m_contestedPvPTimer;
+        bool m_isGuildGroupMember;
 
         /*********************************************************/
         /***               BATTLEGROUND SYSTEM                 ***/
@@ -2576,6 +2618,12 @@ class Player : public Unit, public GridObject<Player>
         BGData                    m_bgData;
 
         bool m_IsBGRandomWinner;
+
+        // Rated BG's
+        uint32 m_RatedBGsPlayed;
+        uint32 m_RatedBGsWon;
+        uint32 m_RatedBGsPlayedWeek;
+        uint32 m_RatedBGsWonWeek;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
@@ -2882,6 +2930,9 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 _activeCheats;
         uint32 _maxPersonalArenaRate;
+        uint32 _currentRatedBGRating;
+        uint32 _ConquestCurrencytotalWeekCap;
+        uint32 _RandomBgCurrencyWeekCap;
 
         PhaseMgr phaseMgr;
 
