@@ -73,32 +73,41 @@ void WorldSession::SendBattleGroundList(uint64 guid, BattlegroundTypeId bgTypeId
 
 void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
 {
-    uint32 bgTypeId_;
-    uint32 instanceId;
-    uint8 asGroup;
     bool isPremade = false;
-    Group* grp = NULL;
+    bool HasUnkByte;
+    uint8 asGroup;
+    uint32 bgTypeId_;
+    std::vector<uint32> UnkArray;
     ObjectGuid guid;
+    Group* grp = NULL;
 
-    recvData >> instanceId;                 // Instance Id
+    for (std::vector<uint32>::iterator itr = UnkArray.begin(); itr != UnkArray.end(); ++itr)
+    {
+        UnkArray.insert(itr, recvData.read<uint32>());
+    }
+    
+    guid[3] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    HasUnkByte = !recvData.ReadBit();
     guid[2] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
-    guid[3] = recvData.ReadBit();
-    guid[1] = recvData.ReadBit();
-    guid[5] = recvData.ReadBit();
     asGroup = recvData.ReadBit();           // As Group
     guid[4] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
-    guid[7] = recvData.ReadBit();
-
-    recvData.ReadByteSeq(guid[2]);
-    recvData.ReadByteSeq(guid[6]);
+    
     recvData.ReadByteSeq(guid[4]);
+    recvData.ReadByteSeq(guid[5]);
     recvData.ReadByteSeq(guid[3]);
     recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[6]);
     recvData.ReadByteSeq(guid[0]);
-    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[2]);
     recvData.ReadByteSeq(guid[1]);
+
+    if (HasUnkByte)
+        recvData.read<uint8>();
 
     //extract from guid
     bgTypeId_ = GUID_LOPART(guid);
@@ -128,8 +137,8 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
 
     // get bg instance or bg template if instance not found
     Battleground* bg = NULL;
-    if (instanceId)
-        bg = sBattlegroundMgr->GetBattlegroundThroughClientInstance(instanceId, bgTypeId);
+    /*if (instanceId)
+        bg = sBattlegroundMgr->GetBattlegroundThroughClientInstance(instanceId, bgTypeId);*/
 
     if (!bg)
         bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
@@ -406,9 +415,11 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket &recvData)
     uint8 action;                       // enter battle 0x1, leave queue 0x0
     ObjectGuid guid;
 
-    recvData >> time;
+    action = recvData.ReadBit();
+
     recvData >> queueSlot;
     recvData >> unk;
+    recvData >> time;
 
     guid[0] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
@@ -419,7 +430,6 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket &recvData)
     guid[3] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
 
-    action = recvData.ReadBit();
 
     recvData.ReadByteSeq(guid[1]);
     recvData.ReadByteSeq(guid[3]);
