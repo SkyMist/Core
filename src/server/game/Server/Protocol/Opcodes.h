@@ -1263,7 +1263,7 @@ enum Opcodes
    SMSG_SCENARIO_PROGRESS_UPDATE                            = 0x167B, // 5.4.7 18019 NYI
    SMSG_SCENARIO_STATE                                      = 0x1E20, // 5.4.7 18019 NYI
    SMSG_SELL_ITEM                                           = 0x0,
-   SMSG_SEND_MAIL_RESULT                                    = 0x0,
+   SMSG_SEND_MAIL_RESULT                                    = 0x0702, // 5.4.7 18019
    SMSG_SEND_UNLEARN_SPELLS                                 = 0x1B3E, // 5.4.7 18019 NYI
    SMSG_SERVERTIME                                          = 0x047E, // 5.4.7 18019 NYI
    SMSG_SERVER_FIRST_ACHIEVEMENT                            = 0x0,

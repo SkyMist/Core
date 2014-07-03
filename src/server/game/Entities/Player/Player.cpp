@@ -3930,17 +3930,27 @@ void Player::RemoveMail(uint32 id)
 
 void Player::SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError, uint32 item_guid, uint32 item_count)
 {
-    WorldPacket data(SMSG_SEND_MAIL_RESULT, (4+4+4+(mailError == MAIL_ERR_EQUIP_ERROR?4:(mailAction == MAIL_ITEM_TAKEN?4+4:0))));
-    data << uint32(mailId);
-    data << uint32(mailAction);
+    WorldPacket data(SMSG_SEND_MAIL_RESULT, 6*4);
     data << uint32(mailError);
-    if (mailError == MAIL_ERR_EQUIP_ERROR)
-        data << uint32(equipError);
-    else if (mailAction == MAIL_ITEM_TAKEN)
+
+    if (mailAction == MAIL_ITEM_TAKEN)
     {
         data << uint32(item_guid);                         // item guid low?
         data << uint32(item_count);                        // item count?
     }
+    else
+    {
+        data << uint32(0) << uint32(0);
+    }
+
+    data << uint32(mailId);
+
+    if (mailError == MAIL_ERR_EQUIP_ERROR)
+        data << uint32(equipError);
+    else
+        data << uint32(0);
+
+    data << uint32(mailAction);
     GetSession()->SendPacket(&data);
 }
 
