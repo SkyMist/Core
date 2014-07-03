@@ -8084,8 +8084,8 @@ void Player::_LoadCurrency(PreparedQueryResult result)
         _currencyStorage.insert(PlayerCurrenciesMap::value_type(currencyID, cur));
 
         // Check Conquest Points currency caps.
-        if (currencyID == CURRENCY_TYPE_CONQUEST_POINTS || currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
-            UpdateConquestCurrencyCap(currencyID);
+        // if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
+        //     UpdateConquestCurrencyCap(currencyID);
     }
     while (result->NextRow());
 }
@@ -8342,13 +8342,8 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
             UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CURRENCY, id, count);
 
         if (id == CURRENCY_TYPE_CONQUEST_POINTS) // Check Conquest Points cap against current.
-        {
             if (weekCap > _ConquestCurrencytotalWeekCap)
-            {
                 _ConquestCurrencytotalWeekCap = weekCap;
-                UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_POINTS);
-            }
-        }
 
         if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
         {
