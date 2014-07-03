@@ -434,6 +434,7 @@ enum Opcodes
    CMSG_QUERY_GUILD_REWARDS                                 = 0x171B, // 5.4.7 18019
    CMSG_QUERY_GUILD_XP                                      = 0x1D37, // 5.4.7 18019
    CMSG_QUERY_INSPECT_ACHIEVEMENTS                          = 0x047E, // 5.4.7 18019
+   CMSG_QUERY_NEXT_MAIL_TIME                                = 0x05F7, // 5.4.7 18019
    CMSG_QUERY_QUESTS_COMPLETED                              = 0x0,
    CMSG_QUERY_TIME                                          = 0x03FD, // 5.4.7 18019
    CMSG_QUESTGIVER_ACCEPT_QUEST                             = 0x0356, // 5.4.7 18019
@@ -649,7 +650,6 @@ enum Opcodes
    MSG_PETITION_DECLINE                                     = 0x0,
    MSG_PETITION_RENAME                                      = 0x0,
    MSG_PVP_LOG_DATA                                         = 0x0,
-   MSG_QUERY_NEXT_MAIL_TIME                                 = 0x05F7, // 5.4.7 18019 NYI
    MSG_QUEST_PUSH_RESULT                                    = 0x0,
    MSG_RAID_READY_CHECK_FINISHED                            = 0x0,
    MSG_RAID_TARGET_UPDATE                                   = 0x0,
@@ -818,7 +818,7 @@ enum Opcodes
    SMSG_CORPSE_QUERY                                        = 0x1F32, // 5.4.7 18019
    SMSG_CORPSE_RECLAIM_DELAY                                = 0x1E73, // 5.4.7 18019
    SMSG_CREATURE_QUERY_RESPONSE                             = 0x00E0, // 5.4.7 18019
-   SMSG_CRITERIA_DELETED                                    = 0x0,
+   SMSG_CRITERIA_DELETED                                    = 0x0622, // 5.4.7 18019
    SMSG_CRITERIA_UPDATE                                     = 0x13B2, // 5.4.7 18019
    SMSG_CROSSED_INEBRIATION_THRESHOLD                       = 0x0,
    SMSG_CURRENCY_LOOT_REMOVED                               = 0x0,
@@ -1121,6 +1121,7 @@ enum Opcodes
    SMSG_NEW_TAXI_PATH                                       = 0x0,
    SMSG_NEW_WORLD                                           = 0x05AB, // 5.4.7 18019
    SMSG_NEW_WORLD_ABORT                                     = 0x0,
+   SMSG_NEXT_MAIL_TIME_RESPONSE                             = 0x1C20, // 5.4.7 18019
    SMSG_NOTIFICATION                                        = 0x1513, // 5.4.7 18019
    SMSG_NOTIFY_DANCE                                        = 0x0,
    SMSG_NOTIFY_DEST_LOC_SPELL_CAST                          = 0x0,

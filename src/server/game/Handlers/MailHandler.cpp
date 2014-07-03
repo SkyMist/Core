@@ -897,22 +897,23 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recvData)
 /// @todo Fix me! ... this void has probably bad condition, but good data are sent
 void WorldSession::HandleQueryNextMailTime(WorldPacket& /*recvData*/)
 {
-    WorldPacket data(MSG_QUERY_NEXT_MAIL_TIME, 8);
+    WorldPacket data(SMSG_NEXT_MAIL_TIME_RESPONSE);
 
     if (!_player->m_mailsLoaded)
         _player->_LoadMail();
 
     if (_player->unReadMails > 0)
     {
-        data << float(0);                                  // float
-        data << uint32(0);                                 // count
+        ByteBuffer BytePart;
+        data << float(1);                                  // float
+        data.WriteBits(_player->GetMailSize(), 20);
 
-        uint32 count = 0;
         time_t now = time(NULL);
         std::set<uint32> sentSenders;
         for (PlayerMails::iterator itr = _player->GetMailBegin(); itr != _player->GetMailEnd(); ++itr)
         {
             Mail* m = (*itr);
+
             // must be not checked yet
             if (m->checked & MAIL_CHECK_MASK_READ)
                 continue;
@@ -925,25 +926,54 @@ void WorldSession::HandleQueryNextMailTime(WorldPacket& /*recvData*/)
             if (sentSenders.count(m->sender))
                 continue;
 
-            data << uint64(m->messageType == MAIL_NORMAL ? m->sender : 0);  // player guid
-            data << uint32(m->messageType != MAIL_NORMAL ? m->sender : 0);  // non-player entries
-            data << uint32(m->messageType);
-            data << uint32(m->stationery);
-            data << float(m->deliver_time - now);
+            bool HasDword8 = true;
+            bool HasDwordC = true;
+            ObjectGuid Sender = m->sender;
 
+            data.WriteBit(Sender[4]);
+            data.WriteBit(Sender[2]);
+            data.WriteBit(HasDword8);            //has dword8
+            data.WriteBit(HasDwordC);            //has dwordC
+            data.WriteBit(Sender[1]);
+            data.WriteBit(Sender[3]);
+            data.WriteBit(Sender[6]);
+            data.WriteBit(Sender[5]);
+            data.WriteBit(Sender[0]);
+            data.WriteBit(Sender[7]);
+
+
+            BytePart.WriteByteSeq(Sender[6]);
+
+            if (HasDwordC)
+                BytePart << uint32(GetMSTimeDiffToNow(now));            //this is some time, the value is the same as ConstantTime in SMSG_MESSAGECHAT
+
+            BytePart.WriteByteSeq(Sender[4]);
+            BytePart.WriteByteSeq(Sender[2]);
+            BytePart.WriteByteSeq(Sender[0]);
+            BytePart << float(m->deliver_time - now);
+            BytePart << uint32(m->messageType);
+            BytePart.WriteByteSeq(Sender[1]);
+            BytePart.WriteByteSeq(Sender[7]);
+            BytePart << uint8(0);                   //unk
+            BytePart << uint32(m->stationery);
+
+            if (HasDword8)
+                BytePart << uint32(GetMSTimeDiffToNow(now));            //this is some time, the value is the same as ConstantTime in SMSG_MESSAGECHAT
+
+            BytePart.WriteByteSeq(Sender[3]);
+            BytePart.WriteByteSeq(Sender[5]);
+
+            //BytePart << uint32(m->messageType != MAIL_NORMAL ? m->sender : 0);  // non-player entries
             sentSenders.insert(m->sender);
-            ++count;
-            if (count == 2)                                  // do not display more than 2 mails
-                break;
         }
-
-        data.put<uint32>(4, count);
+        data.FlushBits();
+        data.append(BytePart);
     }
     else
     {
-        data << float(-DAY);
-        data << uint32(0);
+        data << float(-1);
+        data.WriteBits(0, 20);
+        data.FlushBits();
     }
-
     SendPacket(&data);
 }
