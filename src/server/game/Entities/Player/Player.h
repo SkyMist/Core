@@ -2587,6 +2587,10 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetRatedBGsWonWeek(uint64 guid);
         void SetRatedBGsWonWeek(uint64 guid, uint32 value);
 
+        // BG Roles.
+        uint8 GetBattleGroundRoles() const { return m_bgRoles; }
+        void SetBattleGroundRoles(uint8 roles) { m_bgRoles = roles; }
+
     protected:
         // Gamemaster whisper whitelist
         WhisperListContainer WhisperList;
@@ -2938,6 +2942,8 @@ class Player : public Unit, public GridObject<Player>
 
         // Pet callback
         bool m_initializeCallback;
+
+        uint8 m_bgRoles;
 
         PreparedQueryResultFuture _petPreloadCallback;
         QueryResultHolderFuture _petLoginCallback;

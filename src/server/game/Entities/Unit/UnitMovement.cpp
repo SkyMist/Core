@@ -474,7 +474,7 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
                 data << mi.splineElevation;
             break;
         case MSECounterCount:
-            data.WriteBits(1, 22);
+            data.WriteBits(0, 22);
             break;
         case MSECounter:
             data << m_movementCounter++;
@@ -972,7 +972,7 @@ void Unit::SendTeleportPacket(Position& pos)
     data << float(GetPositionX());
     data << float(GetPositionZMinusOffset());
     data << float(GetPositionY());
-    data << uint32(m_movementCounter++); // counter
+    data << uint32(m_movementCounter++); // movement counter
     data << float(GetOrientation());
 
     data.WriteBit(guid[5]);

@@ -51,6 +51,7 @@
 #include "Formulas.h"
 #include "DisableMgr.h"
 #include "Opcodes.h"
+#include "LFG.h"
 
 /*********************************************************/
 /***            BATTLEGROUND MANAGER                   ***/
@@ -224,7 +225,8 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
         }
         case STATUS_WAIT_JOIN:
         {
-            bool HasRoles = false;
+            bool HasRoles = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != 0x08) ? true : false; // PLAYER_ROLE_DAMAGE
+
             data->Initialize(SMSG_BATTLEFIELD_STATUS_CONFIRM);
 
             data->WriteBit(playerGuid[3]);
@@ -267,7 +269,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(Time2);                     // Join Time
 
             if (HasRoles)
-                *data << uint8(0);                      // selected roles
+                *data << uint8(player->GetBattleGroundRoles() == 0x02 ? 0 : 1); // PLAYER_ROLE_TANK; Client uses sent value like this: Role = 1 << (val + 1).
 
             data->WriteByteSeq(playerGuid[1]);
             *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)

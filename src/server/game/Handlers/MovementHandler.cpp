@@ -269,18 +269,6 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recvPacket)
 
     // Set mover and client control
     GetPlayer()->SetClientControl(GetPlayer(), 1);
-
-    // Update all land speeds after teleportation to prevent getting stuck
-    GetPlayer()->SetSpeed(MOVE_WALK, 1.0f);
-    GetPlayer()->SetSpeed(MOVE_RUN, 1.0f);
-    GetPlayer()->SetSpeed(MOVE_FLIGHT, 0.45f);
-    GetPlayer()->SetSpeed(MOVE_SWIM, 0.67f);
-
-    for (uint8 i = 0; i < MAX_MOVE_TYPE; ++i)
-    {
-        GetPlayer()->SetSpeed(UnitMoveType(i), GetPlayer()->GetSpeedRate(UnitMoveType(i)), true);
-        GetPlayer()->UpdateSpeed(UnitMoveType(i), true);
-    }
 }
 
 void WorldSession::HandleMovementOpcodes(WorldPacket& recvPacket)

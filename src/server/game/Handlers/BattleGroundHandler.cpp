@@ -35,6 +35,7 @@
 #include "Opcodes.h"
 #include "DisableMgr.h"
 #include "Group.h"
+#include "LFG.h"
 
 void WorldSession::HandleBattlemasterHelloOpcode(WorldPacket& recvData)
 {
@@ -73,18 +74,17 @@ void WorldSession::SendBattleGroundList(uint64 guid, BattlegroundTypeId bgTypeId
 
 void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
 {
-    bool isPremade = false;
-    bool HasUnkByte;
-    uint8 asGroup;
-    uint32 bgTypeId_;
-    std::vector<uint32> UnkArray;
     ObjectGuid guid;
     Group* grp = NULL;
+    bool isPremade = false;
+    bool HasNoDamageRole;  // Doesn't have role PLAYER_ROLE_DAMAGE (see LFG.h for roles enum).
+    uint8 role;            // Used for getting other roles.
+    uint8 asGroup;
+    uint32 bgTypeId_;
+    uint32 disabledBgs[2]; // Disabled battlegrounds (Not sure if this should be handled - put it in "Check disabled BG's sent by client." below).
 
-    for (std::vector<uint32>::iterator itr = UnkArray.begin(); itr != UnkArray.end(); ++itr)
-    {
-        UnkArray.insert(itr, recvData.read<uint32>());
-    }
+    for (uint8 i = 0; i < 2; i++)
+        recvData >> disabledBgs[i];
 
     guid[3] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
@@ -92,11 +92,13 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
     guid[6] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
 
-    HasUnkByte = !recvData.ReadBit();
+    HasNoDamageRole = !recvData.ReadBit();  // Doesn't have role PLAYER_ROLE_DAMAGE. Any class can select it so it seems to be filtered using this.
 
     guid[2] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
-    asGroup = recvData.ReadBit();           // As Group
+
+    asGroup = recvData.ReadBit();           // Join as Group.
+
     guid[4] = recvData.ReadBit();
 
     recvData.FlushBits();
@@ -110,10 +112,12 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(guid[2]);
     recvData.ReadByteSeq(guid[1]);
 
-    if (HasUnkByte)
-        recvData.read<uint8>();
+    if (HasNoDamageRole)
+        recvData >> role;                   // Get other roles.
+    else
+        role = 0x08; // PLAYER_ROLE_DAMAGE
 
-    // extract from guid
+    // Extract from guid
     bgTypeId_ = GUID_LOPART(guid);
 
     if (!sBattlemasterListStore.LookupEntry(bgTypeId_))
@@ -122,11 +126,23 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
         return;
     }
 
+    // Check if the BG is disabled by database.
     if (DisableMgr::IsDisabledFor(DISABLE_TYPE_BATTLEGROUND, bgTypeId_, NULL))
     {
         ChatHandler(this).PSendSysMessage(LANG_BG_DISABLED);
         return;
     }
+
+    // Check disabled BG's sent by client.
+    // for (uint8 i = 0; i < 2; i++)
+    // {
+    //     if (disabledBgs[i] == bgTypeId_)
+    //     {
+    //         ChatHandler(this).PSendSysMessage(LANG_BG_DISABLED);
+    //         return;
+    //     }
+    // }
+
     BattlegroundTypeId bgTypeId = BattlegroundTypeId(bgTypeId_);
 
     //TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_BATTLEMASTER_JOIN Message from (GUID:"UI64FMTD" TypeId:%u)", guid, bgTypeId_);
@@ -140,19 +156,12 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
         return;
 
     // get bg instance or bg template if instance not found
-    Battleground* bg = NULL;
-    /*if (instanceId)
-        bg = sBattlegroundMgr->GetBattlegroundThroughClientInstance(instanceId, bgTypeId);*/
+    Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId) ? sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId) : NULL;
 
     if (!bg)
     {
-        if (sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId))
-            bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
-        else
-        {
-            TC_LOG_ERROR("bg.battleground", "Battleground: no available bg / template found");
-            return;
-        }
+        TC_LOG_ERROR("bg.battleground", "Battleground: no available bg / template found");
+        return;
     }
 
     // expected bracket entry
@@ -220,6 +229,8 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
             return;
         }
 
+        _player->SetBattleGroundRoles(role);
+
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
         GroupQueueInfo* ginfo = bgQueue.AddGroup(_player, NULL, bgTypeId, bracketEntry, 0, false, isPremade, 0, 0);
 
@@ -249,6 +260,9 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
         err = grp->CanJoinBattlegroundQueue(bg, bgQueueTypeId, 0, bg->GetMaxPlayersPerTeam(), false, 0);
         isPremade = (grp->GetMembersCount() >= bg->GetMinPlayersPerTeam());
 
+        // Set leader role received from the data.
+        _player->SetBattleGroundRoles(role);
+
         // if we're here, then the conditions to join a bg are met. We can proceed in joining.
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
         GroupQueueInfo* ginfo = NULL;
@@ -275,6 +289,10 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
                 continue;
             }
 
+            // Set member roles from those selected in the group (no data sent for them so can only get the roles like this).
+            if (member != _player)
+                member->SetBattleGroundRoles(member->GetGroup()->GetLfgRoles(member->GetGUID()));
+
             // add to queue
             uint32 queueSlot = member->AddBattlegroundQueueId(bgQueueTypeId);
 
@@ -288,6 +306,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
             TC_LOG_DEBUG("bg.battleground", "Battleground: player joined queue for bg queue type %u bg type %u: GUID %u, NAME %s",
                 bgQueueTypeId, bgTypeId, member->GetGUIDLow(), member->GetName().c_str());
         }
+
         TC_LOG_DEBUG("bg.battleground", "Battleground: group end");
     }
 
