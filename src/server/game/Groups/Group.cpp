@@ -1658,6 +1658,8 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     ObjectGuid leaderGuid = m_leaderGuid;
     ObjectGuid looterGuid = m_looterGuid;
 
+    bool SendDifficulty = true;
+
     WorldPacket data(SMSG_GROUP_LIST, 4 + 3 + 4 + 1 + 8 + 1 + 8 + 3 + (GetMembersCount() * (4 + 2 + 8)) + 1 + 8 + 2 + 4 + 4);
     data << uint32(groupPosition);
     data << uint8(m_groupType); // group type (flags in 3.3)
@@ -1665,7 +1667,7 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     data << uint8(slot->roles);
     data << uint32(m_counter++); // 3.3, value increases every time this packet gets sent
 
-    data.WriteBit(1); // has dungeon and raid difficulty
+    data.WriteBit(SendDifficulty); // has dungeon and raid difficulty
     data.WriteBit(groupGuid[5]);
     data.WriteBits(GetMembersCount(), 21);
     data.WriteBit(groupGuid[7]);
@@ -1746,7 +1748,7 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     {
         data.WriteByteSeq(looterGuid[3]);
         data.WriteByteSeq(looterGuid[5]);
-        data << uint8(m_lootMethod); // loot method
+        data << uint8(m_lootMethod);    // loot method
         data.WriteByteSeq(looterGuid[0]);
         data.WriteByteSeq(looterGuid[1]);
         data.WriteByteSeq(looterGuid[2]);
@@ -1765,10 +1767,10 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     data.WriteByteSeq(groupGuid[3]);
     data.append(memberData);
 
-    //if (hasInstanceDifficulty)
+    if (SendDifficulty)
     {
-        data << uint32(m_raidDifficulty); // Raid Difficulty
-        data << uint32(m_dungeonDifficulty); // Dungeon Difficulty
+        data << uint32(GetDungeonDifficulty()); // Dungeon Difficulty
+        data << uint32(GetRaidDifficulty()); // Raid Difficulty
     }
 
     data.WriteByteSeq(leaderGuid[5]);

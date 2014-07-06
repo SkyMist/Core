@@ -39,7 +39,7 @@ enum Opcodes
    CMSG_ACCEPT_TRADE                                        = 0x0,
    CMSG_ACTIVATETAXI                                        = 0x0756, // 5.4.7 18019
    CMSG_ACTIVATETAXIEXPRESS                                 = 0x0576, // 5.4.7 18019
-   CMSG_ADDON_REGISTERED_PREFIXES                           = 0x1C40, // 5.4.7 18019 NYI
+   CMSG_ADDON_REGISTERED_PREFIXES                           = 0x1C40, // 5.4.7 18019
    CMSG_ADD_FRIEND                                          = 0x064F, // 5.4.7 18019
    CMSG_ADD_IGNORE                                          = 0x126D, // 5.4.7 18019
    CMSG_ADD_VOICE_IGNORE                                    = 0x0,
@@ -576,7 +576,7 @@ enum Opcodes
    CMSG_UNACCEPT_TRADE                                      = 0x1473, // 5.4.7 18019
    CMSG_UNLEARN_SKILL                                       = 0x025D, // 5.4.7 18019
    CMSG_UNLEARN_SPECIALIZATION                              = 0x0,
-   CMSG_UNREGISTER_ALL_ADDON_PREFIXES                       = 0x072B, // 5.4.7 18019 NYI
+   CMSG_UNREGISTER_ALL_ADDON_PREFIXES                       = 0x072B, // 5.4.7 18019
    CMSG_UPDATE_ACCOUNT_DATA                                 = 0x18B2, // 5.4.7 18019 NYI
    CMSG_UPDATE_MISSILE_TRAJECTORY                           = 0x0,
    CMSG_UPDATE_PROJECTILE_POSITION                          = 0x0,

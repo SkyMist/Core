@@ -867,6 +867,9 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_RatedBGsPlayedWeek = 0;
     m_RatedBGsWonWeek    = 0;
 
+    // BG Roles
+    m_bgRoles = 0;
+
     // Player summoning
     m_summon_expire = 0;
     m_summon_mapid = 0;
