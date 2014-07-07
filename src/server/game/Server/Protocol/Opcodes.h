@@ -706,7 +706,7 @@ enum Opcodes
    SMSG_BATTLEFIELD_MGR_EJECTED                             = 0x0,
    SMSG_BATTLEFIELD_MGR_EJECT_PENDING                       = 0x0,
    SMSG_BATTLEFIELD_MGR_ENTERED                             = 0x0,
-   SMSG_BATTLEFIELD_MGR_ENTRY_INVITE                        = 0x147A, // 5.4.7 18019 NYI
+   SMSG_BATTLEFIELD_MGR_ENTRY_INVITE                        = 0x0,
    SMSG_BATTLEFIELD_MGR_EXIT_REQUEST                        = 0x0,
    SMSG_BATTLEFIELD_MGR_QUEUE_INVITE                        = 0x0,
    SMSG_BATTLEFIELD_MGR_QUEUE_REQUEST_RESPONSE              = 0x1E72, // 5.4.7 18019

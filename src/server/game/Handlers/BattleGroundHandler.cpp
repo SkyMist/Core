@@ -115,7 +115,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
     if (HasNoDamageRole)
         recvData >> role;                   // Get other roles.
     else
-        role = 0x08; // PLAYER_ROLE_DAMAGE
+        role = lfg::PLAYER_ROLE_DAMAGE;
 
     // Extract from guid
     bgTypeId_ = GUID_LOPART(guid);

@@ -162,6 +162,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
         case STATUS_NONE:
         {
            // call BuildPacketFailed to send the error to the clients
+            BuildStatusFailedPacket(data, bg, player, QueueSlot, ERR_BATTLEGROUND_NONE);
             break;
         }
         case STATUS_WAIT_QUEUE:
@@ -225,7 +226,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
         }
         case STATUS_WAIT_JOIN:
         {
-            bool HasRoles = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != 0x08) ? true : false; // PLAYER_ROLE_DAMAGE
+            bool HasRoles = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != lfg::PLAYER_ROLE_DAMAGE) ? true : false;
 
             data->Initialize(SMSG_BATTLEFIELD_STATUS_CONFIRM);
 
@@ -269,7 +270,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(Time2);                     // Join Time
 
             if (HasRoles)
-                *data << uint8(player->GetBattleGroundRoles() == 0x02 ? 0 : 1); // PLAYER_ROLE_TANK; Client uses sent value like this: Role = 1 << (val + 1).
+                *data << uint8(player->GetBattleGroundRoles() == lfg::PLAYER_ROLE_TANK ? 0 : 1); // Client uses sent value like this: Role = 1 << (val + 1).
 
             data->WriteByteSeq(playerGuid[1]);
             *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
@@ -1293,8 +1294,8 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     if (!bracketEntry)
         return;
 
-    uint32 winnerConquest = (player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_LAST)) / CURRENCY_PRECISION;
-    uint32 winnerHonor = (player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_LAST)) / CURRENCY_PRECISION;
+    uint32 winnerConquest = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_CONQUEST_LAST)) / CURRENCY_PRECISION;
+    uint32 winnerHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_LAST)) / CURRENCY_PRECISION;
     uint32 loserHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_LAST)) / CURRENCY_PRECISION;
 
     // ToDo: Check hasWonCallToArmsBG / hasWonRandomBG fields.
