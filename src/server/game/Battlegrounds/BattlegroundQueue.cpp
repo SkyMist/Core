@@ -160,7 +160,7 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
     uint32 lastOnlineTime = getMSTime();
 
     //announce world (this don't need mutex)
-    if (isRated && sWorld->getBoolConfig(CONFIG_ARENA_QUEUE_ANNOUNCER_ENABLE))
+    if (isRated && ArenaType && sWorld->getBoolConfig(CONFIG_ARENA_QUEUE_ANNOUNCER_ENABLE))
     {
         ArenaTeam* Team = sArenaTeamMgr->GetArenaTeamById(arenateamid);
         if (Team)
@@ -168,31 +168,31 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
     }
 
     //add players from group to ginfo
-    if (grp)
-    {
-        for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
-        {
-            Player* member = itr->GetSource();
-            if (!member)
-                continue;   // this should never happen
-            PlayerQueueInfo& pl_info = m_QueuedPlayers[member->GetGUID()];
-            pl_info.LastOnlineTime   = lastOnlineTime;
-            pl_info.GroupInfo        = ginfo;
-            // add the pinfo to ginfo's list
-            ginfo->Players[member->GetGUID()]  = &pl_info;
-        }
-    }
-    else
-    {
-        PlayerQueueInfo& pl_info = m_QueuedPlayers[leader->GetGUID()];
-        pl_info.LastOnlineTime   = lastOnlineTime;
-        pl_info.GroupInfo        = ginfo;
-        ginfo->Players[leader->GetGUID()]  = &pl_info;
-    }
-
-    //add GroupInfo to m_QueuedGroups
     {
         //ACE_Guard<ACE_Recursive_Thread_Mutex> guard(m_Lock);
+        if (grp)
+        {
+            for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+            {
+                Player* member = itr->GetSource();
+                if (!member)
+                    continue;   // this should never happen
+                PlayerQueueInfo& pl_info = m_QueuedPlayers[member->GetGUID()];
+                pl_info.LastOnlineTime   = lastOnlineTime;
+                pl_info.GroupInfo        = ginfo;
+                // add the pinfo to ginfo's list
+                ginfo->Players[member->GetGUID()]  = &pl_info;
+            }
+        }
+        else
+        {
+            PlayerQueueInfo& pl_info = m_QueuedPlayers[leader->GetGUID()];
+            pl_info.LastOnlineTime   = lastOnlineTime;
+            pl_info.GroupInfo        = ginfo;
+            ginfo->Players[leader->GetGUID()]  = &pl_info;
+        }
+
+        //add GroupInfo to m_QueuedGroups
         m_QueuedGroups[bracketId][index].push_back(ginfo);
 
         //announce to world, this code needs mutex
@@ -207,12 +207,16 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
                 uint32 q_min_level = bracketEntry->minLevel;
                 uint32 q_max_level = bracketEntry->maxLevel;
                 GroupsQueueType::const_iterator itr;
-                for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); ++itr)
-                    if (!(*itr)->IsInvitedToBGInstanceGUID)
-                        qAlliance += (*itr)->Players.size();
-                for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); ++itr)
-                    if (!(*itr)->IsInvitedToBGInstanceGUID)
-                        qHorde += (*itr)->Players.size();
+
+                if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].empty())
+                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); ++itr)
+                        if (!(*itr)->IsInvitedToBGInstanceGUID)
+                            qAlliance += (*itr)->Players.size();
+
+                if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].empty())
+                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); ++itr)
+                        if (!(*itr)->IsInvitedToBGInstanceGUID)
+                            qHorde += (*itr)->Players.size();
 
                 // Show queue status to player only (when joining queue)
                 if (sWorld->getBoolConfig(CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_PLAYERONLY))
