@@ -184,14 +184,14 @@ class BattlegroundTP : public Battleground
         /* BG Flags */
         uint64 GetFlagPickerGUID(int32 team) const
         {
-            if (team == TEAM_ALLIANCE || team == TEAM_HORDE)
+            if (team == BG_TEAM_ALLIANCE || team == BG_TEAM_HORDE)
                 return m_FlagKeepers[team];
             return 0;
         }
-        void SetAllianceFlagPicker(uint64 guid)     { m_FlagKeepers[TEAM_ALLIANCE] = guid; }
-        void SetHordeFlagPicker(uint64 guid)        { m_FlagKeepers[TEAM_HORDE] = guid; }
-        bool IsAllianceFlagPickedup() const         { return m_FlagKeepers[TEAM_ALLIANCE] != 0; }
-        bool IsHordeFlagPickedup() const            { return m_FlagKeepers[TEAM_HORDE] != 0; }
+        void SetAllianceFlagPicker(uint64 guid)     { m_FlagKeepers[BG_TEAM_ALLIANCE] = guid; }
+        void SetHordeFlagPicker(uint64 guid)        { m_FlagKeepers[BG_TEAM_HORDE] = guid; }
+        bool IsAllianceFlagPickedup() const         { return m_FlagKeepers[BG_TEAM_ALLIANCE] != 0; }
+        bool IsHordeFlagPickedup() const            { return m_FlagKeepers[BG_TEAM_HORDE] != 0; }
         void RespawnFlag(uint32 Team, bool captured);
         void RespawnFlagAfterDrop(uint32 Team);
         uint8 GetFlagState(uint32 team)             { return _flagState[GetTeamIndexByTeamId(team)]; }
@@ -218,10 +218,9 @@ class BattlegroundTP : public Battleground
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
         void SetDroppedFlagGUID(uint64 guid, int32 team = -1)
         {
-            if (team == TEAM_ALLIANCE || team == TEAM_HORDE)
+            if (team == BG_TEAM_ALLIANCE || team == BG_TEAM_HORDE)
                 m_DroppedFlagGUID[team] = guid;
         }
-
 
         uint64 GetDroppedFlagGUID(uint32 TeamID)             { return m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)];}
         void FillInitialWorldStates(WorldPacket& data);

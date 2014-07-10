@@ -61,10 +61,10 @@ void BattlegroundEY::PostUpdateImpl(uint32 diff)
         if (m_PointAddingTimer <= 0)
         {
             m_PointAddingTimer = BG_EY_FPOINTS_TICK_TIME;
-            if (m_TeamPointsCount[TEAM_ALLIANCE] > 0)
-                AddPoints(ALLIANCE, BG_EY_TickPoints[m_TeamPointsCount[TEAM_ALLIANCE] - 1]);
-            if (m_TeamPointsCount[TEAM_HORDE] > 0)
-                AddPoints(HORDE, BG_EY_TickPoints[m_TeamPointsCount[TEAM_HORDE] - 1]);
+            if (m_TeamPointsCount[BG_TEAM_ALLIANCE] > 0)
+                AddPoints(ALLIANCE, BG_EY_TickPoints[m_TeamPointsCount[BG_TEAM_ALLIANCE] - 1]);
+            if (m_TeamPointsCount[BG_TEAM_HORDE] > 0)
+                AddPoints(HORDE, BG_EY_TickPoints[m_TeamPointsCount[BG_TEAM_HORDE] - 1]);
         }
 
         if (m_FlagState == BG_EY_FLAG_STATE_WAIT_RESPAWN || m_FlagState == BG_EY_FLAG_STATE_ON_GROUND)
@@ -126,7 +126,7 @@ void BattlegroundEY::StartingEventOpenDoors()
 
 void BattlegroundEY::AddPoints(uint32 Team, uint32 Points)
 {
-    TeamId team_index = GetTeamIndexByTeamId(Team);
+    BattlegroundTeamId team_index = GetTeamIndexByTeamId(Team);
     m_TeamScores[team_index] += Points;
     m_HonorScoreTics[team_index] += Points;
     if (m_HonorScoreTics[team_index] >= m_HonorTics)
@@ -285,13 +285,13 @@ void BattlegroundEY::UpdateTeamScore(uint32 Team)
     if (score >= BG_EY_MAX_TEAM_SCORE)
     {
         score = BG_EY_MAX_TEAM_SCORE;
-        if (Team == TEAM_ALLIANCE)
+        if (Team == BG_TEAM_ALLIANCE)
             EndBattleground(ALLIANCE);
         else
             EndBattleground(HORDE);
     }
 
-    if (Team == TEAM_ALLIANCE)
+    if (Team == BG_TEAM_ALLIANCE)
         UpdateWorldState(EY_ALLIANCE_RESOURCES, score);
     else
         UpdateWorldState(EY_HORDE_RESOURCES, score);
@@ -314,9 +314,9 @@ void BattlegroundEY::EndBattleground(uint32 winner)
 void BattlegroundEY::UpdatePointsCount(uint32 Team)
 {
     if (Team == ALLIANCE)
-        UpdateWorldState(EY_ALLIANCE_BASE, m_TeamPointsCount[TEAM_ALLIANCE]);
+        UpdateWorldState(EY_ALLIANCE_BASE, m_TeamPointsCount[BG_TEAM_ALLIANCE]);
     else
-        UpdateWorldState(EY_HORDE_BASE, m_TeamPointsCount[TEAM_HORDE]);
+        UpdateWorldState(EY_HORDE_BASE, m_TeamPointsCount[BG_TEAM_HORDE]);
 }
 
 void BattlegroundEY::UpdatePointsIcons(uint32 Team, uint32 Point)
@@ -523,12 +523,12 @@ void BattlegroundEY::Reset()
     //call parent's class reset
     Battleground::Reset();
 
-    m_TeamScores[TEAM_ALLIANCE] = 0;
-    m_TeamScores[TEAM_HORDE] = 0;
-    m_TeamPointsCount[TEAM_ALLIANCE] = 0;
-    m_TeamPointsCount[TEAM_HORDE] = 0;
-    m_HonorScoreTics[TEAM_ALLIANCE] = 0;
-    m_HonorScoreTics[TEAM_HORDE] = 0;
+    m_TeamScores[BG_TEAM_ALLIANCE] = 0;
+    m_TeamScores[BG_TEAM_HORDE] = 0;
+    m_TeamPointsCount[BG_TEAM_ALLIANCE] = 0;
+    m_TeamPointsCount[BG_TEAM_HORDE] = 0;
+    m_HonorScoreTics[BG_TEAM_ALLIANCE] = 0;
+    m_HonorScoreTics[BG_TEAM_HORDE] = 0;
     m_FlagState = BG_EY_FLAG_STATE_ON_BASE;
     m_FlagCapturedBgObjectType = 0;
     m_FlagKeeper = 0;
@@ -671,14 +671,14 @@ void BattlegroundEY::EventTeamLostPoint(Player* player, uint32 Point)
 
     if (Team == ALLIANCE)
     {
-        m_TeamPointsCount[TEAM_ALLIANCE]--;
+        m_TeamPointsCount[BG_TEAM_ALLIANCE]--;
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeAlliance, RESPAWN_ONE_DAY);
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeAlliance + 1, RESPAWN_ONE_DAY);
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeAlliance + 2, RESPAWN_ONE_DAY);
     }
     else
     {
-        m_TeamPointsCount[TEAM_HORDE]--;
+        m_TeamPointsCount[BG_TEAM_HORDE]--;
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeHorde, RESPAWN_ONE_DAY);
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeHorde + 1, RESPAWN_ONE_DAY);
         SpawnBGObject(m_LosingPointTypes[Point].DespawnObjectTypeHorde + 2, RESPAWN_ONE_DAY);
@@ -719,14 +719,14 @@ void BattlegroundEY::EventTeamCapturedPoint(Player* player, uint32 Point)
 
     if (Team == ALLIANCE)
     {
-        m_TeamPointsCount[TEAM_ALLIANCE]++;
+        m_TeamPointsCount[BG_TEAM_ALLIANCE]++;
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeAlliance, RESPAWN_IMMEDIATELY);
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeAlliance + 1, RESPAWN_IMMEDIATELY);
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeAlliance + 2, RESPAWN_IMMEDIATELY);
     }
     else
     {
-        m_TeamPointsCount[TEAM_HORDE]++;
+        m_TeamPointsCount[BG_TEAM_HORDE]++;
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeHorde, RESPAWN_IMMEDIATELY);
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeHorde + 1, RESPAWN_IMMEDIATELY);
         SpawnBGObject(m_CapturingPointTypes[Point].SpawnObjectTypeHorde + 2, RESPAWN_IMMEDIATELY);
@@ -797,12 +797,12 @@ void BattlegroundEY::EventPlayerCapturedFlag(Player* player, uint32 BgObjectType
     uint8 team_id = 0;
     if (player->GetTeam() == ALLIANCE)
     {
-        team_id = TEAM_ALLIANCE;
+        team_id = BG_TEAM_ALLIANCE;
         SendMessageToAll(LANG_BG_EY_CAPTURED_FLAG_A, CHAT_MSG_BG_SYSTEM_ALLIANCE, player);
     }
     else
     {
-        team_id = TEAM_HORDE;
+        team_id = BG_TEAM_HORDE;
         SendMessageToAll(LANG_BG_EY_CAPTURED_FLAG_H, CHAT_MSG_BG_SYSTEM_HORDE, player);
     }
 
@@ -832,8 +832,8 @@ void BattlegroundEY::UpdatePlayerScore(Player* player, uint32 type, uint32 value
 
 void BattlegroundEY::FillInitialWorldStates(WorldPacket& data)
 {
-    data << uint32(EY_HORDE_BASE) << uint32(m_TeamPointsCount[TEAM_HORDE]);
-    data << uint32(EY_ALLIANCE_BASE) << uint32(m_TeamPointsCount[TEAM_ALLIANCE]);
+    data << uint32(EY_HORDE_BASE) << uint32(m_TeamPointsCount[BG_TEAM_HORDE]);
+    data << uint32(EY_ALLIANCE_BASE) << uint32(m_TeamPointsCount[BG_TEAM_ALLIANCE]);
     data << uint32(0xab6) << uint32(0x0);
     data << uint32(0xab5) << uint32(0x0);
     data << uint32(0xab4) << uint32(0x0);
@@ -871,8 +871,8 @@ void BattlegroundEY::FillInitialWorldStates(WorldPacket& data)
 
     data << uint32(0xad2) << uint32(0x1);
     data << uint32(0xad1) << uint32(0x1);
-    data << uint32(0xabe) << uint32(GetTeamScore(TEAM_HORDE));
-    data << uint32(0xabd) << uint32(GetTeamScore(TEAM_ALLIANCE));
+    data << uint32(0xabe) << uint32(GetTeamScore(BG_TEAM_HORDE));
+    data << uint32(0xabd) << uint32(GetTeamScore(BG_TEAM_ALLIANCE));
     data << uint32(0xa05) << uint32(0x8e);
     data << uint32(0xaa0) << uint32(0x0);
     data << uint32(0xa9f) << uint32(0x0);
@@ -945,9 +945,9 @@ bool BattlegroundEY::IsAllNodesControlledByTeam(uint32 team) const
 
 uint32 BattlegroundEY::GetPrematureWinner()
 {
-    if (GetTeamScore(TEAM_ALLIANCE) > GetTeamScore(TEAM_HORDE))
+    if (GetTeamScore(BG_TEAM_ALLIANCE) > GetTeamScore(BG_TEAM_HORDE))
         return ALLIANCE;
-    else if (GetTeamScore(TEAM_HORDE) > GetTeamScore(TEAM_ALLIANCE))
+    else if (GetTeamScore(BG_TEAM_HORDE) > GetTeamScore(BG_TEAM_ALLIANCE))
         return HORDE;
 
     return Battleground::GetPrematureWinner();

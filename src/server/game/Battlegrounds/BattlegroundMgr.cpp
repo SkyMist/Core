@@ -152,7 +152,8 @@ void BattlegroundMgr::Update(uint32 diff)
 
 void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battleground* bg, Player* player, uint8 QueueSlot, uint8 StatusID, uint32 Time1, uint32 Time2, uint8 arenatype)
 {
-    // if (!bg) return;
+    if (!bg)
+        return; // StatusID = STATUS_NONE;
 
     ObjectGuid playerGuid = player->GetGUID();
     ObjectGuid bgGuid = bg ? bg->GetGUID() : 0;
@@ -161,7 +162,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
     {
         case STATUS_NONE:
         {
-           // call BuildPacketFailed to send the error to the clients
+            // call BuildPacketFailed to send the error to the clients
             BuildStatusFailedPacket(data, bg, player, QueueSlot, ERR_BATTLEGROUND_NONE);
             break;
         }
@@ -769,7 +770,7 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     data->WriteByteSeq(PlayerGuid[2]);
     data->WriteByteSeq(BattlegroundGuid[7]);
 
-    *data << uint32(bg->isArena() ? bg->GetArenaType() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5) // *data << uint32(bg->GetStatus()); // Status
+    *data << uint32(bg->isArena() ? bg->GetArenaType() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
 
     data->WriteByteSeq(PlayerReasonGuid[0]);
     data->WriteByteSeq(BattlegroundGuid[2]);
@@ -1271,7 +1272,7 @@ void BattlegroundMgr::CreateInitialBattlegrounds()
             if (data.bgTypeId != BATTLEGROUND_AA)
                 m_ArenaSelectionWeights[data.bgTypeId] = fields[10].GetUInt8();
         }
-        else if (data.bgTypeId != BATTLEGROUND_RB)
+        else if (data.bgTypeId != BATTLEGROUND_RB && data.bgTypeId != BATTLEGROUND_RATED_10_VS_10)
             m_BGSelectionWeights[data.bgTypeId] = fields[10].GetUInt8();
 
         ++count;
