@@ -5288,7 +5288,7 @@ void AuraEffect::HandleAuraOverrideSpells(AuraApplication const* aurApp, uint8 m
     if (!target || !target->IsInWorld())
         return;
 
-    uint32 overrideId = uint32(GetMiscValue());
+    uint32 overrideId = GetMiscValue();
 
     if (apply)
     {

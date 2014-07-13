@@ -82,7 +82,7 @@ class instance_culling_of_stratholme : public InstanceMapScript
                 return false;
             }
 
-            void FillInitialWorldStates(WorldPacket& data) OVERRIDE
+            void FillInitialWorldStates(ByteBuffer& data) OVERRIDE
             {
                 data << uint32(WORLDSTATE_SHOW_CRATES) << uint32(1);
                 data << uint32(WORLDSTATE_CRATES_REVEALED) << uint32(_crateCount);

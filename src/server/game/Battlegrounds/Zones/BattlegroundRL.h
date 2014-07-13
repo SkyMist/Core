@@ -48,7 +48,7 @@ class BattlegroundRL : public Battleground
         /* inherited from BattlegroundClass */
         void AddPlayer(Player* player);
         void Reset();
-        void FillInitialWorldStates(WorldPacket &d);
+        void FillInitialWorldStates(ByteBuffer &d);
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
 

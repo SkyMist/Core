@@ -820,40 +820,42 @@ uint32 BattlefieldWG::GetData(uint32 data) const
     return Battlefield::GetData(data);
 }
 
-
-void BattlefieldWG::FillInitialWorldStates(WorldPacket& data)
+void BattlefieldWG::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_ATTACKER) << uint32(GetAttackerTeam());
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_DEFENDER) << uint32(GetDefenderTeam());
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_ACTIVE) << uint32(IsWarTime() ? 0 : 1); // Note: cleanup these two, their names look awkward
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_SHOW_WORLDSTATE) << uint32(IsWarTime() ? 1 : 0);
+    data << uint32(GetAttackerTeam())   << uint32(BATTLEFIELD_WG_WORLD_STATE_ATTACKER);
+    data << uint32(GetDefenderTeam())   << uint32(BATTLEFIELD_WG_WORLD_STATE_DEFENDER);
+    data << uint32(IsWarTime() ? 0 : 1) << uint32(BATTLEFIELD_WG_WORLD_STATE_ACTIVE); // Note: cleanup these two, their names look awkward
+    data << uint32(IsWarTime() ? 1 : 0) << uint32(BATTLEFIELD_WG_WORLD_STATE_SHOW_WORLDSTATE);
 
     for (uint32 i = 0; i < 2; ++i)
-        data << ClockWorldState[i] << uint32(time(NULL) + (m_Timer / 1000));
+        data << uint32(time(NULL) + (m_Timer / 1000)) << ClockWorldState[i];
 
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_VEHICLE_H) << uint32(GetData(BATTLEFIELD_WG_DATA_VEHICLE_H));
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_MAX_VEHICLE_H) << GetData(BATTLEFIELD_WG_DATA_MAX_VEHICLE_H);
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_VEHICLE_A) << uint32(GetData(BATTLEFIELD_WG_DATA_VEHICLE_A));
-    data << uint32(BATTLEFIELD_WG_WORLD_STATE_MAX_VEHICLE_A) << GetData(BATTLEFIELD_WG_DATA_MAX_VEHICLE_A);
+    data << uint32(GetData(BATTLEFIELD_WG_DATA_VEHICLE_H)) << uint32(BATTLEFIELD_WG_WORLD_STATE_VEHICLE_H);
+    data << GetData(BATTLEFIELD_WG_DATA_MAX_VEHICLE_H)     << uint32(BATTLEFIELD_WG_WORLD_STATE_MAX_VEHICLE_H);
+    data << uint32(GetData(BATTLEFIELD_WG_DATA_VEHICLE_A)) << uint32(BATTLEFIELD_WG_WORLD_STATE_VEHICLE_A);
+    data << GetData(BATTLEFIELD_WG_DATA_MAX_VEHICLE_A)     << uint32(BATTLEFIELD_WG_WORLD_STATE_MAX_VEHICLE_A);
 
     for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
-        data << (*itr)->m_WorldState << (*itr)->m_State;
+        data << (*itr)->m_State << (*itr)->m_WorldState;
 
     for (Workshop::const_iterator itr = WorkshopsList.begin(); itr != WorkshopsList.end(); ++itr)
         if (*itr)
-            data << WorkshopsData[(*itr)->workshopId].worldstate << (*itr)->state;
+            data << (*itr)->state << WorkshopsData[(*itr)->workshopId].worldstate;
 }
 
 void BattlefieldWG::SendInitWorldStatesTo(Player* player)
 {
+    ByteBuffer states;
     WorldPacket data(SMSG_INIT_WORLD_STATES, (4 + 4 + 4 + 2 + (BuildingsInZone.size() * 8) + (WorkshopsList.size() * 8)));
 
     data << uint32(m_MapId);
     data << uint32(m_ZoneId);
     data << uint32(0);
-    data << uint16(10 + BuildingsInZone.size() + WorkshopsList.size()); // Number of fields
+    data.WriteBits(10 + BuildingsInZone.size() + WorkshopsList.size(), 21); // Number of fields
+    data.FlushBits();
 
-    FillInitialWorldStates(data);
+    FillInitialWorldStates(states);
+    data.append(states);
 
     player->GetSession()->SendPacket(&data);
 }

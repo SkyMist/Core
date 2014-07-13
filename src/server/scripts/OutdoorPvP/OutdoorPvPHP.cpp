@@ -152,7 +152,7 @@ void OutdoorPvPHP::SendRemoveWorldStates(Player* player)
     }
 }
 
-void OutdoorPvPHP::FillInitialWorldStates(WorldPacket &data)
+void OutdoorPvPHP::FillInitialWorldStates(ByteBuffer& data)
 {
     data << uint32(HP_UI_TOWER_DISPLAY_A) << uint32(1);
     data << uint32(HP_UI_TOWER_DISPLAY_H) << uint32(1);
@@ -284,7 +284,7 @@ void OPvPCapturePointHP::SendChangePhase()
     SendUpdateWorldState(HP_UI_TOWER_SLIDER_DISPLAY, 1);
 }
 
-void OPvPCapturePointHP::FillInitialWorldStates(WorldPacket &data)
+void OPvPCapturePointHP::FillInitialWorldStates(ByteBuffer& data)
 {
     switch (m_State)
     {

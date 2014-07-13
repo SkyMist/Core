@@ -47,10 +47,10 @@ class instance_zulaman : public InstanceMapScript
                 ZulAmanBossCount        = 0;
             }
 
-            void FillInitialWorldStates(WorldPacket& packet) OVERRIDE
+            void FillInitialWorldStates(ByteBuffer& data) OVERRIDE
             {
-                packet << uint32(WORLD_STATE_ZULAMAN_TIMER_ENABLED) << uint32(ZulAmanState ? 1 : 0);
-                packet << uint32(WORLD_STATE_ZULAMAN_TIMER) << uint32(SpeedRunTimer);
+                data << uint32(WORLD_STATE_ZULAMAN_TIMER_ENABLED) << uint32(ZulAmanState ? 1 : 0);
+                data << uint32(WORLD_STATE_ZULAMAN_TIMER)         << uint32(SpeedRunTimer);
             }
 
             void OnCreatureCreate(Creature* creature) OVERRIDE

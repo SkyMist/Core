@@ -108,9 +108,9 @@ void BattlegroundNA::HandleAreaTrigger(Player* player, uint32 trigger)
     }
 }
 
-void BattlegroundNA::FillInitialWorldStates(WorldPacket &data)
+void BattlegroundNA::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << uint32(0xa11) << uint32(1);           // 9
+    data << uint32(1) << uint32(0xa11);           // 9
     UpdateArenaWorldState();
 }
 

@@ -201,9 +201,9 @@ void BattlegroundDS::HandleAreaTrigger(Player* player, uint32 trigger)
     }
 }
 
-void BattlegroundDS::FillInitialWorldStates(WorldPacket &data)
+void BattlegroundDS::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << uint32(3610) << uint32(1);                                              // 9 show
+    data << uint32(1) << uint32(3610);                                              // 9 show
     UpdateArenaWorldState();
 }
 

@@ -395,44 +395,44 @@ void BattlegroundSA::StartingEventCloseDoors() { }
 
 void BattlegroundSA::StartingEventOpenDoors() { }
 
-void BattlegroundSA::FillInitialWorldStates(WorldPacket& data)
+void BattlegroundSA::FillInitialWorldStates(ByteBuffer& data)
 {
   uint32 ally_attacks = uint32(Attackers == TEAM_ALLIANCE ? 1 : 0);
   uint32 horde_attacks = uint32(Attackers == TEAM_HORDE ? 1 : 0);
 
-  data << uint32(BG_SA_ANCIENT_GATEWS) << uint32(GateStatus[BG_SA_ANCIENT_GATE]);
-  data << uint32(BG_SA_YELLOW_GATEWS) << uint32(GateStatus[BG_SA_YELLOW_GATE]);
-  data << uint32(BG_SA_GREEN_GATEWS) << uint32(GateStatus[BG_SA_GREEN_GATE]);
-  data << uint32(BG_SA_BLUE_GATEWS) << uint32(GateStatus[BG_SA_BLUE_GATE]);
-  data << uint32(BG_SA_RED_GATEWS) << uint32(GateStatus[BG_SA_RED_GATE]);
-  data << uint32(BG_SA_PURPLE_GATEWS) << uint32(GateStatus[BG_SA_PURPLE_GATE]);
+  data << uint32(GateStatus[BG_SA_ANCIENT_GATE]) << uint32(BG_SA_ANCIENT_GATEWS);
+  data << uint32(GateStatus[BG_SA_YELLOW_GATE])  << uint32(BG_SA_YELLOW_GATEWS);
+  data << uint32(GateStatus[BG_SA_GREEN_GATE])   << uint32(BG_SA_GREEN_GATEWS);
+  data << uint32(GateStatus[BG_SA_BLUE_GATE])    << uint32(BG_SA_BLUE_GATEWS);
+  data << uint32(GateStatus[BG_SA_RED_GATE])     << uint32(BG_SA_RED_GATEWS);
+  data << uint32(GateStatus[BG_SA_PURPLE_GATE])  << uint32(BG_SA_PURPLE_GATEWS);
 
-  data << uint32(BG_SA_BONUS_TIMER) << uint32(0);
+  data << uint32(0) << uint32(BG_SA_BONUS_TIMER);
 
-  data << uint32(BG_SA_HORDE_ATTACKS) << horde_attacks;
-  data << uint32(BG_SA_ALLY_ATTACKS) << ally_attacks;
+  data << horde_attacks << uint32(BG_SA_HORDE_ATTACKS);
+  data << ally_attacks  << uint32(BG_SA_ALLY_ATTACKS);
 
   //Time will be sent on first update...
-  data << uint32(BG_SA_ENABLE_TIMER) << ((TimerEnabled) ? uint32(1) : uint32(0));
-  data << uint32(BG_SA_TIMER_MINS) << uint32(0);
-  data << uint32(BG_SA_TIMER_SEC_TENS) << uint32(0);
-  data << uint32(BG_SA_TIMER_SEC_DECS) << uint32(0);
+  data << ((TimerEnabled) ? uint32(1) : uint32(0)) << uint32(BG_SA_ENABLE_TIMER);
+  data << uint32(0) << uint32(BG_SA_TIMER_MINS);
+  data << uint32(0) << uint32(BG_SA_TIMER_SEC_TENS);
+  data << uint32(0) << uint32(BG_SA_TIMER_SEC_DECS);
 
-  data << uint32(BG_SA_RIGHT_GY_HORDE) << uint32(GraveyardStatus[BG_SA_RIGHT_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0);
-  data << uint32(BG_SA_LEFT_GY_HORDE) << uint32(GraveyardStatus[BG_SA_LEFT_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0);
-  data << uint32(BG_SA_CENTER_GY_HORDE) << uint32(GraveyardStatus[BG_SA_CENTRAL_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0);
+  data << uint32(GraveyardStatus[BG_SA_RIGHT_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0)      << uint32(BG_SA_RIGHT_GY_HORDE);
+  data << uint32(GraveyardStatus[BG_SA_LEFT_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0)       << uint32(BG_SA_LEFT_GY_HORDE);
+  data << uint32(GraveyardStatus[BG_SA_CENTRAL_CAPTURABLE_GY] == TEAM_HORDE ? 1 : 0)    << uint32(BG_SA_CENTER_GY_HORDE);
 
-  data << uint32(BG_SA_RIGHT_GY_ALLIANCE) << uint32(GraveyardStatus[BG_SA_RIGHT_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0);
-  data << uint32(BG_SA_LEFT_GY_ALLIANCE) << uint32(GraveyardStatus[BG_SA_LEFT_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0);
-  data << uint32(BG_SA_CENTER_GY_ALLIANCE) << uint32(GraveyardStatus[BG_SA_CENTRAL_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0);
+  data << uint32(GraveyardStatus[BG_SA_RIGHT_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0)   << uint32(BG_SA_RIGHT_GY_ALLIANCE);
+  data << uint32(GraveyardStatus[BG_SA_LEFT_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0)    << uint32(BG_SA_LEFT_GY_ALLIANCE);
+  data << uint32(GraveyardStatus[BG_SA_CENTRAL_CAPTURABLE_GY] == TEAM_ALLIANCE ? 1 : 0) << uint32(BG_SA_CENTER_GY_ALLIANCE);
 
-  data << uint32(BG_SA_HORDE_DEFENCE_TOKEN) << ally_attacks;
-  data << uint32(BG_SA_ALLIANCE_DEFENCE_TOKEN) << horde_attacks;
+  data << ally_attacks  << uint32(BG_SA_HORDE_DEFENCE_TOKEN);
+  data << horde_attacks << uint32(BG_SA_ALLIANCE_DEFENCE_TOKEN);
 
-  data << uint32(BG_SA_LEFT_ATT_TOKEN_HRD) << horde_attacks;
-  data << uint32(BG_SA_RIGHT_ATT_TOKEN_HRD) << horde_attacks;
-  data << uint32(BG_SA_RIGHT_ATT_TOKEN_ALL) <<  ally_attacks;
-  data << uint32(BG_SA_LEFT_ATT_TOKEN_ALL) <<  ally_attacks;
+  data << horde_attacks << uint32(BG_SA_LEFT_ATT_TOKEN_HRD);
+  data << horde_attacks << uint32(BG_SA_RIGHT_ATT_TOKEN_HRD);
+  data << ally_attacks  << uint32(BG_SA_RIGHT_ATT_TOKEN_ALL);
+  data << ally_attacks  << uint32(BG_SA_LEFT_ATT_TOKEN_ALL);
 }
 
 void BattlegroundSA::AddPlayer(Player* player)

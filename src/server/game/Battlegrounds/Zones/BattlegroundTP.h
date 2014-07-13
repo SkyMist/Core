@@ -223,8 +223,7 @@ class BattlegroundTP : public Battleground
         }
 
         uint64 GetDroppedFlagGUID(uint32 TeamID)             { return m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)];}
-        void FillInitialWorldStates(WorldPacket& data);
-
+        void FillInitialWorldStates(ByteBuffer& data);
 
         /* Scorekeeping */
         void AddPoint(uint32 TeamID, uint32 Points = 1)     { m_TeamScores[GetTeamIndexByTeamId(TeamID)] += Points; }

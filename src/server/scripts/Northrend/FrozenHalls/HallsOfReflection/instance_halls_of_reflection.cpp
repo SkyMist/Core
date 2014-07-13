@@ -199,7 +199,7 @@ public:
             }
         }
 
-        void FillInitialWorldStates(WorldPacket& data) OVERRIDE
+        void FillInitialWorldStates(ByteBuffer& data) OVERRIDE
         {
             data << uint32(WORLD_STATE_HOR_WAVES_ENABLED) << uint32(0);
             data << uint32(WORLD_STATE_HOR_WAVE_COUNT) << uint32(0);
