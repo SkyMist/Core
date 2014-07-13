@@ -210,7 +210,7 @@ enum Opcodes
    CMSG_GAME_STORE_LIST                                     = 0x1993, // 5.4.7 18019
    CMSG_GAMETIME_SET                                        = 0x0,
    CMSG_GETDEATHBINDZONE                                    = 0x0,
-   CMSG_GET_MAIL_LIST                                       = 0x07DD, // 5.4.7 18019 NYI
+   CMSG_GET_MAIL_LIST                                       = 0x07DD, // 5.4.7 18019
    CMSG_GET_MIRRORIMAGE_DATA                                = 0x0,
    CMSG_GHOST                                               = 0x0,
    CMSG_GMRESPONSE_RESOLVE                                  = 0x0,
@@ -1241,7 +1241,7 @@ enum Opcodes
    SMSG_REALM_SPLIT                                         = 0x0708, // 5.4.7 18019
    SMSG_REALM_NAME_QUERY_RESPONSE                           = 0x1652, // 5.4.7 18019
    SMSG_REAL_GROUP_UPDATE                                   = 0x0,
-   SMSG_RECEIVED_MAIL                                       = 0x0,
+   SMSG_RECEIVED_MAIL                                       = 0x0D60, // 5.4.7 18019
    SMSG_REDIRECT_CLIENT                                     = 0x05B9, // 5.4.7 18019 NYI
    SMSG_REFER_A_FRIEND_EXPIRED                              = 0x0,
    SMSG_REFER_A_FRIEND_FAILURE                              = 0x0,
