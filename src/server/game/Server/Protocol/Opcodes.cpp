@@ -223,7 +223,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_GAMEOBJ_USE,                             STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleGameObjectUseOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_GAME_STORE_BUY,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_GAME_STORE_LIST,                         STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL                     );
-    DEFINE_OPCODE_HANDLER(CMSG_GET_MAIL_LIST,                           STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGetMailList               );
+    DEFINE_OPCODE_HANDLER(CMSG_GET_MAIL_LIST,                           STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleGetMailList               );
     DEFINE_OPCODE_HANDLER(CMSG_GET_MIRRORIMAGE_DATA,                    STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleMirrorImageDataRequest    );
     DEFINE_OPCODE_HANDLER(CMSG_GMRESPONSE_RESOLVE,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGMResponseResolve         );
     DEFINE_OPCODE_HANDLER(CMSG_GMSURVEY_SUBMIT,                         STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleGMSurveySubmit            );
@@ -1183,7 +1183,7 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_READ_ITEM_OK,                            STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_REALM_SPLIT,                             STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_REAL_GROUP_UPDATE,                       STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_RECEIVED_MAIL,                           STATUS_UNHANDLED);
+    DEFINE_OPCODE_HANDLER(SMSG_RECEIVED_MAIL,                           STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_REDIRECT_CLIENT,                         STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_REFER_A_FRIEND_EXPIRED,                  STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_REFER_A_FRIEND_FAILURE,                  STATUS_UNHANDLED);
