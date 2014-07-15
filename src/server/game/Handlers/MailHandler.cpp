@@ -40,7 +40,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
     uint32 bodyLength, subjectLength, receiverLength, StationeryID;
     uint32 unk1;
 
-    recvData >> unk1 >> COD >> StationeryID >> money;
+    recvData >> unk1 >> money >> StationeryID >> COD;
 
     uint8 items_count = recvData.ReadBits(5);              // attached items count
     
