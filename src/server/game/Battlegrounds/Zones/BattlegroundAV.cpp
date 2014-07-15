@@ -1622,8 +1622,9 @@ void BattlegroundAV::ResetBGSubclass()
 
     m_Mine_Timer=AV_MINE_TICK_TIMER;
     for (uint16 i = 0; i < AV_CPLACE_MAX+AV_STATICCPLACE_MAX; i++)
-        if (BgCreatures[i])
-            DelCreature(i);
+        if (!BgCreatures.empty())
+            if (BgCreatures[i])
+                DelCreature(i);
 }
 
 bool BattlegroundAV::CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* source, Unit const* target, uint32 miscValue)

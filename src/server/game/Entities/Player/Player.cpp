@@ -692,6 +692,9 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
     m_speakTime = 0;
     m_speakCount = 0;
 
+    m_petSlotUsed = 0;
+    m_currentPetSlot = PET_SLOT_DELETED;
+
     m_objectType |= TYPEMASK_PLAYER;
     m_objectTypeId = TYPEID_PLAYER;
 
@@ -8249,7 +8252,7 @@ void Player::SendCurrencies() const
 
 void Player::SendPvpRewards() const
 {
-    uint32 ArenaWinReward   = sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD);
+    uint32 ArenaWinReward   = sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD) / CURRENCY_PRECISION;
     uint32 RatedBGWinReward = 400;
 
     WorldPacket packet(SMSG_REQUEST_PVP_REWARDS_RESPONSE, 10 * 4);
@@ -18605,8 +18608,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     //"totalKills, todayKills, yesterdayKills, chosenTitle, watchedFaction, drunk, "
     // 46      47      48      49      50      51      52           53         54          55             56
     //"health, power1, power2, power3, power4, power5, instance_id, speccount, activespec, exploredZones, equipmentCache, "
-    // 57           58          59
-    //"knownTitles, actionBars, grantableLevels FROM characters WHERE guid = '%u'", guid);
+    // 57           58          59                  60               61
+    //"knownTitles, actionBars, grantableLevels, currentPetSlot, petSlotUsed FROM characters WHERE guid = '%u'", guid);
     PreparedQueryResult result = holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_FROM);
     if (!result)
     {
@@ -19280,6 +19283,9 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     if (m_grantableLevels > 0)
         SetByteValue(PLAYER_FIELD_LIFETIME_MAX_RANK, 1, 0x01);
+
+    m_currentPetSlot = (PetSlot)fields[60].GetUInt8();
+    m_petSlotUsed = fields[61].GetUInt32();
 
     _LoadDeclinedNames(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES));
 
@@ -20926,6 +20932,9 @@ void Player::SaveToDB(bool create /*=false*/)
 
         stmt->setUInt8(index++, GetByteValue(PLAYER_FIELD_LIFETIME_MAX_RANK, 2));
         stmt->setUInt32(index, m_grantableLevels);
+
+        stmt->setUInt8(index++, m_currentPetSlot);
+        stmt->setUInt32(index++, m_petSlotUsed);
     }
     else
     {
@@ -21058,6 +21067,10 @@ void Player::SaveToDB(bool create /*=false*/)
         stmt->setUInt32(index++, m_grantableLevels);
 
         stmt->setUInt8(index++, IsInWorld() && !GetSession()->PlayerLogout() ? 1 : 0);
+
+        stmt->setUInt8(index++, m_currentPetSlot);
+        stmt->setUInt32(index++, m_petSlotUsed);
+
         // Index
         stmt->setUInt32(index, GetGUIDLow());
     }

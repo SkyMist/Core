@@ -182,7 +182,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[1]);
             data->WriteByteSeq(playerGuid[6]);
 
-            *data << uint32(Time2);                     // Join Time
+            *data << uint32(Time1);                     // Join Time
 
             data->WriteByteSeq(playerGuid[3]);
             data->WriteByteSeq(playerGuid[5]);
@@ -1026,7 +1026,9 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId bgTypeId
     {
         case BATTLEGROUND_RB:
             isRandom = true;
-        case BATTLEGROUND_AA: // Intentional missing break, "All Arenas" are handled by random selection too.
+            bgTypeId = GetRandomBG(bgTypeId);
+            break;
+        case BATTLEGROUND_AA: // "All Arenas" are handled by random selection too.
             bgTypeId = GetRandomBG(bgTypeId);
             break;
 
@@ -1360,6 +1362,9 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     uint32 winnerHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_WINNER_HONOR_LAST)) / CURRENCY_PRECISION;
     uint32 loserHonor = (!player->GetRandomWinner() ? sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_FIRST) : sWorld->getIntConfig(CONFIG_BG_REWARD_LOSER_HONOR_LAST)) / CURRENCY_PRECISION;
 
+    bool HasWonRandomBg = player->GetRandomWinner() ? true : false;
+    bool HasWonCallToArms = false;
+
     // ToDo: Check hasWonCallToArmsBG / hasWonRandomBG fields.
     ObjectGuid guidBytes = guid;
 
@@ -1371,7 +1376,7 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     data->WriteBit(guidBytes[3]);
     data->WriteBit(guidBytes[0]);
 
-    data->WriteBit(0);                         // hasWonCallToArmsBG - daily
+    data->WriteBit(HasWonCallToArms);          // hasWonCallToArmsBG - daily
 
     data->WriteBit(guidBytes[4]);
     data->WriteBit(guidBytes[7]);
@@ -1386,7 +1391,7 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, uint64 guid
     size_t count_pos = data->bitwpos();
     data->WriteBits(0, 22);                    // Placeholder for BG count.
 
-    data->WriteBit(player->GetRandomWinner() ? 1 : 0); // hasWonRandomBG - daily.
+    data->WriteBit(HasWonRandomBg);            // hasWonRandomBG - daily.
 
     data->FlushBits();
 
