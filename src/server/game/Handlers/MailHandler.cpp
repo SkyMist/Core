@@ -811,7 +811,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         if(HasDword18)
             ByteData << uint32(0);                                  // dword18
         
-        ByteData << uint32(0);                                      // dword50
+        ByteData << uint32((*itr)->mailTemplateId);
         
         if(HasPlayerSender)
         {
@@ -840,7 +840,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         if(HasNonPlayerSender)
             ByteData << SenderEntry;
         
-        ByteData << uint64((*itr)->COD);
+        ByteData << uint64((*itr++)->COD);
     }
     
     Packet.FlushBits();
