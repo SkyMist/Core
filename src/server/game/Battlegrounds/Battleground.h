@@ -301,7 +301,7 @@ enum GroupJoinBattlegroundResult
 
 struct BattlegroundScore
 {
-    BattlegroundScore() : KillingBlows(0), Deaths(0), HonorableKills(0), BonusHonor(0), DamageDone(0), HealingDone(0) { }
+    BattlegroundScore() : KillingBlows(0), Deaths(0), HonorableKills(0), BonusHonor(0), DamageDone(0), HealingDone(0), RatingChange(0) { }
 
     virtual ~BattlegroundScore() { }                        //virtual destructor is used when deleting score from scores map
 
@@ -311,6 +311,7 @@ struct BattlegroundScore
     uint32 BonusHonor;
     uint32 DamageDone;
     uint32 HealingDone;
+    int32 RatingChange;
 };
 
 enum BGHonorMode

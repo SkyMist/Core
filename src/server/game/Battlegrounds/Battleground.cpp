@@ -793,10 +793,10 @@ void Battleground::EndBattleground(uint32 winner)
                 loserArenaTeam->LostAgainst(loserMatchmakerRating, winnerMatchmakerRating, loserChange, slot);
 
                 TC_LOG_DEBUG("bg.arena", "match Type: %u --- Winner: old rating: %u, rating gain: %d, old MMR: %u, Loser: old rating: %u, rating loss: %d, old MMR: %u", m_ArenaType, winnerTeamRating, winnerChange, winnerMatchmakerRating,
-                    winnerMatchmakerChange, loserTeamRating, loserChange, loserMatchmakerRating);
+                    loserTeamRating, loserChange, loserMatchmakerRating);
 
                 SetArenaMatchmakerRating(winner, winnerMatchmakerRating);
-                SetArenaMatchmakerRating(GetOtherTeam(winner), loserMatchmakerRating + loserMatchmakerChange);
+                SetArenaMatchmakerRating(GetOtherTeam(winner), loserMatchmakerRating);
                 SetArenaTeamRatingChangeForTeam(winner, winnerChange);
                 SetArenaTeamRatingChangeForTeam(GetOtherTeam(winner), loserChange);
 
@@ -810,10 +810,11 @@ void Battleground::EndBattleground(uint32 winner)
             // Deduct 16 points from each teams arena-rating if there are no winners after 20+2 minutes
             else
             {
-                SetArenaTeamRatingChangeForTeam(ALLIANCE, -16);
-                SetArenaTeamRatingChangeForTeam(HORDE, -16);
-                winnerArenaTeam->FinishGame(-16);
-                loserArenaTeam->FinishGame(-16);
+                int32 ARENA_POINTS_LOSS_NO_WINNER = -16;
+                SetArenaTeamRatingChangeForTeam(ALLIANCE, ARENA_POINTS_LOSS_NO_WINNER);
+                SetArenaTeamRatingChangeForTeam(HORDE, ARENA_POINTS_LOSS_NO_WINNER);
+                // winnerArenaTeam->FinishGame(ARENA_POINTS_LOSS_NO_WINNER);
+                // loserArenaTeam->FinishGame(ARENA_POINTS_LOSS_NO_WINNER);
             }
         }
         else
@@ -840,9 +841,9 @@ void Battleground::EndBattleground(uint32 winner)
             if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
             {
                 if (team == winner)
-                    winnerArenaTeam->OfflineMemberLost(itr->first, loserMatchmakerRating, Arena::GetSlotByType(GetArenaType()), winnerMatchmakerChange);
+                    winnerArenaTeam->OfflineMemberLost(itr->first, loserMatchmakerRating, Arena::GetSlotByType(GetArenaType()), 0);
                 else
-                    loserArenaTeam->OfflineMemberLost(itr->first, winnerMatchmakerRating, Arena::GetSlotByType(GetArenaType()), loserMatchmakerChange);
+                    loserArenaTeam->OfflineMemberLost(itr->first, winnerMatchmakerRating, Arena::GetSlotByType(GetArenaType()), 0);
             }
             continue;
         }
@@ -923,7 +924,7 @@ void Battleground::EndBattleground(uint32 winner)
                     {
                         guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1, 0, 0, NULL, player);
                         if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
-                            guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, std::max<uint32>(winnerArenaTeam->GetRating(), 1), 0, 0, NULL, player);
+                            guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, std::max<uint32>(winnerArenaTeam->GetRating(Arena::GetSlotByType(GetArenaType())), 1), 0, 0, NULL, player);
                     }
             }
 
@@ -2041,4 +2042,29 @@ bool Battleground::CheckAchievementCriteriaMeet(uint32 criteriaId, Player const*
 {
     TC_LOG_ERROR("bg.battleground", "Battleground::CheckAchievementCriteriaMeet: No implementation for criteria %u", criteriaId);
     return false;
+}
+
+uint32 Battleground::GetArenaMatchmakerRating(uint32 Team, uint8 slot)
+{
+    uint32 MMR = 0;
+    uint32 count = 0;
+
+    if (Group* group = GetBgRaid(Team))
+    {
+        for (GroupReference* ref = group->GetFirstMember(); ref != NULL; ref = ref->next())
+        {
+            if (Player* groupMember = ref->GetSource())
+            {
+                MMR += groupMember->GetArenaMatchMakerRating(slot);
+                ++count;
+            }
+        }
+    }
+
+    if (!count)
+        count = 1;
+
+    MMR /= count;
+
+    return MMR;
 }

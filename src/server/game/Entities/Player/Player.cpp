@@ -913,7 +913,6 @@ Player::Player(WorldSession* session): Unit(true), phaseMgr(this)
 
     _activeCheats = CHEAT_NONE;
 
-    _maxPersonalArenaRate = 0;
     _currentRatedBGRating = 0;
 
     _RandomBgCurrencyWeekCap = 0;
@@ -8471,7 +8470,7 @@ uint32 Player::GetCurrencyWeekCap(CurrencyTypesEntry const* currency) const
                 break;
             case CURRENCY_TYPE_CONQUEST_META_ARENA:
                 // should add precision mod = 100
-                cap = Trinity::Currency::ConquestRatingCalculator(_maxPersonalArenaRate) * CURRENCY_PRECISION;
+                cap = Trinity::Currency::ConquestRatingCalculator(GetMaxRating()) * CURRENCY_PRECISION;
                 break;
             case CURRENCY_TYPE_CONQUEST_META_RBG:
                 // should add precision mod = 100

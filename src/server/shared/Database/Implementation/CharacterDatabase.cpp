@@ -164,7 +164,6 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_INS_ACCOUNT_INSTANCE_LOCK_TIMES, "INSERT INTO account_instance_times (accountId, instanceId, releaseTime) VALUES (?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_SEL_CHARACTER_NAME_CLASS, "SELECT name, class FROM characters WHERE guid = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_SEL_CHARACTER_NAME, "SELECT name FROM characters WHERE guid = ?", CONNECTION_SYNCH);
-    PrepareStatement(CHAR_SEL_MATCH_MAKER_RATING, "SELECT matchMakerRating FROM character_arena_stats WHERE guid = ? AND slot = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_SEL_CHARACTER_COUNT, "SELECT account, COUNT(guid) FROM characters WHERE account = ? GROUP BY account", CONNECTION_ASYNC);
     PrepareStatement(CHAR_UPD_NAME, "UPDATE characters set name = ?, at_login = at_login & ~ ? WHERE guid = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_UPD_NAME_BY_GUID, "UPDATE characters SET name = ? WHERE guid = ?", CONNECTION_ASYNC);
@@ -313,9 +312,9 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_SEL_PETITION_SIG_BY_GUID_TYPE, "SELECT ownerguid, petitionguid FROM petition_sign WHERE playerguid = ? AND type = ?", CONNECTION_SYNCH);
 
     // Arenas
-    PREPARE_STATEMENT(CHAR_INS_CHARACTER_ARENA_DATA, "INSERT INTO character_arena_data (guid, rating0, bestRatingOfWeek0, bestRatingOfSeason0, matchMakerRating0, weekGames0, weekWins0, prevWeekWins0, seasonGames0, seasonWins0, rating1, bestRatingOfWeek1, bestRatingOfSeason1, matchMakerRating1, weekGames1, weekWins1, prevWeekWins1, seasonGames1, seasonWins1, rating2, bestRatingOfWeek2, bestRatingOfSeason2, matchMakerRating2, weekGames2, weekWins2, prevWeekWins2, seasonGames2, seasonWins2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-    PREPARE_STATEMENT(CHAR_DEL_CHARACTER_ARENA_DATA, "DELETE FROM character_arena_data WHERE guid = ?", CONNECTION_ASYNC);
-    PREPARE_STATEMENT(CHAR_SEL_CHARACTER_ARENA_DATA, "SELECT rating0, bestRatingOfWeek0, bestRatingOfSeason0, matchMakerRating0, weekGames0, weekWins0, prevWeekWins0, seasonGames0, seasonWins0, rating1, bestRatingOfWeek1, bestRatingOfSeason1, matchMakerRating1, weekGames1, weekWins1, prevWeekWins1, seasonGames1, seasonWins1, rating2, bestRatingOfWeek2, bestRatingOfSeason2, matchMakerRating2, weekGames2, weekWins2, prevWeekWins2, seasonGames2, seasonWins2 FROM character_arena_data WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_CHARACTER_ARENA_DATA, "INSERT INTO character_arena_data (guid, rating0, bestRatingOfWeek0, bestRatingOfSeason0, matchMakerRating0, weekGames0, weekWins0, prevWeekWins0, seasonGames0, seasonWins0, rating1, bestRatingOfWeek1, bestRatingOfSeason1, matchMakerRating1, weekGames1, weekWins1, prevWeekWins1, seasonGames1, seasonWins1, rating2, bestRatingOfWeek2, bestRatingOfSeason2, matchMakerRating2, weekGames2, weekWins2, prevWeekWins2, seasonGames2, seasonWins2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_CHARACTER_ARENA_DATA, "DELETE FROM character_arena_data WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_SEL_CHARACTER_ARENA_DATA, "SELECT rating0, bestRatingOfWeek0, bestRatingOfSeason0, matchMakerRating0, weekGames0, weekWins0, prevWeekWins0, seasonGames0, seasonWins0, rating1, bestRatingOfWeek1, bestRatingOfSeason1, matchMakerRating1, weekGames1, weekWins1, prevWeekWins1, seasonGames1, seasonWins1, rating2, bestRatingOfWeek2, bestRatingOfSeason2, matchMakerRating2, weekGames2, weekWins2, prevWeekWins2, seasonGames2, seasonWins2 FROM character_arena_data WHERE guid = ?", CONNECTION_ASYNC);
 
     // Character battleground data
     PrepareStatement(CHAR_INS_PLAYER_BGDATA, "INSERT INTO character_battleground_data (guid, instanceId, team, joinX, joinY, joinZ, joinO, joinMapId, taxiStart, taxiEnd, mountSpell) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);

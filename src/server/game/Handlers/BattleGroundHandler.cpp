@@ -793,7 +793,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     uint32 playerDivider = 0;
     for (GroupReference const* ref = grp->GetFirstMember(); ref != NULL; ref = ref->next())
     {
-        if (Player const* groupMember = ref->getSource())
+        if (Player const* groupMember = ref->GetSource())
         {
             arenaRating += groupMember->GetArenaPersonalRating(arenaslot);
             matchmakerRating += groupMember->GetArenaMatchMakerRating(arenaslot);

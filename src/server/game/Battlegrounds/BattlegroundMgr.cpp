@@ -20,6 +20,7 @@
 #include "Common.h"
 #include "ObjectMgr.h"
 #include "Arena.h"
+#include "Group.h"
 #include "World.h"
 #include "WorldPacket.h"
 
@@ -404,16 +405,19 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         {
             // Alliance team is Gold, Horde team is Green.
             Group* WinnerArenaTeam = bg->GetBgRaid(bg->GetWinner());
-            Group* LoserArenaTeam  = bg->GetBgRaid(GetOtherTeam(bg->GetWinner()));
+            Group* LoserArenaTeam  = bg->GetBgRaid(bg->GetOtherTeam(bg->GetWinner()));
 
-            data->WriteBits(WinnerArenaTeam->GetLeader()->GetName().size(), 7);
+            Player* winnerLeader = ObjectAccessor::FindPlayer(WinnerArenaTeam->GetLeaderGUID());
+            Player* loserLeader = ObjectAccessor::FindPlayer(LoserArenaTeam->GetLeaderGUID());
+
+            data->WriteBits(winnerLeader->GetName().size(), 7);
             data->WriteBit(Guid2[3]);
             data->WriteBit(Guid2[2]);
             data->WriteBit(Guid1[7]);
             data->WriteBit(Guid1[2]);
             data->WriteBit(Guid1[3]);
             data->WriteBit(Guid2[4]);
-            data->WriteBits(LoserArenaTeam->GetLeader()->GetName().size(), 7);
+            data->WriteBits(loserLeader->GetName().size(), 7);
             data->WriteBit(Guid2[7]);
             data->WriteBit(Guid1[6]);
             data->WriteBit(Guid1[4]);
@@ -652,7 +656,10 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         {
             // Alliance team is Gold, Horde team is Green.
             Group* WinnerArenaTeam = bg->GetBgRaid(bg->GetWinner());
-            Group* LoserArenaTeam  = bg->GetBgRaid(GetOtherTeam(bg->GetWinner()));
+            Group* LoserArenaTeam  = bg->GetBgRaid(bg->GetOtherTeam(bg->GetWinner()));
+
+            Player* winnerLeader = ObjectAccessor::FindPlayer(WinnerArenaTeam->GetLeaderGUID());
+            Player* loserLeader = ObjectAccessor::FindPlayer(LoserArenaTeam->GetLeaderGUID());
 
             data->WriteByteSeq(Guid2[4]);
             data->WriteByteSeq(Guid2[5]);
@@ -660,7 +667,7 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
             data->WriteByteSeq(Guid1[2]);
             data->WriteByteSeq(Guid2[3]);
             data->WriteByteSeq(Guid1[7]);
-            data->WriteString(WinnerArenaTeam->GetLeader()->GetName());
+            data->WriteString(winnerLeader->GetName());
             data->WriteByteSeq(Guid2[2]);
             data->WriteByteSeq(Guid1[3]);
             data->WriteByteSeq(Guid2[6]);
@@ -671,7 +678,7 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
             data->WriteByteSeq(Guid2[7]);
             data->WriteByteSeq(Guid2[1]);
             data->WriteByteSeq(Guid1[0]);
-            data->WriteString(LoserArenaTeam->GetLeader()->GetName());
+            data->WriteString(loserLeader->GetName());
         }
     }
 
@@ -686,15 +693,22 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
             if (bg->GetWinner() < WINNER_NONE) // Must have a winner.
             {
                 // Alliance team is Gold, Horde team is Green.
-                Group* WinnerArenaTeam = bg->GetBgRaid(bg->GetWinner());
-                Group* LoserArenaTeam  = bg->GetBgRaid(GetOtherTeam(bg->GetWinner()));
+                uint8 slot = Arena::GetSlotByType(bg->GetArenaType());
 
-                uint32 winnerMatchmakerRating = bg->GetArenaMatchmakerRating(winner, slot);
-                uint32 loserMatchmakerRating = bg->GetArenaMatchmakerRating(GetOtherTeam(winner), slot);
-                uint32 winnerTeamRating = winnerArenaTeam->GetRating(slot);
-                uint32 loserTeamRating = loserArenaTeam->GetRating(slot);
+                Group* WinnerArenaTeam = bg->GetBgRaid(bg->GetWinner());
+                Group* LoserArenaTeam  = bg->GetBgRaid(bg->GetOtherTeam(bg->GetWinner()));
+
+                uint32 winnerMatchmakerRating = bg->GetArenaMatchmakerRating(bg->GetWinner(), slot);
+                uint32 loserMatchmakerRating = bg->GetArenaMatchmakerRating(bg->GetOtherTeam(bg->GetWinner()), slot);
+                uint32 winnerTeamRating = WinnerArenaTeam->GetRating(slot);
+                uint32 loserTeamRating = LoserArenaTeam->GetRating(slot);
                 uint32 WinnerRatingChange = 0;
                 uint32 LoserRatingChange = 0;
+
+                // if (player->GetBattleground())
+                //     for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
+                //         if (itr2->first == itr->guid)
+                //             itr2->second->RatingChange = rating_change;
 
                 *data << uint32(winnerTeamRating - WinnerRatingChange);  // Team1 Old Rating
                 *data << uint32(loserMatchmakerRating);                  // Team2 MMR
