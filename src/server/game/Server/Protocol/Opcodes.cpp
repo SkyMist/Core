@@ -420,7 +420,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_GUILD_RECIPES,                     STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_GUILD_REWARDS,                     STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleGuildRewardsQueryOpcode   );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_GUILD_XP,                          STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleGuildQueryXPOpcode        );
-    DEFINE_OPCODE_HANDLER(CMSG_QUERY_NEXT_MAIL_TIME,                    STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQueryNextMailTime         );
+    DEFINE_OPCODE_HANDLER(CMSG_QUERY_NEXT_MAIL_TIME,                    STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleQueryNextMailTime         );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_INSPECT_ACHIEVEMENTS,              STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleQueryInspectAchievements  );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_QUESTS_COMPLETED,                  STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleQueryQuestsCompleted      );
     DEFINE_OPCODE_HANDLER(CMSG_QUERY_TIME,                              STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleQueryTimeOpcode           );
