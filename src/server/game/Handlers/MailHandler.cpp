@@ -809,7 +809,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
             ByteData << uint32((item ? item->GetUInt32Value(ITEM_FIELD_DURABILITY) : 0));
         }
         
-        ByteData << uint64((*itr)->money);                          // Gold
+        ByteData << uint64((*itr)->COD);
         
         if(HasDword18)
             ByteData << uint32(0);                                  // dword18
@@ -843,7 +843,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         if(HasNonPlayerSender)
             ByteData << SenderEntry;
         
-        ByteData << uint64((*itr++)->COD);
+        ByteData << uint64((*itr++)->money);                          // Gold
     }
     
     Packet.FlushBits();
