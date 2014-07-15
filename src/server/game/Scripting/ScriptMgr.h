@@ -77,7 +77,6 @@ struct OutdoorPvPData;
     MailScript
     SessionScript
     CollisionScript
-    ArenaTeamScript
 
 */
 

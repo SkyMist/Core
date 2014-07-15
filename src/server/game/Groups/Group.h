@@ -287,6 +287,16 @@ class Group
         void OfflineReadyCheck();
 
         /*********************************************************/
+        /***                  ARENA SYSTEM                     ***/
+        /*********************************************************/
+
+        void OfflineMemberLost(uint64 guid, uint32 againstMatchmakerRating, uint8 slot, int32 MatchmakerRatingChange = -12);
+        void MemberLost(Player* player, uint32 againstMatchmakerRating, uint8 slot, int32 MatchmakerRatingChange = -12);
+        uint32 GetRating(uint8 slot);
+        void WonAgainst(uint32 OwnMMRating, uint32 OpponentMMRating, int32& ratingChange, uint8 slot);
+        void LostAgainst(uint32 OwnMMRating, uint32 OpponentMMRating, int32& ratingChange, uint8 slot);
+
+        /*********************************************************/
         /***                   LOOT SYSTEM                     ***/
         /*********************************************************/
 

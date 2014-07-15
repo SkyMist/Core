@@ -1548,6 +1548,26 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recvData)
     data.WriteBit(playerGuid[7]);
     data.WriteBit(playerGuid[1]);
 
+    /*
+    data.WriteBits(MAX_ARENA_SLOT, 3);
+
+    for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
+    {
+        // Client displays only these two fields
+
+        data << uint32(player->GetSeasonWins(i));
+        data << uint32(0);
+        data << uint32(0);
+        
+        data << uint8(i);
+        
+        data << uint32(0);
+        data << uint32(0);
+        data << uint32(player->GetArenaPersonalRating(i));
+        data << uint32(0);
+    }
+    */
+
     data.FlushBits();
 
     data << uint8(0);                                               // rank

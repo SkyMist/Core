@@ -23,7 +23,7 @@
 #include "DBCStores.h"
 #include "GroupReference.h"
 #include "MapReference.h"
-
+#include "Arena.h"
 #include "PlayerMovement.h"
 #include "Common.h"
 #include "Item.h"
@@ -814,19 +814,6 @@ enum InstanceResetWarningType
     RAID_INSTANCE_EXPIRED           = 5
 };
 
-// PLAYER_FIELD_PVP_INFO offsets
-enum ArenaTeamInfoType
-{
-    ARENA_TEAM_ID                = 0,
-    ARENA_TEAM_TYPE              = 1,                       // new in 3.2 - team type?
-    ARENA_TEAM_MEMBER            = 2,                       // 0 - captain, 1 - member
-    ARENA_TEAM_GAMES_WEEK        = 3,
-    ARENA_TEAM_GAMES_SEASON      = 4,
-    ARENA_TEAM_WINS_SEASON       = 5,
-    ARENA_TEAM_PERSONAL_RATING   = 6,
-    ARENA_TEAM_END               = 7
-};
-
 class InstanceSave;
 
 enum RestType
@@ -887,10 +874,10 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS         = 15,
     PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES          = 16,
     PLAYER_LOGIN_QUERY_LOAD_GUILD                   = 17,
-    PLAYER_LOGIN_QUERY_LOAD_ARENA_INFO              = 18,
-    PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS            = 19,
-    PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS       = 20,
-    PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 21,
+    PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS            = 18,
+    PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS       = 19,
+    PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 20,
+    PLAYER_LOGIN_QUERY_LOAD_ARENA_DATA              = 21,
     PLAYER_LOGIN_QUERY_LOAD_BG_DATA                 = 22,
     PLAYER_LOGIN_QUERY_LOAD_GLYPHS                  = 23,
     PLAYER_LOGIN_QUERY_LOAD_TALENTS                 = 24,
@@ -1959,13 +1946,14 @@ class Player : public Unit, public GridObject<Player>
         void SetContestedPvPTimer(uint32 newTime) {m_contestedPvPTimer = newTime;}
         void ResetContestedPvP();
 
-        /** todo: -maybe move UpdateDuelFlag+DuelComplete to independent DuelHandler.. **/
+        // Duels
         DuelInfo* duel;
         void UpdateDuelFlag(time_t currTime);
         void CheckDuelDistance(time_t currTime);
         void DuelComplete(DuelCompleteType type);
         void SendDuelCountdown(uint32 counter);
 
+        // Groups
         bool IsGroupVisibleFor(Player const* p) const;
         bool IsInSameGroupWith(Player const* p) const;
         bool IsInSameRaidWith(Player const* p) const;
@@ -1974,6 +1962,7 @@ class Player : public Unit, public GridObject<Player>
         void RemoveFromGroup(RemoveMethod method = GROUP_REMOVEMETHOD_DEFAULT) { RemoveFromGroup(GetGroup(), GetGUID(), method); }
         void SendUpdateToOutOfRangeGroupMembers();
 
+        // Guilds
         void SetInGuild(uint32 guildId);
         void SetRank(uint8 rankId) { SetUInt32Value(PLAYER_FIELD_GUILD_RANK_ID, rankId); }
         uint8 GetRank() const { return uint8(GetUInt32Value(PLAYER_FIELD_GUILD_RANK_ID)); }
@@ -1987,19 +1976,87 @@ class Player : public Unit, public GridObject<Player>
         int GetGuildIdInvited() { return m_GuildIdInvited; }
         static void RemovePetitionsAndSigns(uint64 guid, uint32 type);
 
-        // Arena Team
-        void SetInArenaTeam(uint32 ArenaTeamId, uint8 slot, uint8 type);
-        void SetArenaTeamInfoField(uint8 slot, ArenaTeamInfoType type, uint32 value);
-        static uint32 GetArenaTeamIdFromDB(uint64 guid, uint8 slot);
-        static void LeaveAllArenaTeams(uint64 guid);
-        uint32 GetArenaTeamId(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_PVP_INFO + (slot * ARENA_TEAM_END) + ARENA_TEAM_ID); }
-        uint32 GetArenaPersonalRating(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_PVP_INFO + (slot * ARENA_TEAM_END) + ARENA_TEAM_PERSONAL_RATING); }
-        void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
-        uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
+        // Arenas
+        uint32 GetArenaPersonalRating(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_ArenaPersonalRating[slot]; }
+        uint32 GetBestRatingOfWeek(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_BestRatingOfWeek[slot]; }
+        uint32 GetBestRatingOfSeason(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_BestRatingOfSeason[slot]; }
+        uint32 GetWeekWins(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_WeekWins[slot]; }
+        uint32 GetPrevWeekWins(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_PrevWeekWins[slot]; }
+        uint32 GetSeasonWins(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_SeasonWins[slot]; }
+        uint32 GetWeekGames(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_WeekGames[slot]; }
+        uint32 GetSeasonGames(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_SeasonGames[slot]; }
+        uint32 GetArenaMatchMakerRating(uint8 slot) const { ASSERT(slot < MAX_ARENA_SLOT); return m_ArenaMatchMakerRating[slot]; }
 
+        uint32 GetMaxRating() const
+        {
+            uint32 max_value = 0;
+
+            for (uint8 i = 0; i < MAX_ARENA_SLOT; i++)
+                if (max_value < GetArenaPersonalRating(i))
+                    max_value = GetArenaPersonalRating(i);
+
+            return max_value;
+        }
+
+        void SetArenaPersonalRating(uint8 slot, uint32 value)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            m_ArenaPersonalRating[slot] = value;
+            if (m_BestRatingOfWeek[slot] < value)
+                m_BestRatingOfWeek[slot] = value;
+            if (m_BestRatingOfSeason[slot] < value)
+                m_BestRatingOfSeason[slot] = value;
+        }
+
+        void SetArenaMatchMakerRating(uint8 slot, uint32 value)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            m_ArenaMatchMakerRating[slot] = value;
+        }
+
+        void IncrementWeekGames(uint8 slot)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            ++m_WeekGames[slot];
+        }
+
+        void IncrementWeekWins(uint8 slot)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            ++m_WeekWins[slot];
+        }
+
+        void IncrementSeasonGames(uint8 slot)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            ++m_SeasonGames[slot];
+        }
+
+        void IncrementSeasonWins(uint8 slot)
+        {
+            if (slot >= MAX_ARENA_SLOT)
+                return;
+
+            ++m_SeasonWins[slot];
+        }
+
+        void FinishWeek();
+
+        // Rated BG's
         uint32 GetRBGPersonalRating() const { return 0; } // GetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING);
         // void SetRBGPersonalRating(uint32 rating) { SetUInt32Value(PLAYER_FIELD_BATTLEGROUND_RATING, rating); }
 
+        // Difficulties
         Difficulty GetDifficulty(bool isRaid) const { return isRaid ? m_raidDifficulty : m_dungeonDifficulty; }
         Difficulty GetDungeonDifficulty() const { return m_dungeonDifficulty; }
         Difficulty GetRaidDifficulty() const { return m_raidDifficulty; }
@@ -2008,6 +2065,7 @@ class Player : public Unit, public GridObject<Player>
         void SetRaidDifficulty(Difficulty raid_difficulty) { m_raidDifficulty = raid_difficulty; }
         void StoreRaidMapDifficulty() { m_raidMapDifficulty = GetMap()->GetDifficulty(); }
 
+        // Skills
         bool UpdateSkill(uint32 skill_id, uint32 step);
         bool UpdateSkillPro(uint16 skillId, int32 chance, uint32 step);
 
@@ -2017,6 +2075,7 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 GetSpellByProto(ItemTemplate* proto);
 
+        // Stats
         float GetHealthBonusFromStamina();
 
         bool UpdateStats(Stats stat);
@@ -2672,8 +2731,8 @@ class Player : public Unit, public GridObject<Player>
         void _LoadFriendList(PreparedQueryResult result);
         bool _LoadHomeBind(PreparedQueryResult result);
         void _LoadDeclinedNames(PreparedQueryResult result);
-        void _LoadArenaTeamInfo(PreparedQueryResult result);
         void _LoadEquipmentSets(PreparedQueryResult result);
+        void _LoadArenaData(PreparedQueryResult result);
         void _LoadBGData(PreparedQueryResult result);
         void _LoadGlyphs(PreparedQueryResult result);
         void _LoadTalents(PreparedQueryResult result);
@@ -2698,6 +2757,7 @@ class Player : public Unit, public GridObject<Player>
         void _SaveSkills(SQLTransaction& trans);
         void _SaveSpells(SQLTransaction& trans);
         void _SaveEquipmentSets(SQLTransaction& trans);
+        void _SaveArenaData(SQLTransaction& trans);
         void _SaveBGData(SQLTransaction& trans);
         void _SaveGlyphs(SQLTransaction& trans);
         void _SaveTalents(SQLTransaction& trans);
@@ -2776,7 +2836,6 @@ class Player : public Unit, public GridObject<Player>
         SkillStatusMap mSkillStatus;
 
         uint32 m_GuildIdInvited;
-        uint32 m_ArenaTeamIdInvited;
 
         PlayerMails m_mail;
         PlayerSpellMap m_spells;
@@ -2934,7 +2993,16 @@ class Player : public Unit, public GridObject<Player>
         uint32 _pendingBindTimer;
 
         uint32 _activeCheats;
-        uint32 _maxPersonalArenaRate;
+
+        uint32 m_ArenaPersonalRating[MAX_ARENA_SLOT];
+        uint32 m_BestRatingOfWeek[MAX_ARENA_SLOT];
+        uint32 m_BestRatingOfSeason[MAX_ARENA_SLOT];
+        uint32 m_ArenaMatchMakerRating[MAX_ARENA_SLOT];
+        uint32 m_WeekWins[MAX_ARENA_SLOT];
+        uint32 m_PrevWeekWins[MAX_ARENA_SLOT];
+        uint32 m_SeasonWins[MAX_ARENA_SLOT];
+        uint32 m_WeekGames[MAX_ARENA_SLOT];
+        uint32 m_SeasonGames[MAX_ARENA_SLOT];
         uint32 _currentRatedBGRating;
         uint32 _ConquestCurrencytotalWeekCap;
         uint32 _RandomBgCurrencyWeekCap;

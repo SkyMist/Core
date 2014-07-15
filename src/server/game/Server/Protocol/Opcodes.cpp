@@ -72,16 +72,6 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_AREATRIGGER,                             STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleAreaTriggerOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_AREA_SPIRIT_HEALER_QUERY,                STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleAreaSpiritHealerQueryOpcode);
     DEFINE_OPCODE_HANDLER(CMSG_AREA_SPIRIT_HEALER_QUEUE,                STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleAreaSpiritHealerQueueOpcode);
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_ACCEPT,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamAcceptOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_CREATE,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamCreateOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_DECLINE,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamDeclineOpcode    );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_DISBAND,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamDisbandOpcode    );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_INVITE,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamInviteOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_LEADER,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamLeaderOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_LEAVE,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamLeaveOpcode      );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_QUERY,                        STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamQueryOpcode      );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_REMOVE,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamRemoveOpcode     );
-    DEFINE_OPCODE_HANDLER(CMSG_ARENA_TEAM_ROSTER,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleArenaTeamRosterOpcode     );
     DEFINE_OPCODE_HANDLER(CMSG_ATTACKSTOP,                              STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleAttackStopOpcode          );
     DEFINE_OPCODE_HANDLER(CMSG_ATTACKSWING,                             STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleAttackSwingOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_AUCTION_HELLO,                           STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleAuctionHelloOpcode        );
@@ -123,7 +113,6 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_BUY_BANK_SLOT,                           STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBuyBankSlotOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_BUY_ITEM,                                STATUS_LOGGEDIN,     PROCESS_THREADUNSAFE, &WorldSession::HandleBuyItemOpcode             );
     DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_ADD_EVENT,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarAddEvent          );
-    DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_ARENA_TEAM,                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarArenaTeam         );
     DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_COMPLAIN,                       STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarComplain          );
     DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_COPY_EVENT,                     STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarCopyEvent         );
     DEFINE_OPCODE_HANDLER(CMSG_CALENDAR_EVENT_INVITE,                   STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleCalendarEventInvite       );
@@ -579,7 +568,6 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_WORLD_TELEPORT,                          STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleWorldTeleportOpcode       );
     DEFINE_OPCODE_HANDLER(CMSG_WRAP_ITEM,                               STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleWrapItemOpcode            );
     DEFINE_OPCODE_HANDLER(CMSG_ZONEUPDATE,                              STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleZoneUpdateOpcode          );
-    DEFINE_OPCODE_HANDLER(MSG_INSPECT_ARENA_TEAMS,                      STATUS_UNHANDLED,    PROCESS_THREADUNSAFE, &WorldSession::HandleInspectArenaTeamsOpcode   );
     DEFINE_OPCODE_HANDLER(MSG_MOVE_CHARM_TELEPORT_CHEAT,                STATUS_UNHANDLED,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
     DEFINE_OPCODE_HANDLER(MSG_MOVE_FALL_LAND,                           STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleMovementOpcodes           );
     DEFINE_OPCODE_HANDLER(MSG_MOVE_HEARTBEAT,                           STATUS_LOGGEDIN,     PROCESS_THREADSAFE,   &WorldSession::HandleMovementOpcodes           );
@@ -644,13 +632,7 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_AREA_TRIGGER_MOVEMENT_UPDATE,            STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_ARENA_ERROR,                             STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_ARENA_UNIT_DESTROYED,                    STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_CHANGE_FAILED_QUEUED,         STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_COMMAND_RESULT,               STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_EVENT,                        STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_INVITE,                       STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_QUERY_RESPONSE,               STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_ROSTER,                       STATUS_UNHANDLED);
-    DEFINE_OPCODE_HANDLER(SMSG_ARENA_TEAM_STATS,                        STATUS_UNHANDLED);
+    DEFINE_OPCODE_HANDLER(SMSG_ARENA_OPPONENT_SPECIALIZATIONS,          STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_ATTACKERSTATEUPDATE,                     STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_ATTACKSTART,                             STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_ATTACKSTOP,                              STATUS_NEVER    );
@@ -709,7 +691,6 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_BREAK_TARGET,                            STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_BUY_FAILED,                              STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_BUY_ITEM,                                STATUS_NEVER    );
-    DEFINE_OPCODE_HANDLER(SMSG_CALENDAR_ARENA_TEAM,                     STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_CALENDAR_CLEAR_PENDING_ACTION,           STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_CALENDAR_COMMAND_RESULT,                 STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_CALENDAR_EVENT_INVITE,                   STATUS_UNHANDLED);
@@ -1213,6 +1194,7 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_SERVER_INFO_RESPONSE,                    STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_SERVER_MESSAGE,                          STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_SERVER_PERF,                             STATUS_UNHANDLED);
+    DEFINE_OPCODE_HANDLER(SMSG_SET_ARENA_SEASON,                        STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_SET_DF_FAST_LAUNCH_RESULT,               STATUS_UNHANDLED);
     DEFINE_OPCODE_HANDLER(SMSG_SET_DUNGEON_DIFFICULTY,                  STATUS_NEVER    );
     DEFINE_OPCODE_HANDLER(SMSG_SET_FACTION_ATWAR,                       STATUS_UNHANDLED);

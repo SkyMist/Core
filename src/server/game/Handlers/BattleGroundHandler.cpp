@@ -20,11 +20,10 @@
 #include "Common.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
-#include "ArenaTeam.h"
 #include "BattlegroundMgr.h"
 #include "Battleground.h"
 #include "Chat.h"
@@ -613,16 +612,16 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket &recvData)
                 return;
 
             // if player leaves rated arena match before match start, it is counted as he played but he lost
-            if (ginfo.IsRated && bg->isArena() && ginfo.IsInvitedToBGInstanceGUID)
-            {
-                ArenaTeam* at = sArenaTeamMgr->GetArenaTeamById(ginfo.Team);
-                if (at)
-                {
-                    TC_LOG_DEBUG("bg.battleground", "UPDATING memberLost's personal arena rating for %u by opponents rating: %u, because he has left queue!", GUID_LOPART(_player->GetGUID()), ginfo.OpponentsTeamRating);
-                    at->MemberLost(_player, ginfo.OpponentsMatchmakerRating);
-                    at->SaveToDB();
-                }
-            }
+            // if (ginfo.IsRated && bg->isArena() && ginfo.IsInvitedToBGInstanceGUID)
+            // {
+            //     ArenaTeam* at = sArenaTeamMgr->GetArenaTeamById(ginfo.Team);
+            //     if (at)
+            //     {
+            //         TC_LOG_DEBUG("bg.battleground", "UPDATING memberLost's personal arena rating for %u by opponents rating: %u, because he has left queue!", GUID_LOPART(_player->GetGUID()), ginfo.OpponentsTeamRating);
+            //         at->MemberLost(_player, ginfo.OpponentsMatchmakerRating);
+            //         at->SaveToDB();
+            //     }
+            // }
 
             if (bg->isArena())
             {
@@ -750,7 +749,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     if (_player->InBattleground())
         return;
 
-    uint8 arenatype = ArenaTeam::GetTypeBySlot(arenaslot);
+    uint8 arenatype = Arena::GetTypeBySlot(arenaslot);
 
     uint32 arenaRating = 0;
     uint32 matchmakerRating = 0;
@@ -784,28 +783,34 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     GroupJoinBattlegroundResult err = ERR_BATTLEGROUND_NONE;
 
     Group* grp = _player->GetGroup();
+
     // no group found, error
     if (!grp)
         return;
     if (grp->GetLeaderGUID() != _player->GetGUID())
         return;
 
-    uint32 ateamId = _player->GetArenaTeamId(arenaslot);
-    // check real arenateam existence only here (if it was moved to group->CanJoin .. () then we would ahve to get it twice)
-    ArenaTeam* at = sArenaTeamMgr->GetArenaTeamById(ateamId);
-    if (!at)
+    uint32 playerDivider = 0;
+    for (GroupReference const* ref = grp->GetFirstMember(); ref != NULL; ref = ref->next())
     {
-        _player->GetSession()->SendNotInArenaTeamPacket(arenatype);
-        return;
+        if (Player const* groupMember = ref->getSource())
+        {
+            arenaRating += groupMember->GetArenaPersonalRating(arenaslot);
+            matchmakerRating += groupMember->GetArenaMatchMakerRating(arenaslot);
+            ++playerDivider;
+        }
     }
 
-    // get the team rating for queueing
-    arenaRating = at->GetRating();
-    matchmakerRating = at->GetAverageMMR(grp);
-    // the arenateam id must match for everyone in the group
+    if (!playerDivider)
+        return;
+
+    arenaRating /= playerDivider;
+    matchmakerRating /= playerDivider;
 
     if (arenaRating <= 0)
         arenaRating = 1;
+    if (matchmakerRating <= 0)
+        matchmakerRating = 1;
 
     BattlegroundQueue &bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
 
@@ -813,11 +818,11 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     GroupQueueInfo* ginfo = NULL;
 
     err = grp->CanJoinBattlegroundQueue(bg, bgQueueTypeId, arenatype, arenatype, true, arenaslot);
-    if (!err)
+    if (!err || (err && sBattlegroundMgr->isArenaTesting()))
     {
-        TC_LOG_DEBUG("bg.battleground", "Battleground: arena team id %u, leader %s queued with matchmaker rating %u for type %u", _player->GetArenaTeamId(arenaslot), _player->GetName().c_str(), matchmakerRating, arenatype);
+        TC_LOG_DEBUG("bg.battleground", "Battleground: arena team leader %s queued with matchmaker rating %u for type %u", _player->GetName().c_str(), matchmakerRating, arenatype);
 
-        ginfo = bgQueue.AddGroup(_player, grp, bgTypeId, bracketEntry, arenatype, true, false, arenaRating, matchmakerRating, ateamId);
+        ginfo = bgQueue.AddGroup(_player, grp, bgTypeId, bracketEntry, arenatype, true, false, arenaRating, matchmakerRating);
         avgTime = bgQueue.GetAverageQueueWaitTime(ginfo, bracketEntry->GetBracketId());
     }
 
@@ -829,7 +834,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
 
         WorldPacket data;
 
-        if (err)
+        if (err && !sBattlegroundMgr->isArenaTesting())
         {
             sBattlegroundMgr->BuildStatusFailedPacket(&data, bg, _player, 0, err);
             member->GetSession()->SendPacket(&data);
@@ -927,6 +932,21 @@ void WorldSession::HandleRequestRatedBgStats(WorldPacket& /*recvData*/)
     // null packet
 
     WorldPacket data(SMSG_RATED_BG_STATS, 72);
+
+    /*
+    for (uint8 i = 0; i < MAX_ARENA_SLOT; i++)
+    {
+        data << uint32(_player->GetWeekGames(i)); // games of week
+        data << uint32(_player->GetSeasonGames(i)); // games of season
+        data << uint32(0);
+        data << uint32(0);
+        data << uint32(_player->GetArenaPersonalRating(i)); // current rating
+        data << uint32(_player->GetBestRatingOfSeason(i)); // best rating of season
+        data << uint32(_player->GetBestRatingOfWeek(i)); // best rating of week
+        data << uint32(_player->GetPrevWeekWins(i)); // wins of prev week
+    }
+    */
+
     /* A 15 in the end means for rated 15v15, 10 => 10v10 and 5 => 5v5. All of them are sent as uint32, you can't have a negative, duh?! :D */
     data << uint32(0); // weekWon5
     data << uint32(0); // weekPlayed5

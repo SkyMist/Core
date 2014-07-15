@@ -20,7 +20,7 @@
 #include "Chat.h"
 #include "ScriptMgr.h"
 #include "AccountMgr.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
 #include "Group.h"

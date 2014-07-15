@@ -46,7 +46,7 @@ Copied events should probably have a new owner
 #include "ObjectAccessor.h"
 #include "DatabaseEnv.h"
 #include "GuildMgr.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "WorldSession.h"
 
 void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recvData*/)
@@ -208,17 +208,6 @@ void WorldSession::HandleCalendarGuildFilter(WorldPacket& recvData)
         guild->MassInviteToEvent(this, minLevel, maxLevel, minRank);
 
     TC_LOG_DEBUG("network", "CMSG_CALENDAR_GUILD_FILTER: Min level [%d], Max level [%d], Min rank [%d]", minLevel, maxLevel, minRank);
-}
-
-void WorldSession::HandleCalendarArenaTeam(WorldPacket& recvData)
-{
-    TC_LOG_DEBUG("network", "CMSG_CALENDAR_ARENA_TEAM [" UI64FMTD "]", _player->GetGUID());
-
-    uint32 arenaTeamId;
-    recvData >> arenaTeamId;
-
-    if (ArenaTeam* team = sArenaTeamMgr->GetArenaTeamById(arenaTeamId))
-        team->MassInviteToEvent(this);
 }
 
 void WorldSession::HandleCalendarAddEvent(WorldPacket& recvData)

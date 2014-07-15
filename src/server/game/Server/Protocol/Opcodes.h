@@ -47,16 +47,6 @@ enum Opcodes
    CMSG_AREATRIGGER                                         = 0x155A, // 5.4.7 18019
    CMSG_AREA_SPIRIT_HEALER_QUERY                            = 0x0,
    CMSG_AREA_SPIRIT_HEALER_QUEUE                            = 0x0,
-   CMSG_ARENA_TEAM_ACCEPT                                   = 0x0,
-   CMSG_ARENA_TEAM_CREATE                                   = 0x0,
-   CMSG_ARENA_TEAM_DECLINE                                  = 0x0,
-   CMSG_ARENA_TEAM_DISBAND                                  = 0x0,
-   CMSG_ARENA_TEAM_INVITE                                   = 0x0,
-   CMSG_ARENA_TEAM_LEADER                                   = 0x0,
-   CMSG_ARENA_TEAM_LEAVE                                    = 0x0,
-   CMSG_ARENA_TEAM_QUERY                                    = 0x0,
-   CMSG_ARENA_TEAM_REMOVE                                   = 0x0,
-   CMSG_ARENA_TEAM_ROSTER                                   = 0x0,
    CMSG_ATTACKSTOP                                          = 0x1E13, // 5.4.7 18019
    CMSG_ATTACKSWING                                         = 0x1513, // 5.4.7 18019
    CMSG_AUCTION_HELLO                                       = 0x047F, // 5.4.7 18019
@@ -102,7 +92,6 @@ enum Opcodes
    CMSG_BUY_BANK_SLOT                                       = 0x00FE, // 5.4.7 18019
    CMSG_BUY_ITEM                                            = 0x1077, // 5.4.7 18019
    CMSG_CALENDAR_ADD_EVENT                                  = 0x16D0, // 5.4.7 18019
-   CMSG_CALENDAR_ARENA_TEAM                                 = 0x0,
    CMSG_CALENDAR_COMPLAIN                                   = 0x0,
    CMSG_CALENDAR_CONTEXT_EVENT_SIGNUP                       = 0x0,
    CMSG_CALENDAR_COPY_EVENT                                 = 0x0,
@@ -601,7 +590,6 @@ enum Opcodes
    MSG_GM_BIND_OTHER                                        = 0x0,
    MSG_GM_SHOWLABEL                                         = 0x0,
    MSG_GM_SUMMON                                            = 0x0,
-   MSG_INSPECT_ARENA_TEAMS                                  = 0x0,
    MSG_MOVE_CHARM_TELEPORT_CHEAT                            = 0x0,
    MSG_MOVE_FALL_LAND                                       = 0x055B, // 5.4.7 18019
    MSG_MOVE_HEARTBEAT                                       = 0x017B, // 5.4.7 18019
@@ -674,13 +662,7 @@ enum Opcodes
    SMSG_AREA_TRIGGER_MOVEMENT_UPDATE                        = 0x0,
    SMSG_ARENA_ERROR                                         = 0x0,
    SMSG_ARENA_UNIT_DESTROYED                                = 0x0,
-   SMSG_ARENA_TEAM_CHANGE_FAILED_QUEUED                     = 0x0,
-   SMSG_ARENA_TEAM_COMMAND_RESULT                           = 0x0,
-   SMSG_ARENA_TEAM_EVENT                                    = 0x0,
-   SMSG_ARENA_TEAM_INVITE                                   = 0x0,
-   SMSG_ARENA_TEAM_QUERY_RESPONSE                           = 0x0,
-   SMSG_ARENA_TEAM_ROSTER                                   = 0x0,
-   SMSG_ARENA_TEAM_STATS                                    = 0x0,
+   SMSG_ARENA_OPPONENT_SPECIALIZATIONS                      = 0x0,
    SMSG_ATTACKERSTATEUPDATE                                 = 0x0540, // 5.4.7 18019
    SMSG_ATTACKSTART                                         = 0x0403, // 5.4.7 18019
    SMSG_ATTACKSTOP                                          = 0x1448, // 5.4.7 18019
@@ -688,7 +670,7 @@ enum Opcodes
    SMSG_AUCTION_HELLO                                       = 0x04E9, // 5.4.7 18019
    SMSG_AUCTION_BIDDER_LIST_RESULT                          = 0x0,
    SMSG_AUCTION_BIDDER_NOTIFICATION                         = 0x0,
-   SMSG_AUCTION_COMMAND_RESULT                              = 0x12FB, // 5.4.7 18019 NYI
+   SMSG_AUCTION_COMMAND_RESULT                              = 0x0,
    SMSG_AUCTION_LIST_PENDING_SALES                          = 0x11EB, // 5.4.7 18019 NYI
    SMSG_AUCTION_LIST_RESULT                                 = 0x0504, // 5.4.7 18019 NYI
    SMSG_AUCTION_OWNER_LIST_RESULT                           = 0x048F, // 5.4.7 18019 NYI
@@ -743,7 +725,6 @@ enum Opcodes
    SMSG_BUY_FAILED                                          = 0x0,
    SMSG_BUY_ITEM                                            = 0x0763, // 5.4.7 18019
    SMSG_CALENDAR_ACTION_PENDING                             = 0x0,
-   SMSG_CALENDAR_ARENA_TEAM                                 = 0x0,
    SMSG_CALENDAR_CLEAR_PENDING_ACTION                       = 0x0,
    SMSG_CALENDAR_COMMAND_RESULT                             = 0x0,
    SMSG_CALENDAR_EVENT_INVITE                               = 0x0,
@@ -1273,6 +1254,7 @@ enum Opcodes
    SMSG_SERVER_MESSAGE                                      = 0x026E, // 5.4.7 18019
    SMSG_SERVER_PERF                                         = 0x0,
    SMSG_SET_AI_ANIM_KIT                                     = 0x0,
+   SMSG_SET_ARENA_SEASON                                    = 0x00E1, // 5.4.7 18019
    SMSG_SET_DF_FAST_LAUNCH_RESULT                           = 0x0,
    SMSG_SET_DUNGEON_DIFFICULTY                              = 0x1500, // 5.4.7 18019
    SMSG_SET_FACTION_ATWAR                                   = 0x0,

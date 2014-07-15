@@ -39,7 +39,7 @@
 #include "AchievementMgr.h"
 #include "AuctionHouseMgr.h"
 #include "ObjectMgr.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "GuildMgr.h"
 #include "GuildFinderMgr.h"
 #include "TicketMgr.h"
@@ -1784,10 +1784,8 @@ void World::SetInitialWorldSettings()
     sGuildMgr->LoadGuilds();
     TC_LOG_INFO("server.loading", "");
 
+    TC_LOG_INFO("server.loading", "Loading Guild Finder...");
     sGuildFinderMgr->LoadFromDB();
-
-    TC_LOG_INFO("server.loading", "Loading ArenaTeams...");
-    sArenaTeamMgr->LoadArenaTeams();
     TC_LOG_INFO("server.loading", "");
 
     TC_LOG_INFO("server.loading", "Loading Groups...");
@@ -3134,8 +3132,13 @@ void World::ResetDailyQuests()
 
 void World::ResetCurrencyWeekCap() // ToDo: put here smsg for weekly_last_reset.
 {
+    // Reset currency data.
     CharacterDatabase.Execute("UPDATE `character_currency` SET `week_count` = 0");
     CharacterDatabase.Execute("UPDATE `character_currency` SET `total_count` = 0 WHERE currency IN (483, 484)"); // For Meta Arena / RBg currency.
+
+    // Reset Arenas data too.
+    CharacterDatabase.Execute("UPDATE `character_arena_data` SET `prevWeekWins0` = `weekWins0`, `prevWeekWins1` = `weekWins1`, `prevWeekWins2` = `weekWins2`");
+    CharacterDatabase.Execute("UPDATE `character_arena_data` SET `bestRatingOfWeek0` = 0, `weekGames0` = 0, `weekWins0` = 0, `bestRatingOfWeek1` = 0, `weekGames1` = 0, `weekWins1` = 0, `bestRatingOfWeek2` = 0, `weekGames2` = 0, `weekWins2` = 0");
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
     {

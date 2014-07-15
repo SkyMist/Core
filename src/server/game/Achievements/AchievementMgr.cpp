@@ -18,8 +18,7 @@
  */
 
 #include "AchievementMgr.h"
-#include "ArenaTeam.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "Battleground.h"
 #include "CellImpl.h"
 #include "Chat.h"
@@ -1330,15 +1329,7 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
                 {
                     for (uint32 arena_slot = 0; arena_slot < MAX_ARENA_SLOT; ++arena_slot)
                     {
-                        uint32 teamId = referencePlayer->GetArenaTeamId(arena_slot);
-                        if (!teamId)
-                            continue;
-
-                        ArenaTeam* team = sArenaTeamMgr->GetArenaTeamById(teamId);
-                        if (!team || team->GetType() != reqTeamType)
-                            continue;
-
-                        SetCriteriaProgress(achievementCriteria, team->GetStats().Rating, referencePlayer, PROGRESS_HIGHEST);
+                        SetCriteriaProgress(achievementCriteria, referencePlayer->GetArenaPersonalRating(arena_slot), referencePlayer, PROGRESS_HIGHEST);
                         break;
                     }
                 }
@@ -1359,21 +1350,7 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
                 else // login case
                 {
                     for (uint32 arena_slot = 0; arena_slot < MAX_ARENA_SLOT; ++arena_slot)
-                    {
-                        uint32 teamId = referencePlayer->GetArenaTeamId(arena_slot);
-                        if (!teamId)
-                            continue;
-
-                        ArenaTeam* team = sArenaTeamMgr->GetArenaTeamById(teamId);
-                        if (!team || team->GetType() != reqTeamType)
-                            continue;
-
-                        if (ArenaTeamMember const* member = team->GetMember(referencePlayer->GetGUID()))
-                        {
-                            SetCriteriaProgress(achievementCriteria, member->PersonalRating, referencePlayer, PROGRESS_HIGHEST);
-                            break;
-                        }
-                    }
+                        SetCriteriaProgress(achievementCriteria, referencePlayer->GetArenaPersonalRating(arena_slot), referencePlayer, PROGRESS_HIGHEST);
                 }
                 break;
             }
@@ -2430,8 +2407,9 @@ bool AchievementMgr<T>::RequirementsSatisfied(AchievementCriteriaEntry const* ac
             break;
         case ACHIEVEMENT_CRITERIA_TYPE_DEATH:
         {
-            if (!miscValue1)
+            if (!miscValue1 || !referencePlayer)
                 return false;
+
             // skip wrong arena achievements, if not achievIdByArenaSlot then normal total death counter
             bool notfit = false;
             for (int j = 0; j < MAX_ARENA_SLOT; ++j)
@@ -2439,7 +2417,7 @@ bool AchievementMgr<T>::RequirementsSatisfied(AchievementCriteriaEntry const* ac
                 if (achievIdByArenaSlot[j] == achievementCriteria->achievement)
                 {
                     Battleground* bg = referencePlayer->GetBattleground();
-                    if (!bg || !bg->isArena() || ArenaTeam::GetSlotByType(bg->GetArenaType()) != j)
+                    if (!bg || !bg->isArena() || Arena::GetSlotByType(bg->GetArenaType()) != j)
                         notfit = true;
                     break;
                 }
@@ -2450,7 +2428,7 @@ bool AchievementMgr<T>::RequirementsSatisfied(AchievementCriteriaEntry const* ac
         }
         case ACHIEVEMENT_CRITERIA_TYPE_DEATH_IN_DUNGEON:
         {
-            if (!miscValue1)
+            if (!miscValue1 || !referencePlayer)
                 return false;
 
             Map const* map = referencePlayer->IsInWorld() ? referencePlayer->GetMap() : sMapMgr->FindMap(referencePlayer->GetMapId(), referencePlayer->GetInstanceId());

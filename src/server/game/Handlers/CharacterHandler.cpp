@@ -18,8 +18,7 @@
  */
 
 #include "AccountMgr.h"
-#include "ArenaTeam.h"
-#include "ArenaTeamMgr.h"
+#include "Arena.h"
 #include "Battleground.h"
 #include "CalendarMgr.h"
 #include "Chat.h"
@@ -161,10 +160,6 @@ bool LoginQueryHolder::Initialize()
     stmt->setUInt32(0, lowGuid);
     res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_GUILD, stmt);
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ARENAINFO);
-    stmt->setUInt32(0, lowGuid);
-    res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_ARENA_INFO, stmt);
-
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ACHIEVEMENTS);
     stmt->setUInt32(0, lowGuid);
     res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS, stmt);
@@ -180,6 +175,10 @@ bool LoginQueryHolder::Initialize()
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_CUF_PROFILES);
     stmt->setUInt32(0, lowGuid);
     res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES, stmt);
+
+    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ARENA_DATA);
+    stmt->setUInt32(0, lowGuid);
+    res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_ARENA_DATA, stmt);
 
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_BGDATA);
     stmt->setUInt32(0, lowGuid);
@@ -773,15 +772,6 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
         return;
     }
 
-    // is arena team captain
-    if (sArenaTeamMgr->GetArenaTeamByCaptain(guid))
-    {
-        WorldPacket data(SMSG_CHAR_DELETE, 1);
-        data << uint8(CHAR_DELETE_FAILED_ARENA_CAPTAIN);
-        SendPacket(&data);
-        return;
-    }
-
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_DATA_BY_GUID);
     stmt->setUInt32(0, GUID_LOPART(guid));
 
@@ -1004,6 +994,16 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
             chH.PSendSysMessage(_FULLVERSION);
 
         TC_LOG_DEBUG("network", "WORLD: Sent server info");
+    }
+
+    if (sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS))
+    {
+        data.Initialize(SMSG_SET_ARENA_SEASON, 8);
+        data << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
+        data << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID) - 1);
+        SendPacket(&data);
+
+        TC_LOG_DEBUG("network", "WORLD: Sent SMSG_SET_ARENA_SEASON");
     }
 
     //QueryResult* result = CharacterDatabase.PQuery("SELECT guildid, rank FROM guild_member WHERE guid = '%u'", pCurrChar->GetGUIDLow());
@@ -2258,8 +2258,6 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
                 if (result)
                     if (Guild* guild = sGuildMgr->GetGuildById((result->Fetch()[0]).GetUInt32()))
                         guild->DeleteMember(MAKE_NEW_GUID(lowGuid, 0, HIGHGUID_PLAYER));
-
-                Player::LeaveAllArenaTeams(guid);
             }
 
             if (!HasPermission(rbac::RBAC_PERM_TWO_SIDE_ADD_FRIEND))
