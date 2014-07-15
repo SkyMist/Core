@@ -704,6 +704,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
     if (!player->m_mailsLoaded)
         player->_LoadMail();
 
+    size_t MailCountSent = 0;
     WorldPacket Packet(SMSG_MAIL_LIST_RESULT);           // guess size
     ByteBuffer ByteData;
     
@@ -712,15 +713,17 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
     
     if(TotalMailCount <= 50)
     {
-        Packet.WriteBits(TotalMailCount, 18);
+        MailCountSent = TotalMailCount;
     }
     else
     {
-        Packet.WriteBits(50, 18);
+        MailCountSent = 50;
     }
+    
+    Packet.WriteBits(MailCountSent, 18);
     // the client displays max 50 messages, no point in sending any more until those are read and deleted
     
-    for(std::size_t i = 0; i < 50; i++)
+    for(std::size_t i = 0; i < MailCountSent; i++)
     {
         bool HasDword18 = false;
         bool HasDword1C = false;
