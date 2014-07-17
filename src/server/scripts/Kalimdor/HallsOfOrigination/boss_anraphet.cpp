@@ -1,41 +1,40 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+/*Copyright (C) 2013 SkyMist Project.
+*
+* This file is NOT free software. Third-party users can NOT redistribute it or modify it :). 
+* If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
+*/
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "SpellAuras.h"
+#include "MapManager.h"
+#include "Spell.h"
+#include "Vehicle.h"
+#include "Cell.h"
+#include "CellImpl.h"
 #include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CreatureTextMgr.h"
+#include "MoveSplineInit.h"
 #include "Player.h"
-#include "ObjectAccessor.h"
+#include "Weather.h"
+
 #include "halls_of_origination.h"
 
-enum Texts
+enum Yells
 {
-    ANRAPHET_SAY_INTRO              = 0,
-    ANRAPHET_SAY_AGGRO              = 1,
-    ANRAPHET_SAY_OMEGA_STANCE       = 2,
-    ANRAPHET_SAY_KILL               = 3,
-    ANRAPHET_SAY_DEATH              = 4,
+    SAY_INTRO                       = 0,
+    SAY_AGGRO                       = 1,
+    SAY_KILL                        = 2,
+    SAY_OMEGA                       = 3,
+    SAY_DEATH                       = 4
+};
 
+enum BrannYells
+{
     BRANN_SAY_DOOR_INTRO            = 0,  // Right, let's go! Just need to input the final entry sequence into the door mechanism... and...
     BRANN_SAY_UNLOCK_DOOR           = 1,  // That did the trick! The control room should be right behind this... oh... wow...
     BRANN_SAY_TROGGS                = 2,  // What? This isn't the control room! There's another entire defense mechanism in place, and the blasted Rock Troggs broke into here somehow. Troggs. Why did it have to be Troggs!
@@ -48,7 +47,57 @@ enum Texts
     BRANN_3_ELEMENTAL_DEAD          = 9,  // One more elemental to go! The door is almost open!
     BRANN_4_ELEMENTAL_DEAD          = 10, // That''s it, you''ve done it! The vault door is opening! Now we can... oh, no!
     BRANN_SAY_ANRAPHET_DIED         = 11, // We''ve done it! The control room is breached!
-    BRANN_SAY_MOMENT                = 12 // Here we go! Now this should only take a moment...
+    BRANN_SAY_MOMENT                = 12  // Here we go! Now this should only take a moment... 
+};
+
+enum Spells
+{
+    SPELL_DESTRUCTION_PROTOCOL      = 77437,
+
+    // Beams NPC
+    SPELL_VISUAL_ON_BEAM            = 76912, // Same as 91205, but each 500 ms dmg for 3 sec. - Normal version.
+    SPELL_BEAM_VISUAL               = 91205, // Lasts forever, damage each 500 ms. - Heroic version of 76912.
+    
+    // Anraphet
+    SPELL_BEAMS_CAST                = 76184, // Summons 3 beams, at 3s each.
+
+    SPELL_NEMESIS_STRIKE            = 83650,
+    SPELL_NEMESIS_STRIKE_H          = 91175,
+
+    SPELL_CRUMBLING_RUIN            = 75609,
+    SPELL_CRUMBLING_RUIN_H          = 91206,
+
+    SPELL_OMEGA_STANCE_SUMMON       = 77106,
+    SPELL_OMEGA_STANCE              = 75622,
+    SPELL_OMEGA_STANCE_SPIDER_TRIGGER = 77121
+};
+
+enum Creatures
+{
+    NPC_BEAM                        = 41144
+};
+
+enum GOs
+{
+    GO_VAULT_OF_LIGHTS_DOOR         = 202313,
+    GO_SUN_MIRROR                   = 207726,
+    GOB_ANRAPHET_DOOR               = 202314,
+
+    GO_DOODAD_ULDUM_LIGHTMACHINE_01 = 207375,
+    GO_DOODAD_ULDUM_LIGHTMACHINE_02 = 207374,
+    GO_DOODAD_ULDUM_LIGHTMACHINE_03 = 207377,
+    GO_DOODAD_ULDUM_LIGHTMACHINE_04 = 207376,
+
+    GO_DOODAD_ULDUM_LASERBEAMS01    = 207662, // Matches GO_DOODAD_ULDUM_LIGHTMACHINE_02
+    GO_DOODAD_ULDUM_LASERBEAMS_01   = 207663, // Matches GO_DOODAD_ULDUM_LIGHTMACHINE_01
+    GO_DOODAD_ULDUM_LASERBEAMS_02   = 207664, // Matches GO_DOODAD_ULDUM_LIGHTMACHINE_04
+    GO_DOODAD_ULDUM_LASERBEAMS_03   = 207665  // Matches GO_DOODAD_ULDUM_LIGHTMACHINE_03 
+};
+
+enum Points
+{
+    POINT_ANRAPHET_ACTIVATE         = 0,
+    MAX_BRANN_WAYPOINTS_INTRO       = 17
 };
 
 enum Events
@@ -66,46 +115,17 @@ enum Events
     EVENT_ANRAPHET_APPEAR           = 10,
     EVENT_ANRAPHET_ACTIVATE         = 11,
     EVENT_ANRAPHET_DESTROY          = 12,
-    EVENT_ANRAPHET_READY            = 13,
-    EVENT_ANRAPHET_NEMESIS_STRIKE   = 14,
-    EVENT_ANRAPHET_ALPHA_BEAMS      = 15,
-    EVENT_ANRAPHET_OMEGA_STANCE     = 16,
-    EVENT_ANRAPHET_CRUMBLING_RUIN   = 17,
-    EVENT_ANRAPHET_ACTIVATE_OMEGA   = 18
+    EVENT_ANRAPHET_READY            = 13
 };
 
-enum Spells
+enum Actions
 {
-    SPELL_DESTRUCTION_PROTOCOL          = 77437,
-
-    SPELL_ALPHA_BEAMS                   = 76184,
-    SPELL_ALPHA_BEAMS_BACK_CAST         = 76912,
-
-    SPELL_CRUMBLING_RUIN                = 75609,
-
-
-    SPELL_NEMESIS_STRIKE                = 75604,
-
-    SPELL_OMEGA_STANCE_SUMMON           = 77106,
-    SPELL_OMEGA_STANCE                  = 75622,
-    SPELL_OMEGA_STANCE_SPIDER_TRIGGER   = 77121,
+    ACTION_ANRAPHET_INTRO           = 1,
+    ACTION_ELEMENTAL_DIED,
+    ACTION_ANRAPHET_DIED
 };
 
-enum Phases
-{
-    PHASE_INTRO         = 1,
-    PHASE_COMBAT        = 2,
-
-    PHASE_MASK_COMBAT   = (1 << PHASE_COMBAT),
-};
-
-enum Points
-{
-    POINT_ANRAPHET_ACTIVATE     = 0,
-    MAX_BRANN_WAYPOINTS_INTRO   = 17
-};
-
-Position const AnraphetActivatePos = {-193.656f, 366.689f, 75.91001f, 3.138207f};
+Position const AnraphetActivatePos = {-193.656f, 366.689f, 75.91001f, 3.138207f}; 
 
 Position const BrannIntroWaypoint[MAX_BRANN_WAYPOINTS_INTRO] =
 {
@@ -126,201 +146,273 @@ Position const BrannIntroWaypoint[MAX_BRANN_WAYPOINTS_INTRO] =
     {-103.559f,  366.5938f, 89.79725f, 0.0f},
     {-71.58507f, 367.0278f, 89.77069f, 0.0f},
     {-35.04861f, 366.6563f, 89.77447f, 0.0f},
-};
+}; 
 
 class boss_anraphet : public CreatureScript
 {
-public:
-    boss_anraphet() : CreatureScript("boss_anraphet") { }
+    public:
+        boss_anraphet() : CreatureScript("boss_anraphet") { }
 
-    struct boss_anraphetAI : public BossAI
-    {
-        boss_anraphetAI(Creature* creature) : BossAI(creature, DATA_ANRAPHET) { }
-
-        void ScheduleCombatEvents()
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            events.ScheduleEvent(EVENT_ANRAPHET_NEMESIS_STRIKE, 8000, 0, PHASE_COMBAT);
-            events.ScheduleEvent(EVENT_ANRAPHET_ALPHA_BEAMS, 10000, 0, PHASE_COMBAT);
-            events.ScheduleEvent(EVENT_ANRAPHET_OMEGA_STANCE, 35000, 0, PHASE_COMBAT);
+            return new boss_anraphetAI(creature);
         }
-
-        void Reset() OVERRIDE
+            
+        struct boss_anraphetAI : public ScriptedAI
         {
-            _Reset();
-            me->SetWalk(false);
-            events.SetPhase(PHASE_INTRO);
-            if (instance->GetData(DATA_DEAD_ELEMENTALS) == 4)
+            boss_anraphetAI(Creature* creature) : ScriptedAI(creature), summons(me)
             {
-                // Set to combat automatically, Brann's event won't repeat
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                events.SetPhase(PHASE_COMBAT);
-                ScheduleCombatEvents();
-                me->SetHomePosition(AnraphetActivatePos);
+                instance = creature->GetInstanceScript();
+                creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                IntroDone = false;
             }
-        }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-            instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me, 1);
-            Talk(ANRAPHET_SAY_AGGRO);
-            _EnterCombat();
-        }
+            bool IntroDone;
+            InstanceScript* instance;
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
-        {
-            instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
-            Talk(ANRAPHET_SAY_DEATH);
+            uint32 m_uiAppearTimer;
+            uint32 m_uiActivateTimer;
+            uint32 m_uiDestroyTimer;
+            uint32 m_uiReadyTimer;
 
-            if (Creature* brann = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_BRANN_0_GUID)))
-                brann->AI()->DoAction(ACTION_ANRAPHET_DIED);
+            uint32 m_uiBeamsTimer;
+            uint32 m_uiFirstTimer;
+            uint32 m_uiSecondTimer;
+            uint32 m_uiThirdTimer;
+            uint32 m_uiNemesisStrikeTimer;
+            uint32 m_uiCrumblingRuinTimer;
+            uint32 m_uiOmegaStanceTimer;
+            SummonList summons;
 
-            _JustDied();
-        }
+            Unit* victim1;
+            Unit* victim2;
+            Unit* victim3;
 
-        void KilledUnit(Unit* victim) OVERRIDE
-        {
-            if (victim->GetTypeId() == TYPEID_PLAYER)
-                Talk(ANRAPHET_SAY_KILL);
-        }
-
-        void JustReachedHome() OVERRIDE
-        {
-            instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
-            _JustReachedHome();
-            instance->SetBossState(DATA_ANRAPHET, FAIL);
-        }
-
-        void DoAction(int32 action) OVERRIDE
-        {
-            if (action == ACTION_ANRAPHET_INTRO)
-                events.ScheduleEvent(EVENT_ANRAPHET_APPEAR, 6000, 0, PHASE_INTRO);
-        }
-
-        void MovementInform(uint32 type, uint32 point) OVERRIDE
-        {
-            if (type != POINT_MOTION_TYPE)
-                return;
-
-            if (point == POINT_ANRAPHET_ACTIVATE)
+            void Reset() OVERRIDE
             {
-                events.ScheduleEvent(EVENT_ANRAPHET_ACTIVATE, 1500, 0, PHASE_INTRO);
-                me->SetHomePosition(AnraphetActivatePos);
+                if (instance)
+                    instance->SetData(DATA_ANRAPHET_EVENT, NOT_STARTED);
             }
-        }
 
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if ((events.GetPhaseMask() & PHASE_MASK_COMBAT) && (!UpdateVictim() || !CheckInRoom()))
-                return;
-
-            events.Update(diff);
-
-            if (me->HasUnitState(UNIT_STATE_CASTING))
-                return;
-
-            while (uint32 eventId = events.ExecuteEvent())
+            void DoAction(int32 action) OVERRIDE
             {
-                switch (eventId)
+                if (action == ACTION_ANRAPHET_INTRO)
+                    m_uiAppearTimer = 6000;
+            } 
+
+            void MovementInform(uint32 type, uint32 point) OVERRIDE
+            {
+                if (type != POINT_MOTION_TYPE)
+                    return;
+    
+                if (point == POINT_ANRAPHET_ACTIVATE)
                 {
-                    case EVENT_ANRAPHET_APPEAR:
-                        me->SetWalk(true);
-                        me->GetMotionMaster()->MovePoint(POINT_ANRAPHET_ACTIVATE, AnraphetActivatePos);
-                        break;
-                    case EVENT_ANRAPHET_ACTIVATE:
-                        me->SetWalk(false);
-                        Talk(ANRAPHET_SAY_INTRO);
-                        events.ScheduleEvent(EVENT_ANRAPHET_DESTROY, 17500, 0, PHASE_INTRO);
-                        return;
-                    case EVENT_ANRAPHET_DESTROY:
-                        DoCastAOE(SPELL_DESTRUCTION_PROTOCOL);
-                        events.ScheduleEvent(EVENT_ANRAPHET_READY, 6000, 0, PHASE_INTRO);
-                        break;
-                    case EVENT_ANRAPHET_READY:
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                        events.SetPhase(PHASE_COMBAT);
-                        ScheduleCombatEvents();
-                        break;
-                    case EVENT_ANRAPHET_NEMESIS_STRIKE:
-                        DoCastVictim(SPELL_NEMESIS_STRIKE);
-                        events.ScheduleEvent(EVENT_ANRAPHET_NEMESIS_STRIKE, 21500, 0, PHASE_COMBAT);
-                        break;
-                    case EVENT_ANRAPHET_ALPHA_BEAMS:
-                        DoCast(me, SPELL_ALPHA_BEAMS);
-                        events.ScheduleEvent(EVENT_ANRAPHET_CRUMBLING_RUIN, 12500, 0, PHASE_COMBAT);
-                        events.ScheduleEvent(EVENT_ANRAPHET_ALPHA_BEAMS, urand(40000, 45000), 0, PHASE_COMBAT);
-                        break;
-                    case EVENT_ANRAPHET_OMEGA_STANCE:
-                        DoCast(me, SPELL_OMEGA_STANCE_SUMMON);
-                        DoCast(me, SPELL_OMEGA_STANCE);
-                        Talk(ANRAPHET_SAY_OMEGA_STANCE);
-                        events.ScheduleEvent(EVENT_ANRAPHET_OMEGA_STANCE, urand(45000, 50000), 0, PHASE_COMBAT);
-                        events.ScheduleEvent(EVENT_ANRAPHET_CRUMBLING_RUIN, 13000, 0, PHASE_COMBAT);
-                        break;
-                    case EVENT_ANRAPHET_CRUMBLING_RUIN:
-                        DoCast(me, SPELL_CRUMBLING_RUIN);
-                        break;
+                    m_uiActivateTimer = 1500;
+                    me->SetHomePosition(AnraphetActivatePos);
                 }
             }
 
-            if (events.GetPhaseMask() & PHASE_MASK_COMBAT)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
+            {
+                Talk(SAY_AGGRO);
+
+                m_uiNemesisStrikeTimer = 7000;
+                m_uiBeamsTimer = 10000;
+                m_uiFirstTimer = 0;
+                m_uiSecondTimer = 0;
+                m_uiThirdTimer = 0;
+                m_uiCrumblingRuinTimer = 25000;
+                m_uiOmegaStanceTimer = 30000;
+
+                if (instance)
+                {
+                    instance->SetData(DATA_ANRAPHET_EVENT, IN_PROGRESS);                    
+                    instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);            
+                }
+            }
+
+            void EnterEvadeMode() OVERRIDE
+            {
+                summons.DespawnAll();
+                me->RemoveAllAuras();
+                Reset();
+                me->DeleteThreatList();
+                me->CombatStop(false);
+                me->GetMotionMaster()->MoveTargetedHome();
+
+                if (instance)
+                {
+                    instance->SetData(DATA_ANRAPHET_EVENT, FAIL);
+                    instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); //Remove
+                    instance->DoRemoveAurasDueToSpellOnPlayers(IsHeroic() ? SPELL_CRUMBLING_RUIN_H : SPELL_CRUMBLING_RUIN);
+                }
+            }
+
+            void KilledUnit(Unit* victim) OVERRIDE
+            {
+                if (victim->GetTypeId() == TYPEID_PLAYER)
+                    Talk(SAY_KILL);
+            }
+
+            void JustDied(Unit* killer) OVERRIDE
+            {
+                Talk(SAY_DEATH);
+                summons.DespawnAll();
+
+                if (Creature* brann = me->FindNearestCreature(39908, 500.0f, true))
+                    brann->AI()->DoAction(ACTION_ANRAPHET_DIED);
+
+                if (instance)
+                {
+                    instance->SetData(DATA_ANRAPHET_EVENT, DONE);
+                    instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); //Remove   
+                    instance->DoRemoveAurasDueToSpellOnPlayers(IsHeroic() ? SPELL_CRUMBLING_RUIN_H : SPELL_CRUMBLING_RUIN);
+                }
+            }
+
+            void JustSummoned(Creature* summon) OVERRIDE
+            {
+                summon->setActive(true);
+                summons.push_back(summon->GetGUID());
+            }
+
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
+                if (!UpdateVictim() && IntroDone || me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
+                if (m_uiAppearTimer <= diff)
+                {
+                    me->SetWalk(true);
+                    me->GetMotionMaster()->MovePoint(POINT_ANRAPHET_ACTIVATE, AnraphetActivatePos); 
+                    m_uiAppearTimer = -1;
+                }
+                else m_uiAppearTimer -= diff;
+
+                if (m_uiActivateTimer <= diff)
+                {
+                    me->SetWalk(false);
+                    Talk(SAY_INTRO); 
+                    m_uiActivateTimer = -1;
+                    m_uiDestroyTimer = 17500;
+                }
+                else m_uiActivateTimer -= diff;
+
+                if (m_uiDestroyTimer <= diff)
+                {
+                    DoCast(me, SPELL_DESTRUCTION_PROTOCOL);
+                    m_uiDestroyTimer = -1;
+                    m_uiReadyTimer = 6000;
+                }
+                else m_uiDestroyTimer -= diff;
+
+                if (m_uiReadyTimer <= diff)
+                {
+                    IntroDone = true;
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    m_uiReadyTimer = -1;
+                }
+                else m_uiReadyTimer -= diff;
+
+                if (m_uiNemesisStrikeTimer <= diff && me->isInCombat())
+                {
+                    DoCast(me->getVictim(), IsHeroic() ? SPELL_NEMESIS_STRIKE_H : SPELL_NEMESIS_STRIKE);
+                    m_uiNemesisStrikeTimer = urand(15000, 20000);
+                }
+                else m_uiNemesisStrikeTimer -= diff;
+
+                if (m_uiBeamsTimer <= diff && me->isInCombat())
+                {
+                    victim1 = SelectTarget(SELECT_TARGET_RANDOM, 0);
+                    victim2 = SelectTarget(SELECT_TARGET_RANDOM, 0);
+                    victim3 = SelectTarget(SELECT_TARGET_RANDOM, 0);
+
+                    DoCast(me, SPELL_BEAMS_CAST);
+                    //me->MonsterYell(SAY_ALPHA, LANG_UNIVERSAL, NULL);
+                    m_uiFirstTimer = 3300;
+                    m_uiSecondTimer = 0;
+                    m_uiThirdTimer = 0;
+                    m_uiBeamsTimer = 45000;
+                }
+                else m_uiBeamsTimer -= diff;
+
+                if (m_uiFirstTimer > 0 && m_uiFirstTimer <= diff && me->isInCombat())
+                {
+                    Creature* Beam1 = me->SummonCreature(NPC_BEAM, victim1->GetPositionX(), victim1->GetPositionY(), victim1->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
+                    DoZoneInCombat(Beam1);
+                    if (IsHeroic())
+                    {
+                        DoCast(Beam1, SPELL_VISUAL_ON_BEAM, false);
+                        Beam1->AddAura(SPELL_BEAM_VISUAL, Beam1);
+                    }
+                    else
+                        DoCast(Beam1, SPELL_VISUAL_ON_BEAM);
+                    m_uiFirstTimer = 0;
+                    m_uiSecondTimer = 3300;
+                    m_uiThirdTimer = 0;
+                }
+                else m_uiFirstTimer -= diff;
+
+                if (m_uiSecondTimer > 0 && m_uiSecondTimer <= diff && me->isInCombat())
+                {
+                    Creature* Beam2 = me->SummonCreature(NPC_BEAM, victim2->GetPositionX(), victim2->GetPositionY(), victim2->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
+                    DoZoneInCombat(Beam2);
+                    if (IsHeroic())
+                    {
+                        DoCast(Beam2, SPELL_VISUAL_ON_BEAM, false);
+                        Beam2->AddAura(SPELL_BEAM_VISUAL, Beam2);
+                    }
+                    else
+                        DoCast(Beam2, SPELL_VISUAL_ON_BEAM);
+                    m_uiFirstTimer = 0;
+                    m_uiSecondTimer = 0;
+                    m_uiThirdTimer = 3300;
+                }
+                else m_uiSecondTimer -= diff;
+
+                if (m_uiThirdTimer > 0 && m_uiThirdTimer <= diff && me->isInCombat())
+                {
+                    Creature* Beam3 = me->SummonCreature(NPC_BEAM, victim3->GetPositionX(), victim3->GetPositionY(), victim3->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
+                    DoZoneInCombat(Beam3);
+                    if (IsHeroic())
+                    {
+                        DoCast(Beam3, SPELL_VISUAL_ON_BEAM, false);
+                        Beam3->AddAura(SPELL_BEAM_VISUAL, Beam3);
+                    }
+                    else
+                        DoCast(Beam3, SPELL_VISUAL_ON_BEAM);
+
+                    m_uiFirstTimer = 0;
+                    m_uiSecondTimer = 0;
+                    m_uiThirdTimer = 0;
+                    m_uiNemesisStrikeTimer = 5500;
+                }
+                else m_uiThirdTimer -= diff;
+
+                if (m_uiCrumblingRuinTimer <= diff && me->isInCombat())
+                {
+                    std::vector<Unit*> targets;
+                    std::list<HostileReference*>::const_iterator i = me->getThreatManager().getThreatList().begin();
+                    for (; i != me->getThreatManager().getThreatList().end(); ++i)
+                        if ((*i)->getTarget()->GetTypeId() == TYPEID_PLAYER)
+                            me->AddAura(IsHeroic() ? SPELL_CRUMBLING_RUIN_H : SPELL_CRUMBLING_RUIN, (*i)->getTarget());
+
+                    m_uiCrumblingRuinTimer = IsHeroic() ? 45000 : 50000;
+                }
+                else m_uiCrumblingRuinTimer -= diff;
+
+                if (m_uiOmegaStanceTimer <= diff && me->isInCombat())
+                {
+                    Talk(SAY_OMEGA);
+                    DoCast(me, SPELL_OMEGA_STANCE_SUMMON);
+                    DoCast(me, SPELL_OMEGA_STANCE);
+                    m_uiOmegaStanceTimer = 40000;
+                }
+                else m_uiOmegaStanceTimer -= diff;
+
                 DoMeleeAttackIfReady();
-        }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return GetHallsOfOriginationAI<boss_anraphetAI>(creature);
-    }
-};
-
-class npc_omega_stance : public CreatureScript
-{
-    public:
-        npc_omega_stance() : CreatureScript("npc_omega_stance") { }
-
-        struct npc_omega_stanceAI : public ScriptedAI
-        {
-            npc_omega_stanceAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void IsSummonedBy(Unit* /*who*/) OVERRIDE
-            {
-                DoCast(me, SPELL_OMEGA_STANCE_SPIDER_TRIGGER, true);
             }
-
-            void EnterEvadeMode() OVERRIDE { }
         };
-
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
-        {
-            return new npc_omega_stanceAI(creature);
-        }
-};
-
-class npc_alpha_beam : public CreatureScript
-{
-    public:
-        npc_alpha_beam() : CreatureScript("npc_alpha_beam") { }
-
-        struct npc_alpha_beamAI : public ScriptedAI
-        {
-            npc_alpha_beamAI(Creature* creature) : ScriptedAI(creature), _instance(creature->GetInstanceScript()) { }
-
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
-            {
-                if (Creature* anraphet = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_ANRAPHET_GUID)))
-                    anraphet->CastSpell(me, SPELL_ALPHA_BEAMS_BACK_CAST);
-            }
-
-            void EnterEvadeMode() OVERRIDE { } // Never evade
-
-            private:
-                InstanceScript* _instance;
-        };
-
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
-        {
-            return GetHallsOfOriginationAI<npc_alpha_beamAI>(creature);
-        }
 };
 
 class npc_brann_bronzebeard_anraphet : public CreatureScript
@@ -328,25 +420,35 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
     public:
         npc_brann_bronzebeard_anraphet() : CreatureScript("npc_brann_bronzebeard_anraphet") { }
 
-        struct npc_brann_bronzebeard_anraphetAI : public CreatureAI
+        struct npc_brann_bronzebeard_anraphetAI : public ScriptedAI
         {
-            npc_brann_bronzebeard_anraphetAI(Creature* creature) : CreatureAI(creature), _currentPoint(0), _instance(creature->GetInstanceScript()) { }
-
-            void sGossipSelect(Player* /*player*/, uint32 sender, uint32 action) OVERRIDE
+            npc_brann_bronzebeard_anraphetAI(Creature* creature) : ScriptedAI(creature)
             {
-                if (_instance->GetBossState(DATA_VAULT_OF_LIGHTS) == DONE)
+                instance = creature->GetInstanceScript();
+                _currentPoint = 0;
+                deadElementals = 0;
+                eventDone = false;
+            }
+
+            InstanceScript* instance;
+            EventMap events;
+            uint32 _currentPoint;
+            uint32 deadElementals;
+            bool eventDone;
+
+            void sGossipSelect(Player* player, uint32 sender, uint32 action) OVERRIDE
+            {
+                if (eventDone)
                     return;
 
-                if (me->GetCreatureTemplate()->GossipMenuId == sender && !action)
-                {
-                    _instance->SetBossState(DATA_VAULT_OF_LIGHTS, IN_PROGRESS);
-                    _currentPoint = 0;
-                    events.Reset();
-                    me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                    me->SetWalk(true);
-                    Talk(BRANN_SAY_DOOR_INTRO);
-                    events.ScheduleEvent(EVENT_BRANN_UNLOCK_DOOR, 7500);
-                }
+                Talk(BRANN_SAY_DOOR_INTRO);
+                _currentPoint = 0;
+                events.Reset();
+                player->PlayerTalkClass->ClearMenus();
+                player->CLOSE_GOSSIP_MENU();
+                me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                me->SetWalk(true);
+                events.ScheduleEvent(EVENT_BRANN_UNLOCK_DOOR, 7500);
             }
 
             void DoAction(int32 action) OVERRIDE
@@ -355,19 +457,23 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                 {
                     case ACTION_ELEMENTAL_DIED:
                     {
-                        uint32 dead = _instance->GetData(DATA_DEAD_ELEMENTALS);
-                        Talk(BRANN_1_ELEMENTAL_DEAD + dead - 1);
-                        if (dead == 4)
+                        deadElementals++;
+                        Talk(BRANN_1_ELEMENTAL_DEAD + deadElementals - 1);
+                        if (deadElementals == 4)
                         {
-                            _instance->DoCastSpellOnPlayers(SPELL_VAULT_OF_LIGHTS_CREDIT);
-                            if (Creature* anraphet = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_ANRAPHET_GUID)))
+                            eventDone = true;
+                            if (GameObject* SunMirror = me->FindNearestGameObject(GO_SUN_MIRROR, 1000.0f))
+                                SunMirror->SetGoState(GO_STATE_ACTIVE);
+                            if (GameObject* AnraphetDoor = me->FindNearestGameObject(GOB_ANRAPHET_DOOR, 1000.0f))
+                                AnraphetDoor->SetGoState(GO_STATE_ACTIVE);
+                            if (Creature* anraphet = me->FindNearestCreature(BOSS_ANRAPHET, 1000.0f, true))
                                 anraphet->AI()->DoAction(ACTION_ANRAPHET_INTRO);
                         }
                         break;
                     }
                     case ACTION_ANRAPHET_DIED:
-                        me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                        events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 1000);
+                        Talk(BRANN_SAY_ANRAPHET_DIED);
+                        me->NearTeleportTo(-482.134f, 174.226f, 330.662f, 2.664f);
                         break;
                 }
             }
@@ -380,23 +486,23 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                 {
                     switch (eventId)
                     {
+                        case EVENT_BRANN_UNLOCK_DOOR:
+                            Talk(BRANN_SAY_UNLOCK_DOOR);
+                            if (GameObject* ADoor = me->FindNearestGameObject(202313, 100.0f))
+                                ADoor->SetGoState(GO_STATE_ACTIVE);
+                            events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 3500);
+                            break;
                         case EVENT_BRANN_MOVE_INTRO:
                             if (_currentPoint < MAX_BRANN_WAYPOINTS_INTRO)
                                 me->GetMotionMaster()->MovePoint(_currentPoint, BrannIntroWaypoint[_currentPoint]);
-                            break;
-                        case EVENT_BRANN_UNLOCK_DOOR:
-                            Talk(BRANN_SAY_UNLOCK_DOOR);
-                            _instance->SetBossState(DATA_VAULT_OF_LIGHTS, DONE);
-                            _instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_VAULT_OF_LIGHTS_EVENT);
-                            events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, 3500);
                             break;
                         case EVENT_BRANN_THINK:
                             Talk(BRANN_SAY_THINK);
                             events.ScheduleEvent(EVENT_BRANN_SET_ORIENTATION_1, 6000);
                             break;
                         case EVENT_BRANN_SET_ORIENTATION_1:
-                            me->SetFacingTo(5.445427f);
                             Talk(BRANN_SAY_MIRRORS);
+                            me->SetFacingTo(5.445427f);
                             events.ScheduleEvent(EVENT_BRANN_SET_ORIENTATION_2, 1000);
                             break;
                         case EVENT_BRANN_SET_ORIENTATION_2:
@@ -413,7 +519,7 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                             break;
                         case EVENT_BRANN_SAY_GET_IT:
                             Talk(BRANN_SAY_GET_IT);
-                            me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                            // me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                             break;
                         case EVENT_BRANN_SET_ORIENTATION_4:
                             me->SetFacingTo(3.141593f);
@@ -453,48 +559,66 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
 
                 events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, delay);
             }
-
-        protected:
-            EventMap events;
-            uint32 _currentPoint;
-            InstanceScript* _instance;
         };
 
         CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return GetHallsOfOriginationAI<npc_brann_bronzebeard_anraphetAI>(creature);
+            return new npc_brann_bronzebeard_anraphetAI(creature);
         }
+}; 
+
+class npc_beam : public CreatureScript
+{
+    public:
+        npc_beam() : CreatureScript("npc_beam") { }
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return new npc_beamAI(creature);
+        }
+            
+        struct npc_beamAI : public ScriptedAI
+        {
+            npc_beamAI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+                creature->AddAura(93199, creature);
+                if (!IsHeroic()) creature->DespawnOrUnsummon(3100);
+            }
+
+            InstanceScript* instance;
+
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
+                if (!UpdateVictim())
+                    return;
+            }
+        };
 };
 
-class spell_anraphet_alpha_beams : public SpellScriptLoader
+class npc_omega_stance : public CreatureScript
 {
-public:
-    spell_anraphet_alpha_beams() : SpellScriptLoader("spell_anraphet_alpha_beams") { }
+    public:
+        npc_omega_stance() : CreatureScript("npc_omega_stance") { }
 
-    class spell_anraphet_alpha_beams_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_anraphet_alpha_beams_SpellScript);
-
-        void FilterTargets(std::list<WorldObject*>& targets)
+        struct npc_omega_stanceAI : public ScriptedAI
         {
-            if (targets.empty())
-                return;
+            npc_omega_stanceAI(Creature* creature) : ScriptedAI(creature) { }
 
-            WorldObject* target = Trinity::Containers::SelectRandomContainerElement(targets);
-            targets.clear();
-            targets.push_back(target);
-        }
+            void IsSummonedBy(Unit* /*who*/) OVERRIDE
+            {
+                me->SetReactState(REACT_PASSIVE);
+                DoCast(me, SPELL_OMEGA_STANCE_SPIDER_TRIGGER, true);
+            }
 
-        void Register()
+            void EnterEvadeMode() OVERRIDE { }
+            void UpdateAI(uint32 diff) OVERRIDE { } // No melee.
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
         {
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_anraphet_alpha_beams_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+            return new npc_omega_stanceAI(creature);
         }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_anraphet_alpha_beams_SpellScript();
-    }
 };
 
 class spell_anraphet_omega_stance_summon : public SpellScriptLoader
@@ -513,13 +637,13 @@ public:
             GetHitDest()->RelocateOffset(offset);
         }
 
-        void Register()
+        void Register() OVERRIDE
         {
             OnEffectLaunch += SpellEffectFn(spell_anraphet_omega_stance_summon_SpellScript::ModDestHeight, EFFECT_0, SPELL_EFFECT_SUMMON);
         }
     };
 
-    SpellScript* GetSpellScript() const
+    SpellScript* GetSpellScript() const OVERRIDE
     {
         return new spell_anraphet_omega_stance_summon_SpellScript();
     }
@@ -544,19 +668,19 @@ public:
 
             float x = caster->GetPositionX() + dist * std::cos(angle);
             float y = caster->GetPositionY() + dist * std::sin(angle);
-            float z = caster->GetMap()->GetHeight(x, y, caster->GetPositionZ());
+            float z = caster->GetPositionZ();
 
             const_cast<WorldLocation*>(GetExplTargetDest())->Relocate(x, y, z);
             GetHitDest()->Relocate(x, y, z);
         }
 
-        void Register()
+        void Register() OVERRIDE
         {
             OnEffectLaunch += SpellEffectFn(spell_omega_stance_spider_effect_SpellScript::SetDestPosition, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
 
-    SpellScript* GetSpellScript() const
+    SpellScript* GetSpellScript() const OVERRIDE
     {
         return new spell_omega_stance_spider_effect_SpellScript();
     }
@@ -565,10 +689,9 @@ public:
 void AddSC_boss_anraphet()
 {
     new boss_anraphet();
-    new spell_anraphet_alpha_beams();
     new npc_brann_bronzebeard_anraphet();
-    new npc_alpha_beam();
+    new npc_beam();
+    new npc_omega_stance();
     new spell_anraphet_omega_stance_summon();
     new spell_omega_stance_spider_effect();
-    new npc_omega_stance();
 }
