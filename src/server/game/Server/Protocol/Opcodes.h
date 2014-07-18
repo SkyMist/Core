@@ -79,7 +79,7 @@ enum Opcodes
    CMSG_BATTLEFIELD_STATUS                                  = 0x19B0, // 5.4.7 18019
    CMSG_BATTLEGROUND_PLAYER_POSITIONS                       = 0x0,
    CMSG_BATTLEMASTER_JOIN                                   = 0x06DD, // 5.4.7 18019
-   CMSG_BATTLEMASTER_JOIN_ARENA                             = 0x0,
+   CMSG_BATTLEMASTER_JOIN_ARENA                             = 0x0557, // 5.4.7 18019
    CMSG_BATTLEMASTER_JOIN_RATED                             = 0x0,
    CMSG_BEGIN_TRADE                                         = 0x0C9A, // 5.4.7 18019
    CMSG_BINDER_ACTIVATE                                     = 0x0477, // 5.4.7 18019
