@@ -115,7 +115,7 @@ class boss_earthrager_ptah : public CreatureScript
                     me->RemoveAura(SPELL_FREEZE_NO_TURN);
                 }
 
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 init.SetOrientationFixed(false);
                 init.Launch();
 
@@ -177,13 +177,13 @@ class boss_earthrager_ptah : public CreatureScript
                         break;
                 }
 
-                SummonList.push_back(summon);
+				SummonList.push_back(summon->GetGUID());
             }
 
             void ChangePhase()
             {
                 me->SetFacingTo(0.0f);
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 init.SetOrientationFixed(true);
                 init.Launch();
 
@@ -269,13 +269,13 @@ class boss_earthrager_ptah : public CreatureScript
                     me->RemoveAura(SPELL_SELF_ROOT);
                     me->RemoveAura(SPELL_FREEZE_NO_TURN);
 
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     init.SetOrientationFixed(false);
                     init.Launch();
 
                     Phase = PHASE_NORMAL;
                     Phased = false;
-                    SetWeather(WEATHER_STATE_SUNNY);
+                    SetWeather(WEATHER_STATE_FINE);
                     FlameBoltTimer = urand(7000, 11000);
                     RagingSmashTimer = 4000;
                     EarthSpikeTimer = 12000;
@@ -352,7 +352,7 @@ class npc_horror : public CreatureScript
 
                 if (m_uiSmashTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_SMASH);
+                    DoCast(me->GetVictim(), SPELL_SMASH);
                     m_uiSmashTimer = urand(7000, 12000);
                 }
                 else

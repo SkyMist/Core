@@ -273,7 +273,7 @@ class boss_anraphet : public CreatureScript
             void JustSummoned(Creature* summon) OVERRIDE
             {
                 summon->setActive(true);
-                summons.push_back(summon->GetGUID());
+                summons.Summon(summon);
             }
 
             void UpdateAI(uint32 diff) OVERRIDE
@@ -314,14 +314,14 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiReadyTimer -= diff;
 
-                if (m_uiNemesisStrikeTimer <= diff && me->isInCombat())
+                if (m_uiNemesisStrikeTimer <= diff && me->IsInCombat())
                 {
-                    DoCast(me->getVictim(), IsHeroic() ? SPELL_NEMESIS_STRIKE_H : SPELL_NEMESIS_STRIKE);
+                    DoCast(me->GetVictim(), IsHeroic() ? SPELL_NEMESIS_STRIKE_H : SPELL_NEMESIS_STRIKE);
                     m_uiNemesisStrikeTimer = urand(15000, 20000);
                 }
                 else m_uiNemesisStrikeTimer -= diff;
 
-                if (m_uiBeamsTimer <= diff && me->isInCombat())
+                if (m_uiBeamsTimer <= diff && me->IsInCombat())
                 {
                     victim1 = SelectTarget(SELECT_TARGET_RANDOM, 0);
                     victim2 = SelectTarget(SELECT_TARGET_RANDOM, 0);
@@ -336,7 +336,7 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiBeamsTimer -= diff;
 
-                if (m_uiFirstTimer > 0 && m_uiFirstTimer <= diff && me->isInCombat())
+                if (m_uiFirstTimer > 0 && m_uiFirstTimer <= diff && me->IsInCombat())
                 {
                     Creature* Beam1 = me->SummonCreature(NPC_BEAM, victim1->GetPositionX(), victim1->GetPositionY(), victim1->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
                     DoZoneInCombat(Beam1);
@@ -353,7 +353,7 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiFirstTimer -= diff;
 
-                if (m_uiSecondTimer > 0 && m_uiSecondTimer <= diff && me->isInCombat())
+                if (m_uiSecondTimer > 0 && m_uiSecondTimer <= diff && me->IsInCombat())
                 {
                     Creature* Beam2 = me->SummonCreature(NPC_BEAM, victim2->GetPositionX(), victim2->GetPositionY(), victim2->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
                     DoZoneInCombat(Beam2);
@@ -370,7 +370,7 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiSecondTimer -= diff;
 
-                if (m_uiThirdTimer > 0 && m_uiThirdTimer <= diff && me->isInCombat())
+                if (m_uiThirdTimer > 0 && m_uiThirdTimer <= diff && me->IsInCombat())
                 {
                     Creature* Beam3 = me->SummonCreature(NPC_BEAM, victim3->GetPositionX(), victim3->GetPositionY(), victim3->GetPositionZ(), 0, TEMPSUMMON_MANUAL_DESPAWN);
                     DoZoneInCombat(Beam3);
@@ -389,7 +389,7 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiThirdTimer -= diff;
 
-                if (m_uiCrumblingRuinTimer <= diff && me->isInCombat())
+                if (m_uiCrumblingRuinTimer <= diff && me->IsInCombat())
                 {
                     std::vector<Unit*> targets;
                     std::list<HostileReference*>::const_iterator i = me->getThreatManager().getThreatList().begin();
@@ -401,7 +401,7 @@ class boss_anraphet : public CreatureScript
                 }
                 else m_uiCrumblingRuinTimer -= diff;
 
-                if (m_uiOmegaStanceTimer <= diff && me->isInCombat())
+                if (m_uiOmegaStanceTimer <= diff && me->IsInCombat())
                 {
                     Talk(SAY_OMEGA);
                     DoCast(me, SPELL_OMEGA_STANCE_SUMMON);
@@ -446,7 +446,7 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                 events.Reset();
                 player->PlayerTalkClass->ClearMenus();
                 player->CLOSE_GOSSIP_MENU();
-                me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                 me->SetWalk(true);
                 events.ScheduleEvent(EVENT_BRANN_UNLOCK_DOOR, 7500);
             }

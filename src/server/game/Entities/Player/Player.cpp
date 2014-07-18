@@ -10620,6 +10620,95 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
             }
             break;
 
+        case 6051: // Temple of Kotmogu
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_TOK)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                BuildWorldState(data, 6303, 0x0);   // alliance victory points
+                BuildWorldState(data, 6304, 0x0);   // horde victory points
+                BuildWorldState(data, 6308, 0x0);   // orb icon alliance
+                BuildWorldState(data, 6307, 0x0);   // orb icon horde
+                BuildWorldState(data, 6309, 0x0);   // orb state
+                BuildWorldState(data, 4247, 0x0);   // time enabled
+                BuildWorldState(data, 4248, 0x0);   // time remaining
+                BuildWorldState(data, 6960, 0x0);   // neutral orbs display
+
+                // 412,998,0,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Alliance","Victory Points: %6303w/1600","",0,0,"","","",0,0,0.000000,
+                // 413,998,0,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Horde","Victory Points: %6304w/1600","",0,0,"","","",0,0,0.000000,
+                // 418,998,0,0.000000,0,0.000000,"Interface\WorldStateFrame\ColumnIcon-FlagCapture2.blp","Orb Possessions","Number of times you have controlled an orb",0,2,"","","",0,0,0.000000,
+                // 419,998,0,0.000000,0,0.000000,"","Victory Points","Number of Victory Points earned",0,2,"","","",0,0,0.000000,
+                // 
+                // 2774,0,45,0,0,0,0,0,0,0,0,0,1708.836792,1244.149292,998,655,6051,"Power Orb","Uncontrolled",6960,16754,0.000000,0,
+                // 2775,0,45,0,0,0,0,0,0,0,0,0,1857.913208,1422.750000,998,655,6051,"Power Orb","Uncontrolled",6960,16757,0.000000,0,
+                // 2776,0,45,0,0,0,0,0,0,0,0,0,1855.027832,1245.364624,998,655,6051,"Power Orb","Uncontrolled",6960,16759,0.000000,0,
+                // 2777,0,45,0,0,0,0,0,0,0,0,0,1710.685791,1421.894165,998,655,6051,"Power Orb","Uncontrolled",6960,16758,0.000000,0,
+            }
+            break;
+        case 6112: // CTF3
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_CTF)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                BuildWorldState(data, 0x62d, 0x0);   // 7 1581 alliance flag captures
+                BuildWorldState(data, 0x62e, 0x0);   // 8 1582 horde flag captures
+                BuildWorldState(data, 0x609, 0x0);   // 9 1545 unk, set to 1 on alliance flag pickup...
+                BuildWorldState(data, 0x60a, 0x0);   // 10 1546 unk, set to 1 on horde flag pickup, after drop it's -1
+                BuildWorldState(data, 0x60b, 0x2);   // 11 1547 unk
+                BuildWorldState(data, 0x641, 0x3);   // 12 1601 unk (max flag captures?)
+                BuildWorldState(data, 0x922, 0x1);   // 13 2338 horde (0 - hide, 1 - flag ok, 2 - flag picked up (flashing), 3 - flag picked up (not flashing)
+                BuildWorldState(data, 0x923, 0x1);   // 14 2339 alliance (0 - hide, 1 - flag ok, 2 - flag picked up (flashing), 3 - flag picked up (not flashing)
+
+                // 425,1010,6112,0.000000,0,0.000000,"","Time Remaining: %4248w min.","Time Remaining",4247,0,"","","",0,0,0.000000,
+                // 421,1010,6112,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Alliance","%1581w/%1601w","Alliance flag captures",2339,0,"Interface\WorldStateFrame\HordeFlag","Horde flag has been picked up","",0,0,0.000000,
+                // 424,1010,6112,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Horde","%1582w/%1601w","Horde flag captures",2338,0,"Interface\WorldStateFrame\AllianceFlag","Alliance flag has been picked up","",0,0,0.000000,
+                // 422,1010,6112,0.000000,0,0.000000,"Interface\WorldStateFrame\ColumnIcon-FlagCapture","Flag Captures","Number of times you have captured the enemy flag",0,2,"","","",0,0,0.000000,
+                // 423,1010,6112,0.000000,0,0.000000,"Interface\WorldStateFrame\ColumnIcon-FlagReturn","Flag Returns","Number of times you have returned your flag to your base from the field",0,2,"","","",0,0,0.000000,
+            }
+            break;
+        case 6126: // Silvershard Mines
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_SM)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                // 426,727,0,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Alliance","Resources: %6437w/1600","",6441,0,"","","",0,0,0.000000,
+                // 427,727,0,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Horde","Resources: %6438w/1600","",6443,0,"","","",0,0,0.000000,
+                // 440,727,0,0.000000,0,0.000000,"","","",6875,0,"","","CAPTUREPOINT",6876,6877,0.000000,
+                // 428,727,0,0.000000,0,0.000000,"","Carts Controlled","Number of Carts you helped control",0,2,"","","",0,0,0.000000,
+            }
+            break;
+        case 6665: // Deepwind Gorge
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_DG)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                BuildWorldState(data, 7904, 0x0);   // alliance bases / gold show
+                BuildWorldState(data, 7887, 0x0);   // horde bases / gold show
+                BuildWorldState(data, 7904, 0x0);   // alliance bases occupied
+                BuildWorldState(data, 7904, 0x0);   // horde bases occupied
+                BuildWorldState(data, 7904, 0x0);   // alliance gold
+                BuildWorldState(data, 7904, 0x0);   // horde gold
+                BuildWorldState(data, 1955, 0x0);   // resource warning, from arathi basin
+
+                BuildWorldState(data, 7935, 0x0);   // pandaren neutral
+                BuildWorldState(data, 7938, 0x0);   // goblin neutral
+                BuildWorldState(data, 7939, 0x0);   // center neutral
+
+                BuildWorldState(data, 7936, 0x0);   // center conflict horde
+                BuildWorldState(data, 7933, 0x0);   // center horde 
+                BuildWorldState(data, 7934, 0x0);   // center conflict alliance
+                BuildWorldState(data, 7937, 0x0);   // center alliance 
+                BuildWorldState(data, 7865, 0x0);   // goblin conflict horde
+                BuildWorldState(data, 7863, 0x0);   // goblin horde 
+                BuildWorldState(data, 7864, 0x0);   // goblin conflict alliance
+                BuildWorldState(data, 7862, 0x0);   // goblin alliance 
+                BuildWorldState(data, 7861, 0x0);   // pandaren conflict horde
+                BuildWorldState(data, 7858, 0x0);   // pandaren horde 
+                BuildWorldState(data, 7857, 0x0);   // pandaren conflict alliance
+                BuildWorldState(data, 7859, 0x0);   // pandaren alliance
+            }
+            break;
+
         /*** BATTLEFIELDS ***/
 
         // Wintergrasp
@@ -10679,9 +10768,9 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 bg->FillInitialWorldStates(data);
             else
             {
-                BuildWorldState(data, 3601, 0x0);    // 7 gold
-                BuildWorldState(data, 3600, 0x0);    // 8 green
-                BuildWorldState(data, 3610, 0x0);    // 9 show
+                BuildWorldState(data, 0xe11, 0x0);    // 7 gold
+                BuildWorldState(data, 0xe10, 0x0);    // 8 green
+                BuildWorldState(data, 0xe1a, 0x0);    // 9 show
             }
             break;
 
@@ -10691,9 +10780,45 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 bg->FillInitialWorldStates(data);
             else
             {
-                BuildWorldState(data, 0xe10, 0x0);   // 7 gold
-                BuildWorldState(data, 0xe11, 0x0);   // 8 green
+                BuildWorldState(data, 0xe11, 0x0);   // 7 gold
+                BuildWorldState(data, 0xe10, 0x0);   // 8 green
                 BuildWorldState(data, 0xe1a, 0x0);   // 9 show
+            }
+            break;
+
+        // Tol'vir Arena
+        case 6296:
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_TA)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                BuildWorldState(data, 0xe11, 0x0);   // 7 gold
+                BuildWorldState(data, 0xe10, 0x0);   // 8 green
+                BuildWorldState(data, 0xe1a, 0x0);   // 9 show
+
+                // 433,980,6296,0.000000,0,0.000000,"","Gold Team: %3601w Players Remaining","",3610,0,"","","",0,0,0.000000,
+                // 434,980,6296,0.000000,0,0.000000,"","Green Team: %3600w Players Remaining","",3610,0,"","","",0,0,0.000000,
+                // 471,980,6296,0.000000,0,0.000000,"","Time: %8295w min remaining","",8524,0,"","","",0,0,0.000000,
+                // 494,980,6296,0.000000,0,0.000000,"","Lowest Health: Green Team - %8528w HP","",8526,0,"","","",0,0,0.000000,
+                // 495,980,6296,0.000000,0,0.000000,"","Lowest Health: Gold Team - %8528w HP","",8527,0,"","","",0,0,0.000000,
+            }
+            break;
+
+        // Tiger's Peak
+        case 6732:
+            if (bg && bg->GetTypeID(true) == BATTLEGROUND_TTP)
+                bg->FillInitialWorldStates(data);
+            else
+            {
+                BuildWorldState(data, 0xe11, 0x0);   // 7 gold
+                BuildWorldState(data, 0xe10, 0x0);   // 8 green
+                BuildWorldState(data, 0xe1a, 0x0);   // 9 show
+
+                // 456,1134,6732,0.000000,0,0.000000,"","Gold Team: %3601w Players Remaining","",3610,0,"","","",0,0,0.000000,
+                // 455,1134,6732,0.000000,0,0.000000,"","Green Team: %3600w Players Remaining","",3610,0,"","","",0,0,0.000000,
+                // 465,1134,6732,0.000000,0,0.000000,"","Time: %8295w min remaining","",8524,0,"","","",0,0,0.000000,
+                // 484,1134,6732,0.000000,0,0.000000,"","Lowest Health: Green Team - %8528w HP","",8526,0,"","","",0,0,0.000000,
+                // 485,1134,6732,0.000000,0,0.000000,"","Lowest Health: Gold Team - %8528w HP","",8527,0,"","","",0,0,0.000000,
             }
             break;
 

@@ -51,33 +51,31 @@ OPvPCapturePointTF::OPvPCapturePointTF(OutdoorPvP* pvp, OutdoorPvPTF_TowerType t
 
 void OPvPCapturePointTF::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << uint32(TFTowerWorldStates[m_TowerType].n) << uint32(bool(m_TowerState & TF_TOWERSTATE_N));
-    data << uint32(TFTowerWorldStates[m_TowerType].h) << uint32(bool(m_TowerState & TF_TOWERSTATE_H));
-    data << uint32(TFTowerWorldStates[m_TowerType].a) << uint32(bool(m_TowerState & TF_TOWERSTATE_A));
+    data << uint32(bool(m_TowerState & TF_TOWERSTATE_N)) << uint32(TFTowerWorldStates[m_TowerType].n);
+    data << uint32(bool(m_TowerState & TF_TOWERSTATE_H)) << uint32(TFTowerWorldStates[m_TowerType].h);
+    data << uint32(bool(m_TowerState & TF_TOWERSTATE_A)) << uint32(TFTowerWorldStates[m_TowerType].a);
 }
 
 void OutdoorPvPTF::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << TF_UI_TOWER_SLIDER_POS << uint32(50);
-    data << TF_UI_TOWER_SLIDER_N << uint32(100);
-    data << TF_UI_TOWER_SLIDER_DISPLAY << uint32(0);
+    data << uint32(50)  << TF_UI_TOWER_SLIDER_POS;
+    data << uint32(100) << TF_UI_TOWER_SLIDER_N;
+    data << uint32(0)   << TF_UI_TOWER_SLIDER_DISPLAY;
 
-    data << TF_UI_TOWER_COUNT_H << m_HordeTowersControlled;
-    data << TF_UI_TOWER_COUNT_A << m_AllianceTowersControlled;
-    data << TF_UI_TOWERS_CONTROLLED_DISPLAY << uint32(!m_IsLocked);
+    data << m_HordeTowersControlled    << TF_UI_TOWER_COUNT_H;
+    data << m_AllianceTowersControlled << TF_UI_TOWER_COUNT_A;
+    data << uint32(!m_IsLocked)        << TF_UI_TOWERS_CONTROLLED_DISPLAY;
 
-    data << TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT << first_digit;
-    data << TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT << second_digit;
-    data << TF_UI_LOCKED_TIME_HOURS << hours_left;
+    data << first_digit                << TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT;
+    data << second_digit               << TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT;
+    data << hours_left                 << TF_UI_LOCKED_TIME_HOURS;
 
-    data << TF_UI_LOCKED_DISPLAY_NEUTRAL << uint32(m_IsLocked && !m_HordeTowersControlled && !m_AllianceTowersControlled);
-    data << TF_UI_LOCKED_DISPLAY_HORDE << uint32(m_IsLocked && (m_HordeTowersControlled > m_AllianceTowersControlled));
-    data << TF_UI_LOCKED_DISPLAY_ALLIANCE << uint32(m_IsLocked && (m_HordeTowersControlled < m_AllianceTowersControlled));
+    data << uint32(m_IsLocked && !m_HordeTowersControlled && !m_AllianceTowersControlled) << TF_UI_LOCKED_DISPLAY_NEUTRAL;
+    data << uint32(m_IsLocked && (m_HordeTowersControlled > m_AllianceTowersControlled))  << TF_UI_LOCKED_DISPLAY_HORDE;
+    data << uint32(m_IsLocked && (m_HordeTowersControlled < m_AllianceTowersControlled))  << TF_UI_LOCKED_DISPLAY_ALLIANCE;
 
     for (OPvPCapturePointMap::iterator itr = m_capturePoints.begin(); itr != m_capturePoints.end(); ++itr)
-    {
         itr->second->FillInitialWorldStates(data);
-    }
 }
 
 void OutdoorPvPTF::SendRemoveWorldStates(Player* player)

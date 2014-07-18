@@ -71,10 +71,13 @@ enum BattlegroundMarks
     SPELL_WS_MARK_WINNER            = 24951,
     SPELL_AB_MARK_LOSER             = 24952,
     SPELL_AB_MARK_WINNER            = 24953,
+
     SPELL_AV_MARK_LOSER             = 24954,
     SPELL_AV_MARK_WINNER            = 24955,
+
     SPELL_SA_MARK_WINNER            = 61160,
     SPELL_SA_MARK_LOSER             = 61159,
+
     ITEM_AV_MARK_OF_HONOR           = 20560,
     ITEM_WS_MARK_OF_HONOR           = 20558,
     ITEM_AB_MARK_OF_HONOR           = 20559,
@@ -180,23 +183,30 @@ enum BattlegroundQueueTypeId
     BATTLEGROUND_QUEUE_NONE     = 0,
 
     // Normal bg's
-    BATTLEGROUND_QUEUE_AV       = 1,
-    BATTLEGROUND_QUEUE_WS       = 2,
-    BATTLEGROUND_QUEUE_AB       = 3,
-    BATTLEGROUND_QUEUE_EY       = 4,
-    BATTLEGROUND_QUEUE_SA       = 5,
-    BATTLEGROUND_QUEUE_IC       = 6,
-    BATTLEGROUND_QUEUE_TP       = 7,
-    BATTLEGROUND_QUEUE_BFG      = 8,
-    BATTLEGROUND_QUEUE_RB       = 9,
+    BATTLEGROUND_QUEUE_AV       = 1,            // Alterac Valley
+    BATTLEGROUND_QUEUE_WS       = 2,            // Warsong Gulch
+    BATTLEGROUND_QUEUE_AB       = 3,            // Arathi Basin
 
-    // Arenas
-    BATTLEGROUND_QUEUE_2v2      = 10,
-    BATTLEGROUND_QUEUE_3v3      = 11,
-    BATTLEGROUND_QUEUE_5v5      = 12,
+    BATTLEGROUND_QUEUE_EY       = 4,            // Eye of the Storm
+    BATTLEGROUND_QUEUE_SA       = 5,            // Strand of the Ancients
+    BATTLEGROUND_QUEUE_IC       = 6,            // Isle of Conquest
+
+    BATTLEGROUND_QUEUE_TP       = 7,            // Twin Peaks
+    BATTLEGROUND_QUEUE_BFG      = 8,            // Battle for Gilneas
+    BATTLEGROUND_QUEUE_RB       = 9,            // Random BG
+
+    BATTLEGROUND_QUEUE_KT       = 13,           // Kotmogu Temple
+    BATTLEGROUND_QUEUE_CTF3     = 14,           // CTF3 Unreleased MOP BG :D.
+    BATTLEGROUND_QUEUE_SSM      = 15,           // Silvershard Mines
+    BATTLEGROUND_QUEUE_DG       = 16,           // Deepwind Gorge
 
     // Rated bg's
-    BATTLEGROUND_QUEUE_RATED_10_VS_10     = 13, // Rated BG 10 vs 10
+    BATTLEGROUND_QUEUE_RATED_10_VS_10     = 17, // Rated BG 10 vs 10
+
+    // Arenas
+    BATTLEGROUND_QUEUE_2v2      = 18,
+    BATTLEGROUND_QUEUE_3v3      = 19,
+    BATTLEGROUND_QUEUE_5v5      = 20,
 
     MAX_BATTLEGROUND_QUEUE_TYPES
 };
@@ -226,7 +236,13 @@ enum ScoreType
     SCORE_SECONDARY_OBJECTIVES  = 17,
     //SOTA
     SCORE_DESTROYED_DEMOLISHER  = 18,
-    SCORE_DESTROYED_WALL        = 19
+    SCORE_DESTROYED_WALL        = 19,
+    //DG
+    SCORE_MINES_ASSAULTED       = 20,
+    SCORE_MINES_DEFENDED        = 21,
+    //TK
+    SCORE_ORB_HANDLES           = 22,
+    SCORE_ORB_SCORE             = 23
 };
 
 enum BattlegroundType

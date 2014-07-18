@@ -1631,7 +1631,7 @@ void GameObject::Use(Unit* user)
                 player->RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
                 player->RemoveAurasByType(SPELL_AURA_MOD_INVISIBILITY);
                 // BG flag dropped
-                // WS:
+                // WS / TP / CTF:
                 // 179785 - Silverwing Flag
                 // 179786 - Warsong Flag
                 // EotS:
@@ -1643,10 +1643,7 @@ void GameObject::Use(Unit* user)
                     {
                         case 179785:                        // Silverwing Flag
                         case 179786:                        // Warsong Flag
-                            if (bg->GetTypeID(true) == BATTLEGROUND_WS)
-                                bg->EventPlayerClickedOnFlag(player, this);
-                            else
-                            if (bg->GetTypeID(true) == BATTLEGROUND_TP)
+                            if (bg->GetTypeID(true) == BATTLEGROUND_WS || bg->GetTypeID(true) == BATTLEGROUND_TP || bg->GetTypeID(true) == BATTLEGROUND_CTF)
                                 bg->EventPlayerClickedOnFlag(player, this);
                             break;
                         case 184142:                        // Netherstorm Flag

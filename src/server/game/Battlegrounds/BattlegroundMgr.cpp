@@ -41,6 +41,13 @@
 #include "BattlegroundTP.h"
 #include "BattlegroundBFG.h"
 #include "BattlegroundRatedBG.h"
+#include "BattlegroundTK.h"
+#include "BattlegroundCTF.h"
+#include "BattlegroundDG.h"
+#include "BattlegroundSM.h"
+#include "BattlegroundTA.h"
+#include "BattlegroundTTP.h"
+
 #include "Chat.h"
 #include "Map.h"
 #include "MapInstanced.h"
@@ -539,6 +546,29 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                         scores << uint32(((BattlegroundBFGScore*)score)->BasesAssaulted);      // bases assaulted
                         scores << uint32(((BattlegroundBFGScore*)score)->BasesDefended);       // bases defended
                         break;
+                    case 998: // Temple of Kotmogu
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundTKScore*)score)->OrbHandles);           // orb captures
+                        scores << uint32(((BattlegroundTKScore*)score)->VictoryPoints);        // victory points
+                        break;
+                    case 1010: // CTF3
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundCTFScore*)score)->FlagCaptures);        // flag captures
+                        scores << uint32(((BattlegroundCTFScore*)score)->FlagReturns);         // flag returns
+                        break;
+                    case 1105: // Deepwind Gorge
+                        data->WriteBits(0x00000002, 22);
+                        scores << uint32(((BattlegroundDGScore*)score)->MinesAssaulted);      // bases assaulted
+                        scores << uint32(((BattlegroundDGScore*)score)->MinesDefended);       // bases defended
+                        scores << uint32(((BattlegroundDGScore*)score)->CartCaptures);         // gold cart captures
+                        scores << uint32(((BattlegroundDGScore*)score)->CartReturns);         // gold cart returns
+                        break;
+                    case 727: // Silvershard Mines
+                        data->WriteBits(0x00000002, 22);
+                        // scores << uint32(((BattlegroundSMScore*)score)->CartsAssaulted);      // gem carts assaulted
+                        // scores << uint32(((BattlegroundSMScore*)score)->CartsDefended);       // gem carts defended
+                        // scores << uint32(((BattlegroundSMScore*)score)->CartCaptures);        // gem cart captures
+                        break;
 
                     default:
                         data->WriteBits(0, 22);
@@ -587,12 +617,37 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 scores << uint32(((BattlegroundBFGScore*)score)->BasesAssaulted);      // bases assaulted
                 scores << uint32(((BattlegroundBFGScore*)score)->BasesDefended);       // bases defended
                 break;
+            case BATTLEGROUND_TOK:
+                data->WriteBits(0x00000002, 22);
+                scores << uint32(((BattlegroundTKScore*)score)->OrbHandles);           // orb captures
+                scores << uint32(((BattlegroundTKScore*)score)->VictoryPoints);        // victory points
+                break;
+            case BATTLEGROUND_CTF:
+                data->WriteBits(0x00000002, 22);
+                scores << uint32(((BattlegroundCTFScore*)score)->FlagCaptures);        // flag captures
+                scores << uint32(((BattlegroundCTFScore*)score)->FlagReturns);         // flag returns
+                break;
+            case BATTLEGROUND_DG:
+                data->WriteBits(0x00000002, 22);
+                scores << uint32(((BattlegroundDGScore*)score)->MinesAssaulted);      // bases assaulted
+                scores << uint32(((BattlegroundDGScore*)score)->MinesDefended);       // bases defended
+                scores << uint32(((BattlegroundDGScore*)score)->CartCaptures);         // gold cart captures
+                scores << uint32(((BattlegroundDGScore*)score)->CartReturns);         // gold cart returns
+                break;
+            case BATTLEGROUND_SM:
+                data->WriteBits(0x00000002, 22);
+                // scores << uint32(((BattlegroundSMScore*)score)->CartsAssaulted);      // gem carts assaulted
+                // scores << uint32(((BattlegroundSMScore*)score)->CartsDefended);       // gem carts defended
+                // scores << uint32(((BattlegroundSMScore*)score)->CartCaptures);        // gem cart captures
+                break;
             case BATTLEGROUND_NA:
             case BATTLEGROUND_BE:
             case BATTLEGROUND_AA:
             case BATTLEGROUND_RL:
             case BATTLEGROUND_DS:
             case BATTLEGROUND_RV:
+            case BATTLEGROUND_TA:
+            case BATTLEGROUND_TTP:
                 data->WriteBits(0, 22);
                 break;
             default:
@@ -1035,14 +1090,17 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId bgTypeId
         case BATTLEGROUND_RATED_10_VS_10:
             if (!sWorld->FindWorldState(WS_WEEKLY_SELECT_RATED_BG)) // If we have no setting for selected rated bg in the db, select one.
             {
-                switch (urand(0, 5))
+                switch (urand(0, 8))
                 {
-                    case 0: bgTypeId = BATTLEGROUND_WS; break;
-                    case 1: bgTypeId = BATTLEGROUND_AB; break;
-                    case 2: bgTypeId = BATTLEGROUND_EY; break;
-                    case 3: bgTypeId = BATTLEGROUND_SA; break;
+                    case 0: bgTypeId = BATTLEGROUND_WS;  break;
+                    case 1: bgTypeId = BATTLEGROUND_AB;  break;
+                    case 2: bgTypeId = BATTLEGROUND_EY;  break;
+                    case 3: bgTypeId = BATTLEGROUND_SA;  break;
                     case 4: bgTypeId = BATTLEGROUND_BFG; break;
-                    case 5: bgTypeId = BATTLEGROUND_TP; break;
+                    case 5: bgTypeId = BATTLEGROUND_TP;  break;
+                    case 6: bgTypeId = BATTLEGROUND_TOK; break;
+                    case 7: bgTypeId = BATTLEGROUND_CTF; break;
+                    case 8: bgTypeId = BATTLEGROUND_SM;  break;
                 }
 
                 bg_template = GetBattlegroundTemplate(bgTypeId);
@@ -1106,11 +1164,29 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId bgTypeId
         case BATTLEGROUND_BFG:
             bg = new BattlegroundBFG(*(BattlegroundBFG*)bg_template);
             break;
+        case BATTLEGROUND_TOK:
+            bg = new BattlegroundTK(*(BattlegroundTK*)bg_template);
+            break;
+        case BATTLEGROUND_CTF:
+            bg = new BattlegroundCTF(*(BattlegroundCTF*)bg_template);
+            break;
+        case BATTLEGROUND_DG:
+            bg = new BattlegroundDG(*(BattlegroundDG*)bg_template);
+            break;
+        case BATTLEGROUND_SM:
+            bg = new BattlegroundSM(*(BattlegroundSM*)bg_template);
+            break;
         case BATTLEGROUND_RB:
             bg = new BattlegroundRB(*(BattlegroundRB*)bg_template);
             break;
         case BATTLEGROUND_RATED_10_VS_10:
             bg = new BattlegroundRatedBG(*(BattlegroundRatedBG*)bg_template);
+            break;
+        case BATTLEGROUND_TA:
+            bg = new BattlegroundTA(*(BattlegroundTA*)bg_template);
+            break;
+        case BATTLEGROUND_TTP:
+            bg = new BattlegroundTTP(*(BattlegroundTTP*)bg_template);
             break;
 
         default:
@@ -1184,22 +1260,28 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
     Battleground* bg = NULL;
     switch (data.bgTypeId)
     {
-        case BATTLEGROUND_AV: bg = new BattlegroundAV; break;
-        case BATTLEGROUND_WS: bg = new BattlegroundWS; break;
-        case BATTLEGROUND_AB: bg = new BattlegroundAB; break;
-        case BATTLEGROUND_NA: bg = new BattlegroundNA; break;
-        case BATTLEGROUND_BE: bg = new BattlegroundBE; break;
-        case BATTLEGROUND_AA: bg = new BattlegroundAA; break;
-        case BATTLEGROUND_EY: bg = new BattlegroundEY; break;
-        case BATTLEGROUND_RL: bg = new BattlegroundRL; break;
-        case BATTLEGROUND_SA: bg = new BattlegroundSA; break;
-        case BATTLEGROUND_DS: bg = new BattlegroundDS; break;
-        case BATTLEGROUND_RV: bg = new BattlegroundRV; break;
-        case BATTLEGROUND_IC: bg = new BattlegroundIC; break;
-        case BATTLEGROUND_TP: bg = new BattlegroundTP; break;
-        case BATTLEGROUND_BFG: bg = new BattlegroundBFG; break;
-        case BATTLEGROUND_RB: bg = new BattlegroundRB; break;
+        case BATTLEGROUND_AV:             bg = new BattlegroundAV;      break;
+        case BATTLEGROUND_WS:             bg = new BattlegroundWS;      break;
+        case BATTLEGROUND_AB:             bg = new BattlegroundAB;      break;
+        case BATTLEGROUND_NA:             bg = new BattlegroundNA;      break;
+        case BATTLEGROUND_BE:             bg = new BattlegroundBE;      break;
+        case BATTLEGROUND_AA:             bg = new BattlegroundAA;      break;
+        case BATTLEGROUND_EY:             bg = new BattlegroundEY;      break;
+        case BATTLEGROUND_RL:             bg = new BattlegroundRL;      break;
+        case BATTLEGROUND_SA:             bg = new BattlegroundSA;      break;
+        case BATTLEGROUND_DS:             bg = new BattlegroundDS;      break;
+        case BATTLEGROUND_RV:             bg = new BattlegroundRV;      break;
+        case BATTLEGROUND_IC:             bg = new BattlegroundIC;      break;
+        case BATTLEGROUND_TP:             bg = new BattlegroundTP;      break;
+        case BATTLEGROUND_BFG:            bg = new BattlegroundBFG;     break;
+        case BATTLEGROUND_TOK:            bg = new BattlegroundTK;      break;
+        case BATTLEGROUND_CTF:            bg = new BattlegroundCTF;     break;
+        case BATTLEGROUND_DG:             bg = new BattlegroundDG;      break;
+        case BATTLEGROUND_SM:             bg = new BattlegroundSM;      break;
+        case BATTLEGROUND_RB:             bg = new BattlegroundRB;      break;
         case BATTLEGROUND_RATED_10_VS_10: bg = new BattlegroundRatedBG; break;
+        case BATTLEGROUND_TA:             bg = new BattlegroundTA;      break;
+        case BATTLEGROUND_TTP:            bg = new BattlegroundTTP;     break;
 
         default:
             bg = new Battleground;
@@ -1471,7 +1553,9 @@ bool BattlegroundMgr::IsArenaType(BattlegroundTypeId bgTypeId)
             || bgTypeId == BATTLEGROUND_NA
             || bgTypeId == BATTLEGROUND_DS
             || bgTypeId == BATTLEGROUND_RV
-            || bgTypeId == BATTLEGROUND_RL;
+            || bgTypeId == BATTLEGROUND_RL
+            || bgTypeId == BATTLEGROUND_TA
+            || bgTypeId == BATTLEGROUND_TTP;
 }
 
 BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgTypeId, uint8 arenaType)
@@ -1494,6 +1578,14 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
             return BATTLEGROUND_QUEUE_TP;
         case BATTLEGROUND_BFG:
             return BATTLEGROUND_QUEUE_BFG;
+        case BATTLEGROUND_TOK:
+            return BATTLEGROUND_QUEUE_KT;
+        case BATTLEGROUND_CTF:
+            return BATTLEGROUND_QUEUE_CTF3;
+        case BATTLEGROUND_SM:
+            return BATTLEGROUND_QUEUE_SSM;
+        case BATTLEGROUND_DG:
+            return BATTLEGROUND_QUEUE_DG;
         case BATTLEGROUND_RB:
             return BATTLEGROUND_QUEUE_RB;
         case BATTLEGROUND_AA:
@@ -1502,6 +1594,8 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
         case BATTLEGROUND_BE:
         case BATTLEGROUND_DS:
         case BATTLEGROUND_RV:
+        case BATTLEGROUND_TA:
+        case BATTLEGROUND_TTP:
             switch (arenaType)
             {
                 case ARENA_TYPE_2v2:
@@ -1541,17 +1635,25 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
             return BATTLEGROUND_TP;
         case BATTLEGROUND_QUEUE_BFG:
             return BATTLEGROUND_BFG;
+        case BATTLEGROUND_QUEUE_KT:
+            return BATTLEGROUND_TOK;
+        case BATTLEGROUND_QUEUE_CTF3:
+            return BATTLEGROUND_CTF;
+        case BATTLEGROUND_QUEUE_SSM:
+            return BATTLEGROUND_SM;
+        case BATTLEGROUND_QUEUE_DG:
+            return BATTLEGROUND_DG;
 
         case BATTLEGROUND_QUEUE_RB: // Random bg
             return BATTLEGROUND_RB;
+
+        case BATTLEGROUND_QUEUE_RATED_10_VS_10: // Rated bg's
+            return BATTLEGROUND_RATED_10_VS_10;
 
         case BATTLEGROUND_QUEUE_2v2: // Arenas
         case BATTLEGROUND_QUEUE_3v3:
         case BATTLEGROUND_QUEUE_5v5:
             return BATTLEGROUND_AA;
-
-        case BATTLEGROUND_QUEUE_RATED_10_VS_10: // Rated bg's
-            return BATTLEGROUND_RATED_10_VS_10;
 
         default:
             return BattlegroundTypeId(0);       // used for unknown templates (it exists and does nothing)
@@ -1673,6 +1775,12 @@ HolidayIds BattlegroundMgr::BGTypeToWeekendHolidayId(BattlegroundTypeId bgTypeId
         case BATTLEGROUND_IC: return HOLIDAY_CALL_TO_ARMS_IC;
         case BATTLEGROUND_TP: return HOLIDAY_CALL_TO_ARMS_TP;
         case BATTLEGROUND_BFG: return HOLIDAY_CALL_TO_ARMS_BFG;
+
+        case BATTLEGROUND_TOK: // NYI
+        case BATTLEGROUND_CTF:
+        case BATTLEGROUND_DG:
+        case BATTLEGROUND_SM:
+
         default: return HOLIDAY_NONE;
     }
 }

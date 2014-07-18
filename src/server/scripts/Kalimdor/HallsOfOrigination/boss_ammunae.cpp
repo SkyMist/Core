@@ -404,7 +404,7 @@ public:
             me->RemoveAllAuras();
 
             if (Creature* Ammunae = me->FindNearestCreature(BOSS_AMMUNAE, 200.0f, true))
-                CAST_AI(boss_ammunae::boss_ammunae_AI, Ammunae->AI())->i--;
+                CAST_AI(boss_ammunae::boss_ammunaeAI, Ammunae->AI())->i--;
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -443,7 +443,7 @@ public:
 
             if (m_uiThornSlashTimer <= diff)
             {
-                DoCast(me->getVictim(), IsHeroic() ? SPELL_THORN_SLASH_H : SPELL_THORN_SLASH);
+                DoCast(me->GetVictim(), IsHeroic() ? SPELL_THORN_SLASH_H : SPELL_THORN_SLASH);
                 m_uiThornSlashTimer = urand(15000, 20000);
             }
             else

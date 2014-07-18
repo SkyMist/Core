@@ -4272,15 +4272,13 @@ enum BattlegroundTypeId
     BATTLEGROUND_RATED_25_VS_25 = 102, // Rated BG 25 vs 25
     BATTLEGROUND_TP             = 108, // Twin Peaks
     BATTLEGROUND_BFG            = 120, // Battle For Gilneas
-    BATTLEGROUND_ICC            = 441, // Icecrown Citadel
-    BATTLEGROUND_RS             = 443, // Ruby Sanctum
     BATTLEGROUND_REY            = 656, // Rated Eye of the Storm
     BATTLEGROUND_TOK            = 699, // 5.x Temple of Kotmogu
     BATTLEGROUND_CTF            = 706, // 5.x CTF3
     BATTLEGROUND_SM             = 708, // 5.x Silvershard Mines
     BATTLEGROUND_TA             = 719, // 5.x Tol'Vir Arena
     BATTLEGROUND_DG             = 754, // 5.x Deepwind Gorge
-    BATTLEGROUND_TTP            = 757, // 5.x The Tiger's Peak
+    BATTLEGROUND_TTP            = 757  // 5.x The Tiger's Peak
 };
 
 #define MAX_BATTLEGROUND_TYPE_ID 758

@@ -134,9 +134,9 @@ class boss_setesh : public CreatureScript
             void JustSummoned(Creature* summon) OVERRIDE
             {
                 summon->setActive(true);
-                if (me->isInCombat())
+                if (me->IsInCombat())
                     summon->AI()->DoZoneInCombat();
-                summons.push_back(summon->GetGUID());
+                summons.Summon(summon);
             }
 
             void EnterEvadeMode() OVERRIDE
@@ -373,7 +373,7 @@ class npc_seed_of_chaos : public CreatureScript
             {
                 instance = creature->GetInstanceScript();
 
-                creature->SetReactState(REACT_PASSIVE):
+                creature->SetReactState(REACT_PASSIVE);
                 creature->CastSpell(creature, SPELL_SEED_OF_CHAOS_VISUAL);
                 creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
                 creature->setFaction(14);
@@ -457,7 +457,7 @@ class npc_chaos_blast : public CreatureScript
             {
                 instance = creature->GetInstanceScript();
 
-                Movement::MoveSplineInit init(*creature);
+                Movement::MoveSplineInit init(creature);
                 init.SetOrientationFixed(true);
                 init.Launch();
                 m_uiAuraTimer = 5000;

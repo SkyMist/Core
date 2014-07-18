@@ -71,6 +71,7 @@
 #include "BattlegroundEY.h"
 #include "BattlegroundWS.h"
 #include "BattlegroundTP.h"
+#include "BattlegroundCTF.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
 {
@@ -4496,6 +4497,19 @@ void Spell::EffectSummonObjectWild(SpellEffIndex effIndex)
                         team = TEAM_HORDE;
 
                     ((BattlegroundTP*)bg)->SetDroppedFlagGUID(pGameObj->GetGUID(), team);
+                }
+                break;
+            }
+            case 1010:                                      //CTF3
+            {
+                if (bg && bg->GetTypeID(true) == BATTLEGROUND_CTF && bg->GetStatus() == STATUS_IN_PROGRESS)
+                {
+                    uint32 team = TEAM_ALLIANCE;
+
+                    if (player->GetTeamId() == team)
+                        team = TEAM_HORDE;
+
+                    ((BattlegroundCTF*)bg)->SetDroppedFlagGUID(pGameObj->GetGUID(), team);
                 }
                 break;
             }

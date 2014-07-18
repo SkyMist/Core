@@ -170,7 +170,7 @@ class boss_temple_guardian_anhuur : public CreatureScript
 
                 PhaseCount++;
                 Talk(SAY_BEACON);
-                DoScriptText(SAY_ANNOUNCE, me);
+                // DoScriptText(SAY_ANNOUNCE, me);
 
                 Phase = PHASE_SHIELD;
 
@@ -322,7 +322,7 @@ class npc_anhuur_viper : public CreatureScript
 
                 if (m_uiViperDotTimer <= diff)
                 {
-                    DoCast(me->getVictim(), IsHeroic() ? SPELL_VIPER_DOT_H : SPELL_VIPER_DOT);
+                    DoCast(me->GetVictim(), IsHeroic() ? SPELL_VIPER_DOT_H : SPELL_VIPER_DOT);
                     m_uiViperDotTimer = urand(41000, 50000);
                 }
                 else m_uiViperDotTimer -= diff;

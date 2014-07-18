@@ -148,8 +148,8 @@ class boss_rajh : public CreatureScript
                 if (IsHeroic())
                     if (!me->GetMap()->GetPlayers().isEmpty())
                         for (Map::PlayerList::const_iterator i = me->GetMap()->GetPlayers().begin(); i != me->GetMap()->GetPlayers().end(); ++i)
-                            if (i->getSource())
-                                i->getSource()->KilledMonsterCredit(48815, 0);
+                            if (i->GetSource())
+                                i->GetSource()->KilledMonsterCredit(48815, 0);
 
                 if (instance)
                 {
@@ -240,7 +240,7 @@ class boss_rajh : public CreatureScript
                         if (Creature* Summoned = me->FindNearestCreature(NPC_INFERNO_LEAP, 100, true))
                         {
                             Summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                            Summoned->SetFloatValue(OBJECT_FIELD_SCALE_X, Summoned->GetFloatValue(OBJECT_FIELD_SCALE_X) * 2.5f);
+                            Summoned->SetFloatValue(OBJECT_FIELD_SCALE, Summoned->GetFloatValue(OBJECT_FIELD_SCALE) * 2.5f);
                             Summoned->setFaction(me->getFaction());
                             Summoned->SetLevel(me->getLevel());
                         }
