@@ -541,30 +541,31 @@ struct AreaTableEntry
 {
     uint32  ID;                                             // 0
     uint32  mapid;                                          // 1
-    uint32  zone;                                           // 2  if 0 then it's zone, else it's zone id of this area
-    uint32  exploreFlag;                                    // 3  main index
-    uint32  flags;                                          // 5,
-    //uint32 unk1;                                          // 6  Pandaria
-    uint32  soundPreferences;                               // 7,
-    uint32  SoundPreferencesUnderwater;                     // 8,
-    uint32  SoundAmbience;                                  // 9,
-    char*   areaName2;                                      // 10  without whitespaces
-    uint32  ZoneMusic;                                      // 11
-    uint32  ZoneIntroMusicTable;                            // 12
-    int32   area_level;                                     // 13
-    char*   area_name;                                      // 14
-    uint32  team;                                           // 15
-    uint32  LiquidTypeOverride[4];                          // 16-19 liquid override by type
-    float   MaxDepth;                                       // 20
-    float   AmbientMultiplier;                              // 21  client only?
-    uint32  LightId;                                        // 22
-    //uint32 unk20;                                         // 23  4.0.0 - Mounting related
-    //uint32 unk21;                                         // 24  4.0.0
-    //uint32 unk22;                                         // 25  4.0.0
-    //uint32 unk23;                                         // 26  4.0.0
-    //uint32 unk24;                                         // 27  worldStateId
-    //uint32 unk25;                                         // 28  Pandaria
-    //uint32 unk26;                                         // 29  Pandaria
+    uint32  zone;                                           // 2   if 0 then it's zone, else it's zone id of this area
+    uint32  exploreFlag;                                    // 3   main index
+    uint32  flags;                                          // 4,
+    //uint32 unk1;                                          // 5,  Pandaria
+    uint32  soundPreferences;                               // 6,
+    char*   rootMapName;                                    // 7,
+    uint32  SoundAmbience;                                  // 8,
+    uint32  ZoneMusic;                                      // 9,
+    char*   areaName2;                                      // 10, without whitespaces
+    uint32  ZoneIntroMusicTable;                            // 11,
+    int32   area_level;                                     // 12,
+    char*   area_name;                                      // 13,
+    uint32  team;                                           // 14,
+    uint32  LiquidTypeOverride[4];                          // 15-18, liquid override by type
+    float   MaxDepth;                                       // 19,
+    float   AmbientMultiplier;                              // 20, client only?
+    uint32  LightId;                                        // 21,
+    //uint32 unk20;                                         // 22, 4.0.0 - Mounting related
+    //uint32 unk21;                                         // 23, 4.0.0
+    //uint32 unk22;                                         // 24, 4.0.0
+    //uint32 unk23;                                         // 25, 4.0.0
+    //uint32 unk24;                                         // 26, - worldStateId
+    //uint32 unk25                                          // 27,
+    //uint32 unk25;                                         // 28,  Pandaria
+    //uint32 unk26;                                         // 29   Pandaria
 
     // Helpers.
     bool IsSanctuary() const

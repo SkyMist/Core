@@ -195,18 +195,18 @@ enum BattlegroundQueueTypeId
     BATTLEGROUND_QUEUE_BFG      = 8,            // Battle for Gilneas
     BATTLEGROUND_QUEUE_RB       = 9,            // Random BG
 
-    BATTLEGROUND_QUEUE_KT       = 13,           // Kotmogu Temple
-    BATTLEGROUND_QUEUE_CTF3     = 14,           // CTF3 Unreleased MOP BG :D.
-    BATTLEGROUND_QUEUE_SSM      = 15,           // Silvershard Mines
-    BATTLEGROUND_QUEUE_DG       = 16,           // Deepwind Gorge
+    BATTLEGROUND_QUEUE_KT       = 10,           // Kotmogu Temple
+    BATTLEGROUND_QUEUE_CTF3     = 11,           // CTF3 Unreleased MOP BG :D.
+    BATTLEGROUND_QUEUE_SSM      = 12,           // Silvershard Mines
+    BATTLEGROUND_QUEUE_DG       = 13,           // Deepwind Gorge
 
     // Rated bg's
-    BATTLEGROUND_QUEUE_RATED_10_VS_10     = 17, // Rated BG 10 vs 10
+    BATTLEGROUND_QUEUE_RATED_10_VS_10     = 14, // Rated BG 10 vs 10
 
     // Arenas
-    BATTLEGROUND_QUEUE_2v2      = 18,
-    BATTLEGROUND_QUEUE_3v3      = 19,
-    BATTLEGROUND_QUEUE_5v5      = 20,
+    BATTLEGROUND_QUEUE_2v2      = 15,
+    BATTLEGROUND_QUEUE_3v3      = 16,
+    BATTLEGROUND_QUEUE_5v5      = 17,
 
     MAX_BATTLEGROUND_QUEUE_TYPES
 };

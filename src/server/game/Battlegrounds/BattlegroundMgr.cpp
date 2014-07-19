@@ -122,16 +122,21 @@ void BattlegroundMgr::Update(uint32 diff)
     // update scheduled queues
     if (!m_QueueUpdateScheduler.empty())
     {
-        std::vector<uint64> scheduled;
-        std::swap(scheduled, m_QueueUpdateScheduler);
+        std::vector<QueueSchedulerItem*> scheduled;
+        {
+            //copy vector and clear the other
+            scheduled = std::vector<QueueSchedulerItem*>(m_QueueUpdateScheduler);
+            m_QueueUpdateScheduler.clear();
+            //release lock
+        }
 
         for (uint8 i = 0; i < scheduled.size(); i++)
         {
-            uint32 arenaMMRating = scheduled[i] >> 32;
-            uint8 arenaType = scheduled[i] >> 24 & 255;
-            BattlegroundQueueTypeId bgQueueTypeId = BattlegroundQueueTypeId(scheduled[i] >> 16 & 255);
-            BattlegroundTypeId bgTypeId = BattlegroundTypeId((scheduled[i] >> 8) & 255);
-            BattlegroundBracketId bracket_id = BattlegroundBracketId(scheduled[i] & 255);
+            uint32 arenaMMRating = scheduled[i]->_arenaMMRating;
+            uint8 arenaType = scheduled[i]->_arenaType;
+            BattlegroundQueueTypeId bgQueueTypeId = scheduled[i]->_bgQueueTypeId;
+            BattlegroundTypeId bgTypeId = scheduled[i]->_bgTypeId;
+            BattlegroundBracketId bracket_id = scheduled[i]->_bracket_id;
             m_BattlegroundQueues[bgQueueTypeId].BattlegroundQueueUpdate(diff, bgTypeId, bracket_id, arenaType, arenaMMRating > 0, arenaMMRating);
         }
     }
@@ -1700,11 +1705,28 @@ void BattlegroundMgr::SetHolidayWeekends(uint32 mask)
 
 void BattlegroundMgr::ScheduleQueueUpdate(uint32 arenaMatchmakerRating, uint8 arenaType, BattlegroundQueueTypeId bgQueueTypeId, BattlegroundTypeId bgTypeId, BattlegroundBracketId bracket_id)
 {
-    //This method must be atomic, @todo add mutex
-    //we will use only 1 number created of bgTypeId and bracket_id
-    uint64 const scheduleId = ((uint64)arenaMatchmakerRating << 32) | (uint32(arenaType) << 24) | (bgQueueTypeId << 16) | (bgTypeId << 8) | bracket_id;
-    if (std::find(m_QueueUpdateScheduler.begin(), m_QueueUpdateScheduler.end(), scheduleId) == m_QueueUpdateScheduler.end())
-        m_QueueUpdateScheduler.push_back(scheduleId);
+    //This method must be atomic, @todo add mutex. We will use only 1 number created of bgTypeId and bracket_id
+    QueueSchedulerItem* schedule_id = new QueueSchedulerItem(arenaMatchmakerRating, arenaType, bgQueueTypeId, bgTypeId, bracket_id);
+    bool found = false;
+
+    if (!m_QueueUpdateScheduler.empty())
+    {
+        for (uint8 i = 0; i < m_QueueUpdateScheduler.size(); i++)
+        {
+            if (m_QueueUpdateScheduler[i]->_arenaMMRating == arenaMatchmakerRating
+             && m_QueueUpdateScheduler[i]->_arenaType == arenaType
+             && m_QueueUpdateScheduler[i]->_bgQueueTypeId == bgQueueTypeId
+             && m_QueueUpdateScheduler[i]->_bgTypeId == bgTypeId
+             && m_QueueUpdateScheduler[i]->_bracket_id == bracket_id)
+            {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if (!found)
+        m_QueueUpdateScheduler.push_back(schedule_id);
 }
 
 uint32 BattlegroundMgr::GetMaxRatingDifference() const

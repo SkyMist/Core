@@ -203,16 +203,15 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
                 uint32 qAlliance = 0;
                 uint32 q_min_level = bracketEntry->minLevel;
                 uint32 q_max_level = bracketEntry->maxLevel;
-                GroupsQueueType::const_iterator itr;
 
                 if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].empty())
-                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); ++itr)
-                        if (!(*itr)->IsInvitedToBGInstanceGUID)
+                    for (GroupsQueueType::const_iterator itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); itr++)
+                        if ((*itr) && !(*itr)->IsInvitedToBGInstanceGUID)
                             qAlliance += (*itr)->Players.size();
 
                 if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].empty())
-                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); ++itr)
-                        if (!(*itr)->IsInvitedToBGInstanceGUID)
+                    for (GroupsQueueType::const_iterator itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); itr++)
+                        if ((*itr) && !(*itr)->IsInvitedToBGInstanceGUID)
                             qHorde += (*itr)->Players.size();
 
                 // Show queue status to player only (when joining queue)

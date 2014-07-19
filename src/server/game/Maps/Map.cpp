@@ -2262,6 +2262,10 @@ uint16 Map::GetAreaFlag(float x, float y, float z, bool *isOutdoors) const
 
     uint16 areaflag;
 
+    // Fix Deepwind Gorge.
+    if (this->GetId() == 1105)
+        atEntry = sAreaStore.LookupEntry(5299);
+
     if (atEntry)
         areaflag = atEntry->exploreFlag;
     else
