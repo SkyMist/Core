@@ -4,16 +4,18 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#ifndef __BattleGroundTK_H
-#define __BattleGroundTK_H
+#ifndef __BATTLEGROUNDTK_H
+#define __BATTLEGROUNDTK_H
 
 #include "Battleground.h"
 
-#define BG_TK_MAX_TEAM_SCORE        1600
-#define BG_TK_ORB_POINTS_MAX        1600
-#define BG_TK_POINTS_UPDATE_TIME    (8 * IN_MILLISECONDS)
-#define BG_TK_TIME_LIMIT            (25 * MINUTE * IN_MILLISECONDS)
-#define BG_TK_EVENT_START_BATTLE    8563
+enum BG_TK_TimerOrScore
+{
+    BG_TK_MAX_TEAM_SCORE        = 1600,
+
+    BG_TK_POINTS_UPDATE_TIME    = 8 * IN_MILLISECONDS,
+    BG_TK_TIME_LIMIT            = 25 * MINUTE * IN_MILLISECONDS
+};
 
 enum BG_TK_NPC
 {
@@ -24,10 +26,12 @@ enum BG_TK_Objects
 {
     BG_TK_OBJECT_A_DOOR         = 0,
     BG_TK_OBJECT_H_DOOR         = 1,
+
     BG_TK_OBJECT_ORB_1          = 2,
     BG_TK_OBJECT_ORB_2          = 3,
     BG_TK_OBJECT_ORB_3          = 4,
     BG_TK_OBJECT_ORB_4          = 5,
+
     BG_TK_OBJECT_MAX            = 6
 };
 
@@ -44,7 +48,7 @@ enum BG_TK_Creatures
     BG_TK_CREATURE_MAX          = 6
 };
 
-enum BG_TK_Objets_Entry
+enum BG_TK_Objects_Entry
 {
     BG_TK_OBJECT_DOOR_ENTRY     = 213172,
 
@@ -64,15 +68,15 @@ enum BG_TK_Sound
 
 enum BG_TK_SpellId
 {
-    BG_TK_SPELL_ORB_PICKED_UP_1 = 121164,   // PURPLE
-    BG_TK_SPELL_ORB_PICKED_UP_2 = 121175,   // ORANGE
-    BG_TK_SPELL_ORB_PICKED_UP_3 = 121176,   // GREEN
-    BG_TK_SPELL_ORB_PICKED_UP_4 = 121177,   // YELLOW
+    BG_TK_SPELL_ORB_PICKED_UP_1 = 121176,   // GREEN
+    BG_TK_SPELL_ORB_PICKED_UP_2 = 121175,   // PURPLE
+    BG_TK_SPELL_ORB_PICKED_UP_3 = 121177,   // RED
+    BG_TK_SPELL_ORB_PICKED_UP_4 = 121164,   // BLUE
 
-    BG_TK_SPELL_ORB_AURA_1      = 121219,   // PURPLE
-    BG_TK_SPELL_ORB_AURA_2      = 121221,   // ORANGE
-    BG_TK_SPELL_ORB_AURA_3      = 121220,   // GREEN
-    BG_TK_SPELL_ORB_AURA_4      = 121217,   // YELLOW
+    BG_TK_SPELL_ORB_AURA_1      = 121220,   // GREEN
+    BG_TK_SPELL_ORB_AURA_2      = 121219,   // PURPLE
+    BG_TK_SPELL_ORB_AURA_3      = 121221,   // RED
+    BG_TK_SPELL_ORB_AURA_4      = 121217,   // BLUE
 
     BG_TK_ALLIANCE_INSIGNIA     = 131527,
     BG_TK_HORDE_INSIGNIA        = 131528
@@ -124,10 +128,10 @@ const float BG_TK_DoorPositions[2][4] =
 
 const float BG_TK_OrbPositions[MAX_ORBS][4] =
 {
-    {1716.78f, 1416.64f, 13.5709f, 1.57239f},
-    {1850.26f, 1416.77f, 13.5709f, 1.56061f},
-    {1850.29f, 1250.31f, 13.5708f, 4.70848f},
-    {1716.83f, 1249.93f, 13.5706f, 4.71397f}
+    {1716.78f, 1416.64f, 13.5709f, 1.57239f}, // GREEN
+    {1850.26f, 1416.77f, 13.5709f, 1.56061f}, // PURPLE
+    {1850.29f, 1250.31f, 13.5708f, 4.70848f}, // RED
+    {1716.83f, 1249.93f, 13.5706f, 4.71397f}  // BLUE
 };
 
 const float BG_TK_SpiritPositions[MAX_ORBS][4] =
@@ -152,17 +156,16 @@ const uint32 BG_TK_ORBS_AURA[MAX_ORBS] =
     BG_TK_SPELL_ORB_AURA_4
 };
 
-struct BattlegroundTKScore : public BattlegroundScore
-{
-    public:
-        BattlegroundTKScore() : OrbHandles(0), VictoryPoints(0) { }
-        virtual ~BattlegroundTKScore() { }
-        uint32 OrbHandles;
-        uint32 VictoryPoints;
-};
-
 //tick point according to which zone
 const uint32 BG_TK_TickPoints[3] = { 1, 3, 5 };
+
+struct BattlegroundTKScore : public BattlegroundScore
+{
+    BattlegroundTKScore() : OrbHandles(0), VictoryPoints(0) { }
+    ~BattlegroundTKScore() { }
+    uint32 OrbHandles;
+    uint32 VictoryPoints;
+};
 
 class BattlegroundTK : public Battleground
 {
@@ -172,35 +175,34 @@ class BattlegroundTK : public Battleground
         ~BattlegroundTK();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* plr);
+        void AddPlayer(Player* player);
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
 
         /* Battleground Events */
-        void EventPlayerDroppedOrb(Player* source);
+        void EventPlayerDroppedOrb(Player* player);
 
-        void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj) { EventPlayerClickedOnOrb(source, target_obj); }
-        void EventPlayerClickedOnOrb(Player* source, GameObject* target_obj);
+        void EventPlayerClickedOnFlag(Player* player, GameObject* target_obj) { EventPlayerClickedOnOrb(player, target_obj); }
+        void EventPlayerClickedOnOrb(Player* player, GameObject* target_obj);
 
-        void RemovePlayer(Player* plr, uint64 guid, uint32 /*team*/);
-        void HandleAreaTrigger(Player* source, uint32 trigger);
+        void RemovePlayer(Player* player, uint64 guid, uint32 /*team*/);
+        void HandleAreaTrigger(Player* player, uint32 trigger);
         void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleground();
         void Reset();
         void EndBattleground(uint32 winner);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
-        uint32 GetRemainingTimeInMinutes() { return m_EndTimer ? (m_EndTimer - 1) / (MINUTE * IN_MILLISECONDS) + 1 : 0; }
 
         void UpdateOrbState(uint32 team, uint32 value);
         void UpdateTeamScore(uint32 team);
-        void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
+        void UpdatePlayerScore(Player* player, uint32 type, uint32 value, bool doAddHonor = true);
         void FillInitialWorldStates(ByteBuffer& data);
 
         /* Scorekeeping */
-        uint32 GetTeamScore(uint32 team) const            { return m_TeamScores[GetTeamIndexByTeamId(team)]; }
-        void AddPoint(uint32 team, uint32 Points = 1)     { m_TeamScores[GetTeamIndexByTeamId(team)] += Points; }
-        void SetTeamPoint(uint32 team, uint32 Points = 0) { m_TeamScores[GetTeamIndexByTeamId(team)] = Points; }
-        void RemovePoint(uint32 team, uint32 Points = 1)  { m_TeamScores[GetTeamIndexByTeamId(team)] -= Points; }
+        uint32 GetTeamScore(uint32 TeamID) const            { return m_TeamScores[GetTeamIndexByTeamId(TeamID)]; }
+        void AddPoint(uint32 TeamID, uint32 Points = 1)     { m_TeamScores[GetTeamIndexByTeamId(TeamID)] += Points; }
+        void SetTeamPoint(uint32 TeamID, uint32 Points = 0) { m_TeamScores[GetTeamIndexByTeamId(TeamID)]  = Points; }
+        void RemovePoint(uint32 TeamID, uint32 Points = 1)  { m_TeamScores[GetTeamIndexByTeamId(TeamID)] -= Points; }
 
         void AccumulateScore(uint32 team, BG_TK_ZONE zone);
 
@@ -213,9 +215,10 @@ class BattlegroundTK : public Battleground
         uint32 m_ReputationCapture;
         uint32 m_HonorWinKills;
         uint32 m_HonorEndKills;
-        uint32 m_EndTimer;
-        uint32 m_UpdatePointsTimer;
-        uint32 m_LastCapturedOrbTeam;
-};
 
+        uint32 _UpdatePointsTimer;
+        uint32 _LastCapturedOrbTeam;
+
+        uint8  _minutesElapsed;
+};
 #endif

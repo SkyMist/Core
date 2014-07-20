@@ -2930,7 +2930,7 @@ void World::SendAutoBroadcast()
             sWorld->SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
 
             WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-            data.WriteBits(msg.length() + 1, 13);
+            data.WriteBits(msg.length(), 12);
             data.FlushBits();
             data.WriteString(msg);
             sWorld->SendGlobalMessage(&data);
@@ -2939,7 +2939,7 @@ void World::SendAutoBroadcast()
         case 1:
         {
             WorldPacket data(SMSG_NOTIFICATION, 2 + msg.length());
-            data.WriteBits(msg.length() + 1, 13);
+            data.WriteBits(msg.length(), 12);
             data.FlushBits();
             data.WriteString(msg);
             sWorld->SendGlobalMessage(&data);

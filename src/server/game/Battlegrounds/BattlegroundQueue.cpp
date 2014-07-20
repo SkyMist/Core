@@ -146,7 +146,7 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
     ginfo->ArenaMatchmakerRating     = MatchmakerRating;
     ginfo->OpponentsTeamRating       = 0;
     ginfo->OpponentsMatchmakerRating = 0;
-    ginfo->group                     = grp;
+    ginfo->group                     = grp ? grp : NULL;
 
     ginfo->Players.clear();
 
@@ -203,14 +203,15 @@ GroupQueueInfo* BattlegroundQueue::AddGroup(Player* leader, Group* grp, Battlegr
                 uint32 qAlliance = 0;
                 uint32 q_min_level = bracketEntry->minLevel;
                 uint32 q_max_level = bracketEntry->maxLevel;
+                GroupsQueueType::const_iterator itr;
 
                 if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].empty())
-                    for (GroupsQueueType::const_iterator itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); itr++)
+                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_ALLIANCE].end(); itr++)
                         if ((*itr) && !(*itr)->IsInvitedToBGInstanceGUID)
                             qAlliance += (*itr)->Players.size();
 
                 if (!m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].empty())
-                    for (GroupsQueueType::const_iterator itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); itr++)
+                    for (itr = m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].begin(); itr != m_QueuedGroups[bracketId][BG_QUEUE_NORMAL_HORDE].end(); itr++)
                         if ((*itr) && !(*itr)->IsInvitedToBGInstanceGUID)
                             qHorde += (*itr)->Players.size();
 
@@ -383,10 +384,9 @@ void BattlegroundQueue::RemovePlayer(uint64 guid, bool decreaseInvitedCount)
         m_QueuedGroups[bracket_id][index].erase(group_itr);
         delete group;
     }
-
-    // if group wasn't empty, so it wasn't deleted, and player has left a rated / random bg / arena queue -> everyone from the group should leave too.
+    // if the group wasn't empty (so it wasn't deleted), and the player has left a rated / random bg / arena queue -> everyone from the group should leave too.
     // don't remove recursively if already invited to bg!
-    if (!group->IsInvitedToBGInstanceGUID && group->IsRated && group->ArenaType || !group->IsInvitedToBGInstanceGUID && !group->ArenaType)
+    else if (!group->IsInvitedToBGInstanceGUID && group->IsRated && group->ArenaType || !group->IsInvitedToBGInstanceGUID && !group->ArenaType)
     {
         // remove next player, this is recursive
         // first send removal information
@@ -746,8 +746,8 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
 
     // battleground with free slot for player should be always in the beggining of the queue
     // maybe it would be better to create bgfreeslotqueue for each bracket_id
-    BGFreeSlotQueueContainer::iterator itr, next;
-    for (itr = sBattlegroundMgr->GetBGFreeSlotQueueStore(bgTypeId).begin(); itr != sBattlegroundMgr->GetBGFreeSlotQueueStore(bgTypeId).end(); itr = next)
+    BGFreeSlotQueueType::iterator itr, next;
+    for (itr = sBattlegroundMgr->BGFreeSlotQueue[bgTypeId].begin(); itr != sBattlegroundMgr->BGFreeSlotQueue[bgTypeId].end(); itr = next)
     {
         next = itr;
         ++next;

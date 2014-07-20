@@ -978,7 +978,6 @@ bool Creature::isCanInteractWithBattleMaster(Player* player, bool msg) const
             case BATTLEGROUND_TP:
             case BATTLEGROUND_BFG:
             case BATTLEGROUND_TOK:
-            case BATTLEGROUND_CTF:
             case BATTLEGROUND_SM:
             case BATTLEGROUND_DG:
 

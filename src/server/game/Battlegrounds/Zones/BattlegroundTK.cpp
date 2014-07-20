@@ -4,34 +4,30 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#include "Object.h"
-#include "Player.h"
-#include "Battleground.h"
 #include "Creature.h"
 #include "GameObject.h"
+#include "Language.h"
+#include "Object.h"
 #include "ObjectMgr.h"
 #include "BattlegroundMgr.h"
+#include "Player.h"
+#include "World.h"
 #include "WorldPacket.h"
-#include "Language.h"
-#include "MapManager.h"
 
 #include "BattlegroundTK.h"
 
 BattlegroundTK::BattlegroundTK()
 {
+    BgObjects.resize(BG_TK_OBJECT_MAX);
+    BgCreatures.resize(BG_TK_CREATURE_MAX);
+
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BG_TK_START_TWO_MINUTES;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_TK_START_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BG_TK_START_HALF_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BG_TK_HAS_BEGUN;
 
-    m_ReputationCapture = 0;
-    m_HonorWinKills     = 0;
-    m_HonorEndKills     = 0;
-
-    m_EndTimer          = 0;
-
-    m_UpdatePointsTimer   = BG_TK_POINTS_UPDATE_TIME;
-    m_LastCapturedOrbTeam = BG_TEAM_ALLIANCE;
+    _UpdatePointsTimer   = 0;
+    _LastCapturedOrbTeam = BG_TEAM_ALLIANCE;
 }
 
 BattlegroundTK::~BattlegroundTK() { }
@@ -40,71 +36,70 @@ void BattlegroundTK::PostUpdateImpl(uint32 diff)
 {
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
-        if (m_EndTimer <= diff)
+        if (GetElapsedTime() >= BG_TK_TIME_LIMIT + 2 * MINUTE * IN_MILLISECONDS)
         {
-            uint32 allianceScore = GetTeamScore(ALLIANCE);
-            uint32 hordeScore    = GetTeamScore(HORDE);
-
-            if (allianceScore > hordeScore)
-                EndBattleground(ALLIANCE);
-            else if (allianceScore < hordeScore)
+            if (GetTeamScore(ALLIANCE) == 0)
+            {
+                if (GetTeamScore(HORDE) == 0)        // No one scored - result is tie
+                    EndBattleground(WINNER_NONE);
+                else                                         // Horde has more points and thus wins
+                    EndBattleground(HORDE);
+            }
+            else if (GetTeamScore(HORDE) == 0)
+                EndBattleground(ALLIANCE);           // Alliance has > 0, Horde has 0, alliance wins
+            else if (GetTeamScore(HORDE) == GetTeamScore(ALLIANCE)) // Team score equal, winner is team that scored the last flag
+                EndBattleground(_LastCapturedOrbTeam);
+            else if (GetTeamScore(HORDE) > GetTeamScore(ALLIANCE))  // Last but not least, check who has the higher score
                 EndBattleground(HORDE);
             else
-            {
-                // if 0 => tie
-                EndBattleground(m_LastCapturedOrbTeam);
-            }
+                EndBattleground(ALLIANCE);
         }
-        else
+        else if (GetElapsedTime() > uint32(_minutesElapsed * MINUTE * IN_MILLISECONDS) +  3 * MINUTE * IN_MILLISECONDS) // first update needed after 1 minute of game already in progress
         {
-            uint32 minutesLeftPrev = GetRemainingTimeInMinutes();
-            m_EndTimer -= diff;
-            uint32 minutesLeft = GetRemainingTimeInMinutes();
-
-            if (minutesLeft != minutesLeftPrev)
-                UpdateWorldState(BG_TK_TIME_REMAINING, minutesLeft);
+            ++_minutesElapsed;
+            UpdateWorldState(BG_TK_TIME_REMAINING, 25 - _minutesElapsed);
         }
 
-        if (m_UpdatePointsTimer <= diff)
+        if (_UpdatePointsTimer <= diff)
         {
             for (uint8 i = 0; i < MAX_ORBS; ++i)
+            {
                 if (uint64 guid = m_OrbKeepers[i])
+                {
                     if (m_playersZone.find(guid) != m_playersZone.end())
+                    {
                         if (Player* player = ObjectAccessor::FindPlayer(guid))
                         {
                             AccumulateScore(player->GetTeamId(), m_playersZone[guid]);
-                            UpdatePlayerScore(player, SCORE_ORB_SCORE, m_playersZone[guid]);
+                            UpdatePlayerScore(player, SCORE_ORB_SCORE, BG_TK_TickPoints[m_playersZone[guid]]);
                         }
+                    }
+                }
+            }
 
-            m_UpdatePointsTimer = BG_TK_POINTS_UPDATE_TIME;
+            _UpdatePointsTimer = BG_TK_POINTS_UPDATE_TIME;
         }
         else
-            m_UpdatePointsTimer -= diff;
+            _UpdatePointsTimer -= diff;
     }
 }
 
 void BattlegroundTK::StartingEventCloseDoors()
 {
-    SpawnBGObject(BG_TK_OBJECT_A_DOOR, RESPAWN_IMMEDIATELY);
-    SpawnBGObject(BG_TK_OBJECT_H_DOOR, RESPAWN_IMMEDIATELY);
-
-    DoorClose(BG_TK_OBJECT_A_DOOR);
-    DoorClose(BG_TK_OBJECT_H_DOOR);
-
-    for (uint8 i = 0; i < 4; ++i)
-        SpawnBGObject(BG_TK_OBJECT_ORB_1 + i, RESPAWN_ONE_DAY);
+    for (uint32 i = BG_TK_OBJECT_A_DOOR; i <= BG_TK_OBJECT_H_DOOR; ++i)
+    {
+        DoorClose(i);
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+    }
 }
 
 void BattlegroundTK::StartingEventOpenDoors()
 {
-    DoorOpen(BG_TK_OBJECT_A_DOOR);
-    DoorOpen(BG_TK_OBJECT_H_DOOR);
+    for (uint32 i = BG_TK_OBJECT_A_DOOR; i <= BG_TK_OBJECT_H_DOOR; ++i)
+        DoorOpen(i);
 
-    for (uint8 i = 0; i < 4; ++i)
-        SpawnBGObject(BG_TK_OBJECT_ORB_1 + i, RESPAWN_IMMEDIATELY);
-
-    // Players that join battleground after start are not eligible to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, BG_TK_EVENT_START_BATTLE);
+    for (uint8 i = BG_TK_OBJECT_ORB_1; i < BG_TK_OBJECT_ORB_4; ++i)
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
 }
 
 void BattlegroundTK::AddPlayer(Player* player)
@@ -117,12 +112,12 @@ void BattlegroundTK::AddPlayer(Player* player)
     m_playersZone[player->GetGUID()] = TK_ZONE_OUT;
 }
 
-void BattlegroundTK::EventPlayerClickedOnOrb(Player* source, GameObject* target_obj)
+void BattlegroundTK::EventPlayerClickedOnOrb(Player* player, GameObject* target_obj)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    if (!source->IsWithinDistInMap(target_obj, 10))
+    if (!player->IsWithinDistInMap(target_obj, 10))
         return;
 
     uint32 index = target_obj->GetEntry() - BG_TK_OBJECT_ORB_1_ENTRY;
@@ -133,27 +128,26 @@ void BattlegroundTK::EventPlayerClickedOnOrb(Player* source, GameObject* target_
 
     // Check if the player already have an orb
     for (uint8 i = 0; i < MAX_ORBS; ++i)
-        if (m_OrbKeepers[i] == source->GetGUID())
+        if (m_OrbKeepers[i] == player->GetGUID())
             return;
 
-    PlaySoundToAll(source->GetTeamId() == TEAM_ALLIANCE ? BG_TK_SOUND_A_ORB_PICKED_UP: BG_TK_SOUND_H_ORB_PICKED_UP);
-    source->CastSpell(source, BG_TK_ORBS_SPELLS[index], true);
-    source->CastSpell(source, source->GetTeamId() == TEAM_ALLIANCE ? BG_TK_ALLIANCE_INSIGNIA: BG_TK_HORDE_INSIGNIA, true);
+    PlaySoundToAll(player->GetTeamId() == BG_TEAM_ALLIANCE ? BG_TK_SOUND_A_ORB_PICKED_UP: BG_TK_SOUND_H_ORB_PICKED_UP);
+    player->CastSpell(player, BG_TK_ORBS_SPELLS[index], true);
+    player->CastSpell(player, player->GetTeamId() == BG_TEAM_ALLIANCE ? BG_TK_ALLIANCE_INSIGNIA: BG_TK_HORDE_INSIGNIA, true);
 
-    UpdatePlayerScore(source, SCORE_ORB_HANDLES, 1);
+    UpdatePlayerScore(player, SCORE_ORB_HANDLES, 1);
 
-    m_OrbKeepers[index] = source->GetGUID();
-    UpdateWorldState(BG_TK_ICON_A, 1);
-    SpawnBGObject(BG_TK_OBJECT_ORB_1 + index, RESPAWN_ONE_DAY);
+    m_OrbKeepers[index] = player->GetGUID();
+    UpdateOrbState(ALLIANCE, 1);
 
     if (Creature* aura = GetBGCreature(BG_TK_CREATURE_ORB_AURA_1 + index))
         aura->RemoveAllAuras();
 
-    SendMessageToAll(LANG_BG_TK_ORB_PICKED_UP, source->GetTeamId() == TEAM_ALLIANCE ? CHAT_MSG_BG_SYSTEM_ALLIANCE: CHAT_MSG_BG_SYSTEM_HORDE, source);
-    source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+    SendMessageToAll(LANG_BG_TK_ORB_PICKED_UP, player->GetTeamId() == BG_TEAM_ALLIANCE ? CHAT_MSG_BG_SYSTEM_ALLIANCE: CHAT_MSG_BG_SYSTEM_HORDE, player);
+    player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattlegroundTK::EventPlayerDroppedOrb(Player* source)
+void BattlegroundTK::EventPlayerDroppedOrb(Player* player)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
@@ -165,14 +159,14 @@ void BattlegroundTK::EventPlayerDroppedOrb(Player* source)
         if (index == MAX_ORBS)
             return;
 
-        if (m_OrbKeepers[index] == source->GetGUID())
+        if (m_OrbKeepers[index] == player->GetGUID())
             break;
     }
 
-    PlaySoundToAll(source->GetTeamId() == TEAM_ALLIANCE ? BG_TK_SOUND_A_ORB_PICKED_UP: BG_TK_SOUND_H_ORB_PICKED_UP);
-    source->RemoveAurasDueToSpell(BG_TK_ORBS_SPELLS[index]);
-    source->RemoveAurasDueToSpell(BG_TK_ALLIANCE_INSIGNIA);
-    source->RemoveAurasDueToSpell(BG_TK_HORDE_INSIGNIA);
+    PlaySoundToAll(player->GetTeamId() == BG_TEAM_ALLIANCE ? BG_TK_SOUND_A_ORB_PICKED_UP: BG_TK_SOUND_H_ORB_PICKED_UP);
+    player->RemoveAurasDueToSpell(BG_TK_ORBS_SPELLS[index]);
+    player->RemoveAurasDueToSpell(BG_TK_ALLIANCE_INSIGNIA);
+    player->RemoveAurasDueToSpell(BG_TK_HORDE_INSIGNIA);
 
     m_OrbKeepers[index] = 0;
     SpawnBGObject(BG_TK_OBJECT_ORB_1 + index, RESPAWN_IMMEDIATELY);
@@ -180,15 +174,16 @@ void BattlegroundTK::EventPlayerDroppedOrb(Player* source)
     if (Creature* aura = GetBGCreature(BG_TK_CREATURE_ORB_AURA_1 + index))
         aura->AddAura(BG_TK_ORBS_AURA[index], aura);
 
-    UpdateWorldState(BG_TK_ICON_A, 0);
-    SendMessageToAll(LANG_BG_TK_ORB_DROPPED, source->GetTeamId() == TEAM_ALLIANCE ? CHAT_MSG_BG_SYSTEM_ALLIANCE: CHAT_MSG_BG_SYSTEM_HORDE, source);
-    source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+    UpdateOrbState(ALLIANCE, 0);
+
+    SendMessageToAll(LANG_BG_TK_ORB_DROPPED, player->GetTeamId() == BG_TEAM_ALLIANCE ? CHAT_MSG_BG_SYSTEM_ALLIANCE: CHAT_MSG_BG_SYSTEM_HORDE, player);
+    player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattlegroundTK::RemovePlayer(Player* plr, uint64 guid, uint32 /*team*/)
+void BattlegroundTK::RemovePlayer(Player* player, uint64 guid, uint32 /*team*/)
 {
-    EventPlayerDroppedOrb(plr);
-    m_playersZone.erase(plr->GetGUID());
+    EventPlayerDroppedOrb(player);
+    m_playersZone.erase(player->GetGUID());
 }
 
 void BattlegroundTK::UpdateOrbState(uint32 team, uint32 value)
@@ -207,38 +202,33 @@ void BattlegroundTK::UpdateTeamScore(uint32 team)
         UpdateWorldState(BG_TK_ORB_POINTS_H, GetTeamScore(team));
 }
 
-void BattlegroundTK::HandleAreaTrigger(Player* source, uint32 trigger)
+void BattlegroundTK::HandleAreaTrigger(Player* player, uint32 trigger)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    uint64 sourceGuid = source->GetGUID();
+    uint64 sourceGuid = player->GetGUID();
     switch(trigger)
     {
         case 7734: // Out-In trigger
-        {
             if (m_playersZone.find(sourceGuid) == m_playersZone.end())
                 return;
-
             if (m_playersZone[sourceGuid] == TK_ZONE_OUT)
                 m_playersZone[sourceGuid] = TK_ZONE_IN;
             else
                 m_playersZone[sourceGuid] = TK_ZONE_OUT;
             break;
-        }
         case 7735: // Middle-In trigger
-        {
             if (m_playersZone.find(sourceGuid) == m_playersZone.end())
                 return;
-
             if (m_playersZone[sourceGuid] == TK_ZONE_IN)
                 m_playersZone[sourceGuid] = TK_ZONE_MIDDLE;
             else
                 m_playersZone[sourceGuid] = TK_ZONE_IN;
             break;
-        }
         default:
+            Battleground::HandleAreaTrigger(player, trigger);
             break;
     }
 }
@@ -269,21 +259,26 @@ bool BattlegroundTK::SetupBattleground()
 
 void BattlegroundTK::Reset()
 {
-    //call parent's class reset
+    // call parent's class reset
     Battleground::Reset();
-    BgObjects.resize(BG_TK_OBJECT_MAX);
-    BgCreatures.resize(BG_TK_CREATURE_MAX);
+
+    m_TeamScores[BG_TEAM_ALLIANCE]      = 0;
+    m_TeamScores[BG_TEAM_HORDE]         = 0;
+
+    m_playersZone.clear();
 
     for (uint32 i = 0; i < MAX_ORBS; ++i)
-        m_OrbKeepers[i] = 0;
+        m_OrbKeepers[i]  = 0;
 
     bool isBGWeekend = BattlegroundMgr::IsBGWeekend(GetTypeID());
-    m_ReputationCapture = (isBGWeekend) ? 45 : 35;
-    m_HonorWinKills = (isBGWeekend) ? 3 : 1;
-    m_HonorEndKills = (isBGWeekend) ? 4 : 2;
+    m_ReputationCapture  = (isBGWeekend) ? 45 : 35;
+    m_HonorWinKills      = (isBGWeekend) ?  3 :  1;
+    m_HonorEndKills      = (isBGWeekend) ?  4 :  2;
 
-    m_EndTimer = BG_TK_TIME_LIMIT;
-    m_LastCapturedOrbTeam = BG_TEAM_ALLIANCE;
+    _UpdatePointsTimer   = BG_TK_POINTS_UPDATE_TIME;
+    _LastCapturedOrbTeam = BG_TEAM_ALLIANCE;
+
+    _minutesElapsed      = 0;
 }
 
 void BattlegroundTK::EndBattleground(uint32 winner)
@@ -310,9 +305,9 @@ void BattlegroundTK::HandleKillPlayer(Player *player, Player *killer)
     Battleground::HandleKillPlayer(player, killer);
 }
 
-void BattlegroundTK::UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor)
+void BattlegroundTK::UpdatePlayerScore(Player* player, uint32 type, uint32 value, bool doAddHonor)
 {
-    BattlegroundScoreMap::iterator itr = PlayerScores.find(Source->GetGUID());
+    BattlegroundScoreMap::iterator itr = PlayerScores.find(player->GetGUID());
     if (itr == PlayerScores.end())                         // player not found
         return;
 
@@ -325,7 +320,7 @@ void BattlegroundTK::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
             ((BattlegroundTKScore*)itr->second)->VictoryPoints += value;
             break;
         default:
-            Battleground::UpdatePlayerScore(Source, type, value, doAddHonor);
+            Battleground::UpdatePlayerScore(player, type, value, doAddHonor);
             break;
     }
 }
@@ -367,14 +362,14 @@ void BattlegroundTK::AccumulateScore(uint32 team, BG_TK_ZONE zone)
         m_TeamScores[team] = BG_TK_MAX_TEAM_SCORE;
 
     if (team == BG_TEAM_ALLIANCE)
-        UpdateWorldState(BG_TK_ORB_POINTS_A, m_TeamScores[team]);
+        UpdateTeamScore(ALLIANCE);
     if (team == BG_TEAM_HORDE)
-        UpdateWorldState(BG_TK_ORB_POINTS_H, m_TeamScores[team]);
+        UpdateTeamScore(HORDE);
 
     // Test win condition
-    if (m_TeamScores[BG_TEAM_ALLIANCE] >= BG_TK_MAX_TEAM_SCORE)
+    if (GetTeamScore(ALLIANCE) >= BG_TK_MAX_TEAM_SCORE)
         EndBattleground(ALLIANCE);
-    if (m_TeamScores[BG_TEAM_HORDE] >= BG_TK_MAX_TEAM_SCORE)
+    if (GetTeamScore(BG_TEAM_HORDE) >= BG_TK_MAX_TEAM_SCORE)
         EndBattleground(HORDE);
 }
 
@@ -382,11 +377,10 @@ void BattlegroundTK::FillInitialWorldStates(ByteBuffer& data)
 {
     data << uint32(GetTeamScore(ALLIANCE)) << uint32(BG_TK_ORB_POINTS_A);
     data << uint32(GetTeamScore(HORDE))    << uint32(BG_TK_ORB_POINTS_H);
-    data << uint32(BG_TK_MAX_TEAM_SCORE)   << uint32(BG_TK_ORB_POINTS_MAX);
     data << uint32(0x1)                    << uint32(BG_KT_NEUTRAL_ORBS);
 
-    data << uint32(0x1)                         << uint32(BG_TK_TIME_ENABLED);
-    data << uint32(GetRemainingTimeInMinutes()) << uint32(BG_TK_TIME_REMAINING);
+    data << uint32(0x1)                    << uint32(BG_TK_TIME_ENABLED);
+    data << uint32(25 - _minutesElapsed)   << uint32(BG_TK_TIME_REMAINING);
 
     /*if (m_OrbState[BG_TEAM_ALLIANCE] == BG_TK_ORB_STATE_ON_GROUND)
         FillInitialWorldState(data, count, BG_TK_ICON_A, -1);

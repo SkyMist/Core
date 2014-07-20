@@ -10645,27 +10645,6 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
                 // 2777,0,45,0,0,0,0,0,0,0,0,0,1710.685791,1421.894165,998,655,6051,"Power Orb","Uncontrolled",6960,16758,0.000000,0,
             }
             break;
-        case 6112: // CTF3
-            if (bg && bg->GetTypeID(true) == BATTLEGROUND_CTF)
-                bg->FillInitialWorldStates(data);
-            else
-            {
-                BuildWorldState(data, 0x62d, 0x0);   // 7 1581 alliance flag captures
-                BuildWorldState(data, 0x62e, 0x0);   // 8 1582 horde flag captures
-                BuildWorldState(data, 0x609, 0x0);   // 9 1545 unk, set to 1 on alliance flag pickup...
-                BuildWorldState(data, 0x60a, 0x0);   // 10 1546 unk, set to 1 on horde flag pickup, after drop it's -1
-                BuildWorldState(data, 0x60b, 0x2);   // 11 1547 unk
-                BuildWorldState(data, 0x641, 0x3);   // 12 1601 unk (max flag captures?)
-                BuildWorldState(data, 0x922, 0x1);   // 13 2338 horde (0 - hide, 1 - flag ok, 2 - flag picked up (flashing), 3 - flag picked up (not flashing)
-                BuildWorldState(data, 0x923, 0x1);   // 14 2339 alliance (0 - hide, 1 - flag ok, 2 - flag picked up (flashing), 3 - flag picked up (not flashing)
-
-                // 425,1010,6112,0.000000,0,0.000000,"","Time Remaining: %4248w min.","Time Remaining",4247,0,"","","",0,0,0.000000,
-                // 421,1010,6112,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Alliance","%1581w/%1601w","Alliance flag captures",2339,0,"Interface\WorldStateFrame\HordeFlag","Horde flag has been picked up","",0,0,0.000000,
-                // 424,1010,6112,0.000000,0,0.000000,"Interface\TargetingFrame\UI-PVP-Horde","%1582w/%1601w","Horde flag captures",2338,0,"Interface\WorldStateFrame\AllianceFlag","Alliance flag has been picked up","",0,0,0.000000,
-                // 422,1010,6112,0.000000,0,0.000000,"Interface\WorldStateFrame\ColumnIcon-FlagCapture","Flag Captures","Number of times you have captured the enemy flag",0,2,"","","",0,0,0.000000,
-                // 423,1010,6112,0.000000,0,0.000000,"Interface\WorldStateFrame\ColumnIcon-FlagReturn","Flag Returns","Number of times you have returned your flag to your base from the field",0,2,"","","",0,0,0.000000,
-            }
-            break;
         case 6126: // Silvershard Mines
             if (bg && bg->GetTypeID(true) == BATTLEGROUND_SM)
                 bg->FillInitialWorldStates(data);
