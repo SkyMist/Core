@@ -234,7 +234,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             *data << uint32(bg->GetClientInstanceID()); // Client Instance ID
             *data << uint8(bg->GetMaxLevel());          // Max Level
 
-            data->WriteBit(bgGuid[2]);
+            data->WriteBit(bgGuid[1]);
             data->WriteBit(1);                          // Eligible In Queue
             data->WriteBit(bgGuid[5]);
             data->WriteBit(playerGuid[1]);
