@@ -397,7 +397,6 @@ bool SpellEffectInfo::IsAttackOrSpellPowerModified() const
 			case SPELL_AURA_PERIODIC_HEAL:
 			case SPELL_AURA_DAMAGE_SHIELD:
 			case SPELL_AURA_SCHOOL_ABSORB:
-			case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
                 return true;
 
             default: break;
@@ -409,6 +408,7 @@ bool SpellEffectInfo::IsAttackOrSpellPowerModified() const
 	switch(Effect)
 	{
 		case SPELL_EFFECT_ENERGIZE:
+		case SPELL_EFFECT_ENERGIZE_PCT:
 			return false;
 
 		default: break;
@@ -484,8 +484,42 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
     int32 basePoints = bp ? *bp : BasePoints;
     float comboDamage = PointsPerComboPoint;
 
+	bool canScale = false;
+    switch (Effect)
+    {
+        case SPELL_EFFECT_SCHOOL_DAMAGE:
+        case SPELL_EFFECT_POWER_DRAIN:
+        case SPELL_EFFECT_HEALTH_LEECH:
+        case SPELL_EFFECT_HEAL:
+        case SPELL_EFFECT_WEAPON_DAMAGE:
+        case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+        case SPELL_EFFECT_FORCE_CAST_WITH_VALUE:
+        case SPELL_EFFECT_TRIGGER_SPELL_WITH_VALUE:
+        case SPELL_EFFECT_TRIGGER_MISSILE_SPELL_WITH_VALUE:
+            canScale = true;
+            break;
+
+        default: break;
+    }
+
+    switch (ApplyAuraName)
+    {
+        case SPELL_AURA_PERIODIC_DAMAGE:
+        case SPELL_AURA_PERIODIC_HEAL:
+        case SPELL_AURA_DAMAGE_SHIELD:
+        case SPELL_AURA_PROC_TRIGGER_DAMAGE:
+        case SPELL_AURA_PERIODIC_LEECH:
+        case SPELL_AURA_PERIODIC_MANA_LEECH:
+        case SPELL_AURA_SCHOOL_ABSORB:
+        case SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE:
+            canScale = true;
+            break;
+
+        default: break;
+    }
+
     // base amount modification based on spell lvl vs caster lvl
-    if (ScalingMultiplier != 0.0f)
+    if (ScalingMultiplier != 0.0f && canScale)
     {
         if (caster && !_spellInfo->IsCustomCalculated())
         {
@@ -561,20 +595,6 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
                 value += comboDamage * comboPoints;
 
         value = caster->ApplyEffectModifiers(_spellInfo, _effIndex, value);
-
-        // amount multiplication based on caster's level
-        if (!_spellInfo->GetSpellScaling() && !basePointsPerLevel && (_spellInfo->Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && _spellInfo->SpellLevel) &&
-                Effect != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE &&
-                Effect != SPELL_EFFECT_KNOCK_BACK &&
-                Effect != SPELL_EFFECT_ADD_EXTRA_ATTACKS &&
-                Effect != SPELL_EFFECT_GAMEOBJECT_DAMAGE &&
-                Effect != SPELL_EFFECT_ADD_COMBO_POINTS &&
-                ApplyAuraName != SPELL_AURA_MOD_SPEED_ALWAYS &&
-                ApplyAuraName != SPELL_AURA_MOD_SPEED_NOT_STACK &&
-                ApplyAuraName != SPELL_AURA_MOD_INCREASE_SPEED &&
-                ApplyAuraName != SPELL_AURA_MOD_DECREASE_SPEED)
-                //there are many more: slow speed, -healing pct
-            value *= 0.25f * exp(caster->getLevel() * (70 - _spellInfo->SpellLevel) / 1000.0f);
 
         if (isAttackOrSpellPowerModified)
         {

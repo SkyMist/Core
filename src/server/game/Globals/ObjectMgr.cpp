@@ -2247,7 +2247,7 @@ void FillItemDamageFields(float* minDamage, float* maxDamage, float* dps, uint32
     *dps = damageInfo->DPS[quality];
     float avgDamage = *dps * delay * 0.001f;
     *minDamage = (statScalingFactor * -0.5f + 1.0f) * avgDamage;
-    *maxDamage = floor(float(avgDamage* (statScalingFactor * 0.5f + 1.0f) + 0.5f));
+    *maxDamage = ((statScalingFactor * 0.5f + 1.0f) + 0.5f) * avgDamage;
 }
 
 uint32 FillItemArmor(uint32 itemlevel, uint32 itemClass, uint32 itemSubclass, uint32 quality, uint32 inventoryType)

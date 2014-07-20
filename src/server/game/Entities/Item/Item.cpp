@@ -19,6 +19,7 @@
 
 #include "Common.h"
 #include "Item.h"
+#include "ItemPrototype.h"
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
 #include "DatabaseEnv.h"
@@ -220,6 +221,11 @@ bool ItemCanGoIntoBag(ItemTemplate const* pProto, ItemTemplate const* pBagProto)
                     if (!(pProto->BagFamily & BAG_FAMILY_MASK_FISHING_SUPP))
                         return false;
                     return true;
+                case ITEM_SUBCLASS_COOKING_CONTAINER:
+                    if (!(pProto->BagFamily & BAG_FAMILY_MASK_COOKING_SUPP))
+                        return false;
+                    return true;
+
                 default:
                     return false;
             }
