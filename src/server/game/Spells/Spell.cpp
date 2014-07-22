@@ -5371,7 +5371,7 @@ void Spell::SendChannelStart(uint32 duration)
     uint32 HealAmount = 0;
 
     ObjectGuid CasterGuid = m_caster->GetGUID();
-    ObjectGuid TargetGuid = m_targets.GetObjectTargetGUID();
+    ObjectGuid TargetGuid = channelTarget;
     ObjectGuid UnkGuid = 0;
 
     WorldPacket data(SMSG_CHANNEL_START);
@@ -5380,8 +5380,8 @@ void Spell::SendChannelStart(uint32 duration)
     data.WriteBit(CasterGuid[2]);
     data.WriteBit(CasterGuid[7]);
     data.WriteBit(CasterGuid[1]);
-    data.WriteBit(CasterGuid[0]);
     data.WriteBit(CasterGuid[5]);
+    data.WriteBit(CasterGuid[0]);
 
     data.WriteBit(HasHealPrediction);
 
