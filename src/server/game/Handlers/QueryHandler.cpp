@@ -701,8 +701,25 @@ void WorldSession::HandleCorpseMapPositionQuery(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Recv CMSG_CORPSE_MAP_POSITION_QUERY");
 
-    uint32 transportGuidLow;
-    recvData >> transportGuidLow;
+    ObjectGuid TransportGuid;
+    
+    TransportGuid[6] = recvData.ReadBit();
+    TransportGuid[1] = recvData.ReadBit();
+    TransportGuid[7] = recvData.ReadBit();
+    TransportGuid[2] = recvData.ReadBit();
+    TransportGuid[4] = recvData.ReadBit();
+    TransportGuid[0] = recvData.ReadBit();
+    TransportGuid[5] = recvData.ReadBit();
+    TransportGuid[3] = recvData.ReadBit();
+    
+    recvData.ReadByteSeq(TransportGuid[5]);
+    recvData.ReadByteSeq(TransportGuid[2]);
+    recvData.ReadByteSeq(TransportGuid[3]);
+    recvData.ReadByteSeq(TransportGuid[6]);
+    recvData.ReadByteSeq(TransportGuid[1]);
+    recvData.ReadByteSeq(TransportGuid[0]);
+    recvData.ReadByteSeq(TransportGuid[7]);
+    recvData.ReadByteSeq(TransportGuid[4]);
 
     WorldPacket data(SMSG_CORPSE_MAP_POSITION_QUERY_RESPONSE, 4+4+4+4);
     data << float(0);
