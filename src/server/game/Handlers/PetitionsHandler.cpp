@@ -419,53 +419,26 @@ void WorldSession::SendPetitionQueryOpcode(ObjectGuid petitionguid)
         return;
     }
 
-    WorldPacket data(SMSG_PETITION_QUERY_RESPONSE, (4+8+name.size()+1+1+4*12+2+10));
-    /*data << uint32(GUID_LOPART(petitionguid));              // guild/team guid (in Trinity always same as GUID_LOPART(petition guid)
-    data << uint64(ownerguid);                              // charter owner guid
-    data << name;                                           // name (guild/arena team)
-    data << uint8(0);                                       // some string
-    if (type == GUILD_CHARTER_TYPE)
-    {
-        uint32 needed = sWorld->getIntConfig(CONFIG_MIN_PETITION_SIGNS);
-        data << uint32(needed);
-        data << uint32(needed);
-        data << uint32(0);                                  // bypass client - side limitation, a different value is needed here for each petition
-    }
-    else
-    {
-        data << uint32(type-1);
-        data << uint32(type-1);
-        data << uint32(type);                               // bypass client - side limitation, a different value is needed here for each petition
-    }
-    data << uint32(0);                                      // 5
-    data << uint32(0);                                      // 6
-    data << uint32(0);                                      // 7
-    data << uint32(0);                                      // 8
-    data << uint16(0);                                      // 9 2 bytes field
-    data << uint32(0);                                      // 10
-    data << uint32(0);                                      // 11
-    data << uint32(0);                                      // 13 count of next strings?
+    WorldPacket data(SMSG_PETITION_QUERY_RESPONSE, (4 + 8 + name.size() + 1 + 1 + 4*12 + 2 + 10));
 
-    for (int i = 0; i < 10; ++i)
-        data << uint8(0);                                   // some string
+    bool HasExtraData = (type == GUILD_CHARTER_TYPE) ? true : false; // check when is sent as false
 
-    data << uint32(0);                                      // 14
+    uint32 minLevelRequired = 12; // Minimum level required.
+    uint32 maxLevelAllowed  = 90; // Maximum level.
+    uint32 minSignaturesNeeded  = sWorld->getIntConfig(CONFIG_MIN_PETITION_SIGNS); // normally 4 signatures except for yours.
+    uint32 maxSignaturesAllowed = 9; // 9 signatures maximum on the chart as initial guild members.
 
-    data << uint32(type != GUILD_CHARTER_TYPE);             // 15 0 - guild, 1 - arena team*/
-    
-    bool HasExtraData = true;                               // check when is sent as false
-    
     data.WriteBit(HasExtraData);
-    
-    if(HasExtraData)
+
+    if (HasExtraData)
     {
         data.WriteBits(name.size(), 7);
         data.WriteBit(OwnerGuid[6]);
         data.WriteBit(OwnerGuid[1]);
-        
-        for(std::size_t i = 0; i < 10; i++)
+
+        for (std::size_t i = 0; i < 10; i++)
             data.WriteBits(0, 6);                           // unk strings size
-        
+
         data.WriteBit(OwnerGuid[2]);
         data.WriteBit(OwnerGuid[5]);
         data.WriteBit(OwnerGuid[3]);
@@ -474,40 +447,40 @@ void WorldSession::SendPetitionQueryOpcode(ObjectGuid petitionguid)
         data.WriteBit(OwnerGuid[7]);
         data.WriteBit(OwnerGuid[4]);
     }
-    
+
     data.FlushBits();
-    
-    if(HasExtraData)
+
+    if (HasExtraData)
     {
         data << uint32(0);                                  // dword10BC
         data << uint32(0);                                  // dword10B8
         data.WriteByteSeq(OwnerGuid[3]);
         data.WriteString(body);
-        data << uint32(0);                                  // MaxSignatures
+        data << uint32(maxSignaturesAllowed);               // MaxSignatures
         data.WriteByteSeq(OwnerGuid[1]);
         data << uint32(0);                                  // dword10B0
         data << uint32(0);                                  // dword10D0
         data.WriteByteSeq(OwnerGuid[0]);
-        
-        //here comes the loop
-        
+
+        // here comes the loop
+
         data.WriteByteSeq(OwnerGuid[1]);
-        data << uint32(0);                                  // MaxLevelRequired
+        data << uint32(maxLevelAllowed);                    // MaxLevelRequired
         data.WriteByteSeq(OwnerGuid[7]);
         data << uint32(type);
-        data << uint32(0);                                  // MinLevelRequired
+        data << uint32(minLevelRequired);                   // MinLevelRequired
         data.WriteByteSeq(OwnerGuid[2]);
         data.WriteByteSeq(OwnerGuid[4]);
         data.WriteString(name);
         data.WriteByteSeq(OwnerGuid[6]);
-        data << uint32(0);                                  // MinSignatures
+        data << uint32(minSignaturesNeeded);                // MinSignatures
         data << uint16(0);                                  // word10C4
         data << uint32(0);                                  // dword18
         data << uint32(0);                                  // dword10D8
         data << uint32(0);                                  // dword10C0
         data << uint32(0);                                  // dword10B4
     }
-    
+
     data << uint32(GUID_LOPART(petitionguid));              // guild/team guid (in Trinity always same as GUID_LOPART(petition guid)
 
     SendPacket(&data);
