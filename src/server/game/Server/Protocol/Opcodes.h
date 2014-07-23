@@ -45,8 +45,8 @@ enum Opcodes
    CMSG_ADD_VOICE_IGNORE                                    = 0x0,
    CMSG_ALTER_APPEARANCE                                    = 0x0,
    CMSG_AREATRIGGER                                         = 0x155A, // 5.4.7 18019
-   CMSG_AREA_SPIRIT_HEALER_QUERY                            = 0x0,
-   CMSG_AREA_SPIRIT_HEALER_QUEUE                            = 0x0,
+   CMSG_AREA_SPIRIT_HEALER_QUERY                            = 0x0376, // 5.4.7 18019
+   CMSG_AREA_SPIRIT_HEALER_QUEUE                            = 0x04D5, // 5.4.7 18019
    CMSG_ATTACKSTOP                                          = 0x1E13, // 5.4.7 18019
    CMSG_ATTACKSWING                                         = 0x1513, // 5.4.7 18019
    CMSG_AUCTION_HELLO                                       = 0x047F, // 5.4.7 18019
@@ -658,7 +658,7 @@ enum Opcodes
    SMSG_ADD_RUNE_POWER                                      = 0x0,
    SMSG_AI_REACTION                                         = 0x0721, // 5.4.7 18019
    SMSG_ALL_ACHIEVEMENT_DATA                                = 0x072B, // 5.4.7 18019
-   SMSG_AREA_SPIRIT_HEALER_TIME                             = 0x0,
+   SMSG_AREA_SPIRIT_HEALER_TIME                             = 0x0441, // 5.4.7 18019
    SMSG_AREA_TRIGGER_MESSAGE                                = 0x0,
    SMSG_AREA_TRIGGER_MOVEMENT_UPDATE                        = 0x0,
    SMSG_ARENA_ERROR                                         = 0x0,
