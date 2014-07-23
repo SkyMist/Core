@@ -622,10 +622,10 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
         }
         if (_player->GetGuildIdInvited())
         {
-            // WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
-            // SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED); // This actually seems to be already invited in guild?
-            // // close at signer side
-            // SendPacket(&data);
+            WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
+            SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED_OTHER); // This actually seems to be already invited in another guild.
+            // close at signer side
+            SendPacket(&data);
             Guild::SendCommandResult(this, GUILD_COMMAND_INVITE, ERR_ALREADY_INVITED_TO_GUILD_S, _player->GetName());
             return;
         }
@@ -652,7 +652,7 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
     if (result)
     {
         WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
-        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED); // maybe _OTHER here?
+        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED);
         // close at signer side
         SendPacket(&data);
         return;

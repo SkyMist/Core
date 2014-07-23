@@ -2282,7 +2282,6 @@ void WorldSession::HandleAreaSpiritHealerQueueOpcode(WorldPacket& recvData)
 
     Battleground* bg = _player->GetBattleground();
 
-    uint64 guid;
     ObjectGuid guid;
     
     guid[5] = recvData.ReadBit();
