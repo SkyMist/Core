@@ -333,6 +333,8 @@ class Battlefield : public ZoneScript
 
         void SendAreaSpiritHealerQueryOpcode(Player* player, uint64 guid);
 
+        bool IncrementQuest(Player* player, uint32 quest, bool complete = false);
+
         void StartBattle();
         void EndBattle(bool endByTimer);
 

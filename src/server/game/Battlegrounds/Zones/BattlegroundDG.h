@@ -77,9 +77,9 @@ const uint32 BG_DG_OP_NODEICONS[3]  =    {7939, 7938, 7935}; // Center Mine, Gob
 
 enum BG_DG_NodeObjectId
 {
-    BG_DG_OBJECTID_NODE_BANNER_A    = 208694,       // Stables banner
-    BG_DG_OBJECTID_NODE_BANNER_1    = 208695,       // Blacksmith banner
-    BG_DG_OBJECTID_NODE_BANNER_2    = 208696,       // Farm banner
+    BG_DG_OBJECTID_NODE_BANNER_A    = 208694,       // Center Mine banner
+    BG_DG_OBJECTID_NODE_BANNER_1    = 208695,       // Goblin Mine banner
+    BG_DG_OBJECTID_NODE_BANNER_2    = 208696,       // Pandaren Mine banner
 
     BG_DG_OBJECTID_BANNER_A         = 208673,
     BG_DG_OBJECTID_BANNER_CONT_A    = 208763,
@@ -188,13 +188,15 @@ const uint32 BG_DG_TickPoints[4]    = {0,    8,   16,   32};
 
 const float BG_DG_NodePositions[BG_DG_DYNAMIC_NODES_COUNT][4] =
 {
-    //    x,         y,         z,         o
-    {1166.785f, 1200.132f, -56.70859f, 0.9075713f},         // central mine
-    {977.0156f, 1046.616f, -44.80923f, -2.600541f},         // goblin mine
-    {806.1821f, 874.2723f, -55.99371f, -2.303835f},         // pandaren mine
+    //    x,       y,         z,        o
+    {-165.850f, 499.967f,  92.8453f, 1.130f},         // central mine
+    {-399.714f, 573.111f, 111.5109f, 1.608f},         // goblin mine
+    {  65.961f, 431.756f, 111.878f,  4.420f},         // pandaren mine
 };
 
-const float BG_DG_DoorPositions[4][8] =
+#define MAX_BG_DG_DOORS 4
+
+const float BG_DG_DoorPositions[MAX_BG_DG_DOORS][8] =
 {
     //    x,        y,          z,         o,         rot0,       rot1,       rot2,    rot3
     {1284.597f, 1281.167f, -15.97792f, 0.7068594f,  0.012957f, -0.060288f, 0.344959f,  0.93659f },

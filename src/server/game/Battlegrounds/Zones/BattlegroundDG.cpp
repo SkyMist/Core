@@ -4,16 +4,15 @@
 * If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
 */
 
-#include "World.h"
-#include "WorldPacket.h"
-#include "ObjectMgr.h"
-#include "BattlegroundMgr.h"
 #include "Creature.h"
+#include "GameObject.h"
 #include "Language.h"
 #include "Object.h"
+#include "ObjectMgr.h"
+#include "BattlegroundMgr.h"
 #include "Player.h"
-#include "Util.h"
-#include "WorldSession.h"
+#include "World.h"
+#include "WorldPacket.h"
 
 #include "BattlegroundDG.h"
 

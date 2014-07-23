@@ -3613,15 +3613,15 @@ void ObjectMgr::LoadQuests()
         "RequiredSourceItemId1, RequiredSourceItemId2, RequiredSourceItemId3, RequiredSourceItemId4, RequiredSourceItemCount1, RequiredSourceItemCount2, RequiredSourceItemCount3, RequiredSourceItemCount4, "
         //       113               114             115             116              117             118                 119                   120               121               122                 123                 124
         "RequiredItemId1, RequiredItemId2, RequiredItemId3, RequiredItemId4, RequiredItemId5, RequiredItemId6, RequiredItemCount1, RequiredItemCount2, RequiredItemCount3, RequiredItemCount4, RequiredItemCount5, RequiredItemCount6, "
-        //      125         126             127             128             129             130                 131                 132                 133             134                     135                 136                 137
-        "RequiredSpell, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4, RewardCurrencyId1, RewardCurrencyId2, RewardCurrencyId3, RewardCurrencyId4, RewardCurrencyCount1, RewardCurrencyCount2, RewardCurrencyCount3, RewardCurrencyCount4, "
-        //      138                  139                 140                   141                    142                    143                     144                   145
+        //      125             126                 127               128                 129                 130           131            132                 133             134                     135                 136          137             138                   139                   140                     141
+        "RequiredSpell, RequiredSpellCast1, RequiredSpellCast2, RequiredSpellCast3, RequiredSpellCast4, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4, RewardCurrencyId1, RewardCurrencyId2, RewardCurrencyId3, RewardCurrencyId4, RewardCurrencyCount1, RewardCurrencyCount2, RewardCurrencyCount3, RewardCurrencyCount4, "
+        //      142                  143                 144                   145                    146                    147                     148                   149
         "RequiredCurrencyId1, RequiredCurrencyId2, RequiredCurrencyId3, RequiredCurrencyId4, RequiredCurrencyCount1, RequiredCurrencyCount2, RequiredCurrencyCount3, RequiredCurrencyCount4, "
-        //      146                  147                 148                   149               150          151
+        //      150                  151                 152                   153               154          155
         "QuestGiverTextWindow, QuestGiverTargetName, QuestTurnTextWindow, QuestTurnTargetName, SoundAccept, SoundTurnIn, "
-        //      152          153            154            155               156                157                  158                  159                160             161
+        //      156          157            158            159               160                161                  162                  163                164             165
         "DetailsEmote1, DetailsEmote2, DetailsEmote3, DetailsEmote4, DetailsEmoteDelay1, DetailsEmoteDelay2, DetailsEmoteDelay3, DetailsEmoteDelay4, EmoteOnIncomplete, EmoteOnComplete, "
-        //      162                 163               164                165                   166                       167                     168                  169               170
+        //      166                 167               168                169                   170                       171                     172                  173               174
         "OfferRewardEmote1, OfferRewardEmote2, OfferRewardEmote3, OfferRewardEmote4, OfferRewardEmoteDelay1, OfferRewardEmoteDelay2, OfferRewardEmoteDelay3, OfferRewardEmoteDelay4, WDBVerified"
         " FROM quest_template");
     if (!result)
@@ -3959,6 +3959,52 @@ void ObjectMgr::LoadQuests()
 
         for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
         {
+            uint32 id = qinfo->RequiredSpellCast[j];
+            if (id)
+            {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id);
+                if (!spellInfo)
+                {
+                    TC_LOG_ERROR("sql.sql", "Quest %u has `ReqSpellCast%d` = %u but spell %u does not exist, quest can't be done.",
+                        qinfo->GetQuestId(), j+1, id, id);
+                    continue;
+                }
+
+                if (!qinfo->RequiredNpcOrGo[j])
+                {
+                    bool found = false;
+                    for (uint32 k = 0; k < MAX_SPELL_EFFECTS; ++k)
+                    {
+                        if ((spellInfo->Effects[k].Effect == SPELL_EFFECT_QUEST_COMPLETE && uint32(spellInfo->Effects[k].MiscValue) == qinfo->Id) ||
+                            spellInfo->Effects[k].Effect == SPELL_EFFECT_SEND_EVENT)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (found)
+                    {
+                        if (!qinfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT))
+                        {
+                            TC_LOG_ERROR("sql.sql", "Spell (id: %u) have SPELL_EFFECT_QUEST_COMPLETE or SPELL_EFFECT_SEND_EVENT for quest %u and RequiredNpcOrGo%d = 0, but quest not have flag QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT. Quest flags or RequiredNpcOrGo%d must be fixed, quest modified to enable objective.", spellInfo->Id, qinfo->Id, j+1, j+1);
+
+                            // this will prevent quest completing without objective
+                            const_cast<Quest*>(qinfo)->SetSpecialFlag(QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT);
+                        }
+                    }
+                    else
+                    {
+                            TC_LOG_ERROR("sql.sql", "Quest %u has `ReqSpellCast%d` = %u and RequiredNpcOrGo%d = 0 but spell %u does not have SPELL_EFFECT_QUEST_COMPLETE or SPELL_EFFECT_SEND_EVENT effect for this quest, quest can't be done.",
+                            qinfo->GetQuestId(), j+1, id, j+1, id);
+                        // no changes, quest can't be done for this requirement
+                    }
+                }
+            }
+        }
+
+        for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+        {
             int32 id = qinfo->RequiredNpcOrGo[j];
             if (id < 0 && !sObjectMgr->GetGameObjectTemplate(-id))
             {
@@ -3978,7 +4024,7 @@ void ObjectMgr::LoadQuests()
             {
                 // In fact SpeakTo and Kill are quite same: either you can speak to mob:SpeakTo or you can't:Kill/Cast
 
-                qinfo->SetSpecialFlag(QUEST_SPECIAL_FLAGS_KILL | QUEST_SPECIAL_FLAGS_CAST | QUEST_SPECIAL_FLAGS_SPEAKTO);
+                qinfo->SetSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST | QUEST_SPECIAL_FLAGS_SPEAKTO);
 
                 if (!qinfo->RequiredNpcOrGoCount[j])
                 {
@@ -4323,7 +4369,7 @@ void ObjectMgr::LoadQuests()
         if (!spellInfo)
             continue;
 
-        for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+        for (uint32 j = 0; j < MAX_SPELL_EFFECTS; ++j)
         {
             if (spellInfo->Effects[j].Effect != SPELL_EFFECT_QUEST_COMPLETE)
                 continue;
@@ -4761,7 +4807,7 @@ void ObjectMgr::LoadEventScripts()
     // Load all possible script entries from spells
     for (uint32 i = 1; i < sSpellMgr->GetSpellInfoStoreSize(); ++i)
         if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(i))
-            for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+            for (uint32 j = 0; j < MAX_SPELL_EFFECTS; ++j)
                 if (spell->Effects[j].Effect == SPELL_EFFECT_SEND_EVENT)
                     if (spell->Effects[j].MiscValue)
                         evt_scripts.insert(spell->Effects[j].MiscValue);
@@ -8101,7 +8147,7 @@ void ObjectMgr::AddSpellToTrainer(uint32 entry, uint32 spell, uint32 spellCost, 
 
     // calculate learned spell for profession case when stored cast-spell
     trainerSpell.learnedSpell[0] = spell;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
         if (spellinfo->Effects[i].Effect != SPELL_EFFECT_LEARN_SPELL)
             continue;

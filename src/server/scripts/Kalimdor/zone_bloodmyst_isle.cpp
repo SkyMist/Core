@@ -170,11 +170,11 @@ public:
 
     bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
     {
-        go->SetGoState(GO_STATE_READY);
         if (Creature* stillpine = go->FindNearestCreature(NPC_PRINCESS_STILLPINE, 25, true))
         {
+            go->SetGoState(GO_STATE_ACTIVE);
             stillpine->GetMotionMaster()->MovePoint(1, go->GetPositionX(), go->GetPositionY()-15, go->GetPositionZ());
-            player->KilledMonsterCredit(NPC_PRINCESS_STILLPINE, stillpine->GetGUID());
+            player->CastedCreatureOrGO(NPC_PRINCESS_STILLPINE, 0, SPELL_OPENING_PRINCESS_STILLPINE_CREDIT);
         }
         return true;
     }

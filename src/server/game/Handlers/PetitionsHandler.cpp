@@ -44,7 +44,7 @@ enum CharterCosts
     GUILD_CHARTER_COST                            = 1000
 };
 
-void SendPetitionTurnResult(WorldPacket* Packet, PetitionSigns Result)
+void SendPetitionTurnResult(WorldPacket* Packet, PetitionTurns Result)
 {
     Packet->WriteBits(Result, 4);
     Packet->FlushBits();
@@ -592,7 +592,13 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
 
     uint32 playerGuid = _player->GetGUIDLow();
     if (GUID_LOPART(ownerGuid) == playerGuid)
+    {
+        WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
+        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_CANT_SIGN_OWN);
+        // close at signer side
+        SendPacket(&data);
         return;
+    }
 
     // not let enemies sign guild charter
     if (!sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD) && GetPlayer()->GetTeam() != sObjectMgr->GetPlayerTeamByGUID(ownerGuid))
@@ -607,17 +613,32 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
         if (_player->GetGuildId())
         {
             Guild::SendCommandResult(this, GUILD_COMMAND_INVITE, ERR_ALREADY_IN_GUILD_S, _player->GetName());
+
+            WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
+            SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_IN_GUILD);
+            // close at signer side
+            SendPacket(&data);
             return;
         }
         if (_player->GetGuildIdInvited())
         {
+            // WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
+            // SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED); // This actually seems to be already invited in guild?
+            // // close at signer side
+            // SendPacket(&data);
             Guild::SendCommandResult(this, GUILD_COMMAND_INVITE, ERR_ALREADY_INVITED_TO_GUILD_S, _player->GetName());
             return;
         }
     }
 
     if (++signs > type)                                        // client signs maximum
+    {
+        WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
+        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_FULL);
+        // close at signer side
+        SendPacket(&data);
         return;
+    }
 
     // Client doesn't allow to sign petition two times by one character, but not check sign by another character from same account
     // not allow sign another player from already sign player account
@@ -631,8 +652,7 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
     if (result)
     {
         WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
-        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED);
-
+        SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_ALREADY_SIGNED); // maybe _OTHER here?
         // close at signer side
         SendPacket(&data);
         return;
@@ -651,7 +671,6 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
 
     WorldPacket data(SMSG_PETITION_SIGN_RESULTS, (9+9+1));
     SendPetitionSignResult(&data, petitionGuid, GetPlayer()->GetGUID(), PETITION_SIGN_OK);
-
     // close at signer side
     SendPacket(&data);
 
@@ -689,7 +708,7 @@ void WorldSession::HandlePetitionDeclineOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(PetitionGuid[2]);
     recvData.ReadByteSeq(PetitionGuid[0]);
     
-    TC_LOG_DEBUG("network", "Petition %u declined by %u", GUID_LOPART(petitionguid), _player->GetGUIDLow());
+    TC_LOG_DEBUG("network", "Petition %u declined by %u", GUID_LOPART(PetitionGuid), _player->GetGUIDLow());
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_OWNER_BY_GUID);
 
@@ -1051,7 +1070,7 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket& recvData)
     CharacterDatabase.CommitTransaction(trans);
 
     // created
-    TC_LOG_DEBUG("network", "TURN IN PETITION GUID %u", GUID_LOPART(petitionGuid));
+    TC_LOG_DEBUG("network", "TURN IN PETITION GUID %u", GUID_LOPART(PetitionGuid));
 
     data.Initialize(SMSG_TURN_IN_PETITION_RESULTS, 1);
     SendPetitionTurnResult(&data, PETITION_TURN_OK);

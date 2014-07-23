@@ -1294,7 +1294,7 @@ void GameObject::Use(Unit* user)
                 if (Battleground* bg = player->GetBattleground())
                     bg->EventPlayerUsedGO(player, this);
 
-                player->KillCreditGO(info->entry, GetGUID());
+                player->CastedCreatureOrGO(info->entry, GetGUID(), 0);
             }
 
             if (uint32 trapEntry = info->goober.linkedTrapId)

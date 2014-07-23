@@ -740,6 +740,13 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
                 return false;
             }
             break;
+        case SMART_ACTION_CALL_CASTEDCREATUREORGO:
+            if (!IsCreatureValid(e, e.action.castedCreatureOrGO.creature))
+                return false;
+
+            if (!IsSpellValid(e, e.action.castedCreatureOrGO.spell))
+                return false;
+            break;
         case SMART_ACTION_REMOVEAURASFROMSPELL:
             if (e.action.removeAura.spell != 0 && !IsSpellValid(e, e.action.removeAura.spell))
                 return false;
