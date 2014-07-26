@@ -856,7 +856,6 @@ void WorldSession::HandleStableSetPetSlotCallback(PreparedQueryResult result, ui
     if (petId != 100)
     {
         // We need to remove and add the new pet to a different slot
-        // GetPlayer()->setPetSlotUsed((PetSlot)slot, false);
         _player->setPetSlotUsed((PetSlot)slot, false);
         _player->setPetSlotUsed((PetSlot)petId, true);
         SendStableResult(STABLE_SUCCESS_UNSTABLE);

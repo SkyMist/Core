@@ -690,23 +690,23 @@ void WorldSession::HandlePetitionDeclineOpcode(WorldPacket& recvData)
 
     ObjectGuid PetitionGuid;
     
-    PetitionGuid[2] = recvData.ReadBit();
-    PetitionGuid[3] = recvData.ReadBit();
-    PetitionGuid[4] = recvData.ReadBit();
-    PetitionGuid[0] = recvData.ReadBit();
-    PetitionGuid[7] = recvData.ReadBit();
     PetitionGuid[1] = recvData.ReadBit();
     PetitionGuid[4] = recvData.ReadBit();
     PetitionGuid[6] = recvData.ReadBit();
+    PetitionGuid[7] = recvData.ReadBit();
+    PetitionGuid[3] = recvData.ReadBit();
+    PetitionGuid[2] = recvData.ReadBit();
+    PetitionGuid[0] = recvData.ReadBit();
+    PetitionGuid[5] = recvData.ReadBit();
     
-    recvData.ReadByteSeq(PetitionGuid[7]);
     recvData.ReadByteSeq(PetitionGuid[5]);
-    recvData.ReadByteSeq(PetitionGuid[1]);
     recvData.ReadByteSeq(PetitionGuid[3]);
-    recvData.ReadByteSeq(PetitionGuid[6]);
     recvData.ReadByteSeq(PetitionGuid[4]);
-    recvData.ReadByteSeq(PetitionGuid[2]);
+    recvData.ReadByteSeq(PetitionGuid[6]);
     recvData.ReadByteSeq(PetitionGuid[0]);
+    recvData.ReadByteSeq(PetitionGuid[7]);
+    recvData.ReadByteSeq(PetitionGuid[2]);
+    recvData.ReadByteSeq(PetitionGuid[1]);
     
     TC_LOG_DEBUG("network", "Petition %u declined by %u", GUID_LOPART(PetitionGuid), _player->GetGUIDLow());
 
@@ -931,7 +931,7 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket& recvData)
 
     PetitionGuid[2] = recvData.ReadBit();
     PetitionGuid[3] = recvData.ReadBit();
-    PetitionGuid[4] = recvData.ReadBit();
+    PetitionGuid[5] = recvData.ReadBit();
     PetitionGuid[0] = recvData.ReadBit();
     PetitionGuid[7] = recvData.ReadBit();
     PetitionGuid[1] = recvData.ReadBit();

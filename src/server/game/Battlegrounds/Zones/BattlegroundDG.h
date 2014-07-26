@@ -82,10 +82,8 @@ enum BG_DG_WorldStates
 
 enum BG_DG_FlagState
 {
-    BG_DG_CART_STATE_ON_BASE        = 0,
-    BG_DG_CART_STATE_WAIT_RESPAWN   = 1,
-    BG_DG_CART_STATE_ON_PLAYER      = 2,
-    BG_DG_CART_STATE_ON_GROUND      = 3
+    BG_DG_CART_STATE_NORMAL         = 1,
+    BG_DG_CART_STATE_ON_PLAYER      = 2
 };
 
 const uint32 BG_DG_OP_NODEICONS[3]  =    {7939, 7938, 7935}; // Center Mine, Goblin Mine, Pandaren Mine - Uncontrolled.
@@ -108,7 +106,9 @@ enum BG_DG_NodeObjectId
     BG_DG_OBJECTID_GATE             = 401000,
 
     BG_DG_OBJECTID_GOLD_CART_A      = 71071,        // A gold cart (creature).
-    BG_DG_OBJECTID_GOLD_CART_H      = 71073         // H gold cart (creature).
+    BG_DG_OBJECTID_GOLD_CART_H      = 71073,        // H gold cart (creature).
+
+    BG_DG_OBJECTID_FLAGPOLE         = 195131
 };
 
 enum BG_DG_ObjectType
@@ -139,7 +139,11 @@ enum BG_DG_ObjectType
     BG_DG_OBJECT_REGENBUFF_2             = 30,
     BG_DG_OBJECT_BERSERKBUFF_2           = 31,
 
-    BG_DG_OBJECTS_MAX                    = 32
+    BG_DG_OBJECT_FLAGPOLE_1              = 32,
+    BG_DG_OBJECT_FLAGPOLE_2              = 33,
+    BG_DG_OBJECT_FLAGPOLE_3              = 34,
+
+    BG_DG_OBJECTS_MAX                    = 35
 };
 
 enum BG_DG_Timers
@@ -349,6 +353,8 @@ class BattlegroundDG : public Battleground
         uint32              m_lastTick[BG_TEAMS_COUNT];
         uint32              m_HonorScoreTics[BG_TEAMS_COUNT];
         bool                m_IsInformedNearVictory;
+        bool                cartAdropped;
+        bool                cartHdropped;
         uint32              m_HonorTics;
         uint64              cartPullerA;
         uint64              cartPullerH;

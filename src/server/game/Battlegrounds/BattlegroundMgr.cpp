@@ -1534,7 +1534,7 @@ void BattlegroundMgr::SendAreaSpiritHealerQueryOpcode(Player* player, Battlegrou
     uint32 time_ = 30000 - bg->GetLastResurrectTime();      // resurrect every 30 seconds
     if (time_ == uint32(-1))
         time_ = 0;
-    
+
     data.WriteBit(guid[5]);
     data.WriteBit(guid[1]);
     data.WriteBit(guid[6]);
@@ -1543,21 +1543,21 @@ void BattlegroundMgr::SendAreaSpiritHealerQueryOpcode(Player* player, Battlegrou
     data.WriteBit(guid[0]);
     data.WriteBit(guid[2]);
     data.WriteBit(guid[3]);
-    
+
     data.FlushBits();
-    
+
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[3]);
-    
+    data.WriteByteSeq(guid[7]);
+
     data << time_;
-    
+
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[3]);
-    data.WriteByteSeq(guid[7]);
-    
+    data.WriteByteSeq(guid[6]);
+
     player->GetSession()->SendPacket(&data);
 }
 

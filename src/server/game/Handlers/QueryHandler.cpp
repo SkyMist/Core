@@ -598,28 +598,34 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 
     GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
-    if (Unit* interactionUnit = ObjectAccessor::FindUnit(guid))
+    if (Unit* interactionUnit = ObjectAccessor::FindUnit(uint64(guid)))
     {
         if (interactionUnit->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
             hasGossip = true;
         else
             hasGossip = false;
     }
-    else hasGossip = false;
+    else if (GameObject* go = GetPlayer()->GetMap()->GetGameObject(uint64(guid)))
+    {
+        if (gossip)
+            hasGossip = true;
+    }
+    else
+	    hasGossip = false;
 
     WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 32 + 32 + 4 + 1);
 
-    data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2.
+    data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2. Common value seems to be 64.
 
     for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
         data << float(gossip ? gossip->Options[i].Probability : 0);
 
-    data << uint32(textID);                              // Send the Text Id as first broadcast id.
+    data << uint32(textID);                              // Send the Text Id as first broadcast id. This is the gossip textID the creature updates to.
 
     for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
         data << uint32(0);                               // Broadcast Text Id for all other slots.
 
-    data << uint32(textID);
+    data << uint32(textID);                              // This is the gossip textID and first to show when speaking to something.
 
     data.WriteBit(hasGossip);                            // Has gossip data - controls gossip window opening.
     data.FlushBits();

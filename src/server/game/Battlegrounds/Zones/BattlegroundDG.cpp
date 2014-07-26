@@ -25,6 +25,9 @@ BattlegroundDG::BattlegroundDG()
     cartPullerA             = NULL;
     cartPullerH             = NULL;
 
+    cartAdropped            = false;
+    cartHdropped            = false;
+
     BgObjects.resize(BG_DG_OBJECTS_MAX);
     BgCreatures.resize(BG_DG_ALL_NODES_COUNT);
 
@@ -150,6 +153,16 @@ void BattlegroundDG::PostUpdateImpl(uint32 diff)
 
 void BattlegroundDG::StartingEventCloseDoors()
 {
+    // Despawn banners, auras, poles and buffs
+    for (uint8 obj = BG_DG_OBJECT_BANNER_NEUTRAL; obj < BG_DG_DYNAMIC_NODES_COUNT * 8; ++obj)
+        SpawnBGObject(obj, RESPAWN_ONE_DAY);
+
+    for (uint8 buff = BG_DG_OBJECT_REGENBUFF_1; buff <= BG_DG_OBJECT_BERSERKBUFF_2; ++buff)
+        SpawnBGObject(buff, RESPAWN_ONE_DAY);
+
+    for (uint8 pole = BG_DG_OBJECT_FLAGPOLE_1; pole <= BG_DG_OBJECT_FLAGPOLE_3; ++pole)
+        SpawnBGObject(pole, RESPAWN_ONE_DAY);
+
     // Starting doors
     for (uint8 i = BG_DG_OBJECT_GATE_A_1; i <= BG_DG_OBJECT_GATE_H_2; ++i)
     {
@@ -180,8 +193,12 @@ void BattlegroundDG::StartingEventOpenDoors()
         SpawnBGObject(banner, RESPAWN_IMMEDIATELY);
 
     // Spawn buffs
-    for (uint8 i = BG_DG_OBJECT_BERSERKBUFF_1; i <= BG_DG_OBJECT_REGENBUFF_2; ++i)
+    for (uint8 i = BG_DG_OBJECT_REGENBUFF_1; i <= BG_DG_OBJECT_BERSERKBUFF_2; ++i)
         SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+
+    // Spawn Poles
+    for (uint8 pole = BG_DG_OBJECT_FLAGPOLE_1; pole <= BG_DG_OBJECT_FLAGPOLE_3; ++pole)
+        SpawnBGObject(pole, RESPAWN_IMMEDIATELY);
 
     // Put proper carts flags.
     if (Creature* CartA = GetBGCreature(BG_DG_CREATURE_CART_A))
@@ -192,10 +209,6 @@ void BattlegroundDG::StartingEventOpenDoors()
         CartH->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
         CartH->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
     }
-
-    // Show cart flags.
-    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY,  BG_DG_CART_STATE_ON_BASE);
-    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_BASE);
 }
 
 void BattlegroundDG::AddPlayer(Player* player)
@@ -300,8 +313,8 @@ uint32 BattlegroundDG::GetOccupiedNodes(Team team)
 void BattlegroundDG::FillInitialWorldStates(ByteBuffer& data)
 {
     // Init the displays
-    data << uint32(BG_DG_CART_STATE_WAIT_RESPAWN) << uint32(BG_DG_SHOW_BASES_GOLD_ALLY);
-    data << uint32(BG_DG_CART_STATE_WAIT_RESPAWN) << uint32(BG_DG_SHOW_BASES_GOLD_HORDE);
+    data << uint32(BG_DG_CART_STATE_NORMAL) << uint32(BG_DG_SHOW_BASES_GOLD_ALLY);
+    data << uint32(BG_DG_CART_STATE_NORMAL) << uint32(BG_DG_SHOW_BASES_GOLD_HORDE);
 
     // Node icons
     for (uint8 node = BG_DG_NODE_C_MINE; node < BG_DG_DYNAMIC_NODES_COUNT; ++node)
@@ -340,18 +353,21 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     1);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   1);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
                         UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
                         UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(7935,   0);
                         break;
 
                     default: break;
@@ -367,18 +383,21 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        1);
                         UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        1);
                         UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      1);
                         UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
                         UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(7935,   0);
                         break;
 
                     default: break;
@@ -394,18 +413,21 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   1);
+                        UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
                         UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   1);
+                        UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
                         UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
                         UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 1);
+                        UpdateWorldState(7935,   0);
                         break;
 
                     default: break;
@@ -421,18 +443,21 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      1);
                         UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
                         UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      1);
                         UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
                         UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    1);
                         UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(7935,   0);
                         break;
 
                     default: break;
@@ -490,10 +515,13 @@ void BattlegroundDG::_NodeDeOccupied(uint8 node)
 void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*target_obj*/)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
+    {
+        TC_LOG_ERROR("bg.battleground", "BattlegroundDG: You cannot click on banners before the BG starts!");
         return;
+    }
 
     uint8 node = BG_DG_NODE_C_MINE;
-    GameObject* obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + 8]);
+    GameObject* obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + BG_DG_OBJECT_AURA_CONTESTED]);
     while ((node < BG_DG_DYNAMIC_NODES_COUNT) && ((!obj) || (!source->IsWithinDistInMap(obj, 10))))
     {
         ++node;
@@ -502,7 +530,7 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
 
     if (node == BG_DG_DYNAMIC_NODES_COUNT)
     {
-        // this means our player isn't close to any of banners - maybe cheater ??
+        TC_LOG_ERROR("bg.battleground", "BattlegroundDG: You aren't close to any of the banners!");
         return;
     }
 
@@ -510,7 +538,10 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
 
     // Check if player really could use this banner, not cheated
     if (!(m_Nodes[node] == BG_DG_NODE_TYPE_NEUTRAL || teamIndex == m_Nodes[node] % 2))
+    {
+        TC_LOG_ERROR("bg.battleground", "BattlegroundDG: You cannot use this banner!");
         return;
+    }
 
     source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
     uint32 sound = 0;
@@ -654,6 +685,16 @@ bool BattlegroundDG::SetupBattleground()
         }
     }
 
+    // Poles.
+    for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
+    {
+        if (!AddObject(BG_DG_OBJECT_FLAGPOLE_1 + i, BG_DG_OBJECTID_FLAGPOLE, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY))
+        {
+            TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn flag poles - Battleground not created!");
+            return false;
+        }
+    }
+
     // Doors.
     if (!AddObject(BG_DG_OBJECT_GATE_H_1, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[0][0], BG_DG_DoorPositions[0][1], BG_DG_DoorPositions[0][2], BG_DG_DoorPositions[0][3], BG_DG_DoorPositions[0][4], BG_DG_DoorPositions[0][5], BG_DG_DoorPositions[0][6], BG_DG_DoorPositions[0][7], RESPAWN_IMMEDIATELY)
      || !AddObject(BG_DG_OBJECT_GATE_H_2, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[1][0], BG_DG_DoorPositions[1][1], BG_DG_DoorPositions[1][2], BG_DG_DoorPositions[1][3], BG_DG_DoorPositions[1][4], BG_DG_DoorPositions[1][5], BG_DG_DoorPositions[1][6], BG_DG_DoorPositions[1][7], RESPAWN_IMMEDIATELY)
@@ -706,7 +747,6 @@ void BattlegroundDG::Reset()
     m_lastTick[BG_TEAM_HORDE]               = 0;
     m_HonorScoreTics[BG_TEAM_ALLIANCE]      = 0;
     m_HonorScoreTics[BG_TEAM_HORDE]         = 0;
-    m_IsInformedNearVictory                 = false;
 
     bool isBGWeekend = sBattlegroundMgr->IsBGWeekend(GetTypeID());
     m_HonorTics = (isBGWeekend) ? BG_DG_DGBGWeekendHonorTicks : BG_DG_NotDGBGWeekendHonorTicks;
@@ -832,6 +872,9 @@ void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeO
                     UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_PLAYER);
                     break;
                 case BG_DG_OBJECTID_GOLD_CART_A: // The Alliance cart is returned to base.
+                    if (!cartAdropped)
+                        return;
+
                     if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
                     {
                         Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
@@ -849,8 +892,10 @@ void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeO
                             Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                             Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         }
+
+                        cartAdropped = false;
                     }
-                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_NORMAL);
                     break;
 
                 default: break;
@@ -859,6 +904,7 @@ void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeO
         break;
 
         case BG_TEAM_HORDE:
+        {
             switch (BG_DG_NodeObjectId)
             {
                 case BG_DG_OBJECTID_GOLD_CART_A: // The Alliance cart should start following the Horde player.
@@ -873,6 +919,9 @@ void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeO
                     UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_PLAYER);
                     break;
                 case BG_DG_OBJECTID_GOLD_CART_H: // The Horde cart is returned to base.
+                    if (!cartHdropped)
+                        return;
+
                     if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
                     {
                         Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
@@ -890,12 +939,16 @@ void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeO
                             Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                             Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                         }
+
+                        cartHdropped = false;
                     }
-                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_NORMAL);
                     break;
 
                 default: break;
             }
+        }
+        break;
 
         default: break;
     }
@@ -948,6 +1001,7 @@ void BattlegroundDG::EventPlayerFailedCart(Player* player)
                 }
 
                 cartPullerA = NULL;
+                cartHdropped = true;
             }
             break;
         case BG_TEAM_HORDE:    // The Alliance cart is dropped by the Horde player.
@@ -965,13 +1019,13 @@ void BattlegroundDG::EventPlayerFailedCart(Player* player)
                 }
 
                 cartPullerH = NULL;
+                cartAdropped = true;
             }
             break;
 
         default: break;
     }
 
-    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_GROUND);
     SendMessageToAll(LANG_BG_DG_CART_DROPPED, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
 }
 
@@ -1001,7 +1055,7 @@ void BattlegroundDG::EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeOb
                     }
                     SendMessageToAll(LANG_BG_DG_CART_CAPTURED_A, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
                 }
-                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_NORMAL);
                 RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
                 m_TeamScores[BG_TEAM_ALLIANCE] += CART_CAPTURE_POINTS;
                 if (m_TeamScores[BG_TEAM_HORDE] >= CART_CAPTURE_POINTS)
@@ -1032,7 +1086,7 @@ void BattlegroundDG::EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeOb
                     }
                     SendMessageToAll(LANG_BG_DG_CART_CAPTURED_H, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
                 }
-                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_BASE);
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_NORMAL);
                 RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
                 m_TeamScores[BG_TEAM_HORDE] += CART_CAPTURE_POINTS;
                 if (m_TeamScores[BG_TEAM_ALLIANCE] >= CART_CAPTURE_POINTS)
