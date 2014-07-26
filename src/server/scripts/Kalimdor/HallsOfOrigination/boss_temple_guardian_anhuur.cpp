@@ -337,7 +337,7 @@ class go_beacon_of_light : public GameObjectScript
 public:
     go_beacon_of_light() : GameObjectScript("go_beacon_of_light") { }
 
-    bool OnGossipHello(Player* player, GameObject* go)
+    bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
     {
         if (go->FindNearestCreature(NPC_BEAM_OF_LIGHT, 14.0f, true))
         {
@@ -362,7 +362,7 @@ class go_lift_of_the_makers_controller : public GameObjectScript
     public:
         go_lift_of_the_makers_controller() : GameObjectScript("go_lift_of_the_makers_controller") { }
 
-        bool OnGossipHello(Player* player, GameObject* go)
+        bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
         {
             InstanceScript* instance = go->GetInstanceScript();
 
@@ -378,7 +378,7 @@ class go_lift_of_the_makers_controller : public GameObjectScript
             return true;
         }
 
-        bool OnGossipSelect(Player* player, GameObject* go, uint32 /*sender*/, uint32 action)
+        bool OnGossipSelect(Player* player, GameObject* go, uint32 /*sender*/, uint32 action) OVERRIDE
         {
             InstanceScript* instance = go->GetInstanceScript();
 
@@ -402,7 +402,7 @@ class go_lift_of_the_makers_controller : public GameObjectScript
 class spell_open_lever_anhuur: public SpellScriptLoader // 68398
 {
 public:
-    spell_open_lever_anhuur () : SpellScriptLoader("spell_open_lever_anhuur") { }
+    spell_open_lever_anhuur() : SpellScriptLoader("spell_open_lever_anhuur") { }
 
     class spell_open_lever_anhuurSpellScript: public SpellScript
     {
@@ -429,8 +429,8 @@ public:
 void AddSC_boss_temple_guardian_anhuur()
 {
     new boss_temple_guardian_anhuur();
-    new go_beacon_of_light();
     new npc_anhuur_viper();
+    new go_beacon_of_light();
     new go_lift_of_the_makers_controller();
     new spell_open_lever_anhuur();
 }

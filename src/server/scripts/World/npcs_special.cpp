@@ -58,6 +58,10 @@ EndContentData */
 #include "CellImpl.h"
 #include "SpellAuras.h"
 #include "Pet.h"
+#include "BattlegroundMgr.h"
+#include "Battleground.h"
+#include "BattlegroundDG.h"
+#include "MotionMaster.h"
 
 /*########
 # npc_air_force_bots
@@ -2435,6 +2439,47 @@ public:
     };
 };
 
+
+// Deepwind Gorge mine cart
+class npc_deepwind_gorge_mine_cart : public CreatureScript
+{
+public:
+    npc_deepwind_gorge_mine_cart() : CreatureScript("npc_deepwind_gorge_mine_cart") { }
+
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    {
+        if (player && player->GetBattleground())
+            if (Battleground* bg = player->GetBattleground())
+                if (bg->GetTypeID(true) == BATTLEGROUND_DG)
+                    if (!creature->GetMotionMaster()->GetCurrentMovementGeneratorType() ||
+                        creature->GetMotionMaster()->GetCurrentMovementGeneratorType() != POINT_MOTION_TYPE &&
+                        creature->GetMotionMaster()->GetCurrentMovementGeneratorType() != CHASE_MOTION_TYPE &&
+                        creature->GetMotionMaster()->GetCurrentMovementGeneratorType() != FOLLOW_MOTION_TYPE)
+                            ((BattlegroundDG*)bg)->EventPlayerClickedOnCart(player, creature->GetEntry());
+
+        player->CLOSE_GOSSIP_MENU();
+        return true;
+    }
+
+    struct npc_deepwind_gorge_mine_cartAI : public ScriptedAI
+    {
+        npc_deepwind_gorge_mine_cartAI(Creature* creature) : ScriptedAI(creature) { }
+
+        void Reset() OVERRIDE
+        {
+            me->SetReactState(REACT_PASSIVE);
+            me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE { } // No melee.
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_deepwind_gorge_mine_cartAI (creature);
+    }
+};
+
 void AddSC_npcs_special()
 {
     new npc_air_force_bots();
@@ -2458,4 +2503,5 @@ void AddSC_npcs_special()
     new npc_experience();
     new npc_firework();
     new npc_spring_rabbit();
+    new npc_deepwind_gorge_mine_cart();
 }

@@ -33,29 +33,3 @@ insert into instance_template values
 (980, 0, '', 0),
 (1105, 0, '', 1),
 (1134, 0, '', 0);
-
-/*
-// DG
-
-// horde wagon DG
--91.648 791.245 133.8193 5.605
-// alliance wagon DG
--241.697 208.404 133.8193 1.364
-
-// center mine
--165.85 499.967 92.8453 1.13
-// Pandaren mine
-65.961 431.756 111.878 4.42
-// goblin mine
--399.714 573.111 111.5109 1.608
-
-// horde graveyard spirit
--221.6748 805.479 137.45197 5.208
-//goblin mine graveyard spirit
--333.910 242.645 132.5693 6.148
-//pandaren mine graveyard spirit
--0.868 757.698 132.5693 3.594
-//alliance graveyard spirit
--111.285 193.291 137.4516 1.966
-
-*/

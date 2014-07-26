@@ -38,8 +38,15 @@
 
 #define BG_DG_MAX_TEAM_SCORE 1600
 
+#define MAX_BG_DG_DOORS 4
+#define MAX_BUFFS 4
+#define MAX_GRAVEYARDS 4
+#define MAX_CARTS 2
+#define CART_CAPTURE_POINTS 200
+
 enum BG_DG_WorldStates
 {
+    // Used for cart flag states (BG_DG_FlagState).
     BG_DG_SHOW_BASES_GOLD_ALLY          = 7904,
     BG_DG_SHOW_BASES_GOLD_HORDE         = 7887,
 
@@ -73,11 +80,19 @@ enum BG_DG_WorldStates
     PANDAREN_MINE_ALLIANCE_CONTROLLED   = 7859
 };
 
+enum BG_DG_FlagState
+{
+    BG_DG_CART_STATE_ON_BASE        = 0,
+    BG_DG_CART_STATE_WAIT_RESPAWN   = 1,
+    BG_DG_CART_STATE_ON_PLAYER      = 2,
+    BG_DG_CART_STATE_ON_GROUND      = 3
+};
+
 const uint32 BG_DG_OP_NODEICONS[3]  =    {7939, 7938, 7935}; // Center Mine, Goblin Mine, Pandaren Mine - Uncontrolled.
 
 enum BG_DG_NodeObjectId
 {
-    BG_DG_OBJECTID_NODE_BANNER_A    = 208694,       // Center Mine banner
+    BG_DG_OBJECTID_NODE_BANNER_0    = 208694,       // Center Mine banner
     BG_DG_OBJECTID_NODE_BANNER_1    = 208695,       // Goblin Mine banner
     BG_DG_OBJECTID_NODE_BANNER_2    = 208696,       // Pandaren Mine banner
 
@@ -90,8 +105,10 @@ enum BG_DG_NodeObjectId
 	BG_DG_OBJECTID_AURA_H           = 180101,
 	BG_DG_OBJECTID_AURA_C           = 180102,
 
-    BG_DG_OBJECTID_GATE_A           = 207177,
-    BG_DG_OBJECTID_GATE_H           = 207178
+    BG_DG_OBJECTID_GATE             = 401000,
+
+    BG_DG_OBJECTID_GOLD_CART_A      = 71071,        // A gold cart (creature).
+    BG_DG_OBJECTID_GOLD_CART_H      = 71073         // H gold cart (creature).
 };
 
 enum BG_DG_ObjectType
@@ -116,16 +133,13 @@ enum BG_DG_ObjectType
     BG_DG_OBJECT_GATE_H_2                = 27,
 
     // Buffs
-    BG_DG_OBJECT_REGENBUFF_C_MINE        = 28,
-    BG_DG_OBJECT_BERSERKBUFF_C_MINE      = 29,
+    BG_DG_OBJECT_REGENBUFF_1             = 28,
+    BG_DG_OBJECT_BERSERKBUFF_1           = 29,
 
-    BG_DG_OBJECT_REGENBUFF_G_MINE        = 30,
-    BG_DG_OBJECT_BERSERKBUFF_G_MINE      = 31,
+    BG_DG_OBJECT_REGENBUFF_2             = 30,
+    BG_DG_OBJECT_BERSERKBUFF_2           = 31,
 
-    BG_DG_OBJECT_REGENBUFF_P_MINE        = 32,
-    BG_DG_OBJECT_BERSERKBUFF_P_MINE      = 33,
-
-    BG_DG_OBJECT_MAX                     = 34
+    BG_DG_OBJECTS_MAX                    = 32
 };
 
 enum BG_DG_Timers
@@ -146,10 +160,19 @@ enum BG_DG_BattlegroundNodes
 
     BG_DG_DYNAMIC_NODES_COUNT   = 3,                        // dynamic nodes that can be captured
 
-    BG_DG_SPIRIT_ALIANCE        = 4,
-    BG_DG_SPIRIT_HORDE          = 5,
+    BG_DG_SPIRIT_ALIANCE_1      = 4,
+    BG_DG_SPIRIT_ALIANCE_2      = 5,
+    BG_DG_SPIRIT_HORDE_1        = 6,
+    BG_DG_SPIRIT_HORDE_2        = 7,
 
-    BG_DG_ALL_NODES_COUNT       = 6                         // all nodes (dynamic and static)
+    BG_DG_CREATURE_CART_A       = 8,
+    BG_DG_CREATURE_CART_H       = 9,
+
+    BG_DG_CREATURE_AURA_1       = 10,
+    BG_DG_CREATURE_AURA_2       = 11,
+    BG_DG_CREATURE_AURA_3       = 12,
+
+    BG_DG_ALL_NODES_COUNT       = 13                         // all nodes (dynamic and static)
 };
 
 enum BG_DG_NodeStatus
@@ -179,6 +202,12 @@ enum BG_DG_Objectives
     DG_OBJECTIVE_DEFEND_MINE            = 123
 };
 
+enum BG_DG_Cart_Buffs
+{
+    DG_CART_BUFF_ALLIANCE               = 140876,
+    DG_CART_BUFF_HORDE                  = 141210
+};
+
 #define BG_DG_NotDGBGWeekendHonorTicks      200
 #define BG_DG_DGBGWeekendHonorTicks         100
 
@@ -191,46 +220,47 @@ const float BG_DG_NodePositions[BG_DG_DYNAMIC_NODES_COUNT][4] =
     //    x,       y,         z,        o
     {-165.850f, 499.967f,  92.8453f, 1.130f},         // central mine
     {-399.714f, 573.111f, 111.5109f, 1.608f},         // goblin mine
-    {  65.961f, 431.756f, 111.878f,  4.420f},         // pandaren mine
+    {  65.961f, 431.756f, 111.878f,  4.420f}          // pandaren mine
 };
 
-#define MAX_BG_DG_DOORS 4
-
+// Doors
 const float BG_DG_DoorPositions[MAX_BG_DG_DOORS][8] =
 {
-    //    x,        y,          z,         o,         rot0,       rot1,       rot2,    rot3
-    {1284.597f, 1281.167f, -15.97792f, 0.7068594f,  0.012957f, -0.060288f, 0.344959f,  0.93659f },
-    {708.0903f,  708.4479f, -17.8342f, -2.391099f,  0.050291f,  0.015127f, 0.929217f, -0.365784f},
-    {1284.597f, 1281.167f, -15.97792f, 0.7068594f,  0.012957f, -0.060288f, 0.344959f,  0.93659f },
-    {708.0903f,  708.4479f, -17.8342f, -2.391099f,  0.050291f,  0.015127f, 0.929217f, -0.365784f}
+    //    x,        y,       z,         o,    rot0, rot1,    rot2,      rot3
+    {-69.9061f, 781.413f, 132.033f, 1.58258f, 0.0f, 0.0f, 0.711261f,  0.702928f}, // H 1
+    {-119.739f, 799.007f, 132.373f, 0.81210f, 0.0f, 0.0f, 0.394986f,  0.918687f}, // H 2
+    {-213.767f, 200.682f, 132.427f, 3.87594f, 0.0f, 0.0f, 0.933346f, -0.358979f}, // A 1
+    {-263.325f, 218.150f, 132.166f, 4.67233f, 0.0f, 0.0f, 0.721127f, -0.692803f}  // A 2
 };
 
-const float BG_DG_BuffPositions[BG_DG_DYNAMIC_NODES_COUNT][4] =
+// Buffs
+const float BG_DG_BuffPositions[MAX_BUFFS][4] =
 {
-    //    x,       y,        z,     o
-    {1185.71f, 1185.24f, -56.36f, 2.56f},                    // central mine
-    {990.75f,  1008.18f, -42.60f, 2.43f},                    // goblin mine
-    {817.66f,  843.34f,  -56.54f, 3.01f},                    // pandaren mine
+    //     x,          y,            z,      o
+    {-94.029518f, 375.503479f, 135.583221f, 0.0f }, // Berserking
+    {-239.42361f, 624.565979f, 135.616486f, 0.0f }, // Berserking
+    {96.404518f,  426.072906f, 111.346909f, 0.0f }, // Restoration
+    {-429.48089f, 581.357666f, 110.959213f, 0.0f }  // Restoration
 };
 
-// WorldSafeLocs ids for ally and horde starting locations (N and S).
-#define MAX_GRAVEYARDS 8
-
-const uint32 BG_DG_GraveyardIds[MAX_GRAVEYARDS] = {4486, 4487, 4488, 4489, 4545, 4546, 4613, 4614}; // Horde / Alliance start + A South, H North, H South, A North, Goblin, Pandaren.
+// Graveyards
+const uint32 BG_DG_GraveyardIds[MAX_GRAVEYARDS] = {4488, 4489, 4545, 4546};
 
 const float BG_DG_SpiritGuidePos[MAX_GRAVEYARDS][4] =
 {
     //    x,       y,        z,     o
-    {1200.03f, 1171.09f, -56.47f, 5.15f},                     // Alliance Start
-    {1017.43f, 960.61f,  -42.95f, 4.88f},                     // Horde Start
+    {-333.910f, 242.645f, 132.5693f, 6.148f}, // Alliance No Icon 4488 S
+    {-0.868f,   757.698f, 132.5693f, 3.594f}, // Horde    No Icon 4489 N
 
-    {1200.03f, 1171.09f, -56.47f, 5.15f},                     // Alliance South
-    {1017.43f, 960.61f,  -42.95f, 4.88f},                     // Alliance North
-    {833.00f,  793.00f,  -57.25f, 5.27f},                     // Horde South
-    {775.17f, 1206.40f,   15.79f, 1.90f},                     // Horde North
+    {-221.674f, 805.479f, 137.4519f, 5.208f}, // Alliance Icon 4545 N
+    {-111.285f, 193.291f, 137.4516f, 1.966f}  // Horde    Icon 4546 S
+};
 
-    {833.00f,  793.00f,  -57.25f, 5.27f},                     // Pandaren Mine
-    {775.17f, 1206.40f,   15.79f, 1.90f},                     // Goblin Mine
+// Mine carts
+const float BG_DG_MineCartPos[MAX_CARTS][4] =
+{
+    {-241.97569f, 208.649307f, 133.746338f, 0.0f}, // Alliance, Areatrigger 9012
+    {-91.557289f, 791.440979f, 133.747101f, 0.0f}  // Horde, Areatrigger 9013
 };
 
 struct BG_DG_BannerTimer
@@ -254,14 +284,18 @@ struct BattlegroundDGScore : public BattlegroundScore
 class BattlegroundDG : public Battleground
 {
     public:
+        /* Construction */
         BattlegroundDG();
         ~BattlegroundDG();
 
+        /* Inherited from BattlegroundClass */
         void AddPlayer(Player* player);
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
+
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleground();
         void Reset();
         void EndBattleground(uint32 winner);
@@ -276,13 +310,20 @@ class BattlegroundDG : public Battleground
         void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
         uint32 GetOccupiedNodes(Team team);
 
+        /* Carts handling */
+        void EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeObjectId);
+        void EventPlayerFailedCart(Player* player);
+        void EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeObjectId);
+
         /* achievement req. */
         bool IsAllNodesControlledByTeam(uint32 team) const;
         bool CheckAchievementCriteriaMeet(uint32 /*criteriaId*/, Player const* /*player*/, Unit const* /*target*/ = NULL, uint32 /*miscvalue1*/ = 0);
 
         uint32 GetPrematureWinner();
+
     private:
         void PostUpdateImpl(uint32 diff);
+
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
         void _DelBanner(uint8 node, uint8 type, uint8 teamIndex);
@@ -309,5 +350,7 @@ class BattlegroundDG : public Battleground
         uint32              m_HonorScoreTics[BG_TEAMS_COUNT];
         bool                m_IsInformedNearVictory;
         uint32              m_HonorTics;
+        uint64              cartPullerA;
+        uint64              cartPullerH;
 };
 #endif

@@ -157,7 +157,7 @@ const uint32 BG_TK_ORBS_AURA[MAX_ORBS] =
 };
 
 //tick point according to which zone
-const uint32 BG_TK_TickPoints[3] = { 1, 3, 5 };
+const uint32 BG_TK_TickPoints[3] = { 3, 4, 5 };
 
 struct BattlegroundTKScore : public BattlegroundScore
 {

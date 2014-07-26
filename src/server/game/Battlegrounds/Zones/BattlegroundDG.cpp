@@ -13,16 +13,20 @@
 #include "Player.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include "MotionMaster.h"
 
 #include "BattlegroundDG.h"
 
 BattlegroundDG::BattlegroundDG()
 {
     m_IsInformedNearVictory = false;
-    m_BuffChange = true;
+    m_BuffChange            = true;
 
-    // BgObjects.resize(BG_DG_OBJECT_MAX);
-    // BgCreatures.resize(BG_DG_ALL_NODES_COUNT + 3); // +3 for aura triggers
+    cartPullerA             = NULL;
+    cartPullerH             = NULL;
+
+    BgObjects.resize(BG_DG_OBJECTS_MAX);
+    BgCreatures.resize(BG_DG_ALL_NODES_COUNT);
 
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BG_DG_START_TWO_MINUTES;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_DG_START_ONE_MINUTE;
@@ -36,9 +40,9 @@ void BattlegroundDG::PostUpdateImpl(uint32 diff)
 {
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
-        int team_points[BG_TEAMS_COUNT] = { 0, 0 };
+        uint8 team_points[BG_TEAMS_COUNT] = { 0, 0 };
 
-        for (int node = 0; node < BG_DG_DYNAMIC_NODES_COUNT; ++node)
+        for (uint8 node = 0; node < BG_DG_DYNAMIC_NODES_COUNT; ++node)
         {
             // 3 sec delay to spawn new banner instead of previously despawned one
             if (m_BannerTimers[node].timer)
@@ -90,15 +94,15 @@ void BattlegroundDG::PostUpdateImpl(uint32 diff)
                 }
             }
 
-            for (int team = 0; team < BG_TEAMS_COUNT; ++team)
+            for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
                 if (m_Nodes[node] == team + BG_DG_NODE_TYPE_OCCUPIED)
                     ++team_points[team];
         }
 
         // Accumulate points
-        for (int team = 0; team < BG_TEAMS_COUNT; ++team)
+        for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
         {
-            int points = team_points[team];
+            uint8 points = team_points[team];
             if (!points)
                 continue;
 
@@ -116,7 +120,7 @@ void BattlegroundDG::PostUpdateImpl(uint32 diff)
                     m_HonorScoreTics[team] -= m_HonorTics;
                 }
 
-                if (!m_IsInformedNearVictory && m_TeamScores[team] > BG_DG_WARNING_NEAR_VICTORY_SCORE)
+                if (!m_IsInformedNearVictory && m_TeamScores[team] >= BG_DG_WARNING_NEAR_VICTORY_SCORE)
                 {
                     if (team == BG_TEAM_ALLIANCE)
                         SendMessageToAll(LANG_BG_DG_A_NEAR_VICTORY, CHAT_MSG_BG_SYSTEM_NEUTRAL);
@@ -146,43 +150,52 @@ void BattlegroundDG::PostUpdateImpl(uint32 diff)
 
 void BattlegroundDG::StartingEventCloseDoors()
 {
-    // // despawn banners, auras and buffs
-    // for (int obj = BG_DG_OBJECT_BANNER_NEUTRAL; obj < BG_DG_DYNAMIC_NODES_COUNT * 8; ++obj)
-    //     SpawnBGObject(obj, RESPAWN_ONE_DAY);
-    // for (int i = 0; i < BG_DG_DYNAMIC_NODES_COUNT * 2; ++i)
-    //     SpawnBGObject(BG_DG_OBJECT_REGENBUFF_C_MINE + i, RESPAWN_ONE_DAY);
-    // 
-    // // Starting doors
-    // DoorClose(BG_DG_OBJECT_GATE_A_1);
-    // DoorClose(BG_DG_OBJECT_GATE_A_2);
-    // DoorClose(BG_DG_OBJECT_GATE_H_1);
-    // DoorClose(BG_DG_OBJECT_GATE_H_2);
-    // SpawnBGObject(BG_DG_OBJECT_GATE_A_1, RESPAWN_IMMEDIATELY);
-    // SpawnBGObject(BG_DG_OBJECT_GATE_A_2, RESPAWN_IMMEDIATELY);
-    // SpawnBGObject(BG_DG_OBJECT_GATE_H_1, RESPAWN_IMMEDIATELY);
-    // SpawnBGObject(BG_DG_OBJECT_GATE_H_2, RESPAWN_IMMEDIATELY);
-    // 
-    // // Starting base spirit guides
-    // _NodeOccupied(BG_DG_SPIRIT_ALIANCE, ALLIANCE);
-    // _NodeOccupied(BG_DG_SPIRIT_HORDE, HORDE);
+    // Starting doors
+    for (uint8 i = BG_DG_OBJECT_GATE_A_1; i <= BG_DG_OBJECT_GATE_H_2; ++i)
+    {
+        DoorClose(i);
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+    }
+
+    // Put proper carts flags.
+    if (Creature* CartA = GetBGCreature(BG_DG_CREATURE_CART_A))
+    if (Creature* CartH = GetBGCreature(BG_DG_CREATURE_CART_H))
+    {
+        CartA->setFaction(35);
+        CartA->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        CartA->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        CartH->setFaction(35);
+        CartH->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        CartH->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
 }
 
 void BattlegroundDG::StartingEventOpenDoors()
 {
-    // // spawn neutral banners
-    // for (int banner = BG_DG_OBJECT_BANNER_NEUTRAL, i = 0; i < 3; banner += 8, ++i)
-    //     SpawnBGObject(banner, RESPAWN_IMMEDIATELY);
-    // for (int i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
-    // {
-    //     //randomly select buff to spawn
-    //     uint8 buff = urand(0, 2);
-    //     SpawnBGObject(BG_DG_OBJECT_REGENBUFF_C_MINE + buff + i * 2, RESPAWN_IMMEDIATELY);
-    // }
-    // 
-    // DoorOpen(BG_DG_OBJECT_GATE_A_1);
-    // DoorOpen(BG_DG_OBJECT_GATE_A_2);
-    // DoorOpen(BG_DG_OBJECT_GATE_H_1);
-    // DoorOpen(BG_DG_OBJECT_GATE_H_2);
+    for (uint8 i = BG_DG_OBJECT_GATE_A_1; i <= BG_DG_OBJECT_GATE_H_2; ++i)
+        DoorOpen(i);
+
+    // Spawn neutral banners
+    for (uint8 banner = BG_DG_OBJECT_BANNER_NEUTRAL, i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; banner += 8, ++i)
+        SpawnBGObject(banner, RESPAWN_IMMEDIATELY);
+
+    // Spawn buffs
+    for (uint8 i = BG_DG_OBJECT_BERSERKBUFF_1; i <= BG_DG_OBJECT_REGENBUFF_2; ++i)
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+
+    // Put proper carts flags.
+    if (Creature* CartA = GetBGCreature(BG_DG_CREATURE_CART_A))
+    if (Creature* CartH = GetBGCreature(BG_DG_CREATURE_CART_H))
+    {
+        CartA->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        CartA->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+        CartH->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        CartH->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
+
+    // Show cart flags.
+    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY,  BG_DG_CART_STATE_ON_BASE);
+    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_BASE);
 }
 
 void BattlegroundDG::AddPlayer(Player* player)
@@ -201,69 +214,59 @@ void BattlegroundDG::HandleAreaTrigger(Player* player, uint32 trigger)
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    // switch (trigger)
-    // {
-    //     case 3948:                                          // Arathi Basin Alliance Exit.
-    //         if (player->GetTeam() != ALLIANCE)
-    //             player->GetSession()->SendAreaTriggerMessage("Only The Alliance can use that portal");
-    //         else
-    //             player->LeaveBattleground();
-    //         break;
-    //     case 3949:                                          // Arathi Basin Horde Exit.
-    //         if (player->GetTeam() != HORDE)
-    //             player->GetSession()->SendAreaTriggerMessage("Only The Horde can use that portal");
-    //         else
-    //             player->LeaveBattleground();
-    //         break;
-    //     case 3866:                                          // Stables
-    //     case 3869:                                          // Gold Mine
-    //     case 3867:                                          // Farm
-    //     case 3868:                                          // Lumber Mill
-    //     case 3870:                                          // Black Smith
-    //     case 4020:                                          // Unk1
-    //     case 4021:                                          // Unk2
-    //     case 4674:                                          // Unk3
-    //         //break;
-    //     default:
-    //         Battleground::HandleAreaTrigger(player, trigger);
-    //         break;
-    // }
+    switch (trigger)
+    {
+        case 9012: // Alliance cart point, when bringing in Horde gold cart.
+            if (player->GetTeam() == ALLIANCE && player->HasAura(DG_CART_BUFF_HORDE))
+                EventPlayerCapturedCart(player, BG_DG_OBJECTID_GOLD_CART_H);
+            break;
+
+        case 9013: // Horde cart point, when bringing in Alliance gold cart.
+            if (player->GetTeam() == HORDE && player->HasAura(DG_CART_BUFF_ALLIANCE))
+                EventPlayerCapturedCart(player, BG_DG_OBJECTID_GOLD_CART_A);
+            break;
+
+        default:
+            Battleground::HandleAreaTrigger(player, trigger);
+            break;
+    }
 }
 
 /*  type: 0-neutral, 1-contested, 3-occupied; teamIndex: 0-ally, 1-horde             */
 void BattlegroundDG::_CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay)
 {
-    // // Just put it into the queue
-    // if (delay)
-    // {
-    //     m_BannerTimers[node].timer = 2000;
-    //     m_BannerTimers[node].type = type;
-    //     m_BannerTimers[node].teamIndex = teamIndex;
-    //     return;
-    // }
-    // 
-    // uint8 obj = node * 8 + type + teamIndex;
-    // 
-    // SpawnBGObject(obj, RESPAWN_IMMEDIATELY);
-    // 
-    // // handle aura with banner
-    // if (!type)
-    //     return;
-    // 
-    // obj = node * 8 + ((type == BG_DG_NODE_TYPE_OCCUPIED) ? (3 + teamIndex) : 7);
-    // SpawnBGObject(obj, RESPAWN_IMMEDIATELY);
+    // Just put it into the queue
+    if (delay)
+    {
+        m_BannerTimers[node].timer = 2000;
+        m_BannerTimers[node].type = type;
+        m_BannerTimers[node].teamIndex = teamIndex;
+        return;
+    }
+
+    uint8 obj = node * 8 + type + teamIndex;
+
+    SpawnBGObject(obj, RESPAWN_IMMEDIATELY);
+
+    // handle aura with banner
+    if (!type)
+        return;
+
+    obj = node * 8 + ((type == BG_DG_NODE_TYPE_OCCUPIED) ? (5 + teamIndex) : 7);
+    SpawnBGObject(obj, RESPAWN_IMMEDIATELY);
 }
 
 void BattlegroundDG::_DelBanner(uint8 node, uint8 type, uint8 teamIndex)
 {
-    // uint8 obj = node * 8 + type + teamIndex;
-    // SpawnBGObject(obj, RESPAWN_ONE_DAY);
-    // 
-    // // handle aura with banner
-    // if (!type)
-    //     return;
-    // obj = node * 8 + ((type == BG_DG_NODE_TYPE_OCCUPIED) ? (3 + teamIndex) : 7);
-    // SpawnBGObject(obj, RESPAWN_ONE_DAY);
+    uint8 obj = node * 8 + type + teamIndex;
+    SpawnBGObject(obj, RESPAWN_ONE_DAY);
+
+    // handle aura with banner
+    if (!type)
+        return;
+
+    obj = node * 8 + ((type == BG_DG_NODE_TYPE_OCCUPIED) ? (5 + teamIndex) : 7);
+    SpawnBGObject(obj, RESPAWN_ONE_DAY);
 }
 
 int32 BattlegroundDG::_GetNodeNameId(uint8 node)
@@ -273,8 +276,8 @@ int32 BattlegroundDG::_GetNodeNameId(uint8 node)
         case BG_DG_NODE_C_MINE:    return LANG_BG_DG_NODE_CENTER_MINE;
         case BG_DG_NODE_G_MINE:    return LANG_BG_DG_NODE_GOBLIN_MINE;
         case BG_DG_NODE_P_MINE:    return LANG_BG_DG_NODE_PANDAREN_MINE;
-        default:
-            ASSERT(false);
+
+        default: ASSERT(false); break;
     }
     return 0;
 }
@@ -297,8 +300,8 @@ uint32 BattlegroundDG::GetOccupiedNodes(Team team)
 void BattlegroundDG::FillInitialWorldStates(ByteBuffer& data)
 {
     // Init the displays
-    data << uint32(0x1) << uint32(BG_DG_SHOW_BASES_GOLD_ALLY);
-    data << uint32(0x1) << uint32(BG_DG_SHOW_BASES_GOLD_HORDE);
+    data << uint32(BG_DG_CART_STATE_WAIT_RESPAWN) << uint32(BG_DG_SHOW_BASES_GOLD_ALLY);
+    data << uint32(BG_DG_CART_STATE_WAIT_RESPAWN) << uint32(BG_DG_SHOW_BASES_GOLD_HORDE);
 
     // Node icons
     for (uint8 node = BG_DG_NODE_C_MINE; node < BG_DG_DYNAMIC_NODES_COUNT; ++node)
@@ -448,44 +451,39 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
 
 void BattlegroundDG::_NodeOccupied(uint8 node, Team team)
 {
-    // if (!AddSpiritGuide(node, BG_DG_SpiritGuidePos[node][0], BG_DG_SpiritGuidePos[node][1], BG_DG_SpiritGuidePos[node][2], BG_DG_SpiritGuidePos[node][3], team))
-    //     TC_LOG_ERROR("bg.battleground", "Failed to spawn spirit guide! point: %u, team: %u, ", node, team);
-    // 
-    // if (node >= BG_DG_DYNAMIC_NODES_COUNT) // only dynamic nodes, no start points
-    //     return;
-    // 
-    // uint8 capturedNodes = 0;
-    // for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
-    //     if (m_Nodes[i] == GetTeamIndexByTeamId(team) + BG_DG_NODE_TYPE_OCCUPIED && !m_NodeTimers[i])
-    //         ++capturedNodes;
-    // 
-    // Creature* trigger = BgCreatures[node + 8] ? GetBGCreature(node + 8) : NULL; // 0-7 spirit guides
-    // if (!trigger)
-    //     trigger = AddCreature(WORLD_TRIGGER, node + 8, team, BG_DG_NodePositions[node][0], BG_DG_NodePositions[node][1], BG_DG_NodePositions[node][2], BG_DG_NodePositions[node][3]);
-    // 
-    // // add bonus honor aura trigger creature when node is accupied - cast bonus aura (+50% honor in 25yards).
-    // // aura should only apply to players who have accupied the node, set correct faction for trigger.
-    // if (trigger)
-    // {
-    //     trigger->setFaction(team == ALLIANCE ? 84 : 83);
-    //     trigger->CastSpell(trigger, SPELL_HONORABLE_DEFENDER_25Y, false);
-    // }
+    if (node >= BG_DG_DYNAMIC_NODES_COUNT) // only dynamic nodes, no start points
+        return;
+
+    uint8 capturedNodes = 0;
+    for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
+        if (m_Nodes[i] == GetTeamIndexByTeamId(team) + BG_DG_NODE_TYPE_OCCUPIED && !m_NodeTimers[i])
+            ++capturedNodes;
+
+    Creature* trigger = BgCreatures[node + 10] ? GetBGCreature(node + 10) : NULL;
+    if (!trigger)
+        trigger = AddCreature(WORLD_TRIGGER, node + 10, team, BG_DG_NodePositions[node][0], BG_DG_NodePositions[node][1], BG_DG_NodePositions[node][2], BG_DG_NodePositions[node][3]);
+
+    // add bonus honor aura trigger creature when node is accupied - cast bonus aura (+50% honor in 25yards).
+    // aura should only apply to players who have accupied the node, set correct faction for trigger.
+    if (trigger)
+    {
+        trigger->setFaction(team == ALLIANCE ? 84 : 83);
+        trigger->CastSpell(trigger, SPELL_HONORABLE_DEFENDER_25Y, false);
+    }
 }
 
 void BattlegroundDG::_NodeDeOccupied(uint8 node)
 {
-    // if (node >= BG_DG_DYNAMIC_NODES_COUNT)
-    //     return;
-    // 
-    // //remove bonus honor aura trigger creature when node is lost
-    // if (node < BG_DG_DYNAMIC_NODES_COUNT)//only dynamic nodes, no start points
-    //     DelCreature(node + 8);// NULL checks are in DelCreature! 0-7 spirit guides
-    // 
-    // RelocateDeadPlayers(BgCreatures[node]);
-    // 
-    // DelCreature(node);
-    // 
-    // // buff object isn't despawned
+    if (node >= BG_DG_DYNAMIC_NODES_COUNT)
+        return;
+
+    // remove bonus honor aura trigger creature when node is lost
+    if (node < BG_DG_DYNAMIC_NODES_COUNT) // only dynamic nodes, no start points
+        DelCreature(node + 10); // NULL checks are in DelCreature!
+
+    RelocateDeadPlayers(BgCreatures[node]);
+
+    DelCreature(node);
 }
 
 /* Invoked if a player used a banner as a gameobject */
@@ -572,7 +570,7 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
             _CreateBanner(node, BG_DG_NODE_TYPE_OCCUPIED, teamIndex, true);
             _SendNodeUpdate(node);
             m_NodeTimers[node] = 0;
-            _NodeOccupied(node, (teamIndex == BG_TEAM_ALLIANCE) ? ALLIANCE:HORDE);
+            _NodeOccupied(node, (teamIndex == BG_TEAM_ALLIANCE) ? ALLIANCE : HORDE);
 
             // FIXME: node names not localized
             if (teamIndex == BG_TEAM_ALLIANCE)
@@ -614,6 +612,7 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
         else
             SendMessage2ToAll(LANG_BG_DG_NODE_TAKEN, CHAT_MSG_BG_SYSTEM_HORDE, NULL, LANG_BG_DG_HORDE, _GetNodeNameId(node));
     }
+
     PlaySoundToAll(sound);
 }
 
@@ -638,42 +637,67 @@ uint32 BattlegroundDG::GetPrematureWinner()
 
 bool BattlegroundDG::SetupBattleground()
 {
-    // for (int i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
-    // {
-    //     if (!AddObject(BG_DG_OBJECT_BANNER_NEUTRAL + 8*i, BG_DG_OBJECTID_NODE_BANNER_0 + i, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_BANNER_CONT_A + 8*i, BG_DG_OBJECTID_BANNER_CONT_A, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_BANNER_CONT_H + 8*i, BG_DG_OBJECTID_BANNER_CONT_H, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_BANNER_ALLY + 8*i, BG_DG_OBJECTID_BANNER_A, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_BANNER_HORDE + 8*i, BG_DG_OBJECTID_BANNER_H, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_AURA_ALLY + 8*i, BG_DG_OBJECTID_AURA_A, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_AURA_HORDE + 8*i, BG_DG_OBJECTID_AURA_H, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_AURA_CONTESTED + 8*i, BG_DG_OBJECTID_AURA_C, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3]/2), std::cos(BG_DG_NodePositions[i][3]/2), RESPAWN_ONE_DAY))
-    //     {
-    //         TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn some object Battleground not created!");
-    //         return false;
-    //     }
-    // }
-    // if (!AddObject(BG_DG_OBJECT_GATE_A, BG_DG_OBJECTID_GATE_A, BG_DG_DoorPositions[0][0], BG_DG_DoorPositions[0][1], BG_DG_DoorPositions[0][2], BG_DG_DoorPositions[0][3], BG_DG_DoorPositions[0][4], BG_DG_DoorPositions[0][5], BG_DG_DoorPositions[0][6], BG_DG_DoorPositions[0][7], RESPAWN_IMMEDIATELY)
-    //     || !AddObject(BG_DG_OBJECT_GATE_H, BG_DG_OBJECTID_GATE_H, BG_DG_DoorPositions[1][0], BG_DG_DoorPositions[1][1], BG_DG_DoorPositions[1][2], BG_DG_DoorPositions[1][3], BG_DG_DoorPositions[1][4], BG_DG_DoorPositions[1][5], BG_DG_DoorPositions[1][6], BG_DG_DoorPositions[1][7], RESPAWN_IMMEDIATELY))
-    // {
-    //     TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn door object Battleground not created!");
-    //     return false;
-    // }
-    // //buffs
-    // for (int i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
-    // {
-    //     if (!AddObject(BG_DG_OBJECT_SPEEDBUFF_STABLES + 3 * i, Buff_Entries[0], BG_DG_BuffPositions[i][0], BG_DG_BuffPositions[i][1], BG_DG_BuffPositions[i][2], BG_DG_BuffPositions[i][3], 0, 0, std::sin(BG_DG_BuffPositions[i][3]/2), std::cos(BG_DG_BuffPositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_SPEEDBUFF_STABLES + 3 * i + 1, Buff_Entries[1], BG_DG_BuffPositions[i][0], BG_DG_BuffPositions[i][1], BG_DG_BuffPositions[i][2], BG_DG_BuffPositions[i][3], 0, 0, std::sin(BG_DG_BuffPositions[i][3]/2), std::cos(BG_DG_BuffPositions[i][3]/2), RESPAWN_ONE_DAY)
-    //         || !AddObject(BG_DG_OBJECT_SPEEDBUFF_STABLES + 3 * i + 2, Buff_Entries[2], BG_DG_BuffPositions[i][0], BG_DG_BuffPositions[i][1], BG_DG_BuffPositions[i][2], BG_DG_BuffPositions[i][3], 0, 0, std::sin(BG_DG_BuffPositions[i][3]/2), std::cos(BG_DG_BuffPositions[i][3]/2), RESPAWN_ONE_DAY))
-    //         TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn buff object!");
-    // }
+    // Flags.
+    for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
+    {
+        if (!AddObject(BG_DG_OBJECT_BANNER_NEUTRAL + 8 * i, BG_DG_OBJECTID_NODE_BANNER_0 + i, BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_BANNER_CONT_A  + 8 * i, BG_DG_OBJECTID_BANNER_CONT_A,     BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_BANNER_CONT_H  + 8 * i, BG_DG_OBJECTID_BANNER_CONT_H,     BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_BANNER_ALLY    + 8 * i, BG_DG_OBJECTID_BANNER_A,          BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_BANNER_HORDE   + 8 * i, BG_DG_OBJECTID_BANNER_H,          BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_AURA_ALLY      + 8 * i, BG_DG_OBJECTID_AURA_A,            BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_AURA_HORDE     + 8 * i, BG_DG_OBJECTID_AURA_H,            BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
+         || !AddObject(BG_DG_OBJECT_AURA_CONTESTED + 8 * i, BG_DG_OBJECTID_AURA_C,            BG_DG_NodePositions[i][0], BG_DG_NodePositions[i][1], BG_DG_NodePositions[i][2], BG_DG_NodePositions[i][3], 0, 0, std::sin(BG_DG_NodePositions[i][3] / 2), std::cos(BG_DG_NodePositions[i][3] / 2), RESPAWN_ONE_DAY))
+        {
+            TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn some object - Battleground not created!");
+            return false;
+        }
+    }
+
+    // Doors.
+    if (!AddObject(BG_DG_OBJECT_GATE_H_1, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[0][0], BG_DG_DoorPositions[0][1], BG_DG_DoorPositions[0][2], BG_DG_DoorPositions[0][3], BG_DG_DoorPositions[0][4], BG_DG_DoorPositions[0][5], BG_DG_DoorPositions[0][6], BG_DG_DoorPositions[0][7], RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_DG_OBJECT_GATE_H_2, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[1][0], BG_DG_DoorPositions[1][1], BG_DG_DoorPositions[1][2], BG_DG_DoorPositions[1][3], BG_DG_DoorPositions[1][4], BG_DG_DoorPositions[1][5], BG_DG_DoorPositions[1][6], BG_DG_DoorPositions[1][7], RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_DG_OBJECT_GATE_A_1, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[2][0], BG_DG_DoorPositions[2][1], BG_DG_DoorPositions[2][2], BG_DG_DoorPositions[2][3], BG_DG_DoorPositions[2][4], BG_DG_DoorPositions[2][5], BG_DG_DoorPositions[2][6], BG_DG_DoorPositions[2][7], RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_DG_OBJECT_GATE_A_2, BG_DG_OBJECTID_GATE, BG_DG_DoorPositions[3][0], BG_DG_DoorPositions[3][1], BG_DG_DoorPositions[3][2], BG_DG_DoorPositions[3][3], BG_DG_DoorPositions[3][4], BG_DG_DoorPositions[3][5], BG_DG_DoorPositions[3][6], BG_DG_DoorPositions[3][7], RESPAWN_IMMEDIATELY))
+    {
+        TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn door object - Battleground not created!");
+        return false;
+    }
+
+    // Buffs.
+    if (!AddObject(BG_DG_OBJECT_BERSERKBUFF_1, Buff_Entries[2], BG_DG_BuffPositions[0][0], BG_DG_BuffPositions[0][1], BG_DG_BuffPositions[0][2], BG_DG_BuffPositions[0][3], 0, 0, std::sin(BG_DG_BuffPositions[0][3] / 2), std::cos(BG_DG_BuffPositions[0][3] / 2), RESPAWN_ONE_DAY)
+     || !AddObject(BG_DG_OBJECT_BERSERKBUFF_2, Buff_Entries[2], BG_DG_BuffPositions[1][0], BG_DG_BuffPositions[1][1], BG_DG_BuffPositions[1][2], BG_DG_BuffPositions[1][3], 0, 0, std::sin(BG_DG_BuffPositions[1][3] / 2), std::cos(BG_DG_BuffPositions[1][3] / 2), RESPAWN_ONE_DAY)
+     || !AddObject(BG_DG_OBJECT_REGENBUFF_1,   Buff_Entries[1], BG_DG_BuffPositions[2][0], BG_DG_BuffPositions[2][1], BG_DG_BuffPositions[2][2], BG_DG_BuffPositions[2][3], 0, 0, std::sin(BG_DG_BuffPositions[2][3] / 2), std::cos(BG_DG_BuffPositions[2][3] / 2), RESPAWN_ONE_DAY)
+     || !AddObject(BG_DG_OBJECT_REGENBUFF_2,   Buff_Entries[1], BG_DG_BuffPositions[3][0], BG_DG_BuffPositions[3][1], BG_DG_BuffPositions[3][2], BG_DG_BuffPositions[3][3], 0, 0, std::sin(BG_DG_BuffPositions[3][3] / 2), std::cos(BG_DG_BuffPositions[3][3] / 2), RESPAWN_ONE_DAY))
+    {
+        TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn buff object!");
+        return false;
+    }
+
+    // Carts
+    if (!AddCreature(BG_DG_OBJECTID_GOLD_CART_A, BG_DG_CREATURE_CART_A, HORDE   , BG_DG_MineCartPos[0][0], BG_DG_MineCartPos[0][1], BG_DG_MineCartPos[0][2], BG_DG_MineCartPos[0][3])
+     || !AddCreature(BG_DG_OBJECTID_GOLD_CART_H, BG_DG_CREATURE_CART_H, ALLIANCE, BG_DG_MineCartPos[1][0], BG_DG_MineCartPos[1][1], BG_DG_MineCartPos[1][2], BG_DG_MineCartPos[1][3]))
+    {
+        TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn gold mine cart object!");
+        return false;
+    }
+
+    // Spirit guides
+    if (!AddSpiritGuide(BG_DG_SPIRIT_ALIANCE_1, BG_DG_SpiritGuidePos[0][0], BG_DG_SpiritGuidePos[0][1], BG_DG_SpiritGuidePos[0][2], BG_DG_SpiritGuidePos[0][3], ALLIANCE)
+     || !AddSpiritGuide(BG_DG_SPIRIT_ALIANCE_2, BG_DG_SpiritGuidePos[2][0], BG_DG_SpiritGuidePos[2][1], BG_DG_SpiritGuidePos[2][2], BG_DG_SpiritGuidePos[2][3], ALLIANCE)
+     || !AddSpiritGuide(BG_DG_SPIRIT_HORDE_1,   BG_DG_SpiritGuidePos[1][0], BG_DG_SpiritGuidePos[1][1], BG_DG_SpiritGuidePos[1][2], BG_DG_SpiritGuidePos[1][3], HORDE)
+     || !AddSpiritGuide(BG_DG_SPIRIT_HORDE_2,   BG_DG_SpiritGuidePos[3][0], BG_DG_SpiritGuidePos[3][1], BG_DG_SpiritGuidePos[3][2], BG_DG_SpiritGuidePos[3][3], HORDE))
+    {
+        TC_LOG_ERROR("sql.sql", "BattleGroundDG: Failed to spawn some spirit guides!");
+        return false;
+    }
 
     return true;
 }
 
 void BattlegroundDG::Reset()
 {
-    //call parent's class reset
+    // Call parent's class reset
     Battleground::Reset();
 
     m_TeamScores[BG_TEAM_ALLIANCE]          = 0;
@@ -683,6 +707,7 @@ void BattlegroundDG::Reset()
     m_HonorScoreTics[BG_TEAM_ALLIANCE]      = 0;
     m_HonorScoreTics[BG_TEAM_HORDE]         = 0;
     m_IsInformedNearVictory                 = false;
+
     bool isBGWeekend = sBattlegroundMgr->IsBGWeekend(GetTypeID());
     m_HonorTics = (isBGWeekend) ? BG_DG_DGBGWeekendHonorTicks : BG_DG_NotDGBGWeekendHonorTicks;
 
@@ -694,7 +719,7 @@ void BattlegroundDG::Reset()
         m_BannerTimers[i].timer = 0;
     }
 
-    for (uint8 i = 0; i < BG_DG_ALL_NODES_COUNT + 5; ++i)//+5 for aura triggers
+    for (uint8 i = 0; i < BG_DG_ALL_NODES_COUNT; ++i)
         if (!BgCreatures.empty())
             if (BgCreatures[i])
                 DelCreature(i);
@@ -719,37 +744,30 @@ WorldSafeLocsEntry const* BattlegroundDG::GetClosestGraveYard(Player* player)
 {
     BattlegroundTeamId teamIndex = GetTeamIndexByTeamId(player->GetTeam());
 
-    // Is there any occupied node for this team?
-    std::vector<uint8> nodes;
-    for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
-        if (m_Nodes[i] == teamIndex + 3)
-            nodes.push_back(i);
-
     WorldSafeLocsEntry const* good_entry = NULL;
-    // If so, select the closest node to place ghost on
-    if (!nodes.empty())
-    {
-        float plr_x = player->GetPositionX();
-        float plr_y = player->GetPositionY();
 
-        float mindist = 999999.0f;
-        for (uint8 i = 0; i < nodes.size(); ++i)
-        {
-            WorldSafeLocsEntry const*entry = sWorldSafeLocsStore.LookupEntry(BG_DG_GraveyardIds[nodes[i]]);
-            if (!entry)
-                continue;
-            float dist = (entry->x - plr_x)*(entry->x - plr_x)+(entry->y - plr_y)*(entry->y - plr_y);
-            if (mindist > dist)
-            {
-                mindist = dist;
-                good_entry = entry;
-            }
-        }
-        nodes.clear();
-    }
+    // Select the proper graveyard to place ghost on
+    float plr_x = player->GetPositionX();
+    float plr_y = player->GetPositionY();
+
+    WorldSafeLocsEntry const* entry1 = sWorldSafeLocsStore.LookupEntry(BG_DG_GraveyardIds[teamIndex == BG_TEAM_ALLIANCE ? 0 : 1]);
+    WorldSafeLocsEntry const* entry2 = sWorldSafeLocsStore.LookupEntry(BG_DG_GraveyardIds[teamIndex == BG_TEAM_ALLIANCE ? 2 : 3]);
+
+    if (entry1 && entry2)
+	{
+        float dist1 = (entry1->x - plr_x) * (entry1->x - plr_x) + (entry1->y - plr_y) * (entry1->y - plr_y);
+        float dist2 = (entry2->x - plr_x) * (entry2->x - plr_x) + (entry2->y - plr_y) * (entry2->y - plr_y);
+
+        // Select the farthest cemetery (N map goes to S cemetery and so on.
+        if (dist1 >= dist2)
+            good_entry = entry1;
+        else
+            good_entry = entry2;
+	}
+
     // If not, place ghost on starting location
-    if (!good_entry)
-        good_entry = sWorldSafeLocsStore.LookupEntry(BG_DG_GraveyardIds[teamIndex+5]);
+    if (!good_entry && entry2)
+        good_entry = entry2;
 
     return good_entry;
 }
@@ -779,7 +797,7 @@ void BattlegroundDG::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
 bool BattlegroundDG::IsAllNodesControlledByTeam(uint32 team) const
 {
     uint32 count = 0;
-    for (int i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
+    for (uint8 i = 0; i < BG_DG_DYNAMIC_NODES_COUNT; ++i)
         if ((team == ALLIANCE && m_Nodes[i] == BG_DG_NODE_STATUS_ALLY_OCCUPIED) ||
             (team == HORDE    && m_Nodes[i] == BG_DG_NODE_STATUS_HORDE_OCCUPIED))
             ++count;
@@ -790,4 +808,242 @@ bool BattlegroundDG::IsAllNodesControlledByTeam(uint32 team) const
 bool BattlegroundDG::CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* player, Unit const* target, uint32 miscvalue)
 {
     return Battleground::CheckAchievementCriteriaMeet(criteriaId, player, target, miscvalue);
+}
+
+//**** Carts handling ****//
+
+void BattlegroundDG::EventPlayerClickedOnCart(Player* player, uint32 BG_DG_NodeObjectId)
+{
+    switch (GetTeamIndexByTeamId(player->GetTeam()))
+    {
+        case BG_TEAM_ALLIANCE:
+        {
+            switch (BG_DG_NodeObjectId)
+            {
+                case BG_DG_OBJECTID_GOLD_CART_H: // The Horde cart should start following the Alliance player.
+                    if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
+                    {
+                        Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        Cart->CastSpell(player, DG_CART_BUFF_HORDE, true);
+                        Cart->GetMotionMaster()->MoveFollow(player, 3.0f, 0.0f);
+                        cartPullerA = player->GetGUID(); // Set as cart puller.
+                    }
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_PLAYER);
+                    break;
+                case BG_DG_OBJECTID_GOLD_CART_A: // The Alliance cart is returned to base.
+                    if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
+                    {
+                        Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+
+                        if (BgCreatures[BG_DG_CREATURE_CART_A])
+                            DelCreature(BG_DG_CREATURE_CART_A);
+                        if (Cart)
+                            Cart->DespawnOrUnsummon();
+
+                        AddCreature(BG_DG_OBJECTID_GOLD_CART_A, BG_DG_CREATURE_CART_A, HORDE, BG_DG_MineCartPos[0][0], BG_DG_MineCartPos[0][1], BG_DG_MineCartPos[0][2], BG_DG_MineCartPos[0][3]);
+                        if (Creature* Cart2 = GetBGCreature(BG_DG_CREATURE_CART_A)) // Readd proper cart flags.
+                        {
+                            Cart->setFaction(35);
+                            Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                            Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        }
+                    }
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                    break;
+
+                default: break;
+            }
+        }
+        break;
+
+        case BG_TEAM_HORDE:
+            switch (BG_DG_NodeObjectId)
+            {
+                case BG_DG_OBJECTID_GOLD_CART_A: // The Alliance cart should start following the Horde player.
+                    if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
+                    {
+                        Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        Cart->CastSpell(player, DG_CART_BUFF_ALLIANCE, true);
+                        Cart->GetMotionMaster()->MoveFollow(player, 3.0f, 0.0f);
+                        cartPullerH = player->GetGUID(); // Set as cart puller.
+                    }
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_PLAYER);
+                    break;
+                case BG_DG_OBJECTID_GOLD_CART_H: // The Horde cart is returned to base.
+                    if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
+                    {
+                        Cart->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+
+                        if (BgCreatures[BG_DG_CREATURE_CART_H])
+                            DelCreature(BG_DG_CREATURE_CART_H);
+                        if (Cart)
+                            Cart->DespawnOrUnsummon();
+
+                        AddCreature(BG_DG_OBJECTID_GOLD_CART_H, BG_DG_CREATURE_CART_H, ALLIANCE, BG_DG_MineCartPos[1][0], BG_DG_MineCartPos[1][1], BG_DG_MineCartPos[1][2], BG_DG_MineCartPos[1][3]);
+                        if (Creature* Cart2 = GetBGCreature(BG_DG_CREATURE_CART_H)) // Readd proper cart flags.
+                        {
+                            Cart->setFaction(35);
+                            Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                            Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        }
+                    }
+                    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                    break;
+
+                default: break;
+            }
+
+        default: break;
+    }
+
+    player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+
+    PSendMessageToAll(LANG_BG_DG_HAS_TAKEN_CART, CHAT_MSG_BG_SYSTEM_NEUTRAL, NULL, player->GetName().c_str());
+}
+
+void BattlegroundDG::HandleKillPlayer(Player* player, Player* killer)
+{
+    if (!player || GetStatus() != STATUS_IN_PROGRESS)
+        return;
+
+    switch (GetTeamIndexByTeamId(player->GetTeam()))
+    {
+        case BG_TEAM_ALLIANCE: // The Horde cart should stop following the Alliance player.
+            if (cartPullerA)
+                if (player->GetGUID() == cartPullerA)
+                    EventPlayerFailedCart(player);
+            break;
+        case BG_TEAM_HORDE:    // The Alliance cart should stop following the Horde player.
+            if (cartPullerH)
+                if (player->GetGUID() == cartPullerH)
+                    EventPlayerFailedCart(player);
+            break;
+
+        default: break;
+    }
+
+    Battleground::HandleKillPlayer(player, killer);
+}
+
+void BattlegroundDG::EventPlayerFailedCart(Player* player)
+{
+    switch (GetTeamIndexByTeamId(player->GetTeam()))
+    {
+        case BG_TEAM_ALLIANCE: // The Horde cart is dropped by the Alliance player.
+            if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
+            {
+                player->RemoveAurasDueToSpell(DG_CART_BUFF_HORDE);
+
+                if (Cart)
+                {
+                    Cart->StopMoving();
+                    Cart->GetMotionMaster()->MovementExpired();
+                    Cart->GetMotionMaster()->Clear();
+                    Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                }
+
+                cartPullerA = NULL;
+            }
+            break;
+        case BG_TEAM_HORDE:    // The Alliance cart is dropped by the Horde player.
+            if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
+            {
+                player->RemoveAurasDueToSpell(DG_CART_BUFF_ALLIANCE);
+
+                if (Cart)
+                {
+                    Cart->StopMoving();
+                    Cart->GetMotionMaster()->MovementExpired();
+                    Cart->GetMotionMaster()->Clear();
+                    Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                }
+
+                cartPullerH = NULL;
+            }
+            break;
+
+        default: break;
+    }
+
+    UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_GROUND);
+    SendMessageToAll(LANG_BG_DG_CART_DROPPED, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
+}
+
+void BattlegroundDG::EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeObjectId)
+{
+    switch (GetTeamIndexByTeamId(player->GetTeam()))
+    {
+        case BG_TEAM_ALLIANCE: // The Horde cart is captured by the Alliance player.
+            if (BG_DG_NodeObjectId == BG_DG_OBJECTID_GOLD_CART_H)
+            {
+                if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
+                {
+                    player->RemoveAurasDueToSpell(DG_CART_BUFF_HORDE);
+                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10);
+
+                    if (BgCreatures[BG_DG_CREATURE_CART_H])
+                        DelCreature(BG_DG_CREATURE_CART_H);
+                    if (Cart)
+                        Cart->DespawnOrUnsummon();
+
+                    AddCreature(BG_DG_OBJECTID_GOLD_CART_H, BG_DG_CREATURE_CART_H, ALLIANCE, BG_DG_MineCartPos[1][0], BG_DG_MineCartPos[1][1], BG_DG_MineCartPos[1][2], BG_DG_MineCartPos[1][3]);
+                    if (Creature* Cart2 = GetBGCreature(BG_DG_CREATURE_CART_H)) // Readd proper cart flags.
+                    {
+                        Cart->setFaction(35);
+                        Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    }
+                    SendMessageToAll(LANG_BG_DG_CART_CAPTURED_A, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
+                }
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_ON_BASE);
+                RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
+                m_TeamScores[BG_TEAM_ALLIANCE] += CART_CAPTURE_POINTS;
+                if (m_TeamScores[BG_TEAM_HORDE] >= CART_CAPTURE_POINTS)
+                    m_TeamScores[BG_TEAM_HORDE] -= CART_CAPTURE_POINTS;
+                else m_TeamScores[BG_TEAM_HORDE] = 0;
+                UpdateWorldState(BG_DG_GOLD_ALLY, m_TeamScores[BG_TEAM_ALLIANCE]);
+            }
+            break;
+        case BG_TEAM_HORDE:    // The Alliance cart is captured by the Horde player.
+            if (BG_DG_NodeObjectId == BG_DG_OBJECTID_GOLD_CART_A)
+            {
+                if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
+                {
+                    player->RemoveAurasDueToSpell(DG_CART_BUFF_ALLIANCE);
+                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10);
+
+                    if (BgCreatures[BG_DG_CREATURE_CART_A])
+                        DelCreature(BG_DG_CREATURE_CART_A);
+                    if (Cart)
+                        Cart->DespawnOrUnsummon();
+
+                    AddCreature(BG_DG_OBJECTID_GOLD_CART_A, BG_DG_CREATURE_CART_A, HORDE, BG_DG_MineCartPos[0][0], BG_DG_MineCartPos[0][1], BG_DG_MineCartPos[0][2], BG_DG_MineCartPos[0][3]);
+                    if (Creature* Cart2 = GetBGCreature(BG_DG_CREATURE_CART_A)) // Readd proper cart flags.
+                    {
+                        Cart->setFaction(35);
+                        Cart->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        Cart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    }
+                    SendMessageToAll(LANG_BG_DG_CART_CAPTURED_H, CHAT_MSG_BG_SYSTEM_NEUTRAL, player);
+                }
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_ON_BASE);
+                RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
+                m_TeamScores[BG_TEAM_HORDE] += CART_CAPTURE_POINTS;
+                if (m_TeamScores[BG_TEAM_ALLIANCE] >= CART_CAPTURE_POINTS)
+                    m_TeamScores[BG_TEAM_ALLIANCE] -= CART_CAPTURE_POINTS;
+                else m_TeamScores[BG_TEAM_ALLIANCE] = 0;
+                UpdateWorldState(BG_DG_GOLD_HORDE, m_TeamScores[BG_TEAM_HORDE]);
+            }
+            break;
+
+        default: break;
+    }
+
+    player->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }

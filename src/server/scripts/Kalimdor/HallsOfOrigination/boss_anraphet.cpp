@@ -425,7 +425,7 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
             npc_brann_bronzebeard_anraphetAI(Creature* creature) : ScriptedAI(creature)
             {
                 instance = creature->GetInstanceScript();
-                _currentPoint = 0;
+                _currentPoint = 1;
                 deadElementals = 0;
                 eventDone = false;
             }
@@ -442,7 +442,7 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                     return;
 
                 Talk(BRANN_SAY_DOOR_INTRO);
-                _currentPoint = 0;
+                _currentPoint = 1;
                 events.Reset();
                 player->PlayerTalkClass->ClearMenus();
                 player->CLOSE_GOSSIP_MENU();
@@ -494,7 +494,7 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
                             break;
                         case EVENT_BRANN_MOVE_INTRO:
                             if (_currentPoint < MAX_BRANN_WAYPOINTS_INTRO)
-                                me->GetMotionMaster()->MovePoint(_currentPoint, BrannIntroWaypoint[_currentPoint]);
+                                me->GetMotionMaster()->MovePoint(_currentPoint, BrannIntroWaypoint[_currentPoint - 1]);
                             break;
                         case EVENT_BRANN_THINK:
                             Talk(BRANN_SAY_THINK);
@@ -538,23 +538,23 @@ class npc_brann_bronzebeard_anraphet : public CreatureScript
 
                 switch (pointId)
                 {
-                    case 0:
+                    case 1:
                         Talk(BRANN_SAY_TROGGS);
                         events.ScheduleEvent(EVENT_BRANN_THINK, 15000);
                         return;
-                    case 1:
+                    case 2:
                         Talk(BRANN_SAY_ANRAPHET_DIED);
                         delay = 1000;
                         break;
-                    case 14:
+                    case 15:
                         Talk(BRANN_SAY_MOMENT);
                         delay = 2200;
                         break;
-                    case 16:
+                    case 17:
                         events.ScheduleEvent(EVENT_BRANN_SET_ORIENTATION_4, 6000);
                         return;
-                    default:
-                        break;
+
+                    default: break;
                 }
 
                 events.ScheduleEvent(EVENT_BRANN_MOVE_INTRO, delay);

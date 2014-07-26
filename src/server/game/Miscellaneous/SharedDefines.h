@@ -3453,7 +3453,6 @@ enum HolidayIds
     HOLIDAY_HARVEST_FESTIVAL         = 321,
     HOLIDAY_HALLOWS_END              = 324,
     HOLIDAY_LUNAR_FESTIVAL           = 327,
-    // HOLIDAY_LOVE_IS_IN_THE_AIR    = 335, unused/duplicated
     HOLIDAY_FIRE_FESTIVAL            = 341,
     HOLIDAY_CALL_TO_ARMS_EY          = 353,
     HOLIDAY_BREWFEST                 = 372,
@@ -3473,20 +3472,26 @@ enum HolidayIds
     HOLIDAY_RATED_BG_15_VS_15        = 442,
     HOLIDAY_RATED_BG_25_VS_25        = 443,
     HOLIDAY_ANNIVERSARY_7_YEARS      = 467,
-    HOLIDAY_DARKMOON_FAIRE_TEROKKAR  = 479,
+    HOLIDAY_DARKMOON_FAIRE_TEROKKAR  = 479,    // Actually, the current MOP-used Darkmoon Faire event.
     HOLIDAY_ANNIVERSARY_8_YEARS      = 484,
     HOLIDAY_CALL_TO_ARMS_SILVERSHARD = 488,    // Call to Arms: Silvershard Mines
     HOLIDAY_CALL_TO_ARMS_TEMPLE_OF_K = 489,    // Call to Arms: Temple of Kotmogu
-    HOLIDAY_CALL_TO_ARMS_AV2         = 490,    // Call to Arms: Alterac Valley
-    HOLIDAY_CALL_TO_ARMS_AB2         = 491,    // Call to Arms: Arathi Basin
-    HOLIDAY_CALL_TO_ARMS_EY2         = 492,    // Call to Arms: Eye of the Storm
-    HOLIDAY_CALL_TO_ARMS_IC2         = 493,    // Call to Arms: Isle of Conquest
-    HOLIDAY_CALL_TO_ARMS_SM2         = 494,    // Call to Arms: Silvershard Mines
-    HOLIDAY_CALL_TO_ARMS_SA2         = 495,    // Call to Arms: Strand of the Ancients
-    HOLIDAY_CALL_TO_ARMS_TOK2        = 496,    // Call to Arms: Temple of Kotmogu
-    HOLIDAY_CALL_TO_ARMS_BG2         = 497,    // Call to Arms: The Battle for Gilneas
-    HOLIDAY_CALL_TO_ARMS_TP2         = 498,    // Call to Arms: Twin Peaks
-    HOLIDAY_CALL_TO_ARMS_WS2         = 499     // Call to Arms: Warsong Gulch
+    HOLYDAY_ANNIVERSARY_9_YEARS      = 509,
+    HOLYDAY_ANNIVERSARY_10_YEARS     = 514,
+    HOLIDAY_CALL_TO_ARMS_DEEPWIND_G  = 515     // Call to Arms: Deepwind Gorge
+
+    // HOLIDAY_LOVE_IS_IN_THE_AIR       = 335,    // Love is in the Air 2                    - unused/duplicated
+    // HOLIDAY_CALL_TO_ARMS_AV2         = 490,    // Call to Arms: Alterac Valley 2          - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_AB2         = 491,    // Call to Arms: Arathi Basin 2            - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_EY2         = 492,    // Call to Arms: Eye of the Storm 2        - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_IC2         = 493,    // Call to Arms: Isle of Conquest 2        - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_SM2         = 494,    // Call to Arms: Silvershard Mines 2       - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_SA2         = 495,    // Call to Arms: Strand of the Ancients 2  - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_TOK2        = 496,    // Call to Arms: Temple of Kotmogu 2       - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_BG2         = 497,    // Call to Arms: The Battle for Gilneas 2  - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_TP2         = 498,    // Call to Arms: Twin Peaks 2              - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_WS2         = 499,    // Call to Arms: Warsong Gulch 2           - unused/duplicated.
+    // HOLIDAY_CALL_TO_ARMS_DG2         = 516,    // Call to Arms: Deepwind Gorge 2          - unused/duplicated.
 };
 
 // values based at QuestInfo.dbc

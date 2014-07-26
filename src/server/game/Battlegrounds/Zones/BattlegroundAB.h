@@ -180,8 +180,10 @@ enum BG_AB_Objectives
 
 #define BG_AB_NotABBGWeekendHonorTicks      260
 #define BG_AB_ABBGWeekendHonorTicks         160
-#define BG_AB_NotABBGWeekendReputationTicks 160
-#define BG_AB_ABBGWeekendReputationTicks    120
+
+// Patch 4.2.0 (2011-06-28): Reputation is now earned for every 260 resources (250 during Call to Arms).
+#define BG_AB_NotABBGWeekendReputationTicks 260
+#define BG_AB_ABBGWeekendReputationTicks    250
 
 #define AB_EVENT_START_BATTLE               9158 // Achievement: Let's Get This Done
 
@@ -242,6 +244,7 @@ struct BattlegroundABScore : public BattlegroundScore
 {
     BattlegroundABScore(): BasesAssaulted(0), BasesDefended(0) { }
     ~BattlegroundABScore() { }
+
     uint32 BasesAssaulted;
     uint32 BasesDefended;
 };
