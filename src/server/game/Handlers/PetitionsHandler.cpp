@@ -104,7 +104,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
     guidNPC[2] = recvData.ReadBit();
     guidNPC[5] = recvData.ReadBit();
     guidNPC[7] = recvData.ReadBit();
-    guidNPC[2] = recvData.ReadBit();
+    guidNPC[3] = recvData.ReadBit();
     nameLen = recvData.ReadBits(7);
     guidNPC[0] = recvData.ReadBit();
     
