@@ -635,10 +635,10 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 break;
             case BATTLEGROUND_DG:
                 data->WriteBits(0x00000002, 22);
-                scores << uint32(((BattlegroundDGScore*)score)->MinesAssaulted);      // bases assaulted
-                scores << uint32(((BattlegroundDGScore*)score)->MinesDefended);       // bases defended
                 scores << uint32(((BattlegroundDGScore*)score)->CartCaptures);         // gold cart captures
-                scores << uint32(((BattlegroundDGScore*)score)->CartReturns);         // gold cart returns
+                scores << uint32(((BattlegroundDGScore*)score)->CartReturns);          // gold cart returns
+                scores << uint32(((BattlegroundDGScore*)score)->MinesAssaulted);       // bases assaulted
+                scores << uint32(((BattlegroundDGScore*)score)->MinesDefended);        // bases defended
                 break;
             case BATTLEGROUND_SM:
                 data->WriteBits(0x00000002, 22);

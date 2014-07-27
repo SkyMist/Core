@@ -936,7 +936,7 @@ void Battleground::EndBattleground(uint32 winner)
                 player->SetRatedBGsPlayedWeek(player->GetGUID(), player->GetRatedBGsPlayedWeek(player->GetGUID()) + 1);
 
                 player->SetRatedBGRating(player->GetGUID(), player->GetRatedBGRating(player->GetGUID()) + 20); // 20 points on win.
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 400); // 400 CP on win.
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 400 * 100); // 400 CP on win.
             }
         }
         else
@@ -951,7 +951,7 @@ void Battleground::EndBattleground(uint32 winner)
 
                 if (player->GetRatedBGRating(player->GetGUID()) > 1500)
                     player->SetRatedBGRating(player->GetGUID(), player->GetRatedBGRating(player->GetGUID()) - 20); // -20 points on lose if rating  > 1500.
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 200); // 200 CP on loss.
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, 200 * 100); // 200 CP on loss.
             }
         }
 

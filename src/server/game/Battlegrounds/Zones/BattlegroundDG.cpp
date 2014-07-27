@@ -335,10 +335,6 @@ void BattlegroundDG::FillInitialWorldStates(ByteBuffer& data)
 
 void BattlegroundDG::_SendNodeUpdate(uint8 node)
 {
-    // Don't update the nodes if their state has not changed.
-    if (m_prevNodes[node] == m_Nodes[node])
-        return;
-
     // Node occupied states update
     for (uint8 node = BG_DG_NODE_C_MINE; node < BG_DG_DYNAMIC_NODES_COUNT; ++node)
     {
@@ -351,22 +347,19 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                     case BG_DG_NODE_C_MINE:
                         UpdateWorldState(CENTER_MINE_CONFLICT_ALLIANCE,     1);
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(CENTER_MINE_H_A_CONTROLLED,        0);
                         UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     1);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(GOBLIN_MINE_H_A_CONTROLLED,        0);
                         UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   1);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
-                        UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
-                        UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(PANDAREN_MINE_H_A_CONTROLLED,      0);
                         UpdateWorldState(7935,   0);
                         break;
 
@@ -381,22 +374,19 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                     case BG_DG_NODE_C_MINE:
                         UpdateWorldState(CENTER_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        1);
-                        UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(CENTER_MINE_H_A_CONTROLLED,        0);
                         UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        1);
-                        UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(GOBLIN_MINE_H_A_CONTROLLED,        0);
                         UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      1);
-                        UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
-                        UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(PANDAREN_MINE_H_A_CONTROLLED,      0);
                         UpdateWorldState(7935,   0);
                         break;
 
@@ -411,22 +401,19 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                     case BG_DG_NODE_C_MINE:
                         UpdateWorldState(CENTER_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   1);
+                        UpdateWorldState(CENTER_MINE_H_A_CONTROLLED,        2);
                         UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      0);
-                        UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   1);
+                        UpdateWorldState(GOBLIN_MINE_H_A_CONTROLLED,        2);
                         UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
-                        UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    0);
-                        UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 1);
+                        UpdateWorldState(PANDAREN_MINE_H_A_CONTROLLED,      2);
                         UpdateWorldState(7935,   0);
                         break;
 
@@ -441,22 +428,19 @@ void BattlegroundDG::_SendNodeUpdate(uint8 node)
                     case BG_DG_NODE_C_MINE:
                         UpdateWorldState(CENTER_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(CENTER_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(CENTER_MINE_HORDE_CONTROLLED,      1);
-                        UpdateWorldState(CENTER_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(CENTER_MINE_H_A_CONTROLLED,        1);
                         UpdateWorldState(7939,   0);
                         break;
                     case BG_DG_NODE_G_MINE:
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_ALLIANCE,     0);
                         UpdateWorldState(GOBLIN_MINE_CONFLICT_HORDE,        0);
-                        UpdateWorldState(GOBLIN_MINE_HORDE_CONTROLLED,      1);
-                        UpdateWorldState(GOBLIN_MINE_ALLIANCE_CONTROLLED,   0);
+                        UpdateWorldState(GOBLIN_MINE_H_A_CONTROLLED,        1);
                         UpdateWorldState(7938,   0);
                         break;
                     case BG_DG_NODE_P_MINE:
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_ALLIANCE,   0);
                         UpdateWorldState(PANDAREN_MINE_CONFLICT_HORDE,      0);
-                        UpdateWorldState(PANDAREN_MINE_HORDE_CONTROLLED,    1);
-                        UpdateWorldState(PANDAREN_MINE_ALLIANCE_CONTROLLED, 0);
+                        UpdateWorldState(PANDAREN_MINE_H_A_CONTROLLED,      1);
                         UpdateWorldState(7935,   0);
                         break;
 
@@ -521,11 +505,11 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
     }
 
     uint8 node = BG_DG_NODE_C_MINE;
-    GameObject* obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + BG_DG_OBJECT_AURA_CONTESTED]);
+    GameObject* obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + ((m_Nodes[node] == BG_DG_NODE_TYPE_OCCUPIED) ? (5 + GetTeamIndexByTeamId(source->GetTeam())) : 7)]);
     while ((node < BG_DG_DYNAMIC_NODES_COUNT) && ((!obj) || (!source->IsWithinDistInMap(obj, 10))))
     {
         ++node;
-        obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + BG_DG_OBJECT_AURA_CONTESTED]);
+        obj = GetBgMap()->GetGameObject(BgObjects[node * 8 + ((m_Nodes[node] == BG_DG_NODE_TYPE_OCCUPIED) ? (5 + GetTeamIndexByTeamId(source->GetTeam())) : 7)]);
     }
 
     if (node == BG_DG_DYNAMIC_NODES_COUNT)
@@ -537,7 +521,7 @@ void BattlegroundDG::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
     BattlegroundTeamId teamIndex = GetTeamIndexByTeamId(source->GetTeam());
 
     // Check if player really could use this banner, not cheated
-    if (!(m_Nodes[node] == BG_DG_NODE_TYPE_NEUTRAL || teamIndex == m_Nodes[node] % 2))
+    if (!(m_Nodes[node] == 0 || teamIndex == m_Nodes[node] % 2))
     {
         TC_LOG_ERROR("bg.battleground", "BattlegroundDG: You cannot use this banner!");
         return;
@@ -1002,6 +986,8 @@ void BattlegroundDG::EventPlayerFailedCart(Player* player)
 
                 cartPullerA = NULL;
                 cartHdropped = true;
+
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_ALLY, BG_DG_CART_STATE_DROPPED);
             }
             break;
         case BG_TEAM_HORDE:    // The Alliance cart is dropped by the Horde player.
@@ -1020,6 +1006,8 @@ void BattlegroundDG::EventPlayerFailedCart(Player* player)
 
                 cartPullerH = NULL;
                 cartAdropped = true;
+
+                UpdateWorldState(BG_DG_SHOW_BASES_GOLD_HORDE, BG_DG_CART_STATE_DROPPED);
             }
             break;
 
@@ -1039,7 +1027,7 @@ void BattlegroundDG::EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeOb
                 if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_H))
                 {
                     player->RemoveAurasDueToSpell(DG_CART_BUFF_HORDE);
-                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10);
+                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10 * 100);
 
                     if (BgCreatures[BG_DG_CREATURE_CART_H])
                         DelCreature(BG_DG_CREATURE_CART_H);
@@ -1070,7 +1058,7 @@ void BattlegroundDG::EventPlayerCapturedCart(Player* player, uint32 BG_DG_NodeOb
                 if (Creature* Cart = GetBGCreature(BG_DG_CREATURE_CART_A))
                 {
                     player->RemoveAurasDueToSpell(DG_CART_BUFF_ALLIANCE);
-                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10);
+                    player->ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, 10 * 100);
 
                     if (BgCreatures[BG_DG_CREATURE_CART_A])
                         DelCreature(BG_DG_CREATURE_CART_A);
