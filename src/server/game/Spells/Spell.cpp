@@ -5650,7 +5650,7 @@ void Spell::TakePower()
         return;
     }
 
-    // In Spell::HandleHolyPower
+    // In Spell::HandleHolyPower - Custom MOP script.
     if (powerType == POWER_HOLY_POWER)
     {
         if (m_spellInfo->Id == 85222)

@@ -12878,7 +12878,7 @@ int32 Unit::GetCreatePowers(Powers power) const
 // Spell power system !Note: Many spells/auras do not have a SpellPower entry, so it returns NULL.
 SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) const
 {
-    // Store the powers in aq vector we then erase.
+    // Store the powers in a vector we then erase.
     std::vector<SpellPowerEntry const*> defaultSpellPower;
 
     // Find the power entries we need first.

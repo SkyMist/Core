@@ -184,7 +184,6 @@ enum Opcodes
    CMSG_DUEL_RESPONSE                                       = 0x07FC, // 5.4.7 18019
    CMSG_EJECT_PASSENGER                                     = 0x0,
    CMSG_EMOTE                                               = 0x12C5, // 5.4.7 18019
-   CMSG_ENABLETAXI                                          = 0x0,
    CMSG_ENABLE_NAGLE                                        = 0x0,
    CMSG_EQUIPMENT_SET_DELETE                                = 0x01DC, // 5.4.7 18019
    CMSG_EQUIPMENT_SET_SAVE                                  = 0x115C, // 5.4.7 18019
@@ -373,7 +372,6 @@ enum Opcodes
    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK    = 0x0,
    CMSG_MOVE_SET_COLLISION_HEIGHT_ACK                       = 0x0031, // 5.4.7 18019 NYI
    CMSG_MOVE_SET_RELATIVE_POSITION                          = 0x0,
-   CMSG_MOVE_SET_VEHICLE_REC_ID_ACK                         = 0x0,
    CMSG_MOVE_SPLINE_DONE                                    = 0x0833, // 5.4.7 18019
    CMSG_MOVE_TIME_SKIPPED                                   = 0x0152, // 5.4.7 18019 NYI
    CMSG_MOVE_TOGGLE_COLLISION_ACK                           = 0x0,
@@ -524,7 +522,6 @@ enum Opcodes
    CMSG_SET_TRADE_CURRENCY                                  = 0x0,
    CMSG_SET_TRADE_GOLD                                      = 0x0C93, // 5.4.7 18019
    CMSG_SET_TRADE_ITEM                                      = 0x0C8A, // 5.4.7 18019 NYI
-   CMSG_SET_VEHICLE_REC_ID_ACK                              = 0x0,
    CMSG_SET_WATCHED_FACTION                                 = 0x12D5, // 5.4.7 18019
    CMSG_SHOP_CATEGORY                                       = 0x0,
    CMSG_SHOWING_CLOAK                                       = 0x1276, // 5.4.7 18019
@@ -545,11 +542,8 @@ enum Opcodes
    CMSG_SWAP_INV_ITEM                                       = 0x1403, // 5.4.7 18019
    CMSG_SWAP_ITEM                                           = 0x150A, // 5.4.7 18019
    CMSG_SYNC_DANCE                                          = 0x0,
-   CMSG_TAXICLEARALLNODES                                   = 0x0,
-   CMSG_TAXIENABLEALLNODES                                  = 0x0,
    CMSG_TAXINODE_STATUS_QUERY                               = 0x01FF, // 5.4.7 18019
    CMSG_TAXIQUERYAVAILABLENODES                             = 0x0656, // 5.4.7 18019
-   CMSG_TAXISHOWNODES                                       = 0x0,
    CMSG_TELEPORT_TO_UNIT                                    = 0x0,
    CMSG_TEXT_EMOTE                                          = 0x037D, // 5.4.7 18019
    CMSG_TIME_ADJUSTMENT_RESPONSE                            = 0x0,
@@ -863,7 +857,6 @@ enum Opcodes
    SMSG_FORCED_DEATH_UPDATE                                 = 0x0,
    SMSG_FORCE_DISPLAY_UPDATE                                = 0x0,
    SMSG_FORCE_SEND_QUEUED_PACKETS                           = 0x01B9, // 5.4.7 18019 NYI
-   SMSG_FORCE_SET_VEHICLE_REC_ID                            = 0x0,
    SMSG_FORGE_MASTER_SET                                    = 0x0,
    SMSG_FRIEND_STATUS                                       = 0x0707, // 5.4.7 18019
    SMSG_GAMEOBJECT_CUSTOM_ANIM                              = 0x0462, // 5.4.7 18019
@@ -1080,7 +1073,6 @@ enum Opcodes
    SMSG_MOVE_SET_SWIM_BACK_SPEED                            = 0x015D, // 5.4.7 18019
    SMSG_MOVE_SET_SWIM_SPEED                                 = 0x01D4, // 5.4.7 18019
    SMSG_MOVE_SET_TURN_RATE                                  = 0x1DB0, // 5.4.7 18019
-   SMSG_MOVE_SET_VEHICLE_REC_ID                             = 0x0,
    SMSG_MOVE_SET_WALK_IN_AIR                                = 0x0,
    SMSG_MOVE_SET_WALK_SPEED                                 = 0x00A0, // 5.4.7 18019
    SMSG_MOVE_TELEPORT                                       = 0x00D5, // 5.4.7 18019
@@ -1104,7 +1096,7 @@ enum Opcodes
    SMSG_MOVE_WATER_WALK                                     = 0x1290, // 5.4.7 18019
    SMSG_MULTIPLE_PACKETS                                    = 0x0,
    SMSG_NAME_QUERY_RESPONSE                                 = 0x1E5B, // 5.4.7 18019
-   SMSG_NEW_TAXI_PATH                                       = 0x0,
+   SMSG_NEW_TAXI_PATH                                       = 0x13A3, // 5.4.7 18019
    SMSG_NEW_WORLD                                           = 0x05AB, // 5.4.7 18019
    SMSG_NEW_WORLD_ABORT                                     = 0x0,
    SMSG_NEXT_MAIL_TIME_RESPONSE                             = 0x1C20, // 5.4.7 18019

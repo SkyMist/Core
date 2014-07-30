@@ -191,13 +191,13 @@ void WorldSession::SendTaxiMenu(Creature* unit)
         data << uint32(curloc);
 
 	    data.WriteByteSeq(taxiGuid[4]);
-	    data.WriteByteSeq(taxiGuid[1]);
-	    data.WriteByteSeq(taxiGuid[7]);
-	    data.WriteByteSeq(taxiGuid[3]);
-	    data.WriteByteSeq(taxiGuid[0]);
 	    data.WriteByteSeq(taxiGuid[2]);
-	    data.WriteByteSeq(taxiGuid[5]);
+	    data.WriteByteSeq(taxiGuid[3]);
 	    data.WriteByteSeq(taxiGuid[6]);
+	    data.WriteByteSeq(taxiGuid[7]);
+	    data.WriteByteSeq(taxiGuid[0]);
+	    data.WriteByteSeq(taxiGuid[1]);
+	    data.WriteByteSeq(taxiGuid[5]);
     }
 
     if (dataBuffer.size())

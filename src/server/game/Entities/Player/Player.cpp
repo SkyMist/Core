@@ -2625,27 +2625,31 @@ void Player::Regenerate(Powers power)
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
             else
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
+
+            break;
         }
-        break;
         case POWER_RAGE:                                                // Regenerate Rage
         {
             float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
             if (!IsInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
                 addvalue += -25 * RageDecreaseRate / meleeHaste;                // Remove 2.5 rage by tick (= 2 seconds => 1.25 rage/sec).
+
+            break;
         }
-        break;
         case POWER_FOCUS:
         {
             float FocusRegenRate = sWorld->getRate(RATE_POWER_FOCUS);
             addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * FocusRegenRate;
+
+            break;
         }
-        break;
         case POWER_ENERGY:                                              // Regenerate energy (Rogue, Feral Druid, Monk)
         {
             float EnergyRegenRate = sWorld->getRate(RATE_POWER_ENERGY);
             addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste)) * EnergyRegenRate;
+
+            break;
         }
-        break;
         // POWER_LIGHT_FORCE - No need, deprecated.
         // POWER_RUNES - No need.
         case POWER_RUNIC_POWER:                                         // Regenerate Runic Power
@@ -2653,8 +2657,9 @@ void Player::Regenerate(Powers power)
             float RunicPowerDecreaseRate = sWorld->getRate(RATE_POWER_RUNICPOWER_LOSS);
             if (!IsInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
                 addvalue += -30 * RunicPowerDecreaseRate;                       // Remove 3 RunicPower by tick.
+
+            break;
         }
-        break;
         case POWER_SOUL_SHARDS:                                         // Regenerate Soul Shards
         {
             if (!IsInCombat()) // If not in combat, gain 1 shard every 20s.
@@ -2676,8 +2681,9 @@ void Player::Regenerate(Powers power)
                 else if (GetPower(POWER_SOUL_SHARDS) == 400)
                     SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 4);
             }
+
+            break;
         }
-        break;
         // POWER_ECLIPSE, POWER_ALTERNATE_POWER - No need.
         // POWER_DARK_FORCE - No need, deprecated.
         case POWER_HOLY_POWER:                                          // Regenerate Holy Power
@@ -2685,8 +2691,9 @@ void Player::Regenerate(Powers power)
         {
             if (!IsInCombat())
                 addvalue += -1.0f;                                              // Remove 1 each 10 secs.
+
+            break;
         }
-        break;
         // POWER_SHADOW_ORBS - No need.
         case POWER_BURNING_EMBERS:                                      // Regenerate Burning Embers
         {
@@ -2749,9 +2756,11 @@ void Player::Regenerate(Powers power)
                     if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
                 }
             }
+
+            break;
         }
-        break;
         case POWER_DEMONIC_FURY:                                            // Regenerate Demonic Fury - Note: Cannot go under 200.
+        {
             if (!IsInCombat() && GetShapeshiftForm() != FORM_METAMORPHOSIS)
             {
                 if (GetPower(POWER_DEMONIC_FURY) > 200)
@@ -2783,7 +2792,10 @@ void Player::Regenerate(Powers power)
                 if (HasAura(SPELL_DEMONIC_FURY_HALF))    RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_HALF);
                 if (HasAura(SPELL_DEMONIC_FURY_MAXIMUM)) RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_MAXIMUM);
             }
+
             break;
+        }
+
         // POWER_ARCANE_CHARGES - Not needed.
         case POWER_HEALTH:
             return;
