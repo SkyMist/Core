@@ -307,7 +307,7 @@ enum ReputationSource
 };
 
 #define ACTION_BUTTON_ACTION(X) (uint32(X) & 0x00FFFFFF)
-#define ACTION_BUTTON_TYPE(X)   ((uint32(X) & 0xFF000000) >> 24)
+#define ACTION_BUTTON_TYPE(X)   ((uint32(X) & 0x3F000000) >> 24)
 #define MAX_ACTION_BUTTON_ACTION_VALUE (0x00FFFFFF+1)
 
 struct ActionButton

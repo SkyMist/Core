@@ -1087,8 +1087,8 @@ enum CommandStates
 };
 
 #define UNIT_ACTION_BUTTON_ACTION(X) (uint32(X) & 0x00FFFFFF)
-#define UNIT_ACTION_BUTTON_TYPE(X)   ((uint32(X) & 0xFF000000) >> 24)
-#define MAKE_UNIT_ACTION_BUTTON(A, T) (uint32(A) | (uint32(T) << 24))
+#define UNIT_ACTION_BUTTON_TYPE(X)   ((uint32(X) & 0x3F000000) >> 24)
+#define MAKE_UNIT_ACTION_BUTTON(A, T) (uint32(A) | (uint32(T & 0x3F) << 24))
 
 struct UnitActionBarEntry
 {
@@ -1117,7 +1117,7 @@ struct UnitActionBarEntry
 
     void SetAction(uint32 action)
     {
-        packedData = (packedData & 0xFF000000) | UNIT_ACTION_BUTTON_ACTION(action);
+        packedData = (packedData & 0x3F000000) | UNIT_ACTION_BUTTON_ACTION(action);
     }
 };
 

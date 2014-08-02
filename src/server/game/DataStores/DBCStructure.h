@@ -1623,7 +1623,7 @@ struct OverrideSpellDataEntry
     //float    unk3                                        // 9
     //uint32   unk0;                                       // 10 Unk - something related to removal, not a spell. Just entry 201 - has 69310.
     //uint32   unk1;                                       // 11 Unk - fixed numbers - 0, 1, 3, 4, 7, 8, 15. Maybe some kind of flags.
-    //uint32   unk2;                                       // 12 Unk - fixed big numbers.
+    uint32     skin;                                       // 12 UI Skin.
 };
 
 struct PvPDifficultyEntry
@@ -2325,7 +2325,7 @@ struct VehicleEntry
 {
     uint32  m_ID;                                           // 0
     uint32  m_flags;                                        // 1
-    //uint32    unk_1                                       // 2 - Pandaria.
+    // uint32  m_flagsB                                     // 2 - Pandaria.
     float   m_turnSpeed;                                    // 3
     float   m_pitchSpeed;                                   // 4
     float   m_pitchMin;                                     // 5
@@ -2353,8 +2353,8 @@ struct VehicleEntry
     float   m_msslTrgtImpactTexRadius;                      // 36
     uint32  m_uiSeatIndicatorType;                          // 37
     uint32  m_powerType;                                    // 38 new in 3.1
-    //float    unk_2                                        // 39 new in 3.1
-    //float    unk_3                                        // 40 new in 3.1
+    // uint32  m_powerType2;                                // 39 new in 3.1
+    // uint32  m_powerType3;                                // 40 new in 3.1
 };
 
 struct VehicleSeatEntry
@@ -2404,9 +2404,27 @@ struct VehicleSeatEntry
     uint32  m_enterUISoundID;                               // 42
     uint32  m_exitUISoundID;                                // 43
     uint32  m_flagsB;                                       // 44
-                                                            // 45-56 added in 3.1, floats mostly
-                                                            // 57-64 int stuff unk.
-    int32   m_uiSkin;                                       // 65
+    // float m_cameraEnteringDelay;                         // 45
+    // float m_cameraEnteringDuration;                      // 46
+    // float m_cameraExitingDelay;                          // 47
+    // float m_cameraExitingDuration;                       // 48
+    // float m_cameraOffsetX;                               // 49
+    // float m_cameraOffsetY;                               // 50
+    // float m_cameraOffsetZ;                               // 51
+    // float m_cameraPosChaseRate;                          // 52
+    // float m_cameraFacingChaseRate;                       // 53
+    // float m_cameraEnteringZoom;                          // 54
+    // float m_cameraSeatZoomMin;                           // 55
+    // float m_cameraSeatZoomMax;                           // 56
+    // uint32 m_enterAnimKitID;                             // 57
+    // uint32 m_rideAnimKitID;                              // 58
+    // uint32 m_exitAnimKitID;                              // 59
+    // uint32 m_vehicleEnterAnimKitID;                      // 60
+    // uint32 m_vehicleRideAnimKitID;                       // 61
+    // uint32 m_vehicleExitAnimKitID;                       // 62
+    // uint32 m_cameraModeID;                               // 63
+    // uint32 m_flagsC;                                     // 64
+    int32   m_uiSkinFileDataID;                             // 65
 
     bool CanEnterOrExit() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_ENTER_OR_EXIT; }
     bool CanSwitchFromSeat() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_SWITCH; }

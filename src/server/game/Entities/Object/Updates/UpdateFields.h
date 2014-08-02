@@ -189,14 +189,13 @@ enum EPlayerFields
     PLAYER_FIELD_COINAGE                                     = UNIT_END + 0x3DD, // Size: 2, Flags: UF_FLAG_PRIVATE
     PLAYER_FIELD_XP                                          = UNIT_END + 0x3DF, // Size: 1, Flags: UF_FLAG_PRIVATE
     PLAYER_FIELD_NEXT_LEVEL_XP                               = UNIT_END + 0x3E0, // Size: 1, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL                                       = UNIT_END + 0x3E1, // Size: 448, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_LINEIDS                               = UNIT_END + 0x03E1, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_STEPS                                 = UNIT_END + 0x0421, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_RANKS                                 = UNIT_END + 0x0461, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_STARTING_RANKS                        = UNIT_END + 0x04A1, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_MAX_RANKS                             = UNIT_END + 0x04E1, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_MODIFIERS                             = UNIT_END + 0x0521, // Size: 64, Flags: UF_FLAG_PRIVATE
-    PLAYER_FIELD_SKILL_TALENTS                               = UNIT_END + 0x056F, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_LINEIDS                               = UNIT_END + 0x3E1, // Size: 64, Flags: UF_FLAG_PRIVATE // PLAYER_FIELD_SKILL = UNIT_END + 0x3E1, // Size: 448, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_STEPS                                 = UNIT_END + 0x421, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_RANKS                                 = UNIT_END + 0x461, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_STARTING_RANKS                        = UNIT_END + 0x4A1, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_MAX_RANKS                             = UNIT_END + 0x4E1, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_MODIFIERS                             = UNIT_END + 0x521, // Size: 64, Flags: UF_FLAG_PRIVATE
+    PLAYER_FIELD_SKILL_TALENTS                               = UNIT_END + 0x56F, // Size: 64, Flags: UF_FLAG_PRIVATE // End of PLAYER_FIELD_SKILL.
     PLAYER_FIELD_CHARACTER_POINTS                            = UNIT_END + 0x5A1, // Size: 1, Flags: UF_FLAG_PRIVATE
     PLAYER_FIELD_MAX_TALENT_TIERS                            = UNIT_END + 0x5A2, // Size: 1, Flags: UF_FLAG_PRIVATE
     PLAYER_FIELD_TRACK_CREATURE_MASK                         = UNIT_END + 0x5A3, // Size: 1, Flags: UF_FLAG_PRIVATE

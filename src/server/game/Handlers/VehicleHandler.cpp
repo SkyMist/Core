@@ -184,7 +184,7 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket& data)
     data.ReadByteSeq(guid[1]);
     data.ReadByteSeq(guid[3]);
 
-    if (Player* player = ObjectAccessor::FindPlayer(guid))
+    if (Player* player = ObjectAccessor::FindPlayer(uint64(guid)))
     {
         if (!player->GetVehicleKit())
             return;
@@ -194,6 +194,16 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket& data)
             return;
 
         _player->EnterVehicle(player);
+    }
+
+    else if (Unit* unit = ObjectAccessor::GetUnit(*_player, uint64(guid)))
+    {
+        if (!unit->GetVehicleKit())
+            return;
+        if (!unit->IsWithinDistInMap(_player, INTERACTION_DISTANCE))
+            return;
+
+        _player->EnterVehicle(unit);
     }
 }
 
