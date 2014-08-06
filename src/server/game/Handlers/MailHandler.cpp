@@ -37,8 +37,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
     ObjectGuid mailbox;
     uint64 money, COD;
     std::string receiverName, subject, body;
-    uint32 bodyLength, subjectLength, receiverLength, StationeryID;
-    uint32 unk1;
+    uint32 bodyLength, subjectLength, receiverLength, StationeryID, unk1;
 
     recvData >> unk1 >> COD >> StationeryID >> money;
 
@@ -455,8 +454,8 @@ void WorldSession::HandleMailReturnToSender(WorldPacket& recvData)
     recvData.ReadByteSeq(mailbox[5]);
     recvData.ReadByteSeq(mailbox[4]);
 
-    if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
-        return;
+    // if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
+    //     return;
 
     Player* player = _player;
     Mail* m = player->GetMail(mailId);
@@ -715,10 +714,10 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         player->_LoadMail();
 
     uint32 MAX_MAIL_MESSAGES = 50;
+    ByteBuffer byteData;
 
     size_t MailCountSent = 0;
     WorldPacket Packet(SMSG_MAIL_LIST_RESULT);
-    ByteBuffer ByteData;
 
     std::size_t TotalMailCount = GetPlayer()->GetMailSize();
     PlayerMails::iterator itr = player->GetMailBegin();
@@ -779,80 +778,83 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
         for (uint8 i = 0; i < item_count; ++i)
             Packet.WriteBit(0);                                     // unk bit, related to a string O_O
 
-        // Item Part Is Here, skipping it for now
+        // Item Part Is Here
         for (uint8 i = 0; i < item_count; ++i)
         {
             Item* item = player->GetMItem((*itr)->items[i].item_guid);
 
+            // string from the bit.
+            byteData.WriteString("");
             // stack count
-            ByteData << uint32((item ? item->GetCount() : 0));
+            byteData << uint32((item ? item->GetCount() : 0));
             // entry
-            ByteData << uint32((item ? item->GetEntry() : 0));
+            byteData << uint32((item ? item->GetEntry() : 0));
             // can be negative
-            ByteData << int32((item ? item->GetItemRandomPropertyId() : 0));
+            byteData << int32((item ? item->GetItemRandomPropertyId() : 0));
             // unk
-            ByteData << uint32((item ? item->GetItemSuffixFactor() : 0));
+            byteData << uint32((item ? item->GetItemSuffixFactor() : 0));
             // item index (0-6?)
-            ByteData << uint8(i);
+            byteData << uint8(i);
 
             for (uint8 j = 0; j < MAX_INSPECTED_ENCHANTMENT_SLOT; ++j)
             {
-                ByteData << uint32((item ? item->GetEnchantmentDuration((EnchantmentSlot)j) : 0));
-                ByteData << uint32((item ? item->GetEnchantmentCharges((EnchantmentSlot)j) : 0));
-                ByteData << uint32((item ? item->GetEnchantmentId((EnchantmentSlot)j) : 0));
+                byteData << uint32((item ? item->GetEnchantmentDuration((EnchantmentSlot)j) : 0));
+                byteData << uint32((item ? item->GetEnchantmentCharges((EnchantmentSlot)j) : 0));
+                byteData << uint32((item ? item->GetEnchantmentId((EnchantmentSlot)j) : 0));
             }
 
             // item guid low?
-            ByteData << uint32((item ? item->GetGUIDLow() : 0));
+            byteData << uint32((item ? item->GetGUIDLow() : 0));
             // max durability
-            ByteData << uint32(0);                                              // Don't put max durability here, breaks sending or receiving mail as causes the 0 durability bug.
+            byteData << uint32(0);                                              // Don't put max durability here, breaks sending or receiving mail as causes the 0 durability bug.
             // charges
-            ByteData << uint32((item ? item->GetSpellCharges() : 0));
+            byteData << uint32((item ? item->GetSpellCharges() : 0));
             // this string is new to mop, for now empty
-            ByteData << uint32(0);                                              // after it put the string
+            byteData << uint32(0);                                              // string length, after it put the string
             // durability
-            ByteData << uint32((item ? item->GetUInt32Value(ITEM_FIELD_DURABILITY) : 0));
+            byteData << uint32((item ? item->GetUInt32Value(ITEM_FIELD_DURABILITY) : 0));
         }
 
-        ByteData << uint64((*itr)->money);                          // Gold
+        byteData << uint64((*itr)->money);                          // Gold
 
         if (HasDword18)
-            ByteData << uint32(0);                                  // dword18
+            byteData << uint32(0);                                  // dword18
 
-        ByteData << uint32((*itr)->mailTemplateId);
+        byteData << uint32((*itr)->mailTemplateId);
 
         if (HasPlayerSender)
         {
-            ByteData.WriteByteSeq(PlayerSender[7]);
-            ByteData.WriteByteSeq(PlayerSender[0]);
-            ByteData.WriteByteSeq(PlayerSender[6]);
-            ByteData.WriteByteSeq(PlayerSender[5]);
-            ByteData.WriteByteSeq(PlayerSender[4]);
-            ByteData.WriteByteSeq(PlayerSender[2]);
-            ByteData.WriteByteSeq(PlayerSender[3]);
-            ByteData.WriteByteSeq(PlayerSender[1]);
+            byteData.WriteByteSeq(PlayerSender[7]);
+            byteData.WriteByteSeq(PlayerSender[0]);
+            byteData.WriteByteSeq(PlayerSender[6]);
+            byteData.WriteByteSeq(PlayerSender[5]);
+            byteData.WriteByteSeq(PlayerSender[4]);
+            byteData.WriteByteSeq(PlayerSender[2]);
+            byteData.WriteByteSeq(PlayerSender[3]);
+            byteData.WriteByteSeq(PlayerSender[1]);
         }
 
-        ByteData << uint8((*itr)->messageType);
-        ByteData.WriteString((*itr)->subject);
-        ByteData << uint32(0);                                      // PackageID, from Package.dbc or smth like that
-        ByteData << uint32((*itr)->stationery);
-        ByteData << uint32((*itr)->checked);
+        byteData << uint8((*itr)->messageType);
+        byteData.WriteString((*itr)->subject);
+        byteData << uint32(0);                                      // PackageID, from Package.dbc or smth like that
+        byteData << uint32((*itr)->stationery);
+        byteData << uint32((*itr)->checked);
 
         if (HasDword1C)
-            ByteData << uint32(0);                                  // dword1C
+            byteData << uint32(0);                                  // dword1C
 
-        ByteData << float(float((*itr)->expire_time - time(NULL)) / DAY);
-        ByteData.WriteString((*itr)->body);
+        byteData << float(float((*itr)->expire_time - time(NULL)) / DAY);
+        byteData.WriteString((*itr)->body);
+        byteData << uint32(0);                                      // Unk
 
         if (HasNonPlayerSender)
-            ByteData << SenderEntry;
+            byteData << SenderEntry;
 
-        ByteData << uint64((*itr++)->COD);
+        byteData << uint64((*itr++)->COD);
     }
 
-    Packet.FlushBits();
-    Packet.append(ByteData);
+	Packet.FlushBits();
+	Packet.append(byteData);
 
     Packet << uint32(TotalMailCount);
 

@@ -2319,31 +2319,34 @@ uint8 Player::GetChatTag() const
     return tag;
 }
 
-void Player::PlayHoverAnimation() // Player Hover animation.
+void Player::PlayHoverAnimation(bool enable) // Player Hover animation.
 {
     ObjectGuid guid = GetGUID();
 
     WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 8 + 1);
+
     data.WriteBit(guid[4]);
+
+    data.WriteBit(enable);
+
     data.WriteBit(guid[0]);
     data.WriteBit(guid[1]);
-    data.WriteBit(guid[3]);
-    data.WriteBit(0); // unk bit.
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[5]);
     data.WriteBit(guid[2]);
+    data.WriteBit(guid[7]);
     data.WriteBit(guid[6]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[5]);
 
     data.FlushBits();
 
+    data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[0]);
 
     GetSession()->SendPacket(&data);
 }
@@ -3306,6 +3309,40 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     data.WriteByteSeq(guid[0]);
 
     data << uint8(recruitAFriend ? 1 : 0);                  // does the GivenXP include a RaF bonus?
+
+    GetSession()->SendPacket(&data);
+}
+
+void Player::SendXPGainAborted()  // Related to EVENT_TRIAL_CAP_REACHED_LEVEL. Dismisses the XP bar and player cannot gain anymore XP. Also a player selection option from the npc, allows making twinks.
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_XP_GAIN_ABORTED, 8 + 1 + 4 + 4 + 4);
+
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[6]);
+
+    data.FlushBits();
+
+    data << uint32(0); // unk1
+    data << uint32(0); // unk2
+
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[4]);
+
+    data << uint32(0); // unk3
 
     GetSession()->SendPacket(&data);
 }
@@ -22939,7 +22976,6 @@ void Player::SendRemoveControlBar()
     data << uint16(0);              //unk word, new to mop
 
     GetSession()->SendPacket(&data);
-    GetSession()->SendPacket(&data);
 }
 
 bool Player::IsAffectedBySpellmod(SpellInfo const* spellInfo, SpellModifier* mod, Spell* spell)
@@ -27913,33 +27949,90 @@ void Player::BuildEnchantmentsInfoData(WorldPacket* data)
 void Player::SendEquipmentSetList()
 {
     uint32 count = 0;
-    WorldPacket data(SMSG_EQUIPMENT_SET_LIST, 4);
-    size_t count_pos = data.wpos();
-    data << uint32(count);                                  // count placeholder
 
     for (EquipmentSets::iterator itr = m_EquipmentSets.begin(); itr != m_EquipmentSets.end(); itr++)
     {
         if (itr->second.state == EQUIPMENT_SET_DELETED)
             continue;
 
-        data.appendPackGUID(itr->second.Guid);
-        data << uint32(itr->first);
-        data << itr->second.Name;
-        data << itr->second.IconName;
-
-        for (uint32 i = 0; i < EQUIPMENT_SLOT_END; i++)
-        {
-            // ignored slots stored in IgnoreMask, client wants "1" as raw GUID, so no HIGHGUID_ITEM
-            if (itr->second.IgnoreMask & (1 << i))
-                data.appendPackGUID(uint64(1));
-            else
-                data.appendPackGUID(MAKE_NEW_GUID(itr->second.Items[i], 0, HIGHGUID_ITEM));
-        }
-
         ++count;                                            // client have limit but it checked at loading and set
     }
 
-    data.put<uint32>(count_pos, count);
+    WorldPacket data(SMSG_EQUIPMENT_SET_LIST);
+
+    data.WriteBits(count, 19);                                  // count
+
+    for (EquipmentSets::iterator itr = m_EquipmentSets.begin(); itr != m_EquipmentSets.end(); ++itr)
+    {
+        if (itr->second.state == EQUIPMENT_SET_DELETED)
+            continue;
+
+        ObjectGuid setGuid = itr->second.Guid;
+
+        for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
+        {
+            // ignored slots stored in IgnoreMask, client wants "1" as raw GUID, so no HIGHGUID_ITEM
+            ObjectGuid itemGuid = (itr->second.IgnoreMask & (1 << i)) ? 0 : MAKE_NEW_GUID(itr->second.Items[i], 0, HIGHGUID_ITEM);
+
+            data.WriteBit(itemGuid[0]);
+            data.WriteBit(itemGuid[2]);
+            data.WriteBit(itemGuid[3]);
+            data.WriteBit(itemGuid[1]);
+            data.WriteBit(itemGuid[6]);
+            data.WriteBit(itemGuid[7]);
+            data.WriteBit(itemGuid[4]);
+            data.WriteBit(itemGuid[5]);
+        }
+
+        data.WriteBit(setGuid[0]);
+        data.WriteBit(setGuid[6]);
+        data.WriteBit(setGuid[3]);
+        data.WriteBits(itr->second.Name.size(), 8);
+        data.WriteBit(setGuid[1]);
+        data.WriteBit(setGuid[7]);
+        data.WriteBit(setGuid[4]);
+        data.WriteBits(itr->second.IconName.size(), 9);
+        data.WriteBit(setGuid[5]);
+        data.WriteBit(setGuid[2]);
+    }
+
+    data.FlushBits();
+
+    for (EquipmentSets::iterator itr = m_EquipmentSets.begin(); itr != m_EquipmentSets.end(); ++itr)
+    {
+        if (itr->second.state == EQUIPMENT_SET_DELETED)
+            continue;
+
+        ObjectGuid setGuid = itr->second.Guid;
+
+        for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
+        {
+            // ignored slots stored in IgnoreMask, client wants "1" as raw GUID, so no HIGHGUID_ITEM
+            ObjectGuid itemGuid = (itr->second.IgnoreMask & (1 << i)) ? 0 : MAKE_NEW_GUID(itr->second.Items[i], 0, HIGHGUID_ITEM);
+
+            data.WriteByteSeq(itemGuid[2]);
+            data.WriteByteSeq(itemGuid[1]);
+            data.WriteByteSeq(itemGuid[0]);
+            data.WriteByteSeq(itemGuid[5]);
+            data.WriteByteSeq(itemGuid[3]);
+            data.WriteByteSeq(itemGuid[4]);
+            data.WriteByteSeq(itemGuid[6]);
+            data.WriteByteSeq(itemGuid[7]);
+        }
+
+        data.WriteByteSeq(setGuid[6]);
+        data << itr->second.Name.c_str();
+        data.WriteByteSeq(setGuid[5]);
+        data.WriteByteSeq(setGuid[2]);
+        data << itr->second.IconName.c_str();
+        data.WriteByteSeq(setGuid[3]);
+        data.WriteByteSeq(setGuid[4]);
+        data << uint32(itr->first);
+        data.WriteByteSeq(setGuid[0]);
+        data.WriteByteSeq(setGuid[7]);
+        data.WriteByteSeq(setGuid[1]);
+    }
+
     GetSession()->SendPacket(&data);
 }
 
@@ -29390,4 +29483,11 @@ uint32 Player::GetRatedBGsWonWeek(uint64 guid)
     }
     else
         return 0;
+}
+
+void Player::SendFailedPlayerCondition(uint32 id)
+{
+    WorldPacket data(SMSG_FAILED_PLAYER_CONDITION, 4);
+    data << uint32(id); // PlayerCondition.dbc id
+    GetSession()->SendPacket(&data);
 }

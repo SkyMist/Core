@@ -88,6 +88,25 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
     if (count != 2)
         return;
 
+    /*
+    var hasSlot = new bool[count];
+    var hasBag = new bool[count];
+    
+    for (var i = 0; i < count; ++i)
+    {
+        hasSlot[i] = !packet.ReadBit();
+        hasBag[i] = !packet.ReadBit();
+    }
+    
+    for (var i = 0; i < count; ++i)
+    {
+        if (hasBag[i])
+            packet.ReadByte("Bag", i);
+        if (hasSlot[i])
+            packet.ReadByte("Slot", i);
+    }
+    */
+
     recvData.rfinish(); // Don't read second item changes, not needed.
     // Second enum of bags and slots (second item?).
     // if (movedToEmpty)
@@ -1582,10 +1601,29 @@ void WorldSession::HandleItemRefundInfoRequest(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_ITEM_REFUND_INFO");
 
-    uint64 guid;
-    recvData >> guid;                                      // item guid
+    ObjectGuid guid; // Item Guid.
 
-    Item* item = _player->GetItemByGuid(guid);
+    guid[0] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+
+    recvData.FlushBits();
+
+    recvData.ReadByteSeq(guid[5]);
+    recvData.ReadByteSeq(guid[3]);
+    recvData.ReadByteSeq(guid[7]);
+    recvData.ReadByteSeq(guid[2]);
+    recvData.ReadByteSeq(guid[1]);
+    recvData.ReadByteSeq(guid[6]);
+    recvData.ReadByteSeq(guid[0]);
+    recvData.ReadByteSeq(guid[4]);
+
+    Item* item = _player->GetItemByGuid(uint64(guid));
     if (!item)
     {
         TC_LOG_DEBUG("network", "Item refund: item not found!");

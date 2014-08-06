@@ -483,6 +483,7 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
             data.WriteBit(0);
             break;
         case MSEOneBit:
+        case MSEHasUnkTime:
             data.WriteBit(1);
             break;
         case MSEExtraElement:
@@ -491,6 +492,13 @@ void Unit::WriteMovementInfo(WorldPacket& data, Movement::ExtraMovementStatusEle
         case MSEUintCount:
             data << uint32(0);
             break;
+        case MSEUnkTime:
+            // data << uint32(0); Don't write anything here as we put the inversed bool false.
+            break;
+        case MSEMountScale:
+            data << float(1.0f);
+            break;
+
         default:
             ASSERT(Movement::PrintInvalidSequenceElement(element, __FUNCTION__));
             break;
@@ -645,25 +653,28 @@ void Unit::SendMovementSetSplineAnim(Movement::AnimType anim)
 void Unit::SendSetPlayHoverAnim(bool enable)
 {
     ObjectGuid guid = GetGUID();
-    WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 10);
+    WorldPacket data(SMSG_SET_PLAY_HOVER_ANIM, 8 + 1);
+
     data.WriteBit(guid[4]);
+
+    data.WriteBit(enable);
+
     data.WriteBit(guid[0]);
     data.WriteBit(guid[1]);
-    data.WriteBit(enable);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[5]);
     data.WriteBit(guid[2]);
+    data.WriteBit(guid[7]);
     data.WriteBit(guid[6]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[5]);
 
+    data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[0]);
 
     SendMessageToSet(&data, true);
 }
@@ -847,6 +858,8 @@ bool Unit::SetHover(bool enable, bool packetOnly /*= false*/)
                 UpdateHeight(newZ);
             }
         }
+
+        SendSetPlayHoverAnim(enable);
     }
 
     if (enable)

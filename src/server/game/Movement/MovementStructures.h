@@ -101,6 +101,7 @@ enum MovementStatusElements
     MSEUintCount,
     MSEHasUnkTime,
     MSEUnkTime,
+    MSEMountScale,
 
     // Special
     MSEZeroBit,         // writes bit value 1 or skips read bit

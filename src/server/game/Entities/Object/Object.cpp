@@ -1090,31 +1090,26 @@ void WorldObject::SendObjectDeSpawnAnim(uint64 guid)
     WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 4 + 9 + 1);
 
     ObjectGuid Guid = guid;
-    bool HasAnim = false;
 
+    data.WriteBit(Guid[1]);
+    data.WriteBit(Guid[2]);
     data.WriteBit(Guid[0]);
     data.WriteBit(Guid[6]);
-    data.WriteBit(!HasAnim);
     data.WriteBit(Guid[4]);
-    data.WriteBit(Guid[1]);
-    data.WriteBit(Guid[7]);
     data.WriteBit(Guid[5]);
-    data.WriteBit(0);               // unk atm
     data.WriteBit(Guid[3]);
-    data.WriteBit(Guid[2]);
+    data.WriteBit(Guid[7]);
+
     data.FlushBits();
-    data.WriteByteSeq(Guid[1]);
 
-    if (HasAnim)
-        data << uint32(0);          // anim here
-
-    data.WriteByteSeq(Guid[6]);
-    data.WriteByteSeq(Guid[7]);
-    data.WriteByteSeq(Guid[5]);
-    data.WriteByteSeq(Guid[4]);
-    data.WriteByteSeq(Guid[3]);
     data.WriteByteSeq(Guid[0]);
+    data.WriteByteSeq(Guid[5]);
+    data.WriteByteSeq(Guid[1]);
+    data.WriteByteSeq(Guid[7]);
     data.WriteByteSeq(Guid[2]);
+    data.WriteByteSeq(Guid[3]);
+    data.WriteByteSeq(Guid[4]);
+    data.WriteByteSeq(Guid[6]);
 
     SendMessageToSet(&data, true);
 }

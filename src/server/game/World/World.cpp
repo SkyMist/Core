@@ -3511,3 +3511,25 @@ void World::ReloadRBAC()
         if (WorldSession* session = itr->second)
             session->InvalidateRBACData();
 }
+
+// Sends a world defense message to all players not in an instance
+void World::SendDefenseMessage(uint32 zoneId, int32 textId)
+{
+    for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+    {
+        if (WorldSession* session = itr->second)
+        {
+            if (session && session->GetPlayer() && session->GetPlayer()->IsInWorld() && !session->GetPlayer()->GetMap()->Instanceable())
+            {
+                std::string message = session->GetTrinityString(textId);
+                uint32 messageLength = message.length() + 1;
+
+                WorldPacket data(SMSG_DEFENSE_MESSAGE);
+                data.WriteBits(messageLength, 12);
+                data << uint32(zoneId);
+                data << message;
+                session->SendPacket(&data);
+            }
+        }
+    }
+}

@@ -30,14 +30,14 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
 
     recvPacket >> channelId;
     passLength = recvPacket.ReadBits(7);
-    uint8 unknown1 = recvPacket.ReadBit();                  // unknown bit
+    uint8 joinByZoneUpdate = recvPacket.ReadBit();                  // unknown bit
     channelLength = recvPacket.ReadBits(7);
     uint8 unknown2 = recvPacket.ReadBit();                  // unknown bit
     password = recvPacket.ReadString(passLength);
     channelName = recvPacket.ReadString(channelLength);
 
-    TC_LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL %s Channel: %u, unk1: %u, unk2: %u, channel: %s, password: %s",
-        GetPlayerInfo().c_str(), channelId, unknown1, unknown2, channelName.c_str(), password.c_str());
+    TC_LOG_DEBUG("chat.system", "CMSG_JOIN_CHANNEL %s Channel: %u, joinByZoneUpdate: %u, unk2: %u, channel: %s, password: %s",
+        GetPlayerInfo().c_str(), channelId, joinByZoneUpdate, unknown2, channelName.c_str(), password.c_str());
 
     if (channelId)
     {
@@ -87,20 +87,10 @@ void WorldSession::HandleLeaveChannel(WorldPacket& recvPacket)
 
 void WorldSession::HandleChannelList(WorldPacket& recvPacket)
 {
-    uint32 channelId;
-
-    recvPacket >> channelId; // flags
-    recvPacket.ReadBit();
-
     uint32 length = recvPacket.ReadBits(7);
-
-    recvPacket.ReadBits(7);
-    recvPacket.ReadBit();
-
     std::string channelName = recvPacket.ReadString(length);
 
-    TC_LOG_DEBUG("chat.system", "%s %s Channel: %s",
-        recvPacket.GetOpcode() == CMSG_CHANNEL_DISPLAY_LIST ? "CMSG_CHANNEL_DISPLAY_LIST" : "CMSG_CHANNEL_LIST",
+    TC_LOG_DEBUG("chat.system", "%s %s Channel: %s", "CMSG_CHANNEL_LIST",
         GetPlayerInfo().c_str(), channelName.c_str());
 
     if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetPlayer()->GetTeam()))
@@ -322,12 +312,6 @@ void WorldSession::HandleChannelAnnouncements(WorldPacket& recvPacket)
     if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetPlayer()->GetTeam()))
         if (Channel* channel = cMgr->GetChannel(channelName, GetPlayer()))
             channel->Announce(GetPlayer());
-}
-
-void WorldSession::HandleChannelDisplayListQuery(WorldPacket &recvPacket)
-{
-    // this should be OK because the 2 function _were_ the same
-    HandleChannelList(recvPacket);
 }
 
 void WorldSession::HandleGetChannelMemberCount(WorldPacket &recvPacket)

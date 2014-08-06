@@ -453,6 +453,7 @@ void Player::SendMovementSetCollisionHeight(float height)
     CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNT_DISPLAY_ID));
 
     bool hasMountDisplayInfoScale = mountDisplayInfo ? true : false;
+    float mountDisplayScale = hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f;
 
     ObjectGuid guid = GetGUID();
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HEIGHT, 2 + 8 + 4 + 4);
@@ -480,8 +481,8 @@ void Player::SendMovementSetCollisionHeight(float height)
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
 
-    data << float(hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f);
     data << float(height);
+    data << float(mountDisplayScale);
     data << uint32(m_movementCounter++);  // Packet counter - old sWorld->GetGameTime().
 
     data.WriteByteSeq(guid[3]);

@@ -91,23 +91,23 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     data->WriteBit(hasVehicle);
     data->WriteBit(0);                                              //has unk dword1044
     data->WriteBit(hasGobjectRotation);
-    data->WriteBit(0);                                              //unk byte0
+    data->WriteBit(0);                                              //unk byte0 FAKE
     data->WriteBit(hasLiving);
-    data->WriteBit(0);                                              //has Unk Large Block
-    data->WriteBit(0);                                              //unk byte2
+    data->WriteBit(0);                                              //has Has Scene Object Data (Large Block)
+    data->WriteBit(0);                                              //unk byte2 FAKE
     data->WriteBit(0);                                              //has Unk Large Block2
     data->WriteBit(self);                                           
     data->WriteBit(0);                                              //unk byte681
-    data->WriteBit(0);                                              //unk byte1
+    data->WriteBit(0);                                              //unk byte1 FAKE
     data->WriteBit(hasGoTransportPos);
     data->WriteBit(hasTransport);
     data->WriteBit(hasAnimKits);
     data->WriteBit(hasStationaryPosition);
     data->WriteBit(hasTarget);
-    data->WriteBit(0);                                              //unk byte3
+    data->WriteBit(0);                                              //unk byte3 FAKE
     data->WriteBits(GOTransportFrames.size(), 22);
     data->WriteBit(0);                                              //has Unk string
-    data->WriteBit(0);                                              //hasTaxiPathNodeRecord?
+    data->WriteBit(0);                                              //hasTaxiPathNodeRecord
 
     // if (hasTaxiPathNodeRecord)
     //     data->WriteBits(MOtransportFrames.size(), 22);
@@ -206,6 +206,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             Movement::PacketBuilder::WriteCreateBits(*self->movespline, *data);
     }
 
+    // Large block 2 here.
+
     if (hasTarget)
     {
         ObjectGuid victimGuid = ToUnit()->GetVictim()->GetGUID();   // checked in BuildCreateUpdateBlockForPlayer
@@ -226,6 +228,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(1);                                  //hasAnimKit1, negated
     }
 
+    // has Unk string length read here (packet.ReadBits(7)).
+
     data->FlushBits();
 
     if (hasGOTransportFrames)
@@ -233,6 +237,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         for (std::vector<uint32>::iterator itr = GOTransportFrames.begin(); itr != GOTransportFrames.end(); ++itr)
             *data << uint32(*itr);
     }
+
+    // Large block 2 here.
 
     if (hasLiving)
     {
@@ -255,10 +261,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         if (hasSpline)
             Movement::PacketBuilder::WriteCreateData(*self->movespline, *data);
 
-        *data << float(self->GetPositionZMinusOffset());
-
         //here is a skipped loop, controlled by the writebits(19) in the bit section
 
+        *data << float(self->GetPositionZMinusOffset());
         *data << float(self->GetPositionY());
         *data << float(self->GetSpeed(MOVE_FLIGHT));
         data->WriteByteSeq(guid[6]);
@@ -398,6 +403,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             *data << uint32(getMSTime());
     }
 
+    // uint32 reading of has Unk dword676
+
+    // string reading of hasUnkString
+
     if (hasGobjectRotation)
         *data << uint64(ToGameObject()->GetRotation());
 
@@ -409,6 +418,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         else
             *data << float(ToUnit()->GetOrientation());
     }
+
+    // uint32 reading of Unk dword1044
 
     if (hasAnimKits)
     {

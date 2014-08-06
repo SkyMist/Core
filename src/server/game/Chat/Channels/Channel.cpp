@@ -555,6 +555,7 @@ void Channel::List(Player const* player)
         {
             data << uint64(i->first);
             data << uint8(i->second.flags);             // flags seems to be changed...
+            data << uint32(realmID);                    // realm id.
             ++count;
         }
     }
@@ -769,12 +770,14 @@ void Channel::MakeJoined(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_JOINED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeLeft(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_LEFT_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeYouJoined(WorldPacket* data)
@@ -811,12 +814,14 @@ void Channel::MakePasswordChanged(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_PASSWORD_CHANGED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeOwnerChanged(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_OWNER_CHANGED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakePlayerNotFound(WorldPacket* data, std::string const& name)
@@ -853,12 +858,14 @@ void Channel::MakeAnnouncementsOn(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_ANNOUNCEMENTS_ON_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeAnnouncementsOff(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_ANNOUNCEMENTS_OFF_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeMuted(WorldPacket* data)
@@ -902,12 +909,14 @@ void Channel::MakePlayerAlreadyMember(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_ALREADY_MEMBER_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeInvite(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_INVITE_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeInviteWrongFaction(WorldPacket* data)
@@ -961,12 +970,14 @@ void Channel::MakeVoiceOn(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_VOICE_ON_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::MakeVoiceOff(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_VOICE_OFF_NOTICE);
     *data << uint64(guid);
+    *data << uint32(realmID);
 }
 
 void Channel::JoinNotify(uint64 guid)

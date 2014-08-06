@@ -785,6 +785,8 @@ class World
         void UpdatePhaseDefinitions();
         void ReloadRBAC();
 
+        void SendDefenseMessage(uint32 zoneId, int32 textId);
+
     protected:
         void _UpdateGameTime();
         // callback for UpdateRealmCharacters

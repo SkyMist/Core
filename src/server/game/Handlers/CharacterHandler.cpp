@@ -1785,26 +1785,22 @@ void WorldSession::HandleEquipmentSetSave(WorldPacket& recvData)
 
     if (setNameLen)
         name = recvData.ReadString(setNameLen);
-    else
-        return;
 
     recvData.ReadByteSeq(setGuid[4]);
 
     if (iconNameLen)
         iconName = recvData.ReadString(iconNameLen);
-    else
-        return;
 
     for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
     {
-        recvData.ReadByteSeq(itemGuid[i][2]);
-        recvData.ReadByteSeq(itemGuid[i][0]);
-        recvData.ReadByteSeq(itemGuid[i][3]);
-        recvData.ReadByteSeq(itemGuid[i][6]);
         recvData.ReadByteSeq(itemGuid[i][1]);
         recvData.ReadByteSeq(itemGuid[i][5]);
-        recvData.ReadByteSeq(itemGuid[i][7]);
+        recvData.ReadByteSeq(itemGuid[i][6]);
+        recvData.ReadByteSeq(itemGuid[i][2]);
         recvData.ReadByteSeq(itemGuid[i][4]);
+        recvData.ReadByteSeq(itemGuid[i][7]);
+        recvData.ReadByteSeq(itemGuid[i][3]);
+        recvData.ReadByteSeq(itemGuid[i][0]);
 
         // equipment manager sends "1" (as raw GUID) for slots set to "ignore" (don't touch slot at equip set)
         if (itemGuid[i] == 1)
@@ -1914,8 +1910,8 @@ void WorldSession::HandleEquipmentSetUse(WorldPacket& recvData)
         recvData.ReadByteSeq(itemGuid[i][7]);
         recvData.ReadByteSeq(itemGuid[i][3]);
         recvData.ReadByteSeq(itemGuid[i][0]);
-        recvData.ReadByteSeq(itemGuid[i][1]);
         recvData.ReadByteSeq(itemGuid[i][4]);
+        recvData.ReadByteSeq(itemGuid[i][1]);
         recvData.ReadByteSeq(itemGuid[i][2]);
         recvData.ReadByteSeq(itemGuid[i][5]);
         recvData.ReadByteSeq(itemGuid[i][6]);

@@ -1750,27 +1750,37 @@ void GameObject::CastSpell(Unit* target, uint32 spellId)
 
 void GameObject::SendCustomAnim(uint32 anim)
 {
-    WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 8+4);
-    ObjectGuid GOGuid = GetGUID();
-    data.WriteBit(0);               // atm unk
-    data.WriteBit(GOGuid[4]);
-    data.WriteBit(GOGuid[2]);
-    data.WriteBit(GOGuid[7]);
-    data.WriteBit(GOGuid[6]);
-    data.WriteBit(GOGuid[3]);
-    data.WriteBit(GOGuid[1]);
-    data.WriteBit(GOGuid[0]);
-    data.WriteBit(GOGuid[5]);
+    WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 4 + 9 + 1);
+
+    bool HasAnim = anim ? true : false;
+    ObjectGuid Guid = GetGUID();
+
+    data.WriteBit(Guid[0]);
+    data.WriteBit(Guid[6]);
+    data.WriteBit(!HasAnim);
+    data.WriteBit(Guid[4]);
+    data.WriteBit(Guid[1]);
+    data.WriteBit(Guid[7]);
+    data.WriteBit(Guid[5]);
+    data.WriteBit(0);               // unk atm
+    data.WriteBit(Guid[3]);
+    data.WriteBit(Guid[2]);
+
     data.FlushBits();
-    data.WriteByteSeq(GOGuid[6]);
-    data.WriteByteSeq(GOGuid[1]);
-    data.WriteByteSeq(GOGuid[7]);
-    data.WriteByteSeq(GOGuid[2]);
-    data << uint32(anim);
-    data.WriteByteSeq(GOGuid[5]);
-    data.WriteByteSeq(GOGuid[0]);
-    data.WriteByteSeq(GOGuid[4]);
-    data.WriteByteSeq(GOGuid[3]);
+
+    data.WriteByteSeq(Guid[1]);
+
+    if (HasAnim)
+        data << uint32(anim);       // anim here
+
+    data.WriteByteSeq(Guid[6]);
+    data.WriteByteSeq(Guid[7]);
+    data.WriteByteSeq(Guid[5]);
+    data.WriteByteSeq(Guid[4]);
+    data.WriteByteSeq(Guid[3]);
+    data.WriteByteSeq(Guid[0]);
+    data.WriteByteSeq(Guid[2]);
+
     SendMessageToSet(&data, true);
 }
 

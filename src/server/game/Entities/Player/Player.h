@@ -1279,7 +1279,7 @@ class Player : public Unit, public GridObject<Player>
             SetFloatValue(UNIT_FIELD_COMBAT_REACH, scale * DEFAULT_COMBAT_REACH);
         }
 
-        void PlayHoverAnimation();
+        void PlayHoverAnimation(bool enable);
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
 
@@ -1332,6 +1332,7 @@ class Player : public Unit, public GridObject<Player>
         void SetGMVisible(bool on);
         void SetPvPDeath(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_PVP_DEATH; else m_ExtraFlags &= ~PLAYER_EXTRA_PVP_DEATH; }
 
+        void SendXPGainAborted();
         void GiveXP(uint32 xp, Unit* victim, float group_rate = 1.0f);
         void GiveGatheringXP();
         void GiveLevel(uint8 level);
@@ -2595,6 +2596,8 @@ class Player : public Unit, public GridObject<Player>
 
         std::string GetMapAreaAndZoneString();
         std::string GetCoordsMapAreaAndZoneString();
+
+        void SendFailedPlayerCondition(uint32 id);
 
         /*********************************************************/
         /***             VOID STORAGE SYSTEM                   ***/

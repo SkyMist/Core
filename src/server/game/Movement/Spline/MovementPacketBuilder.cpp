@@ -54,10 +54,10 @@ namespace Movement
         ObjectGuid guid = unit->GetGUID();
         ObjectGuid transport = unit->GetTransGUID();
 
-        data << float(0.f); // Most likely transport Y
+        data << float(transport? unit->GetTransOffsetY() : 0.0f); // Most likely transport Y
         data << uint32(splineId);
-        data << float(0.f); // Most likely transport Z
-        data << float(0.f); // Most likely transport X
+        data << float(transport? unit->GetTransOffsetZ() : 0.0f); // Most likely transport Z
+        data << float(transport? unit->GetTransOffsetX() : 0.0f); // Most likely transport X
         data << float(pos.x);
         data << float(pos.y);
         data << float(pos.z);
@@ -162,21 +162,21 @@ namespace Movement
         ObjectGuid transport = unit->GetTransGUID();
         MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
-        data << float(0.f); // Most likely transport Y
+        data << float(transport? unit->GetTransOffsetY() : 0.0f); // Transport Y
         data << uint32(moveSpline.GetId());
-        data << float(0.f); // Most likely transport Z
-        data << float(0.f); // Most likely transport X
+        data << float(transport? unit->GetTransOffsetZ() : 0.0f); // Transport Z
+        data << float(transport? unit->GetTransOffsetX() : 0.0f); // Transport X
         data << moveSpline.spline.getPoint(moveSpline.spline.first());
 
         data.WriteBit(guid[3]);
         data.WriteBit(!moveSpline.splineflags.raw());
         data.WriteBit(guid[6]);
 
-        data.WriteBit(1);
-        data.WriteBit(1);
+        data.WriteBit(1); // bit45 inversed.
+        data.WriteBit(1); // bit6D inversed.
 
         data.WriteBits(type, 3);
-        data.WriteBit(1);
+        data.WriteBit(1); // bit78 inversed.
         data.WriteBit(guid[2]);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[5]);
@@ -194,12 +194,12 @@ namespace Movement
             data.WriteBit(targetGuid[1]);
         }
 
-        data.WriteBit(1);
+        data.WriteBit(1); // bit58, inversed.
         data.WriteBit(guid[4]);
 
         int32 compressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? 0 : moveSpline.spline.getPointCount() - 3;
         data.WriteBits(compressedSplineCount, 22); // WP count
-        data.WriteBit(1);
+        data.WriteBit(1); // bit4C, inversed.
         data.WriteBit(0);
 
         data.WriteBit(guid[0]);
@@ -212,15 +212,25 @@ namespace Movement
         data.WriteBit(transport[4]);
         data.WriteBit(transport[7]);
 
-        data.WriteBit(1);
-        data.WriteBit(1); // Parabolic speed // esi+4Ch
-        data.WriteBit(1);
+        data.WriteBit(1); // bit6C, inversed.
+        data.WriteBit(1); // Parabolic speed // esi+4Ch, bit54, inversed.
+        data.WriteBit(1); // bit48, inversed.
 
         uint32 uncompressedSplineCount = moveSpline.splineflags & MoveSplineFlag::UncompressedPath ? moveSpline.splineflags.cyclic ? moveSpline.spline.getPointCount() - 2 : moveSpline.spline.getPointCount() - 3 : 1;
         data.WriteBits(uncompressedSplineCount,  20);
 
         data.WriteBit(guid[1]);
-        data.WriteBit(0); // Send no block
+        data.WriteBit(0); // Send no block - block related to movement counters and speeds (Movement Counter - bitB0 here).
+
+        /* block
+        var bits8C = 0u; // Counter number.
+        if (bitB0) // Movement counter.
+        {
+            bits8C = packet.ReadBits(22);
+            packet.ReadBits("bits9C", 2);
+        }
+        */
+
         data.WriteBit(0);
         data.WriteBit(!moveSpline.Duration());
 
@@ -249,6 +259,26 @@ namespace Movement
         data.WriteByteSeq(transport[5]);
         data.WriteByteSeq(transport[1]);
 
+        /*
+        if (bitB0) // If Movement Counter read the speeds etc.
+        {
+            packet.ReadSingle("FloatA0");
+
+            for (var i = 0; i < bits8C; ++i)
+            {
+                packet.ReadInt16("short74+2", i);
+                packet.ReadInt16("short74+0", i);
+            }
+
+            packet.ReadSingle("FloatA8");
+            packet.ReadInt16("IntA4");
+            packet.ReadInt16("IntAC");
+        }
+
+            if (bit6D)
+                packet.ReadByte("Byte6D");
+        */
+
         if (type == MonsterMoveFacingAngle)
             data << float(moveSpline.facing.angle);
 
@@ -257,12 +287,28 @@ namespace Movement
 
         data.WriteByteSeq(guid[7]);
 
+        /*
+            if (bit78)
+                packet.ReadByte("Byte78");
+
+            if (bit4C)
+                packet.ReadInt32("Int4C");
+
+            if (bit45)
+                packet.ReadByte("Byte45");
+        */
+
         if (compressedSplineCount)
             WriteLinearPath(moveSpline.spline, data);
 
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[1]);
         data.WriteByteSeq(guid[2]);
+
+        /*
+            if (bit48)
+                packet.ReadInt32("Int48");
+        */
 
         if (moveSpline.splineflags & MoveSplineFlag::UncompressedPath)
         {
@@ -282,29 +328,45 @@ namespace Movement
         if (type == MonsterMoveFacingPoint)
             data << moveSpline.facing.f.x << moveSpline.facing.f.y << moveSpline.facing.f.z;
 
+        /*
+            if (bit54)
+                packet.ReadSingle("Float54"); Parabolic speed?
+
+            if (bit6C)
+                packet.ReadByte("Byte6C");
+        */
+
         data.WriteByteSeq(guid[0]);
+
+        /*
+            if (bit58)
+                packet.ReadInt32("Int58");
+        */
+
         data.WriteByteSeq(guid[4]);
     }
 
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)
     {
-        if (!data.WriteBit(!moveSpline.Finalized()))
+        if (moveSpline.Finalized())
             return;
+
+        bool hasSpline = !moveSpline.Finalized();
+        data.WriteBit(hasSpline);
 
         data.WriteBit(moveSpline.splineflags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation));
         data.WriteBits(moveSpline.spline.mode(), 2);
         data.WriteBits(moveSpline.getPath().size(), 20);
         data.WriteBits(moveSpline.splineflags.raw(), 25);
-        data.WriteBit((moveSpline.splineflags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration());
+        data.WriteBit((moveSpline.splineflags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration()); // hasSplineStartTime
 
         bool hasUnkPart = false;
-
         data.WriteBit(hasUnkPart); // NYI Block
 
         if (hasUnkPart)
         {
-            data.WriteBits(0, 2);                            // unk word300
             data.WriteBits(0, 21);                           // unk dword284
+            data.WriteBits(0, 2);                            // unk word300
         }
     }
 
@@ -315,7 +377,7 @@ namespace Movement
             MoveSplineFlag const& splineFlags = moveSpline.splineflags;
             MonsterMoveType type = GetMonsterMoveType(moveSpline);
 
-            data << float(1.f);                             // splineInfo.duration_mod_next; added in 3.1
+            data << float(1.0f);                             // splineInfo.duration_mod_next; added in 3.1
 
             uint32 nodes = moveSpline.getPath().size();
             for (uint32 i = 0; i < nodes; ++i)
@@ -326,14 +388,14 @@ namespace Movement
             }
 
             data << uint8(type);
-            data << float(1.f);                             // splineInfo.duration_mod; added in 3.1
+            data << float(1.0f);                             // splineInfo.duration_mod; added in 3.1
 
             // NYI block here
 
             if (type == MonsterMoveFacingPoint)
                 data << moveSpline.facing.f.x << moveSpline.facing.f.y << moveSpline.facing.f.z;
 
-            if ((splineFlags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration())
+            if (splineFlags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation))
                 data << moveSpline.vertical_acceleration;   // added in 3.1
 
             if (type == MonsterMoveFacingAngle)
@@ -341,7 +403,7 @@ namespace Movement
 
             data << moveSpline.Duration();
 
-            if (splineFlags & (MoveSplineFlag::Parabolic | MoveSplineFlag::Animation))
+            if ((splineFlags & MoveSplineFlag::Parabolic) && moveSpline.effect_start_time < moveSpline.Duration())
                 data << moveSpline.effect_start_time;       // added in 3.1
 
             data << moveSpline.timePassed();

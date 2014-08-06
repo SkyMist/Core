@@ -15605,7 +15605,69 @@ void Unit::SetAuraStack(uint32 spellId, Unit* target, uint32 stack)
         aura->SetStackAmount(stack);
 }
 
-void Unit::SendPlaySpellVisualKit(uint32 id, uint32 unkParam)
+void Unit::SendPlaySpellVisual(Unit* target, uint32 id, bool impact)
+{
+    float posX = target->GetPositionX();
+    float posY = target->GetPositionY();
+    float posZ = target->GetPositionZ();
+    float posO = target->GetOrientation();
+
+    ObjectGuid casterGuid = GetGUID();
+    ObjectGuid targetGuid = target->GetGUID();
+
+    WorldPacket data(SMSG_PLAY_SPELL_VISUAL, 4 + 4 + 4 + 1 + 8);
+
+    data << uint32(id);       // SpellVisualKit.dbc index
+    data << float(posZ);
+    data << uint16(0);        // unk1
+    data << float(posY);
+    data << uint16(0);        // unk2
+    data << float(posX);
+    data << float(posO);
+
+    data.WriteBit(casterGuid[7]);
+    data.WriteBit(casterGuid[3]);
+    data.WriteBit(targetGuid[6]);
+    data.WriteBit(targetGuid[2]);
+    data.WriteBit(casterGuid[2]);
+    data.WriteBit(casterGuid[5]);
+    data.WriteBit(casterGuid[1]);
+    data.WriteBit(casterGuid[4]);
+    data.WriteBit(targetGuid[1]);
+    data.WriteBit(targetGuid[4]);
+    data.WriteBit(casterGuid[6]);
+    data.WriteBit(targetGuid[7]);
+    data.WriteBit(casterGuid[0]);
+
+    data.WriteBit(impact); // Impact (1/0).
+
+    data.WriteBit(targetGuid[3]);
+    data.WriteBit(targetGuid[5]);
+    data.WriteBit(targetGuid[0]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(targetGuid[6]);
+    data.WriteByteSeq(casterGuid[2]);
+    data.WriteByteSeq(targetGuid[4]);
+    data.WriteByteSeq(targetGuid[2]);
+    data.WriteByteSeq(targetGuid[3]);
+    data.WriteByteSeq(targetGuid[1]);
+    data.WriteByteSeq(targetGuid[0]);
+    data.WriteByteSeq(targetGuid[7]);
+    data.WriteByteSeq(casterGuid[6]);
+    data.WriteByteSeq(casterGuid[7]);
+    data.WriteByteSeq(casterGuid[0]);
+    data.WriteByteSeq(targetGuid[5]);
+    data.WriteByteSeq(casterGuid[3]);
+    data.WriteByteSeq(casterGuid[5]);
+    data.WriteByteSeq(casterGuid[1]);
+    data.WriteByteSeq(casterGuid[4]);
+
+    SendMessageToSet(&data, true);
+}
+
+void Unit::SendPlaySpellVisualKit(uint32 id, uint32 impact)
 {
     ObjectGuid guid = GetGUID();
 
@@ -15622,7 +15684,7 @@ void Unit::SendPlaySpellVisualKit(uint32 id, uint32 unkParam)
 
     data << uint32(0);
     data << uint32(id);       // SpellVisualKit.dbc index
-    data << uint32(unkParam); // Impact (1/0).
+    data << uint32(impact);   // Impact (1/0).
 
     data.FlushBits();
 
