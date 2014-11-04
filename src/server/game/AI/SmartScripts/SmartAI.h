@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,6 +22,7 @@
 #include "Creature.h"
 #include "CreatureAI.h"
 #include "Unit.h"
+#include "ConditionMgr.h"
 #include "Spell.h"
 
 #include "SmartScript.h"
@@ -41,13 +40,13 @@ enum SmartEscortState
 enum SmartEscortVars
 {
     SMART_ESCORT_MAX_PLAYER_DIST        = 50,
-    SMART_MAX_AID_DIST    = SMART_ESCORT_MAX_PLAYER_DIST / 2
+    SMART_MAX_AID_DIST    = SMART_ESCORT_MAX_PLAYER_DIST / 2,
 };
 
 class SmartAI : public CreatureAI
 {
     public:
-        ~SmartAI(){ }
+        ~SmartAI(){};
         explicit SmartAI(Creature* c);
 
         // Start moving to the desired MovePoint
@@ -73,7 +72,10 @@ class SmartAI : public CreatureAI
         // Called when creature is spawned or respawned
         void JustRespawned();
 
-        // Called at reaching home after evade, InitializeAI(), EnterEvadeMode() for resetting variables
+        // Called after InitializeAI(), EnterEvadeMode() for resetting variables
+        void Reset();
+
+        // Called at reaching home after evade
         void JustReachedHome();
 
         // Called for reaction at enter to combat if not in combat yet (enemy can be NULL)
@@ -110,7 +112,7 @@ class SmartAI : public CreatureAI
         void HealReceived(Unit* doneBy, uint32& addhealth);
 
         // Called at World update tick
-        void UpdateAI(uint32 diff);
+        void UpdateAI(const uint32 diff);
 
         // Called at text emote receive from player
         void ReceiveEmote(Player* player, uint32 textEmote);
@@ -146,10 +148,10 @@ class SmartAI : public CreatureAI
         bool CanAIAttack(const Unit* who) const;
 
         // Used in scripts to share variables
-        void DoAction(int32 param = 0);
+        void DoAction(const int32 param = 0);
 
         // Used in scripts to share variables
-        uint32 GetData(uint32 id = 0) const;
+        uint32 GetData(uint32 id = 0);
 
         // Used in scripts to share variables
         void SetData(uint32 id, uint32 value);
@@ -158,7 +160,7 @@ class SmartAI : public CreatureAI
         void SetGUID(uint64 guid, int32 id = 0);
 
         // Used in scripts to share variables
-        uint64 GetGUID(int32 id = 0) const;
+        uint64 GetGUID(int32 id = 0);
 
         //core related
         static int Permissible(const Creature*);
@@ -196,7 +198,7 @@ class SmartAI : public CreatureAI
 
         void RemoveAuras();
 
-        void OnSpellClick(Unit* clicker, bool& result);
+        void OnSpellClick(Unit* clicker);
 
     private:
         uint32 mFollowCreditType;
@@ -231,14 +233,13 @@ class SmartAI : public CreatureAI
         uint32 mDespawnState;
         void UpdateDespawn(const uint32 diff);
         uint32 mEscortInvokerCheckTimer;
-        bool mJustReset;
 };
 
 class SmartGameObjectAI : public GameObjectAI
 {
     public:
-        SmartGameObjectAI(GameObject* g) : GameObjectAI(g), go(g) { }
-        ~SmartGameObjectAI() { }
+        SmartGameObjectAI(GameObject* g) : GameObjectAI(g), go(g) {}
+        ~SmartGameObjectAI() {}
 
         void UpdateAI(uint32 diff);
         void InitializeAI();

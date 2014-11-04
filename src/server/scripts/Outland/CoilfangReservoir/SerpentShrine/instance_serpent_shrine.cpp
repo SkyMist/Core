@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,25 +26,14 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "serpent_shrine.h"
-#include "Player.h"
-#include "TemporarySummon.h"
 
 #define MAX_ENCOUNTER 6
+#define SPELL_SCALDINGWATER 37284
+#define MOB_COILFANG_FRENZY 21508
+#define TRASHMOB_COILFANG_PRIESTESS 21220  //6*2
+#define TRASHMOB_COILFANG_SHATTERER 21301  //6*3
 
-enum Misc
-{
-    // Spells
-    SPELL_SCALDINGWATER             = 37284,
-
-    // Creatures
-    NPC_COILFANG_FRENZY             = 21508,
-    NPC_COILFANG_PRIESTESS          = 21220,
-    NPC_COILFANG_SHATTERER          = 21301,
-
-    // Misc
-    MIN_KILLS                       = 30
-};
-
+#define MIN_KILLS 30
 
 //NOTE: there are 6 platforms
 //there should be 3 shatterers and 2 priestess on all platforms, total of 30 elites, else it won't work!
@@ -66,7 +53,7 @@ class go_bridge_console : public GameObjectScript
     public:
         go_bridge_console() : GameObjectScript("go_bridge_console") { }
 
-        bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
+        bool OnGossipHello(Player* /*player*/, GameObject* go)
         {
             InstanceScript* instance = go->GetInstanceScript();
 
@@ -91,7 +78,7 @@ class instance_serpent_shrine : public InstanceMapScript
             {
             }
 
-            void Initialize() OVERRIDE
+            void Initialize()
             {
                 memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
 
@@ -124,7 +111,7 @@ class instance_serpent_shrine : public InstanceMapScript
 
             }
 
-            bool IsEncounterInProgress() const OVERRIDE
+            bool IsEncounterInProgress() const
             {
                 for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                     if (m_auiEncounter[i] == IN_PROGRESS)
@@ -133,7 +120,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 return false;
             }
 
-            void Update(uint32 diff) OVERRIDE
+            void Update(uint32 diff)
             {
                 //Water checks
                 if (WaterCheckTimer <= diff)
@@ -148,9 +135,9 @@ class instance_serpent_shrine : public InstanceMapScript
                         return;
                     for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
                     {
-                        if (Player* player = i->GetSource())
+                        if (Player* player = i->getSource())
                         {
-                            if (player->IsAlive() && /*i->GetSource()->GetPositionZ() <= -21.434931f*/player->IsInWater())
+                            if (player->isAlive() && /*i->getSource()->GetPositionZ() <= -21.434931f*/player->IsInWater())
                             {
                                 if (Water == WATERSTATE_SCALDING)
                                 {
@@ -164,11 +151,10 @@ class instance_serpent_shrine : public InstanceMapScript
                                     //spawn frenzy
                                     if (DoSpawnFrenzy)
                                     {
-                                        if (Creature* frenzy = player->SummonCreature(NPC_COILFANG_FRENZY, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 2000))
+                                        if (Creature* frenzy = player->SummonCreature(MOB_COILFANG_FRENZY, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 2000))
                                         {
                                             frenzy->Attack(player, false);
-                                            frenzy->SetSwim(true);
-                                            frenzy->SetDisableGravity(true);
+                                            frenzy->AddUnitMovementFlag(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_DISABLE_GRAVITY);
                                         }
                                         DoSpawnFrenzy = false;
                                     }
@@ -193,7 +179,7 @@ class instance_serpent_shrine : public InstanceMapScript
                     FrenzySpawnTimer -= diff;
             }
 
-            void OnGameObjectCreate(GameObject* go) OVERRIDE
+            void OnGameObjectCreate(GameObject* go)
             {
                 switch (go->GetEntry())
                 {
@@ -218,7 +204,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 }
             }
 
-            void OnCreatureCreate(Creature* creature) OVERRIDE
+            void OnCreatureCreate(Creature* creature)
             {
                 switch (creature->GetEntry())
                 {
@@ -248,7 +234,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 }
             }
 
-            void SetData64(uint32 type, uint64 data) OVERRIDE
+            void SetData64(uint32 type, uint64 data)
             {
                 if (type == DATA_KARATHRESSEVENT_STARTER)
                     KarathressEvent_Starter = data;
@@ -256,7 +242,7 @@ class instance_serpent_shrine : public InstanceMapScript
                     LeotherasEventStarter = data;
             }
 
-            uint64 GetData64(uint32 identifier) const OVERRIDE
+            uint64 GetData64(uint32 identifier)
             {
                 switch (identifier)
                 {
@@ -284,7 +270,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 return 0;
             }
 
-            void SetData(uint32 type, uint32 data) OVERRIDE
+            void SetData(uint32 type, uint32 data)
             {
                 switch (type)
                 {
@@ -354,7 +340,7 @@ class instance_serpent_shrine : public InstanceMapScript
                     SaveToDB();
             }
 
-            uint32 GetData(uint32 type) const OVERRIDE
+            uint32 GetData(uint32 type)
             {
                 switch (type)
                 {
@@ -394,7 +380,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 return 0;
             }
 
-            std::string GetSaveData() OVERRIDE
+            std::string GetSaveData()
             {
                 OUT_SAVE_INST_DATA;
                 std::ostringstream stream;
@@ -404,7 +390,7 @@ class instance_serpent_shrine : public InstanceMapScript
                 return stream.str();
             }
 
-            void Load(const char* in) OVERRIDE
+            void Load(const char* in)
             {
                 if (!in)
                 {
@@ -449,7 +435,7 @@ class instance_serpent_shrine : public InstanceMapScript
             bool DoSpawnFrenzy;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
             return new instance_serpentshrine_cavern_InstanceMapScript(map);
         }

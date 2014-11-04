@@ -1,5 +1,4 @@
-# Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -26,6 +25,8 @@ set(scripts_STAT_SRCS
   Spells/spell_item.cpp
   Spells/spell_holiday.cpp
   Spells/spell_pet.cpp
+  Spells/spell_monk.cpp
+  Spells/spell_mastery.cpp
 )
 
 message("  -> Prepared: Spells")

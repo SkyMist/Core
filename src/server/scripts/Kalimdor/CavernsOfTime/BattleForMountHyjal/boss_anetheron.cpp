@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -48,9 +45,9 @@ class boss_anetheron : public CreatureScript
 public:
     boss_anetheron() : CreatureScript("boss_anetheron") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_anetheronAI(creature);
+        return new boss_anetheronAI (creature);
     }
 
     struct boss_anetheronAI : public hyjal_trashAI
@@ -67,7 +64,7 @@ public:
         uint32 InfernoTimer;
         bool go;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             damageTaken = 0;
             SwarmTimer = 45000;
@@ -79,29 +76,29 @@ public:
                 instance->SetData(DATA_ANETHERONEVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             if (instance && IsEvent)
                 instance->SetData(DATA_ANETHERONEVENT, IN_PROGRESS);
             Talk(SAY_ONAGGRO);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
             Talk(SAY_ONSLAY);
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId)
         {
             if (waypointId == 7 && instance)
             {
                 Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_JAINAPROUDMOORE));
-                if (target && target->IsAlive())
+                if (target && target->isAlive())
                     me->AddThreat(target, 0.0f);
             }
         }
 
-        void JustDied(Unit* killer) OVERRIDE
+        void JustDied(Unit* killer)
         {
             hyjal_trashAI::JustDied(killer);
             if (instance && IsEvent)
@@ -109,7 +106,7 @@ public:
             Talk(SAY_ONDEATH);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (IsEvent)
             {
@@ -145,7 +142,9 @@ public:
 
                 SwarmTimer = urand(45000, 60000);
                 Talk(SAY_SWARM);
-            } else SwarmTimer -= diff;
+            }
+            else
+                SwarmTimer -= diff;
 
             if (SleepTimer <= diff)
             {
@@ -156,18 +155,24 @@ public:
                 }
                 SleepTimer = 60000;
                 Talk(SAY_SLEEP);
-            } else SleepTimer -= diff;
+            }
+            else
+                SleepTimer -= diff;
             if (AuraTimer <= diff)
             {
                 DoCast(me, SPELL_VAMPIRIC_AURA, true);
                 AuraTimer = urand(10000, 20000);
-            } else AuraTimer -= diff;
+            }
+            else
+                AuraTimer -= diff;
             if (InfernoTimer <= diff)
             {
                 DoCast(SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true), SPELL_INFERNO);
                 InfernoTimer = 45000;
                 Talk(SAY_INFERNO);
-            } else InfernoTimer -= diff;
+            }
+            else
+                InfernoTimer -= diff;
 
             DoMeleeAttackIfReady();
         }
@@ -175,19 +180,19 @@ public:
 
 };
 
-class npc_towering_infernal : public CreatureScript
+class mob_towering_infernal : public CreatureScript
 {
 public:
-    npc_towering_infernal() : CreatureScript("npc_towering_infernal") { }
+    mob_towering_infernal() : CreatureScript("mob_towering_infernal") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_towering_infernalAI(creature);
+        return new mob_towering_infernalAI (creature);
     }
 
-    struct npc_towering_infernalAI : public ScriptedAI
+    struct mob_towering_infernalAI : public ScriptedAI
     {
-        npc_towering_infernalAI(Creature* creature) : ScriptedAI(creature)
+        mob_towering_infernalAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
             if (instance)
@@ -199,33 +204,32 @@ public:
         uint64 AnetheronGUID;
         InstanceScript* instance;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             DoCast(me, SPELL_INFERNO_EFFECT);
             ImmolationTimer = 5000;
             CheckTimer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
-
+        void MoveInLineOfSight(Unit* who)
         {
-            if (me->IsWithinDist(who, 50) && !me->IsInCombat() && me->IsValidAttackTarget(who))
+            if (me->IsWithinDist(who, 50) && !me->isInCombat() && me->IsValidAttackTarget(who))
                 AttackStart(who);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (CheckTimer <= diff)
             {
@@ -240,7 +244,9 @@ public:
                     }
                 }
                 CheckTimer = 5000;
-            } else CheckTimer -= diff;
+            }
+            else
+                CheckTimer -= diff;
 
             //Return since we have no target
             if (!UpdateVictim())
@@ -250,7 +256,9 @@ public:
             {
                 DoCast(me, SPELL_IMMOLATION);
                 ImmolationTimer = 5000;
-            } else ImmolationTimer -= diff;
+            }
+            else
+                ImmolationTimer -= diff;
 
             DoMeleeAttackIfReady();
         }
@@ -261,5 +269,5 @@ public:
 void AddSC_boss_anetheron()
 {
     new boss_anetheron();
-    new npc_towering_infernal();
+    new mob_towering_infernal();
 }

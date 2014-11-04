@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,23 +27,23 @@ const uint8 OutdoorPvPZMBuffZonesNum = 5;
 const uint32 OutdoorPvPZMBuffZones[OutdoorPvPZMBuffZonesNum] = {3521, 3607, 3717, 3715, 3716};
 
 // linked when the central tower is controlled
-const uint32 ZM_GRAVEYARD_ZONE = 3521;
+const uint32 ZM_GRAVEYARD_ZONE      = 3521;
 
 // linked when the central tower is controlled
-const uint32 ZM_GRAVEYARD_ID = 969;
+const uint32 ZM_GRAVEYARD_ID        = 969;
 
 enum OutdoorPvPZMSpells
 {
     // cast on the players of the controlling faction
-    ZM_CAPTURE_BUFF = 33779,  // twin spire blessing
+    ZM_CAPTURE_BUFF                 = 33779,  // twin spire blessing
     // spell that the field scout casts on the player to carry the flag
-    ZM_BATTLE_STANDARD_A = 32430,
+    ZM_BATTLE_STANDARD_A            = 32430,
     // spell that the field scout casts on the player to carry the flag
-    ZM_BATTLE_STANDARD_H = 32431,
+    ZM_BATTLE_STANDARD_H            = 32431,
     // token create spell
-    ZM_AlliancePlayerKillReward = 32155,
+    ZM_AlliancePlayerKillReward     = 32155,
     // token create spell
-    ZM_HordePlayerKillReward = 32158
+    ZM_HordePlayerKillReward        = 32158
 };
 
 // banners 182527, 182528, 182529, gotta check them ingame
@@ -126,44 +124,44 @@ const go_type ZMCapturePoints[ZM_NUM_BEACONS] =
 
 enum OutdoorPvPZMWorldStates
 {
-    ZM_UI_TOWER_SLIDER_N_W = 2529,
-    ZM_UI_TOWER_SLIDER_POS_W = 2528,
-    ZM_UI_TOWER_SLIDER_DISPLAY_W = 2527,
+    ZM_UI_TOWER_SLIDER_N_W          = 2529,
+    ZM_UI_TOWER_SLIDER_POS_W        = 2528,
+    ZM_UI_TOWER_SLIDER_DISPLAY_W    = 2527,
 
-    ZM_UI_TOWER_SLIDER_N_E = 2535,
-    ZM_UI_TOWER_SLIDER_POS_E = 2534,
-    ZM_UI_TOWER_SLIDER_DISPLAY_E = 2533,
+    ZM_UI_TOWER_SLIDER_N_E          = 2535,
+    ZM_UI_TOWER_SLIDER_POS_E        = 2534,
+    ZM_UI_TOWER_SLIDER_DISPLAY_E    = 2533,
 
-    ZM_WORLDSTATE_UNK_1 = 2653,
+    ZM_WORLDSTATE_UNK_1             = 2653,
 
-    ZM_UI_TOWER_EAST_N = 2560,
-    ZM_UI_TOWER_EAST_H = 2559,
-    ZM_UI_TOWER_EAST_A = 2558,
-    ZM_UI_TOWER_WEST_N = 2557,
-    ZM_UI_TOWER_WEST_H = 2556,
-    ZM_UI_TOWER_WEST_A = 2555,
+    ZM_UI_TOWER_EAST_N              = 2560,
+    ZM_UI_TOWER_EAST_H              = 2559,
+    ZM_UI_TOWER_EAST_A              = 2558,
+    ZM_UI_TOWER_WEST_N              = 2557,
+    ZM_UI_TOWER_WEST_H              = 2556,
+    ZM_UI_TOWER_WEST_A              = 2555,
 
-    ZM_MAP_TOWER_EAST_N = 2652,
-    ZM_MAP_TOWER_EAST_H = 2651,
-    ZM_MAP_TOWER_EAST_A = 2650,
-    ZM_MAP_GRAVEYARD_H = 2649,
-    ZM_MAP_GRAVEYARD_A = 2648,
-    ZM_MAP_GRAVEYARD_N = 2647,
-    ZM_MAP_TOWER_WEST_N = 2646,
-    ZM_MAP_TOWER_WEST_H = 2645,
-    ZM_MAP_TOWER_WEST_A = 2644,
+    ZM_MAP_TOWER_EAST_N             = 2652,
+    ZM_MAP_TOWER_EAST_H             = 2651,
+    ZM_MAP_TOWER_EAST_A             = 2650,
+    ZM_MAP_GRAVEYARD_H              = 2649,
+    ZM_MAP_GRAVEYARD_A              = 2648,
+    ZM_MAP_GRAVEYARD_N              = 2647,
+    ZM_MAP_TOWER_WEST_N             = 2646,
+    ZM_MAP_TOWER_WEST_H             = 2645,
+    ZM_MAP_TOWER_WEST_A             = 2644,
 
-    ZM_MAP_HORDE_FLAG_READY = 2658,
-    ZM_MAP_HORDE_FLAG_NOT_READY = 2657,
-    ZM_MAP_ALLIANCE_FLAG_NOT_READY = 2656,
-    ZM_MAP_ALLIANCE_FLAG_READY = 2655
+    ZM_MAP_HORDE_FLAG_READY         = 2658,
+    ZM_MAP_HORDE_FLAG_NOT_READY     = 2657,
+    ZM_MAP_ALLIANCE_FLAG_NOT_READY  = 2656,
+    ZM_MAP_ALLIANCE_FLAG_READY      = 2655
 };
 
 enum ZM_TowerStateMask
 {
-    ZM_TOWERSTATE_N = 1,
-    ZM_TOWERSTATE_A = 2,
-    ZM_TOWERSTATE_H = 4
+    ZM_TOWERSTATE_N                 = 1,
+    ZM_TOWERSTATE_A                 = 2,
+    ZM_TOWERSTATE_H                 = 4
 };
 
 class OutdoorPvPZM;
@@ -178,7 +176,7 @@ class OPvPCapturePointZM_Beacon : public OPvPCapturePoint
 
         void SendChangePhase();
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        void FillInitialWorldStates(WorldPacket & data);
 
         // used when player is activated/inactivated in the area
         bool HandlePlayerEnter(Player* player);
@@ -194,9 +192,9 @@ class OPvPCapturePointZM_Beacon : public OPvPCapturePoint
 
 enum ZM_GraveYardState
 {
-    ZM_GRAVEYARD_N = 1,
-    ZM_GRAVEYARD_A = 2,
-    ZM_GRAVEYARD_H = 4
+    ZM_GRAVEYARD_N          = 1,
+    ZM_GRAVEYARD_A          = 2,
+    ZM_GRAVEYARD_H          = 4
 };
 
 class OPvPCapturePointZM_GraveYard : public OPvPCapturePoint
@@ -207,9 +205,9 @@ class OPvPCapturePointZM_GraveYard : public OPvPCapturePoint
 
         bool Update(uint32 diff);
 
-        void ChangeState() { }
+        void ChangeState() {}
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        void FillInitialWorldStates(WorldPacket & data);
 
         void UpdateTowerState();
 
@@ -249,7 +247,7 @@ class OutdoorPvPZM : public OutdoorPvP
 
         bool Update(uint32 diff);
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        void FillInitialWorldStates(WorldPacket &data);
 
         void SendRemoveWorldStates(Player* player);
 
@@ -269,5 +267,5 @@ class OutdoorPvPZM : public OutdoorPvP
         uint32 m_HordeTowersControlled;
 };
 
-/// @todo flag carrier death/leave/mount/activitychange should give back the gossip options
+// todo: flag carrier death/leave/mount/activitychange should give back the gossip options
 #endif

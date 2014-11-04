@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,57 +22,51 @@ Comment: All disable related commands
 Category: commandscripts
 EndScriptData */
 
-#include "DisableMgr.h"
-#include "AchievementMgr.h"
-#include "Chat.h"
-#include "Language.h"
-#include "ObjectMgr.h"
-#include "OutdoorPvP.h"
-#include "Player.h"
 #include "ScriptMgr.h"
-#include "SpellMgr.h"
+#include "ObjectMgr.h"
+#include "Chat.h"
+#include "DisableMgr.h"
+#include "OutdoorPvP.h"
 
 class disable_commandscript : public CommandScript
 {
 public:
     disable_commandscript() : CommandScript("disable_commandscript") { }
 
-    ChatCommand* GetCommands() const OVERRIDE
+    ChatCommand* GetCommands() const
     {
         static ChatCommand removeDisableCommandTable[] =
         {
-            { "spell",                rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_SPELL,                true, &HandleRemoveDisableSpellCommand,               "", NULL },
-            { "quest",                rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_QUEST,                true, &HandleRemoveDisableQuestCommand,               "", NULL },
-            { "map",                  rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_MAP,                  true, &HandleRemoveDisableMapCommand,                 "", NULL },
-            { "battleground",         rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_BATTLEGROUND,         true, &HandleRemoveDisableBattlegroundCommand,        "", NULL },
-            { "achievement_criteria", rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_ACHIEVEMENT_CRITERIA, true, &HandleRemoveDisableAchievementCriteriaCommand, "", NULL },
-            { "outdoorpvp",           rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_OUTDOORPVP,           true, &HandleRemoveDisableOutdoorPvPCommand,          "", NULL },
-            { "vmap",                 rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_VMAP,                 true, &HandleRemoveDisableVmapCommand,                "", NULL },
-            { "mmap",                 rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE_MMAP,                 true, &HandleRemoveDisableMMapCommand,                "", NULL },
-            { NULL,                   0,                                                 false, NULL,                                           "", NULL }
+            { "spell",                  SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableSpellCommand,               "", NULL },
+            { "quest",                  SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableQuestCommand,               "", NULL },
+            { "map",                    SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableMapCommand,                 "", NULL },
+            { "battleground",           SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableBattlegroundCommand,        "", NULL },
+            { "achievement_criteria",   SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableAchievementCriteriaCommand, "", NULL },
+            { "outdoorpvp",             SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableOutdoorPvPCommand,          "", NULL },
+            { "vmap",                   SEC_ADMINISTRATOR,      true,   &HandleRemoveDisableVmapCommand,                "", NULL },
+            { NULL,                     0,                      false,  NULL,                                           "", NULL }
         };
         static ChatCommand addDisableCommandTable[] =
         {
-            { "spell",                rbac::RBAC_PERM_COMMAND_DISABLE_ADD_SPELL,                true, &HandleAddDisableSpellCommand,                  "", NULL },
-            { "quest",                rbac::RBAC_PERM_COMMAND_DISABLE_ADD_QUEST,                true, &HandleAddDisableQuestCommand,                  "", NULL },
-            { "map",                  rbac::RBAC_PERM_COMMAND_DISABLE_ADD_MAP,                  true, &HandleAddDisableMapCommand,                    "", NULL },
-            { "battleground",         rbac::RBAC_PERM_COMMAND_DISABLE_ADD_BATTLEGROUND,         true, &HandleAddDisableBattlegroundCommand,           "", NULL },
-            { "achievement_criteria", rbac::RBAC_PERM_COMMAND_DISABLE_ADD_ACHIEVEMENT_CRITERIA, true, &HandleAddDisableAchievementCriteriaCommand,    "", NULL },
-            { "outdoorpvp",           rbac::RBAC_PERM_COMMAND_DISABLE_ADD_OUTDOORPVP,           true, &HandleAddDisableOutdoorPvPCommand,             "", NULL },
-            { "vmap",                 rbac::RBAC_PERM_COMMAND_DISABLE_ADD_VMAP,                 true, &HandleAddDisableVmapCommand,                   "", NULL },
-            { "mmap",                 rbac::RBAC_PERM_COMMAND_DISABLE_ADD_MMAP,                 true, &HandleAddDisableMMapCommand,                   "", NULL },
-            { NULL,                   0,                                                 false,  NULL,                                           "", NULL }
+            { "spell",                  SEC_ADMINISTRATOR,      true,   &HandleAddDisableSpellCommand,                  "", NULL },
+            { "quest",                  SEC_ADMINISTRATOR,      true,   &HandleAddDisableQuestCommand,                  "", NULL },
+            { "map",                    SEC_ADMINISTRATOR,      true,   &HandleAddDisableMapCommand,                    "", NULL },
+            { "battleground",           SEC_ADMINISTRATOR,      true,   &HandleAddDisableBattlegroundCommand,           "", NULL },
+            { "achievement_criteria",   SEC_ADMINISTRATOR,      true,   &HandleAddDisableAchievementCriteriaCommand,    "", NULL },
+            { "outdoorpvp",             SEC_ADMINISTRATOR,      true,   &HandleAddDisableOutdoorPvPCommand,             "", NULL },
+            { "vmap",                   SEC_ADMINISTRATOR,      true,   &HandleAddDisableVmapCommand,                   "", NULL },
+            { NULL,                     0,                      false,  NULL,                                           "", NULL }
         };
         static ChatCommand disableCommandTable[] =
         {
-            { "add",    rbac::RBAC_PERM_COMMAND_DISABLE_ADD,    true, NULL, "", addDisableCommandTable },
-            { "remove", rbac::RBAC_PERM_COMMAND_DISABLE_REMOVE, true, NULL, "", removeDisableCommandTable },
-            { NULL,     0,                               false, NULL, "", NULL }
+            { "add",                    SEC_ADMINISTRATOR,      true,   NULL,                                           "", addDisableCommandTable },
+            { "remove",                 SEC_ADMINISTRATOR,      true,   NULL,                                           "", removeDisableCommandTable },
+            { NULL,                     0,                      false,  NULL,                                           "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "disable", rbac::RBAC_PERM_COMMAND_DISABLE, false, NULL, "", disableCommandTable },
-            { NULL,      0,                         false, NULL, "", NULL }
+            { "disable",                SEC_ADMINISTRATOR,     false,   NULL,                                           "", disableCommandTable },
+            { NULL,                     0,                     false,   NULL,                                           "", NULL }
         };
         return commandTable;
     }
@@ -145,7 +137,7 @@ public:
             }
             case DISABLE_TYPE_ACHIEVEMENT_CRITERIA:
             {
-                if (!sAchievementMgr->GetAchievementCriteria(entry))
+                if (!sAchievementCriteriaStore.LookupEntry(entry))
                 {
                     handler->PSendSysMessage(LANG_COMMAND_NO_ACHIEVEMENT_CRITERIA_FOUND);
                     handler->SetSentErrorMessage(true);
@@ -174,17 +166,6 @@ public:
                     return false;
                 }
                 disableTypeStr = "vmap";
-                break;
-            }
-            case DISABLE_TYPE_MMAP:
-            {
-                if (!sMapStore.LookupEntry(entry))
-                {
-                    handler->PSendSysMessage(LANG_COMMAND_NOMAPFOUND);
-                    handler->SetSentErrorMessage(true);
-                    return false;
-                }
-                disableTypeStr = "mmap";
                 break;
             }
             default:
@@ -271,14 +252,6 @@ public:
         return HandleAddDisables(handler, args, DISABLE_TYPE_VMAP);
     }
 
-    static bool HandleAddDisableMMapCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        return HandleAddDisables(handler, args, DISABLE_TYPE_MMAP);
-    }
-
     static bool HandleRemoveDisables(ChatHandler* handler, char const* args, uint8 disableType)
     {
         char* entryStr = strtok((char*)args, " ");
@@ -311,9 +284,6 @@ public:
                 break;
             case DISABLE_TYPE_VMAP:
                 disableTypeStr = "vmap";
-                break;
-            case DISABLE_TYPE_MMAP:
-                disableTypeStr = "mmap";
                 break;
         }
 
@@ -359,7 +329,7 @@ public:
         if (!*args)
             return false;
 
-        return HandleRemoveDisables(handler, args, DISABLE_TYPE_MAP);
+        return HandleAddDisables(handler, args, DISABLE_TYPE_MAP);
     }
 
     static bool HandleRemoveDisableBattlegroundCommand(ChatHandler* handler, char const* args)
@@ -392,14 +362,6 @@ public:
             return false;
 
         return HandleRemoveDisables(handler, args, DISABLE_TYPE_VMAP);
-    }
-
-    static bool HandleRemoveDisableMMapCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        return HandleRemoveDisables(handler, args, DISABLE_TYPE_MMAP);
     }
 };
 

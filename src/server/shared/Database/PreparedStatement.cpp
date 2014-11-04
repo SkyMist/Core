@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -23,15 +21,27 @@
 
 PreparedStatement::PreparedStatement(uint32 index) :
 m_stmt(NULL),
-m_index(index) { }
+m_index(index)
+{
+}
 
-PreparedStatement::~PreparedStatement() { }
+PreparedStatement::~PreparedStatement()
+{
+    for (uint32 i = 0; i < statement_data.size(); i++)
+    {
+        if (statement_data[i].type == TYPE_STRING && statement_data[i].data.str.ptr)
+        {
+            delete[] statement_data[i].data.str.ptr;
+            statement_data[i].data.str.ptr = NULL;
+        }
+    }
+}
 
 void PreparedStatement::BindParameters()
 {
     ASSERT (m_stmt);
 
-    uint8 i = 0;
+    uint32 i = 0;
     for (; i < statement_data.size(); i++)
     {
         switch (statement_data[i].type)
@@ -70,7 +80,10 @@ void PreparedStatement::BindParameters()
                 m_stmt->setDouble(i, statement_data[i].data.d);
                 break;
             case TYPE_STRING:
-                m_stmt->setString(i, statement_data[i].str.c_str());
+                if (!statement_data[i].data.str.ptr)
+                    ASSERT(statement_data[i].data.str.ptr != NULL);
+                m_stmt->setString(i, statement_data[i].data.str.ptr, statement_data[i].data.str.len);
+                statement_data[i].data.str.ptr = NULL;
                 break;
             case TYPE_NULL:
                 m_stmt->setNull(i);
@@ -79,7 +92,7 @@ void PreparedStatement::BindParameters()
     }
     #ifdef _DEBUG
     if (i < m_stmt->m_paramCount)
-        TC_LOG_WARN("sql.sql", "[WARNING]: BindParameters() for statement %u did not bind all allocated parameters", m_index);
+        sLog->outWarn(LOG_FILTER_SQL, "[WARNING]: BindParameters() for statement %u did not bind all allocated parameters", m_index);
     #endif
 }
 
@@ -188,16 +201,60 @@ void PreparedStatement::setString(const uint8 index, const std::string& value)
     if (index >= statement_data.size())
         statement_data.resize(index+1);
 
-    statement_data[index].str = value;
+    size_t len = value.size();
+    const char* src = value.c_str();
+
+    char* data = new char[len];
+    for (size_t i = 0; i < len; ++i)
+        data[i] = src[i];
+
+    statement_data[index].data.str.ptr = data;
+    statement_data[index].data.str.len = len;
     statement_data[index].type = TYPE_STRING;
 }
 
-void PreparedStatement::setNull(const uint8 index)
+void PreparedStatement::setString(const uint8 index, const nullable_string& value)
 {
     if (index >= statement_data.size())
         statement_data.resize(index+1);
 
+    if (value.length)
+        return setString(index, value.ptr, value.length);
+
     statement_data[index].type = TYPE_NULL;
+}
+
+void PreparedStatement::setString(const uint8 index, const char* value)
+{
+    if (index >= statement_data.size())
+        statement_data.resize(index+1);
+
+    ASSERT(value != NULL);
+    size_t len = strlen(value);
+
+    char* data = new char[len];
+    for (size_t i = 0; i < len; ++i)
+        data[i] = value[i];
+
+    statement_data[index].data.str.ptr = data;
+    statement_data[index].data.str.len = len;
+    statement_data[index].type = TYPE_STRING;
+}
+
+void PreparedStatement::setString(const uint8 index, const char* value, uint32 len)
+{
+    if (index >= statement_data.size())
+        statement_data.resize(index+1);
+
+    ASSERT(value != NULL);
+
+    char* data = new char[len];
+    for (size_t i = 0; i < len; ++i)
+        data[i] = value[i];
+
+    statement_data[index].data.str.ptr = data;
+    statement_data[index].data.str.len = len;
+    statement_data[index].type = TYPE_STRING;
 }
 
 MySQLPreparedStatement::MySQLPreparedStatement(MYSQL_STMT* stmt) :
@@ -232,27 +289,32 @@ void MySQLPreparedStatement::ClearParameters()
 {
     for (uint32 i=0; i < m_paramCount; ++i)
     {
-        delete m_bind[i].length;
-        m_bind[i].length = NULL;
         delete[] (char*) m_bind[i].buffer;
         m_bind[i].buffer = NULL;
         m_paramsSet[i] = false;
     }
 }
 
-static bool ParamenterIndexAssertFail(uint32 stmtIndex, uint8 index, uint32 paramCount)
+static bool ParementerIndexAssertFail(uint32 stmtIndex, uint8 index, uint32 paramCount)
 {
-    TC_LOG_ERROR("sql.driver", "Attempted to bind parameter %u%s on a PreparedStatement %u (statement has only %u parameters)", uint32(index) + 1, (index == 1 ? "st" : (index == 2 ? "nd" : (index == 3 ? "rd" : "nd"))), stmtIndex, paramCount);
+    sLog->outError(LOG_FILTER_SQL_DRIVER, "Attempted to bind parameter %u%s on a PreparedStatement %u (statement has only %u parameters)", uint32(index) + 1, (index == 1 ? "st" : (index == 2 ? "nd" : (index == 3 ? "rd" : "nd"))), stmtIndex, paramCount);
     return false;
 }
 
 //- Bind on mysql level
 bool MySQLPreparedStatement::CheckValidIndex(uint8 index)
 {
-    ASSERT(index < m_paramCount || ParamenterIndexAssertFail(m_stmt->m_index, index, m_paramCount));
+    if (index >= m_paramCount)
+    {
+        sLog->outError(LogFilterType::LOG_FILTER_SQL, "Invalid index %u for prepared statement %u", index, m_stmt->m_index);
+        ASSERT(false);
+    }
 
     if (m_paramsSet[index])
-        TC_LOG_WARN("sql.sql", "[WARNING] Prepared Statement (id: %u) trying to bind value on already bound index (%u).", m_stmt->m_index, index);
+    {
+        sLog->outWarn(LOG_FILTER_SQL, "[WARNING] Prepared Statement (id: %u) trying to bind value on already bound index (%u).", m_stmt->m_index, index);
+        ASSERT(false);
+    }
     return true;
 }
 
@@ -341,21 +403,27 @@ void MySQLPreparedStatement::setDouble(const uint8 index, const double value)
     setValue(param, MYSQL_TYPE_DOUBLE, &value, sizeof(double), (value > 0.0f));
 }
 
-void MySQLPreparedStatement::setString(const uint8 index, const char* value)
+void MySQLPreparedStatement::setString(const uint8 index, char* value)
+{
+    ASSERT(value != NULL);
+
+    return setString(index, value, strlen(value));
+}
+
+void MySQLPreparedStatement::setString(const uint8 index, char* value, uint32 len)
 {
     CheckValidIndex(index);
     m_paramsSet[index] = true;
     MYSQL_BIND* param = &m_bind[index];
-    size_t len = strlen(value) + 1;
+    
+    ASSERT(value != NULL);
+
     param->buffer_type = MYSQL_TYPE_VAR_STRING;
     delete [] static_cast<char *>(param->buffer);
-    param->buffer = new char[len];
+    param->buffer = value;
     param->buffer_length = len;
     param->is_null_value = 0;
-    delete param->length;
-    param->length = new unsigned long(len-1);
-
-    memcpy(param->buffer, value, len);
+    param->length_value = len;
 }
 
 void MySQLPreparedStatement::setNull(const uint8 index)
@@ -363,13 +431,13 @@ void MySQLPreparedStatement::setNull(const uint8 index)
     CheckValidIndex(index);
     m_paramsSet[index] = true;
     MYSQL_BIND* param = &m_bind[index];
+
     param->buffer_type = MYSQL_TYPE_NULL;
     delete [] static_cast<char *>(param->buffer);
     param->buffer = NULL;
     param->buffer_length = 0;
     param->is_null_value = 1;
-    delete param->length;
-    param->length = NULL;
+    param->length_value = 0;
 }
 
 void MySQLPreparedStatement::setValue(MYSQL_BIND* param, enum_field_types type, const void* value, uint32 len, bool isUnsigned)
@@ -379,82 +447,105 @@ void MySQLPreparedStatement::setValue(MYSQL_BIND* param, enum_field_types type, 
     param->buffer = new char[len];
     param->buffer_length = 0;
     param->is_null_value = 0;
-    param->length = NULL;               // Only != NULL for strings
+    param->length_value = 0;               // Only != NULL for strings
     param->is_unsigned = isUnsigned;
 
     memcpy(param->buffer, value, len);
 }
 
-std::string MySQLPreparedStatement::getQueryString(std::string const& sqlPattern) const
+std::string MySQLPreparedStatement::getQueryString(const char *query)
 {
-    std::string queryString = sqlPattern;
+    std::ostringstream ss;
 
-    size_t pos = 0;
-    for (uint32 i = 0; i < m_stmt->statement_data.size(); i++)
+    uint32 i = 0;
+    char const* pchr;
+    while ((pchr = strchr(query, '?'))) // double-parentheses to prevent GCC warning
     {
-        pos = queryString.find('?', pos);
-        std::stringstream ss;
+        ss << std::string(query, pchr - query);
 
-        switch (m_stmt->statement_data[i].type)
+        if (i < m_stmt->statement_data.size())
         {
-            case TYPE_BOOL:
-                ss << uint16(m_stmt->statement_data[i].data.boolean);
-                break;
-            case TYPE_UI8:
-                ss << uint16(m_stmt->statement_data[i].data.ui8);  // stringstream will append a character with that code instead of numeric representation
-                break;
-            case TYPE_UI16:
-                ss << m_stmt->statement_data[i].data.ui16;
-                break;
-            case TYPE_UI32:
-                ss << m_stmt->statement_data[i].data.ui32;
-                break;
-            case TYPE_I8:
-                ss << int16(m_stmt->statement_data[i].data.i8);  // stringstream will append a character with that code instead of numeric representation
-                break;
-            case TYPE_I16:
-                ss << m_stmt->statement_data[i].data.i16;
-                break;
-            case TYPE_I32:
-                ss << m_stmt->statement_data[i].data.i32;
-                break;
-            case TYPE_UI64:
-                ss << m_stmt->statement_data[i].data.ui64;
-                break;
-            case TYPE_I64:
-                ss << m_stmt->statement_data[i].data.i64;
-                break;
-            case TYPE_FLOAT:
-                ss << m_stmt->statement_data[i].data.f;
-                break;
-            case TYPE_DOUBLE:
-                ss << m_stmt->statement_data[i].data.d;
-                break;
-            case TYPE_STRING:
-                ss << '\'' << m_stmt->statement_data[i].str << '\'';
-                break;
-            case TYPE_NULL:
-                ss << "NULL";
-                break;
+            switch (m_stmt->statement_data[i].type)
+            {
+                case TYPE_BOOL:
+                    ss << (m_stmt->statement_data[i].data.boolean ? '1' : '0');
+                    break;
+                case TYPE_UI8:
+                    ss << uint16(m_stmt->statement_data[i].data.ui8);  // stringstream will append a character with that code instead of numeric representation
+                    break;
+                case TYPE_UI16:
+                    ss << m_stmt->statement_data[i].data.ui16;
+                    break;
+                case TYPE_UI32:
+                    ss << m_stmt->statement_data[i].data.ui32;
+                    break;
+                case TYPE_I8:
+                    ss << int16(m_stmt->statement_data[i].data.i8);  // stringstream will append a character with that code instead of numeric representation
+                    break;
+                case TYPE_I16:
+                    ss << m_stmt->statement_data[i].data.i16;
+                    break;
+                case TYPE_I32:
+                    ss << m_stmt->statement_data[i].data.i32;
+                    break;
+                case TYPE_UI64:
+                    ss << m_stmt->statement_data[i].data.ui64;
+                    break;
+                case TYPE_I64:
+                    ss << m_stmt->statement_data[i].data.i64;
+                    break;
+                case TYPE_FLOAT:
+                    ss << m_stmt->statement_data[i].data.f;
+                    break;
+                case TYPE_DOUBLE:
+                    ss << m_stmt->statement_data[i].data.d;
+                    break;
+                case TYPE_STRING:
+                    if (m_stmt->statement_data[i].data.str.ptr)
+                    {
+                        ss
+                            << '"'
+                            << std::string(m_stmt->statement_data[i].data.str.ptr, m_stmt->statement_data[i].data.str.len)
+                            << '"';
+                    }
+                    else
+                        ss << "<STRING MOVED>";
+                    break;
+                case TYPE_NULL:
+                    ss << "NULL";
+                    break;
+                default:
+                    ss << "<BAD TYPE " << uint32(m_stmt->statement_data[i].type) << ">";
+                    break;
+            }
+        }
+        else
+        {
+            ss << "<BAD IDX " << i << ">";
         }
 
-        std::string replaceStr = ss.str();
-        queryString.replace(pos, 1, replaceStr);
-        pos += replaceStr.length();
+        ++i;
+        query = pchr + 1;
     }
 
-    return queryString;
+    ss << query;
+
+    return ss.str();
 }
 
 //- Execution
 PreparedStatementTask::PreparedStatementTask(PreparedStatement* stmt) :
 m_stmt(stmt),
-m_has_result(false) { }
+m_has_result(false)
+{
+}
 
 PreparedStatementTask::PreparedStatementTask(PreparedStatement* stmt, PreparedQueryResultFuture result) :
 m_stmt(stmt),
 m_has_result(true),
-m_result(result) { }
+m_result(result)
+{
+}
 
 
 PreparedStatementTask::~PreparedStatementTask()

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,7 +26,7 @@ class instance_eye_of_eternity : public InstanceMapScript
 public:
     instance_eye_of_eternity() : InstanceMapScript("instance_eye_of_eternity", 616) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_eye_of_eternity_InstanceMapScript(map);
     }
@@ -51,7 +48,7 @@ public:
             alexstraszaBunnyGUID = 0;
         };
 
-        bool SetBossState(uint32 type, EncounterState state) OVERRIDE
+        bool SetBossState(uint32 type, EncounterState state)
         {
             if (!InstanceScript::SetBossState(type, state))
                 return false;
@@ -73,7 +70,7 @@ public:
                     SpawnGameObject(GO_EXIT_PORTAL, exitPortalPosition);
 
                     if (GameObject* platform = instance->GetGameObject(platformGUID))
-                        platform->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_DESTROYED);
+                        platform->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DESTROYED);
                 }
                 else if (state == DONE)
                     SpawnGameObject(GO_EXIT_PORTAL, exitPortalPosition);
@@ -97,7 +94,7 @@ public:
             instance->AddToMap(go);
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
@@ -105,14 +102,14 @@ public:
                     platformGUID = go->GetGUID();
                     break;
                 case GO_FOCUSING_IRIS_10:
-                    if (instance->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
+                    if (instance->GetDifficulty() == MAN10_DIFFICULTY)
                     {
                         irisGUID = go->GetGUID();
                         go->GetPosition(&focusingIrisPosition);
                     }
                     break;
                 case GO_FOCUSING_IRIS_25:
-                    if (instance->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
+                    if (instance->GetDifficulty() == MAN25_DIFFICULTY)
                     {
                         irisGUID = go->GetGUID();
                         go->GetPosition(&focusingIrisPosition);
@@ -123,17 +120,17 @@ public:
                     go->GetPosition(&exitPortalPosition);
                     break;
                 case GO_HEART_OF_MAGIC_10:
-                    if (instance->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
+                    if (instance->GetDifficulty() == MAN10_DIFFICULTY)
                         heartOfMagicGUID = go->GetGUID();
                     break;
                 case GO_HEART_OF_MAGIC_25:
-                    if (instance->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
+                    if (instance->GetDifficulty() == MAN25_DIFFICULTY)
                         heartOfMagicGUID = go->GetGUID();
                     break;
             }
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnCreatureCreate(Creature* creature)
         {
             switch (creature->GetEntry())
             {
@@ -142,9 +139,11 @@ public:
                     break;
                 case NPC_MALYGOS:
                     malygosGUID = creature->GetGUID();
+                    creature->setActive(true);
                     break;
                 case NPC_PORTAL_TRIGGER:
                     portalTriggers.push_back(creature->GetGUID());
+                    creature->setActive(true);
                     break;
                 case NPC_ALEXSTRASZA_BUNNY:
                     alexstraszaBunnyGUID = creature->GetGUID();
@@ -155,7 +154,7 @@ public:
             }
         }
 
-        void OnUnitDeath(Unit* unit) OVERRIDE
+        void OnUnitDeath(Unit* unit)
         {
             if (unit->GetTypeId() != TYPEID_PLAYER)
                 return;
@@ -175,7 +174,6 @@ public:
                 if (Creature* alexstraszaBunny = instance->GetCreature(alexstraszaBunnyGUID))
                 {
                     alexstraszaBunny->CastSpell(alexstraszaBunny, SPELL_IRIS_OPENED);
-                    instance->GetGameObject(irisGUID)->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_IN_USE);
                 }
 
                 if (Creature* malygos = instance->GetCreature(malygosGUID))
@@ -199,21 +197,17 @@ public:
                     uint8 counter = 0;
                     if (Creature* trigger = instance->GetCreature(*itr_vortex))
                     {
-                        // each trigger have to cast the spell to 5 players.
                         for (std::list<HostileReference*>::const_iterator itr = m_threatlist.begin(); itr!= m_threatlist.end(); ++itr)
                         {
-                            if (counter >= 5)
-                                break;
-
                             if (Unit* target = (*itr)->getTarget())
                             {
                                 Player* player = target->ToPlayer();
 
-                                if (!player || player->IsGameMaster() || player->HasAura(SPELL_VORTEX_4))
+                                if (!player || !player->isAlive() || player->isGameMaster() || player->HasAura(SPELL_VORTEX_4))
                                     continue;
 
                                 player->CastSpell(trigger, SPELL_VORTEX_4, true);
-                                counter++;
+                                break;
                             }
                         }
                     }
@@ -242,7 +236,7 @@ public:
             }
         }
 
-        void SetData(uint32 data, uint32 /*value*/) OVERRIDE
+        void SetData(uint32 data, uint32 /*value*/)
         {
             switch (data)
             {
@@ -253,12 +247,12 @@ public:
                     PowerSparksHandling();
                     break;
                 case DATA_RESPAWN_IRIS:
-                    SpawnGameObject(instance->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL ? GO_FOCUSING_IRIS_10 : GO_FOCUSING_IRIS_25, focusingIrisPosition);
+                    SpawnGameObject(instance->GetDifficulty() == MAN10_DIFFICULTY ? GO_FOCUSING_IRIS_10 : GO_FOCUSING_IRIS_25, focusingIrisPosition);
                     break;
             }
         }
 
-        uint64 GetData64(uint32 data) const OVERRIDE
+        uint64 GetData64(uint32 data)
         {
             switch (data)
             {
@@ -281,7 +275,7 @@ public:
             return 0;
         }
 
-        std::string GetSaveData() OVERRIDE
+        std::string GetSaveData()
         {
             OUT_SAVE_INST_DATA;
 
@@ -292,7 +286,7 @@ public:
             return saveStream.str();
         }
 
-        void Load(const char* str) OVERRIDE
+        void Load(const char* str)
         {
             if (!str)
             {

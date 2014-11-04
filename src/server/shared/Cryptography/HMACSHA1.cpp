@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,6 +24,7 @@ HmacHash::HmacHash(uint32 len, uint8 *seed)
 {
     HMAC_CTX_init(&m_ctx);
     HMAC_Init_ex(&m_ctx, seed, len, EVP_sha1(), NULL);
+    memset(m_digest, 0, sizeof(m_digest));
 }
 
 HmacHash::~HmacHash()
@@ -46,12 +46,12 @@ void HmacHash::Finalize()
 {
     uint32 length = 0;
     HMAC_Final(&m_ctx, (uint8*)m_digest, &length);
-    ASSERT(length == SHA_DIGEST_LENGTH);
+    ASSERT(length == SHA_DIGEST_LENGTH)
 }
 
 uint8 *HmacHash::ComputeHash(BigNumber* bn)
 {
-    HMAC_Update(&m_ctx, bn->AsByteArray().get(), bn->GetNumBytes());
+    HMAC_Update(&m_ctx, bn->AsByteArray(), bn->GetNumBytes());
     Finalize();
     return (uint8*)m_digest;
 }

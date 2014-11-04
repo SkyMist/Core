@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,58 +22,56 @@ Comment: All ban related commands
 Category: commandscripts
 EndScriptData */
 
-#include "AccountMgr.h"
+#include "ScriptMgr.h"
 #include "Chat.h"
-#include "Language.h"
+#include "AccountMgr.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
-#include "Player.h"
-#include "ScriptMgr.h"
 
 class ban_commandscript : public CommandScript
 {
 public:
     ban_commandscript() : CommandScript("ban_commandscript") { }
 
-    ChatCommand* GetCommands() const OVERRIDE
+    ChatCommand* GetCommands() const
     {
         static ChatCommand unbanCommandTable[] =
         {
-            { "account",        rbac::RBAC_PERM_COMMAND_UNBAN_ACCOUNT,       true,  &HandleUnBanAccountCommand,          "", NULL },
-            { "character",      rbac::RBAC_PERM_COMMAND_UNBAN_CHARACTER,     true,  &HandleUnBanCharacterCommand,        "", NULL },
-            { "playeraccount",  rbac::RBAC_PERM_COMMAND_UNBAN_PLAYERACCOUNT, true,  &HandleUnBanAccountByCharCommand,    "", NULL },
-            { "ip",             rbac::RBAC_PERM_COMMAND_UNBAN_IP,            true,  &HandleUnBanIPCommand,               "", NULL },
-            { NULL, 0, false, NULL, "", NULL }
+            { "account",        SEC_ADMINISTRATOR,  true,  &HandleUnBanAccountCommand,          "", NULL },
+            { "character",      SEC_ADMINISTRATOR,  true,  &HandleUnBanCharacterCommand,        "", NULL },
+            { "playeraccount",  SEC_ADMINISTRATOR,  true,  &HandleUnBanAccountByCharCommand,    "", NULL },
+            { "ip",             SEC_ADMINISTRATOR,  true,  &HandleUnBanIPCommand,               "", NULL },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand banlistCommandTable[] =
         {
-            { "account",        rbac::RBAC_PERM_COMMAND_BANLIST_ACCOUNT,   true,  &HandleBanListAccountCommand,        "", NULL },
-            { "character",      rbac::RBAC_PERM_COMMAND_BANLIST_CHARACTER, true,  &HandleBanListCharacterCommand,      "", NULL },
-            { "ip",             rbac::RBAC_PERM_COMMAND_BANLIST_IP,        true,  &HandleBanListIPCommand,             "", NULL },
-            { NULL, 0, false, NULL, "", NULL }
+            { "account",        SEC_ADMINISTRATOR,  true,  &HandleBanListAccountCommand,        "", NULL },
+            { "character",      SEC_ADMINISTRATOR,  true,  &HandleBanListCharacterCommand,      "", NULL },
+            { "ip",             SEC_ADMINISTRATOR,  true,  &HandleBanListIPCommand,             "", NULL },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand baninfoCommandTable[] =
         {
-            { "account",        rbac::RBAC_PERM_COMMAND_BANINFO_ACCOUNT,   true,  &HandleBanInfoAccountCommand,        "", NULL },
-            { "character",      rbac::RBAC_PERM_COMMAND_BANINFO_CHARACTER, true,  &HandleBanInfoCharacterCommand,      "", NULL },
-            { "ip",             rbac::RBAC_PERM_COMMAND_BANINFO_IP,        true,  &HandleBanInfoIPCommand,             "", NULL },
-            { NULL, 0, false, NULL, "", NULL }
+            { "account",        SEC_ADMINISTRATOR,  true,  &HandleBanInfoAccountCommand,        "", NULL },
+            { "character",      SEC_ADMINISTRATOR,  true,  &HandleBanInfoCharacterCommand,      "", NULL },
+            { "ip",             SEC_ADMINISTRATOR,  true,  &HandleBanInfoIPCommand,             "", NULL },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand banCommandTable[] =
         {
-            { "account",        rbac::RBAC_PERM_COMMAND_BAN_ACCOUNT,       true,  &HandleBanAccountCommand,            "", NULL },
-            { "character",      rbac::RBAC_PERM_COMMAND_BAN_CHARACTER,     true,  &HandleBanCharacterCommand,          "", NULL },
-            { "playeraccount",  rbac::RBAC_PERM_COMMAND_BAN_PLAYERACCOUNT, true,  &HandleBanAccountByCharCommand,      "", NULL },
-            { "ip",             rbac::RBAC_PERM_COMMAND_BAN_IP,            true,  &HandleBanIPCommand,                 "", NULL },
-            { NULL, 0, false, NULL, "", NULL }
+            { "account",        SEC_ADMINISTRATOR,  true,  &HandleBanAccountCommand,            "", NULL },
+            { "character",      SEC_ADMINISTRATOR,  true,  &HandleBanCharacterCommand,          "", NULL },
+            { "playeraccount",  SEC_ADMINISTRATOR,  true,  &HandleBanAccountByCharCommand,      "", NULL },
+            { "ip",             SEC_ADMINISTRATOR,  true,  &HandleBanIPCommand,                 "", NULL },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "ban",            rbac::RBAC_PERM_COMMAND_BAN,     true,  NULL,                                "", banCommandTable },
-            { "baninfo",        rbac::RBAC_PERM_COMMAND_BANINFO, true,  NULL,                                "", baninfoCommandTable },
-            { "banlist",        rbac::RBAC_PERM_COMMAND_BANLIST, true,  NULL,                                "", banlistCommandTable },
-            { "unban",          rbac::RBAC_PERM_COMMAND_UNBAN,   true,  NULL,                                "", unbanCommandTable },
-            { NULL, 0, false, NULL, "", NULL }
+            { "ban",            SEC_ADMINISTRATOR,  true,  NULL,                                "", banCommandTable },
+            { "baninfo",        SEC_ADMINISTRATOR,  true,  NULL,                                "", baninfoCommandTable },
+            { "banlist",        SEC_ADMINISTRATOR,  true,  NULL,                                "", banlistCommandTable },
+            { "unban",          SEC_ADMINISTRATOR,  true,  NULL,                                "", unbanCommandTable },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         return commandTable;
     }
@@ -130,6 +126,24 @@ public:
             default:
                 break;
         }
+
+         if (sWorld->getBoolConfig(CONFIG_ANNOUNCE_BAN))
+         {
+            std::string announce;
+
+            announce = "The character '";
+            announce += name.c_str();
+            announce += "' was banned for ";
+            announce += durationStr;
+            announce += " by the character '";
+            announce += handler->GetSession() ? handler->GetSession()->GetPlayerName().c_str() : "";
+            announce += "'. The reason is: ";
+            announce += reasonStr;
+
+            char buff[2048];
+            sprintf(buff, handler->GetTrinityString(LANG_SYSTEMMESSAGE), announce.c_str());
+            sWorld->SendServerMessage(SERVER_MSG_STRING, buff);
+         }
 
         return true;
     }
@@ -212,6 +226,35 @@ public:
                 }
                 handler->SetSentErrorMessage(true);
                 return false;
+            case BAN_ALREADY_PERMANENT:
+                handler->PSendSysMessage("Account already banned to life");
+                break;
+            case BAN_TOO_SMALL:
+                handler->PSendSysMessage("Account already banned");
+                break;
+        }
+
+        if (sWorld->getBoolConfig(CONFIG_ANNOUNCE_BAN))
+        {
+            std::string announce;
+
+            if (mode == BAN_CHARACTER)
+                announce = "The character '";
+            else if (mode == BAN_IP)
+                announce = "The IP '";
+            else
+                announce = "Account '";
+            announce += nameOrIP.c_str();
+            announce += "' was banned for ";
+            announce += durationStr;
+            announce += " by the character '";
+            announce += handler->GetSession() ? handler->GetSession()->GetPlayerName().c_str() : "";
+            announce += "'. The reason is: ";
+            announce += reasonStr;
+
+            char buff[2048];
+            sprintf(buff, handler->GetTrinityString(LANG_SYSTEMMESSAGE), announce.c_str());
+            sWorld->SendServerMessage(SERVER_MSG_STRING, buff);
         }
 
         return true;

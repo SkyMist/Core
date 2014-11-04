@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -23,7 +20,6 @@
 #include "ScriptedGossip.h"
 #include "blackfathom_deeps.h"
 #include "ScriptedEscortAI.h"
-#include "Player.h"
 
 enum Spells
 {
@@ -34,6 +30,8 @@ enum Spells
     SPELL_TELEPORT_DARNASSUS                                = 9268
 };
 
+#define GOSSIP_ITEM_MORRIDUNE "Please port me to Darnassus"
+
 const Position HomePosition = {-815.817f, -145.299f, -25.870f, 0};
 
 class go_blackfathom_altar : public GameObjectScript
@@ -41,7 +39,7 @@ class go_blackfathom_altar : public GameObjectScript
 public:
     go_blackfathom_altar() : GameObjectScript("go_blackfathom_altar") { }
 
-    bool OnGossipHello(Player* player, GameObject* /*go*/) OVERRIDE
+    bool OnGossipHello(Player* player, GameObject* /*go*/)
     {
         if (!player->HasAura(SPELL_BLESSING_OF_BLACKFATHOM))
             player->AddAura(SPELL_BLESSING_OF_BLACKFATHOM, player);
@@ -54,14 +52,14 @@ class go_blackfathom_fire : public GameObjectScript
 public:
     go_blackfathom_fire() : GameObjectScript("go_blackfathom_fire") { }
 
-    bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
+    bool OnGossipHello(Player* /*player*/, GameObject* go)
     {
         InstanceScript* instance = go->GetInstanceScript();
 
         if (instance)
         {
             go->SetGoState(GO_STATE_ACTIVE);
-            go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+            go->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
             instance->SetData(DATA_FIRE, instance->GetData(DATA_FIRE) + 1);
             return true;
         }
@@ -74,16 +72,16 @@ class npc_blackfathom_deeps_event : public CreatureScript
 public:
     npc_blackfathom_deeps_event() : CreatureScript("npc_blackfathom_deeps_event") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_blackfathom_deeps_eventAI(creature);
+        return new npc_blackfathom_deeps_eventAI (creature);
     }
 
     struct npc_blackfathom_deeps_eventAI : public ScriptedAI
     {
         npc_blackfathom_deeps_eventAI(Creature* creature) : ScriptedAI(creature)
         {
-            if (creature->IsSummon())
+            if (creature->isSummon())
             {
                 creature->SetHomePosition(HomePosition);
                 AttackPlayer();
@@ -100,7 +98,7 @@ public:
 
         bool Flee;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Flee = false;
 
@@ -118,12 +116,12 @@ public:
 
             for (Map::PlayerList::const_iterator i = PlList.begin(); i != PlList.end(); ++i)
             {
-                if (Player* player = i->GetSource())
+                if (Player* player = i->getSource())
                 {
-                    if (player->IsGameMaster())
+                    if (player->isGameMaster())
                         continue;
 
-                    if (player->IsAlive())
+                    if (player->isAlive())
                     {
                         me->SetInCombatWith(player);
                         player->SetInCombatWith(me);
@@ -133,7 +131,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -146,7 +144,9 @@ public:
                     {
                         DoCastVictim(SPELL_RAVAGE);
                         ravageTimer = urand(9000, 14000);
-                    } else ravageTimer -= diff;
+                    }
+                    else
+                        ravageTimer -= diff;
                     break;
                 }
                 case NPC_MURKSHALLOW_SOFTSHELL:
@@ -167,14 +167,16 @@ public:
                             DoCast(target, SPELL_FROST_BOLT_VOLLEY);
                         frostBoltVolleyTimer = urand(5000, 8000);
                     }
-                    else frostBoltVolleyTimer -= diff;
+                    else
+                        frostBoltVolleyTimer -= diff;
 
                     if (frostNovaTimer <= diff)
                     {
                         DoCastAOE(SPELL_FROST_NOVA, false);
                         frostNovaTimer = urand(25000, 30000);
                     }
-                    else frostNovaTimer -= diff;
+                    else
+                        frostNovaTimer -= diff;
                     break;
                 }
             }
@@ -182,9 +184,9 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            if (me->IsSummon()) //we are not a normal spawn.
+            if (me->isSummon()) //we are not a normal spawn.
                 if (instance)
                     instance->SetData(DATA_EVENT, instance->GetData(DATA_EVENT) + 1);
         }
@@ -193,8 +195,8 @@ public:
 
 enum Morridune
 {
-    SAY_MORRIDUNE_1 = 0,
-    SAY_MORRIDUNE_2 = 1
+    SAY_MORRIDUNE_1 = -1048003,
+    SAY_MORRIDUNE_2 = -1048004
 };
 
 class npc_morridune : public CreatureScript
@@ -202,38 +204,55 @@ class npc_morridune : public CreatureScript
 public:
     npc_morridune() : CreatureScript("npc_morridune") { }
 
+    bool OnGossipSelect(Player* player, Creature* /*creature*/, uint32 /*sender*/, uint32 action)
+    {
+        player->PlayerTalkClass->ClearMenus();
+        switch (action)
+        {
+            case GOSSIP_ACTION_INFO_DEF + 1:
+                player->TeleportTo(1, 9952.239f, 2284.277f, 1341.394f, 1.595f);
+                player->CLOSE_GOSSIP_MENU();
+                break;
+        }
+        return true;
+    }
+
+    bool OnGossipHello(Player* player, Creature* creature)
+    {
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_MORRIDUNE, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+        return true;
+    }
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_morriduneAI (creature);
+    }
+
     struct npc_morriduneAI : public npc_escortAI
     {
         npc_morriduneAI(Creature* creature) : npc_escortAI(creature)
         {
-            Talk(SAY_MORRIDUNE_1);
-            me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+            DoScriptText(SAY_MORRIDUNE_1, creature);
+            me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             Start(false, false, 0);
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId)
         {
             switch (waypointId)
             {
                 case 4:
                     SetEscortPaused(true);
-                    me->SetFacingTo(1.775791f);
-                    me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                    Talk(SAY_MORRIDUNE_2);
+                    me->SetOrientation(1.775791f);
+                    me->SendMovementFlagUpdate();
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    DoScriptText(SAY_MORRIDUNE_2, me);
                     break;
             }
         }
-
-        void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) OVERRIDE
-        {
-            DoCast(player, SPELL_TELEPORT_DARNASSUS);
-        }
     };
-
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new npc_morriduneAI(creature);
-    }
 };
 
 void AddSC_blackfathom_deeps()

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -43,7 +40,7 @@ public:
 
     struct boss_galvangarAI : public ScriptedAI
     {
-        boss_galvangarAI(Creature* creature) : ScriptedAI(creature) { }
+        boss_galvangarAI(Creature* creature) : ScriptedAI(creature) {}
 
         uint32 CleaveTimer;
         uint32 FrighteningShoutTimer;
@@ -52,7 +49,7 @@ public:
         uint32 MortalStrikeTimer;
         uint32 ResetTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             CleaveTimer                     = urand(1 * IN_MILLISECONDS, 9 * IN_MILLISECONDS);
             FrighteningShoutTimer           = urand(2 * IN_MILLISECONDS, 19 * IN_MILLISECONDS);
@@ -62,48 +59,48 @@ public:
             ResetTimer                      = 5 * IN_MILLISECONDS;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             Talk(YELL_AGGRO);
         }
 
-        void JustRespawned() OVERRIDE
+        void JustRespawned()
         {
             Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
 
             if (CleaveTimer <= diff)
             {
-                DoCastVictim(SPELL_CLEAVE);
+                DoCast(me->getVictim(), SPELL_CLEAVE);
                 CleaveTimer =  urand(10 * IN_MILLISECONDS, 16 * IN_MILLISECONDS);
             } else CleaveTimer -= diff;
 
             if (FrighteningShoutTimer <= diff)
             {
-                DoCastVictim(SPELL_FRIGHTENING_SHOUT);
+                DoCast(me->getVictim(), SPELL_FRIGHTENING_SHOUT);
                 FrighteningShoutTimer = urand(10 * IN_MILLISECONDS, 15 * IN_MILLISECONDS);
             } else FrighteningShoutTimer -= diff;
 
             if (Whirlwind1Timer <= diff)
             {
-                DoCastVictim(SPELL_WHIRLWIND1);
+                DoCast(me->getVictim(), SPELL_WHIRLWIND1);
                 Whirlwind1Timer = urand(6 * IN_MILLISECONDS, 10 * IN_MILLISECONDS);
             } else Whirlwind1Timer -= diff;
 
             if (Whirlwind2Timer <= diff)
             {
-                DoCastVictim(SPELL_WHIRLWIND2);
+                DoCast(me->getVictim(), SPELL_WHIRLWIND2);
                 Whirlwind2Timer = urand(10 * IN_MILLISECONDS, 25 * IN_MILLISECONDS);
             } else Whirlwind2Timer -= diff;
 
             if (MortalStrikeTimer <= diff)
             {
-                DoCastVictim(SPELL_MORTAL_STRIKE);
+                DoCast(me->getVictim(), SPELL_MORTAL_STRIKE);
                 MortalStrikeTimer = urand(10 * IN_MILLISECONDS, 30 * IN_MILLISECONDS);
             } else MortalStrikeTimer -= diff;
 
@@ -122,7 +119,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_galvangarAI(creature);
     }

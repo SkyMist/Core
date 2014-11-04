@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -17,33 +15,46 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+/* ScriptData
+SDName: Boss_Hydromancer_Thespia
+SD%Complete: 80
+SDComment: Needs additional adjustments (when instance script is adjusted)
+SDCategory: Coilfang Resevoir, The Steamvault
+EndScriptData */
+
+/* ContentData
+boss_hydromancer_thespia
+mob_coilfang_waterelemental
+EndContentData */
+
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "steam_vault.h"
 
-enum HydromancerThespia
-{
-    SAY_SUMMON                  = 0,
-    SAY_AGGRO                   = 1,
-    SAY_SLAY                    = 2,
-    SAY_DEAD                    = 3,
+#define SAY_SUMMON                  -1545000
+#define SAY_AGGRO_1                 -1545001
+#define SAY_AGGRO_2                 -1545002
+#define SAY_AGGRO_3                 -1545003
+#define SAY_SLAY_1                  -1545004
+#define SAY_SLAY_2                  -1545005
+#define SAY_DEAD                    -1545006
 
-    SPELL_LIGHTNING_CLOUD       = 25033,
-    SPELL_LUNG_BURST            = 31481,
-    SPELL_ENVELOPING_WINDS      = 31718,
+#define SPELL_LIGHTNING_CLOUD       25033
+#define SPELL_LUNG_BURST            31481
+#define SPELL_ENVELOPING_WINDS      31718
 
-    SPELL_WATER_BOLT_VOLLEY     = 34449,
-    H_SPELL_WATER_BOLT_VOLLEY   = 37924
-};
+#define SPELL_WATER_BOLT_VOLLEY     34449
+#define H_SPELL_WATER_BOLT_VOLLEY   37924
 
 class boss_hydromancer_thespia : public CreatureScript
 {
 public:
     boss_hydromancer_thespia() : CreatureScript("boss_hydromancer_thespia") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_thespiaAI(creature);
+        return new boss_thespiaAI (creature);
     }
 
     struct boss_thespiaAI : public ScriptedAI
@@ -59,38 +70,38 @@ public:
         uint32 LungBurst_Timer;
         uint32 EnvelopingWinds_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             LightningCloud_Timer = 15000;
             LungBurst_Timer = 7000;
             EnvelopingWinds_Timer = 9000;
 
             if (instance)
-                instance->SetBossState(DATA_HYDROMANCER_THESPIA, NOT_STARTED);
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, NOT_STARTED);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEAD);
+            DoScriptText(SAY_DEAD, me);
 
             if (instance)
-                instance->SetBossState(DATA_HYDROMANCER_THESPIA, DONE);
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, DONE);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY_1, SAY_SLAY_2), me);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(RAND(SAY_AGGRO_1, SAY_AGGRO_2, SAY_AGGRO_3), me);
 
             if (instance)
-                instance->SetBossState(DATA_HYDROMANCER_THESPIA, IN_PROGRESS);
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -136,30 +147,30 @@ public:
 
 };
 
-class npc_coilfang_waterelemental : public CreatureScript
+class mob_coilfang_waterelemental : public CreatureScript
 {
 public:
-    npc_coilfang_waterelemental() : CreatureScript("npc_coilfang_waterelemental") { }
+    mob_coilfang_waterelemental() : CreatureScript("mob_coilfang_waterelemental") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_coilfang_waterelementalAI(creature);
+        return new mob_coilfang_waterelementalAI (creature);
     }
 
-    struct npc_coilfang_waterelementalAI : public ScriptedAI
+    struct mob_coilfang_waterelementalAI : public ScriptedAI
     {
-        npc_coilfang_waterelementalAI(Creature* creature) : ScriptedAI(creature) { }
+        mob_coilfang_waterelementalAI(Creature* creature) : ScriptedAI(creature) {}
 
         uint32 WaterBoltVolley_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             WaterBoltVolley_Timer = 3000+rand()%3000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE { }
+        void EnterCombat(Unit* /*who*/) { }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -179,5 +190,5 @@ public:
 void AddSC_boss_hydromancer_thespia()
 {
     new boss_hydromancer_thespia();
-    new npc_coilfang_waterelemental();
+    new mob_coilfang_waterelemental();
 }

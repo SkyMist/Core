@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,49 +26,43 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 
-enum Says
-{
-    SAY_SPAWN                   = 0
-};
+#define SAY_SPAWN   "TIMMY!"
 
-enum Spells
-{
-    SPELL_RAVENOUSCLAW          = 17470
-};
+#define SPELL_RAVENOUSCLAW    17470
 
 class boss_timmy_the_cruel : public CreatureScript
 {
 public:
     boss_timmy_the_cruel() : CreatureScript("boss_timmy_the_cruel") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_timmy_the_cruelAI(creature);
+        return new boss_timmy_the_cruelAI (creature);
     }
 
     struct boss_timmy_the_cruelAI : public ScriptedAI
     {
-        boss_timmy_the_cruelAI(Creature* creature) : ScriptedAI(creature) { }
+        boss_timmy_the_cruelAI(Creature* creature) : ScriptedAI(creature) {}
 
         uint32 RavenousClaw_Timer;
         bool HasYelled;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             RavenousClaw_Timer = 10000;
             HasYelled = false;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             if (!HasYelled)
             {
-                Talk(SAY_SPAWN);
+                me->MonsterYell(SAY_SPAWN, LANG_UNIVERSAL, 0);
                 HasYelled = true;
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -80,7 +72,7 @@ public:
             if (RavenousClaw_Timer <= diff)
             {
                 //Cast
-                DoCastVictim(SPELL_RAVENOUSCLAW);
+                DoCast(me->getVictim(), SPELL_RAVENOUSCLAW);
                 //15 seconds until we should cast this again
                 RavenousClaw_Timer = 15000;
             } else RavenousClaw_Timer -= diff;

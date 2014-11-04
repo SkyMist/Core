@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,31 +22,29 @@ Comment: All quest related commands
 Category: commandscripts
 EndScriptData */
 
-#include "Chat.h"
-#include "ObjectMgr.h"
-#include "Player.h"
-#include "ReputationMgr.h"
 #include "ScriptMgr.h"
+#include "ObjectMgr.h"
+#include "Chat.h"
 
 class quest_commandscript : public CommandScript
 {
 public:
     quest_commandscript() : CommandScript("quest_commandscript") { }
 
-    ChatCommand* GetCommands() const OVERRIDE
+    ChatCommand* GetCommands() const
     {
         static ChatCommand questCommandTable[] =
         {
-            { "add",      rbac::RBAC_PERM_COMMAND_QUEST_ADD,      false, &HandleQuestAdd,      "", NULL },
-            { "complete", rbac::RBAC_PERM_COMMAND_QUEST_COMPLETE, false, &HandleQuestComplete, "", NULL },
-            { "remove",   rbac::RBAC_PERM_COMMAND_QUEST_REMOVE,   false, &HandleQuestRemove,   "", NULL },
-            { "reward",   rbac::RBAC_PERM_COMMAND_QUEST_REWARD,   false, &HandleQuestReward,   "", NULL },
-            { NULL,       0,                                false, NULL,                 "", NULL }
+            { "add",            SEC_ADMINISTRATOR,  false, &HandleQuestAdd,                    "", NULL },
+            { "complete",       SEC_ADMINISTRATOR,  false, &HandleQuestComplete,               "", NULL },
+            { "remove",         SEC_ADMINISTRATOR,  false, &HandleQuestRemove,                 "", NULL },
+            { "reward",         SEC_ADMINISTRATOR,  false, &HandleQuestReward,                 "", NULL },
+            { NULL,             SEC_PLAYER,         false, NULL,                               "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "quest", rbac::RBAC_PERM_COMMAND_QUEST,  false, NULL, "", questCommandTable },
-            { NULL,    0,                        false, NULL,              "", NULL }
+            { "quest",          SEC_ADMINISTRATOR,  false, NULL,                  "", questCommandTable },
+            { NULL,             SEC_PLAYER,         false, NULL,                               "", NULL }
         };
         return commandTable;
     }
@@ -82,7 +78,7 @@ public:
 
         // check item starting quest (it can work incorrectly if added without item in inventory)
         ItemTemplateContainer const* itc = sObjectMgr->GetItemTemplateStore();
-        ItemTemplateContainer::const_iterator result = find_if (itc->begin(), itc->end(), Finder<uint32, ItemTemplate>(entry, &ItemTemplate::StartQuest));
+        ItemTemplateContainer::const_iterator result = find_if(itc->begin(), itc->end(), Finder<uint32, ItemTemplate>(entry, &ItemTemplate::StartQuest));
 
         if (result != itc->end())
         {
@@ -94,7 +90,7 @@ public:
         // ok, normal (creature/GO starting) quest
         if (player->CanAddQuest(quest, true))
         {
-            player->AddQuestAndCheckCompletion(quest, NULL);
+            player->AddQuest(quest, NULL);
 
             if (player->CanCompleteQuest(entry))
                 player->CompleteQuest(entry);
@@ -140,12 +136,6 @@ public:
 
                 // we ignore unequippable quest items in this case, its' still be equipped
                 player->TakeQuestSourceItem(logQuest, false);
-
-                if (quest->HasFlag(QUEST_FLAGS_FLAGS_PVP))
-                {
-                    player->pvpInfo.IsHostile = player->pvpInfo.IsInHostileArea || player->HasPvPForcingQuest();
-                    player->UpdatePvPState();
-                }
             }
         }
 
@@ -203,26 +193,40 @@ public:
             }
         }
 
+        for (uint8 y = 0; y < QUEST_REQUIRED_CURRENCY_COUNT; y++)
+        {
+            uint32 currency = quest->RequiredCurrencyId[y];
+            uint32 currencyCount = quest->RequiredCurrencyCount[y];
+
+            if (!currency || !currencyCount)
+                continue;
+
+            player->ModifyCurrency(currency, currencyCount);
+        }
+
         // All creature/GO slain/casted (not required, but otherwise it will display "Creature slain 0/10")
         for (uint8 i = 0; i < QUEST_OBJECTIVES_COUNT; ++i)
         {
             int32 creature = quest->RequiredNpcOrGo[i];
-            uint32 creatureCount = quest->RequiredNpcOrGoCount[i];
+            uint32 creaturecount = quest->RequiredNpcOrGoCount[i];
 
             if (uint32 spell_id = quest->RequiredSpellCast[i])
             {
-                for (uint16 z = 0; z < creatureCount; ++z)
-                    player->CastedCreatureOrGO(creature, 0, spell_id);
+                for (uint16 z = 0; z < creaturecount; ++z)
+                    if (creature > 0)
+                        player->CastedCreatureOrGOForQuest(creature, true, spell_id);
+                    else
+                        player->CastedCreatureOrGOForQuest(creature, false, spell_id);
             }
             else if (creature > 0)
             {
                 if (CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(creature))
-                    for (uint16 z = 0; z < creatureCount; ++z)
+                    for (uint16 z = 0; z < creaturecount; ++z)
                         player->KilledMonster(cInfo, 0);
             }
             else if (creature < 0)
             {
-                for (uint16 z = 0; z < creatureCount; ++z)
+                for (uint16 z = 0; z < creaturecount; ++z)
                     player->CastedCreatureOrGO(creature, 0, 0);
             }
         }

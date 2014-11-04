@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,16 +25,17 @@ enum Spells
     H_SPELL_HATEFUL_STRIKE                      = 59192,
     SPELL_FRENZY                                = 28131,
     SPELL_BERSERK                               = 26662,
-    SPELL_SLIME_BOLT                            = 32309
+    SPELL_SLIME_BOLT                            = 32309,
 };
 
 enum Yells
 {
-    SAY_AGGRO                                   = 0,
-    SAY_SLAY                                    = 1,
-    SAY_DEATH                                   = 2,
-    EMOTE_BERSERK                               = 3,
-    EMOTE_ENRAGE                                = 4
+    SAY_AGGRO_1                                 = -1533017,
+    SAY_AGGRO_2                                 = -1533018,
+    SAY_SLAY                                    = -1533019,
+    SAY_DEATH                                   = -1533020,
+    EMOTE_BERSERK                               = -1533021,
+    EMOTE_ENRAGE                                = -1533022,
 };
 
 enum Events
@@ -48,9 +46,9 @@ enum Events
     EVENT_SLIME
 };
 
-enum Misc
+enum
 {
-    ACHIEV_MAKE_QUICK_WERK_OF_HIM_STARTING_EVENT  = 10286
+    ACHIEV_MAKE_QUICK_WERK_OF_HIM_STARTING_EVENT  = 10286,
 };
 
 class boss_patchwerk : public CreatureScript
@@ -58,18 +56,18 @@ class boss_patchwerk : public CreatureScript
 public:
     boss_patchwerk() : CreatureScript("boss_patchwerk") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_patchwerkAI(creature);
+        return new boss_patchwerkAI (creature);
     }
 
     struct boss_patchwerkAI : public BossAI
     {
-        boss_patchwerkAI(Creature* creature) : BossAI(creature, BOSS_PATCHWERK) { }
+        boss_patchwerkAI(Creature* creature) : BossAI(creature, BOSS_PATCHWERK) {}
 
         bool Enraged;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             _Reset();
 
@@ -77,23 +75,23 @@ public:
                 instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_MAKE_QUICK_WERK_OF_HIM_STARTING_EVENT);
         }
 
-        void KilledUnit(Unit* /*Victim*/) OVERRIDE
+        void KilledUnit(Unit* /*Victim*/)
         {
             if (!(rand()%5))
-                Talk(SAY_SLAY);
+                DoScriptText(SAY_SLAY, me);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             _JustDied();
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             _EnterCombat();
             Enraged = false;
-            Talk(SAY_AGGRO);
+            DoScriptText(RAND(SAY_AGGRO_1, SAY_AGGRO_2), me);
             events.ScheduleEvent(EVENT_HATEFUL, 1000);
             events.ScheduleEvent(EVENT_BERSERK, 360000);
 
@@ -101,7 +99,7 @@ public:
                 instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_MAKE_QUICK_WERK_OF_HIM_STARTING_EVENT);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -122,7 +120,7 @@ public:
                         for (; i != me->getThreatManager().getThreatList().end(); ++i)
                         {
                             Unit* target = (*i)->getTarget();
-                            if (target->IsAlive() && target != me->GetVictim() && target->GetHealth() > MostHP && me->IsWithinMeleeRange(target))
+                            if (target->isAlive() && target != me->getVictim() && target->GetHealth() > MostHP && me->IsWithinMeleeRange(target))
                             {
                                 MostHP = target->GetHealth();
                                 pMostHPTarget = target;
@@ -130,7 +128,7 @@ public:
                         }
 
                         if (!pMostHPTarget)
-                            pMostHPTarget = me->GetVictim();
+                            pMostHPTarget = me->getVictim();
 
                         DoCast(pMostHPTarget, RAID_MODE(SPELL_HATEFUL_STRIKE, H_SPELL_HATEFUL_STRIKE), true);
 
@@ -139,11 +137,11 @@ public:
                     }
                     case EVENT_BERSERK:
                         DoCast(me, SPELL_BERSERK, true);
-                        Talk(EMOTE_BERSERK);
+                        DoScriptText(EMOTE_BERSERK, me);
                         events.ScheduleEvent(EVENT_SLIME, 2000);
                         break;
                     case EVENT_SLIME:
-                        DoCastVictim(SPELL_SLIME_BOLT, true);
+                        DoCast(me->getVictim(), SPELL_SLIME_BOLT, true);
                         events.ScheduleEvent(EVENT_SLIME, 2000);
                         break;
                 }
@@ -152,7 +150,7 @@ public:
             if (!Enraged && HealthBelowPct(5))
             {
                 DoCast(me, SPELL_FRENZY, true);
-                Talk(EMOTE_ENRAGE);
+                DoScriptText(EMOTE_ENRAGE, me);
                 Enraged = true;
             }
 

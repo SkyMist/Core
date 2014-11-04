@@ -1,174 +1,121 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+#include "ScriptPCH.h"
+#include "zulgurub.h"
 
-#include "ScriptMgr.h"
-#include "InstanceScript.h"
-#include "instance_zulgurub.h"
-
-DoorData const doorData[] =
+static const DoorData doordata[] = 
 {
-    { GO_VENOXIS_COIL,                  DATA_VENOXIS,   DOOR_TYPE_ROOM, BOUNDARY_NONE },
-    { GO_ARENA_DOOR_1,                  DATA_MANDOKIR,  DOOR_TYPE_ROOM, BOUNDARY_NONE },
-    { GO_FORCEFIELD,                    DATA_KILNARA,   DOOR_TYPE_ROOM, BOUNDARY_NONE },
-    { GO_ZANZIL_DOOR,                   DATA_ZANZIL,    DOOR_TYPE_ROOM, BOUNDARY_NONE },
-    //{ GO_THE_CACHE_OF_MADNESS_DOOR,     DATA_xxxxxxx,   DOOR_TYPE_ROOM, BOUNDARY_NONE },
-    { 0,                                0,              DOOR_TYPE_ROOM, BOUNDARY_NONE }
+    {GO_VENOXIS_EXIT,           DATA_VENOXIS,            DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_MANDOKIR_EXIT1,         DATA_MANDOKIR,           DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_MANDOKIR_EXIT2,         DATA_MANDOKIR,           DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_MANDOKIR_EXIT3,         DATA_MANDOKIR,           DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_MANDOKIR_EXIT4,         DATA_MANDOKIR,           DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_MANDOKIR_EXIT5,         DATA_MANDOKIR,           DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_ZANZIL_EXIT,            DATA_ZANZIL,             DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_KILNARA_EXIT,           DATA_KILNARA,            DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {0,                         0,                       DOOR_TYPE_ROOM,     BOUNDARY_NONE},
 };
 
 class instance_zulgurub : public InstanceMapScript
 {
     public:
-        instance_zulgurub() : InstanceMapScript(ZGScriptName, 859) { }
+        instance_zulgurub() : InstanceMapScript("instance_zulgurub", 859) { }
+        
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        {
+            return new instance_zulgurub_InstanceMapScript(map);
+        }
 
         struct instance_zulgurub_InstanceMapScript : public InstanceScript
         {
             instance_zulgurub_InstanceMapScript(Map* map) : InstanceScript(map)
             {
                 SetBossNumber(EncounterCount);
-                LoadDoorData(doorData);
-                venoxisGUID         = 0;
-                mandokirGUID        = 0;
-                kilnaraGUID         = 0;
-                zanzilGUID          = 0;
-                jindoGUID           = 0;
-                hazzarahGUID        = 0;
-                renatakiGUID        = 0;
-                wushoolayGUID       = 0;
-                grilekGUID          = 0;
-                jindoTiggerGUID     = 0;
+                LoadDoorData(doordata);
+                venoxisGUID     = 0;
+                mandokirGUID    = 0;
+                kilnaraGUID     = 0;
+                zanzilGUID      = 0;
+                jindoGUID       = 0;
+                hazzarahGUID    = 0;
+                renatakiGUID    = 0;
+                wushoolayGUID   = 0;
+                grilekGUID      = 0;
+                uiBosses        = 0;
             }
-
-            void OnCreatureCreate(Creature* creature) OVERRIDE
+    
+            void OnCreatureCreate(Creature* creature)
             {
                 switch (creature->GetEntry())
                 {
-                    case NPC_VENOXIS:
-                        venoxisGUID = creature->GetGUID();
-                        break;
-                    case NPC_MANDOKIR:
-                        mandokirGUID = creature->GetGUID();
-                        break;
-                    case NPC_KILNARA:
-                        kilnaraGUID = creature->GetGUID();
-                        break;
-                    case NPC_ZANZIL:
-                        zanzilGUID = creature->GetGUID();
-                        break;
-                    case NPC_JINDO:
-                        jindoGUID = creature->GetGUID();
-                        break;
-                    case NPC_HAZZARAH:
-                        hazzarahGUID = creature->GetGUID();
-                        break;
-                    case NPC_RENATAKI:
-                        renatakiGUID = creature->GetGUID();
-                        break;
-                    case NPC_WUSHOOLAY:
-                        wushoolayGUID = creature->GetGUID();
-                        break;
-                    case NPC_GRILEK:
-                        grilekGUID = creature->GetGUID();
-                        break;
-                    case NPC_JINDO_TRIGGER:
-                        jindoTiggerGUID = creature->GetGUID();
-                        break;
-                    default:
-                        break;
+                   case NPC_VENOXIS:
+                      venoxisGUID = creature->GetGUID();
+                      break;
+                   case NPC_MANDOKIR:
+                      mandokirGUID = creature->GetGUID();
+                      break;
+                   case NPC_KILNARA:
+                      kilnaraGUID = creature->GetGUID();
+                      break;
+                   case NPC_ZANZIL:
+                      zanzilGUID = creature->GetGUID();
+                      break;
+                   case NPC_JINDO:
+                      jindoGUID = creature->GetGUID();
+                      break;
+                   case NPC_HAZZARAH:
+                      hazzarahGUID = creature->GetGUID();
+                      break;
+                   case NPC_RENATAKI:
+                      renatakiGUID = creature->GetGUID();
+                      break;
+                   case NPC_WUSHOOLAY:
+                      wushoolayGUID = creature->GetGUID();
+                      break;
+                   case NPC_GRILEK:
+                      grilekGUID = creature->GetGUID();
+                      break;
+                   default:
+                      break;
                 }
             }
-
-            void OnGameObjectCreate(GameObject* go) OVERRIDE
+            
+            void OnGameObjectCreate(GameObject* pGo)
             {
-                switch (go->GetEntry())
+                switch (pGo->GetEntry())
                 {
-                    case GO_VENOXIS_COIL:
-                    case GO_ARENA_DOOR_1:
-                    case GO_FORCEFIELD:
-                    case GO_ZANZIL_DOOR:
-                    case GO_THE_CACHE_OF_MADNESS_DOOR:
-                        AddDoor(go, true);
-                        break;
-                    default:
+                    case GO_VENOXIS_EXIT:
+                    case GO_MANDOKIR_EXIT1:
+                    case GO_MANDOKIR_EXIT2:
+                    case GO_MANDOKIR_EXIT3:
+                    case GO_MANDOKIR_EXIT4:
+                    case GO_MANDOKIR_EXIT5:
+                    case GO_ZANZIL_EXIT:
+                    case GO_KILNARA_EXIT:
+                        AddDoor(pGo, true);
                         break;
                 }
             }
 
-            void OnGameObjectRemove(GameObject* go) OVERRIDE
-            {
-                switch (go->GetEntry())
-                {
-                    case GO_VENOXIS_COIL:
-                    case GO_ARENA_DOOR_1:
-                    case GO_FORCEFIELD:
-                    case GO_ZANZIL_DOOR:
-                    case GO_THE_CACHE_OF_MADNESS_DOOR:
-                        AddDoor(go, false);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
+            bool SetBossState(uint32 type, EncounterState state)
             {
                 if (!InstanceScript::SetBossState(type, state))
                     return false;
 
-                switch (type)
+                if (state == DONE)
                 {
-                    case DATA_VENOXIS:
-                    case DATA_MANDOKIR:
-                    case DATA_KILNARA:
-                    case DATA_ZANZIL:
-                    case DATA_JINDO:
-                    case DATA_HAZZARAH:
-                    case DATA_RENATAKI:
-                    case DATA_WUSHOOLAY:
-                    case DATA_GRILEK:
-                        break;
-                    default:
-                        break;
+                    uiBosses++;
+                    SaveToDB();
                 }
 
                 return true;
             }
 
-            /*
-            void SetData(uint32 type, uint32 data) OVERRIDE
+            uint32 GetData(uint32 type)
             {
-                switch (type)
-                {
-                }
-            }
-
-            uint32 GetData(uint32 type) const OVERRIDE
-            {
-                switch (type)
-                {
-                }
-
+                if (type == DATA_BOSSES)
+                    return uiBosses;
                 return 0;
             }
-            */
-
-            uint64 GetData64(uint32 type) const OVERRIDE
+            uint64 GetData64(uint32 type)
             {
                 switch (type)
                 {
@@ -190,27 +137,26 @@ class instance_zulgurub : public InstanceMapScript
                         return wushoolayGUID;
                     case DATA_GRILEK:
                         return grilekGUID;
-                    case DATA_JINDOR_TRIGGER:
-                        return jindoTiggerGUID;
                     default:
                         break;
+
                 }
 
                 return 0;
             }
 
-            std::string GetSaveData() OVERRIDE
+            std::string GetSaveData()
             {
                 OUT_SAVE_INST_DATA;
 
                 std::ostringstream saveStream;
-                saveStream << "Z G " << GetBossSaveData();
+                saveStream << "Z G " << uiBosses << " " << GetBossSaveData();
 
                 OUT_SAVE_INST_DATA_COMPLETE;
                 return saveStream.str();
             }
 
-            void Load(char const* str) OVERRIDE
+            void Load(char const* str)
             {
                 if (!str)
                 {
@@ -227,6 +173,9 @@ class instance_zulgurub : public InstanceMapScript
 
                 if (dataHead1 == 'Z' && dataHead2 == 'G')
                 {
+                    loadStream >> uiBosses;
+                    if (uiBosses > 5)
+                        uiBosses = 0;
                     for (uint8 i = 0; i < EncounterCount; ++i)
                     {
                         uint32 tmpState;
@@ -253,13 +202,8 @@ class instance_zulgurub : public InstanceMapScript
              uint64 renatakiGUID;
              uint64 wushoolayGUID;
              uint64 grilekGUID;
-             uint64 jindoTiggerGUID;
+             uint32 uiBosses; 
         };
-
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
-        {
-            return new instance_zulgurub_InstanceMapScript(map);
-        }
 };
 
 void AddSC_instance_zulgurub()

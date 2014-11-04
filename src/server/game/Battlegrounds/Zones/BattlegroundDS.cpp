@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -17,12 +16,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Battleground.h"
 #include "BattlegroundDS.h"
-#include "Creature.h"
-#include "GameObject.h"
 #include "Language.h"
-#include "ObjectAccessor.h"
 #include "Player.h"
+#include "Object.h"
+#include "ObjectMgr.h"
 #include "WorldPacket.h"
 
 BattlegroundDS::BattlegroundDS()
@@ -34,6 +33,7 @@ BattlegroundDS::BattlegroundDS()
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
+    //we must set messageIds
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
@@ -147,7 +147,11 @@ void BattlegroundDS::StartingEventOpenDoors()
 void BattlegroundDS::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    PlayerScores[player->GetGUID()] = new BattlegroundScore;
+    //create score and add it to map, default values are set in constructor
+    BattlegroundDSScore* score = new BattlegroundDSScore;
+
+    PlayerScores[player->GetGUID()] = score;
+
     UpdateArenaWorldState();
 }
 
@@ -167,7 +171,6 @@ void BattlegroundDS::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
-        TC_LOG_ERROR("bg.battleground", "BattlegroundDS: Killer player not found");
         return;
     }
 
@@ -177,18 +180,18 @@ void BattlegroundDS::HandleKillPlayer(Player* player, Player* killer)
     CheckArenaWinConditions();
 }
 
-void BattlegroundDS::HandleAreaTrigger(Player* player, uint32 trigger)
+void BattlegroundDS::HandleAreaTrigger(Player* Source, uint32 Trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    switch (trigger)
+    switch (Trigger)
     {
         case 5347:
         case 5348:
             // Remove effects of Demonic Circle Summon
-            if (player->HasAura(48018))
-                player->RemoveAurasDueToSpell(48018);
+            if (Source->HasAura(48018))
+                Source->RemoveAurasDueToSpell(48018);
 
             // Someone has get back into the pipes and the knockback has already been performed,
             // so we reset the knockback count for kicking the player again into the arena.
@@ -196,14 +199,19 @@ void BattlegroundDS::HandleAreaTrigger(Player* player, uint32 trigger)
                 setPipeKnockBackCount(0);
             break;
         default:
-            Battleground::HandleAreaTrigger(player, trigger);
             break;
     }
 }
 
-void BattlegroundDS::FillInitialWorldStates(ByteBuffer& data)
+bool BattlegroundDS::HandlePlayerUnderMap(Player* player)
 {
-    data << uint32(1) << uint32(3610);                                              // 9 show
+    player->TeleportTo(GetMapId(), 1299.046f, 784.825f, 9.338f, player->GetOrientation(), false);
+    return true;
+}
+
+void BattlegroundDS::FillInitialWorldStates(WorldPacket &data)
+{
+    Player::AppendWorldState(data, uint32(3610), uint32(1));                                              // 9 show
     UpdateArenaWorldState();
 }
 
@@ -229,7 +237,6 @@ bool BattlegroundDS::SetupBattleground()
         || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_1, 0, 1369.977f, 817.2882f, 16.08718f, 3.106686f, RESPAWN_IMMEDIATELY)
         || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_2, 0, 1212.833f, 765.3871f, 16.09484f, 0.0f, RESPAWN_IMMEDIATELY))
     {
-        TC_LOG_ERROR("sql.sql", "BatteGroundDS: Failed to spawn some object!");
         return false;
     }
 

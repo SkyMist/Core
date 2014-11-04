@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -16,14 +15,6 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
-/**
-* @file main.cpp
-* @brief Authentication Server main program
-*
-* This file contains the main program for the
-* authentication server
-*/
 
 #include <ace/Dev_Poll_Reactor.h>
 #include <ace/TP_Reactor.h>
@@ -42,12 +33,6 @@
 #include "RealmList.h"
 #include "RealmAcceptor.h"
 
-#ifdef __linux__
-#include <sched.h>
-#include <sys/resource.h>
-#define PROCESS_HIGH_PRIORITY -15 // [-20, 19], default is 0
-#endif
-
 #ifndef _TRINITY_REALM_CONFIG
 # define _TRINITY_REALM_CONFIG  "authserver.conf"
 #endif
@@ -57,15 +42,15 @@ void StopDB();
 
 bool stopEvent = false;                                     // Setting it to true stops the server
 
-LoginDatabaseWorkerPool LoginDatabase;                      // Accessor to the authserver database
+LoginDatabaseWorkerPool LoginDatabase;                      // Accessor to the auth server database
 
-/// Handle authserver's termination signals
-class AuthServerSignalHandler : public Trinity::SignalHandler
+// Handle authserver's termination signals
+class AuthServerSignalHandler : public JadeCore::SignalHandler
 {
 public:
-    virtual void HandleSignal(int sigNum)
+    virtual void HandleSignal(int SigNum)
     {
-        switch (sigNum)
+        switch (SigNum)
         {
         case SIGINT:
         case SIGTERM:
@@ -76,56 +61,47 @@ public:
 };
 
 /// Print out the usage string for this program on the console.
-void usage(const char* prog)
+void usage(const char *prog)
 {
-    TC_LOG_INFO("server.authserver", "Usage: \n %s [<options>]\n"
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "Usage: \n %s [<options>]\n"
         "    -c config_file           use config_file as configuration file\n\r",
         prog);
 }
 
-/// Launch the auth server
-extern int main(int argc, char** argv)
+// Launch the auth server
+extern int main(int argc, char **argv)
 {
     // Command line parsing to get the configuration file name
-    char const* configFile = _TRINITY_REALM_CONFIG;
-    int count = 1;
-    while (count < argc)
+    char const* cfg_file = _TRINITY_REALM_CONFIG;
+    int c = 1;
+    while (c < argc)
     {
-        if (strcmp(argv[count], "-c") == 0)
+        if (strcmp(argv[c], "-c") == 0)
         {
-            if (++count >= argc)
+            if (++c >= argc)
             {
-                printf("Runtime-Error: -c option requires an input argument\n");
+                printf("Runtime-Error: -c option requires an input argument");
                 usage(argv[0]);
                 return 1;
             }
             else
-                configFile = argv[count];
+                cfg_file = argv[c];
         }
-        ++count;
+        ++c;
     }
 
-    if (!sConfigMgr->LoadInitial(configFile))
+    if (!ConfigMgr::Load(cfg_file))
     {
-        printf("Invalid or missing configuration file : %s\n", configFile);
-        printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!\n");
+        printf("Invalid or missing configuration file : %s", cfg_file);
+        printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!");
         return 1;
     }
 
-    TC_LOG_INFO("server.authserver", "%s (authserver)", _FULLVERSION);
-    TC_LOG_INFO("server.authserver", "<Ctrl-C> to stop.\n");
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "%s (authserver)", _FULLVERSION);
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "<Ctrl-C> to stop.\n");
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "Using configuration file %s.", cfg_file);
 
-    TC_LOG_INFO("server.authserver", " ############  ##   ##  ##  ##  ###    ###  ##    ###########  ###############");
-    TC_LOG_INFO("server.authserver", " ###           ##  ##    #  #   ## #  # ##        ###              ######");
-    TC_LOG_INFO("server.authserver", " #########     ###        ##    ##  ##  ##  ##    ##########         ##");
-    TC_LOG_INFO("server.authserver", "       ###     ##  ##     ##    ##  ##  ##  ##           ###         ##");
-    TC_LOG_INFO("server.authserver", "##########     ##   ##    ##    ##  ##  ##  ##    ##########         ##");
-    TC_LOG_INFO("server.authserver", "     v. 5.4.7                         C O R E ");
-    TC_LOG_INFO("server.authserver", "  Project SkyMist 2014(c) Game Emulation <http://www.sky-mist.net/> \n");
-
-    TC_LOG_INFO("server.authserver", "Using configuration file %s.", configFile);
-
-    TC_LOG_WARN("server.authserver", "%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    sLog->outWarn(LOG_FILTER_AUTHSERVER, "%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
 
 #if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);
@@ -133,54 +109,56 @@ extern int main(int argc, char** argv)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor(), true), true);
 #endif
 
-    TC_LOG_DEBUG("server.authserver", "Max allowed open files is %d", ACE::max_handles());
+    sLog->outDebug(LOG_FILTER_AUTHSERVER, "Max allowed open files is %d", ACE::max_handles());
 
     // authserver PID file creation
-    std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
-    if (!pidFile.empty())
+    std::string pidfile = ConfigMgr::GetStringDefault("PidFile", "");
+    if (!pidfile.empty())
     {
-        if (uint32 pid = CreatePIDFile(pidFile))
-            TC_LOG_INFO("server.authserver", "Daemon PID: %u\n", pid);
-        else
+        uint32 pid = CreatePIDFile(pidfile);
+        if (!pid)
         {
-            TC_LOG_ERROR("server.authserver", "Cannot create PID file %s.\n", pidFile.c_str());
+            sLog->outError(LOG_FILTER_AUTHSERVER, "Cannot create PID file %s.\n", pidfile.c_str());
             return 1;
         }
+        sLog->outInfo(LOG_FILTER_AUTHSERVER, "Daemon PID: %u\n", pid);
     }
 
     // Initialize the database connection
     if (!StartDB())
         return 1;
 
+    sLog->SetRealmID(0);                                               // ensure we've set realm to 0 (authserver realmid)
+
     // Get the list of realms for the server
-    sRealmList->Initialize(sConfigMgr->GetIntDefault("RealmsStateUpdateDelay", 20));
+    sRealmList->Initialize(ConfigMgr::GetIntDefault("RealmsStateUpdateDelay", 20));
     if (sRealmList->size() == 0)
     {
-        TC_LOG_ERROR("server.authserver", "No valid realms specified.");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "No valid realms specified.");
         return 1;
     }
 
     // Launch the listening network socket
     RealmAcceptor acceptor;
 
-    int32 rmport = sConfigMgr->GetIntDefault("RealmServerPort", 3724);
+    int32 rmport = ConfigMgr::GetIntDefault("RealmServerPort", 3724);
     if (rmport < 0 || rmport > 0xFFFF)
     {
-        TC_LOG_ERROR("server.authserver", "Specified port out of allowed range (1-65535)");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Specified port out of allowed range (1-65535)");
         return 1;
     }
 
-    std::string bind_ip = sConfigMgr->GetStringDefault("BindIP", "0.0.0.0");
+    std::string bind_ip = ConfigMgr::GetStringDefault("BindIP", "0.0.0.0");
 
     ACE_INET_Addr bind_addr(uint16(rmport), bind_ip.c_str());
 
     if (acceptor.open(bind_addr, ACE_Reactor::instance(), ACE_NONBLOCK) == -1)
     {
-        TC_LOG_ERROR("server.authserver", "Auth server can not bind to %s:%d", bind_ip.c_str(), rmport);
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Auth server can not bind to %s:%d", bind_ip.c_str(), rmport);
         return 1;
     }
 
-    // Initialize the signal handlers
+    // Initialise the signal handlers
     AuthServerSignalHandler SignalINT, SignalTERM;
 
     // Register authservers's signal handlers
@@ -188,73 +166,46 @@ extern int main(int argc, char** argv)
     Handler.register_handler(SIGINT, &SignalINT);
     Handler.register_handler(SIGTERM, &SignalTERM);
 
-    ///- Handle affinity for multiple processors and process priority
-    uint32 affinity = sConfigMgr->GetIntDefault("UseProcessors", 0);
-    bool highPriority = sConfigMgr->GetBoolDefault("ProcessPriority", false);
-
-#ifdef _WIN32 // Windows
+    ///- Handle affinity for multiple processors and process priority on Windows
+#ifdef _WIN32
     {
         HANDLE hProcess = GetCurrentProcess();
 
-        if (affinity > 0)
+        uint32 Aff = ConfigMgr::GetIntDefault("UseProcessors", 0);
+        if (Aff > 0)
         {
             ULONG_PTR appAff;
             ULONG_PTR sysAff;
 
             if (GetProcessAffinityMask(hProcess, &appAff, &sysAff))
             {
-                ULONG_PTR currentAffinity = affinity & appAff;            // remove non accessible processors
+                ULONG_PTR curAff = Aff & appAff;            // remove non accessible processors
 
-                if (!currentAffinity)
-                    TC_LOG_ERROR("server.authserver", "Processors marked in UseProcessors bitmask (hex) %x are not accessible for the authserver. Accessible processors bitmask (hex): %x", affinity, appAff);
-                else if (SetProcessAffinityMask(hProcess, currentAffinity))
-                    TC_LOG_INFO("server.authserver", "Using processors (bitmask, hex): %x", currentAffinity);
+                if (!curAff)
+                    sLog->outError(LOG_FILTER_AUTHSERVER, "Processors marked in UseProcessors bitmask (hex) %x not accessible for authserver. Accessible processors bitmask (hex): %x", Aff, appAff);
+                else if (SetProcessAffinityMask(hProcess, curAff))
+                    sLog->outInfo(LOG_FILTER_AUTHSERVER, "Using processors (bitmask, hex): %x", curAff);
                 else
-                    TC_LOG_ERROR("server.authserver", "Can't set used processors (hex): %x", currentAffinity);
+                    sLog->outError(LOG_FILTER_AUTHSERVER, "Can't set used processors (hex): %x", curAff);
             }
+
         }
 
-        if (highPriority)
+        bool Prio = ConfigMgr::GetBoolDefault("ProcessPriority", false);
+
+        if (Prio)
         {
             if (SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS))
-                TC_LOG_INFO("server.authserver", "authserver process priority class set to HIGH");
+                sLog->outInfo(LOG_FILTER_AUTHSERVER, "The auth server process priority class has been set to HIGH");
             else
-                TC_LOG_ERROR("server.authserver", "Can't set authserver process priority class.");
+                sLog->outError(LOG_FILTER_AUTHSERVER, "Can't set auth server process priority class.");
+
         }
     }
-#elif __linux__ // Linux
-
-    if (affinity > 0)
-    {
-        cpu_set_t mask;
-        CPU_ZERO(&mask);
-
-        for (unsigned int i = 0; i < sizeof(affinity) * 8; ++i)
-            if (affinity & (1 << i))
-                CPU_SET(i, &mask);
-
-        if (sched_setaffinity(0, sizeof(mask), &mask))
-            TC_LOG_ERROR("server.authserver", "Can't set used processors (hex): %x, error: %s", affinity, strerror(errno));
-        else
-        {
-            CPU_ZERO(&mask);
-            sched_getaffinity(0, sizeof(mask), &mask);
-            TC_LOG_INFO("server.authserver", "Using processors (bitmask, hex): %x", *(uint32*)(&mask));
-        }
-    }
-
-    if (highPriority)
-    {
-        if (setpriority(PRIO_PROCESS, 0, PROCESS_HIGH_PRIORITY))
-            TC_LOG_ERROR("server.authserver", "Can't set authserver process priority class, error: %s", strerror(errno));
-        else
-            TC_LOG_INFO("server.authserver", "authserver process priority class set to %i", getpriority(PRIO_PROCESS, 0));
-    }
-
 #endif
 
     // maximum counter for next ping
-    uint32 numLoops = (sConfigMgr->GetIntDefault("MaxPingTime", 30) * (MINUTE * 1000000 / 100000));
+    uint32 numLoops = (ConfigMgr::GetIntDefault("MaxPingTime", 30) * (MINUTE * 1000000 / 100000));
     uint32 loopCounter = 0;
 
     // Wait for termination signal
@@ -269,7 +220,7 @@ extern int main(int argc, char** argv)
         if ((++loopCounter) == numLoops)
         {
             loopCounter = 0;
-            TC_LOG_INFO("server.authserver", "Ping MySQL to keep connection alive");
+            sLog->outInfo(LOG_FILTER_AUTHSERVER, "Ping MySQL to keep connection alive");
             LoginDatabase.KeepAlive();
         }
     }
@@ -277,49 +228,48 @@ extern int main(int argc, char** argv)
     // Close the Database Pool and library
     StopDB();
 
-    TC_LOG_INFO("server.authserver", "Halting process...");
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "Halting process...");
     return 0;
 }
 
-/// Initialize connection to the database
+// Initialize connection to the database
 bool StartDB()
 {
     MySQL::Library_Init();
 
-    std::string dbstring = sConfigMgr->GetStringDefault("LoginDatabaseInfo", "");
+    std::string dbstring = ConfigMgr::GetStringDefault("LoginDatabaseInfo", "");
     if (dbstring.empty())
     {
-        TC_LOG_ERROR("server.authserver", "Database not specified");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Database not specified");
         return false;
     }
 
-    int32 worker_threads = sConfigMgr->GetIntDefault("LoginDatabase.WorkerThreads", 1);
+    int32 worker_threads = ConfigMgr::GetIntDefault("LoginDatabase.WorkerThreads", 1);
     if (worker_threads < 1 || worker_threads > 32)
     {
-        TC_LOG_ERROR("server.authserver", "Improper value specified for LoginDatabase.WorkerThreads, defaulting to 1.");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Improper value specified for LoginDatabase.WorkerThreads, defaulting to 1.");
         worker_threads = 1;
     }
 
-    int32 synch_threads = sConfigMgr->GetIntDefault("LoginDatabase.SynchThreads", 1);
+    int32 synch_threads = ConfigMgr::GetIntDefault("LoginDatabase.SynchThreads", 1);
     if (synch_threads < 1 || synch_threads > 32)
     {
-        TC_LOG_ERROR("server.authserver", "Improper value specified for LoginDatabase.SynchThreads, defaulting to 1.");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Improper value specified for LoginDatabase.SynchThreads, defaulting to 1.");
         synch_threads = 1;
     }
 
     // NOTE: While authserver is singlethreaded you should keep synch_threads == 1. Increasing it is just silly since only 1 will be used ever.
-    if (!LoginDatabase.Open(dbstring, uint8(worker_threads), uint8(synch_threads)))
+    if (!LoginDatabase.Open(dbstring.c_str(), uint8(worker_threads), uint8(synch_threads)))
     {
-        TC_LOG_ERROR("server.authserver", "Cannot connect to database");
+        sLog->outError(LOG_FILTER_AUTHSERVER, "Cannot connect to database");
         return false;
     }
 
-    TC_LOG_INFO("server.authserver", "Started auth database connection pool.");
-    sLog->SetRealmId(0); // Enables DB appenders when realm is set.
+    sLog->outInfo(LOG_FILTER_AUTHSERVER, "Started auth database connection pool.");
+    sLog->EnableDBAppenders();
     return true;
 }
 
-/// Close the connection to the database
 void StopDB()
 {
     LoginDatabase.Close();

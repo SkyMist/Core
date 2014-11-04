@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,8 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
+#include "ScriptPCH.h"
 #include "violet_hold.h"
 
 enum Spells
@@ -43,13 +39,15 @@ enum IchoronCreatures
 
 enum Yells
 {
-    SAY_AGGRO                                   = 0,
-    SAY_SLAY                                    = 1,
-    SAY_DEATH                                   = 2,
-    SAY_SPAWN                                   = 3,
-    SAY_ENRAGE                                  = 4,
-    SAY_SHATTER                                 = 5,
-    SAY_BUBBLE                                  = 6
+    SAY_AGGRO                                   = -1608018,
+    SAY_SLAY_1                                  = -1608019,
+    SAY_SLAY_2                                  = -1608020,
+    SAY_SLAY_3                                  = -1608021,
+    SAY_DEATH                                   = -1608022,
+    SAY_SPAWN                                   = -1608023,
+    SAY_ENRAGE                                  = -1608024,
+    SAY_SHATTER                                 = -1608025,
+    SAY_BUBBLE                                  = -1608026
 };
 
 enum Actions
@@ -58,7 +56,7 @@ enum Actions
     ACTION_WATER_ELEMENT_KILLED                 = 2,
 };
 
-/// @todo get those positions from spawn of creature 29326
+// TODO get those positions from spawn of creature 29326
 #define MAX_SPAWN_LOC 5
 static Position SpawnLoc[MAX_SPAWN_LOC]=
 {
@@ -69,19 +67,16 @@ static Position SpawnLoc[MAX_SPAWN_LOC]=
     {1935.50f, 796.224f, 52.492f, 4.224f},
 };
 
-enum Misc
-{
-    DATA_DEHYDRATION                            = 1
-};
+#define DATA_DEHYDRATION                        1
 
 class boss_ichoron : public CreatureScript
 {
 public:
     boss_ichoron() : CreatureScript("boss_ichoron") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_ichoronAI(creature);
+        return new boss_ichoronAI (creature);
     }
 
     struct boss_ichoronAI : public ScriptedAI
@@ -102,7 +97,7 @@ public:
 
         SummonList m_waterElements;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             bIsExploded = false;
             bIsFrenzy = false;
@@ -122,9 +117,9 @@ public:
             }
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
 
             DoCast(me, SPELL_PROTECTIVE_BUBBLE);
 
@@ -143,7 +138,7 @@ public:
             }
         }
 
-        void AttackStart(Unit* who) OVERRIDE
+        void AttackStart(Unit* who)
         {
             if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC) || me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
                 return;
@@ -157,9 +152,9 @@ public:
             }
         }
 
-        void DoAction(int32 param) OVERRIDE
+        void DoAction(const int32 param)
         {
-            if (!me->IsAlive())
+            if (!me->isAlive())
                 return;
 
             switch (param)
@@ -193,15 +188,15 @@ public:
 
             if (!HealthBelowPct(25))
             {
-                Talk(SAY_BUBBLE);
+                DoScriptText(SAY_BUBBLE, me);
                 DoCast(me, SPELL_PROTECTIVE_BUBBLE, true);
             }
 
             me->SetVisible(true);
-            me->GetMotionMaster()->MoveChase(me->GetVictim());
+            me->GetMotionMaster()->MoveChase(me->getVictim());
         }
 
-        uint32 GetData(uint32 type) const OVERRIDE
+        uint32 GetData(uint32 type)
         {
             if (type == DATA_DEHYDRATION)
                 return dehydration ? 1 : 0;
@@ -209,17 +204,16 @@ public:
             return 0;
         }
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) {}
 
-
-        void UpdateAI(uint32 uiDiff) OVERRIDE
+        void UpdateAI(const uint32 uiDiff)
         {
             if (!UpdateVictim())
                 return;
 
             if (!bIsFrenzy && HealthBelowPct(25) && !bIsExploded)
             {
-                Talk(SAY_ENRAGE);
+                DoScriptText(SAY_ENRAGE, me);
                 DoCast(me, SPELL_FRENZY, true);
                 bIsFrenzy = true;
             }
@@ -232,7 +226,7 @@ public:
                     {
                         if (!me->HasAura(SPELL_PROTECTIVE_BUBBLE, 0))
                         {
-                            Talk(SAY_SHATTER);
+                            DoScriptText(SAY_SHATTER, me);
                             DoCast(me, SPELL_WATER_BLAST);
                             DoCast(me, SPELL_DRAINED);
                             bIsExploded = true;
@@ -252,7 +246,7 @@ public:
                         {
                             for (std::list<uint64>::const_iterator itr = m_waterElements.begin(); itr != m_waterElements.end(); ++itr)
                                 if (Creature* temp = Unit::GetCreature(*me, *itr))
-                                    if (temp->IsAlive())
+                                    if (temp->isAlive())
                                     {
                                         bIsWaterElementsAlive = true;
                                         break;
@@ -280,9 +274,9 @@ public:
             }
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
 
             if (bIsExploded)
             {
@@ -307,50 +301,47 @@ public:
             }
         }
 
-        void JustSummoned(Creature* summoned) OVERRIDE
+        void JustSummoned(Creature* summoned)
         {
             if (summoned)
             {
                 summoned->SetSpeed(MOVE_RUN, 0.3f);
                 summoned->GetMotionMaster()->MoveFollow(me, 0, 0);
-                m_waterElements.Summon(summoned);
-                instance->SetData64(DATA_ADD_TRASH_MOB, summoned->GetGUID());
+                m_waterElements.push_back(summoned->GetGUID());
             }
         }
 
-        void SummonedCreatureDespawn(Creature* summoned) OVERRIDE
+        void SummonedCreatureDespawn(Creature* summoned)
         {
             if (summoned)
             {
-                m_waterElements.Despawn(summoned);
-                instance->SetData64(DATA_DEL_TRASH_MOB, summoned->GetGUID());
+                m_waterElements.remove(summoned->GetGUID());
             }
         }
 
-        void KilledUnit(Unit* victim) OVERRIDE
+        void KilledUnit(Unit* victim)
         {
-            if (victim->GetTypeId() != TYPEID_PLAYER)
+            if (victim == me)
                 return;
-
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY_1, SAY_SLAY_2, SAY_SLAY_3), me);
         }
     };
 
 };
 
-class npc_ichor_globule : public CreatureScript
+class mob_ichor_globule : public CreatureScript
 {
 public:
-    npc_ichor_globule() : CreatureScript("npc_ichor_globule") { }
+    mob_ichor_globule() : CreatureScript("mob_ichor_globule") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_ichor_globuleAI(creature);
+        return new mob_ichor_globuleAI (creature);
     }
 
-    struct npc_ichor_globuleAI : public ScriptedAI
+    struct mob_ichor_globuleAI : public ScriptedAI
     {
-        npc_ichor_globuleAI(Creature* creature) : ScriptedAI(creature)
+        mob_ichor_globuleAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -359,18 +350,18 @@ public:
 
         uint32 uiRangeCheck_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             uiRangeCheck_Timer = 1000;
             DoCast(me, SPELL_WATER_GLOBULE);
         }
 
-        void AttackStart(Unit* /*who*/) OVERRIDE
+        void AttackStart(Unit* /*who*/)
         {
             return;
         }
 
-        void UpdateAI(uint32 uiDiff) OVERRIDE
+        void UpdateAI(const uint32 uiDiff)
         {
             if (uiRangeCheck_Timer < uiDiff)
             {
@@ -391,7 +382,7 @@ public:
             else uiRangeCheck_Timer -= uiDiff;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             DoCast(me, SPELL_SPLASH);
             if (Creature* pIchoron = Unit::GetCreature(*me, instance->GetData64(DATA_ICHORON)))
@@ -409,7 +400,7 @@ class achievement_dehydration : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
+        bool OnCheck(Player* /*player*/, Unit* target)
         {
             if (!target)
                 return false;
@@ -425,6 +416,6 @@ class achievement_dehydration : public AchievementCriteriaScript
 void AddSC_boss_ichoron()
 {
     new boss_ichoron();
-    new npc_ichor_globule();
+    new mob_ichor_globule();
     new achievement_dehydration();
 }

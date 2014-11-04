@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,10 +19,11 @@
 #ifndef TRINITY_UNORDERED_MAP_H
 #define TRINITY_UNORDERED_MAP_H
 
+#include "Define.h"
 #include "HashNamespace.h"
 
 #if COMPILER_HAS_CPP11_SUPPORT
-#    include <unordered_map>
+#   include <unordered_map>
 #elif COMPILER == COMPILER_INTEL
 #    include <ext/hash_map>
 #elif COMPILER == COMPILER_GNU && defined(__clang__) && defined(_LIBCPP_VERSION)
@@ -51,6 +51,8 @@
 #    define UNORDERED_MAP std::tr1::unordered_map
 #    define UNORDERED_MULTIMAP std::tr1::unordered_multimap
 #elif COMPILER == COMPILER_MICROSOFT && _MSC_VER >= 1300
+
+using stdext::hash_map;
 #    define UNORDERED_MAP stdext::hash_map
 #    define UNORDERED_MULTIMAP stdext::hash_multimap
 #elif COMPILER == COMPILER_INTEL
@@ -64,7 +66,7 @@
 #    define UNORDERED_MULTIMAP std::tr1::unordered_multimap
 #elif COMPILER == COMPILER_GNU && GCC_VERSION >= 30000
 #    define UNORDERED_MAP __gnu_cxx::hash_map
-#    define UNORDERED_MULTIMAP __gnu_cxx::hash_multimap
+#define UNORDERED_MULTIMAP __gnu_cxx::hash_multimap
 #else
 #    define UNORDERED_MAP std::hash_map
 #    define UNORDERED_MULTIMAP std::hash_multimap

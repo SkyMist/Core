@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -26,7 +24,11 @@ SDCategory: Script Examples
 EndScriptData */
 
 #include "ScriptMgr.h"
-#include "Player.h"
+
+enum eSay
+{
+    SAY_HI  = -1999925
+};
 
 class AT_example_areatrigger : public AreaTriggerScript
 {
@@ -37,9 +39,9 @@ class AT_example_areatrigger : public AreaTriggerScript
         {
         }
 
-        bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) OVERRIDE
+        bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/)
         {
-            player->Kill(player);
+            DoScriptText(SAY_HI, player);
             return true;
         }
 };
@@ -53,7 +55,7 @@ class ItemUse_example_item : public ItemScript
         {
         }
 
-        bool OnUse(Player* /*player*/, Item* /*item*/, SpellCastTargets const& /*targets*/) OVERRIDE
+        bool OnUse(Player* /*player*/, Item* /*item*/, SpellCastTargets const& /*targets*/)
         {
             sScriptMgr->LoadDatabase();
             return true;
@@ -69,7 +71,7 @@ class GOHello_example_go_teleporter : public GameObjectScript
         {
         }
 
-        bool OnGossipHello(Player* player, GameObject* /*go*/) OVERRIDE
+        bool OnGossipHello(Player* player, GameObject* /*go*/)
         {
             player->TeleportTo(0, 1807.07f, 336.105f, 70.3975f, 0.0f);
             return false;

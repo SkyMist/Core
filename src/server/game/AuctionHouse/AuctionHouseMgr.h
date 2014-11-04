@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -35,7 +34,7 @@ class WorldPacket;
 
 enum AuctionError
 {
-    ERR_AUCTION_OK                  = 0,
+    ERR_AUCTION_OK                  = 40,
     ERR_AUCTION_INVENTORY           = 1,
     ERR_AUCTION_DATABASE_ERROR      = 2,
     ERR_AUCTION_NOT_ENOUGHT_MONEY   = 3,
@@ -43,7 +42,7 @@ enum AuctionError
     ERR_AUCTION_HIGHER_BID          = 5,
     ERR_AUCTION_BID_INCREMENT       = 7,
     ERR_AUCTION_BID_OWN             = 10,
-    ERR_AUCTION_RESTRICTED_ACCOUNT  = 13
+    ERR_RESTRICTED_ACCOUNT          = 13,
 };
 
 enum AuctionAction
@@ -72,9 +71,9 @@ struct AuctionEntry
     uint32 itemEntry;
     uint32 itemCount;
     uint32 owner;
-    uint32 startbid;                                        //maybe useless
-    uint32 bid;
-    uint32 buyout;
+    uint64 startbid;                                        //maybe useless
+    uint64 bid;
+    uint64 buyout;
     time_t expire_time;
     uint32 bidder;
     uint32 deposit;                                         //deposit can be calculated only when creating auction
@@ -100,6 +99,8 @@ struct AuctionEntry
 class AuctionHouseObject
 {
   public:
+    // Initialize storage
+    AuctionHouseObject() { next = AuctionsMap.begin(); }
     ~AuctionHouseObject()
     {
         for (AuctionEntryMap::iterator itr = AuctionsMap.begin(); itr != AuctionsMap.end(); ++itr)
@@ -134,6 +135,9 @@ class AuctionHouseObject
 
   private:
     AuctionEntryMap AuctionsMap;
+
+    // storage for "next" auction item for next Update()
+    AuctionEntryMap::const_iterator next;
 };
 
 class AuctionHouseMgr

@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,13 +22,11 @@ Comment: All guild related commands
 Category: commandscripts
 EndScriptData */
 
-#include "AchievementMgr.h"
+#include "ScriptMgr.h"
 #include "Chat.h"
-#include "Language.h"
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "ObjectAccessor.h"
-#include "ScriptMgr.h"
 
 class guild_commandscript : public CommandScript
 {
@@ -41,18 +37,20 @@ public:
     {
         static ChatCommand guildCommandTable[] =
         {
-            { "create",   rbac::RBAC_PERM_COMMAND_GUILD_CREATE,   true, &HandleGuildCreateCommand,           "", NULL },
-            { "delete",   rbac::RBAC_PERM_COMMAND_GUILD_DELETE,   true, &HandleGuildDeleteCommand,           "", NULL },
-            { "invite",   rbac::RBAC_PERM_COMMAND_GUILD_INVITE,   true, &HandleGuildInviteCommand,           "", NULL },
-            { "uninvite", rbac::RBAC_PERM_COMMAND_GUILD_UNINVITE, true, &HandleGuildUninviteCommand,         "", NULL },
-            { "rank",     rbac::RBAC_PERM_COMMAND_GUILD_RANK,     true, &HandleGuildRankCommand,             "", NULL },
-            { "rename",   rbac::RBAC_PERM_COMMAND_GUILD_RENAME,   true, &HandleGuildRenameCommand,           "", NULL },
-            { NULL,       0,                               false, NULL,                                "", NULL }
+            { "create",         SEC_GAMEMASTER,     true,  &HandleGuildCreateCommand,           "", NULL },
+            { "delete",         SEC_GAMEMASTER,     true,  &HandleGuildDeleteCommand,           "", NULL },
+            { "invite",         SEC_GAMEMASTER,     true,  &HandleGuildInviteCommand,           "", NULL },
+            { "uninvite",       SEC_GAMEMASTER,     true,  &HandleGuildUninviteCommand,         "", NULL },
+            { "rank",           SEC_GAMEMASTER,     true,  &HandleGuildRankCommand,             "", NULL },
+            { "rename",         SEC_GAMEMASTER,     true,  &HandleGuildRenameCommand,           "", NULL },
+            { "givexp",         SEC_GAMEMASTER,     true,  &HandleGuildXpCommand,               "", NULL },
+            { "levelup",        SEC_GAMEMASTER,     true,  &HandleGuildLevelUpCommand,          "", NULL },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "guild", rbac::RBAC_PERM_COMMAND_GUILD,  true, NULL, "", guildCommandTable },
-            { NULL,    0,                       false, NULL, "", NULL }
+            { "guild",          SEC_ADMINISTRATOR,  true, NULL,                                 "", guildCommandTable },
+            { NULL,             0,                  false, NULL,                                "", NULL }
         };
         return commandTable;
     }
@@ -195,7 +193,7 @@ public:
             return false;
 
         uint8 newRank = uint8(atoi(rankStr));
-        return targetGuild->ChangeMemberRank(targetGuid, newRank);
+       return targetGuild->ChangeMemberRank(targetGuid, newRank);
     }
 
     static bool HandleGuildRenameCommand(ChatHandler* handler, char const* _args)
@@ -244,6 +242,91 @@ public:
         }
 
         handler->PSendSysMessage(LANG_GUILD_RENAME_DONE, oldGuildStr, newGuildStr);
+        return true;
+    }
+
+    static bool HandleGuildXpCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        Guild* targetGuild;
+        uint32 amount = 0;
+
+        if (*args == '"')
+        {
+            char* guildStr = handler->extractQuotedArg((char*)args);
+            if (!guildStr)
+                return false;
+
+            targetGuild = sGuildMgr->GetGuildByName(guildStr);
+        }
+        else
+        {
+            if (!handler->getSelectedPlayer())
+                return false;
+
+            Player* target = handler->getSelectedPlayer();
+
+            if (!target->GetGuildId())
+                return false;
+
+            targetGuild = sGuildMgr->GetGuildById(target->GetGuildId());
+        }
+
+        amount = (uint32)atoi(args);
+
+        if (!targetGuild)
+            return false;
+
+        targetGuild->GiveXP(amount, handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL);
+        return true;
+    }
+
+    static bool HandleGuildLevelUpCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+            return false;
+
+        Guild* targetGuild;
+        uint32 amount = 0;
+
+        if (*args == '"')
+        {
+            char* guildStr = handler->extractQuotedArg((char*)args);
+            if (!guildStr)
+                return false;
+
+            targetGuild = sGuildMgr->GetGuildByName(guildStr);
+        }
+        else
+        {
+            if (!handler->getSelectedPlayer())
+                return false;
+
+            Player* target = handler->getSelectedPlayer();
+
+            if (!target->GetGuildId())
+                return false;
+
+            targetGuild = sGuildMgr->GetGuildById(target->GetGuildId());
+        }
+
+        amount = (uint32)atoi(args);
+
+        if (!targetGuild)
+            return false;
+
+        uint32 experience = 0;
+
+        for (uint8 i = 0; i < amount; ++i)
+        {
+            if (targetGuild->GetLevel() >= sWorld->getIntConfig(CONFIG_GUILD_MAX_LEVEL))
+                break;
+
+            experience = sGuildMgr->GetXPForGuildLevel(targetGuild->GetLevel()) - targetGuild->GetExperience();
+            targetGuild->GiveXP(experience, handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL);
+        }
         return true;
     }
 };

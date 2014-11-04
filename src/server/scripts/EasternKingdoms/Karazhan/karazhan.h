@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,7 +19,7 @@
 #ifndef DEF_KARAZHAN_H
 #define DEF_KARAZHAN_H
 
-enum DataTypes
+enum eEnums
 {
     TYPE_ATTUMEN                    = 1,
     TYPE_MOROES                     = 2,
@@ -64,5 +62,6 @@ enum OperaEvents
     EVENT_RAJ                       = 3
 };
 
-#define ERROR_INST_DATA(a)          TC_LOG_ERROR("scripts", "Instance Data for Karazhan not set properly. Encounter for Creature Entry %u may not work properly.", a->GetEntry());
+#define ERROR_INST_DATA(a)          sLog->outError(LOG_FILTER_TSCR, "Instance Data for Karazhan not set properly. Encounter for Creature Entry %u may not work properly.", a->GetEntry());
 #endif
+

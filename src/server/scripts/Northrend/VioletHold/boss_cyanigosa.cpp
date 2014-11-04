@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,8 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
+#include "ScriptPCH.h"
 #include "violet_hold.h"
 
 enum Spells
@@ -37,13 +33,16 @@ enum Spells
 
 enum Yells
 {
-    SAY_AGGRO                                   = 0,
-    SAY_SLAY                                    = 1,
-    SAY_DEATH                                   = 2,
-    SAY_SPAWN                                   = 3,
-    SAY_DISRUPTION                              = 4,
-    SAY_BREATH_ATTACK                           = 5,
-    SAY_SPECIAL_ATTACK                          = 6
+    SAY_AGGRO                                   = -1608000,
+    SAY_SLAY_1                                  = -1608001,
+    SAY_SLAY_2                                  = -1608002,
+    SAY_SLAY_3                                  = -1608003,
+    SAY_DEATH                                   = -1608004,
+    SAY_SPAWN                                   = -1608005,
+    SAY_DISRUPTION                              = -1608006,
+    SAY_BREATH_ATTACK                           = -1608007,
+    SAY_SPECIAL_ATTACK_1                        = -1608008,
+    SAY_SPECIAL_ATTACK_2                        = -1608009
 };
 
 class boss_cyanigosa : public CreatureScript
@@ -51,9 +50,9 @@ class boss_cyanigosa : public CreatureScript
 public:
     boss_cyanigosa() : CreatureScript("boss_cyanigosa") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_cyanigosaAI(creature);
+        return new boss_cyanigosaAI (creature);
     }
 
     struct boss_cyanigosaAI : public ScriptedAI
@@ -71,7 +70,7 @@ public:
 
         InstanceScript* instance;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             uiArcaneVacuumTimer = 10000;
             uiBlizzardTimer = 15000;
@@ -82,18 +81,17 @@ public:
                 instance->SetData(DATA_CYANIGOSA_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
 
             if (instance)
                 instance->SetData(DATA_CYANIGOSA_EVENT, IN_PROGRESS);
         }
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) {}
 
-
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (instance && instance->GetData(DATA_REMOVE_NPC) == 1)
             {
@@ -143,20 +141,19 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
 
             if (instance)
                 instance->SetData(DATA_CYANIGOSA_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* victim) OVERRIDE
+        void KilledUnit(Unit* victim)
         {
-            if (victim->GetTypeId() != TYPEID_PLAYER)
+            if (victim == me)
                 return;
-
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY_1, SAY_SLAY_2, SAY_SLAY_3), me);
         }
     };
 
@@ -169,9 +166,9 @@ class achievement_defenseless : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
+        bool OnCheck(Player* /*player*/, Unit* target)
         {
-            if (!target)
+            if(!target)
                 return false;
 
             InstanceScript* instance = target->GetInstanceScript();

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,17 +18,15 @@
 #ifndef DEF_RUINS_OF_AHNQIRAJ_H
 #define DEF_RUINS_OF_AHNQIRAJ_H
 
-enum DataTypes
+enum Encounters
 {
-    DATA_KURINNAXX          = 0,
-    DATA_RAJAXX             = 1,
-    DATA_MOAM               = 2,
-    DATA_BURU               = 3,
-    DATA_AYAMISS            = 4,
-    DATA_OSSIRIAN           = 5,
-    NUM_ENCOUNTER           = 6,
-
-    DATA_PARALYZED          = 7
+    BOSS_KURINNAXX              = 0,
+    BOSS_RAJAXX                 = 1,
+    BOSS_MOAM                   = 2,
+    BOSS_BURU                   = 3,
+    BOSS_AYAMISS                = 4,
+    BOSS_OSSIRIAN               = 5,
+    MAX_ENCOUNTER
 };
 
 enum Creatures
@@ -44,18 +39,7 @@ enum Creatures
     NPC_OSSIRIAN                = 15339,
     NPC_HIVEZARA_HORNET         = 15934,
     NPC_HIVEZARA_SWARMER        = 15546,
-    NPC_HIVEZARA_LARVA          = 15555,
-    NPC_SAND_VORTEX             = 15428,
-    NPC_OSSIRIAN_TRIGGER        = 15590,
-    NPC_HATCHLING               = 15521,
-    NPC_LARVA                   = 15555,
-    NPC_SWARMER                 = 15546,
-    NPC_HORNET                  = 15934
-};
-
-enum GameObjects
-{
-    GO_OSSIRIAN_CRYSTAL         = 180619
+    NPC_HIVEZARA_LARVA          = 15555
 };
 
 #endif

@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,34 +23,30 @@ SDComment: SDComment: Timers may incorrect
 SDCategory: Karazhan
 EndScriptData */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
+#include "ScriptPCH.h"
 #include "karazhan.h"
 
-enum Spells
-{
-    // phase 1
-    SPELL_BELLOWING_ROAR        = 39427,
-    SPELL_CHARRED_EARTH         = 30129,
-    SPELL_DISTRACTING_ASH       = 30130,
-    SPELL_SMOLDERING_BREATH     = 30210,
-    SPELL_TAIL_SWEEP            = 25653,
-    // phase 2
-    SPELL_RAIN_OF_BONES         = 37098,
-    SPELL_SMOKING_BLAST         = 37057,
-    SPELL_FIREBALL_BARRAGE      = 30282,
-    SPELL_SEARING_CINDERS       = 30127,
-    SPELL_SUMMON_SKELETON       = 30170
-};
+//phase 1
+#define SPELL_BELLOWING_ROAR        39427
+#define SPELL_CHARRED_EARTH         30129
+#define SPELL_DISTRACTING_ASH       30130
+#define SPELL_SMOLDERING_BREATH     30210
+#define SPELL_TAIL_SWEEP            25653
+//phase 2
+#define SPELL_RAIN_OF_BONES         37098
+#define SPELL_SMOKING_BLAST         37057
+#define SPELL_FIREBALL_BARRAGE      30282
+#define SPELL_SEARING_CINDERS       30127
+#define SPELL_SUMMON_SKELETON       30170
 
-enum Says
-{
-    EMOTE_SUMMON                = 0, // Not used in script
-    YELL_AGGRO                  = 1,
-    YELL_FLY_PHASE              = 2,
-    YELL_LAND_PHASE             = 3,
-    EMOTE_BREATH                = 4
-};
+#define EMOTE_SUMMON                "An ancient being awakens in the distance..."
+#define YELL_AGGRO                  "What fools! I shall bring a quick end to your suffering!"
+#define YELL_FLY_PHASE              "Miserable vermin. I shall exterminate you from the air!"
+#define YELL_LAND_PHASE_1           "Enough! I shall land and crush you myself!"
+#define YELL_LAND_PHASE_2           "Insects! Let me show you my strength up close!"
+#define EMOTE_BREATH                "takes a deep breath."
+
+#define QUEST_NIGHTBANE             9644
 
 float IntroWay[8][3] =
 {
@@ -71,9 +65,9 @@ class boss_nightbane : public CreatureScript
 public:
     boss_nightbane() : CreatureScript("boss_nightbane") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_nightbaneAI(creature);
+        return new boss_nightbaneAI (creature);
     }
 
     struct boss_nightbaneAI : public ScriptedAI
@@ -86,11 +80,6 @@ public:
 
         InstanceScript* instance;
 
-        uint32 Phase;
-
-        bool RainBones;
-        bool Skeletons;
-
         uint32 BellowingRoarTimer;
         uint32 CharredEarthTimer;
         uint32 DistractingAshTimer;
@@ -101,17 +90,18 @@ public:
         uint32 FireballBarrageTimer;
         uint32 SearingCindersTimer;
 
-        uint32 FlyCount;
+        uint32 Phase;
+        uint8 MovePhase;
+        uint8 FlyCount;
         uint32 FlyTimer;
 
+        bool RainBones;
+        bool Skeletons;
         bool Intro;
         bool Flying;
         bool Movement;
 
-        uint32 WaitTimer;
-        uint32 MovePhase;
-
-        void Reset() OVERRIDE
+        void Reset()
         {
             BellowingRoarTimer = 30000;
             CharredEarthTimer = 15000;
@@ -122,11 +112,12 @@ public:
             SmokingBlastTimer = 20000;
             FireballBarrageTimer = 13000;
             SearingCindersTimer = 14000;
-            WaitTimer = 1000;
 
-            Phase =1;
+            Phase = 1;
             FlyCount = 0;
             MovePhase = 0;
+            Movement = false;
+            Flying = false;
 
             me->SetSpeed(MOVE_RUN, 2.0f);
             me->SetDisableGravity(true);
@@ -142,15 +133,15 @@ public:
             }
 
             HandleTerraceDoors(true);
-
-            Flying = false;
-            Movement = false;
+            me->SetReactState(REACT_PASSIVE);
 
             if (!Intro)
             {
                 me->SetHomePosition(IntroWay[7][0], IntroWay[7][1], IntroWay[7][2], 0);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
+            else
+                instance->DoSendNotifyToInstance(EMOTE_SUMMON);
         }
 
         void HandleTerraceDoors(bool open)
@@ -162,22 +153,15 @@ public:
             }
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             if (instance)
                 instance->SetData(TYPE_NIGHTBANE, IN_PROGRESS);
-
             HandleTerraceDoors(false);
-           Talk(YELL_AGGRO);
+            me->MonsterYell(YELL_AGGRO, LANG_UNIVERSAL, 0);
         }
 
-        void AttackStart(Unit* who) OVERRIDE
-        {
-            if (!Intro && !Flying)
-                ScriptedAI::AttackStart(who);
-        }
-
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit * /*killer*/)
         {
             if (instance)
                 instance->SetData(TYPE_NIGHTBANE, DONE);
@@ -185,121 +169,82 @@ public:
             HandleTerraceDoors(true);
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
-
-        {
-            if (!Intro && !Flying)
-                ScriptedAI::MoveInLineOfSight(who);
-        }
-
-        void MovementInform(uint32 type, uint32 id) OVERRIDE
+        void MovementInform(uint32 type, uint32 id)
         {
             if (type != POINT_MOTION_TYPE)
                 return;
 
-            if (Intro)
+            if (id == 8)
             {
-                if (id >= 8)
-                {
-                    Intro = false;
-                    me->SetHomePosition(IntroWay[7][0], IntroWay[7][1], IntroWay[7][2], 0);
-                    return;
-                }
-
-                WaitTimer = 1;
+                me->MonsterTextEmote(EMOTE_BREATH, 0, true);
+                Phase = 2;
+                return;
             }
 
-            if (Flying)
+            if (id == 7)
             {
-                if (id == 0)
-                {
-                    Talk(EMOTE_BREATH);
-                    Flying = false;
-                    Phase = 2;
-                    return;
-                }
-
-                if (id == 3)
-                {
-                    MovePhase = 4;
-                    WaitTimer = 1;
-                    return;
-                }
-
-                if (id == 8)
+                if (Phase == 2)
                 {
                     Flying = false;
                     Phase = 1;
-                    Movement = true;
-                    return;
+                    me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, false);
+                    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, false);
                 }
 
-                WaitTimer = 1;
+                DoResetThreat();
+                me->SetDisableGravity(false);
+                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6);
+                me->SetReactState(REACT_AGGRESSIVE);
+                me->SetInCombatWithZone();
+                if (me->getVictim())
+                    me->GetMotionMaster()->MoveChase(me->getVictim());
+                return;
             }
+
+            ++MovePhase;
+            Movement = true;
         }
 
-        void JustSummoned(Creature* summoned) OVERRIDE
+        void JustSummoned(Creature* summoned)
         {
-            summoned->AI()->AttackStart(me->GetVictim());
+            summoned->SetInCombatWithZone();
         }
 
         void TakeOff()
         {
-            Talk(YELL_FLY_PHASE);
-
+            me->MonsterYell(YELL_FLY_PHASE, LANG_UNIVERSAL, 0);
+            me->SetReactState(REACT_PASSIVE);
             me->InterruptSpell(CURRENT_GENERIC_SPELL);
-            me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
+            me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
             me->SetDisableGravity(true);
-            (*me).GetMotionMaster()->Clear(false);
-            (*me).GetMotionMaster()->MovePoint(0, IntroWay[2][0], IntroWay[2][1], IntroWay[2][2]);
+            me->GetMotionMaster()->Clear(false);
+            me->GetMotionMaster()->MovePoint(8, IntroWay[2][0], IntroWay[2][1], IntroWay[2][2]);
 
-            Flying = true;
-
-            FlyTimer = urand(45000, 60000); //timer wrong between 45 and 60 seconds
+            FlyTimer = urand(45000, 60000);
             ++FlyCount;
 
-            RainofBonesTimer = 5000; //timer wrong (maybe)
+            RainofBonesTimer = 5000;
             RainBones = false;
             Skeletons = false;
+
+            me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, true);
+            me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
          }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 const diff)
         {
-            /* The timer for this was never setup apparently, not sure if the code works properly:
-            if (WaitTimer <= diff)
+            if (Intro && !Movement)
             {
-                if (Intro)
-                {
-                    if (MovePhase >= 7)
-                    {
-                        me->SetLevitate(false);
-                        me->HandleEmote(EMOTE_ONESHOT_LAND);
-                        me->GetMotionMaster()->MovePoint(8, IntroWay[7][0], IntroWay[7][1], IntroWay[7][2]);
-                    }
-                    else
-                    {
-                        me->GetMotionMaster()->MovePoint(MovePhase, IntroWay[MovePhase][0], IntroWay[MovePhase][1], IntroWay[MovePhase][2]);
-                        ++MovePhase;
-                    }
-                }
-                if (Flying)
-                {
-                    if (MovePhase >= 7)
-                    {
-                        me->SetLevitate(false);
-                        me->HandleEmote(EMOTE_ONESHOT_LAND);
-                        me->GetMotionMaster()->MovePoint(8, IntroWay[7][0], IntroWay[7][1], IntroWay[7][2]);
-                    }
-                    else
-                    {
-                        me->GetMotionMaster()->MovePoint(MovePhase, IntroWay[MovePhase][0], IntroWay[MovePhase][1], IntroWay[MovePhase][2]);
-                        ++MovePhase;
-                    }
-                }
+                Intro = false;
+                Movement = true;
+            }
 
-                WaitTimer = 0;
-            } else WaitTimer -= diff;
-            */
+            if (Movement)
+            {
+                Movement = false;
+                me->GetMotionMaster()->MovePoint(MovePhase, IntroWay[MovePhase][0], IntroWay[MovePhase][1], IntroWay[MovePhase][2]);
+            }
 
             if (!UpdateVictim())
                 return;
@@ -310,12 +255,6 @@ public:
             //  Phase 1 "GROUND FIGHT"
             if (Phase == 1)
             {
-                if (Movement)
-                {
-                    DoStartMovement(me->GetVictim());
-                    Movement = false;
-                }
-
                 if (BellowingRoarTimer <= diff)
                 {
                     DoCastVictim(SPELL_BELLOWING_ROAR);
@@ -411,11 +350,9 @@ public:
 
                 if (FlyTimer <= diff) //landing
                 {
-                    Talk(YELL_LAND_PHASE);
-
-                    me->GetMotionMaster()->Clear(false);
-                    me->GetMotionMaster()->MovePoint(3, IntroWay[3][0], IntroWay[3][1], IntroWay[3][2]);
-
+                    me->MonsterYell(RAND(*YELL_LAND_PHASE_1, *YELL_LAND_PHASE_2), LANG_UNIVERSAL, 0);
+                    Movement = true;
+                    MovePhase = 3;
                     Flying = true;
                 } else FlyTimer -= diff;
             }
@@ -423,7 +360,31 @@ public:
     };
 };
 
+class go_blackened_urn : public GameObjectScript
+{
+    public:
+        go_blackened_urn() : GameObjectScript("go_blackened_urn") { }
+
+        bool OnGossipHello(Player* player, GameObject* go)
+        {
+            InstanceScript* _instance = go->GetInstanceScript();
+            if (!_instance)
+                return false;
+
+            // already summoned
+            if (_instance->GetData(TYPE_NIGHTBANE) != NOT_STARTED)
+                return false;
+
+            if (player->GetQuestStatus(QUEST_NIGHTBANE) == QUEST_STATUS_INCOMPLETE || player->GetQuestStatus(QUEST_NIGHTBANE) == QUEST_STATUS_REWARDED)
+                go->SummonCreature(17225, -11003.7f, -1760.19f, 140.25f, 0.29f);
+
+            _instance->SetData(TYPE_NIGHTBANE, IN_PROGRESS);
+            return false;
+        }
+};
+
 void AddSC_boss_nightbane()
 {
     new boss_nightbane();
+    new go_blackened_urn();
 }

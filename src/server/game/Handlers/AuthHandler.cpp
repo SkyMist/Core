@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,92 +18,97 @@
 #include "Opcodes.h"
 #include "WorldSession.h"
 #include "WorldPacket.h"
-#include "Config.h"
 
 void WorldSession::SendAuthResponse(uint8 code, bool queued, uint32 queuePos)
 {
-    std::map<uint32, std::string> realmNamesToSend;
-
-    QueryResult classResult = LoginDatabase.PQuery("SELECT class, expansion FROM realm_classes WHERE realmId = %u", realmID);
-    QueryResult raceResult = LoginDatabase.PQuery("SELECT race, expansion FROM realm_races WHERE realmId = %u", realmID);
-
-    if (!classResult || !raceResult)
+    const static uint8 ClassExpensions[MAX_CLASSES] = 
     {
-        TC_LOG_ERROR("network", "Unable to retrieve class or race data.");
-        return;
-    }
+        0, // CLASS_NONE
+        0, // CLASS_WARRIOR
+        0, // CLASS_PALADIN
+        0, // CLASS_HUNTER
+        0, // CLASS_ROGUE
+        0, // CLASS_PRIEST
+        0, // CLASS_DEATH_KNIGHT
+        0, // CLASS_SHAMAN
+        0, // CLASS_MAGE
+        0, // CLASS_WARLOCK
+        4, // CLASS_MONK
+        0  // CLASS_DRUID
+    };
 
-    RealmNameMap::const_iterator iter = realmNameStore.find(realmID);
-    if (iter != realmNameStore.end()) // Add local realm
-        realmNamesToSend[realmID] = iter->second;
-
-    // TC_LOG_ERROR("network", "SMSG_AUTH_RESPONSE");
     WorldPacket packet(SMSG_AUTH_RESPONSE, 80);
-    
-    packet.WriteBit(code == AUTH_OK);
 
-    if (code == AUTH_OK)
+    bool hasAccountData = code == AUTH_OK;
+    const uint32 realmRaceCount = 15;
+
+    packet.WriteBit(hasAccountData);
+
+    if (hasAccountData)
     {
-        packet.WriteBits(realmNamesToSend.size(), 21); // Send current realmId
-
-        for (std::map<uint32, std::string>::const_iterator itr = realmNamesToSend.begin(); itr != realmNamesToSend.end(); itr++)
-        {
-            packet.WriteBits(itr->second.size(), 8);
-            packet.WriteBit(itr->first == realmID); // Home realm
-            packet.WriteBits(itr->second.size(), 8);
-        }
-
-        packet.WriteBit(0);
-        packet.WriteBits(raceResult->GetRowCount(), 23);
         packet.WriteBits(0, 21);
         packet.WriteBit(0);
-        packet.WriteBits(classResult->GetRowCount(), 23);
+        packet.WriteBits(realmRaceCount, 23);
+        packet.WriteBits(0, 21);
+        packet.WriteBit(0);
+        packet.WriteBits(MAX_CLASSES - 1, 23);
         packet.WriteBit(0);
         packet.WriteBit(0);
         packet.WriteBit(0);
     }
 
     packet.WriteBit(queued);
-
     if (queued)
-        packet.WriteBit(1);                             // Unknown
+        packet.WriteBit(false);
 
     packet.FlushBits();
-
+    
     if (queued)
-        packet << uint32(0);                            // Unknown
+        packet << uint32(queuePos);                            // Unknown
 
-    if (code == AUTH_OK)
+    if (hasAccountData)
     {
-        do
+        for (uint32 i = 1; i < MAX_CLASSES; ++i)
         {
-            Field* fields = classResult->Fetch();
-            
-            packet << fields[1].GetUInt8();
-            packet << fields[0].GetUInt8();
-        } 
-        while (classResult->NextRow());
-
-        packet << uint8(Expansion());
-        
-        do
-        {
-            Field* fields = raceResult->Fetch();
-            
-            packet << fields[1].GetUInt8();
-            packet << fields[0].GetUInt8();
-        } 
-        while (raceResult->NextRow());
-
-        packet << uint32(Expansion());
-
-        for (std::map<uint32, std::string>::const_iterator itr = realmNamesToSend.begin(); itr != realmNamesToSend.end(); itr++)
-        {
-            packet << uint32(itr->first);
-            packet.WriteString(itr->second);
-            packet.WriteString(itr->second);
+            packet << uint8(ClassExpensions[i]); // expension
+            packet << uint8(i);                  // class
         }
 
+        packet << uint8(Expansion());
+
+        packet << uint8(0);
+        packet << uint8(RACE_HUMAN);
+        packet << uint8(0);
+        packet << uint8(RACE_ORC);
+        packet << uint8(0);
+        packet << uint8(RACE_DWARF);
+        packet << uint8(0);
+        packet << uint8(RACE_NIGHTELF);
+        packet << uint8(0);
+        packet << uint8(RACE_UNDEAD_PLAYER);
+        packet << uint8(0);
+        packet << uint8(RACE_TAUREN);
+        packet << uint8(0);
+        packet << uint8(RACE_GNOME);
+        packet << uint8(0);
+        packet << uint8(RACE_TROLL);
+        packet << uint8(1);
+        packet << uint8(RACE_GOBLIN);
+        packet << uint8(1);
+        packet << uint8(RACE_BLOODELF);
+        packet << uint8(1);
+        packet << uint8(RACE_DRAENEI);
+        packet << uint8(1);
+        packet << uint8(RACE_WORGEN);
+        packet << uint8(1);
+        packet << uint8(RACE_PANDAREN_NEUTRAL);
+        packet << uint8(1);
+        packet << uint8(RACE_PANDAREN_ALLI);
+        packet << uint8(1);
+        packet << uint8(RACE_PANDAREN_HORDE);
+
+        packet << uint32(Expansion());
+        
         packet << uint32(0);
         packet << uint32(0);
         packet << uint32(0);
@@ -114,14 +117,15 @@ void WorldSession::SendAuthResponse(uint8 code, bool queued, uint32 queuePos)
         packet << uint8(Expansion());
         packet << uint32(0);
     }
-    packet << uint8(code);                             // Auth response ?
+
+    packet << uint8(code);
 
     SendPacket(&packet);
 }
 
 void WorldSession::SendClientCacheVersion(uint32 version)
 {
-    WorldPacket data(SMSG_CLIENTCACHE_VERSION, 4);
+    WorldPacket data(SMSG_CLIENT_CACHE_VERSION, 4);
     data << uint32(version);
     SendPacket(&data);
 }

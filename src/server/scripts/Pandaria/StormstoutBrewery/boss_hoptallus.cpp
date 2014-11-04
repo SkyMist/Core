@@ -19,7 +19,7 @@ enum Yells
     SAY_AGGRO          = 0, // Oh yeah!
     SAY_KILL           = 1, // You die!
     SAY_DEATH          = 2, // You have...turnip...for a head...
-    SAY_FURLWIND       = 3, // Gonna spins around!
+    SAY_FURLWIND       = 3, // Gonna spins around !
     SAY_CARROT_BREATH  = 4  // Urp...eats too many carrots...
 };
 
@@ -77,13 +77,13 @@ class boss_hoptallus : public CreatureScript
             SummonList summons;
             bool introStarted, introDone;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 summons.DespawnAll();
@@ -102,16 +102,15 @@ class boss_hoptallus : public CreatureScript
                 }
             }
 
-            void MovementInform(uint32 type, uint32 id) OVERRIDE
+            void MovementInform(uint32 type, uint32 id)
             {
-                if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
+                if (!me->isAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
-                me->SetHomePosition(hoptallusMovePosition);
                 events.ScheduleEvent(EVENT_SET_COMBAT, 200);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 Talk(SAY_AGGRO);
 
@@ -128,13 +127,13 @@ class boss_hoptallus : public CreatureScript
                 _EnterCombat();
             }
 
-            void KilledUnit(Unit* victim) OVERRIDE
+            void KilledUnit(Unit* victim)
             {
                 if (victim->GetTypeId() == TYPEID_PLAYER)
                     Talk(SAY_KILL);
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -150,7 +149,7 @@ class boss_hoptallus : public CreatureScript
                 _EnterEvadeMode();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
@@ -164,16 +163,16 @@ class boss_hoptallus : public CreatureScript
                 _JustDied();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
                 summon->setActive(true);
 
-		        if (me->IsInCombat())
+		        if (me->isInCombat())
                     summon->SetInCombatWithZone();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim() && introDone)
                     return;
@@ -218,7 +217,7 @@ class boss_hoptallus : public CreatureScript
                     }
                 }
 
-                if (introDone && me->IsInCombat())
+                if (introDone && me->isInCombat())
                     DoMeleeAttackIfReady();
             }
 
@@ -227,27 +226,26 @@ class boss_hoptallus : public CreatureScript
             void CallNPCS()
             {
                 // 15 Hoppling, 7 Hopper, 5 Bopper.
-                for (uint8 i = 0; i < 15; i++)
+                for (uint8 i = 0; i < 8; i++)
                     if (Creature* hoppling = me->SummonCreature(NPC_HOPPLING, bunnySummonPosition, TEMPSUMMON_MANUAL_DESPAWN))
                         hoppling->GetMotionMaster()->MoveJump(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 5.0f, 10.0f);
 
-                for (uint8 i = 0; i < 7; i++)
+                for (uint8 i = 0; i < 4; i++)
                     if (Creature* hopper = me->SummonCreature(NPC_HOPPER, bunnySummonPosition, TEMPSUMMON_MANUAL_DESPAWN))
                         hopper->GetMotionMaster()->MoveJump(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 5.0f, 10.0f);
 
-                for (uint8 i = 0; i < 5; i++)
+                for (uint8 i = 0; i < 2; i++)
                     if (Creature* bopper = me->SummonCreature(NPC_BOPPER, bunnySummonPosition, TEMPSUMMON_MANUAL_DESPAWN))
                         bopper->GetMotionMaster()->MoveJump(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 5.0f, 10.0f);
             }
     };
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_hoptallus_AI(creature);
     }
 };
 
-// Hopper 59464.
 class npc_hopper : public CreatureScript
 {
     public :
@@ -263,23 +261,23 @@ class npc_hopper : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 me->AddAura(SPELL_KEG_CARRY, me);
                 Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_CHECK_PLAYERS, 1000);
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -287,7 +285,7 @@ class npc_hopper : public CreatureScript
                 me->DespawnOrUnsummon();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -318,13 +316,12 @@ class npc_hopper : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_hopper_AI(creature);
         }
 };
 
-// Bopper 59551.
 class npc_bopper : public CreatureScript
 {
     public :
@@ -339,14 +336,14 @@ class npc_bopper : public CreatureScript
 
             InstanceScript* instance;
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
             }
 
-            void Reset() OVERRIDE { }
+            void Reset() { }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -354,18 +351,18 @@ class npc_bopper : public CreatureScript
                 me->DespawnOrUnsummon();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 if (Unit* hammer = me->SummonCreature(NPC_BOPPER_HAMMER, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0, TEMPSUMMON_TIMED_DESPAWN, 30000))
                 {
                     hammer->ToCreature()->SetReactState(REACT_PASSIVE);
-                    hammer->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
+                    hammer->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
                     hammer->AddAura(SPELL_HAMMER_VISUAL, hammer);
                     hammer->AddAura(SPELL_HAMMER_ARROW, hammer);
                 }
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -374,13 +371,12 @@ class npc_bopper : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_bopper_AI(creature);
         }
 };
 
-// Giant hammer 59539.
 class npc_hoptallus_bopper_hammer : public CreatureScript
 {
     public:
@@ -390,18 +386,15 @@ class npc_hoptallus_bopper_hammer : public CreatureScript
         {
             npc_hoptallus_bopper_hammerAI(Creature* creature) : PassiveAI(creature) { }
 
-            void OnSpellClick(Unit* clicker, bool& result) OVERRIDE
+            void OnSpellClick(Unit* clicker)
             {
-                if (result)
-				{
-                    clicker->AddAura(SPELL_SMASH_AURA, clicker);
-                    me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
-                    me->DespawnOrUnsummon();
-				}
+                clicker->AddAura(SPELL_SMASH_AURA, clicker);
+                me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
+                me->DespawnOrUnsummon();
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_hoptallus_bopper_hammerAI(creature);
         }
@@ -411,13 +404,9 @@ class PositionCheck : public std::unary_function<Unit*, bool>
 {
     public:
         explicit PositionCheck(Unit* _caster) : caster(_caster) { }
-
-        bool operator()(WorldObject* object) const
+        bool operator()(WorldObject* object)
         {
-            if (!caster->HasInArc(M_PI / 6, object))
-                return true;
-
-            return false;
+              return !caster->HasInArc(M_PI / 6, object);
         }
 
     private:
@@ -428,20 +417,16 @@ class PlayerCheck : public std::unary_function<Unit*, bool>
 {
     public:
         explicit PlayerCheck(Unit* _caster) : caster(_caster) { }
-
-        bool operator()(WorldObject* object) const
+        bool operator()(WorldObject* object)
         {
-            if (object->GetTypeId() != TYPEID_PLAYER)
-                return true;
-
-            return false;
+            return object->GetTypeId() != TYPEID_PLAYER;
         }
 
     private:
         Unit* caster;
 };
 
-// Carrot Breath 112944.
+// Carrot Breath 112944
 class spell_hoptallus_carrot_breath : public SpellScriptLoader
 {
 public:
@@ -451,18 +436,18 @@ public:
     {
         PrepareAuraScript(spell_hoptallus_carrot_breath_AuraScript);
 
-        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             PreventDefaultAction(); // Don't apply stupid dummy aura.
         }
 
-        void Register() OVERRIDE
+        void Register()
         {
             OnEffectApply += AuraEffectApplyFn(spell_hoptallus_carrot_breath_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
         }
     };
 
-    AuraScript* GetAuraScript() const OVERRIDE
+    AuraScript* GetAuraScript() const
     {
         return new spell_hoptallus_carrot_breath_AuraScript();
     }
@@ -483,7 +468,7 @@ public:
             targets.remove_if(PositionCheck(GetCaster()));
         }
 
-        void Register() OVERRIDE
+        void Register()
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hoptallus_carrot_breath_damageSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENTRY);
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hoptallus_carrot_breath_damageSpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CONE_ENTRY);
@@ -491,7 +476,7 @@ public:
         }
     };
 
-    SpellScript* GetSpellScript() const OVERRIDE
+    SpellScript* GetSpellScript() const
     {
         return new spell_hoptallus_carrot_breath_damageSpellScript();
     }
@@ -512,13 +497,13 @@ public:
             targets.remove_if(PlayerCheck(GetCaster()));
         }
 
-        void Register() OVERRIDE
+        void Register()
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hoptallus_furlwind_damageSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
         }
     };
 
-    SpellScript* GetSpellScript() const OVERRIDE
+    SpellScript* GetSpellScript() const
     {
         return new spell_hoptallus_furlwind_damageSpellScript();
     }

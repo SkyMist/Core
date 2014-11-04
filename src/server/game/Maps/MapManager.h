@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,14 +19,13 @@
 #ifndef TRINITY_MAPMANAGER_H
 #define TRINITY_MAPMANAGER_H
 
-#include "Object.h"
+#include "Define.h"
+#include <ace/Singleton.h>
+#include <ace/Thread_Mutex.h>
+#include "Common.h"
 #include "Map.h"
 #include "GridStates.h"
 #include "MapUpdater.h"
-
-#include <ace/Singleton.h>
-#include <ace/Thread_Mutex.h>
-
 
 class Transport;
 struct TransportCreatureProto;
@@ -88,17 +86,17 @@ class MapManager
 
         static bool IsValidMapCoord(uint32 mapid, float x, float y)
         {
-            return IsValidMAP(mapid, false) && Trinity::IsValidMapCoord(x, y);
+            return IsValidMAP(mapid, false) && JadeCore::IsValidMapCoord(x, y);
         }
 
         static bool IsValidMapCoord(uint32 mapid, float x, float y, float z)
         {
-            return IsValidMAP(mapid, false) && Trinity::IsValidMapCoord(x, y, z);
+            return IsValidMAP(mapid, false) && JadeCore::IsValidMapCoord(x, y, z);
         }
 
         static bool IsValidMapCoord(uint32 mapid, float x, float y, float z, float o)
         {
-            return IsValidMAP(mapid, false) && Trinity::IsValidMapCoord(x, y, z, o);
+            return IsValidMAP(mapid, false) && JadeCore::IsValidMapCoord(x, y, z, o);
         }
 
         static bool IsValidMapCoord(WorldLocation const& loc)
@@ -106,7 +104,38 @@ class MapManager
             return IsValidMapCoord(loc.GetMapId(), loc.GetPositionX(), loc.GetPositionY(), loc.GetPositionZ(), loc.GetOrientation());
         }
 
+        // modulos a radian orientation to the range of 0..2PI
+        static float NormalizeOrientation(float o)
+        {
+            // fmod only supports positive numbers. Thus we have
+            // to emulate negative numbers
+            if (o < 0)
+            {
+                float mod = o *-1;
+                mod = fmod(mod, 2.0f * static_cast<float>(M_PI));
+                mod = -mod + 2.0f * static_cast<float>(M_PI);
+                return mod;
+            }
+            return fmod(o, 2.0f * static_cast<float>(M_PI));
+        }
+
         void DoDelayedMovesAndRemoves();
+
+        void LoadTransports();
+        void LoadTransportNPCs();
+
+        //Load transport to instance
+        Transport* LoadTransportInMap(Map* instance, uint32 goEntry, uint32 period);
+        void UnLoadTransportFromMap(Transport* t);
+        void LoadTransportForPlayers(Player* player);
+        void UnLoadTransportForPlayers(Player* player);
+
+        typedef std::set<Transport*> TransportSet;
+        TransportSet m_Transports;
+
+        typedef std::map<uint32, TransportSet> TransportMap;
+        TransportMap m_TransportsByMap;
+        TransportMap m_TransportsByInstanceIdMap;
 
         bool CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck = false);
         void InitializeVisibilityDistanceInfo();

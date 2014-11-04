@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -71,7 +69,7 @@ class boss_doomlord_kazzak : public CreatureScript
             {
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _events.Reset();
                 _events.ScheduleEvent(EVENT_SHADOW_VOLLEY, urand(6000, 10000));
@@ -84,17 +82,17 @@ class boss_doomlord_kazzak : public CreatureScript
                 _events.ScheduleEvent(EVENT_BERSERK, 180000);
             }
 
-            void JustRespawned() OVERRIDE
+            void JustRespawned()
             {
                 Talk(SAY_INTRO);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 Talk(SAY_AGGRO);
             }
 
-            void KilledUnit(Unit* victim) OVERRIDE
+            void KilledUnit(Unit* victim)
             {
                 // When Kazzak kills a player (not pets/totems), he regens some health
                 if (victim->GetTypeId() != TYPEID_PLAYER)
@@ -105,12 +103,12 @@ class boss_doomlord_kazzak : public CreatureScript
                 Talk(SAY_KILL);
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 Talk(SAY_DEATH);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 const diff)
             {
                 // Return since we have no target
                 if (!UpdateVictim())
@@ -171,9 +169,9 @@ class boss_doomlord_kazzak : public CreatureScript
             EventMap _events;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new boss_doomlordkazzakAI(creature);
+            return new boss_doomlordkazzakAI (creature);
         }
 };
 
@@ -186,20 +184,20 @@ class spell_mark_of_kazzak : public SpellScriptLoader
         {
             PrepareAuraScript(spell_mark_of_kazzak_AuraScript);
 
-            bool Validate(SpellInfo const* /*spell*/) OVERRIDE
+            bool Validate(SpellInfo const* /*spell*/)
             {
                 if (!sSpellMgr->GetSpellInfo(SPELL_MARK_OF_KAZZAK_DAMAGE))
                     return false;
                 return true;
             }
 
-            void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
+            void CalculateAmount(constAuraEffectPtr /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
             {
                 if (Unit* owner = GetUnitOwner())
                     amount = CalculatePct(owner->GetPower(POWER_MANA), 5);
             }
 
-            void OnPeriodic(AuraEffect const* aurEff)
+            void OnPeriodic(constAuraEffectPtr aurEff)
             {
                 Unit* target = GetTarget();
 
@@ -211,14 +209,14 @@ class spell_mark_of_kazzak : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_mark_of_kazzak_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_PERIODIC_MANA_LEECH);
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_mark_of_kazzak_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_MANA_LEECH);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const
         {
             return new spell_mark_of_kazzak_AuraScript();
         }

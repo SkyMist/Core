@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,13 +22,13 @@
 class instance_ruins_of_ahnqiraj : public InstanceMapScript
 {
     public:
-        instance_ruins_of_ahnqiraj() : InstanceMapScript("instance_ruins_of_ahnqiraj", 509) { }
+        instance_ruins_of_ahnqiraj() : InstanceMapScript("instance_ruins_of_ahnqiraj", 509) {}
 
         struct instance_ruins_of_ahnqiraj_InstanceMapScript : public InstanceScript
         {
             instance_ruins_of_ahnqiraj_InstanceMapScript(Map* map) : InstanceScript(map)
             {
-                SetBossNumber(NUM_ENCOUNTER);
+                SetBossNumber(MAX_ENCOUNTER);
 
                 _kurinaxxGUID   = 0;
                 _rajaxxGUID     = 0;
@@ -39,10 +36,9 @@ class instance_ruins_of_ahnqiraj : public InstanceMapScript
                 _buruGUID       = 0;
                 _ayamissGUID    = 0;
                 _ossirianGUID   = 0;
-                _paralyzedGUID  = 0;
             }
 
-            void OnCreatureCreate(Creature* creature) OVERRIDE
+            void OnCreatureCreate(Creature* creature)
             {
                 switch (creature->GetEntry())
                 {
@@ -75,36 +71,28 @@ class instance_ruins_of_ahnqiraj : public InstanceMapScript
                 return true;
             }
 
-            void SetData64(uint32 type, uint64 data) OVERRIDE
-            {
-                if (type == DATA_PARALYZED)
-                    _paralyzedGUID = data;
-            }
-
-            uint64 GetData64(uint32 type) const OVERRIDE
+            uint64 GetData64(uint32 type)
             {
                 switch (type)
                 {
-                    case DATA_KURINNAXX:
+                    case BOSS_KURINNAXX:
                         return _kurinaxxGUID;
-                    case DATA_RAJAXX:
+                    case BOSS_RAJAXX:
                         return _rajaxxGUID;
-                    case DATA_MOAM:
+                    case BOSS_MOAM:
                         return _moamGUID;
-                    case DATA_BURU:
+                    case BOSS_BURU:
                         return _buruGUID;
-                    case DATA_AYAMISS:
+                    case BOSS_AYAMISS:
                         return _ayamissGUID;
-                    case DATA_OSSIRIAN:
+                    case BOSS_OSSIRIAN:
                         return _ossirianGUID;
-                    case DATA_PARALYZED:
-                        return _paralyzedGUID;
                 }
 
                 return 0;
             }
 
-            std::string GetSaveData() OVERRIDE
+            std::string GetSaveData()
             {
                 OUT_SAVE_INST_DATA;
 
@@ -132,7 +120,7 @@ class instance_ruins_of_ahnqiraj : public InstanceMapScript
 
                 if (dataHead1 == 'R' && dataHead2 == 'A')
                 {
-                    for (uint8 i = 0; i < NUM_ENCOUNTER; ++i)
+                    for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                     {
                         uint32 tmpState;
                         loadStream >> tmpState;
@@ -154,10 +142,9 @@ class instance_ruins_of_ahnqiraj : public InstanceMapScript
             uint64 _buruGUID;
             uint64 _ayamissGUID;
             uint64 _ossirianGUID;
-            uint64 _paralyzedGUID;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
             return new instance_ruins_of_ahnqiraj_InstanceMapScript(map);
         }

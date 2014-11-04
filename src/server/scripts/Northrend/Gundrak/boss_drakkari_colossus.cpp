@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,7 +22,6 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "gundrak.h"
-#include "SpellInfo.h"
 
 enum Spells
 {
@@ -89,13 +85,13 @@ class boss_drakkari_colossus : public CreatureScript
                 introDone = false;
             }
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _Reset();
 
@@ -116,7 +112,7 @@ class boss_drakkari_colossus : public CreatureScript
                 instance->SetData(DATA_DRAKKARI_COLOSSUS_EVENT, NOT_STARTED);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 _EnterCombat();
 
@@ -127,7 +123,7 @@ class boss_drakkari_colossus : public CreatureScript
                 instance->SetData(DATA_DRAKKARI_COLOSSUS_EVENT, IN_PROGRESS);
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 _JustDied();
 
@@ -136,27 +132,27 @@ class boss_drakkari_colossus : public CreatureScript
                 instance->SetData(DATA_DRAKKARI_COLOSSUS_EVENT, DONE);
             }
 
-            void JustReachedHome() OVERRIDE
+            void JustReachedHome()
             {
                 // Note: This should not be called, but before use SetBossState function we should use BossAI
                 //        in all the bosses of the instance
                 instance->SetData(DATA_DRAKKARI_COLOSSUS_EVENT, FAIL);
             }
 
-            void DoAction(int32 action) OVERRIDE
+            void DoAction(const int32 action)
             {
                 switch (action)
                 {
                     case ACTION_SUMMON_ELEMENTAL:
-                        DoCast(SPELL_EMERGE);
+                        DoCast(me, SPELL_EMERGE, true);
                         break;
                     case ACTION_FREEZE_COLOSSUS:
-                        me->GetMotionMaster()->Clear();
                         me->GetMotionMaster()->MoveIdle();
-
+                        me->AttackStop();
                         me->SetReactState(REACT_PASSIVE);
+                        me->RemoveAllAuras();
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                        DoCast(me, SPELL_FREEZE_ANIM);
+                        //DoCast(me, SPELL_FREEZE_ANIM);
                         break;
                     case ACTION_UNFREEZE_COLOSSUS:
 
@@ -169,14 +165,14 @@ class boss_drakkari_colossus : public CreatureScript
 
                         me->SetInCombatWithZone();
 
-                        if (me->GetVictim())
-                            me->GetMotionMaster()->MoveChase(me->GetVictim(), 0, 0);
+                        if (me->getVictim())
+                            me->GetMotionMaster()->MoveChase(me->getVictim(), 0, 0);
 
                         break;
                 }
             }
 
-            void DamageTaken(Unit* /*attacker*/, uint32& damage) OVERRIDE
+            void DamageTaken(Unit* /*attacker*/, uint32& damage)
             {
                 if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC))
                     damage = 0;
@@ -195,7 +191,7 @@ class boss_drakkari_colossus : public CreatureScript
                 }
             }
 
-            uint32 GetData(uint32 data) const OVERRIDE
+            uint32 GetData(uint32 data)
             {
                if (data == DATA_COLOSSUS_PHASE)
                    return phase;
@@ -205,13 +201,13 @@ class boss_drakkari_colossus : public CreatureScript
                return 0;
             }
 
-            void SetData(uint32 type, uint32 data) OVERRIDE
+            void SetData(uint32 type, uint32 data)
             {
                 if (type == DATA_INTRO_DONE)
                     introDone = data;
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -226,7 +222,7 @@ class boss_drakkari_colossus : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_MIGHTY_BLOW:
-                            DoCastVictim(SPELL_MIGHTY_BLOW);
+                            DoCast(me->getVictim(), SPELL_MIGHTY_BLOW);
                             events.ScheduleEvent(EVENT_MIGHTY_BLOW, urand(5000, 15000));
                             break;
                     }
@@ -236,7 +232,7 @@ class boss_drakkari_colossus : public CreatureScript
                     DoMeleeAttackIfReady();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                summon->SetInCombatWithZone();
 
@@ -249,7 +245,7 @@ class boss_drakkari_colossus : public CreatureScript
             bool introDone;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_drakkari_colossusAI(creature);
         }
@@ -268,7 +264,7 @@ class boss_drakkari_elemental : public CreatureScript
                 instance = creature->GetInstanceScript();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 events.ScheduleEvent(EVENT_SURGE, urand(5000, 15000));
@@ -276,7 +272,7 @@ class boss_drakkari_elemental : public CreatureScript
                 me->AddAura(SPELL_MOJO_VOLLEY, me);
             }
 
-            void JustDied(Unit* killer) OVERRIDE
+            void JustDied(Unit* killer)
             {
                 if (killer == me)
                     return;
@@ -288,7 +284,7 @@ class boss_drakkari_elemental : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -314,7 +310,7 @@ class boss_drakkari_elemental : public CreatureScript
                 DoMeleeAttackIfReady();
             }
 
-           void DoAction(int32 action) OVERRIDE
+           void DoAction(const int32 action)
             {
                 switch (action)
                 {
@@ -330,7 +326,7 @@ class boss_drakkari_elemental : public CreatureScript
                 }
            }
 
-            void DamageTaken(Unit* /*attacker*/, uint32& damage) OVERRIDE
+            void DamageTaken(Unit* /*attacker*/, uint32& damage)
             {
                 if (HealthBelowPct(50) && instance)
                 {
@@ -360,12 +356,12 @@ class boss_drakkari_elemental : public CreatureScript
                 }
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 me->DespawnOrUnsummon();
             }
 
-            void SpellHitTarget(Unit* target, SpellInfo const* spell) OVERRIDE
+            void SpellHitTarget(Unit* target, SpellInfo const* spell)
             {
                 if (spell->Id == SPELL_MERGE)
                 {
@@ -382,7 +378,7 @@ class boss_drakkari_elemental : public CreatureScript
             InstanceScript* instance;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_drakkari_elementalAI(creature);
         }
@@ -393,9 +389,9 @@ class npc_living_mojo : public CreatureScript
 public:
     npc_living_mojo() : CreatureScript("npc_living_mojo") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_living_mojoAI(creature);
+        return new npc_living_mojoAI (creature);
     }
 
     struct npc_living_mojoAI : public ScriptedAI
@@ -405,7 +401,7 @@ public:
             instance = creature->GetInstanceScript();
         }
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             mojoWaveTimer = 2*IN_MILLISECONDS;
             mojoPuddleTimer = 7*IN_MILLISECONDS;
@@ -425,7 +421,7 @@ public:
             }
         }
 
-        void MovementInform(uint32 type, uint32 id) OVERRIDE
+        void MovementInform(uint32 type, uint32 id)
         {
             if (type != POINT_MOTION_TYPE)
                 return;
@@ -443,7 +439,7 @@ public:
             }
         }
 
-        void AttackStart(Unit* attacker) OVERRIDE
+        void AttackStart(Unit* attacker)
         {
             if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == POINT_MOTION_TYPE)
                 return;
@@ -469,7 +465,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -477,13 +473,13 @@ public:
 
             if (mojoWaveTimer <= diff)
             {
-                DoCastVictim(SPELL_MOJO_WAVE);
+                DoCast(me->getVictim(), SPELL_MOJO_WAVE);
                 mojoWaveTimer = 15*IN_MILLISECONDS;
             } else mojoWaveTimer -= diff;
 
             if (mojoPuddleTimer <= diff)
             {
-                DoCastVictim(SPELL_MOJO_PUDDLE);
+                DoCast(me->getVictim(), SPELL_MOJO_PUDDLE);
                 mojoPuddleTimer = 18*IN_MILLISECONDS;
             } else mojoPuddleTimer -= diff;
 

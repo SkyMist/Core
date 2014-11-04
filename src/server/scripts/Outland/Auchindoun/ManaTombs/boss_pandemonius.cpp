@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,27 +26,30 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 
-enum Pandemonius
-{
-    SAY_AGGRO                       = 0,
-    SAY_KILL                        = 1,
-    SAY_DEATH                       = 2,
-    EMOTE_DARK_SHELL                = 3,
+#define SAY_AGGRO_1                     -1557008
+#define SAY_AGGRO_2                     -1557009
+#define SAY_AGGRO_3                     -1557010
 
-    SPELL_VOID_BLAST                = 32325,
-    H_SPELL_VOID_BLAST              = 38760,
-    SPELL_DARK_SHELL                = 32358,
-    H_SPELL_DARK_SHELL              = 38759
-};
+#define SAY_KILL_1                      -1557011
+#define SAY_KILL_2                      -1557012
+
+#define SAY_DEATH                       -1557013
+
+#define EMOTE_DARK_SHELL                -1557014
+
+#define SPELL_VOID_BLAST                32325
+#define H_SPELL_VOID_BLAST              38760
+#define SPELL_DARK_SHELL                32358
+#define H_SPELL_DARK_SHELL              38759
 
 class boss_pandemonius : public CreatureScript
 {
 public:
     boss_pandemonius() : CreatureScript("boss_pandemonius") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_pandemoniusAI(creature);
+        return new boss_pandemoniusAI (creature);
     }
 
     struct boss_pandemoniusAI : public ScriptedAI
@@ -61,29 +62,29 @@ public:
         uint32 DarkShell_Timer;
         uint32 VoidBlast_Counter;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             VoidBlast_Timer = 8000+rand()%15000;
             DarkShell_Timer = 20000;
             VoidBlast_Counter = 0;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
-            Talk(SAY_KILL);
+            DoScriptText(RAND(SAY_KILL_1, SAY_KILL_2), me);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(RAND(SAY_AGGRO_1, SAY_AGGRO_2, SAY_AGGRO_3), me);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -111,7 +112,7 @@ public:
                     if (me->IsNonMeleeSpellCasted(false))
                         me->InterruptNonMeleeSpells(true);
 
-                    Talk(EMOTE_DARK_SHELL);
+                    DoScriptText(EMOTE_DARK_SHELL, me);
 
                     DoCast(me, SPELL_DARK_SHELL);
                     DarkShell_Timer = 20000;

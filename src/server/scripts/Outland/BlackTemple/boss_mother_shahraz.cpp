@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,29 +27,31 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "black_temple.h"
 
-enum MotherShahraz
-{
-    //Speech'n'Sounds
-    SAY_TAUNT               = 0,
-    SAY_AGGRO               = 1,
-    SAY_SPELL               = 2,
-    SAY_SLAY                = 3,
-    SAY_ENRAGE              = 4,
-    SAY_DEATH               = 5,
+//Speech'n'Sounds
+#define SAY_TAUNT1              -1564018
+#define SAY_TAUNT2              -1564019
+#define SAY_TAUNT3              -1564020
+#define SAY_AGGRO               -1564021
+#define SAY_SPELL1              -1564022
+#define SAY_SPELL2              -1564023
+#define SAY_SPELL3              -1564024
+#define SAY_SLAY1               -1564025
+#define SAY_SLAY2               -1564026
+#define SAY_ENRAGE              -1564027
+#define SAY_DEATH               -1564028
 
-    //Spells
-    SPELL_BEAM_SINISTER     = 40859,
-    SPELL_BEAM_VILE         = 40860,
-    SPELL_BEAM_WICKED       = 40861,
-    SPELL_BEAM_SINFUL       = 40827,
-    SPELL_ATTRACTION        = 40871,
-    SPELL_SILENCING_SHRIEK  = 40823,
-    SPELL_ENRAGE            = 23537,
-    SPELL_SABER_LASH        = 40810, //43267
-    SPELL_SABER_LASH_IMM    = 43690,
-    SPELL_TELEPORT_VISUAL   = 40869,
-    SPELL_BERSERK           = 45078
-};
+//Spells
+#define SPELL_BEAM_SINISTER     40859
+#define SPELL_BEAM_VILE         40860
+#define SPELL_BEAM_WICKED       40861
+#define SPELL_BEAM_SINFUL       40827
+#define SPELL_ATTRACTION        40871
+#define SPELL_SILENCING_SHRIEK  40823
+#define SPELL_ENRAGE            23537
+#define SPELL_SABER_LASH        40810//43267
+#define SPELL_SABER_LASH_IMM    43690
+#define SPELL_TELEPORT_VISUAL   40869
+#define SPELL_BERSERK           45078
 
 uint32 PrismaticAuras[]=
 {
@@ -84,9 +84,9 @@ class boss_mother_shahraz : public CreatureScript
 public:
     boss_mother_shahraz() : CreatureScript("boss_mother_shahraz") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_shahrazAI(creature);
+        return new boss_shahrazAI (creature);
     }
 
     struct boss_shahrazAI : public ScriptedAI
@@ -113,10 +113,10 @@ public:
 
         bool Enraged;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             if (instance)
-                instance->SetBossState(DATA_MOTHER_SHAHRAZ, NOT_STARTED);
+                instance->SetData(DATA_MOTHERSHAHRAZEVENT, NOT_STARTED);
 
             for (uint8 i = 0; i<3; ++i)
                 TargetGUID[i] = 0;
@@ -136,26 +136,26 @@ public:
             Enraged = false;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             if (instance)
-                instance->SetBossState(DATA_MOTHER_SHAHRAZ, IN_PROGRESS);
+                instance->SetData(DATA_MOTHERSHAHRAZEVENT, IN_PROGRESS);
 
             DoZoneInCombat();
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY1, SAY_SLAY2), me);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             if (instance)
-                instance->SetBossState(DATA_MOTHER_SHAHRAZ, DONE);
+                instance->SetData(DATA_MOTHERSHAHRAZEVENT, DONE);
 
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
         }
 
         void TeleportPlayers()
@@ -167,7 +167,7 @@ public:
             for (uint8 i = 0; i < 3; ++i)
             {
                 Unit* unit = SelectTarget(SELECT_TARGET_RANDOM, 1);
-                if (unit && unit->IsAlive() && (unit->GetTypeId() == TYPEID_PLAYER))
+                if (unit && unit->isAlive() && (unit->GetTypeId() == TYPEID_PLAYER))
                 {
                     TargetGUID[i] = unit->GetGUID();
                     unit->CastSpell(unit, SPELL_TELEPORT_VISUAL, true);
@@ -176,7 +176,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -185,14 +185,14 @@ public:
             {
                 Enraged = true;
                 DoCast(me, SPELL_ENRAGE, true);
-                Talk(SAY_ENRAGE);
+                DoScriptText(SAY_ENRAGE, me);
             }
 
             //Randomly cast one beam.
             if (BeamTimer <= diff)
             {
                 Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0);
-                if (!target || !target->IsAlive())
+                if (!target || !target->isAlive())
                     return;
 
                 BeamTimer = 9000;
@@ -236,7 +236,7 @@ public:
 
                 TeleportPlayers();
 
-                Talk(SAY_SPELL);
+                DoScriptText(RAND(SAY_SPELL2, SAY_SPELL3), me);
                 FatalAttractionExplodeTimer = 2000;
                 FatalAttractionTimer = urand(40, 71) * 1000;
             } else FatalAttractionTimer -= diff;
@@ -268,13 +268,13 @@ public:
 
             if (ShriekTimer <= diff)
             {
-                DoCastVictim(SPELL_SILENCING_SHRIEK);
+                DoCast(me->getVictim(), SPELL_SILENCING_SHRIEK);
                 ShriekTimer = 25000+rand()%10 * 1000;
             } else ShriekTimer -= diff;
 
             if (SaberTimer <= diff)
             {
-                DoCastVictim(SPELL_SABER_LASH);
+                DoCast(me->getVictim(), SPELL_SABER_LASH);
                 SaberTimer = 25000+rand()%10 * 1000;
             } else SaberTimer -= diff;
 
@@ -284,14 +284,14 @@ public:
                 if (EnrageTimer <= diff)
                 {
                     DoCast(me, SPELL_BERSERK);
-                    Talk(SAY_ENRAGE);
+                    DoScriptText(SAY_ENRAGE, me);
                 } else EnrageTimer -= diff;
             }
 
             //Random taunts
             if (RandomYellTimer <= diff)
             {
-                Talk(SAY_TAUNT);
+                DoScriptText(RAND(SAY_TAUNT1, SAY_TAUNT2, SAY_TAUNT3), me);
                 RandomYellTimer = urand(60, 151) * 1000;
             } else RandomYellTimer -= diff;
 

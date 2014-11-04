@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,8 +21,8 @@
 
 enum Texts
 {
-    EMOTE_AGGRO             = 0,
-    EMOTE_MANA_FULL         = 1
+    EMOTE_AGGRO             = -1509000,
+    EMOTE_MANA_FULL         = -1509001
 };
 
 enum Spells
@@ -61,11 +58,11 @@ class boss_moam : public CreatureScript
 
         struct boss_moamAI : public BossAI
         {
-            boss_moamAI(Creature* creature) : BossAI(creature, DATA_MOAM)
+            boss_moamAI(Creature* creature) : BossAI(creature, BOSS_MOAM)
             {
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _Reset();
                 me->SetPower(POWER_MANA, 0);
@@ -74,7 +71,7 @@ class boss_moam : public CreatureScript
                 //events.ScheduleEvent(EVENT_WIDE_SLASH, 11000);
             }
 
-            void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/) OVERRIDE
+            void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/)
             {
                 if (!_isStonePhase && HealthBelowPct(45))
                 {
@@ -83,7 +80,7 @@ class boss_moam : public CreatureScript
                 }
             }
 
-            void DoAction(int32 action) OVERRIDE
+            void DoAction(int32 const action)
             {
                 switch (action)
                 {
@@ -108,7 +105,7 @@ class boss_moam : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 const diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -151,7 +148,7 @@ class boss_moam : public CreatureScript
                                         targetList.push_back((*itr)->getTarget());
                             }
 
-                            Trinity::Containers::RandomResizeList(targetList, 5);
+                            JadeCore::Containers::RandomResizeList(targetList, 5);
 
                             for (std::list<Unit*>::iterator itr = targetList.begin(); itr != targetList.end(); ++itr)
                                 DoCast(*itr, SPELL_DRAIN_MANA);
@@ -178,7 +175,7 @@ class boss_moam : public CreatureScript
             bool _isStonePhase;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_moamAI(creature);
         }

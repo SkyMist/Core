@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,23 +18,23 @@
 #ifndef DEF_ARCHAVON_H
 #define DEF_ARCHAVON_H
 
-uint32 const EncounterCount = 4;
+enum Creatures
+{
+    CREATURE_ARCHAVON                           = 31125,
+    CREATURE_EMALON                             = 33993,
+    CREATURE_KORALON                            = 35013,
+    CREATURE_TORAVON                            = 38433,
+};
 
 enum Data
 {
-    DATA_ARCHAVON       = 0,
-    DATA_EMALON         = 1,
-    DATA_KORALON        = 2,
-    DATA_TORAVON        = 3,
+    DATA_ARCHAVON   = 0,
+    DATA_EMALON     = 1,
+    DATA_KORALON    = 2,
+    DATA_TORAVON    = 3,
 };
 
-enum CreatureIds
-{
-    NPC_ARCHAVON        = 31125,
-    NPC_EMALON          = 33993,
-    NPC_KORALON         = 35013,
-    NPC_TORAVON         = 38433
-};
+#define MAX_ENCOUNTER 4
 
 enum AchievementCriteriaIds
 {

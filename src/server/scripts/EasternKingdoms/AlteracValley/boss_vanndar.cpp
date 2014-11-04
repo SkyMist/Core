@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,8 +22,8 @@ enum Yells
 {
     YELL_AGGRO                                    = 0,
     YELL_EVADE                                    = 1,
-  //YELL_RESPAWN1                                 = -1810010, // Missing in database
-  //YELL_RESPAWN2                                 = -1810011, // Missing in database
+    YELL_RESPAWN1                                 = -1810010, // no creature_text
+    YELL_RESPAWN2                                 = -1810011, // no creature_text
     YELL_RANDOM                                   = 2,
     YELL_SPELL                                    = 3,
 };
@@ -45,7 +42,7 @@ public:
 
     struct boss_vanndarAI : public ScriptedAI
     {
-        boss_vanndarAI(Creature* creature) : ScriptedAI(creature) { }
+        boss_vanndarAI(Creature* creature) : ScriptedAI(creature) {}
 
         uint32 AvatarTimer;
         uint32 ThunderclapTimer;
@@ -53,7 +50,7 @@ public:
         uint32 ResetTimer;
         uint32 YellTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             AvatarTimer        = 3 * IN_MILLISECONDS;
             ThunderclapTimer   = 4 * IN_MILLISECONDS;
@@ -62,31 +59,37 @@ public:
             YellTimer = urand(20 * IN_MILLISECONDS, 30 * IN_MILLISECONDS);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             Talk(YELL_AGGRO);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void JustRespawned()
+        {
+            Reset();
+            DoScriptText(RAND(YELL_RESPAWN1, YELL_RESPAWN2), me);
+        }
+
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
 
             if (AvatarTimer <= diff)
             {
-                DoCastVictim(SPELL_AVATAR);
+                DoCast(me->getVictim(), SPELL_AVATAR);
                 AvatarTimer =  urand(15 * IN_MILLISECONDS, 20 * IN_MILLISECONDS);
             } else AvatarTimer -= diff;
 
             if (ThunderclapTimer <= diff)
             {
-                DoCastVictim(SPELL_THUNDERCLAP);
+                DoCast(me->getVictim(), SPELL_THUNDERCLAP);
                 ThunderclapTimer = urand(5 * IN_MILLISECONDS, 15 * IN_MILLISECONDS);
             } else ThunderclapTimer -= diff;
 
             if (StormboltTimer <= diff)
             {
-                DoCastVictim(SPELL_STORMBOLT);
+                DoCast(me->getVictim(), SPELL_STORMBOLT);
                 StormboltTimer = urand(10 * IN_MILLISECONDS, 25 * IN_MILLISECONDS);
             } else StormboltTimer -= diff;
 
@@ -111,7 +114,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_vanndarAI(creature);
     }

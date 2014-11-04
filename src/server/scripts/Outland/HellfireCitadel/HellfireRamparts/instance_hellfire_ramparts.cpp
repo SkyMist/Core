@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -17,7 +15,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 /* ScriptData
 SDName: Instance_Hellfire_Ramparts
 SD%Complete: 50
@@ -32,98 +30,91 @@ EndScriptData */
 class instance_ramparts : public InstanceMapScript
 {
     public:
-        instance_ramparts() : InstanceMapScript("instance_ramparts", 543) { }
+        instance_ramparts()
+            : InstanceMapScript("instance_ramparts", 543)
+        {
+        }
 
         struct instance_ramparts_InstanceMapScript : public InstanceScript
         {
-            instance_ramparts_InstanceMapScript(Map* map) : InstanceScript(map) { }
+            instance_ramparts_InstanceMapScript(Map* map) : InstanceScript(map) {}
 
-            void Initialize() OVERRIDE
+            uint32 m_auiEncounter[MAX_ENCOUNTER];
+            uint64 m_uiChestNGUID;
+            uint64 m_uiChestHGUID;
+            uint32 uiTeam;
+            bool spawned;
+
+            void Initialize()
             {
-                SetBossNumber(EncounterCount);
-                felIronChestGUID = 0;
+                memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+
+                m_uiChestNGUID = 0;
+                m_uiChestHGUID = 0;
+                uiTeam = 0;
+            }
+            
+            void BeforePlayerEnter(Player* player)
+            {
+                if (!uiTeam)
+                    uiTeam = player->GetTeam();
             }
 
-            void OnGameObjectCreate(GameObject* go) OVERRIDE
+            void OnCreatureCreate(Creature* creature)
+            {
+                switch (creature->GetEntry())
+                {
+                    case NPC_HONOR_HOLD_REKON:
+                        if (uiTeam == TEAM_HORDE)
+                            creature->UpdateEntry(NPC_TRALLMAR_INVADER);
+                        break;
+                    case NPC_ADVANCE_SCOUT_CHADWICK:
+                        if (uiTeam == TEAM_HORDE)
+                            creature->UpdateEntry(NPC_STONE_GUARD_STOCKTON);
+                        break;
+                }
+            }
+
+            void OnGameObjectCreate(GameObject* go)
             {
                 switch (go->GetEntry())
                 {
-                    case GO_FEL_IRON_CHEST_NORMAL:
-                    case GO_FEL_IRON_CHECT_HEROIC:
-                        felIronChestGUID = go->GetGUID();
+                    case 185168:
+                        m_uiChestNGUID = go->GetGUID();
+                        break;
+                    case 185169:
+                        m_uiChestHGUID = go->GetGUID();
                         break;
                 }
             }
 
-            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
+            void SetData(uint32 uiType, uint32 uiData)
             {
-                if (!InstanceScript::SetBossState(type, state))
-                    return false;
+                sLog->outDebug(LOG_FILTER_TSCR, "Instance Ramparts: SetData received for type %u with data %u", uiType, uiData);
 
-                switch (type)
+                switch (uiType)
                 {
-                    case DATA_VAZRUDEN:
-                    case DATA_NAZAN:
-                        if (GetBossState(DATA_VAZRUDEN) == DONE && GetBossState(DATA_NAZAN) == DONE && !spawned)
+                    case TYPE_VAZRUDEN:
+                        if (uiData == DONE && m_auiEncounter[1] == DONE && !spawned)
                         {
-                            DoRespawnGameObject(felIronChestGUID, HOUR*IN_MILLISECONDS);
+                            DoRespawnGameObject(instance->IsHeroic() ? m_uiChestHGUID : m_uiChestNGUID, HOUR*IN_MILLISECONDS);
                             spawned = true;
                         }
+                        m_auiEncounter[0] = uiData;
+                        break;
+                    case TYPE_NAZAN:
+                        if (uiData == DONE && m_auiEncounter[0] == DONE && !spawned)
+                        {
+                            DoRespawnGameObject(instance->IsHeroic() ? m_uiChestHGUID : m_uiChestNGUID, HOUR*IN_MILLISECONDS);
+                            spawned = true;
+                        }
+                        m_auiEncounter[1] = uiData;
                         break;
                 }
-                return true;
             }
-
-            std::string GetSaveData() OVERRIDE
-            {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << "H R " << GetBossSaveData();
-
-                OUT_SAVE_INST_DATA_COMPLETE;
-                return saveStream.str();
-            }
-
-            void Load(const char* strIn) OVERRIDE
-            {
-                if (!strIn)
-                {
-                    OUT_LOAD_INST_DATA_FAIL;
-                    return;
-                }
-
-                OUT_LOAD_INST_DATA(strIn);
-
-                char dataHead1, dataHead2;
-
-                std::istringstream loadStream(strIn);
-                loadStream >> dataHead1 >> dataHead2;
-
-                if (dataHead1 == 'H' && dataHead2 == 'R')
-                {
-                    for (uint8 i = 0; i < EncounterCount; ++i)
-                    {
-                        uint32 tmpState;
-                        loadStream >> tmpState;
-                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                            tmpState = NOT_STARTED;
-
-                        SetBossState(i, EncounterState(tmpState));
-                    }
-                }
-                else
-                    OUT_LOAD_INST_DATA_FAIL;
-
-                OUT_LOAD_INST_DATA_COMPLETE;
-            }
-
-            protected:
-                uint64 felIronChestGUID;
-                bool spawned;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
             return new instance_ramparts_InstanceMapScript(map);
         }

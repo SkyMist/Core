@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -19,7 +17,7 @@
  */
 
 /* ScriptData
-SDName: npc_anubisath_sentinel
+SDName: mob_anubisath_sentinel
 SD%Complete: 95
 SDComment: Shadow storm is not properly implemented in core it should only target ppl outside of melee range.
 SDCategory: Temple of Ahn'Qiraj
@@ -38,37 +36,34 @@ EndScriptData */
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 
-enum Spells
-{
-    SPELL_MENDING_BUFF     = 2147,
+#define SPELL_MENDING_BUFF      2147
 
-    SPELL_KNOCK_BUFF       = 21737,
-    SPELL_KNOCK            = 25778,
-    SPELL_MANAB_BUFF       = 812,
-    SPELL_MANAB            = 25779,
+#define SPELL_KNOCK_BUFF        21737
+#define SPELL_KNOCK             25778
+#define SPELL_MANAB_BUFF        812
+#define SPELL_MANAB             25779
 
-    SPELL_REFLECTAF_BUFF   = 13022,
-    SPELL_REFLECTSFr_BUFF  = 19595,
-    SPELL_THORNS_BUFF      = 25777,
+#define SPELL_REFLECTAF_BUFF    13022
+#define SPELL_REFLECTSFr_BUFF   19595
+#define SPELL_THORNS_BUFF       25777
 
-    SPELL_THUNDER_BUFF     = 2834,
-    SPELL_THUNDER          = 8732,
+#define SPELL_THUNDER_BUFF      2834
+#define SPELL_THUNDER           8732
 
-    SPELL_MSTRIKE_BUFF     = 9347,
-    SPELL_MSTRIKE          = 24573,
+#define SPELL_MSTRIKE_BUFF      9347
+#define SPELL_MSTRIKE           24573
 
-    SPELL_STORM_BUFF       = 2148,
-    SPELL_STORM            = 26546
-};
+#define SPELL_STORM_BUFF        2148
+#define SPELL_STORM             26546
 
-class npc_anubisath_sentinel : public CreatureScript
+class mob_anubisath_sentinel : public CreatureScript
 {
 public:
-    npc_anubisath_sentinel() : CreatureScript("npc_anubisath_sentinel") { }
+    mob_anubisath_sentinel() : CreatureScript("mob_anubisath_sentinel") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new aqsentinelAI(creature);
+        return new aqsentinelAI (creature);
     }
 
     struct aqsentinelAI : public ScriptedAI
@@ -145,7 +140,7 @@ public:
                 Creature* c = Unit::GetCreature(*me, NearbyGUID[i]);
                 if (c)
                 {
-                    if (!c->IsInCombat())
+                    if (!c->isInCombat())
                     {
                         c->SetNoCallAssistance(true);
                         if (c->AI())
@@ -215,7 +210,7 @@ public:
 
         bool gatherOthersWhenAggro;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             if (!me->isDead())
             {
@@ -239,7 +234,7 @@ public:
             me->AddAura(id, me);
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who)
         {
             if (gatherOthersWhenAggro)
                 GetOtherSentinels(who);
@@ -248,7 +243,7 @@ public:
             DoZoneInCombat();
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             for (int ni=0; ni<3; ++ni)
             {
@@ -264,7 +259,7 @@ public:
     };
 };
 
-void AddSC_npc_anubisath_sentinel()
+void AddSC_mob_anubisath_sentinel()
 {
-    new npc_anubisath_sentinel();
+    new mob_anubisath_sentinel();
 }

@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -31,17 +30,16 @@
 
 #include "Log.h"
 #include "Master.h"
-#include "World.h"
 
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
-#endif
+#endif //_TRINITY_CORE_CONFIG
 
 #ifdef _WIN32
 #include "ServiceWin32.h"
 char serviceName[] = "worldserver";
-char serviceLongName[] = "SkyFire world service";
-char serviceDescription[] = "SkyFire World of Warcraft emulator world service";
+char serviceLongName[] = "JadeCore world service";
+char serviceDescription[] = "JadeCore World of Warcraft emulator world service";
 /*
  * -1 - not in service mode
  *  0 - stopped
@@ -55,32 +53,31 @@ WorldDatabaseWorkerPool WorldDatabase;                      ///< Accessor to the
 CharacterDatabaseWorkerPool CharacterDatabase;              ///< Accessor to the character database
 LoginDatabaseWorkerPool LoginDatabase;                      ///< Accessor to the realm/login database
 
-RealmNameMap realmNameStore;
 uint32 realmID;                                             ///< Id of the realm
 
 /// Print out the usage string for this program on the console.
-void usage(const char* prog)
+void usage(const char *prog)
 {
-    printf("Usage:\n");
-    printf(" %s [<options>]\n", prog);
-    printf("    -c config_file           use config_file as configuration file\n");
-#ifdef _WIN32
-    printf("    Running as service functions:\n");
-    printf("    --service                run as service\n");
-    printf("    -s install               install service\n");
-    printf("    -s uninstall             uninstall service\n");
-#endif
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Usage: \n %s [<options>]\n"
+        "    -c config_file           use config_file as configuration file\n\r"
+        #ifdef _WIN32
+        "    Running as service functions:\n\r"
+        "    --service                run as service\n\r"
+        "    -s install               install service\n\r"
+        "    -s uninstall             uninstall service\n\r"
+        #endif
+        , prog);
 }
 
 /// Launch the Trinity server
-extern int main(int argc, char** argv)
+extern int main(int argc, char **argv)
 {
     ///- Command line parsing to get the configuration file name
     char const* cfg_file = _TRINITY_CORE_CONFIG;
     int c = 1;
-    while (c < argc)
+    while ( c < argc )
     {
-        if (!strcmp(argv[c], "-c"))
+        if (strcmp(argv[c], "-c") == 0)
         {
             if (++c >= argc)
             {
@@ -93,7 +90,10 @@ extern int main(int argc, char** argv)
         }
 
         #ifdef _WIN32
-        if (strcmp(argv[c], "-s") == 0) // Services
+        ////////////
+        //Services//
+        ////////////
+        if (strcmp(argv[c], "-s") == 0)
         {
             if (++c >= argc)
             {
@@ -101,17 +101,16 @@ extern int main(int argc, char** argv)
                 usage(argv[0]);
                 return 1;
             }
-
             if (strcmp(argv[c], "install") == 0)
             {
                 if (WinServiceInstall())
-                    printf("Installing service\n");
+                    printf("Installing service");
                 return 1;
             }
             else if (strcmp(argv[c], "uninstall") == 0)
             {
                 if (WinServiceUninstall())
-                    printf("Uninstalling service\n");
+                    printf("Uninstalling service");
                 return 1;
             }
             else
@@ -121,27 +120,28 @@ extern int main(int argc, char** argv)
                 return 1;
             }
         }
-
         if (strcmp(argv[c], "--service") == 0)
+        {
             WinServiceRun();
+        }
+        ////
         #endif
         ++c;
     }
 
-    if (!sConfigMgr->LoadInitial(cfg_file))
+    if (!ConfigMgr::Load(cfg_file))
     {
-        printf("Invalid or missing configuration file : %s\n", cfg_file);
-        printf("Verify that the file exists and has \'[worldserver]' written in the top of the file!\n");
+        printf("Invalid or missing configuration file : %s", cfg_file);
+        printf("Verify that the file exists and has \'[worldserver]' written in the top of the file!");
         return 1;
     }
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Using configuration file %s.", cfg_file);
 
-    TC_LOG_INFO("server.worldserver", "Using configuration file %s.", cfg_file);
-
-    TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
-    TC_LOG_INFO("server.worldserver", "Using ACE version: %s", ACE_VERSION);
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Using ACE version: %s", ACE_VERSION);
 
     ///- and run the 'Master'
-    /// @todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
+    /// \todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
     int ret = sMaster->Run();
 
     // at sMaster return function exist with codes

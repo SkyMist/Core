@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -33,6 +32,7 @@ enum DumpTableType
                                                             // character_queststatus, character_queststatus_rewarded, character_reputation,
                                                             // character_spell, character_spell_cooldown, character_ticket, character_talent.
                                                             // character_cuf_profiles, character_currency
+    DTT_VS_TABLE,       // Void Storage Table <- playerGuid
 
     DTT_EQSET_TABLE,    // <- guid                          // character_equipmentsets
 
@@ -50,7 +50,7 @@ enum DumpTableType
     DTT_ITEM_GIFT,      // <- item guids                    // character_gifts
 
     DTT_PET,            //    -> pet guids collection       // character_pet
-    DTT_PET_TABLE       // <- pet guids                     // pet_aura, pet_spell, pet_spell_cooldown
+    DTT_PET_TABLE,      // <- pet guids                     // pet_aura, pet_spell, pet_spell_cooldown
 };
 
 enum DumpReturn
@@ -60,22 +60,23 @@ enum DumpReturn
     DUMP_TOO_MANY_CHARS,
     DUMP_UNEXPECTED_END,
     DUMP_FILE_BROKEN,
-    DUMP_CHARACTER_DELETED
+    DUMP_CHARACTER_DELETED,
+    DUMP_SYSTEM_LOCKED
 };
 
 class PlayerDump
 {
     protected:
-        PlayerDump() { }
+        PlayerDump() {}
 };
 
 class PlayerDumpWriter : public PlayerDump
 {
     public:
-        PlayerDumpWriter() { }
+        PlayerDumpWriter() {}
 
         bool GetDump(uint32 guid, std::string& dump);
-        DumpReturn WriteDump(std::string const& file, uint32 guid);
+        DumpReturn WriteDump(const std::string& file, uint32 guid);
     private:
         typedef std::set<uint32> GUIDs;
 
@@ -91,9 +92,13 @@ class PlayerDumpWriter : public PlayerDump
 class PlayerDumpReader : public PlayerDump
 {
     public:
-        PlayerDumpReader() { }
+        PlayerDumpReader() {}
 
-        DumpReturn LoadDump(std::string const& file, uint32 account, std::string name, uint32 guid);
+        DumpReturn LoadDump(const std::string& file, uint32 account, std::string name, uint32 guid, bool onlyBoundedItems = false);
 };
 
+#define sInterRealmTransfertReader ACE_Singleton<PlayerDumpReader, ACE_Thread_Mutex>::instance()
+#define sInterRealmTransfertWriter ACE_Singleton<PlayerDumpWriter, ACE_Thread_Mutex>::instance()
+
 #endif
+

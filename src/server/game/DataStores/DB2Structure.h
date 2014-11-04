@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2011 TrintiyCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,7 +19,17 @@
 #define TRINITY_DB2STRUCTURE_H
 
 #include "Common.h"
+#include "DBCEnums.h"
+#include "Define.h"
+#include "Path.h"
+#include "Util.h"
+#include "Vehicle.h"
+#include "SharedDefines.h"
 #include "ItemPrototype.h"
+
+#include <map>
+#include <set>
+#include <vector>
 
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform
 #if defined(__GNUC__)
@@ -31,23 +39,6 @@
 #endif
 
 // Structures used to access raw DB2 data and required packing to portability
-struct BroadcastTextEntry
-{
-    uint32   ID;                                             // 0
-    //uint32   Unk0;                                         // 1
-    LocalizedString* text_0;                                 // 2
-    LocalizedString* text_1;                                 // 3
-    //uint32   Unk1;                                         // 4
-    //uint32   Unk2;                                         // 5
-    //uint32   Unk3;                                         // 6
-    //uint32   Unk4;                                         // 7
-    //uint32   Unk5;                                         // 8
-    //uint32   Unk6;                                         // 9
-    uint32   SoundID;                                        // 10
-    //uint32   Unk7;                                         // 11
-    //uint32   Unk8;                                         // 12
-};
-
 struct ItemEntry
 {
     uint32   ID;                                             // 0
@@ -66,13 +57,14 @@ struct ItemCurrencyCostEntry
     uint32  ItemId;
 };
 
+// 5.4.0 17399 check @author : Izidor
 struct ItemSparseEntry
 {
     uint32     ID;                                           // 0
     uint32     Quality;                                      // 1
     uint32     Flags;                                        // 2
     uint32     Flags2;                                       // 3
-    uint32     Flags3;                                       // 4
+    uint32     Unk540_1;                                     // 4 unk flag
     float      Unk430_1;                                     // 5
     float      Unk430_2;                                     // 6
     uint32     BuyCount;                                     // 7
@@ -93,26 +85,26 @@ struct ItemSparseEntry
     uint32     MaxCount;                                     // 22
     uint32     Stackable;                                    // 23
     uint32     ContainerSlots;                               // 24
-    int32      ItemStatType[MAX_ITEM_PROTO_STATS];           // 25 - 34
-    uint32     ItemStatValue[MAX_ITEM_PROTO_STATS];          // 35 - 44
-    int32      ItemStatUnk1[MAX_ITEM_PROTO_STATS];           // 45 - 54
-    int32      ItemStatUnk2[MAX_ITEM_PROTO_STATS];           // 55 - 64
-    uint32     ScalingStatDistribution;                      // 65
-    uint32     DamageType;                                   // 66
-    uint32     Delay;                                        // 67
-    float      RangedModRange;                               // 68
-    int32      SpellId[MAX_ITEM_PROTO_SPELLS];               // 69 - 73
-    int32      SpellTrigger[MAX_ITEM_PROTO_SPELLS];          // 74 - 78
-    int32      SpellCharges[MAX_ITEM_PROTO_SPELLS];          // 79 - 83
-    int32      SpellCooldown[MAX_ITEM_PROTO_SPELLS];         // 84 - 88
-    int32      SpellCategory[MAX_ITEM_PROTO_SPELLS];         // 89 - 89
-    int32      SpellCategoryCooldown[MAX_ITEM_PROTO_SPELLS]; // 94 - 98
+    int32      ItemStatType[MAX_ITEM_PROTO_STATS];           // 25 - 35
+    int32      ItemStatValue[MAX_ITEM_PROTO_STATS];          // 36 - 46
+    int32      ItemStatUnk1[MAX_ITEM_PROTO_STATS];           // 47 - 57
+    int32      ItemStatUnk2[MAX_ITEM_PROTO_STATS];           // 58 - 68
+    uint32     ScalingStatDistribution;                      // 69
+    uint32     DamageType;                                   // 70
+    uint32     Delay;                                        // 71
+    float      RangedModRange;                               // 72
+    int32      SpellId[MAX_ITEM_PROTO_SPELLS];               //
+    int32      SpellTrigger[MAX_ITEM_PROTO_SPELLS];          //
+    int32      SpellCharges[MAX_ITEM_PROTO_SPELLS];          //
+    int32      SpellCooldown[MAX_ITEM_PROTO_SPELLS];         //
+    int32      SpellCategory[MAX_ITEM_PROTO_SPELLS];         // 
+    int32      SpellCategoryCooldown[MAX_ITEM_PROTO_SPELLS]; //
     uint32     Bonding;                                      // 99
-    LocalizedString* Name;                                   // 100
-    LocalizedString* Name2;                                  // 101
-    LocalizedString* Name3;                                  // 102
-    LocalizedString* Name4;                                  // 103
-    LocalizedString* Description;                            // 104
+    char*      Name;                                         // 100
+    char*      Name2;                                        // 101
+    char*      Name3;                                        // 102
+    char*      Name4;                                        // 103
+    char*      Description;                                  // 104
     uint32     PageText;                                     // 105
     uint32     LanguageID;                                   // 106
     uint32     PageMaterial;                                 // 107
@@ -140,82 +132,50 @@ struct ItemSparseEntry
     int32      CurrencySubstitutionCount;                    // 133
 };
 
+struct ItemUpgradeEntry
+{
+    uint32 Id;
+    uint32 itemUpgradePath;
+    uint32 itemLevelUpgrade;
+    uint32 precItemUpgradeId;
+    uint32 currencyId;
+    uint32 currencyCost;
+};
+
+struct RulesetItemUpgradeEntry
+{
+    uint32 Id;
+    uint32 unk;
+    uint32 itemUpgradeId;
+    uint32 itemid;
+};
+
 #define MAX_ITEM_EXT_COST_ITEMS         5
 #define MAX_ITEM_EXT_COST_CURRENCIES    5
 
 struct ItemExtendedCostEntry
 {
-    uint32      ID;                                                  // 0 extended-cost entry id
-    //uint32    reqhonorpoints;                                      // 1 required honor points
-    //uint32    reqarenapoints;                                      // 2 required arena points
-    uint32      RequiredArenaSlot;                                   // 3 arena slot restrictions (min slot value)
-    uint32      RequiredItem[MAX_ITEM_EXT_COST_ITEMS];               // 4-8 required item id
-    uint32      RequiredItemCount[MAX_ITEM_EXT_COST_ITEMS];          // 9-13 required count of 1st item
-    uint32      RequiredPersonalArenaRating;                         // 14 required personal arena rating
-    //uint32    ItemPurchaseGroup;                                   // 15
-    uint32      RequiredCurrency[MAX_ITEM_EXT_COST_CURRENCIES];      // 16-20 required curency id
-    uint32      RequiredCurrencyCount[MAX_ITEM_EXT_COST_CURRENCIES]; // 21-25 required curency count
-    uint32      RequiredFactionId;
-    uint32      RequiredFactionStanding;
-    uint32      RequirementFlags;
-    uint32      RequiredGuildLevel;
-    uint32      RequiredAchievement;
+    uint32      ID;                                                     // 0 extended-cost entry id
+    //uint32    reqhonorpoints;                                         // 1 required honor points, only 0
+    //uint32    reqarenapoints;                                         // 2 required arena points, only 0
+    uint32      RequiredArenaSlot;                                      // 3 arena slot restrictions (min slot value)
+    uint32      RequiredItem[MAX_ITEM_EXT_COST_ITEMS];                  // 4-8 required item id
+    uint32      RequiredItemCount[MAX_ITEM_EXT_COST_ITEMS];             // 9-13 required count of 1st item
+    uint32      RequiredPersonalArenaRating;                            // 14 required personal arena rating
+    //uint32    ItemPurchaseGroup;                                      // 15, only 0
+    uint32      RequiredCurrency[MAX_ITEM_EXT_COST_CURRENCIES];         // 16-20 required curency id
+    uint32      RequiredCurrencyCount[MAX_ITEM_EXT_COST_CURRENCIES];    // 21-25 required curency count
+    //uint32    Unk_1;                                                  // 26 Only 0
+    //uint32    Unk_2;                                                  // 27 Only 0
+    //uint32    Unk_3;                                                  // 28
+    //uint32    Unk_4;                                                  // 29 Only 0
+    //uint32    Unk_5;                                                  // 30 Only 0
 };
 
-#define KEYCHAIN_SIZE   32
-
-struct KeyChainEntry
+struct BattlePetSpeciesEntry
 {
-    uint32      Id;
-    uint8       Key[KEYCHAIN_SIZE];
-};
-
-// QuestPackageItem.db2
-struct QuestPackageItemEntry
-{
-    uint32      ID;                                          // 0
-    uint32      QuestPackageID;                              // 1
-    uint32      ItemID;                                      // 2
-    uint32      Unk1;                                        // 3
-    uint32      Unk2;                                        // 4
-};
-
-// SceneScript.db2
-struct SceneScriptEntry
-{
-    uint32 m_ID;                                             // 0         m_ID
-    LocalizedString* m_name;                                 // 1         m_name
-    LocalizedString* m_script;                               // 2         m_script
-    uint32 m_prevScriptPartID;                               // 3         m_prevScriptPartID - Prev Script Part Id From Chain
-    uint32 m_nextScriptPartID;                               // 4         m_nextScriptPartID - Next Script Part Id From Chain
-};
-
-// SpellReagents.db2
-struct SpellReagentsEntry
-{
-    //uint32    Id;                                          // 0         m_ID
-    int32     Reagent[MAX_SPELL_REAGENTS];                   // 1  - 10   m_reagent
-    uint32    ReagentCount[MAX_SPELL_REAGENTS2];             // 11 - 20   m_reagentCount
-};
-
-// ItemUpgrade.db2
-struct ItemUpgradeEntry
-{
-    uint32 Id;                                               // 0         m_ID
-    uint32 itemUpgradePath;                                  // 1         Upgrade Path
-    uint32 itemLevelUpgrade;                                 // 2         Upgrade Level
-    uint32 precItemUpgradeId;                                // 3         Upgrade Id
-    uint32 currencyId;                                       // 4         Currency Id
-    uint32 currencyCost;                                     // 5         Currency Ammount
-};
-
-// RulesetItemUpgrade.db2
-struct RulesetItemUpgradeEntry
-{
-    uint32 Id;                                               // 0         m_ID
-    uint32 unk;                                              // 1         Unk
-    uint32 itemUpgradeId;                                    // 2         Upgrade Id
-    uint32 itemid;                                           // 3         Item Id
+    uint32 ID;
+    uint32 CreatureEntry;
 };
 
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform

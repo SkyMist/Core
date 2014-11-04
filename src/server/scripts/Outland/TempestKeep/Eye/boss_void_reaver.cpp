@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,16 +27,16 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "the_eye.h"
 
-enum Yells
+enum eEnums
 {
-    SAY_AGGRO                   = 0,
-    SAY_SLAY                    = 1,
-    SAY_DEATH                   = 2,
-    SAY_POUNDING                = 3
-};
+    SAY_AGGRO                   = -1550000,
+    SAY_SLAY1                   = -1550001,
+    SAY_SLAY2                   = -1550002,
+    SAY_SLAY3                   = -1550003,
+    SAY_DEATH                   = -1550004,
+    SAY_POUNDING1               = -1550005,
+    SAY_POUNDING2               = -1550006,
 
-enum Spells
-{
     SPELL_POUNDING              = 34162,
     SPELL_ARCANE_ORB            = 34172,
     SPELL_KNOCK_AWAY            = 25778,
@@ -70,7 +68,7 @@ class boss_void_reaver : public CreatureScript
 
             bool Enraged;
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 Pounding_Timer = 15000;
                 ArcaneOrb_Timer = 3000;
@@ -79,41 +77,41 @@ class boss_void_reaver : public CreatureScript
 
                 Enraged = false;
 
-                if (instance && me->IsAlive())
+                if (instance && me->isAlive())
                     instance->SetData(DATA_VOIDREAVEREVENT, NOT_STARTED);
             }
 
-            void KilledUnit(Unit* /*victim*/) OVERRIDE
+            void KilledUnit(Unit* /*victim*/)
             {
-                Talk(SAY_SLAY);
+                DoScriptText(RAND(SAY_SLAY1, SAY_SLAY2, SAY_SLAY3), me);
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
-                Talk(SAY_DEATH);
+                DoScriptText(SAY_DEATH, me);
                 DoZoneInCombat();
 
                 if (instance)
                     instance->SetData(DATA_VOIDREAVEREVENT, DONE);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
-                Talk(SAY_AGGRO);
+                DoScriptText(SAY_AGGRO, me);
 
                 if (instance)
                     instance->SetData(DATA_VOIDREAVEREVENT, IN_PROGRESS);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
                 // Pounding
                 if (Pounding_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_POUNDING);
-                    Talk(SAY_POUNDING);
+                    DoCast(me->getVictim(), SPELL_POUNDING);
+                    DoScriptText(RAND(SAY_POUNDING1, SAY_POUNDING2), me);
                     Pounding_Timer = 15000; //cast time(3000) + cooldown time(12000)
                 }
                 else
@@ -130,7 +128,7 @@ class boss_void_reaver : public CreatureScript
                         if (!target)
                             continue;
                         // exclude pets & totems, 18 yard radius minimum
-                        if (target->GetTypeId() == TYPEID_PLAYER && target->IsAlive() && !target->IsWithinDist(me, 18, false))
+                        if (target->GetTypeId() == TYPEID_PLAYER && target->isAlive() && !target->IsWithinDist(me, 18, false))
                             target_list.push_back(target);
                         target = NULL;
                     }
@@ -138,10 +136,10 @@ class boss_void_reaver : public CreatureScript
                     if (!target_list.empty())
                         target = *(target_list.begin()+rand()%target_list.size());
                     else
-                        target = me->GetVictim();
+                        target = me->getVictim();
 
                     if (target)
-                        me->CastSpell(target, SPELL_ARCANE_ORB, false, NULL, NULL, 0);
+                        me->CastSpell(target, SPELL_ARCANE_ORB, false, NULL, NULLAURA_EFFECT, 0);
                     ArcaneOrb_Timer = 3000;
                 }
                 else
@@ -149,10 +147,10 @@ class boss_void_reaver : public CreatureScript
                 // Single Target knock back, reduces aggro
                 if (KnockAway_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_KNOCK_AWAY);
+                    DoCast(me->getVictim(), SPELL_KNOCK_AWAY);
                     //Drop 25% aggro
-                    if (DoGetThreat(me->GetVictim()))
-                        DoModifyThreatPercent(me->GetVictim(), -25);
+                    if (DoGetThreat(me->getVictim()))
+                        DoModifyThreatPercent(me->getVictim(), -25);
                     KnockAway_Timer = 30000;
                 }
                 else
@@ -172,7 +170,7 @@ class boss_void_reaver : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_void_reaverAI(creature);
         }

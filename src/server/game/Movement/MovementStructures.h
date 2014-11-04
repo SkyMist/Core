@@ -1,27 +1,27 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+* Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+* Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef _MOVEMENT_STRUCTURES_H
 #define _MOVEMENT_STRUCTURES_H
 
-#include "Opcodes.h"
-#include "Object.h"
+#include "ByteBuffer.h"
+#include "WorldPacket.h"
+//#include "Object.h"
 
 class ByteBuffer;
 class Unit;
@@ -56,6 +56,7 @@ enum MovementStatusElements
     MSEHasFallDirection,
     MSEHasSplineElevation,
     MSEHasSpline,
+    MSEHasUnkTime,
 
     MSEGuidByte0,
     MSEGuidByte1,
@@ -95,32 +96,32 @@ enum MovementStatusElements
     MSEFallSinAngle,
     MSEFallHorizontalSpeed,
     MSESplineElevation,
-
-    MSECounter,
-    MSECounterCount,
-    MSEUintCount,
-    MSEHasUnkTime,
+    MSEUnkUIntCount,
+    MSEUnkUIntLoop,
     MSEUnkTime,
-    MSEMountScale,
-
+    MSECounter,
+    MSEGenericDword0,
+    MSEGenericDword1,
+    MSEGenericDword2,
+    MSEGenericDword3,
+    MSEGenericDword4,
+    MSEGenericDword5,
+    MSEGenericDword6,
+    MSEGenericDword7,
+    MSEGeneric2bits0,
     // Special
-    MSEZeroBit,         // writes bit value 1 or skips read bit
-    MSEOneBit,          // writes bit value 0 or skips read bit
-    MSEEnd,             // marks end of parsing
+    MSEFlushBits,   //FlushBits()
+    MSEZeroBit, // writes bit value 1 or skips read bit
+    MSEOneBit,  // writes bit value 0 or skips read bit
+    MSEEnd,     // marks end of parsing
     MSEExtraElement,    // Used to signalize reading into ExtraMovementStatusElement, element sequence inside it is declared as separate array
                         // Allowed internal elements are: GUID markers (not transport), MSEExtraFloat, MSEExtraInt8
     MSEExtraFloat,
     MSEExtraInt8,
 };
 
-namespace Movement
-{
-    class PacketSender;
-
     class ExtraMovementStatusElement
     {
-        friend class PacketSender;
-
     public:
         ExtraMovementStatusElement(MovementStatusElements const* elements) : _elements(elements), _index(0) { }
 
@@ -134,7 +135,6 @@ namespace Movement
             int8  byteData;
         } Data;
 
-    protected:
         void ResetIndex() { _index = 0; }
 
     private:
@@ -145,7 +145,7 @@ namespace Movement
     class PacketSender
     {
     public:
-        PacketSender(Unit* unit, Opcodes serverControl, Opcodes playerControl, Opcodes broadcast = SMSG_PLAYER_MOVE, ExtraMovementStatusElement* extras = NULL);
+        PacketSender(Unit* unit, Opcodes serverControl, Opcodes playerControl, Opcodes broadcast = SMSG_MOVE_UPDATE, ExtraMovementStatusElement* extras = NULL);
 
         void Send() const;
 
@@ -157,7 +157,6 @@ namespace Movement
     };
 
     bool PrintInvalidSequenceElement(MovementStatusElements element, char const* function);
-}
 
 MovementStatusElements const* GetMovementStatusElementsSequence(Opcodes opcode);
 

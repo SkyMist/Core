@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -34,13 +33,12 @@ EndContentData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "Spell.h"
-#include "Player.h"
 
 /*#####
 # item_only_for_flight
 #####*/
 
-enum OnlyForFlight
+enum eOnlyForFlight
 {
     SPELL_ARCANE_CHARGES    = 45072
 };
@@ -50,7 +48,7 @@ class item_only_for_flight : public ItemScript
 public:
     item_only_for_flight() : ItemScript("item_only_for_flight") { }
 
-    bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/)
     {
         uint32 itemId = item->GetEntry();
         bool disabled = false;
@@ -68,12 +66,12 @@ public:
                     break;
            case 34475:
                 if (const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(SPELL_ARCANE_CHARGES))
-                    Spell::SendCastResult(player, spellInfo, 1, SPELL_FAILED_NOT_ON_GROUND);
+                    Spell::SendCastResult(player, spellInfo, NULL, 1, SPELL_FAILED_NOT_ON_GROUND);
                     break;
         }
 
         // allow use in flight only
-        if (player->IsInFlight() && !disabled)
+        if (player->isInFlight() && !disabled)
             return false;
 
         // error
@@ -91,7 +89,7 @@ class item_nether_wraith_beacon : public ItemScript
 public:
     item_nether_wraith_beacon() : ItemScript("item_nether_wraith_beacon") { }
 
-    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const& /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const& /*targets*/)
     {
         if (player->GetQuestStatus(10832) == QUEST_STATUS_INCOMPLETE)
         {
@@ -114,7 +112,7 @@ class item_gor_dreks_ointment : public ItemScript
 public:
     item_gor_dreks_ointment() : ItemScript("item_gor_dreks_ointment") { }
 
-    bool OnUse(Player* player, Item* item, SpellCastTargets const& targets) OVERRIDE
+    bool OnUse(Player* player, Item* item, SpellCastTargets const& targets)
     {
         if (targets.GetUnitTarget() && targets.GetUnitTarget()->GetTypeId() == TYPEID_UNIT &&
             targets.GetUnitTarget()->GetEntry() == 20748 && !targets.GetUnitTarget()->HasAura(32578))
@@ -134,7 +132,7 @@ class item_incendiary_explosives : public ItemScript
 public:
     item_incendiary_explosives() : ItemScript("item_incendiary_explosives") { }
 
-    bool OnUse(Player* player, Item* item, SpellCastTargets const & /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* item, SpellCastTargets const & /*targets*/)
     {
         if (player->FindNearestCreature(26248, 15) || player->FindNearestCreature(26249, 15))
             return false;
@@ -155,7 +153,7 @@ class item_mysterious_egg : public ItemScript
 public:
     item_mysterious_egg() : ItemScript("item_mysterious_egg") { }
 
-    bool OnExpire(Player* player, ItemTemplate const* /*pItemProto*/) OVERRIDE
+    bool OnExpire(Player* player, ItemTemplate const* /*pItemProto*/)
     {
         ItemPosCountVec dest;
         uint8 msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, 39883, 1); // Cracked Egg
@@ -173,9 +171,9 @@ public:
 class item_disgusting_jar : public ItemScript
 {
 public:
-    item_disgusting_jar() : ItemScript("item_disgusting_jar") { }
+    item_disgusting_jar() : ItemScript("item_disgusting_jar") {}
 
-    bool OnExpire(Player* player, ItemTemplate const* /*pItemProto*/) OVERRIDE
+    bool OnExpire(Player* player, ItemTemplate const* /*pItemProto*/)
     {
         ItemPosCountVec dest;
         uint8 msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, 44718, 1); // Ripe Disgusting Jar
@@ -190,7 +188,7 @@ public:
 # item_pile_fake_furs
 #####*/
 
-enum PileFakeFur
+enum ePileFakeFur
 {
     GO_CARIBOU_TRAP_1                                      = 187982,
     GO_CARIBOU_TRAP_2                                      = 187995,
@@ -224,7 +222,7 @@ class item_pile_fake_furs : public ItemScript
 public:
     item_pile_fake_furs() : ItemScript("item_pile_fake_furs") { }
 
-    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const & /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const & /*targets*/)
     {
         GameObject* go = NULL;
         for (uint8 i = 0; i < CaribouTrapsNum; ++i)
@@ -257,7 +255,7 @@ public:
 # item_petrov_cluster_bombs
 #####*/
 
-enum PetrovClusterBombs
+enum ePetrovClusterBombs
 {
     SPELL_PETROV_BOMB           = 42406,
     AREA_ID_SHATTERED_STRAITS   = 4064,
@@ -269,7 +267,7 @@ class item_petrov_cluster_bombs : public ItemScript
 public:
     item_petrov_cluster_bombs() : ItemScript("item_petrov_cluster_bombs") { }
 
-    bool OnUse(Player* player, Item* /*item*/, const SpellCastTargets & /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* /*item*/, const SpellCastTargets & /*targets*/)
     {
         if (player->GetZoneId() != ZONE_ID_HOWLING)
             return false;
@@ -277,7 +275,7 @@ public:
         if (!player->GetTransport() || player->GetAreaId() != AREA_ID_SHATTERED_STRAITS)
         {
             if (const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(SPELL_PETROV_BOMB))
-                Spell::SendCastResult(player, spellInfo, 1, SPELL_FAILED_NOT_HERE);
+                Spell::SendCastResult(player, spellInfo, NULL, 1, SPELL_FAILED_NOT_HERE);
 
             return true;
         }
@@ -290,7 +288,7 @@ public:
 # item_dehta_trap_smasher
 # For quest 11876, Help Those That Cannot Help Themselves
 ######*/
-enum HelpThemselves
+enum eHelpThemselves
 {
     QUEST_CANNOT_HELP_THEMSELVES                  =  11876,
     NPC_TRAPPED_MAMMOTH_CALF                      =  25850,
@@ -333,7 +331,7 @@ class item_dehta_trap_smasher : public ItemScript
 public:
     item_dehta_trap_smasher() : ItemScript("item_dehta_trap_smasher") { }
 
-    bool OnUse(Player* player, Item* /*item*/, const SpellCastTargets & /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* /*item*/, const SpellCastTargets & /*targets*/)
     {
         if (player->GetQuestStatus(QUEST_CANNOT_HELP_THEMSELVES) != QUEST_STATUS_INCOMPLETE)
             return false;
@@ -369,7 +367,7 @@ class item_trident_of_nazjan : public ItemScript
 public:
     item_trident_of_nazjan() : ItemScript("item_Trident_of_Nazjan") { }
 
-    bool OnUse(Player* player, Item* item, const SpellCastTargets & /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* item, const SpellCastTargets & /*targets*/)
     {
         if (player->GetQuestStatus(QUEST_THE_EMISSARY) == QUEST_STATUS_INCOMPLETE)
         {
@@ -385,7 +383,7 @@ public:
     }
 };
 
-enum CapturedFrog
+enum eCapturedFrog
 {
     QUEST_THE_PERFECT_SPIES      = 25444,
     NPC_VANIRAS_SENTRY_TOTEM     = 40187
@@ -396,7 +394,7 @@ class item_captured_frog : public ItemScript
 public:
     item_captured_frog() : ItemScript("item_captured_frog") { }
 
-    bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) OVERRIDE
+    bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/)
     {
         if (player->GetQuestStatus(QUEST_THE_PERFECT_SPIES) == QUEST_STATUS_INCOMPLETE)
         {
@@ -409,6 +407,32 @@ public:
             player->SendEquipError(EQUIP_ERR_CLIENT_LOCKED_OUT, item, NULL);
         return true;
     }
+};
+
+class item_sylvanas_music_box : public ItemScript
+{
+    public:
+        item_sylvanas_music_box() : ItemScript("item_sylvanas_music_box") { }
+
+        bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/)
+        {
+            Map* map = player->GetMap();
+            if (!map)
+                return false;
+
+            Map::PlayerList const &_list = map->GetPlayers();
+            if (_list.isEmpty())
+                return false;
+
+            for (Map::PlayerList::const_iterator i = _list.begin(); i != _list.end(); ++i)
+            {
+                if (Player* pPlayer = i->getSource())
+                    if (pPlayer->IsWithinDistInMap(player, 50.0f))
+                        pPlayer->SendPlaySound(10896, player->GetGUID());
+            }
+
+            return false;
+        }
 };
 
 void AddSC_item_scripts()
@@ -424,4 +448,5 @@ void AddSC_item_scripts()
     new item_dehta_trap_smasher();
     new item_trident_of_nazjan();
     new item_captured_frog();
+    new item_sylvanas_music_box();
 }

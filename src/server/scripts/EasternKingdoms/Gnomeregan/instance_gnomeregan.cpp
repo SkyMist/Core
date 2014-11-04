@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,7 +18,6 @@
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "gnomeregan.h"
-#include "Player.h"
 
 #define    MAX_ENCOUNTER  1
 
@@ -30,7 +26,7 @@ class instance_gnomeregan : public InstanceMapScript
 public:
     instance_gnomeregan() : InstanceMapScript("instance_gnomeregan", 90) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_gnomeregan_InstanceMapScript(map);
     }
@@ -48,7 +44,7 @@ public:
 
         uint64 uiBastmasterEmiShortfuseGUID;
 
-        void Initialize() OVERRIDE
+        void Initialize()
         {
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
 
@@ -58,7 +54,7 @@ public:
             uiBastmasterEmiShortfuseGUID    = 0;
         }
 
-        void Load(const char* in) OVERRIDE
+        void Load(const char* in)
         {
             if (!in)
             {
@@ -80,7 +76,7 @@ public:
             OUT_LOAD_INST_DATA_COMPLETE;
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnCreatureCreate(Creature* creature)
         {
             switch (creature->GetEntry())
             {
@@ -88,7 +84,7 @@ public:
             }
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
@@ -105,7 +101,7 @@ public:
             }
         }
 
-        void SetData(uint32 uiType, uint32 uiData) OVERRIDE
+        void SetData(uint32 uiType, uint32 uiData)
         {
             switch (uiType)
             {
@@ -117,7 +113,7 @@ public:
             }
         }
 
-        uint32 GetData(uint32 uiType) const OVERRIDE
+        uint32 GetData(uint32 uiType)
         {
             switch (uiType)
             {
@@ -126,7 +122,7 @@ public:
             return 0;
         }
 
-        uint64 GetData64(uint32 uiType) const OVERRIDE
+        uint64 GetData64(uint32 uiType)
         {
             switch (uiType)
             {

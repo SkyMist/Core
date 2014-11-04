@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -33,14 +30,14 @@ class instance_obsidian_sanctum : public InstanceMapScript
 public:
     instance_obsidian_sanctum() : InstanceMapScript("instance_obsidian_sanctum", 615) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_obsidian_sanctum_InstanceMapScript(map);
     }
 
     struct instance_obsidian_sanctum_InstanceMapScript : public InstanceScript
     {
-        instance_obsidian_sanctum_InstanceMapScript(Map* map) : InstanceScript(map) { }
+        instance_obsidian_sanctum_InstanceMapScript(Map* map) : InstanceScript(map) {}
 
         uint32 m_auiEncounter[MAX_ENCOUNTER];
         uint64 m_uiSartharionGUID;
@@ -52,7 +49,7 @@ public:
         bool m_bShadronKilled;
         bool m_bVesperonKilled;
 
-        void Initialize() OVERRIDE
+        void Initialize()
         {
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
 
@@ -66,7 +63,7 @@ public:
             m_bVesperonKilled = false;
         }
 
-        bool IsEncounterInProgress() const OVERRIDE
+        bool IsEncounterInProgress() const
         {
             for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                 if (m_auiEncounter[i] == IN_PROGRESS)
@@ -75,7 +72,7 @@ public:
             return false;
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnCreatureCreate(Creature* creature)
         {
             switch (creature->GetEntry())
             {
@@ -99,7 +96,7 @@ public:
             }
         }
 
-        void SetData(uint32 uiType, uint32 uiData) OVERRIDE
+        void SetData(uint32 uiType, uint32 uiData)
         {
             if (uiType == TYPE_SARTHARION_EVENT)
                 m_auiEncounter[0] = uiData;
@@ -111,7 +108,7 @@ public:
                 m_bVesperonKilled = true;
         }
 
-        uint32 GetData(uint32 uiType) const OVERRIDE
+        uint32 GetData(uint32 uiType)
         {
             if (uiType == TYPE_SARTHARION_EVENT)
                 return m_auiEncounter[0];
@@ -125,7 +122,7 @@ public:
             return 0;
         }
 
-        uint64 GetData64(uint32 uiData) const OVERRIDE
+        uint64 GetData64(uint32 uiData)
         {
             switch (uiData)
             {

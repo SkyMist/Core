@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,65 +17,34 @@
  */
 
 #include "ObjectAccessor.h"
-#include "CellImpl.h"
-#include "Corpse.h"
-#include "Creature.h"
-#include "DynamicObject.h"
-#include "GameObject.h"
-#include "GridNotifiers.h"
-#include "GridNotifiersImpl.h"
-#include "Item.h"
-#include "Map.h"
-#include "MapInstanced.h"
-#include "MapManager.h"
-#include "ObjectDefines.h"
 #include "ObjectMgr.h"
-#include "Opcodes.h"
-#include "Pet.h"
+
 #include "Player.h"
+#include "Creature.h"
+#include "GameObject.h"
+#include "DynamicObject.h"
 #include "Vehicle.h"
-#include "World.h"
 #include "WorldPacket.h"
+#include "Item.h"
+#include "Corpse.h"
+#include "GridNotifiers.h"
+#include "MapManager.h"
+#include "Map.h"
+#include "CellImpl.h"
+#include "GridNotifiersImpl.h"
+#include "Opcodes.h"
+#include "ObjectDefines.h"
+#include "MapInstanced.h"
+#include "World.h"
 
 #include <cmath>
 
-ObjectAccessor::ObjectAccessor() { }
-
-ObjectAccessor::~ObjectAccessor() { }
-
-template<class T> T* ObjectAccessor::GetObjectInWorld(uint32 mapid, float x, float y, uint64 guid, T* /*fake*/)
+ObjectAccessor::ObjectAccessor()
 {
-    T* obj = HashMapHolder<T>::Find(guid);
-    if (!obj || obj->GetMapId() != mapid)
-        return NULL;
-
-    CellCoord p = Trinity::ComputeCellCoord(x, y);
-    if (!p.IsCoordValid())
-    {
-        TC_LOG_ERROR("misc", "ObjectAccessor::GetObjectInWorld: invalid coordinates supplied X:%f Y:%f grid cell [%u:%u]", x, y, p.x_coord, p.y_coord);
-        return NULL;
-    }
-
-    CellCoord q = Trinity::ComputeCellCoord(obj->GetPositionX(), obj->GetPositionY());
-    if (!q.IsCoordValid())
-    {
-        TC_LOG_ERROR("misc", "ObjectAccessor::GetObjecInWorld: object (GUID: %u TypeId: %u) has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), q.x_coord, q.y_coord);
-        return NULL;
-    }
-
-    int32 dx = int32(p.x_coord) - int32(q.x_coord);
-    int32 dy = int32(p.y_coord) - int32(q.y_coord);
-
-    if (dx > -2 && dx < 2 && dy > -2 && dy < 2)
-        return obj;
-    else
-        return NULL;
 }
 
-Player* ObjectAccessor::GetObjectInWorld(uint64 guid, Player* /*typeSpecifier*/)
+ObjectAccessor::~ObjectAccessor()
 {
-    Player* player = HashMapHolder<Player>::Find(guid);
-    return player && player->IsInWorld() ? player : NULL;
 }
 
 WorldObject* ObjectAccessor::GetWorldObject(WorldObject const& p, uint64 guid)
@@ -131,6 +99,7 @@ Object* ObjectAccessor::GetObjectByTypeMask(WorldObject const& p, uint64 guid, u
         case HIGHGUID_AREATRIGGER:
             if (typemask & TYPEMASK_AREATRIGGER)
                 return GetAreaTrigger(p, guid);
+            break;
         case HIGHGUID_CORPSE:
             break;
     }
@@ -146,15 +115,6 @@ Corpse* ObjectAccessor::GetCorpse(WorldObject const& u, uint64 guid)
 GameObject* ObjectAccessor::GetGameObject(WorldObject const& u, uint64 guid)
 {
     return GetObjectInMap(guid, u.GetMap(), (GameObject*)NULL);
-}
-
-Transport* ObjectAccessor::GetTransport(WorldObject const& u, uint64 guid)
-{
-    if (GUID_HIPART(guid) != HIGHGUID_MO_TRANSPORT)
-        return NULL;
-
-    GameObject* go = GetGameObject(u, guid);
-    return go ? go->ToTransport() : NULL;
 }
 
 DynamicObject* ObjectAccessor::GetDynamicObject(WorldObject const& u, uint64 guid)
@@ -187,6 +147,11 @@ Player* ObjectAccessor::GetPlayer(WorldObject const& u, uint64 guid)
     return GetObjectInMap(guid, u.GetMap(), (Player*)NULL);
 }
 
+Transport* ObjectAccessor::GetTransport(WorldObject const& u, uint64 guid)
+{
+    return GetObjectInMap(guid, u.GetMap(), (Transport*)NULL);
+}
+
 Creature* ObjectAccessor::GetCreatureOrPetOrVehicle(WorldObject const& u, uint64 guid)
 {
     if (IS_PET_GUID(guid))
@@ -213,12 +178,12 @@ Unit* ObjectAccessor::FindUnit(uint64 guid)
     return GetObjectInWorld(guid, (Unit*)NULL);
 }
 
-Creature* ObjectAccessor::FindCreature(uint64 guid)
+DynamicObject* ObjectAccessor::FindDynamicObject(uint64 guid)
 {
-    return GetObjectInWorld(guid, (Creature*)NULL);
+    return GetObjectInWorld(guid, (DynamicObject*)NULL);
 }
 
-Player* ObjectAccessor::FindPlayerByName(std::string const& name)
+Player* ObjectAccessor::FindPlayerByName(const char* name)
 {
     TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
     std::string nameStr = name;
@@ -262,7 +227,7 @@ void ObjectAccessor::RemoveCorpse(Corpse* corpse)
 {
     ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-    /// @todo more works need to be done for corpse and other world object
+    //TODO: more works need to be done for corpse and other world object
     if (Map* map = corpse->FindMap())
     {
         corpse->DestroyForNearbyPlayers();
@@ -283,11 +248,11 @@ void ObjectAccessor::RemoveCorpse(Corpse* corpse)
         TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, i_corpseLock);
 
         Player2CorpsesMapType::iterator iter = i_player2corpse.find(corpse->GetOwnerGUID());
-        if (iter == i_player2corpse.end()) /// @todo Fix this
+        if (iter == i_player2corpse.end()) // TODO: Fix this
             return;
 
         // build mapid*cellid -> guid_set map
-        CellCoord cellCoord = Trinity::ComputeCellCoord(corpse->GetPositionX(), corpse->GetPositionY());
+        CellCoord cellCoord = JadeCore::ComputeCellCoord(corpse->GetPositionX(), corpse->GetPositionY());
         sObjectMgr->DeleteCorpseCellData(corpse->GetMapId(), cellCoord.GetId(), GUID_LOPART(corpse->GetOwnerGUID()));
 
         i_player2corpse.erase(iter);
@@ -306,7 +271,7 @@ void ObjectAccessor::AddCorpse(Corpse* corpse)
         i_player2corpse[corpse->GetOwnerGUID()] = corpse;
 
         // build mapid*cellid -> guid_set map
-        CellCoord cellCoord = Trinity::ComputeCellCoord(corpse->GetPositionX(), corpse->GetPositionY());
+        CellCoord cellCoord = JadeCore::ComputeCellCoord(corpse->GetPositionX(), corpse->GetPositionY());
         sObjectMgr->AddCorpseCellData(corpse->GetMapId(), cellCoord.GetId(), GUID_LOPART(corpse->GetOwnerGUID()), corpse->GetInstanceId());
     }
 }
@@ -345,7 +310,7 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(uint64 player_guid, bool insignia
         return NULL;
     }
 
-    TC_LOG_DEBUG("misc", "Deleting Corpse and spawned bones.");
+    sLog->outDebug(LOG_FILTER_GENERAL, "Deleting Corpse and spawned bones.");
 
     // Map can be NULL
     Map* map = corpse->FindMap();
@@ -384,8 +349,8 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(uint64 player_guid, bool insignia
 
         for (uint8 i = 0; i < EQUIPMENT_SLOT_END; ++i)
         {
-            if (corpse->GetUInt32Value(CORPSE_FIELD_ITEMS + i))
-                bones->SetUInt32Value(CORPSE_FIELD_ITEMS + i, 0);
+            if (corpse->GetUInt32Value(CORPSE_FIELD_ITEM + i))
+                bones->SetUInt32Value(CORPSE_FIELD_ITEM + i, 0);
         }
 
         // add bones in grid store if grid loaded where corpse placed
@@ -429,8 +394,8 @@ void ObjectAccessor::Update(uint32 /*diff*/)
     WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
     for (UpdateDataMapType::iterator iter = update_players.begin(); iter != update_players.end(); ++iter)
     {
-        iter->second.BuildPacket(&packet);
-        iter->first->GetSession()->SendPacket(&packet);
+        if (iter->second.BuildPacket(&packet))
+            iter->first->GetSession()->SendPacket(&packet);
         packet.clear();                                     // clean the string
     }
 }
@@ -457,6 +422,7 @@ template class HashMapHolder<GameObject>;
 template class HashMapHolder<DynamicObject>;
 template class HashMapHolder<Creature>;
 template class HashMapHolder<Corpse>;
+template class HashMapHolder<Transport>;
 
 template Player* ObjectAccessor::GetObjectInWorld<Player>(uint32 mapid, float x, float y, uint64 guid, Player* /*fake*/);
 template Pet* ObjectAccessor::GetObjectInWorld<Pet>(uint32 mapid, float x, float y, uint64 guid, Pet* /*fake*/);
@@ -464,3 +430,4 @@ template Creature* ObjectAccessor::GetObjectInWorld<Creature>(uint32 mapid, floa
 template Corpse* ObjectAccessor::GetObjectInWorld<Corpse>(uint32 mapid, float x, float y, uint64 guid, Corpse* /*fake*/);
 template GameObject* ObjectAccessor::GetObjectInWorld<GameObject>(uint32 mapid, float x, float y, uint64 guid, GameObject* /*fake*/);
 template DynamicObject* ObjectAccessor::GetObjectInWorld<DynamicObject>(uint32 mapid, float x, float y, uint64 guid, DynamicObject* /*fake*/);
+template Transport* ObjectAccessor::GetObjectInWorld<Transport>(uint32 mapid, float x, float y, uint64 guid, Transport* /*fake*/);

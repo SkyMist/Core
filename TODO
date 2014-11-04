@@ -1,55 +1,31 @@
-SkyMist Project ToDo List.
+SkyMist Project 5.4.7 ToDo List.
 
 == Milestone 1 ==
 - Make server workable on (Fix critical stuff).
 
 ToDO:
-- Finish spell system.        // System ok - ToDo: Update remaining opcodes and files and port class spell fixes.
-- Finish movement.
-- Finish Speeds changing.
+
+- Insert stuff here.
 
 == Milestone 2 ==
 - Make server playable on (Fix big stuff).
 
 ToDO:
-- Quests.                     // Partially updated, a bit of research needed on the new features.
-- Achievements.               // Partially implemented and updated.
-- Guilds.
-- Battlegrounds.
-- Implement Item Black Market.
-- Item Upgrade, Void Storage. // Systems ok - ToDo: Update opcodes.
-- Pet System.
 
-DONE:
-- Groups.
-- Map Difficulties.
-- Map, Spawn, Phasing systems.
-- Currency.
-- Vehicles.
-- Item Transmogrify.
-- Item Reforge.
+- Insert stuff here.
 
-== Milestone 3 == !! 30 April Deadline to get here. !!
+== Milestone 3 ==
 - Finish stuff - Beta Stage - Launchable after DB update. Not perfectly functionable yet as still under heavy work, but needed.
 ! Beta testing bug-discovery help is and should be used here.
 
 ToDO:
 
-In order of importance HIGH -> LOW:
- 
-CORE Work
-- Archaeology and any new profession stuff.
-- Battlefields.
-- Rated BG's.
-- Wargames.
-- Battle Pets.
-- Script raids and dungeons and fix + add scripts we have.
-- Script spells and abilities, guild perks etc.
+Core Work:
 
 - Insert stuff here.
 
 DB Work:
-- Adapt, upgrade and use 4.3.4 DB.
+- Adapt 4.3.4 DB.
 - Script and finish what's left (Quests, Spells, Events, Map + Terrain Phasing).
 
 - Insert stuff here.
@@ -57,5 +33,10 @@ DB Work:
 * NOTE: !! means it's important we do it asap!
 
 == Milestone 4 ==
+
+ToDO:
+
+- Insert stuff here.
+
 - GM-s, staff completion, site & forum structural improvements etc.
 - Final touches and release. Here begins the all-fun, no-work part :D.

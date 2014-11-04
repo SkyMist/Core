@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,33 +27,27 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "stratholme.h"
 
-enum Spells
-{
-    SPELL_DRAININGBLOW      = 16793,
-    SPELL_CROWDPUMMEL       = 10887,
-    SPELL_MIGHTYBLOW        = 14099,
-    SPELL_FURIOUS_ANGER     = 16791
-};
+#define SPELL_DRAININGBLOW    16793
+#define SPELL_CROWDPUMMEL    10887
+#define SPELL_MIGHTYBLOW    14099
+#define SPELL_FURIOUS_ANGER     16791
 
-enum Models
-{
-    MODEL_NORMAL            = 10433,
-    MODEL_HUMAN             = 3637
-};
+#define MODEL_NORMAL            10433
+#define MODEL_HUMAN             3637
 
 class boss_magistrate_barthilas : public CreatureScript
 {
 public:
     boss_magistrate_barthilas() : CreatureScript("boss_magistrate_barthilas") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_magistrate_barthilasAI(creature);
+        return new boss_magistrate_barthilasAI (creature);
     }
 
     struct boss_magistrate_barthilasAI : public ScriptedAI
     {
-        boss_magistrate_barthilasAI(Creature* creature) : ScriptedAI(creature) { }
+        boss_magistrate_barthilasAI(Creature* creature) : ScriptedAI(creature) {}
 
         uint32 DrainingBlow_Timer;
         uint32 CrowdPummel_Timer;
@@ -63,7 +55,7 @@ public:
         uint32 FuriousAnger_Timer;
         uint32 AngerCount;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             DrainingBlow_Timer = 20000;
             CrowdPummel_Timer = 15000;
@@ -71,30 +63,29 @@ public:
             FuriousAnger_Timer = 5000;
             AngerCount = 0;
 
-            if (me->IsAlive())
+            if (me->isAlive())
                 me->SetDisplayId(MODEL_NORMAL);
             else
                 me->SetDisplayId(MODEL_HUMAN);
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
-
+        void MoveInLineOfSight(Unit* who)
         {
             //nothing to see here yet
 
             ScriptedAI::MoveInLineOfSight(who);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             me->SetDisplayId(MODEL_HUMAN);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -113,21 +104,21 @@ public:
             //DrainingBlow
             if (DrainingBlow_Timer <= diff)
             {
-                DoCastVictim(SPELL_DRAININGBLOW);
+                DoCast(me->getVictim(), SPELL_DRAININGBLOW);
                 DrainingBlow_Timer = 15000;
             } else DrainingBlow_Timer -= diff;
 
             //CrowdPummel
             if (CrowdPummel_Timer <= diff)
             {
-                DoCastVictim(SPELL_CROWDPUMMEL);
+                DoCast(me->getVictim(), SPELL_CROWDPUMMEL);
                 CrowdPummel_Timer = 15000;
             } else CrowdPummel_Timer -= diff;
 
             //MightyBlow
             if (MightyBlow_Timer <= diff)
             {
-                DoCastVictim(SPELL_MIGHTYBLOW);
+                DoCast(me->getVictim(), SPELL_MIGHTYBLOW);
                 MightyBlow_Timer = 20000;
             } else MightyBlow_Timer -= diff;
 

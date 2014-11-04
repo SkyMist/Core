@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -16,7 +14,6 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
- 
 #ifndef CREATUREAIIMPL_H
 #define CREATUREAIIMPL_H
 
@@ -314,313 +311,186 @@ const T& RAND(const T& v1, const T& v2, const T& v3, const T& v4, const T& v5, c
     }
 }
 
-class EventMap
+class EventMap : private std::map<uint32, uint32>
 {
-    /**
-    * Internal storage type.
-    * Key: Time as uint32 when the event should occur.
-    * Value: The event data as uint32.
-    *
-    * Structure of event data:
-    * - Bit  0 - 15: Event Id.
-    * - Bit 16 - 23: Group
-    * - Bit 24 - 31: Phase
-    * - Pattern: 0xPPGGEEEE
-    */
-    typedef std::multimap<uint32, uint32> EventStore;
-
     public:
-        EventMap() : _time(0), _phase(0) { }
+        EventMap() : _time(0), _phase(0) {}
 
-        /**
-        * @name Reset
-        * @brief Removes all scheduled events and resets time and phase.
-        */
-        void Reset()
-        {
-            _eventMap.clear();
-            _time = 0;
-            _phase = 0;
-        }
+        // Returns current timer value, does not represent real dates/times
+        uint32 GetTimer() const { return _time; }
 
-        /**
-         * @name Update
-         * @brief Updates the timer of the event map.
-         * @param time Value to be added to time.
-         */
-        void Update(uint32 time)
-        {
-            _time += time;
-        }
+        // Removes all events and clears phase
+        void Reset() { clear(); _time = 0; _phase = 0; }
 
-        /**
-        * @name GetTimer
-        * @return Current timer value.
-        */
-        uint32 GetTimer() const
-        {
-            return _time;
-        }
+        void Update(uint32 time) { _time += time; }
 
-        /**
-        * @name GetPhaseMask
-        * @return Active phases as mask.
-        */
-        uint8 GetPhaseMask() const
-        {
-            return _phase;
-        }
+        uint32 GetPhaseMask() const { return (_phase >> 24) & 0xFF; }
 
-        /**
-        * @name Empty
-        * @return True, if there are no events scheduled.
-        */
-        bool Empty() const
-        {
-            return _eventMap.empty();
-        }
+        bool Empty() const { return empty(); }
 
-        /**
-        * @name SetPhase
-        * @brief Sets the phase of the map (absolute).
-        * @param phase Phase which should be set. Values: 1 - 8. 0 resets phase.
-        */
-        void SetPhase(uint8 phase)
+        // Sets event phase, must be in range 1 - 8
+        void SetPhase(uint32 phase)
         {
-            if (!phase)
+            if (phase && phase < 8)
+                _phase = (1 << (phase + 24));
+            else if (!phase)
                 _phase = 0;
-            else if (phase <= 8)
-                _phase = (1 << (phase - 1));
         }
 
-        /**
-        * @name AddPhase
-        * @brief Activates the given phase (bitwise).
-        * @param phase Phase which should be activated. Values: 1 - 8
-        */
-        void AddPhase(uint8 phase)
+        // Creates new event entry in map with given id, time, group if given (1 - 8) and phase if given (1 - 8)
+        // 0 for group/phase means it belongs to no group or runs in all phases
+        void ScheduleEvent(uint32 eventId, uint32 time, uint32 groupId = 0, uint32 phase = 0)
         {
-            if (phase && phase <= 8)
-                _phase |= (1 << (phase - 1));
+            time += _time;
+            if (groupId && groupId < 9)
+                eventId |= (1 << (groupId + 16));
+            if (phase && phase < 8)
+                eventId |= (1 << (phase + 24));
+            const_iterator itr = find(time);
+            while (itr != end())
+            {
+                ++time;
+                itr = find(time);
+            }
+
+            insert(std::make_pair(time, eventId));
         }
 
-        /**
-        * @name RemovePhase
-        * @brief Deactivates the given phase (bitwise).
-        * @param phase Phase which should be deactivated. Values: 1 - 8.
-        */
-        void RemovePhase(uint8 phase)
-        {
-            if (phase && phase <= 8)
-                _phase &= ~(1 << (phase - 1));
-        }
-
-        /**
-        * @name ScheduleEvent
-        * @brief Creates new event entry in map.
-        * @param eventId The id of the new event.
-        * @param time The time in milliseconds until the event occurs.
-        * @param group The group which the event is associated to. Has to be between 1 and 8. 0 means it has no group.
-        * @param phase The phase in which the event can occur. Has to be between 1 and 8. 0 means it can occur in all phases.
-        */
-        void ScheduleEvent(uint32 eventId, uint32 time, uint32 group = 0, uint8 phase = 0)
-        {
-            if (group && group <= 8)
-                eventId |= (1 << (group + 15));
-
-            if (phase && phase <= 8)
-                eventId |= (1 << (phase + 23));
-
-            _eventMap.insert(EventStore::value_type(_time + time, eventId));
-        }
-
-        /**
-        * @name RescheduleEvent
-        * @brief Cancels the given event and reschedules it.
-        * @param eventId The id of the event.
-        * @param time The time in milliseconds until the event occurs.
-        * @param group The group which the event is associated to. Has to be between 1 and 8. 0 means it has no group.
-        * @param phase The phase in which the event can occur. Has to be between 1 and 8. 0 means it can occur in all phases.
-        */
-        void RescheduleEvent(uint32 eventId, uint32 time, uint32 group = 0, uint8 phase = 0)
+        // Removes event with specified id and creates new entry for it
+        void RescheduleEvent(uint32 eventId, uint32 time, uint32 groupId = 0, uint32 phase = 0)
         {
             CancelEvent(eventId);
-            ScheduleEvent(eventId, time, group, phase);
+            ScheduleEvent(eventId, time, groupId, phase);
         }
 
-        /**
-        * @name RepeatEvent
-        * @brief Cancels the closest event and reschedules it.
-        * @param time Time until the event occurs.
-        */
+        // Reschedules closest event
         void RepeatEvent(uint32 time)
         {
-            if (Empty())
+            if (empty())
                 return;
 
-            uint32 eventId = _eventMap.begin()->second;
-            _eventMap.erase(_eventMap.begin());
-            ScheduleEvent(eventId, time);
+            uint32 eventId = begin()->second;
+            erase(begin());
+            time += _time;
+            const_iterator itr = find(time);
+            while (itr != end())
+            {
+                ++time;
+                itr = find(time);
+            }
+
+            insert(std::make_pair(time, eventId));
         }
 
-        /**
-        * @name PopEvent
-        * @brief Remove the first event in the map.
-        */
+        // Removes first event
         void PopEvent()
         {
-            if (!Empty())
-                _eventMap.erase(_eventMap.begin());
+            erase(begin());
         }
 
-        /**
-        * @name ExecuteEvent
-        * @brief Returns the next event to execute and removes it from map.
-        * @return Id of the event to execute.
-        */
+        // Gets next event id to execute and removes it from map
         uint32 ExecuteEvent()
         {
-            while (!Empty())
+            while (!empty())
             {
-                EventStore::iterator itr = _eventMap.begin();
-
-                if (itr->first > _time)
+                if (begin()->first > _time)
                     return 0;
-                else if (_phase && (itr->second & 0xFF000000) && !((itr->second >> 24) & _phase))
-                    _eventMap.erase(itr);
+                else if (_phase && (begin()->second & 0xFF000000) && !(begin()->second & _phase))
+                    erase(begin());
                 else
                 {
-                    uint32 eventId = (itr->second & 0x0000FFFF);
-                    _eventMap.erase(itr);
+                    uint32 eventId = (begin()->second & 0x0000FFFF);
+                    erase(begin());
                     return eventId;
                 }
             }
-
             return 0;
         }
 
-        /**
-        * @name GetEvent
-        * @brief Returns the next event to execute.
-        * @return Id of the event to execute.
-        */
+        // Gets next event id to execute
         uint32 GetEvent()
         {
-            while (!Empty())
+            while (!empty())
             {
-                EventStore::iterator itr = _eventMap.begin();
-
-                if (itr->first > _time)
+                if (begin()->first > _time)
                     return 0;
-                else if (_phase && (itr->second & 0xFF000000) && !(itr->second & (_phase << 24)))
-                    _eventMap.erase(itr);
+                else if (_phase && (begin()->second & 0xFF000000) && !(begin()->second & _phase))
+                    erase(begin());
                 else
-                    return (itr->second & 0x0000FFFF);
+                    return (begin()->second & 0x0000FFFF);
             }
 
             return 0;
         }
 
-        /**
-        * @name DelayEvents
-        * @brief Delays all events in the map. If delay is greater than or equal internal timer, delay will be 0.
-        * @param delay Amount of delay.
-        */
+        // Delay all events
         void DelayEvents(uint32 delay)
         {
-            _time = delay < _time ? _time - delay : 0;
+            if (delay < _time)
+                _time -= delay;
+            else
+                _time = 0;
         }
 
-        /**
-        * @name DelayEvents
-        * @brief Delay all events of the same group.
-        * @param delay Amount of delay.
-        * @param group Group of the events.
-        */
-        void DelayEvents(uint32 delay, uint32 group)
+        // Delay all events having the specified Group
+        void DelayEvents(uint32 delay, uint32 groupId)
         {
-            if (!group || group > 8 || Empty())
-                return;
-
-            EventStore delayed;
-
-            for (EventStore::iterator itr = _eventMap.begin(); itr != _eventMap.end();)
+            uint32 nextTime = _time + delay;
+            uint32 groupMask = (1 << (groupId + 16));
+            for (iterator itr = begin(); itr != end() && itr->first < nextTime;)
             {
-                if (itr->second & (1 << (group + 15)))
+                if (itr->second & groupMask)
                 {
-                    delayed.insert(EventStore::value_type(itr->first + delay, itr->second));
-                    _eventMap.erase(itr++);
+                    ScheduleEvent(itr->second, itr->first - _time + delay);
+                    erase(itr);
+                    itr = begin();
                 }
                 else
                     ++itr;
             }
-
-            _eventMap.insert(delayed.begin(), delayed.end());
         }
 
-        /**
-        * @name CancelEvent
-        * @brief Cancels all events of the specified id.
-        * @param eventId Event id to cancel.
-        */
+        // Cancel events with specified id
         void CancelEvent(uint32 eventId)
         {
-            if (Empty())
-                return;
-
-            for (EventStore::iterator itr = _eventMap.begin(); itr != _eventMap.end();)
+            for (iterator itr = begin(); itr != end();)
             {
                 if (eventId == (itr->second & 0x0000FFFF))
-                    _eventMap.erase(itr++);
+                {
+                    erase(itr);
+                    itr = begin();
+                }
                 else
                     ++itr;
             }
         }
 
-        /**
-        * @name CancelEventGroup
-        * @brief Cancel events belonging to specified group.
-        * @param group Group to cancel.
-        */
-        void CancelEventGroup(uint32 group)
+        // Cancel events belonging to specified group
+        void CancelEventGroup(uint32 groupId)
         {
-            if (!group || group > 8 || Empty())
-                return;
+            uint32 groupMask = (1 << (groupId + 16));
 
-            for (EventStore::iterator itr = _eventMap.begin(); itr != _eventMap.end();)
+            for (iterator itr = begin(); itr != end();)
             {
-                if (itr->second & (1 << (group + 15)))
-                    _eventMap.erase(itr++);
+                if (itr->second & groupMask)
+                {
+                    erase(itr);
+                    itr = begin();
+                }
                 else
                     ++itr;
             }
         }
 
-        /**
-        * @name GetNextEventTime
-        * @brief Returns closest occurence of specified event.
-        * @param eventId Wanted event id.
-        * @return Time of found event.
-        */
+        // Returns time of next event to execute
+        // To get how much time remains substract _time
         uint32 GetNextEventTime(uint32 eventId) const
         {
-            if (Empty())
-                return 0;
-
-            for (EventStore::const_iterator itr = _eventMap.begin(); itr != _eventMap.end(); ++itr)
+            for (const_iterator itr = begin(); itr != end(); ++itr)
                 if (eventId == (itr->second & 0x0000FFFF))
                     return itr->first;
 
             return 0;
-        }
-
-        /**
-         * @name GetNextEventTime
-         * @return Time of next event.
-         */
-        uint32 GetNextEventTime() const
-        {
-            return Empty() ? 0 : _eventMap.begin()->first;
         }
 
         /**
@@ -631,40 +501,15 @@ class EventMap
         */
         bool IsInPhase(uint8 phase)
         {
-            return phase <= 8 && (!phase || _phase & (1 << (phase - 1)));
+            if (phase > 8)
+                return false;
+
+            return (!phase || GetPhaseMask() & (1 << phase));
         }
 
     private:
-        /**
-        * @name _time
-        * @brief Internal timer.
-        *
-        * This does not represent the real date/time value.
-        * It's more like a stopwatch: It can run, it can be stopped,
-        * it can be resetted and so on. Events occur when this timer
-        * has reached their time value. Its value is changed in the
-        * Update method.
-        */
         uint32 _time;
-
-        /**
-        * @name _phase
-        * @brief Phase mask of the event map.
-        *
-        * Contains the phases the event map is in. Multiple
-        * phases from 1 to 8 can be set with SetPhase or
-        * AddPhase. RemovePhase deactives a phase.
-        */
-        uint8 _phase;
-
-        /**
-        * @name _eventMap
-        * @brief Internal event storage map. Contains the scheduled events.
-        *
-        * See typedef at the beginning of the class for more
-        * details.
-        */
-        EventStore _eventMap;
+        uint32 _phase;
 };
 
 enum AITarget
@@ -674,14 +519,14 @@ enum AITarget
     AITARGET_ENEMY,
     AITARGET_ALLY,
     AITARGET_BUFF,
-    AITARGET_DEBUFF
+    AITARGET_DEBUFF,
 };
 
 enum AICondition
 {
     AICOND_AGGRO,
     AICOND_COMBAT,
-    AICOND_DIE
+    AICOND_DIE,
 };
 
 #define AI_DEFAULT_COOLDOWN 5000
@@ -689,7 +534,7 @@ enum AICondition
 struct AISpellInfoType
 {
     AISpellInfoType() : target(AITARGET_SELF), condition(AICOND_COMBAT)
-        , cooldown(AI_DEFAULT_COOLDOWN), realCooldown(0), maxRange(0.0f){ }
+        , cooldown(AI_DEFAULT_COOLDOWN), realCooldown(0), maxRange(0.0f){}
     AITarget target;
     AICondition condition;
     uint32 cooldown;
@@ -698,6 +543,117 @@ struct AISpellInfoType
 };
 
 AISpellInfoType* GetAISpellInfo(uint32 i);
+
+inline void CreatureAI::SetGazeOn(Unit* target)
+{
+    if (me->IsValidAttackTarget(target))
+    {
+        AttackStart(target);
+        me->SetReactState(REACT_PASSIVE);
+    }
+}
+
+inline bool CreatureAI::UpdateVictimWithGaze()
+{
+    if (!me->isInCombat())
+        return false;
+
+    if (me->HasReactState(REACT_PASSIVE))
+    {
+        if (me->getVictim())
+            return true;
+        else
+            me->SetReactState(REACT_AGGRESSIVE);
+    }
+
+    if (Unit* victim = me->SelectVictim())
+        AttackStart(victim);
+    return me->getVictim();
+}
+
+inline bool CreatureAI::UpdateVictim()
+{
+    if (!me->isInCombat())
+        return false;
+
+    if (!me->HasReactState(REACT_PASSIVE))
+    {
+        if (Unit* victim = me->SelectVictim())
+            AttackStart(victim);
+        return me->getVictim();
+    }
+    else if (me->getThreatManager().isThreatListEmpty())
+    {
+        EnterEvadeMode();
+        return false;
+    }
+
+    return true;
+}
+
+inline bool CreatureAI::_EnterEvadeMode()
+{
+    if (!me->isAlive())
+        return false;
+
+    // dont remove vehicle auras, passengers arent supposed to drop off the vehicle
+    if (me->GetEntry() != 46499 && me->GetEntry() != 62982 && me->GetEntry() != 67236 && me->GetEntry() != 59607) // NPC_HOLY_GUARDIAN or Mindbender
+        me->RemoveAllAurasExceptType(SPELL_AURA_CONTROL_VEHICLE);
+
+    // sometimes bosses stuck in combat?
+    me->DeleteThreatList();
+    me->CombatStop(true);
+    me->LoadCreaturesAddon();
+    me->SetLootRecipient(NULL);
+    me->ResetPlayerDamageReq();
+
+    if (me->IsInEvadeMode())
+        return false;
+
+    return true;
+}
+
+inline void UnitAI::DoCast(Unit* victim, uint32 spellId, bool triggered)
+{
+    if (!victim || (me->HasUnitState(UNIT_STATE_CASTING) && !triggered))
+        return;
+
+    me->CastSpell(victim, spellId, triggered);
+}
+
+inline void UnitAI::DoCastVictim(uint32 spellId, bool triggered)
+{
+    // Why don't we check for casting unit_state and existing target as we do in DoCast(.. ?
+    me->CastSpell(me->getVictim(), spellId, triggered);
+}
+
+inline void UnitAI::DoCastAOE(uint32 spellId, bool triggered)
+{
+    if (!triggered && me->HasUnitState(UNIT_STATE_CASTING))
+        return;
+
+    me->CastSpell((Unit*)NULL, spellId, triggered);
+}
+
+inline Creature* CreatureAI::DoSummon(uint32 entry, const Position& pos, uint32 despawnTime, TempSummonType summonType)
+{
+    return me->SummonCreature(entry, pos, summonType, despawnTime);
+}
+
+inline Creature* CreatureAI::DoSummon(uint32 entry, WorldObject* obj, float radius, uint32 despawnTime, TempSummonType summonType)
+{
+    Position pos;
+    obj->GetRandomNearPosition(pos, radius);
+    return me->SummonCreature(entry, pos, summonType, despawnTime);
+}
+
+inline Creature* CreatureAI::DoSummonFlyer(uint32 entry, WorldObject* obj, float flightZ, float radius, uint32 despawnTime, TempSummonType summonType)
+{
+    Position pos;
+    obj->GetRandomNearPosition(pos, radius);
+    pos.m_positionZ += flightZ;
+    return me->SummonCreature(entry, pos, summonType, despawnTime);
+}
 
 #endif
 

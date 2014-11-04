@@ -18,13 +18,14 @@
 #ifndef __BATTLEGROUNDAA_H
 #define __BATTLEGROUNDAA_H
 
-#include "Battleground.h"
+class Battleground;
 
 class BattlegroundAAScore : public BattlegroundScore
 {
     public:
         BattlegroundAAScore() {};
         virtual ~BattlegroundAAScore() {};
+        //TODO fix me
 };
 
 class BattlegroundAA : public Battleground
@@ -34,16 +35,13 @@ class BattlegroundAA : public Battleground
         ~BattlegroundAA();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
-        void StartingEventCloseDoors();
-        void StartingEventOpenDoors();
+        virtual void AddPlayer(Player* player);
+        virtual void StartingEventCloseDoors();
+        virtual void StartingEventOpenDoors();
 
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         bool SetupBattleground();
         void HandleKillPlayer(Player* player, Player* killer);
-
-    private:
 };
-
 #endif

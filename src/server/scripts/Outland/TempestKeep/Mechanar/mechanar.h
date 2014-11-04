@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,22 +19,9 @@
 #ifndef DEF_MECHANAR_H
 #define DEF_MECHANAR_H
 
-uint32 const EncounterCount             = 5;
-
-enum DataTypes
-{
-    DATA_GATEWATCHER_GYROKILL           = 0,
-    DATA_GATEWATCHER_IRON_HAND          = 1,
-    DATA_MECHANOLORD_CAPACITUS          = 2,
-    DATA_NETHERMANCER_SEPRETHREA        = 3,
-    DATA_PATHALEON_THE_CALCULATOR       = 4
-};
-
-enum GameobjectIds
-{
-    GO_DOOR_MOARG_1                     = 184632,
-    GO_DOOR_MOARG_2                     = 184322,
-    GO_DOOR_NETHERMANCER                = 184449
-};
+#define DATA_NETHERMANCER_EVENT      1
+#define NPC_GATEWATCHER          19218
+#define GOB_CACHE_LEGION        184465
 
 #endif
+

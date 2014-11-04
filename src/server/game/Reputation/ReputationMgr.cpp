@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,8 +24,6 @@
 #include "World.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
-#include "Opcodes.h"
-#include "WorldSession.h"
 
 const int32 ReputationMgr::PointsInRank[MAX_REPUTATION_RANK] = {36000, 3000, 3000, 3000, 6000, 12000, 21000, 1000};
 
@@ -48,7 +45,7 @@ bool ReputationMgr::IsAtWar(uint32 faction_id) const
 
     if (!factionEntry)
     {
-        TC_LOG_ERROR("misc", "ReputationMgr::IsAtWar: Can't get AtWar flag of %s for unknown faction (faction id) #%u.", _player->GetName().c_str(), faction_id);
+        sLog->outError(LOG_FILTER_GENERAL, "ReputationMgr::IsAtWar: Can't get AtWar flag of %s for unknown faction (faction id) #%u.", _player->GetName(), faction_id);
         return 0;
     }
 
@@ -71,7 +68,7 @@ int32 ReputationMgr::GetReputation(uint32 faction_id) const
 
     if (!factionEntry)
     {
-        TC_LOG_ERROR("misc", "ReputationMgr::GetReputation: Can't get reputation of %s for unknown faction (faction id) #%u.", _player->GetName().c_str(), faction_id);
+        sLog->outError(LOG_FILTER_GENERAL, "ReputationMgr::GetReputation: Can't get reputation of %s for unknown faction (faction id) #%u.", _player->GetName(), faction_id);
         return 0;
     }
 
@@ -139,23 +136,24 @@ uint32 ReputationMgr::GetDefaultStateFlags(FactionEntry const* factionEntry) con
 
     uint32 raceMask = _player->getRaceMask();
     uint32 classMask = _player->getClassMask();
-    for (int i = 0; i < 4; i++)
+    for (int i=0; i < 4; i++)
     {
-        if ((factionEntry->BaseRepRaceMask[i] & raceMask  || (factionEntry->BaseRepRaceMask[i] == 0  && factionEntry->BaseRepClassMask[i] != 0)) &&
-            (factionEntry->BaseRepClassMask[i] & classMask || factionEntry->BaseRepClassMask[i] == 0))
+        if ((factionEntry->BaseRepRaceMask[i] & raceMask  ||
+            (factionEntry->BaseRepRaceMask[i] == 0  &&
+             factionEntry->BaseRepClassMask[i] != 0)) &&
+            (factionEntry->BaseRepClassMask[i] & classMask ||
+             factionEntry->BaseRepClassMask[i] == 0))
 
             return factionEntry->ReputationFlags[i];
     }
-
     return 0;
 }
 
 void ReputationMgr::SendForceReactions()
 {
-    WorldPacket data(SMSG_SET_FORCED_REACTIONS, 6 + _forcedReactions.size() * (4 + 4));
+    WorldPacket data(SMSG_SET_FORCED_REACTIONS, 1 + _forcedReactions.size() *(4 + 4));
 
     data.WriteBits(_forcedReactions.size(), 6);
-
     data.FlushBits();
 
     for (ForcedReactions::const_iterator itr = _forcedReactions.begin(); itr != _forcedReactions.end(); ++itr)
@@ -169,50 +167,45 @@ void ReputationMgr::SendForceReactions()
 
 void ReputationMgr::SendState(FactionState const* faction)
 {
-    uint32 count = 1;
+    uint32 count = 0;
 
-    WorldPacket data(SMSG_SET_FACTION_STANDING, 4 + 4 + 3 + 4 + 4);
+    for (FactionStateList::iterator itr = _factions.begin(); itr != _factions.end(); ++itr)
+        if (itr->second.needSend)
+            //if (itr->second.ReputationListID != faction->ReputationListID)
+                ++count;
 
+    WorldPacket data(SMSG_SET_FACTION_STANDING);
     data << float(0);
     data << float(0);
 
-    size_t countPos = data.bitwpos();
     data.WriteBits(count, 21);
-
-    data.WriteBit(_sendFactionIncreased);
-
+    data.WriteBit(true);
     data.FlushBits();
 
     _sendFactionIncreased = false; // Reset
-
-    data << uint32(faction->ReputationListID);
-    data << uint32(faction->Standing);
 
     for (FactionStateList::iterator itr = _factions.begin(); itr != _factions.end(); ++itr)
     {
         if (itr->second.needSend)
         {
             itr->second.needSend = false;
-            if (itr->second.ReputationListID != faction->ReputationListID)
+            //if (itr->second.ReputationListID != faction->ReputationListID)
             {
                 data << uint32(itr->second.ReputationListID);
                 data << uint32(itr->second.Standing);
-                ++count;
             }
         }
     }
 
-    data.PutBits(countPos, count, 21);
     _player->SendDirectMessage(&data);
 }
 
 void ReputationMgr::SendInitialReputations()
 {
-    uint16 count = 256;
-    RepListID a = 0;
-    ByteBuffer bitData;
+    WorldPacket data(SMSG_INITIALIZE_FACTIONS, 256 * 6);
 
-    WorldPacket data(SMSG_INITIALIZE_FACTIONS, (count * (1 + 4)) + 32);
+    ByteBuffer bits;
+    RepListID a = 0;
 
     for (FactionStateList::iterator itr = _factions.begin(); itr != _factions.end(); ++itr)
     {
@@ -221,15 +214,15 @@ void ReputationMgr::SendInitialReputations()
         {
             data << uint8(0);
             data << uint32(0);
-            bitData.WriteBit(0);
+
+            bits.WriteBit(0);
         }
 
         // fill in encountered data
         data << uint8(itr->second.Flags);
         data << uint32(itr->second.Standing);
 
-        // Bonus reputation (Your account has unlocked bonus reputation gain with this faction.)
-        bitData.WriteBit(0);
+        bits.WriteBit(itr->second.needSend);
 
         itr->second.needSend = false;
 
@@ -237,14 +230,15 @@ void ReputationMgr::SendInitialReputations()
     }
 
     // fill in absent fields
-    for (; a != count; ++a)
+    for (; a != 256; ++a)
     {
-        data << uint8(0);
-        data << uint32(0);
-        bitData.WriteBit(0);
+        data << uint8  (0x00);
+        data << uint32 (0x00000000);
+
+        bits.WriteBit(0);
     }
 
-    data.append(bitData);
+    data.append(bits);
 
     _player->SendDirectMessage(&data);
 }
@@ -381,6 +375,10 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, in
         {
             // int32 *= float cause one point loss?
             standing = int32(floor((float)standing * sWorld->getRate(RATE_REPUTATION_GAIN) + 0.5f));
+
+            if (_player->GetSession()->IsPremium())
+                standing = int32(floor((float)standing * sWorld->getRate(RATE_REPUTATION_GAIN_PREMIUM) + 0.5f));
+
             standing += itr->second.Standing + BaseRep;
         }
 

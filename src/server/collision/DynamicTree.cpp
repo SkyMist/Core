@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -27,6 +26,7 @@
 #include "Timer.h"
 #include "GameObjectModel.h"
 #include "ModelInstance.h"
+#include "VMapDefinitions.h" 
 
 #include <G3D/AABox.h>
 #include <G3D/Ray.h>
@@ -164,16 +164,16 @@ struct DynamicTreeIntersectionCallback_WithLogger
     uint32 phase_mask;
     DynamicTreeIntersectionCallback_WithLogger(uint32 phasemask) : did_hit(false), phase_mask(phasemask)
     {
-        TC_LOG_DEBUG("maps", "Dynamic Intersection log");
+        sLog->outDebug(LOG_FILTER_MAPS, "Dynamic Intersection log");
     }
     bool operator()(const G3D::Ray& r, const GameObjectModel& obj, float& distance)
     {
-        TC_LOG_DEBUG("maps", "testing intersection with %s", obj.name.c_str());
+        sLog->outDebug(LOG_FILTER_MAPS, "testing intersection with %s", obj.name.c_str());
         bool hit = obj.intersectRay(r, distance, true, phase_mask);
         if (hit)
         {
             did_hit = true;
-            TC_LOG_DEBUG("maps", "result: intersects");
+            sLog->outDebug(LOG_FILTER_MAPS, "result: intersects");
         }
         return hit;
     }
@@ -233,6 +233,10 @@ bool DynamicMapTree::getObjectHitPos(const uint32 phasemask, const G3D::Vector3&
 
 bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const
 {
+    // Don't calculate hit position, if wrong src/dest points provided!
+    if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
+        return false;
+
     G3D::Vector3 v1(x1, y1, z1), v2(x2, y2, z2);
 
     float maxDist = (v2 - v1).magnitude();

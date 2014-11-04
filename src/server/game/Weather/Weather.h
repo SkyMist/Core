@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -47,7 +46,7 @@ struct WeatherData
 enum WeatherState
 {
     WEATHER_STATE_FINE              = 0,
-    WEATHER_STATE_FOG               = 1, // Used in some instance encounters.
+    WEATHER_STATE_FOG               = 1,
     WEATHER_STATE_LIGHT_RAIN        = 3,
     WEATHER_STATE_MEDIUM_RAIN       = 4,
     WEATHER_STATE_HEAVY_RAIN        = 5,
@@ -59,7 +58,7 @@ enum WeatherState
     WEATHER_STATE_HEAVY_SANDSTORM   = 42,
     WEATHER_STATE_THUNDERS          = 86,
     WEATHER_STATE_BLACKRAIN         = 90,
-    WEATHER_STATE_BLACKSNOW         = 106
+    WEATHER_STATE_BLACKSNOW         = 106,
 };
 
 /// Weather for one zone

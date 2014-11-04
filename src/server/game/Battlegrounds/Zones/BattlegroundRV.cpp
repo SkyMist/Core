@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -33,18 +32,48 @@ BattlegroundRV::BattlegroundRV()
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
+    // we must set messageIds
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_ARENA_HAS_BEGUN;
+
+    // helper for check player height
+    fencesOpened = false;
 }
 
-BattlegroundRV::~BattlegroundRV() { }
+BattlegroundRV::~BattlegroundRV()
+{
+
+}
 
 void BattlegroundRV::PostUpdateImpl(uint32 diff)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
+
+    if (teleportTimer < diff)
+    {
+        for (BattlegroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
+            if (Player* player = ObjectAccessor::FindPlayer(MAKE_NEW_GUID(itr->first, 0, HIGHGUID_PLAYER)))
+                if (player && player->GetPositionZ() < 27.0f)
+                    player->TeleportTo(618, 763.5f, -284.0f, 29.0f, player->GetOrientation(), TELE_TO_NOT_LEAVE_COMBAT);
+        teleportTimer = 3000;
+    }
+    else
+        teleportTimer -= diff;
+
+    // enable fences check
+    if (!fencesOpened)
+    {
+        if (fencesTimer < diff)
+        {
+            fencesOpened = true;
+            UpdateElevatorsType();
+        }
+        else
+            fencesTimer -= diff;
+    }
 
     if (getTimer() < diff)
     {
@@ -65,6 +94,14 @@ void BattlegroundRV::PostUpdateImpl(uint32 diff)
                 setState(BG_RV_STATE_SWITCH_PILLARS);
                 break;
             case BG_RV_STATE_SWITCH_PILLARS:
+                for (uint8 i = BG_RV_OBJECT_PILAR_1; i <= BG_RV_OBJECT_PULLEY_2; ++i)
+                {
+                     if (GameObject* gob = GetBgMap()->GetGameObject(BgObjects[i]))
+                     {
+                         gob->SetLootState(GO_READY);
+                         gob->UseDoorOrButton(RESPAWN_ONE_DAY);
+                     }
+                }
                 TogglePillarCollision();
                 setTimer(BG_RV_PILLAR_SWITCH_TIMER);
                 break;
@@ -74,7 +111,9 @@ void BattlegroundRV::PostUpdateImpl(uint32 diff)
         setTimer(getTimer() - diff);
 }
 
-void BattlegroundRV::StartingEventCloseDoors() { }
+void BattlegroundRV::StartingEventCloseDoors()
+{
+}
 
 void BattlegroundRV::StartingEventOpenDoors()
 {
@@ -87,16 +126,22 @@ void BattlegroundRV::StartingEventOpenDoors()
 
     setState(BG_RV_STATE_OPEN_FENCES);
     setTimer(BG_RV_FIRST_TIMER);
+    fencesTimer = 20000;
 
     // Should be false at first, TogglePillarCollision will do it.
     SetPillarCollision(true);
     TogglePillarCollision();
+
+    teleportTimer = 23000;
 }
 
 void BattlegroundRV::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    PlayerScores[player->GetGUID()] = new BattlegroundScore;
+    //create score and add it to map, default values are set in constructor
+    BattlegroundRVScore* sc = new BattlegroundRVScore;
+
+    PlayerScores[player->GetGUID()] = sc;
 
     UpdateWorldState(BG_RV_WORLD_STATE_A, GetAlivePlayersCountByTeam(ALLIANCE));
     UpdateWorldState(BG_RV_WORLD_STATE_H, GetAlivePlayersCountByTeam(HORDE));
@@ -120,7 +165,6 @@ void BattlegroundRV::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
-        TC_LOG_ERROR("bg.battleground", "BattlegroundRV: Killer player not found");
         return;
     }
 
@@ -132,12 +176,18 @@ void BattlegroundRV::HandleKillPlayer(Player* player, Player* killer)
     CheckArenaWinConditions();
 }
 
-void BattlegroundRV::HandleAreaTrigger(Player* player, uint32 trigger)
+bool BattlegroundRV::HandlePlayerUnderMap(Player* player)
+{
+    player->TeleportTo(GetMapId(), 763.5f, -284, 28.276f, 2.422f, false);
+    return true;
+}
+
+void BattlegroundRV::HandleAreaTrigger(Player* Source, uint32 Trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    switch (trigger)
+    switch (Trigger)
     {
         case 5224:
         case 5226:
@@ -146,16 +196,15 @@ void BattlegroundRV::HandleAreaTrigger(Player* player, uint32 trigger)
         case 5474:
             break;
         default:
-            Battleground::HandleAreaTrigger(player, trigger);
             break;
     }
 }
 
-void BattlegroundRV::FillInitialWorldStates(ByteBuffer& data)
+void BattlegroundRV::FillInitialWorldStates(WorldPacket &data)
 {
-    data << uint32(GetAlivePlayersCountByTeam(ALLIANCE)) << uint32(BG_RV_WORLD_STATE_A);
-    data << uint32(GetAlivePlayersCountByTeam(HORDE))    << uint32(BG_RV_WORLD_STATE_H);
-    data << uint32(0x1)                                  << uint32(BG_RV_WORLD_STATE);  // Enable.
+    Player::AppendWorldState(data, uint32(BG_RV_WORLD_STATE_A), uint32(GetAlivePlayersCountByTeam(ALLIANCE)));
+    Player::AppendWorldState(data, uint32(BG_RV_WORLD_STATE_H), uint32(GetAlivePlayersCountByTeam(HORDE)));
+    Player::AppendWorldState(data, uint32(BG_RV_WORLD_STATE), uint32(1));
 }
 
 void BattlegroundRV::Reset()
@@ -197,23 +246,28 @@ bool BattlegroundRV::SetupBattleground()
 
 )
     {
-        TC_LOG_ERROR("sql.sql", "BatteGroundRV: Failed to spawn some object!");
         return false;
     }
     return true;
 }
 
 
+void BattlegroundRV::UpdateElevatorsType()
+{
+    for (uint8 i = BG_RV_OBJECT_ELEVATOR_1; i <= BG_RV_OBJECT_ELEVATOR_2; ++i)
+    {
+        if (GameObject* gob = GetBgMap()->GetGameObject(BgObjects[i]))
+        {
+            gob->SetGoType(GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING);
+            gob->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
+            gob->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_TRANSPORT);
+        }
+    }
+}
+
 void BattlegroundRV::TogglePillarCollision()
 {
     bool apply = GetPillarCollision();
-
-    // Toggle visual pillars, pulley, gear, and collision based on previous state
-    for (uint8 i = BG_RV_OBJECT_PILAR_1; i <= BG_RV_OBJECT_GEAR_2; ++i)
-        apply ? DoorOpen(i) : DoorClose(i);
-
-    for (uint8 i = BG_RV_OBJECT_PILAR_2; i <= BG_RV_OBJECT_PULLEY_2; ++i)
-        apply ? DoorClose(i) : DoorOpen(i);
 
     for (uint8 i = BG_RV_OBJECT_PILAR_1; i <= BG_RV_OBJECT_PILAR_COLLISION_4; ++i)
     {
@@ -235,6 +289,6 @@ void BattlegroundRV::TogglePillarCollision()
                     gob->SendUpdateToPlayer(player);
         }
     }
-
+    
     SetPillarCollision(!apply);
 }

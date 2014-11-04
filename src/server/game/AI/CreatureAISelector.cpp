@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -34,7 +33,7 @@ namespace FactorySelector
         const CreatureAICreator* ai_factory = NULL;
         CreatureAIRegistry& ai_registry(*CreatureAIRepository::instance());
 
-        if (creature->IsPet())
+        if (creature->isPet())
             ai_factory = ai_registry.GetRegistryItem("PetAI");
 
         //scriptname in db
@@ -54,15 +53,15 @@ namespace FactorySelector
                 ai_factory = ai_registry.GetRegistryItem("VehicleAI");
             else if (creature->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN) && ((Guardian*)creature)->GetOwner()->GetTypeId() == TYPEID_PLAYER)
                 ai_factory = ai_registry.GetRegistryItem("PetAI");
-            else if (creature->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK))
+            else if (creature->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK))
                 ai_factory = ai_registry.GetRegistryItem("NullCreatureAI");
-            else if (creature->IsGuard())
+            else if (creature->isGuard())
                 ai_factory = ai_registry.GetRegistryItem("GuardAI");
             else if (creature->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
                 ai_factory = ai_registry.GetRegistryItem("PetAI");
-            else if (creature->IsTotem())
+            else if (creature->isTotem())
                 ai_factory = ai_registry.GetRegistryItem("TotemAI");
-            else if (creature->IsTrigger())
+            else if (creature->isTrigger())
             {
                 if (creature->m_spells[0])
                     ai_factory = ai_registry.GetRegistryItem("TriggerAI");
@@ -96,7 +95,7 @@ namespace FactorySelector
         // select NullCreatureAI if not another cases
         ainame = (ai_factory == NULL) ? "NullCreatureAI" : ai_factory->key();
 
-        TC_LOG_DEBUG("scripts", "Creature %s (Entry: %u GUID: %u DB GUID: %u) is using AI type: %s.", creature->GetName().c_str(), creature->GetEntry(), creature->GetGUIDLow(), creature->GetDBTableGUIDLow(), ainame.c_str());
+        sLog->outDebug(LOG_FILTER_TSCR, "Creature %u used AI is %s.", creature->GetGUIDLow(), ainame.c_str());
         return (ai_factory == NULL ? new NullCreatureAI(creature) : ai_factory->Create(creature));
     }
 
@@ -133,17 +132,21 @@ namespace FactorySelector
         const GameObjectAICreator* ai_factory = NULL;
         GameObjectAIRegistry& ai_registry(*GameObjectAIRepository::instance());
 
-        // scriptname in db
         if (GameObjectAI* scriptedAI = sScriptMgr->GetGameObjectAI(go))
             return scriptedAI;
 
         ai_factory = ai_registry.GetRegistryItem(go->GetAIName());
 
+        // scriptname in db
+        if (!ai_factory)
+            if (GameObjectAI* scriptedAI = sScriptMgr->GetGameObjectAI(go))
+                return scriptedAI;
+
         //future goAI types go here
 
         std::string ainame = (ai_factory == NULL || go->GetScriptId()) ? "NullGameObjectAI" : ai_factory->key();
 
-        TC_LOG_DEBUG("scripts", "GameObject %u used AI is %s.", go->GetGUIDLow(), ainame.c_str());
+        sLog->outDebug(LOG_FILTER_TSCR, "GameObject %u used AI is %s.", go->GetGUIDLow(), ainame.c_str());
 
         return (ai_factory == NULL ? new NullGameObjectAI(go) : ai_factory->Create(go));
     }

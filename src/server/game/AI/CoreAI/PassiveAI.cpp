@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,14 +19,15 @@
 #include "PassiveAI.h"
 #include "Creature.h"
 #include "TemporarySummon.h"
+#include "SpellAuraEffects.h"
 
 PassiveAI::PassiveAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
 PossessedAI::PossessedAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
 NullCreatureAI::NullCreatureAI(Creature* c) : CreatureAI(c) { me->SetReactState(REACT_PASSIVE); }
 
-void PassiveAI::UpdateAI(uint32)
+void PassiveAI::UpdateAI(const uint32)
 {
-    if (me->IsInCombat() && me->getAttackers().empty())
+    if (me->isInCombat() && me->getAttackers().empty())
         EnterEvadeMode();
 }
 
@@ -36,11 +36,11 @@ void PossessedAI::AttackStart(Unit* target)
     me->Attack(target, true);
 }
 
-void PossessedAI::UpdateAI(uint32 /*diff*/)
+void PossessedAI::UpdateAI(const uint32 /*diff*/)
 {
-    if (me->GetVictim())
+    if (me->getVictim())
     {
-        if (!me->IsValidAttackTarget(me->GetVictim()))
+        if (!me->IsValidAttackTarget(me->getVictim()))
             me->AttackStop();
         else
             DoMeleeAttackIfReady();
@@ -76,5 +76,5 @@ void CritterAI::EnterEvadeMode()
 void TriggerAI::IsSummonedBy(Unit* summoner)
 {
     if (me->m_spells[0])
-        me->CastSpell(me, me->m_spells[0], false, 0, 0, summoner->GetGUID());
+        me->CastSpell(me, me->m_spells[0], false, 0, NULLAURA_EFFECT, summoner->GetGUID());
 }

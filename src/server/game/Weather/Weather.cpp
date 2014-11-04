@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,8 +28,6 @@
 #include "ObjectMgr.h"
 #include "Util.h"
 #include "ScriptMgr.h"
-#include "Opcodes.h"
-#include "WorldSession.h"
 
 /// Create the Weather object
 Weather::Weather(uint32 zone, WeatherData const* weatherChances)
@@ -40,7 +37,7 @@ Weather::Weather(uint32 zone, WeatherData const* weatherChances)
     m_type = WEATHER_TYPE_FINE;
     m_grade = 0;
 
-    TC_LOG_INFO("misc", "WORLD: Starting weather system for zone %u (change every %u minutes).", m_zone, (uint32)(m_timer.GetInterval() / (MINUTE*IN_MILLISECONDS)));
+    sLog->outInfo(LOG_FILTER_GENERAL, "WORLD: Starting weather system for zone %u (change every %u minutes).", m_zone, (uint32)(m_timer.GetInterval() / (MINUTE*IN_MILLISECONDS)));
 }
 
 /// Launch a weather update
@@ -95,13 +92,12 @@ bool Weather::ReGenerate()
     //78 days between January 1st and March 20nd; 365/4=91 days by season
     // season source http://aa.usno.navy.mil/data/docs/EarthSeasons.html
     time_t gtime = sWorld->GetGameTime();
-    struct tm ltime;
-    ACE_OS::localtime_r(&gtime, &ltime);
-    uint32 season = ((ltime.tm_yday - 78 + 365)/91)%4;
+    struct tm * ltime = localtime(&gtime);
+    uint32 season = ((ltime->tm_yday - 78 + 365)/91)%4;
 
     static char const* seasonName[WEATHER_SEASONS] = { "spring", "summer", "fall", "winter" };
 
-    TC_LOG_INFO("misc", "Generating a change in %s weather for zone %u.", seasonName[season], m_zone);
+    sLog->outInfo(LOG_FILTER_GENERAL, "Generating a change in %s weather for zone %u.", seasonName[season], m_zone);
 
     if ((u < 60) && (m_grade < 0.33333334f))                // Get fair
     {
@@ -195,19 +191,22 @@ bool Weather::ReGenerate()
 
 void Weather::SendWeatherUpdateToPlayer(Player* player)
 {
-    WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
+    WorldPacket data(SMSG_WEATHER, (4+4+4));
     data << float(m_grade);
     data << uint32(GetWeatherState());
     data.WriteBit(0);
     data.FlushBits();
-
     player->GetSession()->SendPacket(&data);
 }
 
-// Send the new weather to all players in the zone
+/// Send the new weather to all players in the zone
 bool Weather::UpdateWeather()
 {
-    //- Send the weather packet to all players in this zone
+    Player* player = sWorld->FindPlayerInZone(m_zone);
+    if (!player)
+        return false;
+
+    ///- Send the weather packet to all players in this zone
     if (m_grade >= 1)
         m_grade = 0.9999f;
     else if (m_grade < 0)
@@ -215,15 +214,12 @@ bool Weather::UpdateWeather()
 
     WeatherState state = GetWeatherState();
 
-    WorldPacket data(SMSG_WEATHER, (4 + 4 + 1));
+    WorldPacket data(SMSG_WEATHER, (4+4+4));
     data << float(m_grade);
     data << uint32(state);
     data.WriteBit(0);
     data.FlushBits();
-
-    //- Returns false if there were no players found to update
-    if (!sWorld->SendZoneMessage(m_zone, &data))
-        return false;
+    player->SendMessageToSet(&data, true);
 
     ///- Log the event
     char const* wthstr;
@@ -270,10 +266,9 @@ bool Weather::UpdateWeather()
             wthstr = "fine";
             break;
     }
+    sLog->outInfo(LOG_FILTER_GENERAL, "Change the weather of zone %u to %s.", m_zone, wthstr);
 
-    TC_LOG_INFO("misc", "Change the weather of zone %u to %s.", m_zone, wthstr);
     sScriptMgr->OnWeatherChange(this, state, m_grade);
-
     return true;
 }
 
@@ -326,4 +321,3 @@ WeatherState Weather::GetWeatherState() const
             return WEATHER_STATE_FINE;
     }
 }
-

@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -32,8 +31,9 @@
 #include "WorldPacket.h"
 #include "Cryptography/BigNumber.h"
 #include "Opcodes.h"
-#include "AccountMgr.h"
 
+class CalendarEvent;
+class CalendarInvite;
 class Creature;
 class GameObject;
 class InstanceSave;
@@ -51,23 +51,14 @@ struct AreaTableEntry;
 struct AuctionEntry;
 struct DeclinedName;
 struct ItemTemplate;
-struct MovementInfo;
-
-namespace lfg
-{
 struct LfgJoinResultData;
+struct LfgLockStatus;
 struct LfgPlayerBoot;
 struct LfgProposal;
-struct LfgQueueStatusData;
-struct LfgPlayerRewardData;
+struct LfgReward;
 struct LfgRoleCheck;
 struct LfgUpdateData;
-}
-
-namespace rbac
-{
-class RBACData;
-}
+struct MovementInfo;
 
 enum AccountDataType
 {
@@ -78,19 +69,19 @@ enum AccountDataType
     GLOBAL_MACROS_CACHE             = 4,                    // 0x10 g
     PER_CHARACTER_MACROS_CACHE      = 5,                    // 0x20 p
     PER_CHARACTER_LAYOUT_CACHE      = 6,                    // 0x40 p
-    PER_CHARACTER_CHAT_CACHE        = 7                     // 0x80 p
+    PER_CHARACTER_CHAT_CACHE        = 7,                    // 0x80 p
 };
 
 #define NUM_ACCOUNT_DATA_TYPES        8
 
 #define GLOBAL_CACHE_MASK           0x15
-#define PER_CHARACTER_CACHE_MASK    0xEA
+#define PER_CHARACTER_CACHE_MASK    0xAA
 
 #define REGISTERED_ADDON_PREFIX_SOFTCAP 64
 
 struct AccountData
 {
-    AccountData() : Time(0), Data("") { }
+    AccountData() : Time(0), Data("") {}
 
     time_t Time;
     std::string Data;
@@ -104,22 +95,39 @@ enum PartyOperation
     PARTY_OP_SWAP = 4
 };
 
-enum ChangeDynamicDifficultyResult
+enum PartyResult
 {
-    DIFF_CHANGE_FAIL_RAID_RECENTLY_IN_COMBAT                    =  0, // "Raid was in combat recently and may not change difficulty again for %s.", where %s is time. Send the time in seconds as a uint32
-    DIFF_CHANGE_FAIL_EVENT_IN_PROGRESS                          =  1, // "Raid difficulty cannot be changed at this time. An event is in progress."
-    DIFF_CHANGE_FAIL_ENCOUNTER_IN_PROGRESS                      =  2, // "Raid difficulty cannot be changed at this time. An encounter is in progress."
-    DIFF_CHANGE_FAIL_SOMEONE_IN_COMBAT                          =  3, // "Raid difficulty cannot be changed at this time. A player is in combat."
-    DIFF_CHANGE_FAIL_SOMEONE_BUSY                               =  4, // "Raid difficulty cannot be changed at this time. A player is busy."
-    DIFF_CHANGE_SET_CHANGE_TIME                                 =  5, // Sets the time(in secs, uint32 sent) until the raid can't change difficulty
-    DIFF_CHANGE_FAIL_CHANGE_STARTED                             =  6, // "A raid difficulty change is currently in progress."
-    DIFF_CHANGE_SHOW_AREA_TRIGGER_TEXT                          =  7, // Shows the area trigger text in the chat box. Send MapDifficultyID as a uint32
-    DIFF_CHANGE_FAIL_SOMEONE_LOCKED                             =  8, // "Raid difficulty cannot be changed. %s is already locked to a different Heroic instance." where %s is the name of the player. Send a packed guid of the locked player
-    DIFF_CHANGE_FAIL_ALREADY_HEROIC                             =  9, // "Your heroic instance is already in running and in use by another party"
-    DIFF_CHANGE_FAIL_IN_LFR                                     = 10, // "Using Raid Finder to enter this instance disables dynamic difficulty selection"
-    DIFF_CHANGE_SUCCESS                                         = 11, // This is sent where the change is successful. Send the mapID(uint32) and the DifficultyID(uint32) 
-
+    ERR_PARTY_RESULT_OK                 = 0,
+    ERR_BAD_PLAYER_NAME_S               = 1,
+    ERR_TARGET_NOT_IN_GROUP_S           = 2,
+    ERR_TARGET_NOT_IN_INSTANCE_S        = 3,
+    ERR_GROUP_FULL                      = 4,
+    ERR_ALREADY_IN_GROUP_S              = 5,
+    ERR_NOT_IN_GROUP                    = 6,
+    ERR_NOT_LEADER                      = 7,
+    ERR_PLAYER_WRONG_FACTION            = 8,
+    ERR_IGNORING_YOU_S                  = 9,
+    ERR_LFG_PENDING                     = 12,
+    ERR_INVITE_RESTRICTED               = 13,
+    ERR_GROUP_SWAP_FAILED               = 14,               // if (PartyOperation == PARTY_OP_SWAP) ERR_GROUP_SWAP_FAILED else ERR_INVITE_IN_COMBAT
+    ERR_INVITE_UNKNOWN_REALM            = 15,
+    ERR_INVITE_NO_PARTY_SERVER          = 16,
+    ERR_INVITE_PARTY_BUSY               = 17,
+    ERR_PARTY_TARGET_AMBIGUOUS          = 18,
+    ERR_PARTY_LFG_INVITE_RAID_LOCKED    = 19,
+    ERR_PARTY_LFG_BOOT_LIMIT            = 20,
+    ERR_PARTY_LFG_BOOT_COOLDOWN_S       = 21,
+    ERR_PARTY_LFG_BOOT_IN_PROGRESS      = 22,
+    ERR_PARTY_LFG_BOOT_TOO_FEW_PLAYERS  = 23,
+    ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S   = 24,
+    ERR_RAID_DISALLOWED_BY_LEVEL        = 25,
+    ERR_PARTY_LFG_BOOT_IN_COMBAT        = 26,
+    ERR_VOTE_KICK_REASON_NEEDED         = 27,
+    ERR_PARTY_LFG_BOOT_DUNGEON_COMPLETE = 28,
+    ERR_PARTY_LFG_BOOT_LOOT_ROLLS       = 29,
+    ERR_PARTY_LFG_TELEPORT_IN_COMBAT    = 30
 };
+
 
 enum BFLeaveReason
 {
@@ -127,7 +135,7 @@ enum BFLeaveReason
     //BF_LEAVE_REASON_UNK1      = 0x00000002, (not used)
     //BF_LEAVE_REASON_UNK2      = 0x00000004, (not used)
     BF_LEAVE_REASON_EXITED    = 0x00000008,
-    BF_LEAVE_REASON_LOW_LEVEL = 0x00000010
+    BF_LEAVE_REASON_LOW_LEVEL = 0x00000010,
 };
 
 enum ChatRestrictionType
@@ -140,24 +148,34 @@ enum ChatRestrictionType
 
 enum CharterTypes
 {
-    GUILD_CHARTER_TYPE                            = 4
+    GUILD_CHARTER_TYPE                            = 4,
+    ARENA_TEAM_CHARTER_2v2_TYPE                   = 2,
+    ARENA_TEAM_CHARTER_3v3_TYPE                   = 3,
+    ARENA_TEAM_CHARTER_5v5_TYPE                   = 5,
 };
 
-#define DB2_REPLY_BROADCAST 35137211
-#define DB2_REPLY_SPARSE    2442913102
-#define DB2_REPLY_ITEM      1344507586
+enum DB2Types : uint32
+{
+    DB2_REPLY_SPARSE                          = 2442913102,           // hash of item-sparse.db2
+    DB2_REPLY_ITEM                            = 1344507586,           // hash of item.db2
+    DB2_REPLY_SCENE_SCRIPT                    = 3568395212,           // hash of ScreneScript.db2
+    DB2_REPLY_BATTLE_PET_EFFECT_PROPERTIES    = 1672791226,           // hash of BattlePetEffectProperties.db2
+    DB2_REPLY_BROADCAST_TEXT                  = 35137211,             // hash of BroadcastText.db2
+    DB2_REPLY_ITEM_EXTENDED_COST              = 3146089301,           // hash of ItemExtendedCost.db2
+};
 
 //class to deal with packet processing
 //allows to determine if next packet is safe to be processed
 class PacketFilter
 {
 public:
-    explicit PacketFilter(WorldSession* pSession) : m_pSession(pSession) { }
-    virtual ~PacketFilter() { }
+    explicit PacketFilter(WorldSession* pSession) : m_pSession(pSession) {}
+    virtual ~PacketFilter() {}
 
     virtual bool Process(WorldPacket* /*packet*/) { return true; }
     virtual bool ProcessLogout() const { return true; }
     static Opcodes DropHighBytes(Opcodes opcode) { return Opcodes(opcode & 0xFFFF); }
+    static uint16 DropHighBytes(uint16 opcode) { return opcode & 0xFFFF; }
 
 protected:
     WorldSession* const m_pSession;
@@ -166,8 +184,8 @@ protected:
 class MapSessionFilter : public PacketFilter
 {
 public:
-    explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
-    ~MapSessionFilter() { }
+    explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
+    ~MapSessionFilter() {}
 
     virtual bool Process(WorldPacket* packet);
     //in Map::Update() we do not process player logout!
@@ -179,8 +197,8 @@ public:
 class WorldSessionFilter : public PacketFilter
 {
 public:
-    explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
-    ~WorldSessionFilter() { }
+    explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
+    ~WorldSessionFilter() {}
 
     virtual bool Process(WorldPacket* packet);
 };
@@ -193,10 +211,10 @@ class CharacterCreateInfo
     friend class Player;
 
     protected:
-        CharacterCreateInfo(std::string const& name, uint8 race, uint8 cclass, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId,
+        CharacterCreateInfo(std::string name, uint8 race, uint8 cclass, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId,
         WorldPacket& data) : Name(name), Race(race), Class(cclass), Gender(gender), Skin(skin), Face(face), HairStyle(hairStyle), HairColor(hairColor), FacialHair(facialHair),
         OutfitId(outfitId), Data(data), CharCount(0)
-        { }
+        {}
 
         /// User specified variables
         std::string Name;
@@ -213,13 +231,16 @@ class CharacterCreateInfo
 
         /// Server side data
         uint8 CharCount;
+
+    private:
+        virtual ~CharacterCreateInfo(){};
 };
 
 /// Player session in the World
 class WorldSession
 {
     public:
-        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
+        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, bool ispremium, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
         ~WorldSession();
 
         bool PlayerLoading() const { return m_playerLoading; }
@@ -230,43 +251,33 @@ class WorldSession
         void ReadAddonsInfo(WorldPacket& data);
         void SendAddonsInfo();
         bool IsAddonRegistered(const std::string& prefix) const;
-
         void SendTimezoneInformation();
 
         void SendPacket(WorldPacket const* packet, bool forced = false);
         void SendNotification(const char *format, ...) ATTR_PRINTF(2, 3);
         void SendNotification(uint32 string_id, ...);
-        void SendPetNameInvalid(uint32 error, std::string const& name, DeclinedName *declinedName);
-        void SendPartyResult(PartyOperation operation, std::string const& member, PartyResult res, uint32 val = 0);
+        void SendPetNameInvalid(uint32 error, const std::string& name, DeclinedName *declinedName);
+        void SendPartyResult(PartyOperation operation, const std::string& member, PartyResult res, uint32 val = 0);
         void SendAreaTriggerMessage(const char* Text, ...) ATTR_PRINTF(2, 3);
         void SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps);
         void SendQueryTimeResponse();
-        void SendServerWorldInfo();
-        void SendGroupInviteNotification(const std::string& inviterName, bool inGroup);
-
-        void SendNewWorld(WorldLocation const &location);
+        void HandleLearnPetSpecialization(WorldPacket& data);
 
         void SendAuthResponse(uint8 code, bool queued, uint32 queuePos = 0);
         void SendClientCacheVersion(uint32 version);
 
-        rbac::RBACData* GetRBACData();
-        bool HasPermission(uint32 permissionId);
-        void LoadPermissions();
-        void InvalidateRBACData(); // Used to force LoadPermissions at next HasPermission check
-
         AccountTypes GetSecurity() const { return _security; }
+        bool IsPremium() const { return _ispremium; }
         uint32 GetAccountId() const { return _accountId; }
         Player* GetPlayer() const { return _player; }
-        std::string const& GetPlayerName() const;
-        std::string GetPlayerInfo() const;
-
+        std::string GetPlayerName(bool simple = true) const;
         uint32 GetGuidLow() const;
         void SetSecurity(AccountTypes security) { _security = security; }
         std::string const& GetRemoteAddress() { return m_Address; }
         void SetPlayer(Player* player);
         uint8 Expansion() const { return m_expansion; }
 
-        void InitWarden(BigNumber* k, std::string const& os);
+        void InitWarden(BigNumber* k, std::string os);
 
         /// Session in auth.queue currently
         void SetInQueue(bool state) { m_inQueue = state; }
@@ -286,7 +297,7 @@ class WorldSession
             return (_logoutTime > 0 && currTime >= _logoutTime + 20);
         }
 
-        void LogoutPlayer(bool save);
+        void LogoutPlayer(bool Save);
         void KickPlayer();
 
         void QueuePacket(WorldPacket* new_packet);
@@ -295,45 +306,43 @@ class WorldSession
         /// Handle the authentication waiting queue (to be completed)
         void SendAuthWaitQue(uint32 position);
 
+        //void SendTestCreatureQueryOpcode(uint32 entry, uint64 guid, uint32 testvalue);
         void SendNameQueryOpcode(ObjectGuid guid);
-        void SendPlayerDeclinedNamesResult(ObjectGuid guid, uint32 result);
-        void SendRealmNameQueryOpcode(uint32 realmId);
 
         void SendTrainerList(uint64 guid);
-        void SendTrainerList(uint64 guid, std::string const& strTitle);
-
-        // Currency
-        void HandleSetCurrencyFlags(WorldPacket& recvData);
-
+        void SendTrainerList(uint64 guid, const std::string& strTitle);
         void SendListInventory(uint64 guid);
-        void SendShowBank(ObjectGuid guid);
+        void SendShowBank(uint64 guid);
         void SendTabardVendorActivate(uint64 guid);
         void SendSpiritResurrect();
         void SendBindPoint(Creature* npc);
 
         void SendAttackStop(Unit const* enemy);
 
-        void SendBattleGroundList(uint64 guid, BattlegroundTypeId bgTypeId = BATTLEGROUND_RB);
+        void SendBattleGroundList(uint64 guid, BattlegroundTypeId bgTypeId);
 
         void SendTradeStatus(TradeStatus status);
         void SendUpdateTrade(bool trader_data = true);
         void SendCancelTrade();
 
-        void SendPetitionQueryOpcode(ObjectGuid petitionguid);
+        void SendPetitionQueryOpcode(uint64 petitionguid);
 
         // Spell
         void HandleClientCastFlags(WorldPacket& recvPacket, uint8 castFlags, SpellCastTargets & targets);
 
         // Pet
-        void SendPetNameQuery(ObjectGuid guid, uint64 petNumber);
+        void SendPetNameQuery(ObjectGuid petnumber, ObjectGuid petguid);
         void SendStablePet(uint64 guid);
         void SendStablePetCallback(PreparedQueryResult result, uint64 guid);
         void SendStableResult(uint8 guid);
         bool CheckStableMaster(uint64 guid);
 
+        // Battle pet
+        void HandleSummonBattlePet(WorldPacket& recvData);
+
         // Account Data
         AccountData* GetAccountData(AccountDataType type) { return &m_accountData[type]; }
-        void SetAccountData(AccountDataType type, time_t tm, std::string const& data);
+        void SetAccountData(AccountDataType type, time_t tm, std::string data);
         void SendAccountDataTimes(uint32 mask);
         void LoadGlobalAccountData();
         void LoadAccountData(PreparedQueryResult result, uint32 mask);
@@ -359,8 +368,8 @@ class WorldSession
         void SendAuctionOwnerNotification(AuctionEntry* auction);
         void SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId);
 
-        //Item Enchantment
-        void SendEnchantmentLog(uint64 target, uint64 caster, uint32 itemId, uint32 enchantId);
+        // Item Enchantment
+        void SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemID, uint32 enchantID, uint8 slotID);
         void SendItemEnchantTimeUpdate(uint64 Playerguid, uint64 Itemguid, uint32 slot, uint32 Duration);
 
         //Taxi
@@ -371,11 +380,12 @@ class WorldSession
         void SendDiscoverNewTaxiNode(uint32 nodeid);
 
         // Guild/Arena Team
-        void SendArenaTeamCommandResult(uint32 team_action, std::string const& team, std::string const& player, uint32 error_id = 0);
         void SendNotInArenaTeamPacket(uint8 type);
-        void SendPetitionShowList(ObjectGuid guid);
+        void SendPetitionShowList(uint64 guid);
+        void SendPetitionSignResult(ObjectGuid ownerGuid, ObjectGuid petitionGuid, uint8 result);
+        void SendAlreadySigned(ObjectGuid playerGuid);
 
-        void BuildPartyMemberStatsChangedPacket(Player* player, WorldPacket* data);
+        void BuildPartyMemberStatsChangedPacket(Player* player, WorldPacket* data, uint32 mask, ObjectGuid guid, bool full = false);
 
         void DoLootRelease(uint64 lguid);
 
@@ -392,10 +402,10 @@ class WorldSession
         void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
         uint32 getDialogStatus(Player* player, Object* questgiver, uint32 defstatus);
 
-        ACE_Atomic_Op<ACE_Thread_Mutex, time_t> m_timeOutTime;
+        time_t m_timeOutTime;
         void UpdateTimeOutTime(uint32 diff)
         {
-            if (time_t(diff) > m_timeOutTime.value())
+            if (time_t(diff) > m_timeOutTime)
                 m_timeOutTime = 0;
             else
                 m_timeOutTime -= diff;
@@ -407,18 +417,36 @@ class WorldSession
         uint32 GetRecruiterId() const { return recruiterId; }
         bool IsARecruiter() const { return isRecruiter; }
 
-        z_stream_s* GetCompressionStream() { return _compressionStream; }
+        // Antispam Functions
+        void UpdateAntispamTimer(uint32 diff)
+        {
+            if (m_uiAntispamMailSentTimer <= diff)
+            {
+                m_uiAntispamMailSentTimer = sWorld->getIntConfig(CONFIG_ANTISPAM_MAIL_TIMER);
+                m_uiAntispamMailSentCount = 0;
+            }
+            else
+                m_uiAntispamMailSentTimer -= diff;
+        }
 
-        // Trial Accounts
-        uint32 GetTrialLeftTime() { return m_trialTime; }
-        void SetTrialLeftTime(uint32 time) { m_trialTime = time; }
-        bool IsTrialAccount() const { return m_isTrialAccount; }
-        void SetTrialAccount(bool value) { m_isTrialAccount = value; }
+        bool UpdateAntispamCount()
+        {
+            if (!sWorld->getBoolConfig(CONFIG_ANTISPAM_ENABLED))
+                return true;
+
+            m_uiAntispamMailSentCount++;
+            if (m_uiAntispamMailSentCount > sWorld->getIntConfig(CONFIG_ANTISPAM_MAIL_COUNT))
+                return false;
+            return true;
+        }
+
+        z_stream_s* GetCompressionStream() { return _compressionStream; }
 
     public:                                                 // opcodes handlers
 
         void Handle_NULL(WorldPacket& recvPacket);          // not used
         void Handle_EarlyProccess(WorldPacket& recvPacket); // just mark packets processed in WorldSocket::OnRead
+        void Handle_ServerSide(WorldPacket& recvPacket);    // sever side only, can't be accepted from client
         void Handle_Deprecated(WorldPacket& recvPacket);    // never used anymore by client
 
         void HandleCharEnumOpcode(WorldPacket& recvPacket);
@@ -428,11 +456,11 @@ class WorldSession
         void HandlePlayerLoginOpcode(WorldPacket& recvPacket);
         void HandleLoadScreenOpcode(WorldPacket& recvPacket);
         void HandleCharEnum(PreparedQueryResult result);
-        void HandlePlayerLogin(LoginQueryHolder * holder);
+        void HandlePlayerLogin(LoginQueryHolder * holder, PreparedQueryResult accountResult);
         void HandleCharFactionOrRaceChange(WorldPacket& recvData);
         void HandleRandomizeCharNameOpcode(WorldPacket& recvData);
         void HandleReorderCharacters(WorldPacket& recvData);
-        void HandleOpeningCinematic(WorldPacket& recvData);
+
 
         // played time
         void HandlePlayedTime(WorldPacket& recvPacket);
@@ -448,6 +476,7 @@ class WorldSession
 
         // new party stats
         void HandleInspectHonorStatsOpcode(WorldPacket& recvPacket);
+        void HandleInspectRatedBGStatsOpcode(WorldPacket& recvPacket);
 
         void HandleMoveWaterWalkAck(WorldPacket& recvPacket);
         void HandleFeatherFallAck(WorldPacket& recvData);
@@ -455,8 +484,11 @@ class WorldSession
         void HandleMoveHoverAck(WorldPacket& recvData);
 
         void HandleMountSpecialAnimOpcode(WorldPacket& recvdata);
+        
+        void HandleClientReportError(WorldPacket& recvData);
 
         // character view
+        void HandleShowAccountAchievement(WorldPacket& recvData);
         void HandleShowingHelmOpcode(WorldPacket& recvData);
         void HandleShowingCloakOpcode(WorldPacket& recvData);
 
@@ -468,14 +500,12 @@ class WorldSession
 
         void HandleMoveTeleportAck(WorldPacket& recvPacket);
         void HandleForceSpeedChangeAck(WorldPacket& recvData);
-        void HandleSetCollisionHeightAck(WorldPacket& recvPacket);
 
         void HandlePingOpcode(WorldPacket& recvPacket);
         void HandleAuthSessionOpcode(WorldPacket& recvPacket);
         void HandleRepopRequestOpcode(WorldPacket& recvPacket);
         void HandleAutostoreLootItemOpcode(WorldPacket& recvPacket);
         void HandleLootMoneyOpcode(WorldPacket& recvPacket);
-        void HandleLootCurrencyOpcode(WorldPacket& recvPacket);
         void HandleLootOpcode(WorldPacket& recvPacket);
         void HandleLootReleaseOpcode(WorldPacket& recvPacket);
         void HandleLootMasterGiveOpcode(WorldPacket& recvPacket);
@@ -489,6 +519,7 @@ class WorldSession
         void HandleGMTicketUpdateOpcode(WorldPacket& recvPacket);
         void HandleGMTicketDeleteOpcode(WorldPacket& recvPacket);
         void HandleGMTicketGetTicketOpcode(WorldPacket& recvPacket);
+        void HandleGMTicketGetWebTicketOpcode(WorldPacket& recvPacket);
         void HandleGMTicketSystemStatusOpcode(WorldPacket& recvPacket);
         void HandleGMSurveySubmit(WorldPacket& recvPacket);
         void HandleReportLag(WorldPacket& recvPacket);
@@ -502,18 +533,21 @@ class WorldSession
         void HandleEmoteOpcode(WorldPacket& recvPacket);
         void HandleContactListOpcode(WorldPacket& recvPacket);
         void HandleAddFriendOpcode(WorldPacket& recvPacket);
-        void HandleAddFriendOpcodeCallBack(PreparedQueryResult result, std::string const& friendNote);
+        void HandleAddFriendOpcodeCallBack(PreparedQueryResult result, std::string friendNote);
         void HandleDelFriendOpcode(WorldPacket& recvPacket);
         void HandleAddIgnoreOpcode(WorldPacket& recvPacket);
         void HandleAddIgnoreOpcodeCallBack(PreparedQueryResult result);
         void HandleDelIgnoreOpcode(WorldPacket& recvPacket);
         void HandleSetContactNotesOpcode(WorldPacket& recvPacket);
-        void HandleBugOpcode(WorldPacket& recvPacket);
+        void HandleReportBugOpcode(WorldPacket& recvPacket);
+        void HandleReportSuggestionOpcode(WorldPacket& recvPacket);
+
+        void HandleSendDuelRequest(WorldPacket& recvPacket);
 
         void HandleAreaTriggerOpcode(WorldPacket& recvPacket);
 
         void HandleSetFactionAtWar(WorldPacket& recvData);
-        void HandleUnsetFactionAtWar(WorldPacket& recvData);
+        void HandleUnSetFactionAtWar(WorldPacket& recvData);
         void HandleSetFactionCheat(WorldPacket& recvData);
         void HandleSetWatchedFactionOpcode(WorldPacket& recvData);
         void HandleSetFactionInactiveOpcode(WorldPacket& recvData);
@@ -527,7 +561,6 @@ class WorldSession
         void HandleGameobjectReportUse(WorldPacket& recvPacket);
 
         void HandleNameQueryOpcode(WorldPacket& recvPacket);
-        void HandleRealmNameQueryOpcode(WorldPacket& recvPacket);
 
         void HandleQueryTimeOpcode(WorldPacket& recvPacket);
 
@@ -551,30 +584,33 @@ class WorldSession
         void HandleBattlefieldStatusOpcode(WorldPacket& recvData);
         void HandleBattleMasterHelloOpcode(WorldPacket& recvData);
 
+        void SendGroupInviteNotification(const std::string& inviterName, bool inGroup);
+
         void HandleGroupInviteOpcode(WorldPacket& recvPacket);
         //void HandleGroupCancelOpcode(WorldPacket& recvPacket);
         void HandleGroupInviteResponseOpcode(WorldPacket& recvPacket);
         void HandleGroupUninviteOpcode(WorldPacket& recvPacket);
         void HandleGroupUninviteGuidOpcode(WorldPacket& recvPacket);
         void HandleGroupSetLeaderOpcode(WorldPacket& recvPacket);
-        void HandleGroupSetEveryoneIsAssistant(WorldPacket& recvData);
         void HandleGroupSetRolesOpcode(WorldPacket& recvData);
         void HandleGroupDisbandOpcode(WorldPacket& recvPacket);
-        void HandleSetLootSpecialization(WorldPacket& recvData);
         void HandleOptOutOfLootOpcode(WorldPacket& recvData);
         void HandleLootMethodOpcode(WorldPacket& recvPacket);
         void HandleLootRoll(WorldPacket& recvData);
+        void HandleLootMasterAskForRoll(WorldPacket& recvData);
         void HandleRequestPartyMemberStatsOpcode(WorldPacket& recvData);
+        void HandleRaidConfirmReadyCheck(WorldPacket& recvData);
+        void HandleRaidLeaderReadyCheck(WorldPacket& recvData);
         void HandleRaidTargetUpdateOpcode(WorldPacket& recvData);
-        void HandleRaidReadyCheckOpcode(WorldPacket& recvData);
-        void HandleRaidReadyCheckConfirmOpcode(WorldPacket& recvData);
-        void HandleRaidReadyCheckFinishedOpcode(WorldPacket& recvData);
         void HandleGroupRaidConvertOpcode(WorldPacket& recvData);
         void HandleGroupChangeSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupSwapSubGroupOpcode(WorldPacket& recvData);
         void HandleGroupAssistantLeaderOpcode(WorldPacket& recvData);
-        void HandleGroupClearRaidMarkerOpcode(WorldPacket& recvData);
+        void HandleGroupEveryoneIsAssistantOpcode(WorldPacket& recvData);
         void HandlePartyAssignmentOpcode(WorldPacket& recvData);
+        void HandleRolePollBegin(WorldPacket& recvData);
+        void HandleRequestJoinUpdates(WorldPacket& recvData);
+        void HandleClearRaidMarkerOpcode(WorldPacket& recvData);
 
         void HandlePetitionBuyOpcode(WorldPacket& recvData);
         void HandlePetitionShowSignOpcode(WorldPacket& recvData);
@@ -588,22 +624,22 @@ class WorldSession
         void HandleGuildQueryOpcode(WorldPacket& recvPacket);
         void HandleGuildInviteOpcode(WorldPacket& recvPacket);
         void HandleGuildRemoveOpcode(WorldPacket& recvPacket);
+        void HandleGuildMasterReplaceOpcode(WorldPacket& recvPacket);
         void HandleGuildAcceptOpcode(WorldPacket& recvPacket);
         void HandleGuildDeclineOpcode(WorldPacket& recvPacket);
         void HandleGuildEventLogQueryOpcode(WorldPacket& recvPacket);
         void HandleGuildRosterOpcode(WorldPacket& recvPacket);
         void HandleGuildRewardsQueryOpcode(WorldPacket& recvPacket);
-        void HandleGuildPromoteOpcode(WorldPacket& recvPacket);
-        void HandleGuildDemoteOpcode(WorldPacket& recvPacket);
         void HandleGuildAssignRankOpcode(WorldPacket& recvPacket);
         void HandleGuildLeaveOpcode(WorldPacket& recvPacket);
         void HandleGuildDisbandOpcode(WorldPacket& recvPacket);
-        void HandleGuildSetGuildMaster(WorldPacket& recvPacket);
+        void HandleGuildLeaderOpcode(WorldPacket& recvPacket);
         void HandleGuildMOTDOpcode(WorldPacket& recvPacket);
         void HandleGuildNewsUpdateStickyOpcode(WorldPacket& recvPacket);
         void HandleGuildSetNoteOpcode(WorldPacket& recvPacket);
         void HandleGuildQueryRanksOpcode(WorldPacket& recvPacket);
         void HandleGuildQueryNewsOpcode(WorldPacket& recvPacket);
+        void HandleSwapRanks(WorldPacket& recvPacket);
         void HandleGuildSetRankPermissionsOpcode(WorldPacket& recvPacket);
         void HandleGuildAddRankOpcode(WorldPacket& recvPacket);
         void HandleGuildDelRankOpcode(WorldPacket& recvPacket);
@@ -612,6 +648,8 @@ class WorldSession
         void HandleGuildRequestPartyState(WorldPacket& recvPacket);
         void HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket);
         void HandleAutoDeclineGuildInvites(WorldPacket& recvPacket);
+        void HandleGuildRequestChallengeUpdate(WorldPacket& recvPacket);
+        void HandleGuildRequestGuildRecipes(WorldPacket& recvPacket);
 
         void HandleGuildFinderAddRecruit(WorldPacket& recvPacket);
         void HandleGuildFinderBrowse(WorldPacket& recvPacket);
@@ -643,14 +681,12 @@ class WorldSession
         void HandleListStabledPetsOpcode(WorldPacket& recvPacket);
         void HandleStableSetPetSlot(WorldPacket& recvPacket);
         void HandleStableSetPetSlotCallback(PreparedQueryResult result, uint32 petId);
-        void SendTrainerBuyFailed(uint64 guid, uint32 spellId, uint32 reason);
+        void SendTrainerService(uint64 guid, uint32 spellId, uint32 trainState);
 
         void HandleDuelResponseOpcode(WorldPacket& recvPacket);
-        void HandleDuelProposedOpcode(WorldPacket& recvPacket);
 
         void HandleAcceptTradeOpcode(WorldPacket& recvPacket);
         void HandleBeginTradeOpcode(WorldPacket& recvPacket);
-        void HandleBusyTradeOpcode(WorldPacket& recvPacket);
         void HandleCancelTradeOpcode(WorldPacket& recvPacket);
         void HandleClearTradeItemOpcode(WorldPacket& recvPacket);
         void HandleIgnoreTradeOpcode(WorldPacket& recvPacket);
@@ -685,6 +721,9 @@ class WorldSession
         void HandleSwapInvItemOpcode(WorldPacket& recvPacket);
         void HandleDestroyItemOpcode(WorldPacket& recvPacket);
         void HandleAutoEquipItemOpcode(WorldPacket& recvPacket);
+        void SendItemDb2Reply(uint32 entry);
+        void SendItemSparseDb2Reply(uint32 entry);
+        void SendBroadcastTextDb2Reply(uint32 entry);
         void HandleSellItemOpcode(WorldPacket& recvPacket);
         void HandleBuyItemInSlotOpcode(WorldPacket& recvPacket);
         void HandleBuyItemOpcode(WorldPacket& recvPacket);
@@ -710,9 +749,12 @@ class WorldSession
         void HandleCancelGrowthAuraOpcode(WorldPacket& recvPacket);
         void HandleCancelAutoRepeatSpellOpcode(WorldPacket& recvPacket);
 
-        void HandleLearnTalentOpcode(WorldPacket& recvPacket);
         void HandleTalentWipeConfirmOpcode(WorldPacket& recvPacket);
         void HandleUnlearnSkillOpcode(WorldPacket& recvPacket);
+        void HandleSetSpecialization(WorldPacket& recvPacket);
+        void HandleLearnTalents(WorldPacket& recvPacket);
+
+        void HandleArcheologyRequestHistory(WorldPacket& recvPacket);
 
         void HandleQuestgiverStatusQueryOpcode(WorldPacket& recvPacket);
         void HandleQuestgiverStatusMultipleQuery(WorldPacket& recvPacket);
@@ -722,8 +764,6 @@ class WorldSession
         void HandleQuestgiverChooseRewardOpcode(WorldPacket& recvPacket);
         void HandleQuestgiverRequestRewardOpcode(WorldPacket& recvPacket);
         void HandleQuestQueryOpcode(WorldPacket& recvPacket);
-        void HandleQuestgiverCancel(WorldPacket& recvData);
-        void HandleQuestLogSwapQuest(WorldPacket& recvData);
         void HandleQuestLogRemoveQuest(WorldPacket& recvData);
         void HandleQuestConfirmAccept(WorldPacket& recvData);
         void HandleQuestgiverCompleteQuest(WorldPacket& recvData);
@@ -731,10 +771,11 @@ class WorldSession
         void HandlePushQuestToParty(WorldPacket& recvPacket);
         void HandleQuestPushResult(WorldPacket& recvPacket);
 
+        bool processChatmessageFurtherAfterSecurityChecks(std::string&, uint32);
         void HandleMessagechatOpcode(WorldPacket& recvPacket);
         void HandleAddonMessagechatOpcode(WorldPacket& recvPacket);
-        void SendPlayerNotFoundNotice(std::string const& name);
-        void SendPlayerAmbiguousNotice(std::string const& name);
+        void SendPlayerNotFoundNotice(std::string name);
+        void SendPlayerAmbiguousNotice(std::string name);
         void SendWrongFactionNotice();
         void SendChatRestrictedNotice(ChatRestrictionType restriction);
         void HandleTextEmoteOpcode(WorldPacket& recvPacket);
@@ -743,9 +784,12 @@ class WorldSession
         void HandleUnregisterAddonPrefixesOpcode(WorldPacket& recvPacket);
         void HandleAddonRegisteredPrefixesOpcode(WorldPacket& recvPacket);
 
+        void HandleRequestBattlePetJournal(WorldPacket& recvPacket);
+        void HandleRequestGmTicket(WorldPacket& recvPakcet);
         void HandleReclaimCorpseOpcode(WorldPacket& recvPacket);
         void HandleCorpseQueryOpcode(WorldPacket& recvPacket);
         void HandleCemeteryListOpcode(WorldPacket& recvData);
+        void HandleForcedReactionsOpcode(WorldPacket& recvData);
         void HandleCorpseMapPositionQuery(WorldPacket& recvPacket);
         void HandleResurrectResponseOpcode(WorldPacket& recvPacket);
         void HandleSummonResponseOpcode(WorldPacket& recvData);
@@ -767,6 +811,7 @@ class WorldSession
         void HandleChannelAnnouncements(WorldPacket& recvPacket);
         void HandleChannelModerate(WorldPacket& recvPacket);
         void HandleChannelDeclineInvite(WorldPacket& recvPacket);
+        void HandleChannelDisplayListQuery(WorldPacket& recvPacket);
         void HandleGetChannelMemberCount(WorldPacket& recvPacket);
         void HandleSetChannelWatch(WorldPacket& recvPacket);
 
@@ -788,16 +833,14 @@ class WorldSession
         void HandlePetAbandon(WorldPacket& recvData);
         void HandlePetRename(WorldPacket& recvData);
         void HandlePetCancelAuraOpcode(WorldPacket& recvPacket);
-        void HandlePetSpellAutocastOpcode(WorldPacket& recvPacket);
         void HandlePetCastSpellOpcode(WorldPacket& recvPacket);
-        void HandleSetPetSpecialization(WorldPacket& recvPacket);
 
         void HandleSetActionBarToggles(WorldPacket& recvData);
 
         void HandleCharRenameOpcode(WorldPacket& recvData);
-        void HandleChangePlayerNameOpcodeCallBack(PreparedQueryResult result, std::string const& newName);
+        void HandleChangePlayerNameOpcodeCallBack(PreparedQueryResult result, std::string newName);
         void HandleSetPlayerDeclinedNames(WorldPacket& recvData);
-        void HandeSetTalentSpecialization(WorldPacket& recvData);
+        void SendPlayerDeclinedNamesResult(ObjectGuid guid, uint32 result);
 
         void HandleTotemDestroyed(WorldPacket& recvData);
         void HandleDismissCritter(WorldPacket& recvData);
@@ -809,10 +852,14 @@ class WorldSession
         void HandlePVPLogDataOpcode(WorldPacket& recvData);
         void HandleBattleFieldPortOpcode(WorldPacket& recvData);
         void HandleBattlefieldListOpcode(WorldPacket& recvData);
-        void HandleBattlefieldLeaveOpcode(WorldPacket& recvData);
+        void HandleLeaveBattlefieldOpcode(WorldPacket& recvData);
+        void HandleLeaveBattlefieldAtEndOpcode(WorldPacket& recvData);
         void HandleBattlemasterJoinArena(WorldPacket& recvData);
+        void HandleBattlemasterJoinRated(WorldPacket& recvData);
+        void HandleQueryBattlefieldState(WorldPacket& recvData);
+
         void HandleReportPvPAFK(WorldPacket& recvData);
-        void HandleRequestRatedBgInfo(WorldPacket& recvData);
+        void HandleRequestRatedBgInfo(WorldPacket & recvData);
         void HandleRequestPvpOptions(WorldPacket& recvData);
         void HandleRequestPvpReward(WorldPacket& recvData);
         void HandleRequestRatedBgStats(WorldPacket& recvData);
@@ -824,53 +871,66 @@ class WorldSession
         void HandleFarSightOpcode(WorldPacket& recvData);
         void HandleSetDungeonDifficultyOpcode(WorldPacket& recvData);
         void HandleSetRaidDifficultyOpcode(WorldPacket& recvData);
-        void HandleChangePlayerDifficulty(WorldPacket& recvData);
         void HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData);
         void HandleSetTitleOpcode(WorldPacket& recvData);
         void HandleRealmSplitOpcode(WorldPacket& recvData);
+        void HandleRealmQueryNameOpcode(WorldPacket& recvData);
         void HandleTimeSyncResp(WorldPacket& recvData);
         void HandleWhoisOpcode(WorldPacket& recvData);
         void HandleResetInstancesOpcode(WorldPacket& recvData);
+        void HandleResetChallengeModeOpcode(WorldPacket& recvData);
         void HandleHearthAndResurrect(WorldPacket& recvData);
         void HandleInstanceLockResponse(WorldPacket& recvPacket);
 
         // Battlefield
-        void SendBfInvitePlayerToWar(uint64 guid, uint32 zoneId, uint32 time);
+        void SendBfInvitePlayerToWar(uint64 guid,uint32 ZoneId,uint32 time);
         void SendBfInvitePlayerToQueue(uint64 guid);
-        void SendBfQueueInviteResponse(uint64 guid, uint32 zoneId, bool canQueue = true, bool full = false);
+        void SendBfQueueInviteResponse(uint64 guid,uint32 ZoneId, bool CanQueue = true, bool Full = false);
         void SendBfEntered(uint64 guid);
         void SendBfLeaveMessage(uint64 guid, BFLeaveReason reason = BF_LEAVE_REASON_EXITED);
-        void HandleBfQueueInviteResponse(WorldPacket& recvData);
-        void HandleBfEntryInviteResponse(WorldPacket& recvData);
-        void HandleBfExitRequest(WorldPacket& recvData);
+        void HandleBfQueueInviteResponse(WorldPacket &recv_data);
+        void HandleBfEntryInviteResponse(WorldPacket &recv_data);
+        void HandleBfExitQueueRequest(WorldPacket &recv_data);
+        void HandleBfExitRequest(WorldPacket &recv_data);
+        void HandleBfQueueRequest(WorldPacket &recv_data);
 
         // Looking for Dungeon/Raid
         void HandleLfgSetCommentOpcode(WorldPacket& recvData);
-        void HandleLfgGetLockInfoOpcode(WorldPacket& recvData);
-        void SendLfgPlayerLockInfo();
-        void SendLfgPartyLockInfo();
+        void HandleLfgLockInfoRequestOpcode(WorldPacket& recvData);
         void HandleLfgJoinOpcode(WorldPacket& recvData);
         void HandleLfgLeaveOpcode(WorldPacket& recvData);
         void HandleLfgSetRolesOpcode(WorldPacket& recvData);
         void HandleLfgProposalResultOpcode(WorldPacket& recvData);
         void HandleLfgSetBootVoteOpcode(WorldPacket& recvData);
         void HandleLfgTeleportOpcode(WorldPacket& recvData);
-        void HandleLfrJoinOpcode(WorldPacket& recvData);
+        void HandleLfrSearchOpcode(WorldPacket& recvData);
         void HandleLfrLeaveOpcode(WorldPacket& recvData);
         void HandleLfgGetStatus(WorldPacket& recvData);
 
-        void SendLfgUpdateStatus(lfg::LfgUpdateData const& updateData, bool party);
-        void SendLfgRoleChosen(uint64 guid, uint8 roles);
-        void SendLfgRoleCheckUpdate(lfg::LfgRoleCheck const& pRoleCheck);
-        void SendLfgLfrList(bool update);
-        void SendLfgJoinResult(lfg::LfgJoinResultData const& joinData);
-        void SendLfgQueueStatus(lfg::LfgQueueStatusData const& queueData);
-        void SendLfgPlayerReward(lfg::LfgPlayerRewardData const& lfgPlayerRewardData);
-        void SendLfgBootProposalUpdate(lfg::LfgPlayerBoot const& boot);
-        void SendLfgUpdateProposal(lfg::LfgProposal const& proposal);
+        void SendLfgRoleChosen(ObjectGuid guid, uint8 roles);
+        void SendLfgRoleCheckUpdate(const LfgRoleCheck* pRoleCheck);
+        void SendLfgUpdateSearch(bool update);
+        void SendLfgJoinResult(uint64 guid_, const LfgJoinResultData& joinData);
+        void SendLfgQueueStatus(uint32 dungeon, int32 waitTime, int32 avgWaitTime, int32 waitTimeTanks, int32 waitTimeHealer, int32 waitTimeDps, uint32 queuedTime, uint8 tanks, uint8 healers, uint8 dps);
+        void SendLfgPlayerReward(uint32 rdungeonEntry, uint32 sdungeonEntry, uint8 done, const LfgReward* reward, const Quest *qRew);
+        void SendLfgBootPlayer(const LfgPlayerBoot* pBoot);
+        void SendLfgUpdateProposal(uint32 proposalId, const LfgProposal *pProp);
         void SendLfgDisabled();
         void SendLfgOfferContinue(uint32 dungeonEntry);
         void SendLfgTeleportError(uint8 err);
+
+        // Arena Team
+        void HandleInspectArenaTeamsOpcode(WorldPacket& recvData);
+        void HandleArenaTeamQueryOpcode(WorldPacket& recvData);
+        void HandleArenaTeamRosterOpcode(WorldPacket& recvData);
+        void HandleArenaTeamInviteOpcode(WorldPacket& recvData);
+        void HandleArenaTeamAcceptOpcode(WorldPacket& recvData);
+        void HandleArenaTeamCreateOpcode(WorldPacket& recvData);
+        void HandleArenaTeamDeclineOpcode(WorldPacket& recvData);
+        void HandleArenaTeamLeaveOpcode(WorldPacket& recvData);
+        void HandleArenaTeamRemoveOpcode(WorldPacket& recvData);
+        void HandleArenaTeamDisbandOpcode(WorldPacket& recvData);
+        void HandleArenaTeamLeaderOpcode(WorldPacket& recvData);
 
         void HandleAreaSpiritHealerQueryOpcode(WorldPacket& recvData);
         void HandleAreaSpiritHealerQueueOpcode(WorldPacket& recvData);
@@ -878,6 +938,9 @@ class WorldSession
         void HandleSelfResOpcode(WorldPacket& recvData);
         void HandleComplainOpcode(WorldPacket& recvData);
         void HandleRequestPetInfoOpcode(WorldPacket& recvData);
+        
+        // Shop
+        void HandleShopDataRequest(WorldPacket& recvData);
 
         // Socket gem
         void HandleSocketOpcode(WorldPacket& recvData);
@@ -916,6 +979,7 @@ class WorldSession
         void HandleCalendarGetCalendar(WorldPacket& recvData);
         void HandleCalendarGetEvent(WorldPacket& recvData);
         void HandleCalendarGuildFilter(WorldPacket& recvData);
+        void HandleCalendarArenaTeam(WorldPacket& recvData);
         void HandleCalendarAddEvent(WorldPacket& recvData);
         void HandleCalendarUpdateEvent(WorldPacket& recvData);
         void HandleCalendarRemoveEvent(WorldPacket& recvData);
@@ -929,9 +993,19 @@ class WorldSession
         void HandleCalendarGetNumPending(WorldPacket& recvData);
         void HandleCalendarEventSignup(WorldPacket& recvData);
 
+        void SendCalendarEvent(CalendarEvent const& calendarEvent, CalendarSendEventType sendEventType);
+        void SendCalendarEventInvite(CalendarInvite const& invite, bool pending);
+        void SendCalendarEventInviteAlert(CalendarEvent const& calendarEvent, CalendarInvite const& calendarInvite);
+        void SendCalendarEventInviteRemove(CalendarInvite const& invite, uint32 flags);
+        void SendCalendarEventInviteRemoveAlert(CalendarEvent const& calendarEvent, CalendarInviteStatus status);
+        void SendCalendarEventRemovedAlert(CalendarEvent const& calendarEvent);
+        void SendCalendarEventUpdateAlert(CalendarEvent const& calendarEvent, CalendarSendEventType sendEventType);
+        void SendCalendarEventStatus(CalendarEvent const& calendarEvent, CalendarInvite const& invite);
+        void SendCalendarEventModeratorStatusAlert(CalendarInvite const& invite);
+        void SendCalendarClearPendingAction();
         void SendCalendarRaidLockout(InstanceSave const* save, bool add);
         void SendCalendarRaidLockoutUpdated(InstanceSave const* save);
-        void HandleSetSavedInstanceExtend(WorldPacket& recvData);
+        void SendCalendarCommandResult(CalendarError err, char const* param = NULL);
 
         // Void Storage
         void HandleVoidStorageUnlock(WorldPacket& recvData);
@@ -951,7 +1025,12 @@ class WorldSession
         void HandleUpgradeItemOpcode(WorldPacket& recvData);
         void SendItemUpgradeResult(bool success);
 
+        // Loot specialization
+        void HandleSetLootSpecialization(WorldPacket& recvData);
+
         // Miscellaneous
+        void HandleTradeInfo (WorldPacket& recvData);
+        void HandleSaveCUFProfiles(WorldPacket& recvData);
         void HandleSpellClick(WorldPacket& recvData);
         void HandleMirrorImageDataRequest(WorldPacket& recvData);
         void HandleAlterAppearance(WorldPacket& recvData);
@@ -966,30 +1045,25 @@ class WorldSession
         void HandleReadyForAccountDataTimes(WorldPacket& recvData);
         void HandleQueryQuestsCompleted(WorldPacket& recvData);
         void HandleQuestPOIQuery(WorldPacket& recvData);
-        void HandleQuestNPCQuery(WorldPacket& recvData);
         void HandleEjectPassenger(WorldPacket& data);
         void HandleEnterPlayerVehicle(WorldPacket& data);
         void HandleUpdateProjectilePosition(WorldPacket& recvPacket);
-        void HandleUpdateMissileTrajectory(WorldPacket& recvPacket);
         void HandleRequestHotfix(WorldPacket& recvPacket);
+        void HandleUpdateMissileTrajectory(WorldPacket& recvPacket);
         void HandleViolenceLevel(WorldPacket& recvPacket);
         void HandleObjectUpdateFailedOpcode(WorldPacket& recvPacket);
-        void HandleRequestCategoryCooldowns(WorldPacket& recvPacket);
-        void HandleSetAllowLowLevelRaid1(WorldPacket& recvData);
-        void HandleSetAllowLowLevelRaid2(WorldPacket& recvData);
-        void HandleResetFactionCheat(WorldPacket& recvData);
-        void HandleRolePollBegin(WorldPacket& recvData);
-        void HandleRequestJoinUpdates(WorldPacket& recvData);
-
-        void SendStreamingMovie();
-
-        void SendBroadcastText(uint32 entry);
-
+        void HandleSetFactionOpcode(WorldPacket& recvPacket);
+        void HandleCategoryCooldownOpcode(WorldPacket& recvPacket);
+        void HandleChangeCurrencyFlags(WorldPacket& recvPacket);
         int32 HandleEnableNagleAlgorithm();
 
-        // Compact Unit Frames (4.x)
-        void HandleSaveCUFProfiles(WorldPacket& recvPacket);
-        void SendLoadCUFProfiles();
+        // Black Market
+        void HandleBlackMarketHello(WorldPacket& recvData);
+        void SendBlackMarketHello(uint64 npcGuid);
+        void HandleBlackMarketRequestItems(WorldPacket& recvData);
+        void SendBlackMarketRequestItemsResult();
+        void HandleBlackMarketBid(WorldPacket& recvData);
+        void SendBlackMarketBidResult(uint32 itemEntry, uint32 auctionId);
 
     private:
         void InitializeQueryCallbackParameters();
@@ -997,6 +1071,7 @@ class WorldSession
 
         PreparedQueryResultFuture _charEnumCallback;
         PreparedQueryResultFuture _addIgnoreCallback;
+        PreparedQueryResultFuture _accountSpellCallback;
 
         QueryCallback<PreparedQueryResult, std::string> _charRenameCallback;
         QueryCallback<PreparedQueryResult, std::string> _addFriendCallback;
@@ -1005,42 +1080,7 @@ class WorldSession
         QueryCallback<PreparedQueryResult, CharacterCreateInfo*, true> _charCreateCallback;
         QueryResultHolderFuture _charLoginCallback;
 
-    friend class World;
-    protected:
-        class DosProtection
-        {
-            friend class World;
-            public:
-                DosProtection(WorldSession* s) : Session(s), _policy((Policy)sWorld->getIntConfig(CONFIG_PACKET_SPOOF_POLICY)) { }
-                bool EvaluateOpcode(WorldPacket& p) const;
-                void AllowOpcode(uint16 opcode, bool allow) { _isOpcodeAllowed[opcode] = allow; }
-            protected:
-                enum Policy
-                {
-                    POLICY_LOG,
-                    POLICY_KICK,
-                    POLICY_BAN,
-                };
-
-                bool IsOpcodeAllowed(uint16 opcode) const
-                {
-                    OpcodeStatusMap::const_iterator itr = _isOpcodeAllowed.find(opcode);
-                    if (itr == _isOpcodeAllowed.end())
-                        return true;    // No presence in the map indicates this is the first time the opcode was sent this session, so allow
-
-                    return itr->second;
-                }
-
-                WorldSession* Session;
-
-            private:
-                typedef UNORDERED_MAP<uint16, bool> OpcodeStatusMap;
-                OpcodeStatusMap _isOpcodeAllowed; // could be bool array, but wouldn't be practical for game versions with non-linear opcodes
-                Policy _policy;
-        } AntiDOS;
-
     private:
-        void _SendNotificationPacket(const char* message);
         // private trade methods
         void moveItems(Item* myItems[], Item* hisItems[]);
 
@@ -1049,14 +1089,14 @@ class WorldSession
         void LogUnprocessedTail(WorldPacket* packet);
 
         // EnumData helpers
-        bool IsLegitCharacterForAccount(uint32 lowGUID)
+        bool CharCanLogin(uint32 lowGUID)
         {
-            return _legitCharacters.find(lowGUID) != _legitCharacters.end();
+            return _allowedCharsToLogin.find(lowGUID) != _allowedCharsToLogin.end();
         }
 
         // this stores the GUIDs of the characters who can login
         // characters who failed on Player::BuildEnumData shouldn't login
-        std::set<uint32> _legitCharacters;
+        std::set<uint32> _allowedCharsToLogin;
 
         uint32 m_GUIDLow;                                   // set loggined or recently logout player (while m_playerRecentlyLogout set)
         Player* _player;
@@ -1066,6 +1106,7 @@ class WorldSession
         AccountTypes _security;
         uint32 _accountId;
         uint8 m_expansion;
+        bool _ispremium;
 
         typedef std::list<AddonInfo> AddonsList;
 
@@ -1092,10 +1133,33 @@ class WorldSession
         bool isRecruiter;
         ACE_Based::LockedQueue<WorldPacket*, ACE_Thread_Mutex> _recvQueue;
         time_t timeLastWhoCommand;
+        time_t timeCharEnumOpcode;
+        time_t timeLastChannelInviteCommand;
+        time_t timeLastChannelPassCommand;
+        time_t timeLastChannelMuteCommand;
+        time_t timeLastChannelBanCommand;
+        time_t timeLastChannelUnbanCommand;
+        time_t timeLastChannelAnnounceCommand;
+        time_t timeLastGroupInviteCommand;
+        time_t timeLastGuildInviteCommand;
+        time_t timeLastChannelModerCommand;
+        time_t timeLastChannelOwnerCommand;
+        time_t timeLastChannelSetownerCommand;
+        time_t timeLastChannelUnmoderCommand;
+        time_t timeLastChannelUnmuteCommand;
+        time_t timeLastChannelKickCommand;
+        time_t timeLastServerCommand;
+        time_t timeLastArenaTeamCommand;
+        time_t timeLastCalendarInvCommand;
+        time_t timeLastChangeSubGroupCommand;
+        time_t timeLastSellItemOpcode;
+        time_t timeLastBuyItemOpcode;
+        time_t timeLastBuyItemSlotOpcode;
+        uint32 m_uiAntispamMailSentCount;
+        uint32 m_uiAntispamMailSentTimer;
+
+        uint8 playerLoginCounter;
         z_stream_s* _compressionStream;
-        rbac::RBACData* _RBACData;
-        bool m_isTrialAccount;
-        uint32 m_trialTime;
 };
 #endif
 /// @}

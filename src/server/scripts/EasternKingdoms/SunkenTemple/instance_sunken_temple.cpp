@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,31 +27,25 @@ EndScriptData */
 #include "InstanceScript.h"
 #include "sunken_temple.h"
 
-enum Gameobject
-{
-    GO_ATALAI_STATUE1           = 148830,
-    GO_ATALAI_STATUE2           = 148831,
-    GO_ATALAI_STATUE3           = 148832,
-    GO_ATALAI_STATUE4           = 148833,
-    GO_ATALAI_STATUE5           = 148834,
-    GO_ATALAI_STATUE6           = 148835,
-    GO_ATALAI_IDOL              = 148836,
-    GO_ATALAI_LIGHT1            = 148883,
-    GO_ATALAI_LIGHT2            = 148937
+#define GO_ATALAI_STATUE1 148830
+#define GO_ATALAI_STATUE2 148831
+#define GO_ATALAI_STATUE3 148832
+#define GO_ATALAI_STATUE4 148833
+#define GO_ATALAI_STATUE5 148834
+#define GO_ATALAI_STATUE6 148835
+#define GO_ATALAI_IDOL 148836
 
-};
+#define GO_ATALAI_LIGHT1 148883
+#define GO_ATALAI_LIGHT2 148937
 
-enum CreatureIds
-{
-    NPC_MALFURION_STORMRAGE     = 15362
-};
+#define NPC_MALFURION_STORMRAGE 15362
 
 class instance_sunken_temple : public InstanceMapScript
 {
 public:
     instance_sunken_temple() : InstanceMapScript("instance_sunken_temple", 109) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_sunken_temple_InstanceMapScript(map);
     }
@@ -81,7 +73,7 @@ public:
         bool s5;
         bool s6;
 
-        void Initialize() OVERRIDE
+        void Initialize()
         {
             GOAtalaiStatue1 = 0;
             GOAtalaiStatue2 = 0;
@@ -101,7 +93,7 @@ public:
             s6 = false;
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
@@ -179,7 +171,7 @@ public:
         void UseStatue(GameObject* go)
         {
             go->SummonGameObject(GO_ATALAI_LIGHT1, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, 0, 0, 0, 0, 0);
-            go->SetUInt32Value(GAMEOBJECT_FIELD_FLAGS, 4);
+            go->SetUInt32Value(GAMEOBJECT_FLAGS, 4);
         }
 
          /*
@@ -195,13 +187,13 @@ public:
          }
          */
 
-         void SetData(uint32 type, uint32 data) OVERRIDE
+         void SetData(uint32 type, uint32 data)
          {
             if (type == EVENT_STATE)
                 State = data;
          }
 
-         uint32 GetData(uint32 type) const OVERRIDE
+         uint32 GetData(uint32 type)
          {
             if (type == EVENT_STATE)
                 return State;

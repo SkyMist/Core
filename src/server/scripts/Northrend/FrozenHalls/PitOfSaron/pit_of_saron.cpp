@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -25,7 +22,7 @@
 #include "pit_of_saron.h"
 #include "Vehicle.h"
 
-enum Spells
+enum eSpells
 {
     SPELL_FIREBALL              = 69583, //Ymirjar Flamebearer
     SPELL_HELLFIRE              = 69586,
@@ -34,36 +31,36 @@ enum Spells
     SPELL_LEAPING_FACE_MAUL     = 69504, // Geist Ambusher
 };
 
-enum Events
+enum eEvents
 {
     // Ymirjar Flamebearer
     EVENT_FIREBALL              = 1,
     EVENT_TACTICAL_BLINK        = 2,
 };
 
-class npc_ymirjar_flamebearer : public CreatureScript
+class mob_ymirjar_flamebearer : public CreatureScript
 {
     public:
-        npc_ymirjar_flamebearer() : CreatureScript("npc_ymirjar_flamebearer") { }
+        mob_ymirjar_flamebearer() : CreatureScript("mob_ymirjar_flamebearer") { }
 
-        struct npc_ymirjar_flamebearerAI: public ScriptedAI
+        struct mob_ymirjar_flamebearerAI: public ScriptedAI
         {
-            npc_ymirjar_flamebearerAI(Creature* creature) : ScriptedAI(creature)
+            mob_ymirjar_flamebearerAI(Creature* creature) : ScriptedAI(creature)
             {
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 _events.ScheduleEvent(EVENT_FIREBALL, 4000);
                 _events.ScheduleEvent(EVENT_TACTICAL_BLINK, 15000);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -100,35 +97,35 @@ class npc_ymirjar_flamebearer : public CreatureScript
             EventMap _events;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_ymirjar_flamebearerAI(creature);
+            return new mob_ymirjar_flamebearerAI(creature);
         }
 };
 
-class npc_iceborn_protodrake : public CreatureScript
+class mob_iceborn_protodrake : public CreatureScript
 {
     public:
-        npc_iceborn_protodrake() : CreatureScript("npc_iceborn_protodrake") { }
+        mob_iceborn_protodrake() : CreatureScript("mob_iceborn_protodrake") { }
 
-        struct npc_iceborn_protodrakeAI: public ScriptedAI
+        struct mob_iceborn_protodrakeAI: public ScriptedAI
         {
-            npc_iceborn_protodrakeAI(Creature* creature) : ScriptedAI(creature), _vehicle(creature->GetVehicleKit())
+            mob_iceborn_protodrakeAI(Creature* creature) : ScriptedAI(creature), _vehicle(creature->GetVehicleKit())
             {
                 ASSERT(_vehicle);
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _frostBreathCooldown = 5000;
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 _vehicle->RemoveAllPassengers();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -149,29 +146,29 @@ class npc_iceborn_protodrake : public CreatureScript
             uint32 _frostBreathCooldown;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_iceborn_protodrakeAI(creature);
+            return new mob_iceborn_protodrakeAI(creature);
         }
 };
 
-class npc_geist_ambusher : public CreatureScript
+class mob_geist_ambusher : public CreatureScript
 {
     public:
-        npc_geist_ambusher() : CreatureScript("npc_geist_ambusher") { }
+        mob_geist_ambusher() : CreatureScript("mob_geist_ambusher") { }
 
-        struct npc_geist_ambusherAI: public ScriptedAI
+        struct mob_geist_ambusherAI: public ScriptedAI
         {
-            npc_geist_ambusherAI(Creature* creature) : ScriptedAI(creature)
+            mob_geist_ambusherAI(Creature* creature) : ScriptedAI(creature)
             {
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 _leapingFaceMaulCooldown = 9000;
             }
 
-            void EnterCombat(Unit* who) OVERRIDE
+            void EnterCombat(Unit* who)
             {
                 if (who->GetTypeId() != TYPEID_PLAYER)
                     return;
@@ -181,7 +178,7 @@ class npc_geist_ambusher : public CreatureScript
                     DoCast(who, SPELL_LEAPING_FACE_MAUL);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -202,22 +199,22 @@ class npc_geist_ambusher : public CreatureScript
             uint32 _leapingFaceMaulCooldown;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_geist_ambusherAI(creature);
+            return new mob_geist_ambusherAI(creature);
         }
 };
 
-class spell_trash_npc_glacial_strike : public SpellScriptLoader
+class spell_trash_mob_glacial_strike : public SpellScriptLoader
 {
     public:
-        spell_trash_npc_glacial_strike() : SpellScriptLoader("spell_trash_npc_glacial_strike") { }
+        spell_trash_mob_glacial_strike() : SpellScriptLoader("spell_trash_mob_glacial_strike") { }
 
-        class spell_trash_npc_glacial_strike_AuraScript : public AuraScript
+        class spell_trash_mob_glacial_strike_AuraScript : public AuraScript
         {
-            PrepareAuraScript(spell_trash_npc_glacial_strike_AuraScript);
+            PrepareAuraScript(spell_trash_mob_glacial_strike_AuraScript);
 
-            void PeriodicTick(AuraEffect const* /*aurEff*/)
+            void PeriodicTick(constAuraEffectPtr /*aurEff*/)
             {
                 if (GetTarget()->IsFullHealth())
                 {
@@ -226,22 +223,22 @@ class spell_trash_npc_glacial_strike : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_trash_npc_glacial_strike_AuraScript::PeriodicTick, EFFECT_2, SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_trash_mob_glacial_strike_AuraScript::PeriodicTick, EFFECT_2, SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const
         {
-            return new spell_trash_npc_glacial_strike_AuraScript();
+            return new spell_trash_mob_glacial_strike_AuraScript();
         }
 };
 
 void AddSC_pit_of_saron()
 {
-    new npc_ymirjar_flamebearer();
-    new npc_iceborn_protodrake();
-    new npc_geist_ambusher();
-    new spell_trash_npc_glacial_strike();
+    new mob_ymirjar_flamebearer();
+    new mob_iceborn_protodrake();
+    new mob_geist_ambusher();
+    new spell_trash_mob_glacial_strike();
 }

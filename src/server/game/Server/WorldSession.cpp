@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -23,11 +22,8 @@
 
 #include "WorldSocket.h"                                    // must be first to make ACE happy with ACE includes in it
 #include <zlib.h>
-#include "Config.h"
 #include "Common.h"
 #include "DatabaseEnv.h"
-#include "AccountMgr.h"
-#include "AddonMgr.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
@@ -39,7 +35,6 @@
 #include "Group.h"
 #include "Guild.h"
 #include "World.h"
-#include "Pet.h"
 #include "ObjectAccessor.h"
 #include "BattlegroundMgr.h"
 #include "OutdoorPvPMgr.h"
@@ -51,23 +46,17 @@
 #include "WardenWin.h"
 #include "WardenMac.h"
 
-namespace {
-
-std::string const DefaultPlayerName = "<none>";
-
-} // namespace
-
 bool MapSessionFilter::Process(WorldPacket* packet)
 {
     Opcodes opcode = DropHighBytes(packet->GetOpcode());
-    OpcodeHandler const* opHandle = clientOpcodeTable[opcode];
+    OpcodeHandler const* opHandle = opcodeTable[WOW_CLIENT][opcode];
 
     //let's check if our opcode can be really processed in Map::Update()
-    if (opHandle->ProcessingPlace == PROCESS_INPLACE)
+    if (opHandle->packetProcessing == PROCESS_INPLACE)
         return true;
 
     //we do not process thread-unsafe packets
-    if (opHandle->ProcessingPlace == PROCESS_THREADUNSAFE)
+    if (opHandle->packetProcessing == PROCESS_THREADUNSAFE)
         return false;
 
     Player* player = m_pSession->GetPlayer();
@@ -83,13 +72,13 @@ bool MapSessionFilter::Process(WorldPacket* packet)
 bool WorldSessionFilter::Process(WorldPacket* packet)
 {
     Opcodes opcode = DropHighBytes(packet->GetOpcode());
-    OpcodeHandler const* opHandle = clientOpcodeTable[opcode];
+    OpcodeHandler const* opHandle = opcodeTable[WOW_CLIENT][opcode];
     //check if packet handler is supposed to be safe
-    if (opHandle->ProcessingPlace == PROCESS_INPLACE)
+    if (opHandle->packetProcessing == PROCESS_INPLACE)
         return true;
 
     //thread-unsafe packets should be processed in World::UpdateSessions()
-    if (opHandle->ProcessingPlace == PROCESS_THREADUNSAFE)
+    if (opHandle->packetProcessing == PROCESS_THREADUNSAFE)
         return true;
 
     //no player attached? -> our client! ^^
@@ -102,33 +91,30 @@ bool WorldSessionFilter::Process(WorldPacket* packet)
 }
 
 /// WorldSession constructor
-WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter):
-    m_muteTime(mute_time),
-    m_timeOutTime(0),
-    AntiDOS(this),
-    _player(NULL),
-    m_Socket(sock),
-    _security(sec),
-    _accountId(id),
-    m_expansion(expansion),
-    _warden(NULL),
-    _logoutTime(0),
-    m_inQueue(false),
-    m_playerLoading(false),
-    m_playerLogout(false),
-    m_playerRecentlyLogout(false),
-    m_playerSave(false),
-    m_sessionDbcLocale(sWorld->GetAvailableDbcLocale(locale)),
-    m_sessionDbLocaleIndex(locale),
-    m_latency(0),
-    m_clientTimeDelay(0),
-    m_TutorialsChanged(false),
-    _filterAddonMessages(false),
-    recruiterId(recruiter),
-    isRecruiter(isARecruiter),
-    timeLastWhoCommand(0),
-    _RBACData(NULL)
+WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, bool ispremium, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter):
+m_muteTime(mute_time), m_timeOutTime(0), _player(NULL), m_Socket(sock),
+_security(sec), _ispremium(ispremium), _accountId(id), m_expansion(expansion), _logoutTime(0),
+m_inQueue(false), m_playerLoading(false), m_playerLogout(false),
+m_playerRecentlyLogout(false), m_playerSave(false),
+m_sessionDbcLocale(sWorld->GetAvailableDbcLocale(locale)),
+m_sessionDbLocaleIndex(locale),
+m_latency(0), m_clientTimeDelay(0), m_TutorialsChanged(false), recruiterId(recruiter),
+isRecruiter(isARecruiter), timeLastWhoCommand(0),
+timeLastChannelInviteCommand(0), timeLastGroupInviteCommand(0), timeLastGuildInviteCommand(0), timeLastChannelPassCommand(0),
+timeLastChannelMuteCommand(0), timeLastChannelBanCommand(0), timeLastChannelUnbanCommand(0), timeLastChannelAnnounceCommand(0),
+timeLastChannelModerCommand(0), timeLastChannelOwnerCommand(0),
+timeLastChannelSetownerCommand(0),
+timeLastChannelUnmoderCommand(0),
+timeLastChannelUnmuteCommand(0),
+timeLastChannelKickCommand(0),
+timeCharEnumOpcode(0),
+playerLoginCounter(0),
+timeLastServerCommand(0), timeLastArenaTeamCommand(0), timeLastCalendarInvCommand(0), timeLastChangeSubGroupCommand(0),
+m_uiAntispamMailSentCount(0), m_uiAntispamMailSentTimer(0), timeLastSellItemOpcode(0), timeLastBuyItemOpcode(0), timeLastBuyItemSlotOpcode(0)
 {
+    _warden = NULL;
+    _filterAddonMessages = false;
+
     if (sock)
     {
         m_Address = sock->GetRemoteAddress();
@@ -147,11 +133,10 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8
     _compressionStream->next_in = NULL;
     int32 z_res = deflateInit(_compressionStream, sWorld->getIntConfig(CONFIG_COMPRESSION));
     if (z_res != Z_OK)
-        TC_LOG_ERROR("network", "Can't initialize packet compression (zlib: deflateInit) Error code: %i (%s)", z_res, zError(z_res));
-
-
-    m_isTrialAccount = false;
-    m_trialTime = NULL;
+    {
+        sLog->outError(LOG_FILTER_NETWORKIO, "Can't initialize packet compression (zlib: deflateInit) Error code: %i (%s)", z_res, zError(z_res));
+        return;
+    }
 }
 
 /// WorldSession destructor
@@ -169,8 +154,8 @@ WorldSession::~WorldSession()
         m_Socket = NULL;
     }
 
-    delete _warden;
-    delete _RBACData;
+    if (_warden)
+        delete _warden;
 
     ///- empty incoming packet queue
     WorldPacket* packet = NULL;
@@ -181,25 +166,37 @@ WorldSession::~WorldSession()
 
     int32 z_res = deflateEnd(_compressionStream);
     if (z_res != Z_OK && z_res != Z_DATA_ERROR) // Z_DATA_ERROR signals that internal state was BUSY
-        TC_LOG_ERROR("network", "Can't close packet compression stream (zlib: deflateEnd) Error code: %i (%s)", z_res, zError(z_res));
+    {
+        sLog->outError(LOG_FILTER_NETWORKIO, "Can't close packet compression stream (zlib: deflateEnd) Error code: %i (%s)", z_res, zError(z_res));
+        return;
+    }
 
     delete _compressionStream;
 }
 
-std::string const & WorldSession::GetPlayerName() const
-{
-    return _player != NULL ? _player->GetName() : DefaultPlayerName;
-}
+/// Get the player name
+std::string WorldSession::GetPlayerName(bool simple /* = true */) const
+ {
+    std::string name = "[Player: ";
+    uint32 guidLow = 0;
 
-std::string WorldSession::GetPlayerInfo() const
-{
-    std::ostringstream ss;
+    if (Player* player = GetPlayer())
+    {
+        name.append(player->GetName());
+        guidLow = player->GetGUIDLow();
+    }
+    else
+        name.append("<none>");
 
-    ss << "[Player: " << GetPlayerName()
-       << " (Guid: " << (_player != NULL ? _player->GetGUID() : 0)
-       << ", Account: " << GetAccountId() << ")]";
+    if (!simple)
+    {
+        std::ostringstream ss;
+        ss << " (Guid: " << guidLow << ", Account: " << GetAccountId() << ")";
+        name.append(ss.str());
+    }
 
-    return ss.str();
+    name.append("]");
+    return name;
 }
 
 /// Get player guid if available. Use for logging purposes only
@@ -214,23 +211,23 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     if (!m_Socket)
         return;
 
-    if (packet->GetOpcode() == NULL_OPCODE)
+    if (packet->GetOpcode() == NULL_OPCODE && !forced)
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of NULL_OPCODE to %s", GetPlayerInfo().c_str());
+        sLog->outError(LOG_FILTER_OPCODES, "Prevented sending of NULL_OPCODE to %s", GetPlayerName(false).c_str());
         return;
     }
-    else if (packet->GetOpcode() == UNKNOWN_OPCODE)
+    else if (packet->GetOpcode() == UNKNOWN_OPCODE && !forced)
     {
-        TC_LOG_ERROR("network.opcode", "Prevented sending of UNKNOWN_OPCODE to %s", GetPlayerInfo().c_str());
+        sLog->outError(LOG_FILTER_OPCODES, "Prevented sending of UNKNOWN_OPCODE to %s", GetPlayerName(false).c_str());
         return;
     }
 
     if (!forced)
     {
-        OpcodeHandler const* handler = serverOpcodeTable[packet->GetOpcode()];
-        if (!handler || handler->Status == STATUS_UNHANDLED)
+        OpcodeHandler* handler = opcodeTable[WOW_SERVER][packet->GetOpcode()];
+        if (!handler || handler->status == STATUS_UNHANDLED)
         {
-            TC_LOG_ERROR("network.opcode", "Prevented sending disabled opcode %s to %s", GetOpcodeNameForLogging(packet->GetOpcode(), true).c_str(), GetPlayerInfo().c_str());
+            sLog->outError(LOG_FILTER_OPCODES, "Prevented sending disabled opcode %s to %s", GetOpcodeNameForLogging(packet->GetOpcode(), WOW_SERVER).c_str(), GetPlayerName(false).c_str());
             return;
         }
     }
@@ -260,8 +257,8 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     {
         uint64 minTime = uint64(cur_time - lastTime);
         uint64 fullTime = uint64(lastTime - firstTime);
-        TC_LOG_INFO("misc", "Send all time packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f time: %u", sendPacketCount, sendPacketBytes, float(sendPacketCount)/fullTime, float(sendPacketBytes)/fullTime, uint32(fullTime));
-        TC_LOG_INFO("misc", "Send last min packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount)/minTime, float(sendLastPacketBytes)/minTime);
+        sLog->outInfo(LOG_FILTER_GENERAL, "Send all time packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f time: %u", sendPacketCount, sendPacketBytes, float(sendPacketCount)/fullTime, float(sendPacketBytes)/fullTime, uint32(fullTime));
+        sLog->outInfo(LOG_FILTER_GENERAL, "Send last min packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount)/minTime, float(sendLastPacketBytes)/minTime);
 
         lastTime = cur_time;
         sendLastPacketCount = 1;
@@ -269,7 +266,7 @@ void WorldSession::SendPacket(WorldPacket const* packet, bool forced /*= false*/
     }
 #endif                                                      // !TRINITY_DEBUG
 
-    if (m_Socket->SendPacket(*packet) == -1)
+    if (m_Socket->SendPacket(packet) == -1)
         m_Socket->CloseSocket();
 }
 
@@ -282,24 +279,36 @@ void WorldSession::QueuePacket(WorldPacket* new_packet)
 /// Logging helper for unexpected opcodes
 void WorldSession::LogUnexpectedOpcode(WorldPacket* packet, const char* status, const char *reason)
 {
-    TC_LOG_ERROR("network.opcode", "Received unexpected opcode %s Status: %s Reason: %s from %s",
-        GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str(), status, reason, GetPlayerInfo().c_str());
+    sLog->outError(LOG_FILTER_OPCODES, "Received unexpected opcode %s Status: %s Reason: %s from %s",
+        GetOpcodeNameForLogging(packet->GetOpcode(), WOW_CLIENT).c_str(), status, reason, GetPlayerName(false).c_str());
 }
 
 /// Logging helper for unexpected opcodes
 void WorldSession::LogUnprocessedTail(WorldPacket* packet)
 {
-    if (!sLog->ShouldLog("network.opcode", LOG_LEVEL_TRACE) || packet->rpos() >= packet->wpos())
-        return;
-
-    TC_LOG_TRACE("network.opcode", "Unprocessed tail data (read stop at %u from %u) Opcode %s from %s",
-        uint32(packet->rpos()), uint32(packet->wpos()), GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str(), GetPlayerInfo().c_str());
+    sLog->outError(LOG_FILTER_OPCODES, "Unprocessed tail data (read stop at %u from %u) Opcode %s from %s",
+        uint32(packet->rpos()), uint32(packet->wpos()), GetOpcodeNameForLogging(packet->GetOpcode(), WOW_CLIENT).c_str(), GetPlayerName(false).c_str());
     packet->print_storage();
 }
+
+struct OpcodeInfo
+{
+    OpcodeInfo(uint32 nb, uint32 time) : nbPkt(nb), totalTime(time) {}
+    uint32 nbPkt;
+    uint32 totalTime;
+};
 
 /// Update the WorldSession (triggered by World update)
 bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 {
+    uint32 sessionDiff = getMSTime();
+    uint32 nbPacket = 0;
+    std::map<uint32, OpcodeInfo> pktHandle; // opcodeId / OpcodeInfo
+
+    /// Antispam Timer update
+    if (sWorld->getBoolConfig(CONFIG_ANTISPAM_ENABLED))
+        UpdateAntispamTimer(diff);
+
     /// Update Timeout timer.
     UpdateTimeOutTime(diff);
 
@@ -321,21 +330,16 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     //! loop caused by re-enqueueing the same packets over and over again, we stop updating this session
     //! and continue updating others. The re-enqueued packets will be handled in the next Update call for this session.
     uint32 processedPackets = 0;
-
     while (m_Socket && !m_Socket->IsClosed() &&
             !_recvQueue.empty() && _recvQueue.peek(true) != firstDelayedPacket &&
             _recvQueue.next(packet, updater))
     {
-        if (!AntiDOS.EvaluateOpcode(*packet))
-        {
-            TC_LOG_ERROR("network", "A Player (Account: %u) was kicked / banned due to possible Spoof / DOS attempt on CMSG_CHAR_ENUM!", GetAccountId());
-            KickPlayer();
-        }
+        const OpcodeHandler* opHandle = opcodeTable[WOW_CLIENT][packet->GetOpcode()];
+        uint32 pktTime = getMSTime();
 
-        OpcodeHandler const* opHandle = clientOpcodeTable[packet->GetOpcode()];
         try
         {
-            switch (opHandle->Status)
+            switch (opHandle->status)
             {
                 case STATUS_LOGGEDIN:
                     if (!_player)
@@ -352,15 +356,16 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                             deletePacket = false;
                             QueuePacket(packet);
                             //! Log
-                                TC_LOG_DEBUG("network", "Re-enqueueing packet with opcode %s with with status STATUS_LOGGEDIN. "
-                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str());
+                                sLog->outDebug(LOG_FILTER_NETWORKIO, "Re-enqueueing packet with opcode %s with with status STATUS_LOGGEDIN. "
+                                    "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode(), WOW_CLIENT).c_str());
                         }
                     }
                     else if (_player->IsInWorld())
                     {
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
-                        (this->*opHandle->Handler)(*packet);
-                        LogUnprocessedTail(packet);
+                        (this->*opHandle->handler)(*packet);
+                        if (sLog->ShouldLog(LOG_FILTER_NETWORKIO, LOG_LEVEL_TRACE) && packet->rpos() < packet->wpos())
+                            LogUnprocessedTail(packet);
                     }
                     // lag can cause STATUS_LOGGEDIN opcodes to arrive after the player started a transfer
                     break;
@@ -372,8 +377,9 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     {
                         // not expected _player or must checked in packet hanlder
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
-                        (this->*opHandle->Handler)(*packet);
-                        LogUnprocessedTail(packet);
+                        (this->*opHandle->handler)(*packet);
+                        if (sLog->ShouldLog(LOG_FILTER_NETWORKIO, LOG_LEVEL_TRACE) && packet->rpos() < packet->wpos())
+                            LogUnprocessedTail(packet);
                     }
                     break;
                 case STATUS_TRANSFER:
@@ -384,8 +390,9 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     else
                     {
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
-                        (this->*opHandle->Handler)(*packet);
-                        LogUnprocessedTail(packet);
+                        (this->*opHandle->handler)(*packet);
+                        if (sLog->ShouldLog(LOG_FILTER_NETWORKIO, LOG_LEVEL_TRACE) && packet->rpos() < packet->wpos())
+                            LogUnprocessedTail(packet);
                     }
                     break;
                 case STATUS_AUTHED:
@@ -402,32 +409,44 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         m_playerRecentlyLogout = false;
 
                     sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
-                    (this->*opHandle->Handler)(*packet);
-                    LogUnprocessedTail(packet);
+                    (this->*opHandle->handler)(*packet);
+                    if (sLog->ShouldLog(LOG_FILTER_NETWORKIO, LOG_LEVEL_TRACE) && packet->rpos() < packet->wpos())
+                        LogUnprocessedTail(packet);
                     break;
                 case STATUS_NEVER:
-                        TC_LOG_ERROR("network.opcode", "Received not allowed opcode %s from %s", GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str()
-                            , GetPlayerInfo().c_str());
+                        sLog->outError(LOG_FILTER_OPCODES, "Received not allowed opcode %s from %s", GetOpcodeNameForLogging(packet->GetOpcode(), WOW_CLIENT).c_str()
+                            , GetPlayerName(false).c_str());
                     break;
                 case STATUS_UNHANDLED:
-                        TC_LOG_ERROR("network.opcode", "Received not handled opcode %s from %s", GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str()
-                            , GetPlayerInfo().c_str());
+                        sLog->outError(LOG_FILTER_OPCODES, "Received not handled opcode %s from %s", GetOpcodeNameForLogging(packet->GetOpcode(), WOW_CLIENT).c_str()
+                            , GetPlayerName(false).c_str());
                     break;
             }
         }
-        catch (ByteBufferException const&)
+        catch(ByteBufferException &)
         {
-            TC_LOG_ERROR("network", "WorldSession::Update ByteBufferException occured while parsing a packet (opcode: %s) from client %s, accountid=%i. Skipped packet.",
-                    GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str(), GetRemoteAddress().c_str(), GetAccountId());
+            sLog->outError(LOG_FILTER_NETWORKIO, "WorldSession::Update ByteBufferException occured while parsing a packet (opcode: %u) from client %s, accountid=%i. Skipped packet.",
+                    packet->GetOpcode(), GetRemoteAddress().c_str(), GetAccountId());
             packet->hexlike();
         }
+
+        nbPacket++;
+
+        std::map<uint32, OpcodeInfo>::iterator itr = pktHandle.find(packet->GetOpcode());
+        if (itr == pktHandle.end())
+            pktHandle.insert(std::make_pair(packet->GetOpcode(), OpcodeInfo(1, getMSTime() - pktTime)));
+        else
+        {
+            OpcodeInfo& data = (*itr).second;
+            data.nbPkt += 1;
+            data.totalTime += getMSTime() - pktTime;
+        }
+
 
         if (deletePacket)
             delete packet;
 
-        deletePacket = true;
-
-#define MAX_PROCESSED_PACKETS_IN_SAME_WORLDSESSION_UPDATE 100
+#define MAX_PROCESSED_PACKETS_IN_SAME_WORLDSESSION_UPDATE 250
         processedPackets++;
 
         //process only a max amout of packets in 1 Update() call.
@@ -464,18 +483,42 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
             return false;                                       //Will remove this session from the world session map
     }
 
+    sessionDiff = getMSTime() - sessionDiff;
+    if (sessionDiff > 70)
+    {
+        std::map<uint32, OpcodeInfo>::iterator itr = pktHandle.find(CMSG_ADD_FRIEND);
+        if (itr != pktHandle.end())
+        {
+            if ((*itr).second.nbPkt > 7)
+            {
+                sLog->OutPandashan("Account [%u] has been kicked for flood of CMSG_ADD_FRIEND (count : %u)", GetAccountId(), (*itr).second.nbPkt);
+                KickPlayer();
+                return false;
+            }
+        }
+
+        sLog->OutPandashan("Session of account [%u] take more than 50 ms to execute (%u ms)", GetAccountId(), sessionDiff);
+        for (auto itr : pktHandle)
+            sLog->OutPandashan("-----> %u %s (%u ms)", itr.second.nbPkt, GetOpcodeNameForLogging((Opcodes)itr.first, WOW_CLIENT).c_str(), itr.second.totalTime);
+    }
+
     return true;
 }
 
 /// %Log the player out
-void WorldSession::LogoutPlayer(bool save)
+void WorldSession::LogoutPlayer(bool Save)
 {
+    // fix exploit with Aura Bind Sight
+    _player->StopCastingBindSight();
+    _player->StopCastingCharm();
+    _player->RemoveAurasByType(SPELL_AURA_BIND_SIGHT);
+
     // finish pending transfers before starting the logout
     while (_player && _player->IsBeingTeleportedFar())
         HandleMoveWorldportAckOpcode();
 
     m_playerLogout = true;
-    m_playerSave = save;
+    m_playerSave = Save;
 
     if (_player)
     {
@@ -490,6 +533,39 @@ void WorldSession::LogoutPlayer(bool save)
             _player->BuildPlayerRepop();
             _player->RepopAtGraveyard();
         }
+        else if (!_player->getAttackers().empty())
+        {
+            // build set of player who attack _player or who have pet attacking of _player
+            std::set<Player*> aset;
+            for (Unit::AttackerSet::const_iterator itr = _player->getAttackers().begin(); itr != _player->getAttackers().end(); ++itr)
+            {
+                Unit* owner = (*itr)->GetOwner();           // including player controlled case
+                if (owner && owner->GetTypeId() == TYPEID_PLAYER)
+                    aset.insert(owner->ToPlayer());
+                else if ((*itr)->GetTypeId() == TYPEID_PLAYER)
+                    aset.insert((Player*)(*itr));
+            }
+
+            // CombatStop() method is removing all attackers from the AttackerSet
+            // That is why it must be AFTER building current set of attackers
+            _player->CombatStop();
+            _player->getHostileRefManager().setOnlineOfflineState(false);
+            _player->RemoveAllAurasOnDeath();
+            _player->SetPvPDeath(!aset.empty());
+            _player->KillPlayer();
+            _player->BuildPlayerRepop();
+            _player->RepopAtGraveyard();
+
+            // give honor to all attackers from set like group case
+            for (std::set<Player*>::const_iterator itr = aset.begin(); itr != aset.end(); ++itr)
+                (*itr)->RewardHonor(_player, aset.size());
+
+            // give bg rewards and update counters like kill by first from attackers
+            // this can't be called for all attackers.
+            if (!aset.empty())
+                if (Battleground* bg = _player->GetBattleground())
+                    bg->HandleKillPlayer(_player, *aset.begin());
+        }
         else if (_player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
         {
             // this will kill character by SPELL_AURA_SPIRIT_OF_REDEMPTION
@@ -503,13 +579,17 @@ void WorldSession::LogoutPlayer(bool save)
             _player->RepopAtGraveyard();
             _player->SetPendingBind(0, 0);
         }
-
-        if (_player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED))
+        else if (_player->GetVehicleBase() && _player->isInCombat())
         {
-            _player->Dismount();
-            _player->RemoveAurasByType(SPELL_AURA_MOUNTED);
-            _player->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
-            _player->RemoveAurasByType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
+            _player->KillPlayer();
+            _player->BuildPlayerRepop();
+            _player->RepopAtGraveyard();
+        }
+        else if (_player->isInCombat() && sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_NORMAL && _player->IsPvP())
+        {
+            _player->KillPlayer();
+            _player->BuildPlayerRepop();
+            _player->RepopAtGraveyard();
         }
 
         //drop a flag if player is carrying it
@@ -517,18 +597,17 @@ void WorldSession::LogoutPlayer(bool save)
             bg->EventPlayerLoggedOut(_player);
 
         ///- Teleport to home if the player is in an invalid instance
-        if (!_player->m_InstanceValid && !_player->IsGameMaster())
+        if (!_player->m_InstanceValid && !_player->isGameMaster())
             _player->TeleportTo(_player->m_homebindMapId, _player->m_homebindX, _player->m_homebindY, _player->m_homebindZ, _player->GetOrientation());
 
         sOutdoorPvPMgr->HandlePlayerLeaveZone(_player, _player->GetZoneId());
 
-        for (int i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+        for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
         {
             if (BattlegroundQueueTypeId bgQueueTypeId = _player->GetBattlegroundQueueTypeId(i))
             {
                 _player->RemoveBattlegroundQueueId(bgQueueTypeId);
-                BattlegroundQueue& queue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
-                queue.RemovePlayer(_player->GetGUID(), true);
+                sBattlegroundMgr->m_BattlegroundQueues[ bgQueueTypeId ].RemovePlayer(_player->GetGUID(), true);
             }
         }
 
@@ -555,21 +634,17 @@ void WorldSession::LogoutPlayer(bool save)
                 _pet->SavePetToDB(PET_SLOT_ACTUAL_PET_SLOT);
         }
 
-        ///- Clear whisper whitelist
-        _player->ClearWhisperWhiteList();
-
         ///- empty buyback items and save the player in the database
         // some save parts only correctly work in case player present in map/player_lists (pets, etc)
-        if (save)
+        if (Save)
         {
             uint32 eslot;
             for (int j = BUYBACK_SLOT_START; j < BUYBACK_SLOT_END; ++j)
             {
                 eslot = j - BUYBACK_SLOT_START;
-                _player->SetUInt64Value(PLAYER_FIELD_VENDORBUYBACK_SLOTS + (eslot * 2), 0);
-                _player->SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE + eslot, 0);
-
-                _player->SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP + eslot, 0);
+                _player->SetUInt64Value(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + (eslot * 2), 0);
+                _player->SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, 0);
+                _player->SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, 0);
             }
             _player->SaveToDB();
         }
@@ -578,8 +653,7 @@ void WorldSession::LogoutPlayer(bool save)
         _player->CleanupChannels();
 
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
-        if (_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket)
-            _player->UninviteFromGroup();
+        _player->UninviteFromGroup();
 
         // remove player from the group if he is:
         // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
@@ -605,8 +679,7 @@ void WorldSession::LogoutPlayer(bool save)
         // e.g if he got disconnected during a transfer to another map
         // calls to GetMap in this case may cause crashes
         _player->CleanupsBeforeDelete();
-        TC_LOG_INFO("entities.player.character", "Account: %d (IP: %s) Logout Character:[%s] (GUID: %u) Level: %d",
-            GetAccountId(), GetRemoteAddress().c_str(), _player->GetName().c_str(), _player->GetGUIDLow(), _player->getLevel());
+        sLog->outInfo(LOG_FILTER_CHARACTER, "Account: %d (IP: %s) Logout Character:[%s] (GUID: %u) Level: %d", GetAccountId(), GetRemoteAddress().c_str(), _player->GetName(), _player->GetGUIDLow(), _player->getLevel());
         if (Map* _map = _player->FindMap())
             _map->RemovePlayerFromMap(_player, true);
 
@@ -614,7 +687,7 @@ void WorldSession::LogoutPlayer(bool save)
 
         //! Send the 'logout complete' packet to the client
         //! Client will respond by sending 3x CMSG_CANCEL_TRADE, which we currently dont handle
-        WorldPacket data(SMSG_LOGOUT_COMPLETE);
+        WorldPacket data(SMSG_LOGOUT_COMPLETE, 1);
         ObjectGuid guid = 0; // Autolog guid - 0 for logout
 
         data.WriteBit(0); // Dafuck ? 1st bit twice read ??????
@@ -637,19 +710,15 @@ void WorldSession::LogoutPlayer(bool save)
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[7]);
         SendPacket(&data);
-
-        TC_LOG_DEBUG("network", "SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
 
         //! Since each account can only have one online character at any given time, ensure all characters for active account are marked as offline
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ONLINE);
-        stmt->setUInt32(0, GetAccountId());
-        CharacterDatabase.Execute(stmt);
+        CharacterDatabase.PExecute("UPDATE characters SET online = 0 WHERE account = '%u'", GetAccountId());
     }
 
     m_playerLogout = false;
     m_playerSave = false;
     m_playerRecentlyLogout = true;
-    AntiDOS.AllowOpcode(CMSG_CHAR_ENUM, true);
     LogoutRequest(0);
 }
 
@@ -671,7 +740,12 @@ void WorldSession::SendNotification(const char *format, ...)
         vsnprintf(szStr, 1024, format, ap);
         va_end(ap);
 
-        _SendNotificationPacket(szStr);
+        size_t len = strlen(szStr);
+        WorldPacket data(SMSG_NOTIFICATION, 2 + len);
+        data.WriteBits(len, 12);
+        data.FlushBits();
+        data.append(szStr, len);
+        SendPacket(&data);
     }
 }
 
@@ -687,19 +761,13 @@ void WorldSession::SendNotification(uint32 string_id, ...)
         vsnprintf(szStr, 1024, format, ap);
         va_end(ap);
 
-        _SendNotificationPacket(szStr);
+        size_t len = strlen(szStr);
+        WorldPacket data(SMSG_NOTIFICATION, 2 + len);
+        data.WriteBits(len, 12);
+        data.FlushBits();
+        data.append(szStr, len);
+        SendPacket(&data);
     }
-}
-
-void WorldSession::_SendNotificationPacket(const char* message)
-{
-    uint32 length = strlen(message);
-
-    WorldPacket data(SMSG_NOTIFICATION, 2 + length);
-    data.WriteBits(length, 12);
-    data.FlushBits();
-    data.WriteString(message);
-    SendPacket(&data);
 }
 
 const char *WorldSession::GetTrinityString(int32 entry) const
@@ -709,44 +777,34 @@ const char *WorldSession::GetTrinityString(int32 entry) const
 
 void WorldSession::Handle_NULL(WorldPacket& recvPacket)
 {
-    TC_LOG_ERROR("network.opcode", "Received unhandled opcode %s from %s"
-        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), false).c_str(), GetPlayerInfo().c_str());
+    sLog->outError(LOG_FILTER_OPCODES, "Received unhandled opcode %s from %s"
+        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), WOW_CLIENT).c_str(), GetPlayerName(false).c_str());
 }
 
 void WorldSession::Handle_EarlyProccess(WorldPacket& recvPacket)
 {
-    TC_LOG_ERROR("network.opcode", "Received opcode %s that must be processed in WorldSocket::OnRead from %s"
-        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), false).c_str(), GetPlayerInfo().c_str());
+    sLog->outError(LOG_FILTER_OPCODES, "Received opcode %s that must be processed in WorldSocket::OnRead from %s"
+        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), WOW_CLIENT).c_str(), GetPlayerName(false).c_str());
+}
+
+void WorldSession::Handle_ServerSide(WorldPacket& recvPacket)
+{
+    sLog->outError(LOG_FILTER_OPCODES, "Received server-side opcode %s from %s"
+        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), WOW_CLIENT).c_str(), GetPlayerName(false).c_str());
 }
 
 void WorldSession::Handle_Deprecated(WorldPacket& recvPacket)
 {
-    TC_LOG_ERROR("network.opcode", "Received deprecated opcode %s from %s"
-        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), false).c_str(), GetPlayerInfo().c_str());
+    sLog->outError(LOG_FILTER_OPCODES, "Received deprecated opcode %s from %s"
+        , GetOpcodeNameForLogging(recvPacket.GetOpcode(), WOW_CLIENT).c_str(), GetPlayerName(false).c_str());
 }
 
 void WorldSession::SendAuthWaitQue(uint32 position)
 {
     if (position == 0)
-    {
-        WorldPacket packet(SMSG_AUTH_RESPONSE, 1);
-        packet.WriteBit(0); // has account info
-        packet.WriteBit(0); // has queue info
-        packet << uint8(AUTH_OK);
-        packet.FlushBits();
-        SendPacket(&packet);
-    }
+        SendAuthResponse(AUTH_OK, false);
     else
-    {
-        WorldPacket packet(SMSG_AUTH_RESPONSE, 6);
-        packet.WriteBit(0); // has account info
-        packet.WriteBit(1); // has queue info
-        packet.WriteBit(0); // unk queue bool
-        packet << uint8(AUTH_WAIT_QUEUE);
-        packet.FlushBits();
-        packet << uint32(position);
-        SendPacket(&packet);
-    }
+        SendAuthResponse(AUTH_OK, true, position);
 }
 
 void WorldSession::LoadGlobalAccountData()
@@ -754,16 +812,6 @@ void WorldSession::LoadGlobalAccountData()
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_DATA);
     stmt->setUInt32(0, GetAccountId());
     LoadAccountData(CharacterDatabase.Query(stmt), GLOBAL_CACHE_MASK);
-
-    //Load the trial data for the account
-    PreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_TRIAL_DATA);
-    stmt2->setUInt32(0, GetAccountId());
-
-    PreparedQueryResult result = LoginDatabase.Query(stmt2);
-    Field* fields = result->Fetch();
-
-    SetTrialAccount(fields[0].GetBool());
-    SetTrialLeftTime(fields[1].GetUInt32());
 }
 
 void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)
@@ -781,14 +829,14 @@ void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)
         uint32 type = fields[0].GetUInt8();
         if (type >= NUM_ACCOUNT_DATA_TYPES)
         {
-            TC_LOG_ERROR("misc", "Table `%s` have invalid account data type (%u), ignore.",
+            sLog->outError(LOG_FILTER_GENERAL, "Table `%s` have invalid account data type (%u), ignore.",
                 mask == GLOBAL_CACHE_MASK ? "account_data" : "character_account_data", type);
             continue;
         }
 
         if ((mask & (1 << type)) == 0)
         {
-            TC_LOG_ERROR("misc", "Table `%s` have non appropriate for table  account data type (%u), ignore.",
+            sLog->outError(LOG_FILTER_GENERAL, "Table `%s` have non appropriate for table  account data type (%u), ignore.",
                 mask == GLOBAL_CACHE_MASK ? "account_data" : "character_account_data", type);
             continue;
         }
@@ -799,7 +847,7 @@ void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)
     while (result->NextRow());
 }
 
-void WorldSession::SetAccountData(AccountDataType type, time_t tm, std::string const& data)
+void WorldSession::SetAccountData(AccountDataType type, time_t tm, std::string data)
 {
     uint32 id = 0;
     uint32 index = 0;
@@ -831,15 +879,14 @@ void WorldSession::SetAccountData(AccountDataType type, time_t tm, std::string c
 
 void WorldSession::SendAccountDataTimes(uint32 mask)
 {
-    WorldPacket data(SMSG_ACCOUNT_DATA_TIMES, 4 + 1 + 4 + NUM_ACCOUNT_DATA_TYPES * 4);
-    data << uint32(mask);
-    data << uint32(time(NULL)); // Server time
+    WorldPacket data(SMSG_ACCOUNT_DATA_TIMES, 4+NUM_ACCOUNT_DATA_TYPES*4+4+1);
+    data << uint32(mask);                                   // type mask
+    data << uint32(time(NULL));                             // Server time
 
     for (uint32 i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
-        data << uint32(GetAccountData(AccountDataType(i))->Time); // also unix time
+        data << uint32(GetAccountData(AccountDataType(i))->Time);// also unix time
 
-
-    data.WriteBit(1);
+    data.WriteBit(0);
     data.FlushBits();
 
     SendPacket(&data);
@@ -897,7 +944,7 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
     if (size > 0xFFFFF)
     {
-        TC_LOG_ERROR("misc", "WorldSession::ReadAddonsInfo addon info too big, size %u", size);
+        sLog->outError(LOG_FILTER_GENERAL, "WorldSession::ReadAddonsInfo addon info too big, size %u", size);
         return;
     }
 
@@ -908,7 +955,7 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
     ByteBuffer addonInfo;
     addonInfo.resize(size);
 
-    if (uncompress(addonInfo.contents(), &uSize, data.contents() + pos, data.size() - pos) == Z_OK)
+    if (uncompress((Bytef*)const_cast<uint8*>(addonInfo.contents()), &uSize, data.contents() + pos, data.size() - pos) == Z_OK)
     {
         uint32 addonsCount;
         addonInfo >> addonsCount;                         // addons count
@@ -916,8 +963,8 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
         for (uint32 i = 0; i < addonsCount; ++i)
         {
             std::string addonName;
-            uint8 HasPublicKey;
-            uint32 PublicKeyCRC, UrlCRC;
+            uint8 usingPubKey;
+            uint32 crc, urlFile;
 
             // check next addon data format correctness
             if (addonInfo.rpos() + 1 > addonInfo.size())
@@ -925,39 +972,40 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
             addonInfo >> addonName;
 
-            addonInfo >> HasPublicKey >> PublicKeyCRC >> UrlCRC;
+            addonInfo >> usingPubKey >> crc >> urlFile;
 
-            TC_LOG_INFO("misc", "ADDON: Name: %s, Has Public Key: 0x%x, Public Key CRC: 0x%x, Url CRC: %i", addonName.c_str(), HasPublicKey, PublicKeyCRC, UrlCRC);
+            sLog->outInfo(LOG_FILTER_GENERAL, "ADDON: Name: %s, usingPubKey: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), usingPubKey, crc, urlFile);
 
-            uint8 addonState = HasPublicKey ? ADDON_STATE_ENABLED : ADDON_STATE_DISABLED_OUT_OF_DATE;
-
-            AddonInfo addon(addonName, HasPublicKey, PublicKeyCRC, UrlCRC, addonState);
+            AddonInfo addon(addonName, true, crc, 2, usingPubKey);
 
             SavedAddon const* savedAddon = AddonMgr::GetAddonInfo(addonName);
             if (savedAddon)
             {
-                if (addon.PublicKeyCRC != savedAddon->CRC)
-                    TC_LOG_ERROR("misc", "ADDON: %s was known and has CRC (0x%x) which doesn't match client CRC (0x%x)!", addon.Name.c_str(), savedAddon->CRC, addon.PublicKeyCRC);
+                if (addon.CRC != savedAddon->CRC)
+                    sLog->outInfo(LOG_FILTER_GENERAL, "ADDON: %s was known, but didn't match known CRC (0x%x)!", addon.Name.c_str(), savedAddon->CRC);
                 else
-                    TC_LOG_INFO("misc", "ADDON: %s was known, CRC is correct (0x%x)", addon.Name.c_str(), savedAddon->CRC);
+                    sLog->outInfo(LOG_FILTER_GENERAL, "ADDON: %s was known, CRC is correct (0x%x)", addon.Name.c_str(), savedAddon->CRC);
             }
             else
             {
                 AddonMgr::SaveAddon(addon);
 
-                TC_LOG_INFO("misc", "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.PublicKeyCRC);
+                sLog->outInfo(LOG_FILTER_GENERAL, "ADDON: %s (0x%x) was not known, saving...", addon.Name.c_str(), addon.CRC);
             }
 
             /// @todo Find out when to not use CRC/pubkey, and other possible states.
             m_addonsList.push_back(addon);
         }
 
-        uint32 bannedTimeStamp;
-        addonInfo >> bannedTimeStamp; // Latest Banned Addon TimeStamp.
-        TC_LOG_DEBUG("network", "ADDON: Banned Time: %u", bannedTimeStamp);
+        uint32 currentTime;
+        addonInfo >> currentTime;
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "ADDON: CurrentTime: %u", currentTime);
+
+        if (addonInfo.rpos() != addonInfo.size())
+            sLog->outDebug(LOG_FILTER_NETWORKIO, "packet under-read!");
     }
     else
-        TC_LOG_ERROR("misc", "Addon packet uncompress error!");
+        sLog->outError(LOG_FILTER_GENERAL, "Addon packet uncompress error!");
 }
 
 void WorldSession::SendAddonsInfo()
@@ -982,93 +1030,73 @@ void WorldSession::SendAddonsInfo()
         0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
     };
 
-    uint8 pubKeyOrder[256] = 
+    uint8 pubKeyOrder[256] =
     {
-        0x7A, 0xEE, 0x14, 0xB2, 0x6B, 0x4F, 0xDF, 0x04, 0x91, 0x0E, 0x74, 0x58, 0x38, 0xF3, 0x1A, 0xB3,
-        0xE9, 0xD8, 0x51, 0x53, 0x19, 0xF6, 0x08, 0x79, 0x44, 0xED, 0x6A, 0x09, 0x7E, 0xC5, 0xAE, 0x65,
-        0x7F, 0x5F, 0xD7, 0x0F, 0x07, 0x2B, 0x39, 0xE6, 0x2F, 0x3E, 0xC8, 0xA5, 0x81, 0xB6, 0x3A, 0x1D,
-        0x61, 0x06, 0x67, 0x57, 0x92, 0xBA, 0x4A, 0xE5, 0x75, 0x7C, 0xB9, 0x94, 0x2A, 0xEF, 0xD4, 0xF2,
-        0xB7, 0x24, 0xD9, 0xA6, 0xE8, 0x5E, 0xCD, 0x43, 0xDC, 0x2D, 0x05, 0xC6, 0x70, 0x0B, 0x46, 0x34,
-        0xF0, 0x1F, 0xC7, 0x0D, 0x72, 0x2C, 0x4B, 0x1C, 0xE0, 0x9B, 0xE1, 0xC0, 0xCC, 0x98, 0x63, 0xF7,
-        0x27, 0x25, 0xD5, 0x4C, 0x71, 0x02, 0x97, 0xB5, 0xAF, 0x54, 0xFC, 0x00, 0x2E, 0x64, 0xAA, 0xF1,
-        0x88, 0x18, 0xFB, 0x50, 0x03, 0x52, 0x20, 0x86, 0xB8, 0x68, 0x4E, 0x87, 0xBC, 0xA2, 0x13, 0x0C,
-        0xEC, 0xA8, 0xBB, 0x8B, 0x35, 0x42, 0x1E, 0xCB, 0x90, 0x3F, 0xFA, 0xFE, 0x1B, 0x56, 0x85, 0xA7,
-        0x84, 0xDD, 0x30, 0xA0, 0x22, 0x77, 0xA9, 0xF9, 0xE4, 0x73, 0x21, 0xC1, 0xBD, 0xAC, 0xBE, 0xCE,
-        0x9E, 0x6E, 0xD0, 0x16, 0xF4, 0x26, 0x3D, 0xC9, 0xF5, 0x76, 0x45, 0x11, 0x9D, 0x3C, 0x9F, 0x48,
-        0xBF, 0x32, 0x6C, 0x66, 0x9A, 0xDA, 0x17, 0x60, 0x83, 0xB1, 0x80, 0x5C, 0x8A, 0xAB, 0xDE, 0xC4,
-        0x5B, 0x23, 0xCF, 0xD3, 0x62, 0xB4, 0x8E, 0xF8, 0x59, 0x36, 0xA1, 0x8D, 0xE7, 0x0A, 0x9C, 0x78,
-        0x7D, 0xFD, 0x29, 0x3B, 0x47, 0x69, 0x82, 0x15, 0x5D, 0x6F, 0x55, 0x49, 0xEA, 0x93, 0xAD, 0x28,
-        0xDB, 0x89, 0x95, 0x40, 0xEB, 0xB0, 0x33, 0xD2, 0x4D, 0xD6, 0x8F, 0x12, 0x31, 0xA3, 0x8C, 0xE2,
-        0x01, 0x10, 0x96, 0x6D, 0x37, 0xE3, 0xA4, 0xD1, 0x41, 0x99, 0xCA, 0xC3, 0xC2, 0x7B, 0x5A, 0xFF
+         0x7A, 0xEE, 0x14, 0xB2, 0x6B, 0x4F, 0xDF, 0x04, 0x91, 0x0E, 0x74, 0x58, 0x38, 0xF3, 0x1A, 0xB3,
+         0xE9, 0xD8, 0x51, 0x53, 0x19, 0xF6, 0x08, 0x79, 0x44, 0xED, 0x6A, 0x09, 0x7E, 0xC5, 0xAE, 0x65,
+         0x7F, 0x5F, 0xD7, 0x0F, 0x07, 0x2B, 0x39, 0xE6, 0x2F, 0x3E, 0xC8, 0xA5, 0x81, 0xB6, 0x3A, 0x1D,
+         0x61, 0x06, 0x67, 0x57, 0x92, 0xBA, 0x4A, 0xE5, 0x75, 0x7C, 0xB9, 0x94, 0x2A, 0xEF, 0xD4, 0xF2,
+         0xB7, 0x24, 0xD9, 0xA6, 0xE8, 0x5E, 0xCD, 0x43, 0xDC, 0x2D, 0x05, 0xC6, 0x70, 0x0B, 0x46, 0x34,
+         0xF0, 0x1F, 0xC7, 0x0D, 0x72, 0x2C, 0x4B, 0x1C, 0xE0, 0x9B, 0xE1, 0xC0, 0xCC, 0x98, 0x63, 0xF7,
+         0x27, 0x25, 0xD5, 0x4C, 0x71, 0x02, 0x97, 0xB5, 0xAF, 0x54, 0xFC, 0x00, 0x2E, 0x64, 0xAA, 0xF1,
+         0x88, 0x18, 0xFB, 0x50, 0x03, 0x52, 0x20, 0x86, 0xB8, 0x68, 0x4E, 0x87, 0xBC, 0xA2, 0x13, 0x0C,
+         0xEC, 0xA8, 0xBB, 0x8B, 0x35, 0x42, 0x1E, 0xCB, 0x90, 0x3F, 0xFA, 0xFE, 0x1B, 0x56, 0x85, 0xA7,
+         0x84, 0xDD, 0x30, 0xA0, 0x22, 0x77, 0xA9, 0xF9, 0xE4, 0x73, 0x21, 0xC1, 0xBD, 0xAC, 0xBE, 0xCE,
+         0x9E, 0x6E, 0xD0, 0x16, 0xF4, 0x26, 0x3D, 0xC9, 0xF5, 0x76, 0x45, 0x11, 0x9D, 0x3C, 0x9F, 0x48,
+         0xBF, 0x32, 0x6C, 0x66, 0x9A, 0xDA, 0x17, 0x60, 0x83, 0xB1, 0x80, 0x5C, 0x8A, 0xAB, 0xDE, 0xC4,
+         0x5B, 0x23, 0xCF, 0xD3, 0x62, 0xB4, 0x8E, 0xF8, 0x59, 0x36, 0xA1, 0x8D, 0xE7, 0x0A, 0x9C, 0x78,
+         0x7D, 0xFD, 0x29, 0x3B, 0x47, 0x69, 0x82, 0x15, 0x5D, 0x6F, 0x55, 0x49, 0xEA, 0x93, 0xAD, 0x28,
+         0xDB, 0x89, 0x95, 0x40, 0xEB, 0xB0, 0x33, 0xD2, 0x4D, 0xD6, 0x8F, 0x12, 0x31, 0xA3, 0x8C, 0xE2,
+         0x01, 0x10, 0x96, 0x6D, 0x37, 0xE3, 0xA4, 0xD1, 0x41, 0x99, 0xCA, 0xC3, 0xC2, 0x7B, 0x5A, 0xFF,
     };
 
-    WorldPacket data(SMSG_ADDON_INFO);
+    WorldPacket data(SMSG_ADDON_INFO, 1000);
 
-    data.WriteBits(m_addonsList.size(), 23);
+    AddonMgr::BannedAddonList const* bannedAddons = AddonMgr::GetBannedAddons();
+    data.WriteBits((uint32)m_addonsList.size(), 23);
 
     for (AddonsList::iterator itr = m_addonsList.begin(); itr != m_addonsList.end(); ++itr)
     {
-        bool UsePublicKeyCRC = (itr->HasPublicKey && itr->PublicKeyCRC > 0) ? true : false;
-        bool HasPublicKey = (itr->HasPublicKey && itr->PublicKeyCRC != STANDARD_ADDON_CRC) ? true : false; // Send extra public key - not for standard Addons.
-        bool HasURL = itr->UrlCRC ? true : false;
-
-        data.WriteBit(UsePublicKeyCRC);      // Standard CRC Addon.
-        data.WriteBit(HasURL);               // Has URL.
-        data.WriteBit(HasPublicKey);         // Use extra Public key (Non-Standard Addon).
-
-        if (HasURL)
-            data.WriteBits(0, 8); // URL String size NYI
+        data.WriteBit(itr->Enabled);
+        data.WriteBit(0); // Has URL
+        data.WriteBit(!itr->UsePublicKeyOrCRC); // If client doesnt have it, send it
     }
 
-    AddonMgr::BannedAddonList const* bannedAddons = AddonMgr::GetBannedAddons();
-
-    data.WriteBits(bannedAddons->size(), 18);
-
+    data.WriteBits((uint32)bannedAddons->size(), 18);
     data.FlushBits();
 
     for (AddonsList::iterator itr = m_addonsList.begin(); itr != m_addonsList.end(); ++itr)
     {
-        bool UsePublicKeyCRC = (itr->HasPublicKey && itr->PublicKeyCRC > 0) ? true : false;
-        bool HasPublicKey = (itr->HasPublicKey && itr->PublicKeyCRC != STANDARD_ADDON_CRC) ? true : false; // Send extra public key - not for standard Addons.
-        bool HasURL = itr->UrlCRC ? true : false;
-
-        if (HasPublicKey)
+        if (!itr->UsePublicKeyOrCRC)
         {
             size_t pos = data.wpos();
             for (int i = 0; i < 256; i++)
                 data << uint8(0);
 
             for (int i = 0; i < 256; i++)
-                data.put(pos + pubKeyOrder[i], addonPublicKey[i]); // Assign Public Key.
+                data.put(pos + pubKeyOrder[i], addonPublicKey[i]);
         }
 
-        if (UsePublicKeyCRC)
+        if (itr->Enabled)
         {
-            data << uint32(HasPublicKey ? 0 : itr->PublicKeyCRC); // Sniffs show 0 for client Standard Addons.
-            data << uint8(!HasPublicKey);
+            data << uint32(0);
+            data << uint8(itr->Enabled);
         }
 
         data << uint8(itr->State);
-
-        if (HasURL)
-            data.WriteString(""); // URL String
     }
 
     m_addonsList.clear();
 
-    if (bannedAddons->size() > 0)
+    for (AddonMgr::BannedAddonList::const_iterator itr = bannedAddons->begin(); itr != bannedAddons->end(); ++itr)
     {
-        for (AddonMgr::BannedAddonList::const_iterator itr = bannedAddons->begin(); itr != bannedAddons->end(); ++itr)
-        {
-            for (int32 i = 0; i < 8; i++)
-                data << uint32(0);
+        for (int32 i = 0; i < 8; i++)
+            data << uint32(0);
 
-            bool IsBanned = itr->Timestamp ? true : false; // If it's banned, it has a TimeStamp.
-
-            data << uint32(itr->Id);
-            data << uint32(itr->Timestamp);
-            data << uint32(IsBanned);
-        }
+        // Those 3 might be in wrong order
+        data << uint32(itr->Id);
+        data << uint32(itr->Timestamp);
+        data << uint32(1);  // IsBanned
     }
 
     SendPacket(&data);
@@ -1088,14 +1116,14 @@ bool WorldSession::IsAddonRegistered(const std::string& prefix) const
 
 void WorldSession::HandleUnregisterAddonPrefixesOpcode(WorldPacket& /*recvPacket*/) // empty packet
 {
-    TC_LOG_DEBUG("network", "WORLD: Received CMSG_UNREGISTER_ALL_ADDON_PREFIXES");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_UNREGISTER_ALL_ADDON_PREFIXES");
 
     _registeredAddonPrefixes.clear();
 }
 
 void WorldSession::HandleAddonRegisteredPrefixesOpcode(WorldPacket& recvPacket)
 {
-    TC_LOG_DEBUG("network", "WORLD: Received CMSG_ADDON_REGISTERED_PREFIXES");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_ADDON_REGISTERED_PREFIXES");
 
     // This is always sent after CMSG_UNREGISTER_ALL_ADDON_PREFIXES
 
@@ -1113,8 +1141,6 @@ void WorldSession::HandleAddonRegisteredPrefixesOpcode(WorldPacket& recvPacket)
     for (uint32 i = 0; i < count; ++i)
         lengths[i] = recvPacket.ReadBits(5);
 
-    recvPacket.FlushBits();
-
     for (uint32 i = 0; i < count; ++i)
         _registeredAddonPrefixes.push_back(recvPacket.ReadString(lengths[i]));
 
@@ -1129,21 +1155,14 @@ void WorldSession::HandleAddonRegisteredPrefixesOpcode(WorldPacket& recvPacket)
 
 void WorldSession::SendTimezoneInformation()
 {
-    char timezoneString[256];
-    // TIME_ZONE_INFORMATION timeZoneInfo;
-    // GetTimeZoneInformation(&timeZoneInfo);
-    // wcstombs(timezoneString, timeZoneInfo.StandardName, sizeof(timezoneString));
+    const static std::string timeZoneName = "Europe/Paris";
 
-    sprintf(timezoneString, "Etc/UTC"); // The method above cannot be used, because of non-english OS translations, so we send const data (possible strings are hardcoded in the client because of the same reason)
-
-    WorldPacket data(SMSG_SET_TIMEZONE_INFORMATION, 2 + strlen(timezoneString) * 2);
-    data.WriteBits(strlen(timezoneString), 7);
-    data.WriteBits(strlen(timezoneString), 7);
-
+    WorldPacket data(SMSG_TIME_ZONE_INFORMATION, 26);
+    data.WriteBits(strlen(timeZoneName.c_str()), 7);
+    data.WriteBits(strlen(timeZoneName.c_str()), 7);
     data.FlushBits();
-
-    data.WriteString(timezoneString);
-    data.WriteString(timezoneString);
+    data.WriteString(timeZoneName);
+    data.WriteString(timeZoneName);
     SendPacket(&data);
 }
 
@@ -1183,12 +1202,14 @@ void WorldSession::ProcessQueryCallbacks()
     }
 
     //! HandlePlayerLoginOpcode
-    if (_charLoginCallback.ready())
+    if (_charLoginCallback.ready() && _accountSpellCallback.ready())
     {
         SQLQueryHolder* param;
         _charLoginCallback.get(param);
-        HandlePlayerLogin((LoginQueryHolder*)param);
+        _accountSpellCallback.get(result);
+        HandlePlayerLogin((LoginQueryHolder*)param, result);
         _charLoginCallback.cancel();
+        _accountSpellCallback.cancel();
     }
 
     //! HandleAddFriendOpcode
@@ -1236,7 +1257,7 @@ void WorldSession::ProcessQueryCallbacks()
     }
 }
 
-void WorldSession::InitWarden(BigNumber* k, std::string const& os)
+void WorldSession::InitWarden(BigNumber* k, std::string os)
 {
     if (os == "Win")
     {
@@ -1248,81 +1269,5 @@ void WorldSession::InitWarden(BigNumber* k, std::string const& os)
         // Disabled as it is causing the client to crash
         // _warden = new WardenMac();
         // _warden->Init(this, k);
-    }
-}
-
-void WorldSession::LoadPermissions()
-{
-    uint32 id = GetAccountId();
-    std::string name;
-    AccountMgr::GetName(id, name);
-    uint8 secLevel = GetSecurity();
-
-    _RBACData = new rbac::RBACData(id, name, realmID, secLevel);
-    _RBACData->LoadFromDB();
-
-    TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: %u, Name: %s, realmId: %d, secLevel: %u]",
-                   id, name.c_str(), realmID, secLevel);
-}
-
-rbac::RBACData* WorldSession::GetRBACData()
-{
-    return _RBACData;
-}
-
-bool WorldSession::HasPermission(uint32 permission)
-{
-    if (!_RBACData)
-        LoadPermissions();
-
-    bool hasPermission = _RBACData->HasPermission(permission);
-    TC_LOG_DEBUG("rbac", "WorldSession::HasPermission [AccountId: %u, Name: %s, realmId: %d]",
-                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmID);
-
-    return hasPermission;
-}
-
-void WorldSession::InvalidateRBACData()
-{
-    TC_LOG_DEBUG("rbac", "WorldSession::Invalidaterbac::RBACData [AccountId: %u, Name: %s, realmId: %d]",
-                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmID);
-    delete _RBACData;
-    _RBACData = NULL;
-}
-
-bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p) const
-{
-    if (IsOpcodeAllowed(p.GetOpcode()))
-        return true;
-
-    // Opcode not allowed, let the punishment begin
-    TC_LOG_INFO("network", "AntiDOS: Account %u, IP: %s, sent unacceptable packet (opc: %u, size: %u)",
-        Session->GetAccountId(), Session->GetRemoteAddress().c_str(), p.GetOpcode(), (uint32)p.size());
-
-    switch (_policy)
-    {
-        case POLICY_LOG:
-            return true;
-        case POLICY_KICK:
-            TC_LOG_INFO("network", "AntiDOS: Player kicked!");
-            return false;
-        case POLICY_BAN:
-        {
-            BanMode bm = (BanMode)sWorld->getIntConfig(CONFIG_PACKET_SPOOF_BANMODE);
-            uint32 duration = sWorld->getIntConfig(CONFIG_PACKET_SPOOF_BANDURATION); // in seconds
-            std::string nameOrIp = "";
-            switch (bm)
-            {
-                case BAN_CHARACTER: // not supported, ban account
-                case BAN_ACCOUNT: (void)sAccountMgr->GetName(Session->GetAccountId(), nameOrIp); break;
-                case BAN_IP: nameOrIp = Session->GetRemoteAddress(); break;
-            }
-            sWorld->BanAccount(bm, nameOrIp, duration, "DOS (Packet Flooding/Spoofing", "Server: AutoDOS");
-            TC_LOG_INFO("network", "AntiDOS: Player automatically banned for %u seconds.", duration);
-
-            return false;
-        }
-        default: // invalid policy
-            return true;
     }
 }

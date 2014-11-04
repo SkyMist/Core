@@ -1,214 +1,273 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
-/* ScriptData
-SDName: Boss_jandicebarov
-SD%Complete: 100
-SDComment:
-SDCategory: Scholomance
-EndScriptData */
-
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "scholomance.h"
 
 enum Spells
 {
-    SPELL_CURSEOFBLOOD          = 24673,
-    //SPELL_ILLUSION              = 17773,
+    SPELL_GRAVITY_FLUX_DMG  = 114038,
+    SPELL_GRAVITY_FLUX      = 114059,
+    SPELL_WHIRL_OF_ILLUSION = 114048,
+    SPELL_WONDROUS_RAPID    = 114062
+};
 
-    // Spells of Illusion of Jandice Barov
-    SPELL_CLEAVE                = 15584
+enum Talk
+{
+    SAY_AGGRO               = 0, // Ooh, it takes some real stones to challenge the Mistress of Illusion. Well? Show me what you've got! (30287)
+    SAY_WHIRL_ILLUSION_1    = 1, // Come, try your luck! Ha ha haaa... (30292)
+    SAY_WHIRL_ILLUSION_2    = 2, // Feeling a bit... dizzy? (30293)
+    SAY_KILLER_1            = 3, // Ashes, ashes, we all fall down. (30289)
+    SAY_KILLER_2            = 4, // Oh, careful not to bleed on the rug, please dear? (30290)
+    SAY_WIPE_RESET          = 5, // Better luck next time. (30291)
+    SAY_DEATH               = 6, // Jandice Barov yells: Ugh... death... hurts? Unreal... (30288)
+};
+
+enum Events
+{
+    EVENT_GRAVITY,
+    EVENT_FINISH_INVIS,
+    EVENT_WOUNDROUS_RAPID
+};
+
+Position const IllusionPos[9] =
+{
+    { 300.248f, 46.374f, 113.409f, 0.0f },
+    { 299.957f, 31.166f, 113.409f, 0.0f },
+    { 299.764f, 21.024f, 113.409f, 0.0f },
+    { 280.708f, 31.672f, 113.408f, 0.0f },
+    { 281.195f, 21.988f, 113.408f, 0.0f },
+    { 262.164f, 32.343f, 113.409f, 0.0f },
+    { 261.658f, 21.720f, 113.409f, 0.0f },
+    { 262.375f, 46.644f, 113.409f, 0.0f },
+    { 282.495f, 45.559f, 113.408f, 0.0f },
+};
+
+Position const IllusionHeroPos[15] =
+{
+    { 300.248f, 46.374f, 113.409f, 0.f },
+    { 299.957f, 31.166f, 113.409f, 0.f },
+    { 299.764f, 21.024f, 113.409f, 0.f },
+    { 280.708f, 31.672f, 113.408f, 0.f },
+    { 281.195f, 21.988f, 113.408f, 0.f },
+    { 262.164f, 32.343f, 113.409f, 0.f },
+    { 261.658f, 21.720f, 113.409f, 0.f },
+    { 262.375f, 46.644f, 113.409f, 0.f },
+    { 282.495f, 45.559f, 113.408f, 0.f },
+    { 271.66f,  21.244f, 113.408f, 0.f },
+    { 271.631f, 31.055f, 113.408f, 0.f },
+    { 272.426f, 46.041f, 113.408f, 0.f },
+    { 291.272f, 46.044f, 113.408f, 0.f },
+    { 290.763f, 31.190f, 113.408f, 0.f },
+    { 290.394f, 21.659f, 113.408f, 0.f },
 };
 
 class boss_jandice_barov : public CreatureScript
 {
-public:
-    boss_jandice_barov() : CreatureScript("boss_jandice_barov") { }
+    public:
+        boss_jandice_barov() : CreatureScript("boss_jandice_barov") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new boss_jandicebarovAI(creature);
-    }
-
-    struct boss_jandicebarovAI : public ScriptedAI
-    {
-        boss_jandicebarovAI(Creature* creature) : ScriptedAI(creature) { }
-
-        uint32 CurseOfBlood_Timer;
-        uint32 Illusion_Timer;
-        //uint32 Illusioncounter;
-        uint32 Invisible_Timer;
-        bool Invisible;
-
-        void Reset() OVERRIDE
+        struct boss_jandice_barovAI : public BossAI
         {
-            CurseOfBlood_Timer = 15000;
-            Illusion_Timer = 30000;
-            Invisible_Timer = 3000;                             //Too much too low?
-            Invisible = false;
-        }
+            boss_jandice_barovAI(Creature* creature) : BossAI(creature, DATA_JANDICE_BAROV) { }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-        }
-
-        void SummonIllusions(Unit* victim)
-        {
-            if (Creature* Illusion = DoSpawnCreature(11439, float(irand(-9, 9)), float(irand(-9, 9)), 0, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 60000))
-                Illusion->AI()->AttackStart(victim);
-        }
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if (Invisible && Invisible_Timer <= diff)
+            void Reset()
             {
-                //Become visible again
-                me->setFaction(14);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->SetDisplayId(11073);     //Jandice Model
-                Invisible = false;
-            } else if (Invisible)
-            {
-                Invisible_Timer -= diff;
-                //Do nothing while invisible
-                return;
+                _Reset();
+                Pone = false;
+                Ptwo = false;
+                summons.DespawnAll();
             }
 
-            //Return since we have no target
-            if (!UpdateVictim())
-                return;
-
-            //CurseOfBlood_Timer
-            if (CurseOfBlood_Timer <= diff)
+            void EnterCombat(Unit* /*who*/)
             {
-                //Cast
-                DoCastVictim(SPELL_CURSEOFBLOOD);
+                _EnterCombat();
+                events.ScheduleEvent(EVENT_GRAVITY, 12000);
+                events.ScheduleEvent(EVENT_WOUNDROUS_RAPID, 20000);
+            }
 
-                //45 seconds
-                CurseOfBlood_Timer = 30000;
-            } else CurseOfBlood_Timer -= diff;
-
-            //Illusion_Timer
-            if (!Invisible && Illusion_Timer <= diff)
+            void SummonedCreatureDespawn(Creature* summon)
             {
+                summons.Despawn(summon);
+            }
 
-                //Interrupt any spell casting
-                me->InterruptNonMeleeSpells(false);
-                me->setFaction(35);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->SetDisplayId(11686);  // Invisible Model
-                DoModifyThreatPercent(me->GetVictim(), -99);
-
-                //Summon 10 Illusions attacking random gamers
-                Unit* target = NULL;
-                for (uint8 i = 0; i < 10; ++i)
+            void SummonIllusions()
+            {
+                if (IsHeroic())
                 {
-                    target = SelectTarget(SELECT_TARGET_RANDOM, 0);
-                    if (target)
-                        SummonIllusions(target);
+                    for (uint8 i = 0; i < 15; ++i)
+                        me->SummonCreature(59220, IllusionHeroPos[i], TEMPSUMMON_DEAD_DESPAWN, 0);
                 }
-                Invisible = true;
-                Invisible_Timer = 3000;
+                else
 
-                //25 seconds until we should cast this agian
-                Illusion_Timer = 25000;
-            } else Illusion_Timer -= diff;
+                for (uint8 i = 0; i < 9; ++i)
+                    me->SummonCreature(59220, IllusionPos[i], TEMPSUMMON_DEAD_DESPAWN, 0);
 
-            //            //Illusion_Timer
-            //            if (Illusion_Timer <= diff)
-            //            {
-            //                  //Cast
-            //                DoCastVictim(SPELL_ILLUSION);
-            //
-            //                  //3 Illusion will be summoned
-            //                  if (Illusioncounter < 3)
-            //                  {
-            //                    Illusion_Timer = 500;
-            //                    ++Illusioncounter;
-            //                  }
-            //                  else {
-            //                      //15 seconds until we should cast this again
-            //                      Illusion_Timer = 15000;
-            //                      Illusioncounter = 0;
-            //                  }
-            //
-            //            } else Illusion_Timer -= diff;
+                PrepInvis();
+            }
 
-            DoMeleeAttackIfReady();
+            void PrepInvis()
+            {
+                me->InterruptNonMeleeSpells(false);
+                me->AddUnitState(UNIT_STATE_ROOT);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                me->SetVisible(false);
+                DoModifyThreatPercent(me->getVictim(), -99);
+                events.ScheduleEvent(EVENT_FINISH_INVIS, urand(15000, 25000));
+                events.CancelEvent(EVENT_WOUNDROUS_RAPID);
+                events.CancelEvent(EVENT_GRAVITY);
+            }
+
+            void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/)
+            {
+                if(!Pone && !me->IsNonMeleeSpellCasted(false) && HealthBelowPct(66))
+                {
+                    Pone = true;
+                    Talk(RAND(SAY_WHIRL_ILLUSION_1, SAY_WHIRL_ILLUSION_2));
+                    SummonIllusions();
+                    DoCastAOE(SPELL_WHIRL_OF_ILLUSION);
+                }
+                if(!Ptwo && !me->IsNonMeleeSpellCasted(false) && HealthBelowPct(33))
+                {
+                    Ptwo = true;
+                    Talk(RAND(SAY_WHIRL_ILLUSION_1, SAY_WHIRL_ILLUSION_2));
+                    SummonIllusions();
+                    DoCastAOE(SPELL_WHIRL_OF_ILLUSION);
+                }
+            }
+
+            void JustDied(Unit* /*killer*/)
+            {
+                _JustDied();
+                summons.DespawnAll();
+            }
+
+            void KilledUnit(Unit* victim)
+            {
+            }
+
+            void UpdateAI(uint32 const diff)
+            {
+                if(!UpdateVictim())
+                    return;
+
+                events.Update(diff);
+
+                if(me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
+                if(uint32 eventId = events.ExecuteEvent())
+                {
+                    switch(eventId)
+                    {
+                        case EVENT_GRAVITY:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                            {
+                                if (Creature* fluxtarget = me->SummonCreature(CREATURE_GRAVITY_FLUX, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 30000))
+                                {
+                                    fluxtarget->setFaction(target->getFaction());
+                                    fluxtarget->GetMotionMaster()->MoveIdle();
+                                    fluxtarget->CastSpell(target, SPELL_GRAVITY_FLUX, true);
+                                    fluxtarget->SetReactState(REACT_AGGRESSIVE);
+                                }
+                            }
+                            events.ScheduleEvent(EVENT_GRAVITY, 25000);
+                            break;
+                        case EVENT_FINISH_INVIS:
+                            me->ClearUnitState(UNIT_STATE_ROOT);
+                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                            me->SetVisible(true);
+                            me->RemoveAura(SPELL_WHIRL_OF_ILLUSION);
+                            events.ScheduleEvent(EVENT_WOUNDROUS_RAPID, urand(25000, 30000));
+                            events.ScheduleEvent(EVENT_GRAVITY, 25000);
+                            summons.DespawnAll();
+                            break;
+                        case EVENT_WOUNDROUS_RAPID:
+                            DoCastVictim(SPELL_WONDROUS_RAPID);
+                            events.ScheduleEvent(EVENT_WOUNDROUS_RAPID, urand(25000, 30000));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                DoMeleeAttackIfReady();
+            }
+            private:
+                bool Pone;
+                bool Ptwo;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new boss_jandice_barovAI(creature);
         }
-    };
-
 };
 
-// Illusion of Jandice Barov Script
-
-class npc_illusionofjandicebarov : public CreatureScript
+class mob_gravity_flux : public CreatureScript
 {
 public:
-    npc_illusionofjandicebarov() : CreatureScript("npc_illusionofjandicebarov") { }
+    mob_gravity_flux() : CreatureScript("mob_gravity_flux") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    struct mob_gravity_fluxAI : public ScriptedAI
     {
-        return new npc_illusionofjandicebarovAI(creature);
-    }
+        mob_gravity_fluxAI(Creature* creature) : ScriptedAI(creature) { }
 
-    struct npc_illusionofjandicebarovAI : public ScriptedAI
-    {
-        npc_illusionofjandicebarovAI(Creature* creature) : ScriptedAI(creature) { }
+        void Reset() { }
 
-        uint32 Cleave_Timer;
+        void EnterCombat(Unit* /*who*/) { }
 
-        void Reset() OVERRIDE
+        void MoveInLineOfSight(Unit* who)
         {
-            Cleave_Timer = urand(2000, 8000);
-            me->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_MAGIC, true);
-        }
+        if (who && who->GetTypeId() == TYPEID_PLAYER && me->IsValidAttackTarget(who))
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-        }
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            //Return since we have no target
-            if (!UpdateVictim())
-                return;
-
-            //Cleave_Timer
-            if (Cleave_Timer <= diff)
+            if (!searchplayer && me->IsWithinDistInMap(who, 4.9f))
             {
-                //Cast
-                DoCastVictim(SPELL_CLEAVE);
-
-                //5-8 seconds
-                Cleave_Timer = urand(5000, 8000);
-            } else Cleave_Timer -= diff;
-
-            DoMeleeAttackIfReady();
+                searchplayer = true;
+                DoCast(who, SPELL_GRAVITY_FLUX_DMG);
+                ScriptedAI::MoveInLineOfSight(who);
+            }
         }
+        private:
+            bool searchplayer;
     };
 
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new mob_gravity_fluxAI (creature);
+    }
 };
 
-void AddSC_boss_jandicebarov()
+class mob_jandice_barov_illusion : public CreatureScript
+{
+public:
+    mob_jandice_barov_illusion() : CreatureScript("mob_jandice_barov_illusion") { }
+
+    struct mob_jandice_barov_illusionAI : public ScriptedAI
+    {
+        mob_jandice_barov_illusionAI(Creature* creature) : ScriptedAI(creature) { }
+
+        void Reset()
+        {
+            me->SetReactState(REACT_PASSIVE);
+        }
+
+        void EnterCombat(Unit* /*who*/) { }
+
+        void IsSummonedBy(Unit* summoner)
+        {
+            me->GetMotionMaster()->MoveIdle();
+//            me->SetTarget(0);
+        }
+
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new mob_jandice_barov_illusionAI (creature);
+    }
+};
+
+void AddSC_boss_jandice_barov()
 {
     new boss_jandice_barov();
-    new npc_illusionofjandicebarov();
+    new mob_gravity_flux();
+    new mob_jandice_barov_illusion();
 }

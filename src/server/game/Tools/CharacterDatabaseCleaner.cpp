@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,7 +17,6 @@
  */
 
 #include "Common.h"
-#include "AchievementMgr.h"
 #include "CharacterDatabaseCleaner.h"
 #include "World.h"
 #include "Database/DatabaseEnv.h"
@@ -31,12 +29,12 @@ void CharacterDatabaseCleaner::CleanDatabase()
     if (!sWorld->getBoolConfig(CONFIG_CLEAN_CHARACTER_DB))
         return;
 
-    TC_LOG_INFO("misc", "Cleaning character database...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Cleaning character database...");
 
     uint32 oldMSTime = getMSTime();
 
     // check flags which clean ups are necessary
-    QueryResult result = CharacterDatabase.PQuery("SELECT value FROM worldstates WHERE entry = %d", WS_CLEANING_FLAGS);
+    QueryResult result = CharacterDatabase.Query("SELECT value FROM worldstates WHERE entry = 20004");
     if (!result)
         return;
 
@@ -61,11 +59,12 @@ void CharacterDatabaseCleaner::CleanDatabase()
     // NOTE: In order to have persistentFlags be set in worldstates for the next cleanup,
     // you need to define them at least once in worldstates.
     flags &= sWorld->getIntConfig(CONFIG_PERSISTENT_CHARACTER_CLEAN_FLAGS);
-    CharacterDatabase.DirectPExecute("UPDATE worldstates SET value = %u WHERE entry = %d", flags, WS_CLEANING_FLAGS);
+    CharacterDatabase.DirectPExecute("UPDATE worldstates SET value = %u WHERE entry = 20004", flags);
 
     sWorld->SetCleaningFlags(flags);
 
-    TC_LOG_INFO("server.loading", ">> Cleaned character database in %u ms", GetMSTimeDiffToNow(oldMSTime));
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Cleaned character database in %u ms", GetMSTimeDiffToNow(oldMSTime));
+
 }
 
 void CharacterDatabaseCleaner::CheckUnique(const char* column, const char* table, bool (*check)(uint32))
@@ -73,7 +72,7 @@ void CharacterDatabaseCleaner::CheckUnique(const char* column, const char* table
     QueryResult result = CharacterDatabase.PQuery("SELECT DISTINCT %s FROM %s", column, table);
     if (!result)
     {
-        TC_LOG_INFO("misc", "Table %s is empty.", table);
+        sLog->outInfo(LOG_FILTER_GENERAL, "Table %s is empty.", table);
         return;
     }
 
@@ -109,7 +108,7 @@ void CharacterDatabaseCleaner::CheckUnique(const char* column, const char* table
 
 bool CharacterDatabaseCleaner::AchievementProgressCheck(uint32 criteria)
 {
-    return sAchievementMgr->GetAchievementCriteria(criteria);
+    return sAchievementCriteriaStore.LookupEntry(criteria);
 }
 
 void CharacterDatabaseCleaner::CleanCharacterAchievementProgress()
@@ -129,7 +128,7 @@ void CharacterDatabaseCleaner::CleanCharacterSkills()
 
 bool CharacterDatabaseCleaner::SpellCheck(uint32 spell_id)
 {
-    return sSpellMgr->GetSpellInfo(spell_id);
+    return sSpellMgr->GetSpellInfo(spell_id);// && !GetTalentSpellPos(spell_id);
 }
 
 void CharacterDatabaseCleaner::CleanCharacterSpell()
@@ -139,11 +138,13 @@ void CharacterDatabaseCleaner::CleanCharacterSpell()
 
 bool CharacterDatabaseCleaner::TalentCheck(uint32 talent_id)
 {
+    return false;
+    /*
     TalentEntry const* talentInfo = sTalentStore.LookupEntry(talent_id);
     if (!talentInfo)
         return false;
 
-    return true;
+    return sTalentTabStore.LookupEntry(talentInfo->TalentTab);*/
 }
 
 void CharacterDatabaseCleaner::CleanCharacterTalent()

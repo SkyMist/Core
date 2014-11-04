@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2013 MaNGOS <http://www.getmangos.com/>
+ * Copyright (C) 2008-2013 Trinity <http://www.trinitycore.org/>
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -103,7 +103,7 @@ bool adt_MHDR::prepareLoadedData()
     if (fcc != MHDRMagic.fcc)
         return false;
 
-    if (size!=sizeof(adt_MHDR)-8)
+    if (size != sizeof(adt_MHDR) - 8)
         return false;
 
     // Check and prepare MCIN
@@ -123,9 +123,9 @@ bool adt_MCIN::prepareLoadedData()
         return false;
 
     // Check cells data
-    for (int i=0; i<ADT_CELLS_PER_GRID;i++)
-        for (int j=0; j<ADT_CELLS_PER_GRID;j++)
-            if (cells[i][j].offsMCNK && !getMCNK(i,j)->prepareLoadedData())
+    for (int i = 0; i < ADT_CELLS_PER_GRID; i++)
+        for (int j = 0; j < ADT_CELLS_PER_GRID; j++)
+            if (cells[i][j].offsMCNK && !getMCNK(i, j)->prepareLoadedData())
                 return false;
 
     return true;

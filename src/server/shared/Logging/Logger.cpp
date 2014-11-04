@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -19,11 +17,14 @@
 
 #include "Logger.h"
 
-Logger::Logger(): name(""), level(LOG_LEVEL_DISABLED) { }
+Logger::Logger(): name(""), type(LOG_FILTER_GENERAL), level(LOG_LEVEL_DISABLED)
+{
+}
 
-void Logger::Create(std::string const& _name, LogLevel _level)
+void Logger::Create(std::string const& _name, LogFilterType _type, LogLevel _level)
 {
     name = _name;
+    type = _type;
     level = _level;
 }
 
@@ -37,6 +38,11 @@ Logger::~Logger()
 std::string const& Logger::getName() const
 {
     return name;
+}
+
+LogFilterType Logger::getType() const
+{
+    return type;
 }
 
 LogLevel Logger::getLogLevel() const
@@ -64,7 +70,7 @@ void Logger::setLogLevel(LogLevel _level)
     level = _level;
 }
 
-void Logger::write(LogMessage& message) const
+void Logger::write(LogMessage& message)
 {
     if (!level || level > message.level || message.text.empty())
     {
@@ -72,7 +78,7 @@ void Logger::write(LogMessage& message) const
         return;
     }
 
-    for (AppenderMap::const_iterator it = appenders.begin(); it != appenders.end(); ++it)
+    for (AppenderMap::iterator it = appenders.begin(); it != appenders.end(); ++it)
         if (it->second)
             it->second->write(message);
 }

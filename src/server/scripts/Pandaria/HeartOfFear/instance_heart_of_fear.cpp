@@ -1,223 +1,274 @@
-/*Copyright (C) 2014 Buli.
-*
-* This file is NOT free software. Third-party users may NOT redistribute it or modify it :).
-*/
+/*
+ * Copyright (C) 2008-20XX JadeCore <http://www.pandashan.com>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
-#include "ScriptedCreature.h"
-#include "ObjectAccessor.h"
-#include "Group.h"
-#include "Unit.h"
-#include "Player.h"
-#include "Map.h"
-#include "PoolMgr.h"
-#include "AccountMgr.h"
-
+#include "VMapFactory.h"
 #include "heart_of_fear.h"
 
-class instance_heart_of_fear: public InstanceMapScript 
+DoorData const doorData[] =
 {
-public:
-	instance_heart_of_fear() : InstanceMapScript("instance_heart_of_fear", 1009) { }
+    {GOB_ANTECHAMBER_DOOR_ENTRANCE, 0,              DOOR_TYPE_ROOM,     BOUNDARY_S},
+    {GOB_ANTECHAMBER_DOOR_EXIT,     0,              DOOR_TYPE_ROOM,     BOUNDARY_E},
+    {GOB_ORATIUM_DOOR_ENTRANCE,     DATA_ZORLOK,    DOOR_TYPE_ROOM,     BOUNDARY_W},
+    {GOB_QUARTERS_DOOR_ENTRANCE,    DATA_ZORLOK,     DOOR_TYPE_PASSAGE,  BOUNDARY_S},
+    {GOB_QUARTERS_DOOR_EXIT,        DATA_TAYAK,     DOOR_TYPE_PASSAGE,  BOUNDARY_W},
+    {GOB_STAIRWAYS_DOOR_EXIT,       0,              DOOR_TYPE_ROOM,     BOUNDARY_N},
+    {GOB_BALCONY_DOOR_EXIT,         DATA_MELJARAK,  DOOR_TYPE_PASSAGE,  BOUNDARY_S},
+    {GOB_ATRIUM_DOOR_ENTRANCE,      0,              DOOR_TYPE_ROOM,     BOUNDARY_N},
+    {GOB_ATRIUM_DOOR_EXIT,          0,              DOOR_TYPE_ROOM,     BOUNDARY_W},
+    {GOB_SANCTUM_DOOR_ENTRANCE,     0,              DOOR_TYPE_ROOM,     BOUNDARY_E},
+    {GOB_HEARTOFFEAR_DOOR_ENTRANCE, DATA_UNSOK,     DOOR_TYPE_PASSAGE,  BOUNDARY_E},
+    {0,         0,              DOOR_TYPE_ROOM,     0}, // EOF
+};
 
-	struct instance_heart_of_fear_InstanceMapScript: public InstanceScript
-    {
-		instance_heart_of_fear_InstanceMapScript(InstanceMap* map) : InstanceScript(map)
+class instance_heart_of_fear : public InstanceMapScript
+{
+    public:
+        instance_heart_of_fear() : InstanceMapScript("instance_heart_of_fear", 1009) { }
+
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
-            Initialize();
+            return new instance_heart_of_fear_InstanceMapScript(map);
         }
 
-        // Bosses.
-		uint64 uiGrandVizierZorlok;
-		uint64 uiBladeLordTayak;
-		uint64 uiGaralon;
-		uint64 uiWindLordMeljarak;
-		uint64 uiAmberShaperUnsok;
-        uint64 uiGrandEmpressShekzeer;
-
-		void Initialize() 
+        struct instance_heart_of_fear_InstanceMapScript : public InstanceScript
         {
-            SetBossNumber(MAX_ENCOUNTERS);
+            instance_heart_of_fear_InstanceMapScript(Map* map) : InstanceScript(map) {}
 
-            // Bosses.
-			uiGrandVizierZorlok     = 0;
-			uiBladeLordTayak        = 0;
-			uiGaralon               = 0;
-			uiWindLordMeljarak      = 0;
-			uiAmberShaperUnsok      = 0;
-            uiGrandEmpressShekzeer  = 0;
+            // Boss GUIDs
+            uint64 zorlokGuid;
+            uint64 tayakGuid;
+            uint64 garalonGuid;
+            uint64 meljarakGuid;
+            uint64 unsokGuid;
+            uint64 shekzeerGuid;
 
-			for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
-				SetBossState(i, NOT_STARTED);
-		}
+            // Add GUIDs
+            uint64 stormSpiritGuid;
 
-		bool IsEncounterInProgress() const 
-        {
-			for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i) 
-				if (GetBossState(i) == IN_PROGRESS)
-					return true;
+            // Special Doors GUIDs
+            uint64 zorlokEntranceDoorGuid;
+            uint64 tayakEntranceDoorGuid;
+            uint64 tayakExitDoorGuid;
+            uint64 garalonEntranceDoorGuid;
+            uint64 meljarakExitDoorGuid;
+            uint64 unsokEntranceDoorGuid;
+            uint64 shekzeerEntranceDoorGuid;
 
-			return false;
-		}
-
-		void OnCreatureCreate(Creature* creature) 
-        {
-			switch (creature->GetEntry())
+            void Initialize()
             {
-                // Bosses.
-			    case BOSS_GRAND_VIZIER_ZORLOK:
-				    uiGrandVizierZorlok = creature->GetGUID();
-				    break;
-			    case BOSS_BLADE_LORD_TAYAK:
-				    uiBladeLordTayak = creature->GetGUID();
-				    break;
-			    case BOSS_GARALON:
-				    uiGaralon = creature->GetGUID();
-				    break;
-			    case BOSS_WIND_LORD_MELJARAK:
-				    uiWindLordMeljarak = creature->GetGUID();
-				    break;
-			    case BOSS_AMBER_SHAPER_UNSOK:
-				    uiAmberShaperUnsok = creature->GetGUID();
-				    break;
-			    case BOSS_GRAND_EMPRESS_SHEKZEER:
-				    uiGrandEmpressShekzeer = creature->GetGUID();
-				    break;
+                SetBossNumber(DATA_MAX_BOSS_DATA);
+                LoadDoorData(doorData);
 
-                default: break;
-			}
-		}
+                zorlokGuid      = 0;
+                tayakGuid       = 0;
+                garalonGuid     = 0;
+                meljarakGuid    = 0;
+                unsokGuid       = 0;
+                shekzeerGuid    = 0;
 
-/*
-        void OnUnitDeath(Unit* killed)
-        {
-            if (killed->GetTypeId() == TYPEID_PLAYER) return;
-
-            switch(killed->ToCreature()->GetEntry())
-            {
+                zorlokEntranceDoorGuid      = 0;
+                tayakEntranceDoorGuid       = 0;
+                tayakExitDoorGuid           = 0;
+                garalonEntranceDoorGuid     = 0;
+                meljarakExitDoorGuid        = 0;
+                unsokEntranceDoorGuid       = 0;
+                shekzeerEntranceDoorGuid    = 0;
             }
-        }
 
-        void OnGameObjectCreate(GameObject* go) 
-        {
-            switch (go->GetEntry())
+            void OnCreatureCreate(Creature* creature)
             {
-            }
-        }
-
-        void OnGameObjectRemove(GameObject* go)
-        {
-            switch (go->GetEntry())
-            {
-            }
-        }
-*/
-
-		void SetData(uint32 type, uint32 data)
-        {
-            SetBossState(type, EncounterState(data));
-
-			if (data == DONE)
-				SaveToDB();
-		}
-
-        bool SetBossState(uint32 data, EncounterState state)
-        {
-            if (!InstanceScript::SetBossState(data, state))
-                return false;
-
-            if (state == DONE)
-            {
-                switch(data)
+                switch (creature->GetEntry())
                 {
-                    case DATA_VIZIER_ZORLOK_EVENT:
-                    case DATA_BLADE_LORD_TAYAK_EVENT:
-                    case DATA_GARALON_EVENT:
-                    case DATA_WIND_LORD_MELJARAK_EVENT:
-                    case DATA_AMBER_SHAPER_UNSOK_EVENT:
-                    case DATA_EMPRESS_SHEKZEER_EVENT:
-                    break;
+                    case NPC_ZORLOK:
+                        zorlokGuid = creature->GetGUID();
+                        break;
+                    case NPC_STORM_SPIRIT:
+                        stormSpiritGuid = creature->GetGUID();
+                        break;
+                    case NPC_TAYAK:
+                        tayakGuid = creature->GetGUID();
+                        break;
+                    case NPC_GARALON:
+                        garalonGuid = creature->GetGUID();
+                        break;
+                    case NPC_MELJARAK:
+                        meljarakGuid = creature->GetGUID();
+                        break;
+                    case NPC_UNSOK:
+                        unsokGuid = creature->GetGUID();
+                        break;
+                    case NPC_SHEKZEER:
+                        shekzeerGuid = creature->GetGUID();
+                        break;
+                    default:
+                        break;
                 }
             }
 
-            return true;
-        }
-
-		uint32 GetData(uint32 type) const OVERRIDE
-        {
-			return GetBossState(type);
-		}
-
-		uint64 getData64(uint32 data) const OVERRIDE
-        {
-			switch (data)
+            void OnGameObjectCreate(GameObject* go)
             {
-                // Bosses.
-			    case DATA_VIZIER_ZORLOK:      return uiGrandVizierZorlok;     break;
-			    case DATA_BLADE_LORD_TAYAK:   return uiBladeLordTayak;        break;
-			    case DATA_GARALON:            return uiGaralon;               break;
-			    case DATA_WIND_LORD_MELJARAK: return uiWindLordMeljarak;      break;
-			    case DATA_AMBER_SHAPER_UNSOK: return uiAmberShaperUnsok;      break;
-			    case DATA_EMPRESS_SHEKZEER:   return uiGrandEmpressShekzeer;  break;
-
-                default:                      return 0;                       break;
-			}
-		}
-
-		std::string GetSaveData() 
-        {
-			OUT_SAVE_INST_DATA;
-
-			std::ostringstream saveStream;
-			saveStream << "H F " << GetBossSaveData();
-
-			OUT_SAVE_INST_DATA_COMPLETE;
-			return saveStream.str();
-		}
-
-		void Load(const char* in) 
-        {
-			if (!in) 
-            {
-				OUT_LOAD_INST_DATA_FAIL;
-				return;
-			}
-
-			OUT_LOAD_INST_DATA(in);
-
-			char dataHead1, dataHead2;
-
-			std::istringstream loadStream(in);
-			loadStream >> dataHead1 >> dataHead2;
-
-			if (dataHead1 == 'H' && dataHead2 == 'F') 
-            {
-                for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
+                switch (go->GetEntry())
                 {
-                    uint32 tmpState;
-                    loadStream >> tmpState;
+                    // Generic doors
+                    case GOB_ANTECHAMBER_DOOR_ENTRANCE:
+                    case GOB_ANTECHAMBER_DOOR_EXIT:
+                    case GOB_ATRIUM_DOOR_ENTRANCE:
+                    case GOB_ATRIUM_DOOR_EXIT:
+                        AddDoor(go, true);
+                        break;
+                    // Specific doors
+                    case GOB_ORATIUM_DOOR_ENTRANCE:
+                        AddDoor(go, true);
+                        zorlokEntranceDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_QUARTERS_DOOR_ENTRANCE:
+                        AddDoor(go, true);
+                        tayakEntranceDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_QUARTERS_DOOR_EXIT:
+                        AddDoor(go, true);
+                        tayakExitDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_STAIRWAYS_DOOR_EXIT:
+                        AddDoor(go, true);
+                        garalonEntranceDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_BALCONY_DOOR_EXIT:
+                        AddDoor(go, true);
+                        meljarakExitDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_SANCTUM_DOOR_ENTRANCE:
+                        AddDoor(go, true);
+                        unsokEntranceDoorGuid = go->GetGUID();
+                        break;
+                    case GOB_HEARTOFFEAR_DOOR_ENTRANCE:
+                        AddDoor(go, true);
+                        shekzeerEntranceDoorGuid = go->GetGUID();
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-                    if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                        tmpState = NOT_STARTED;
+            bool SetBossState(uint32 id, EncounterState state)
+            {
+                if (!InstanceScript::SetBossState(id, state))
+                    return false;
+                /*
+                switch (id)
+                {
 
-                    SetBossState(i, EncounterState(tmpState));
+                    default:
+                        break;
+                }
+                */
+                return true;
+            }
+
+            uint64 GetData64(uint32 type)
+            {
+                switch (type)
+                {
+                    // --- Creatures ---
+                    case NPC_ZORLOK:
+                        return zorlokGuid;
+                    case NPC_STORM_SPIRIT:
+                        return stormSpiritGuid;
+                    case NPC_TAYAK:
+                        return tayakGuid;
+                    case NPC_GARALON:
+                        return garalonGuid;
+                    case NPC_MELJARAK:
+                        return meljarakGuid;
+                    case NPC_UNSOK:
+                        return unsokGuid;
+                    case NPC_SHEKZEER:
+                        return shekzeerGuid;
+                    // --- GameObjects ---
+                    case GOB_ORATIUM_DOOR_ENTRANCE:
+                        return zorlokEntranceDoorGuid;
+                    case GOB_QUARTERS_DOOR_ENTRANCE:
+                        return tayakEntranceDoorGuid;
+                    case GOB_QUARTERS_DOOR_EXIT:
+                        return tayakExitDoorGuid;
+                    case GOB_STAIRWAYS_DOOR_EXIT:
+                        return garalonEntranceDoorGuid;
+                    case GOB_BALCONY_DOOR_EXIT:
+                        return meljarakExitDoorGuid;
+                    case GOB_SANCTUM_DOOR_ENTRANCE:
+                        return unsokEntranceDoorGuid;
+                    case GOB_HEARTOFFEAR_DOOR_ENTRANCE:
+                        return shekzeerEntranceDoorGuid;
+                    default:
+                        break;
                 }
 
-			} else OUT_LOAD_INST_DATA_FAIL;
+                return 0;
+            }
 
-			OUT_LOAD_INST_DATA_COMPLETE;
-		}
-	};
+            bool IsWipe()
+            {
+                Map::PlayerList const& PlayerList = instance->GetPlayers();
 
-	InstanceScript* GetInstanceScript(InstanceMap* map) const
-    {
-		return new instance_heart_of_fear_InstanceMapScript(map);
-	}
+                if (PlayerList.isEmpty())
+                    return true;
+
+                for (Map::PlayerList::const_iterator Itr = PlayerList.begin(); Itr != PlayerList.end(); ++Itr)
+                {
+                    Player* player = Itr->getSource();
+
+                    if (!player)
+                        continue;
+
+                    if (player->isAlive() && !player->isGameMaster())
+                        return false;
+                }
+
+                return true;
+            }
+
+            bool CheckRequiredBosses(uint32 bossId, Player const* player = NULL) const
+            {
+                if (!InstanceScript::CheckRequiredBosses(bossId, player))
+                    return false;
+
+                switch (bossId)
+                {
+                    case DATA_TAYAK:
+                    case DATA_GARALON:
+                    case DATA_MELJARAK:
+                    case DATA_UNSOK:
+                    case DATA_SHEKZEER:
+                        if (GetBossState(bossId - 1) != DONE)
+                            return false;
+                    default:
+                        break;
+                }
+
+                return true;
+            }
+        };
 };
 
 void AddSC_instance_heart_of_fear()
 {
-	new instance_heart_of_fear();
+    new instance_heart_of_fear();
 }

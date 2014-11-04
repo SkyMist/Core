@@ -1,3 +1,0 @@
-ALTER TABLE `characters`   
-  ADD COLUMN `currentPetSlot` TINYINT(3) UNSIGNED DEFAULT 0  NOT NULL AFTER `deleteDate`,
-  ADD COLUMN `petSlotUsed` INT(10) UNSIGNED DEFAULT 0  NOT NULL AFTER `currentPetSlot`;

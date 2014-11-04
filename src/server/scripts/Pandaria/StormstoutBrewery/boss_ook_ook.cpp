@@ -18,10 +18,10 @@
 enum Yells
 {
     SAY_INTRO                    = 0, // Who crashing Ook party!? Ook ook ook...
-    SAY_AGGRO                    = 1, // Me gonna ook you in the dooker!
-    SAY_KILL                     = 2, // In the dooker!
+    SAY_AGGRO                    = 1, // Me gonna ook you in the ooker!
+    SAY_KILL                     = 2, // In the ooker!
     SAY_BANANAS                  = 3, // 0 - Get Ooking party started! ; 1 - Come on and get your Ook on! ; 2 - We're gonna Ook all night!
-    SAY_DEATH                    = 4  // Ook! Oooook!!
+    SAY_DEATH                    = 4  // Ook ! Oooook !
 };
 
 #define ANN_BANANAS "Ook-Ook is Going Bananas! More barrels are coming!"
@@ -81,13 +81,13 @@ class boss_ook_ook : public CreatureScript
             uint8 goingBananasDone;
             bool summonedBarrels; // For Going Bananas phases.
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 Talk(SAY_INTRO);
                 Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 summons.DespawnAll();
@@ -101,7 +101,7 @@ class boss_ook_ook : public CreatureScript
                 _Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 Talk(SAY_AGGRO);
 
@@ -116,13 +116,13 @@ class boss_ook_ook : public CreatureScript
                 _EnterCombat();
             }
 
-            void KilledUnit(Unit* victim) OVERRIDE
+            void KilledUnit(Unit* victim)
             {
                 if (victim->GetTypeId() == TYPEID_PLAYER)
                     Talk(SAY_KILL);
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -138,7 +138,7 @@ class boss_ook_ook : public CreatureScript
                 _EnterEvadeMode();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
@@ -152,16 +152,16 @@ class boss_ook_ook : public CreatureScript
                 _JustDied();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
                 summon->setActive(true);
 
-		        if (me->IsInCombat())
+		        if (me->isInCombat())
                     summon->SetInCombatWithZone();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -184,7 +184,7 @@ class boss_ook_ook : public CreatureScript
                     {
                         case EVENT_GROUND_POUND:
                             DoCast(me, SPELL_GROUND_POUND);
-                            events.ScheduleEvent(EVENT_GROUND_POUND, urand(7000, 10000));
+                            events.ScheduleEvent(EVENT_GROUND_POUND, DUNGEON_MODE(10000, 7000));
                             break;
 
                         case EVENT_GOING_BANANAS:
@@ -202,7 +202,7 @@ class boss_ook_ook : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_ook_ook_AI(creature);
         }
@@ -224,12 +224,12 @@ class npc_ook_barrel : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 me->SetReactState(REACT_PASSIVE);
@@ -242,15 +242,15 @@ class npc_ook_barrel : public CreatureScript
                 me->GetMotionMaster()->MovePoint(1, x, y, z);
             }
 
-            void MovementInform(uint32 type, uint32 id) OVERRIDE
+            void MovementInform(uint32 type, uint32 id)
             {
-                if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
+                if (!me->isAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
                 events.ScheduleEvent(EVENT_EXPLODE, 500);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (CheckIfAgainstWall() || CheckIfAgainstPlayer())
                     DoExplode(true);
@@ -317,7 +317,7 @@ class npc_ook_barrel : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_ook_barrel_AI(creature);
         }
@@ -355,13 +355,13 @@ public :
             }
         }
 
-        void Register() OVERRIDE
+        void Register()
         {
             OnEffectLaunch += SpellEffectFn(spell_ook_ook_going_bananas_summon_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
 
-    SpellScript* GetSpellScript() const OVERRIDE
+    SpellScript* GetSpellScript() const
     {
         return new spell_ook_ook_going_bananas_summon_SpellScript();
     }
@@ -395,14 +395,14 @@ public:
             targets.remove_if(PositionCheck(GetCaster()));
         }
 
-        void Register() OVERRIDE
+        void Register()
         {
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_104);
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CONE_ENEMY_104);
         }
     };
 
-    SpellScript* GetSpellScript() const OVERRIDE
+    SpellScript* GetSpellScript() const
     {
         return new spell_ook_ook_ground_pound_dmgSpellScript();
     }
@@ -418,7 +418,7 @@ class spell_ook_ook_barrel_ride : public SpellScriptLoader
         {
             PrepareAuraScript(spell_ook_ook_barrel_ride_AuraScript);
 
-            void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (GetTarget())
                 {
@@ -431,13 +431,13 @@ class spell_ook_ook_barrel_ride : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectApply += AuraEffectApplyFn(spell_ook_ook_barrel_ride_AuraScript::OnApply, EFFECT_0, SPELL_AURA_CONTROL_VEHICLE, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const
         {
             return new spell_ook_ook_barrel_ride_AuraScript();
         }

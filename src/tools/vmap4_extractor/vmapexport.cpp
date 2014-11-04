@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2013 MaNGOS <http://www.getmangos.com/>
+ * Copyright (C) 2008-2013 Trinity <http://www.trinitycore.org/>
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -61,7 +61,7 @@
 HANDLE WorldMpq = NULL;
 HANDLE LocaleMpq = NULL;
 
-uint32 CONF_TargetBuild = 17898;              // 5.4.7.17898
+uint32 CONF_TargetBuild = 17399;              // 5.4.0.17399
 
 // List MPQ for extract maps from
 char const* CONF_mpq_list[]=
@@ -75,9 +75,9 @@ char const* CONF_mpq_list[]=
     "expansion4.MPQ", // added in 5.x.x
 };
 
-uint32 const Builds[] = {16016, 16048, 16057, 16309, 16357, 16516, 16650, 16844, 16965, 17116, 17266, 17325, 17345, 17538, 17645, 17688, 17898, 0};
+uint32 const Builds[] = {16016, 16048, 16057, 16309, 16357, 16516, 16650, 16844, 16965, 17116, 17266, 17345, 17538, 0};
 #define LAST_DBC_IN_DATA_BUILD 15595    // after this build mpqs with dbc are back to locale folder
-#define NEW_BASE_SET_BUILD 16016
+#define NEW_BASE_SET_BUILD 16016 // 15211
 
 #define LOCALES_COUNT 12
 
@@ -124,6 +124,7 @@ bool LoadLocaleMPQFile(int locale)
 {
     TCHAR buff[512];
     memset(buff, 0, sizeof(buff));
+
     _stprintf(buff, _T("%s%s/locale-%s.MPQ"), input_path, LocalesT[locale], LocalesT[locale]);
     if (!SFileOpenArchive(buff, 0, MPQ_OPEN_READ_ONLY, &LocaleMpq))
     {
@@ -171,8 +172,10 @@ bool LoadLocaleMPQFile(int locale)
 void LoadCommonMPQFiles(uint32 build)
 {
     TCHAR filename[512];
+
     _stprintf(filename, _T("%sworld.MPQ"), input_path);
     _tprintf(_T("Loading common MPQ files\n"));
+
     if (!SFileOpenArchive(filename, 0, MPQ_OPEN_READ_ONLY, &WorldMpq))
     {
         if (GetLastError() != ERROR_PATH_NOT_FOUND)
@@ -183,9 +186,6 @@ void LoadCommonMPQFiles(uint32 build)
     int count = sizeof(CONF_mpq_list) / sizeof(char*);
     for (int i = 1; i < count; ++i)
     {
-        if (build < 15211 && !strcmp("world2.MPQ", CONF_mpq_list[i]))   // 4.3.2 and higher MPQ
-            continue;
-
         _stprintf(filename, _T("%s%s"), input_path, CONF_mpq_list[i]);
         if (!SFileOpenPatchArchive(WorldMpq, filename, "", 0))
         {
@@ -198,7 +198,6 @@ void LoadCommonMPQFiles(uint32 build)
             _tprintf(_T("Loaded %s\n"), filename);
     }
 
-    char const* prefix = NULL;
     for (int i = 0; Builds[i] && Builds[i] <= CONF_TargetBuild; ++i)
     {
         // Do not attempt to read older MPQ patch archives past this build, they were merged with base
@@ -207,18 +206,9 @@ void LoadCommonMPQFiles(uint32 build)
             continue;
 
         memset(filename, 0, sizeof(filename));
-        if (Builds[i] > LAST_DBC_IN_DATA_BUILD)
-        {
-            prefix = "";
-            _stprintf(filename, _T("%swow-update-base-%u.MPQ"), input_path, Builds[i]);
-        }
-        else
-        {
-            prefix = "base";
-            _stprintf(filename, _T("%swow-update-%u.MPQ"), input_path, Builds[i]);
-        }
-
-        if (!SFileOpenPatchArchive(WorldMpq, filename, prefix, 0))
+        _stprintf(filename, _T("%swow-update-base-%u.MPQ"), input_path, Builds[i]);
+ 
+        if (!SFileOpenPatchArchive(WorldMpq, filename, "base", 0))
         {
             if (GetLastError() != ERROR_PATH_NOT_FOUND)
                 _tprintf(_T("Cannot open patch archive %s\n"), filename);
@@ -414,21 +404,30 @@ void ParsMapFiles()
     char fn[512];
     //char id_filename[64];
     char id[10];
-    for (unsigned int i=0; i<map_count; ++i)
+    for (unsigned int i = 0; i < map_count; ++i)
     {
-        sprintf(id,"%03u",map_ids[i].id);
-        sprintf(fn,"World\\Maps\\%s\\%s.wdt", map_ids[i].name, map_ids[i].name);
-        WDTFile WDT(fn,map_ids[i].name);
+        sprintf(id, "%03u", map_ids[i].id);
+        sprintf(fn, "World\\Maps\\%s\\%s.wdt", map_ids[i].name, map_ids[i].name);
+        WDTFile WDT(fn, map_ids[i].name);
         if(WDT.init(id, map_ids[i].id))
         {
             printf("Processing Map %u\n[", map_ids[i].id);
-            for (int x=0; x<64; ++x)
+            for (int x = 0; x < 64; ++x)
             {
-                for (int y=0; y<64; ++y)
+                for (int y = 0; y < 64; ++y)
                 {
-                    if (ADTFile *ADT = WDT.GetMap(x,y))
+                    if (ADTFile *ADT = WDT.GetMap_base(x,y))
                     {
-                        //sprintf(id_filename,"%02u %02u %03u",x,y,map_ids[i].id);//!!!!!!!!!
+                        ADT->init(map_ids[i].id, x, y);
+                        delete ADT;
+                    }
+                    if (ADTFile *ADT = WDT.GetMap_obj0(x,y))
+                    {
+                        ADT->init(map_ids[i].id, x, y);
+                        delete ADT;
+                    }
+                    if (ADTFile *ADT = WDT.GetMap_obj1(x,y))
+                    {
                         ADT->init(map_ids[i].id, x, y);
                         delete ADT;
                     }
@@ -588,7 +587,7 @@ int main(int argc, char ** argv)
         if (!dbc->open())
         {
             delete dbc;
-            printf("FATAL ERROR: Map.dbc not found in data file.\n");
+            printf("Fatal error: Invalid Map.dbc file format!\n");
             return 1;
         }
         map_count=dbc->getRecordCount ();
@@ -606,7 +605,7 @@ int main(int argc, char ** argv)
         delete [] map_ids;
         //nError = ERROR_SUCCESS;
         // Extract models, listed in GameObjectDisplayInfo.dbc
-        ExtractGameobjectModels();
+        ExtractGameobjectModels(&input_path[0]);
     }
 
     SFileCloseArchive(LocaleMpq);

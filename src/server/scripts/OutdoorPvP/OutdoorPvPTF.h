@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -26,11 +24,11 @@ const uint8 OutdoorPvPTFBuffZonesNum = 5;
 
 const uint32 OutdoorPvPTFBuffZones[OutdoorPvPTFBuffZonesNum] =
 {
-    3519 /*Terokkar Forest*/,
-    3791 /*Sethekk Halls*/,
-    3789 /*Shadow Labyrinth*/,
-    3792 /*Mana-Tombs*/,
-    3790 /*Auchenai Crypts*/
+    3519,       //Terokkar Forest
+    3791,       //Sethekk Halls
+    3789,       //Shadow Labyrinth
+    3792,       //Mana-Tombs
+    3790        //Auchenai Crypts
 };
 
 // locked for 6 hours after capture
@@ -47,7 +45,7 @@ const uint32 TF_HORDE_QUEST = 11506;
 
 enum OutdoorPvPTF_TowerType
 {
-    TF_TOWER_NW = 0,
+    TF_TOWER_NW     = 0,
     TF_TOWER_N,
     TF_TOWER_NE,
     TF_TOWER_SE,
@@ -100,27 +98,27 @@ const uint32 TFTowerPlayerLeaveEvents[TF_TOWER_NUM] =
 
 enum TFWorldStates
 {
-    TF_UI_TOWER_SLIDER_POS = 0xa41,
-    TF_UI_TOWER_SLIDER_N = 0xa40,
-    TF_UI_TOWER_SLIDER_DISPLAY = 0xa3f,
+    TF_UI_TOWER_SLIDER_POS                  = 0xa41,
+    TF_UI_TOWER_SLIDER_N                    = 0xa40,
+    TF_UI_TOWER_SLIDER_DISPLAY              = 0xa3f,
 
-    TF_UI_TOWER_COUNT_H = 0xa3e,
-    TF_UI_TOWER_COUNT_A = 0xa3d,
-    TF_UI_TOWERS_CONTROLLED_DISPLAY = 0xa3c,
+    TF_UI_TOWER_COUNT_H                     = 0xa3e,
+    TF_UI_TOWER_COUNT_A                     = 0xa3d,
+    TF_UI_TOWERS_CONTROLLED_DISPLAY         = 0xa3c,
 
-    TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT = 0x9d0,
-    TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT = 0x9ce,
-    TF_UI_LOCKED_TIME_HOURS = 0x9cd,
-    TF_UI_LOCKED_DISPLAY_NEUTRAL = 0x9cc,
-    TF_UI_LOCKED_DISPLAY_HORDE = 0xad0,
-    TF_UI_LOCKED_DISPLAY_ALLIANCE = 0xacf
+    TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT   = 0x9d0,
+    TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT  = 0x9ce,
+    TF_UI_LOCKED_TIME_HOURS                 = 0x9cd,
+    TF_UI_LOCKED_DISPLAY_NEUTRAL            = 0x9cc,
+    TF_UI_LOCKED_DISPLAY_HORDE              = 0xad0,
+    TF_UI_LOCKED_DISPLAY_ALLIANCE           = 0xacf
 };
 
 enum TFTowerStates
 {
-    TF_TOWERSTATE_N = 1,
-    TF_TOWERSTATE_H = 2,
-    TF_TOWERSTATE_A = 4
+    TF_TOWERSTATE_N                         = 1,
+    TF_TOWERSTATE_H                         = 2,
+    TF_TOWERSTATE_A                         = 4
 };
 
 class OPvPCapturePointTF : public OPvPCapturePoint
@@ -135,7 +133,7 @@ class OPvPCapturePointTF : public OPvPCapturePoint
 
         void SendChangePhase();
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        void FillInitialWorldStates(WorldPacket & data);
 
         // used when player is activated/inactivated in the area
         bool HandlePlayerEnter(Player* player);
@@ -163,7 +161,7 @@ class OutdoorPvPTF : public OutdoorPvP
 
         bool Update(uint32 diff);
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        void FillInitialWorldStates(WorldPacket &data);
 
         void SendRemoveWorldStates(Player* player);
 

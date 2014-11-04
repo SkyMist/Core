@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -35,10 +34,10 @@ class GridInfo
 public:
     GridInfo()
         : i_timer(0), vis_Update(0, irand(0, DEFAULT_VISIBILITY_NOTIFY_PERIOD)),
-          i_unloadActiveLockCount(0), i_unloadExplicitLock(false), i_unloadReferenceLock(false) { }
+          i_unloadActiveLockCount(0), i_unloadExplicitLock(false), i_unloadReferenceLock(false) {}
     GridInfo(time_t expiry, bool unload = true )
         : i_timer(expiry), vis_Update(0, irand(0, DEFAULT_VISIBILITY_NOTIFY_PERIOD)),
-          i_unloadActiveLockCount(0), i_unloadExplicitLock(!unload), i_unloadReferenceLock(false) { }
+          i_unloadActiveLockCount(0), i_unloadExplicitLock(!unload), i_unloadReferenceLock(false) {}
     const TimeTracker& getTimeTracker() const { return i_timer; }
     bool getUnloadLock() const { return i_unloadActiveLockCount || i_unloadExplicitLock || i_unloadReferenceLock; }
     void setUnloadExplicitLock(bool on) { i_unloadExplicitLock = on; }
@@ -79,10 +78,18 @@ class NGrid
 {
     public:
         typedef Grid<ACTIVE_OBJECT, WORLD_OBJECT_TYPES, GRID_OBJECT_TYPES> GridType;
-        NGrid(uint32 id, int32 x, int32 y, time_t expiry, bool unload = true) :
-            i_gridId(id), i_GridInfo(GridInfo(expiry, unload)), i_x(x), i_y(y),
-            i_cellstate(GRID_STATE_INVALID), i_GridObjectDataLoaded(false)
-        { }
+        NGrid(uint32 id, int32 x, int32 y, time_t expiry, bool unload = true)
+            : i_gridId(id)
+            , i_GridInfo(GridInfo(expiry, unload))
+            , i_x(x)
+            , i_y(y)
+            , i_cellstate(GRID_STATE_INVALID)
+            , i_GridObjectDataLoaded(false)
+
+
+        {
+
+        }
 
         GridType& GetGridType(const uint32 x, const uint32 y)
         {

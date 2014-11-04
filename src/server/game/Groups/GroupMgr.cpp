@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,8 +18,6 @@
 #include "Common.h"
 #include "GroupMgr.h"
 #include "InstanceSaveMgr.h"
-#include "World.h"
-#include "DBCStores.h"
 
 GroupMgr::GroupMgr()
 {
@@ -50,7 +46,7 @@ uint32 GroupMgr::GenerateNewGroupDbStoreId()
 
     if (newStorageId == NextGroupDbStoreId)
     {
-        TC_LOG_ERROR("misc", "Group storage ID overflow!! Can't continue, shutting down server. ");
+        sLog->outError(LOG_FILTER_GENERAL, "Group storage ID overflow!! Can't continue, shutting down server. ");
         World::StopNow(ERROR_EXIT_CODE);
     }
 
@@ -88,7 +84,7 @@ uint32 GroupMgr::GenerateGroupId()
 {
     if (NextGroupId >= 0xFFFFFFFE)
     {
-        TC_LOG_ERROR("misc", "Group guid overflow!! Can't continue, shutting down server. ");
+        sLog->outError(LOG_FILTER_GENERAL, "Group guid overflow!! Can't continue, shutting down server. ");
         World::StopNow(ERROR_EXIT_CODE);
     }
     return NextGroupId++;
@@ -129,7 +125,7 @@ void GroupMgr::LoadGroups()
             ", g.icon7, g.icon8, g.groupType, g.difficulty, g.raiddifficulty, g.guid, lfg.dungeon, lfg.state FROM groups g LEFT JOIN lfg_data lfg ON lfg.guid = g.guid ORDER BY g.guid ASC");
         if (!result)
         {
-            TC_LOG_INFO("server.loading", ">> Loaded 0 group definitions. DB table `groups` is empty!");
+            sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 group definitions. DB table `groups` is empty!");
             return;
         }
 
@@ -154,10 +150,10 @@ void GroupMgr::LoadGroups()
         }
         while (result->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded %u group definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u group definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
 
-    TC_LOG_INFO("server.loading", "Loading Group members...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Group members...");
     {
         uint32 oldMSTime = getMSTime();
 
@@ -171,7 +167,7 @@ void GroupMgr::LoadGroups()
         QueryResult result = CharacterDatabase.Query("SELECT guid, memberGuid, memberFlags, subgroup, roles FROM group_member ORDER BY guid");
         if (!result)
         {
-            TC_LOG_INFO("server.loading", ">> Loaded 0 group members. DB table `group_member` is empty!");
+            sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 group members. DB table `group_member` is empty!");
             return;
         }
 
@@ -185,16 +181,16 @@ void GroupMgr::LoadGroups()
             if (group)
                 group->LoadMemberFromDB(fields[1].GetUInt32(), fields[2].GetUInt8(), fields[3].GetUInt8(), fields[4].GetUInt8());
             else
-                TC_LOG_ERROR("misc", "GroupMgr::LoadGroups: Consistency failed, can't find group (storage id: %u)", fields[0].GetUInt32());
+                sLog->outError(LOG_FILTER_GENERAL, "GroupMgr::LoadGroups: Consistency failed, can't find group (storage id: %u)", fields[0].GetUInt32());
 
             ++count;
         }
         while (result->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded %u group members in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u group members in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
 
-    TC_LOG_INFO("server.loading", "Loading Group instance saves...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Group instance saves...");
     {
         uint32 oldMSTime = getMSTime();
         //                                                   0           1        2              3             4             5            6
@@ -203,7 +199,7 @@ void GroupMgr::LoadGroups()
             "LEFT JOIN character_instance ci LEFT JOIN groups g ON g.leaderGuid = ci.guid ON ci.instance = gi.instance AND ci.permanent = 1 GROUP BY gi.instance ORDER BY gi.guid");
         if (!result)
         {
-            TC_LOG_INFO("server.loading", ">> Loaded 0 group-instance saves. DB table `group_instance` is empty!");
+            sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 group-instance saves. DB table `group_instance` is empty!");
             return;
         }
 
@@ -217,14 +213,14 @@ void GroupMgr::LoadGroups()
             MapEntry const* mapEntry = sMapStore.LookupEntry(fields[1].GetUInt16());
             if (!mapEntry || !mapEntry->IsDungeon())
             {
-                TC_LOG_ERROR("sql.sql", "Incorrect entry in group_instance table : no dungeon map %d", fields[1].GetUInt16());
+                sLog->outError(LOG_FILTER_SQL, "Incorrect entry in group_instance table : no dungeon map %d", fields[1].GetUInt16());
                 continue;
             }
 
             uint32 diff = fields[4].GetUInt8();
             if (diff >= uint32(mapEntry->IsRaid() ? MAX_RAID_DIFFICULTY : MAX_DUNGEON_DIFFICULTY))
             {
-                TC_LOG_ERROR("sql.sql", "Wrong dungeon difficulty use in group_instance table: %d", diff + 1);
+                sLog->outError(LOG_FILTER_SQL, "Wrong dungeon difficulty use in group_instance table: %d", diff + 1);
                 diff = 0;                                   // default for both difficaly types
             }
 
@@ -234,6 +230,6 @@ void GroupMgr::LoadGroups()
         }
         while (result->NextRow());
 
-        TC_LOG_INFO("server.loading", ">> Loaded %u group-instance saves in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+        sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u group-instance saves in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     }
 }

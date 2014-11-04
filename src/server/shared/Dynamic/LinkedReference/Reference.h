@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,7 +20,6 @@
 #define _REFERENCE_H
 
 #include "Dynamic/LinkedList.h"
-#include "Errors.h" // for ASSERT
 
 //=====================================================
 
@@ -41,12 +39,12 @@ template <class TO, class FROM> class Reference : public LinkedListElement
         virtual void sourceObjectDestroyLink() = 0;
     public:
         Reference() { iRefTo = NULL; iRefFrom = NULL; }
-        virtual ~Reference() { }
+        virtual ~Reference() {}
 
         // Create new link
         void link(TO* toObj, FROM* fromObj)
         {
-            ASSERT(fromObj);                                // fromObj MUST not be NULL
+            assert(fromObj);                                // fromObj MUST not be NULL
             if (isValid())
                 unlink();
             if (toObj != NULL)
@@ -60,7 +58,7 @@ template <class TO, class FROM> class Reference : public LinkedListElement
         // We don't need the reference anymore. Call comes from the refFrom object
         // Tell our refTo object, that the link is cut
         void unlink()
-        {
+        { 
             targetObjectDestroyLink();
             delink();
             iRefTo = NULL;
@@ -94,7 +92,7 @@ template <class TO, class FROM> class Reference : public LinkedListElement
         TO* operator ->() const { return iRefTo; }
         TO* getTarget() const { return iRefTo; }
 
-        FROM* GetSource() const { return iRefFrom; }
+        FROM* getSource() const { return iRefFrom; }
 };
 
 //=====================================================

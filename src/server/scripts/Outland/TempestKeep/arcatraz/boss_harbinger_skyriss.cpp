@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -34,30 +32,30 @@ EndContentData */
 #include "ScriptedCreature.h"
 #include "arcatraz.h"
 
-enum Says
+enum eSays
 {
-    SAY_INTRO              = 0,
-    SAY_AGGRO              = 1,
-    SAY_KILL               = 2,
-    SAY_MIND               = 3,
-    SAY_FEAR               = 4,
-    SAY_IMAGE              = 5,
-    SAY_DEATH              = 6
+    SAY_INTRO              = -1552000,
+    SAY_AGGRO              = -1552001,
+    SAY_KILL_1             = -1552002,
+    SAY_KILL_2             = -1552003,
+    SAY_MIND_1             = -1552004,
+    SAY_MIND_2             = -1552005,
+    SAY_FEAR_1             = -1552006,
+    SAY_FEAR_2             = -1552007,
+    SAY_IMAGE              = -1552008,
+    SAY_DEATH              = -1552009,
 };
 
-enum Spells
+enum eSpells
 {
-    SPELL_FEAR              = 39415,
-    SPELL_MIND_REND         = 36924,
-    H_SPELL_MIND_REND       = 39017,
-    SPELL_DOMINATION        = 37162,
-    H_SPELL_DOMINATION      = 39019,
-    H_SPELL_MANA_BURN       = 39020,
-    SPELL_66_ILLUSION       = 36931,                       //entry 21466
-    SPELL_33_ILLUSION       = 36932,                       //entry 21467
-
-    SPELL_MIND_REND_IMAGE   = 36929,
-    H_SPELL_MIND_REND_IMAGE = 39021
+    SPELL_FEAR             = 39415,
+    SPELL_MIND_REND        = 36924,
+    H_SPELL_MIND_REND      = 39017,
+    SPELL_DOMINATION       = 37162,
+    H_SPELL_DOMINATION     = 39019,
+    H_SPELL_MANA_BURN      = 39020,
+    SPELL_66_ILLUSION      = 36931,                       //entry 21466
+    SPELL_33_ILLUSION      = 36932,                       //entry 21467
 };
 
 class boss_harbinger_skyriss : public CreatureScript
@@ -89,7 +87,7 @@ class boss_harbinger_skyriss : public CreatureScript
             uint32 Domination_Timer;
             uint32 ManaBurn_Timer;
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 if (!Intro)
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
@@ -105,8 +103,7 @@ class boss_harbinger_skyriss : public CreatureScript
                 ManaBurn_Timer = 25000;
             }
 
-            void MoveInLineOfSight(Unit* who) OVERRIDE
-
+            void MoveInLineOfSight(Unit* who)
             {
                 if (!Intro)
                     return;
@@ -114,16 +111,16 @@ class boss_harbinger_skyriss : public CreatureScript
                 ScriptedAI::MoveInLineOfSight(who);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE { }
+            void EnterCombat(Unit* /*who*/) {}
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
-                Talk(SAY_DEATH);
+                DoScriptText(SAY_DEATH, me);
                 if (instance)
                     instance->SetData(TYPE_HARBINGERSKYRISS, DONE);
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 if (!summon)
                     return;
@@ -131,18 +128,18 @@ class boss_harbinger_skyriss : public CreatureScript
                     summon->SetHealth(summon->CountPctFromMaxHealth(33));
                 else
                     summon->SetHealth(summon->CountPctFromMaxHealth(66));
-                if (me->GetVictim())
+                if (me->getVictim())
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                         summon->AI()->AttackStart(target);
             }
 
-            void KilledUnit(Unit* victim) OVERRIDE
+            void KilledUnit(Unit* victim)
             {
                 //won't yell killing pet/other unit
                 if (victim->GetEntry() == 21436)
                     return;
 
-                Talk(SAY_KILL);
+                DoScriptText(RAND(SAY_KILL_1, SAY_KILL_2), me);
             }
 
             void DoSplit(uint32 val)
@@ -150,7 +147,7 @@ class boss_harbinger_skyriss : public CreatureScript
                 if (me->IsNonMeleeSpellCasted(false))
                     me->InterruptNonMeleeSpells(false);
 
-                Talk(SAY_IMAGE);
+                DoScriptText(SAY_IMAGE, me);
 
                 if (val == 66)
                     DoCast(me, SPELL_66_ILLUSION);
@@ -158,7 +155,7 @@ class boss_harbinger_skyriss : public CreatureScript
                     DoCast(me, SPELL_33_ILLUSION);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!Intro)
                 {
@@ -170,13 +167,13 @@ class boss_harbinger_skyriss : public CreatureScript
                         switch (Intro_Phase)
                         {
                         case 1:
-                            Talk(SAY_INTRO);
+                            DoScriptText(SAY_INTRO, me);
                             instance->HandleGameObject(instance->GetData64(DATA_SPHERE_SHIELD), true);
                             ++Intro_Phase;
                             Intro_Timer = 25000;
                             break;
                         case 2:
-                            Talk(SAY_AGGRO);
+                            DoScriptText(SAY_AGGRO, me);
                             if (Unit* mellic = Unit::GetUnit(*me, instance->GetData64(DATA_MELLICHAR)))
                             {
                                 //should have a better way to do this. possibly spell exist.
@@ -215,7 +212,7 @@ class boss_harbinger_skyriss : public CreatureScript
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1))
                         DoCast(target, SPELL_MIND_REND);
                     else
-                        DoCastVictim(SPELL_MIND_REND);
+                        DoCast(me->getVictim(), SPELL_MIND_REND);
 
                     MindRend_Timer = 8000;
                 }
@@ -227,12 +224,12 @@ class boss_harbinger_skyriss : public CreatureScript
                     if (me->IsNonMeleeSpellCasted(false))
                         return;
 
-                    Talk(SAY_FEAR);
+                    DoScriptText(RAND(SAY_FEAR_1, SAY_FEAR_2), me);
 
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1))
                         DoCast(target, SPELL_FEAR);
                     else
-                        DoCastVictim(SPELL_FEAR);
+                        DoCast(me->getVictim(), SPELL_FEAR);
 
                     Fear_Timer = 25000;
                 }
@@ -244,12 +241,12 @@ class boss_harbinger_skyriss : public CreatureScript
                     if (me->IsNonMeleeSpellCasted(false))
                         return;
 
-                    Talk(SAY_MIND);
+                    DoScriptText(RAND(SAY_MIND_1, SAY_MIND_2), me);
 
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1))
                         DoCast(target, SPELL_DOMINATION);
                     else
-                        DoCastVictim(SPELL_DOMINATION);
+                        DoCast(me->getVictim(), SPELL_DOMINATION);
 
                     Domination_Timer = 16000+rand()%16000;
                 }
@@ -275,11 +272,14 @@ class boss_harbinger_skyriss : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new boss_harbinger_skyrissAI(creature);
+            return new boss_harbinger_skyrissAI (creature);
         }
 };
+
+#define SPELL_MIND_REND_IMAGE   36929
+#define H_SPELL_MIND_REND_IMAGE 39021
 
 class boss_harbinger_skyriss_illusion : public CreatureScript
 {
@@ -291,14 +291,14 @@ class boss_harbinger_skyriss_illusion : public CreatureScript
         }
         struct boss_harbinger_skyriss_illusionAI : public ScriptedAI
         {
-            boss_harbinger_skyriss_illusionAI(Creature* creature) : ScriptedAI(creature) { }
+            boss_harbinger_skyriss_illusionAI(Creature* creature) : ScriptedAI(creature) {}
 
-            void Reset() OVERRIDE { }
+            void Reset() { }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE { }
+            void EnterCombat(Unit* /*who*/) { }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_harbinger_skyriss_illusionAI(creature);
         }

@@ -1,53 +1,54 @@
-/*Copyright (C) 2014 SkyMist Project.
-*
-* This file is NOT free software. Third-party users can NOT redistribute it or modify it :). 
-* If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
-*/
-
+#include "Battleground.h"
+#include "BattlegroundTTP.h"
 #include "Language.h"
 #include "Object.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "WorldPacket.h"
 
-#include "BattlegroundTTP.h"
-
 BattlegroundTTP::BattlegroundTTP()
 {
-    // BgObjects.resize(BG_TTP_OBJECT_MAX);
+    BgObjects.resize(BG_TTP_OBJECT_MAX);
 
     StartDelayTimes[BG_STARTING_EVENT_FIRST]  = BG_START_DELAY_1M;
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    // We must set messageIds
+    //we must set messageIds
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_ARENA_HAS_BEGUN;
 }
 
-BattlegroundTTP::~BattlegroundTTP() { }
+BattlegroundTTP::~BattlegroundTTP()
+{
+
+}
 
 void BattlegroundTTP::StartingEventCloseDoors()
 {
-    // for (uint32 i = BG_TTP_OBJECT_DOOR_1; i <= BG_TTP_OBJECT_DOOR_2; ++i)
-    //     SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+    for (uint32 i = BG_TTP_OBJECT_DOOR_1; i <= BG_TTP_OBJECT_DOOR_2; ++i)
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
 }
 
 void BattlegroundTTP::StartingEventOpenDoors()
 {
-    // for (uint32 i = BG_TTP_OBJECT_DOOR_1; i <= BG_TTP_OBJECT_DOOR_2; ++i)
-    //     DoorOpen(i);
-    // 
-    // for (uint32 i = BG_TTP_OBJECT_BUFF_1; i <= BG_TTP_OBJECT_BUFF_2; ++i)
-    //     SpawnBGObject(i, 60);
+    for (uint32 i = BG_TTP_OBJECT_DOOR_1; i <= BG_TTP_OBJECT_DOOR_2; ++i)
+        DoorOpen(i);
+
+    for (uint32 i = BG_TTP_OBJECT_BUFF_1; i <= BG_TTP_OBJECT_BUFF_2; ++i)
+        SpawnBGObject(i, 60);
 }
 
 void BattlegroundTTP::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    PlayerScores[player->GetGUID()] = new BattlegroundScore;
+    //create score and add it to map, default values are set in constructor
+    BattlegroundTTPScore* sc = new BattlegroundTTPScore;
+
+    PlayerScores[player->GetGUID()] = sc;
+
     UpdateArenaWorldState();
 }
 
@@ -67,7 +68,7 @@ void BattlegroundTTP::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
-        TC_LOG_ERROR("bg.battleground", "Killer player not found");
+        sLog->outError(LOG_FILTER_BATTLEGROUND, "BattlegroundTV: Killer player not found");
         return;
     }
 
@@ -77,46 +78,51 @@ void BattlegroundTTP::HandleKillPlayer(Player* player, Player* killer)
     CheckArenaWinConditions();
 }
 
-void BattlegroundTTP::HandleAreaTrigger(Player* player, uint32 trigger)
+bool BattlegroundTTP::HandlePlayerUnderMap(Player* player)
+{
+    player->TeleportTo(GetMapId(), 567.313843f, 632.106384f, 380.703339f, player->GetOrientation(), false);
+    return true;
+}
+
+void BattlegroundTTP::HandleAreaTrigger(Player* Source, uint32 Trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    switch (trigger)
+    switch (Trigger)
     {
-        case 4696:                                          // buff trigger?
-        case 4697:                                          // buff trigger?
+        case 4536:                                          // buff trigger?
+        case 4537:                                          // buff trigger?
             break;
         default:
-            Battleground::HandleAreaTrigger(player, trigger);
             break;
     }
 }
 
-void BattlegroundTTP::FillInitialWorldStates(ByteBuffer& data)
+void BattlegroundTTP::FillInitialWorldStates(WorldPacket &data)
 {
-    data << uint32(1) << uint32(0xe1a);           // 9
+    Player::AppendWorldState(data, uint32(0xE1A), uint32(1));
     UpdateArenaWorldState();
 }
 
 void BattlegroundTTP::Reset()
 {
-    // Call parent's reset
+    // Call parent's class reset
     Battleground::Reset();
 }
 
 bool BattlegroundTTP::SetupBattleground()
 {
-    // // gates
-    // if (!AddObject(BG_TTP_OBJECT_DOOR_1, BG_TTP_OBJECT_TYPE_DOOR_1, 1293.561f, 1601.938f, 31.60557f, -1.457349f, 0, 0, -0.6658813f, 0.7460576f, RESPAWN_IMMEDIATELY)
-    //     || !AddObject(BG_TTP_OBJECT_DOOR_2, BG_TTP_OBJECT_TYPE_DOOR_2, 1278.648f, 1730.557f, 31.60557f, 1.684245f, 0, 0, 0.7460582f, 0.6658807f, RESPAWN_IMMEDIATELY)
-    // // buffs
-    //     || !AddObject(BG_TTP_OBJECT_BUFF_1, BG_TTP_OBJECT_TYPE_BUFF_1, 1328.719971f, 1632.719971f, 36.730400f, -1.448624f, 0, 0, 0.6626201f, -0.7489557f, 120)
-    //     || !AddObject(BG_TTP_OBJECT_BUFF_2, BG_TTP_OBJECT_TYPE_BUFF_2, 1243.300049f, 1699.170044f, 34.872601f, -0.06981307f, 0, 0, 0.03489945f, -0.9993908f, 120))
-    // {
-    //     TC_LOG_ERROR("sql.sql", "BatteGroundRL: Failed to spawn some object!");
-    //     return false;
-    // }
+    // Gates
+    if (!AddObject(BG_TTP_OBJECT_DOOR_1, BG_TTP_OBJECT_TYPE_DOOR_1, 502.414f, 633.099f, 380.706f, 0.0308292f, 0.0f, 0.0f, 0.015414f, 0.999881f, RESPAWN_IMMEDIATELY)
+        || !AddObject(BG_TTP_OBJECT_DOOR_2, BG_TTP_OBJECT_TYPE_DOOR_2, 632.891f, 633.059f, 380.705f, 3.12778f, 0.0f, 0.0f, 0.999976f, 0.0069045f, RESPAWN_IMMEDIATELY)
+    // Buffs
+        || !AddObject(BG_TTP_OBJECT_BUFF_1, BG_TTP_OBJECT_TYPE_BUFF_1, 566.788f, 602.743f, 383.68f, 1.5724f, 0.0f, 0.0f, 0.707673f, 0.70654f, 120)
+        || !AddObject(BG_TTP_OBJECT_BUFF_2, BG_TTP_OBJECT_TYPE_BUFF_2, 566.661f, 664.311f, 383.681f, 4.66374f, 0.0f, 0.0f, 0.724097f, -0.689698f, 120))
+    {
+        sLog->outError(LOG_FILTER_SQL, "BattlegroundTTP: Failed to spawn some object!");
+        return false;
+    }
 
     return true;
 }

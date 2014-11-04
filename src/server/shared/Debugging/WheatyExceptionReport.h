@@ -1,29 +1,10 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
- 
 #ifndef _WHEATYEXCEPTIONREPORT_
 #define _WHEATYEXCEPTIONREPORT_
 
-#if PLATFORM == PLATFORM_WINDOWS && !defined(__MINGW32__)
+#if PLATFORM == PLATFORM_WINDOWS
 
 #include <dbghelp.h>
-#include <set>
+
 #if _MSC_VER < 1400
 #   define countof(array)   (sizeof(array) / sizeof(array[0]))
 #else
@@ -50,10 +31,7 @@ enum BasicType                                              // Stolen from CVCON
     btComplex = 28,
     btBit = 29,
     btBSTR = 30,
-    btHresult = 31,
-
-    // Custom types
-    btStdString = 101
+    btHresult = 31
 };
 
 const char* const rgBaseType[] =
@@ -92,25 +70,6 @@ const char* const rgBaseType[] =
     " HRESULT "                                             // btHresult = 31
 };
 
-struct SymbolPair
-{
-    SymbolPair(DWORD type, DWORD_PTR offset)
-    {
-        _type = type;
-        _offset = offset;
-    }
-
-    bool operator<(const SymbolPair& other) const
-    {
-        return _offset < other._offset || 
-              (_offset == other._offset && _type < other._type);
-    }
-
-    DWORD _type;
-    DWORD_PTR _offset;
-};
-typedef std::set<SymbolPair> SymbolPairs;
-
 class WheatyExceptionReport
 {
     public:
@@ -122,7 +81,7 @@ class WheatyExceptionReport
         static LONG WINAPI WheatyUnhandledExceptionFilter(
             PEXCEPTION_POINTERS pExceptionInfo);
 
-        static void printTracesForAllThreads(bool);
+        static void printTracesForAllThreads();
     private:
         // where report info is extracted and generated
         static void GenerateExceptionReport(PEXCEPTION_POINTERS pExceptionInfo);
@@ -139,18 +98,15 @@ class WheatyExceptionReport
 
         static BOOL CALLBACK EnumerateSymbolsCallback(PSYMBOL_INFO, ULONG, PVOID);
 
-        static bool FormatSymbolValue(PSYMBOL_INFO, STACKFRAME64 *, char * pszBuffer, unsigned cbBuffer);
+        static bool FormatSymbolValue(PSYMBOL_INFO, STACKFRAME *, char * pszBuffer, unsigned cbBuffer);
 
-        static char * DumpTypeIndex(char *, DWORD64, DWORD, unsigned, DWORD_PTR, bool &, char*, char*);
+        static char * DumpTypeIndex(char *, DWORD64, DWORD, unsigned, DWORD_PTR, bool &, char*);
 
         static char * FormatOutputValue(char * pszCurrBuffer, BasicType basicType, DWORD64 length, PVOID pAddress);
 
         static BasicType GetBasicType(DWORD typeIndex, DWORD64 modBase);
 
         static int __cdecl _tprintf(const TCHAR * format, ...);
-
-        static bool StoreSymbol(DWORD type , DWORD_PTR offset);
-        static void ClearSymbols();
 
         // Variables used by the class
         static TCHAR m_szLogFileName[MAX_PATH];
@@ -159,7 +115,6 @@ class WheatyExceptionReport
         static HANDLE m_hReportFile;
         static HANDLE m_hDumpFile;
         static HANDLE m_hProcess;
-        static SymbolPairs symbols;
 };
 
 extern WheatyExceptionReport g_WheatyExceptionReport;       //  global instance of class

@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -37,13 +35,13 @@ PacketLog::~PacketLog()
 
 void PacketLog::Initialize()
 {
-    std::string logsDir = sConfigMgr->GetStringDefault("LogsDir", "");
+    std::string logsDir = ConfigMgr::GetStringDefault("LogsDir", "");
 
     if (!logsDir.empty())
         if ((logsDir.at(logsDir.length()-1) != '/') && (logsDir.at(logsDir.length()-1) != '\\'))
             logsDir.push_back('/');
 
-    std::string logname = sConfigMgr->GetStringDefault("PacketLogFile", "");
+    std::string logname = ConfigMgr::GetStringDefault("PacketLogFile", "");
     if (!logname.empty())
         _file = fopen((logsDir + logname).c_str(), "wb");
 }
@@ -57,7 +55,7 @@ void PacketLog::LogPacket(WorldPacket const& packet, Direction direction)
     data << uint8(direction);
 
     for (uint32 i = 0; i < packet.size(); i++)
-        data << packet[i];
+        data << const_cast<WorldPacket&>(packet)[i];
 
     fwrite(data.contents(), 1, data.size(), _file);
     fflush(_file);

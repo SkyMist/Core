@@ -1,275 +1,261 @@
-/*Copyright (C) 2013 SkyMist Project.
-*
-* This file is NOT free software. Third-party users can NOT redistribute it or modify it :). 
-* If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
-*/
-
-#include "ObjectMgr.h"
-#include "ScriptMgr.h"
-#include "InstanceScript.h"
-#include "ScriptedCreature.h"
-#include "Map.h"
-#include "PoolMgr.h"
-#include "AccountMgr.h"
-#include "ObjectAccessor.h"
-#include "Group.h"
-#include "Unit.h"
-#include "Player.h"
-
+#include "ScriptPCH.h"
 #include "halls_of_origination.h"
+
+#define MAX_ENCOUNTER 7
+
+static const DoorData doorData[] =
+{
+    {GO_DOOR_ULDUM_14,              DATA_TEMPLE_GUARDIAN_ANHUUR, DOOR_TYPE_ROOM,    BOUNDARY_NONE},
+    {GO_ANHUUR_BRIDGE,              DATA_TEMPLE_GUARDIAN_ANHUUR, DOOR_TYPE_PASSAGE, BOUNDARY_NONE},
+    {GO_DOOR_ULDUM_15,              DATA_TEMPLE_GUARDIAN_ANHUUR, DOOR_TYPE_PASSAGE, BOUNDARY_NONE},
+    {GO_ANHUUR_ELEVATOR,            DATA_TEMPLE_GUARDIAN_ANHUUR, DOOR_TYPE_PASSAGE, BOUNDARY_NONE},
+    {GO_VAULT_OF_LIGHTS_ENTR_DOOR,  DATA_ANRAPHET,               DOOR_TYPE_PASSAGE, BOUNDARY_NONE},
+    {0,                0,                                        DOOR_TYPE_ROOM,    BOUNDARY_NONE} // END
+};
 
 class instance_halls_of_origination : public InstanceMapScript
 {
-public:
-    instance_halls_of_origination() : InstanceMapScript("instance_halls_of_origination", 644) { }
+    public:
+        instance_halls_of_origination() : InstanceMapScript("instance_halls_of_origination", 644) { }
 
-    struct instance_halls_of_origination_InstanceMapScript: public InstanceScript
-    {
-        instance_halls_of_origination_InstanceMapScript(InstanceMap* map) : InstanceScript(map)
+        InstanceScript* GetInstanceScript(InstanceMap *map) const
         {
-            Initialize();
+            return new instance_halls_of_origination_InstanceMapScript(map);
         }
 
-        // Bosses.
-        uint64 uiTempleGuardianAnhuur;
-        uint64 uiEarthragerPtah;
-        uint64 uiAnraphet;
-        uint64 uiIsiset;
-        uint64 uiAmmunae;
-        uint64 uiSetesh;
-        uint64 uiRajh;
-
-        // GameObjects.
-        uint64 OriginationElevatorGUID;
-        uint64 uiAnhuurBridgeGUID;
-
-        void Initialize()
+        struct instance_halls_of_origination_InstanceMapScript: public InstanceScript
         {
-            SetBossNumber(MAX_ENCOUNTER);
-
-            // Bosses.
-            uiTempleGuardianAnhuur  = 0;
-            uiEarthragerPtah        = 0;
-            uiAnraphet              = 0;
-            uiIsiset                = 0;
-            uiAmmunae               = 0;
-            uiSetesh                = 0;
-            uiRajh                  = 0;
-
-            // GameObjects.
-            uiAnhuurBridgeGUID      = 0;
-            // OriginationElevatorGUID = 0;
-
-            for (uint32 i = 0; i < MAX_ENCOUNTER; ++i)
-                SetBossState(i, NOT_STARTED);
-        }
-
-        bool IsEncounterInProgress() const
-        {
-            for (uint32 i = 0; i < MAX_ENCOUNTER; ++i)
-                if (GetBossState(i) == IN_PROGRESS)
-                    return true;
-
-            return false;
-        }
-
-        void OnCreatureCreate(Creature* creature)
-        {
-            switch(creature->GetEntry())
+            instance_halls_of_origination_InstanceMapScript(InstanceMap *map) : InstanceScript(map)
             {
-                case BOSS_TEMPLE_GUARDIAN_ANHUUR:
-                    uiTempleGuardianAnhuur = creature->GetGUID();
-                    break;
-                case BOSS_EARTHRAGER_PTAH:
-                    uiEarthragerPtah = creature->GetGUID();
-                    break;
-                case BOSS_ANRAPHET:
-                    uiAnraphet = creature->GetGUID();
-                    break;
-                case BOSS_ISISET:
-                    uiIsiset = creature->GetGUID();
-                    break;
-                case BOSS_AMMUNAE:
-                    uiAmmunae = creature->GetGUID();
-                    break;
-                case BOSS_SETESH:
-                    uiSetesh = creature->GetGUID();
-                    break;
-                case BOSS_RAJH:
-                    uiRajh = creature->GetGUID();
-                    break;
+                SetBossNumber(MAX_ENCOUNTER);
+                LoadDoorData(doorData);
+                uiTempleGuardianAnhuurGUID = 0;
+                uiEarthragerPtahGUID = 0;
+                uiAnraphetGUID = 0;
+                uiIsisetGUID = 0;
+                uiAmmunaeGUID = 0;
+                uiSeteshGUID = 0;
+                uiRajhGUID = 0;
+                uiBrannGUID = 0;
 
-                default: break;
+                uiWardensDone = 0;
+
+                uiOriginationElevatorGUID = 0;
+                uiAnhuurBridgeGUID = 0;
+                uiAnraphetEntranceDoorGUID = 0;
+                uiAnraphetBossDoorGUID = 0;
             }
-        }
 
-        void OnUnitDeath(Unit* killed)
-        {
-            Creature* creature = killed->ToCreature();
-            if (!creature)
-                return;
-
-            switch (creature->GetEntry())
+            void OnPlayerEnter(Player* player)
             {
-                case NPC_FLAME_WARDEN:
-                    if (Creature* brann = creature->FindNearestCreature(39908, 500.0f, true))
-                        brann->AI()->DoAction(2);
-                    if (GameObject* laser1 = creature->FindNearestGameObject(207663, 1000.0f))
-                        laser1->SetGoState(GO_STATE_ACTIVE);
-                    if (GameObject* machine1 = creature->FindNearestGameObject(207375, 1000.0f))
-                        machine1->SetGoState(GO_STATE_ACTIVE);
-                    break;
-                case NPC_EARTH_WARDEN:
-                    if (Creature* brann = creature->FindNearestCreature(39908, 500.0f, true))
-                        brann->AI()->DoAction(2);
-                    if (GameObject* laser3 = creature->FindNearestGameObject(207665, 1000.0f))
-                        laser3->SetGoState(GO_STATE_ACTIVE);
-                    if (GameObject* machine3 = creature->FindNearestGameObject(207377, 1000.0f))
-                        machine3->SetGoState(GO_STATE_ACTIVE);
-                    break;
-                case NPC_WATER_WARDEN:
-                    if (Creature* brann = creature->FindNearestCreature(39908, 500.0f, true))
-                        brann->AI()->DoAction(2);
-                    if (GameObject* laser4 = creature->FindNearestGameObject(207664, 1000.0f))
-                        laser4->SetGoState(GO_STATE_ACTIVE);
-                    if (GameObject* machine4 = creature->FindNearestGameObject(207376, 1000.0f))
-                        machine4->SetGoState(GO_STATE_ACTIVE);
-                    break;
-                case NPC_AIR_WARDEN:
-                    if (Creature* brann = creature->FindNearestCreature(39908, 500.0f, true))
-                        brann->AI()->DoAction(2);
-                    if (GameObject* laser2 = creature->FindNearestGameObject(207662, 1000.0f))
-                        laser2->SetGoState(GO_STATE_ACTIVE);
-                    if (GameObject* machine2 = creature->FindNearestGameObject(207374, 1000.0f))
-                        machine2->SetGoState(GO_STATE_ACTIVE);
-                    break;
+                if (!uiTeamInInstance)
+                    uiTeamInInstance = player->GetTeam();
             }
-        }
 
-        void OnGameObjectCreate(GameObject* go)
-        {
-            switch (go->GetEntry())
+            void OnCreatureCreate(Creature* pCreature)
             {
-                case GO_ANHUUR_BRIDGE:
-                    uiAnhuurBridgeGUID = go->GetGUID();
-                    break;
-                case GO_ORIGINATION_ELEVATOR:
-                    OriginationElevatorGUID = go->GetGUID();
-                    break;
+                if (!uiTeamInInstance)
+                {
+                    Map::PlayerList const &players = instance->GetPlayers();
+                    if (!players.isEmpty())
+                        if (Player* player = players.begin()->getSource())
+                            uiTeamInInstance = player->GetTeam();
+                }
 
-                default: break;
+                switch (pCreature->GetEntry())
+                {
+                    case NPC_TEMPLE_GUARDIAN_ANHUUR:
+                        uiTempleGuardianAnhuurGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_EARTHRAGER_PTAH:
+                        uiEarthragerPtahGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_ANRAPHET:
+                        uiAnraphetGUID = pCreature->GetGUID();
+                        if (uiWardensDone >= 4)
+                        {
+                            pCreature->RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
+                            pCreature->SetHomePosition(-203.93f, 368.71f, 75.92f, pCreature->GetOrientation());
+                            //DoTeleportTo(-203.93f, 368.71f, 75.92f);
+                            pCreature->GetMotionMaster()->MovePoint(0, -203.93f, 368.71f, 75.92f);
+                        }
+                        break;
+                    case NPC_ISISET:
+                        uiIsisetGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_AMMUNAE:
+                        uiAmmunaeGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_SETESH:
+                        uiSeteshGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_RAJH:
+                        uiRajhGUID = pCreature->GetGUID();
+                        break;
+                    case NPC_BRANN_BRONZEBEARD:
+                        uiBrannGUID = pCreature->GetGUID();
+                        if (GetBossState(DATA_ANRAPHET) == DONE)
+                            pCreature->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                        break;
+                }
             }
-        }
 
-        void SetData(uint32 type, uint32 data)
-        {
-            SetBossState(type, EncounterState(data));
+            void OnGameObjectCreate(GameObject* go)
+            {
+                switch (go->GetEntry()) 
+                {
+                    case GO_ORIGINATION_ELEVATOR:
+                        uiOriginationElevatorGUID = go->GetGUID();
+                        break;
+                    case GO_ANHUUR_BRIDGE:
+                    case GO_ANHUUR_ELEVATOR:
+                    case GO_DOOR_ULDUM_14:
+                    case GO_DOOR_ULDUM_15:                                           
+                        AddDoor(go, true);
+                        break;
+                    case GO_VAULT_OF_LIGHTS_ENTR_DOOR:
+                        uiAnraphetEntranceDoorGUID = go->GetGUID();
+                        break;
+                    case GO_VAULT_OF_LIGHTS_BOSS_DOOR:
+                        uiAnraphetBossDoorGUID = go->GetGUID();
+                        if (uiWardensDone >= 4)
+                            go->SetGoState(GO_STATE_ACTIVE);
+                        break;
+                }
+            }
 
-            if (data == DONE)
+            uint64 GetData64(uint32 identifier)
+            {
+                switch(identifier)
+                {
+                    case DATA_TEMPLE_GUARDIAN_ANHUUR:
+                        return uiTempleGuardianAnhuurGUID;
+                    case DATA_EARTHRAGER_PTAH:
+                        return uiEarthragerPtahGUID;
+                    case DATA_ANRAPHET:
+                        return uiAnraphetGUID;
+                    case DATA_ISISET:
+                        return uiIsisetGUID;
+                    case DATA_AMMUNAE:
+                        return uiAmmunaeGUID;
+                    case DATA_SETESH:
+                        return uiSeteshGUID;
+                    case DATA_RAJH:
+                        return uiRajhGUID;
+                    case DATA_BRANN:
+                        return uiBrannGUID;
+                    case DATA_ANRAPHET_ENTRANCE_DOOR:
+                        return uiAnraphetEntranceDoorGUID;
+                    case DATA_ANRAPHET_BOSS_DOOR:
+                        return uiAnraphetBossDoorGUID;
+                }
+                return 0;
+            }
+
+            bool SetBossState(uint32 type, EncounterState state)
+            {
+                if (!InstanceScript::SetBossState(type, state))
+                    return false;
+                
+                return true;
+            }
+
+            void SetData(uint32 type, uint32 data)
+            {
+                switch (type)
+                {
+                    case DATA_WARDENS:
+
+                        uiWardensDone += data;
+                        
+                        if (uiWardensDone == 4)
+                        {
+                            DoUpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET2, SPELL_FASTER_THAN_LIGHT);
+                            HandleGameObject(uiAnraphetBossDoorGUID, true);
+                            if (Creature* pAnraphet = instance->GetCreature(uiAnraphetGUID))
+                                pAnraphet->AI()->DoAction(1);
+                        }
+                            
+                        switch (uiWardensDone)
+                        {
+                            case 1:
+                            case 2:
+                            case 3:
+                            case 4:
+                                if (Creature* pBrann = instance->GetCreature(uiBrannGUID))
+                                    pBrann->AI()->DoAction(uiWardensDone);
+                                break;
+                        }
+                        break;
+                }
                 SaveToDB();
-        }
-
-        uint32 GetData(uint32 type) const OVERRIDE
-        {
-            return GetBossState(type);
-        }
-
-        uint64 GetData64(uint32 identifier) const OVERRIDE
-        {
-            switch(identifier)
-            {
-                // Bosses.
-                case DATA_TEMPLE_GUARDIAN_ANHUUR: return uiTempleGuardianAnhuur;  break;
-                case DATA_EARTHRAGER_PTAH:        return uiEarthragerPtah;        break;
-                case DATA_ANRAPHET:               return uiAnraphet;              break;
-                case DATA_ISISET:                 return uiIsiset;                break;
-                case DATA_AMMUNAE:                return uiAmmunae;               break;
-                case DATA_SETESH:                 return uiSetesh;                break;
-                case DATA_RAJH:                   return uiRajh;                  break;
-
-                // GameObjects.
-                case DATA_ANHUUR_BRIDGE:          return uiAnhuurBridgeGUID;      break;
-                case DATA_ORIGINATION_ELEVATOR:   return OriginationElevatorGUID; break;
-
-                default:                          return 0;                       break;
             }
-        }
 
-        bool SetBossState(uint32 type, EncounterState state)
-        {
-            if (!InstanceScript::SetBossState(type, state))
-                return false;
-
-            if (state == DONE)
+            std::string GetSaveData()
             {
-                switch(type)
+                OUT_SAVE_INST_DATA;
+
+                std::ostringstream saveStream;
+                saveStream << "H O" << GetBossSaveData() << uiWardensDone << " "; 
+
+                OUT_SAVE_INST_DATA_COMPLETE;
+                return saveStream.str();
+            }
+
+            void Load(const char* in)
+            {
+                if (!in)
                 {
-                    case DATA_TEMPLE_GUARDIAN_ANHUUR_EVENT:
-                    case DATA_EARTHRAGER_PTAH_EVENT:
-                    case DATA_ANRAPHET_EVENT:
-                    case DATA_ISISET_EVENT:
-                    case DATA_AMMUNAE_EVENT:
-                    case DATA_SETESH_EVENT:
-                    case DATA_RAJH_EVENT:
-                    break;
-                }
-            }
-
-            return true;
-        }
-
-        std::string GetSaveData()
-        {
-            OUT_SAVE_INST_DATA;
-
-            std::ostringstream saveStream;
-            saveStream << "H O " << GetBossSaveData();
-
-            OUT_SAVE_INST_DATA_COMPLETE;
-            return saveStream.str();
-        }
-
-        void Load(const char* in)
-        {
-            if (!in)
-            {
-                OUT_LOAD_INST_DATA_FAIL;
-                return;
-            }
-
-            OUT_LOAD_INST_DATA(in);
-
-            char dataHead1, dataHead2;
-
-            std::istringstream loadStream(in);
-            loadStream >> dataHead1 >> dataHead2;
-
-            if (dataHead1 == 'H' && dataHead2 == 'O')
-            {
-                for (uint32 i = 0; i < MAX_ENCOUNTER; ++i)
-                {
-                    uint32 tmpState;
-                    loadStream >> tmpState;
-
-                    if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                        tmpState = NOT_STARTED;
-
-                    // Below makes the player on-instance-entry display of bosses killed shit work (SMSG_RAID_INSTANCE_INFO).
-                    // Like, say an unbound player joins the party and he tries to enter the dungeon / raid.
-                    // This makes sure binding-to-instance-on-entrance confirmation box will properly display bosses defeated / available.
-                    SetBossState(i, EncounterState(tmpState));
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
                 }
 
-            } else OUT_LOAD_INST_DATA_FAIL;
+                OUT_LOAD_INST_DATA(in);
 
-            OUT_LOAD_INST_DATA_COMPLETE;
-        }
-    };
+                char dataHead1, dataHead2;
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const
-    {
-        return new instance_halls_of_origination_InstanceMapScript(map);
-    }
+                std::istringstream loadStream(in);
+                loadStream >> dataHead1 >> dataHead2;
+
+                if (dataHead1 == 'H' && dataHead2 == 'O')
+                {
+                    for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+                    {
+                        uint32 tmpState;
+                        loadStream >> tmpState;
+                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                            tmpState = NOT_STARTED;
+                        SetBossState(i, EncounterState(tmpState));
+                    }
+                    uint32 wardens = 0;
+                    loadStream >> wardens;
+                    //uiWardensDone = wardens;
+                    if (wardens > 4) wardens = 4;
+                    SetData(DATA_WARDENS, wardens);
+                }else OUT_LOAD_INST_DATA_FAIL;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
+            }
+
+            private:
+                uint32 uiTeamInInstance;
+                uint64 uiTempleGuardianAnhuurGUID;
+                uint64 uiEarthragerPtahGUID;
+                uint64 uiAnraphetGUID;
+                uint64 uiIsisetGUID;
+                uint64 uiAmmunaeGUID;
+                uint64 uiSeteshGUID;
+                uint64 uiRajhGUID;
+                uint64 uiBrannGUID;
+
+                uint32 uiWardensDone;
+
+                uint64 uiOriginationElevatorGUID;
+                uint64 uiAnhuurBridgeGUID;
+                uint64 uiAnraphetEntranceDoorGUID;
+                uint64 uiAnraphetBossDoorGUID;
+
+        };
 };
 
 void AddSC_instance_halls_of_origination()

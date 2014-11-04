@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -22,19 +19,15 @@
 #include "ScriptedCreature.h"
 #include "SpellScript.h"
 #include "naxxramas.h"
-#include "Player.h"
 
-enum Heigan
-{
-    SPELL_DECREPIT_FEVER        = 29998, // 25-man: 55011
-    SPELL_SPELL_DISRUPTION      = 29310,
-    SPELL_PLAGUE_CLOUD          = 29350,
+#define SAY_AGGRO           RAND(-1533109, -1533110, -1533111)
+#define SAY_SLAY            -1533112
+#define SAY_TAUNT           RAND(-1533113, -1533114, -1533115, -1533116, -1533117)
+#define SAY_DEATH           -1533118
 
-    SAY_AGGRO                   = 0,
-    SAY_SLAY                    = 1,
-    SAY_TAUNT                   = 2,
-    SAY_DEATH                   = 3
-};
+#define SPELL_SPELL_DISRUPTION  29310
+#define SPELL_DECREPIT_FEVER    RAID_MODE(29998, 55011)
+#define SPELL_PLAGUE_CLOUD      29350
 
 enum Events
 {
@@ -51,46 +44,43 @@ enum Phases
     PHASE_DANCE,
 };
 
-enum Misc
-{
-    ACTION_SAFETY_DANCE_FAIL        = 1,
-    DATA_SAFETY_DANCE               = 19962139
-};
+#define ACTION_SAFETY_DANCE_FAIL 1
+#define DATA_SAFETY_DANCE        19962139
 
 class boss_heigan : public CreatureScript
 {
 public:
     boss_heigan() : CreatureScript("boss_heigan") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_heiganAI(creature);
+        return new boss_heiganAI (creature);
     }
 
     struct boss_heiganAI : public BossAI
     {
-        boss_heiganAI(Creature* creature) : BossAI(creature, BOSS_HEIGAN) { }
+        boss_heiganAI(Creature* creature) : BossAI(creature, BOSS_HEIGAN) {}
 
         uint32 eruptSection;
         bool eruptDirection;
         bool safetyDance;
         Phases phase;
 
-        void KilledUnit(Unit* who) OVERRIDE
+        void KilledUnit(Unit* who)
         {
             if (!(rand()%5))
-                Talk(SAY_SLAY);
+                DoScriptText(SAY_SLAY, me);
             if (who->GetTypeId() == TYPEID_PLAYER)
                 safetyDance = false;
         }
 
-        void SetData(uint32 id, uint32 data) OVERRIDE
+        void SetData(uint32 id, uint32 data)
         {
             if (id == DATA_SAFETY_DANCE)
                 safetyDance = data ? true : false;
         }
 
-        uint32 GetData(uint32 type) const OVERRIDE
+        uint32 GetData(uint32 type)
         {
             if (type == DATA_SAFETY_DANCE)
                 return safetyDance ? 1 : 0;
@@ -98,16 +88,16 @@ public:
             return 0;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             _JustDied();
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             _EnterCombat();
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
             EnterPhase(PHASE_FIGHT);
             safetyDance = true;
         }
@@ -123,23 +113,19 @@ public:
                 events.ScheduleEvent(EVENT_FEVER, urand(15000, 20000));
                 events.ScheduleEvent(EVENT_PHASE, 90000);
                 events.ScheduleEvent(EVENT_ERUPT, 15000);
-                me->GetMotionMaster()->MoveChase(me->GetVictim());
             }
             else
             {
                 float x, y, z, o;
                 me->GetHomePosition(x, y, z, o);
-                me->NearTeleportTo(x, y, z, o - G3D::halfPi());
-                me->GetMotionMaster()->Clear();
-                me->GetMotionMaster()->MoveIdle();
-                me->SetTarget(0);
+                me->NearTeleportTo(x, y, z, o);
                 DoCastAOE(SPELL_PLAGUE_CLOUD);
                 events.ScheduleEvent(EVENT_PHASE, 45000);
                 events.ScheduleEvent(EVENT_ERUPT, 8000);
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim() || !CheckInRoom())
                 return;
@@ -159,7 +145,7 @@ public:
                         events.ScheduleEvent(EVENT_FEVER, urand(20000, 25000));
                         break;
                     case EVENT_PHASE:
-                        /// @todo Add missing texts for both phase switches
+                        // TODO : Add missing texts for both phase switches
                         EnterPhase(phase == PHASE_FIGHT ? PHASE_DANCE : PHASE_FIGHT);
                         break;
                     case EVENT_ERUPT:
@@ -205,13 +191,13 @@ class spell_heigan_eruption : public SpellScriptLoader
                             Heigan->AI()->SetData(DATA_SAFETY_DANCE, 0);
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectHitTarget += SpellEffectFn(spell_heigan_eruption_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_heigan_eruption_SpellScript();
         }
@@ -224,7 +210,7 @@ class achievement_safety_dance : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
+        bool OnCheck(Player* /*player*/, Unit* target)
         {
             if (!target)
                 return false;

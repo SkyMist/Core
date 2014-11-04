@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,18 +23,35 @@
 #include "ObjectAccessor.h"
 #include "CreatureAIImpl.h"
 
-int ReactorAI::Permissible(const Creature* creature)
+#define REACTOR_VISIBLE_RANGE (26.46f)
+
+int
+ReactorAI::Permissible(const Creature* creature)
 {
-    if (creature->IsCivilian() || creature->IsNeutralToAll())
+    if (creature->isCivilian() || creature->IsNeutralToAll())
         return PERMIT_BASE_REACTIVE;
 
     return PERMIT_BASE_NO;
 }
 
-void ReactorAI::UpdateAI(uint32 /*diff*/)
+void
+ReactorAI::MoveInLineOfSight(Unit*)
 {
+}
+
+void
+ReactorAI::UpdateAI(const uint32 /*time_diff*/)
+{
+    // update i_victimGuid if me->getVictim() !=0 and changed
     if (!UpdateVictim())
         return;
 
-    DoMeleeAttackIfReady();
+    if (me->isAttackReady())
+    {
+        if (me->IsWithinMeleeRange(me->getVictim()))
+        {
+            me->AttackerStateUpdate(me->getVictim());
+            me->resetAttackTimer();
+        }
+    }
 }

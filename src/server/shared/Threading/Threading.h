@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2008 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -31,7 +30,7 @@ namespace ACE_Based
     class Runnable
     {
         public:
-            virtual ~Runnable() { }
+            virtual ~Runnable() {}
             virtual void run() = 0;
 
             void incReference() { ++m_refs; }
@@ -52,7 +51,7 @@ namespace ACE_Based
         Normal,
         High,
         Highest,
-        Realtime
+        Realtime,
     };
 
 #define MAXPRIORITYNUM (Realtime + 1)
@@ -101,7 +100,7 @@ namespace ACE_Based
             typedef ACE_TSS<Thread> ThreadStorage;
             //global object - container for Thread class representation of every thread
             static ThreadStorage m_ThreadStorage;
-            //use this object to determine current OS thread priority values mapped to enum Priority{ }
+            //use this object to determine current OS thread priority values mapped to enum Priority{}
             static ThreadPriority m_TpEnum;
     };
 

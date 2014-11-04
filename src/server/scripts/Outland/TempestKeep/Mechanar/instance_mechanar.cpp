@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,125 +16,80 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* ScriptData
+SDName: Instance_Mechanar
+SD%Complete: 100
+SDComment:
+SDCategory: Mechanar
+EndScriptData */
+
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "mechanar.h"
 
-static DoorData const doorData[] =
-{
-    { GO_DOOR_MOARG_1,          DATA_GATEWATCHER_IRON_HAND,     DOOR_TYPE_PASSAGE,  BOUNDARY_NONE },
-    { GO_DOOR_MOARG_2,          DATA_GATEWATCHER_GYROKILL,      DOOR_TYPE_PASSAGE,  BOUNDARY_NONE },
-    { GO_DOOR_NETHERMANCER,     DATA_NETHERMANCER_SEPRETHREA,   DOOR_TYPE_ROOM,     BOUNDARY_NONE },
-    {0,                         0,                              DOOR_TYPE_ROOM,     BOUNDARY_NONE }
-};
+#define MAX_ENCOUNTER      1
 
 class instance_mechanar : public InstanceMapScript
 {
     public:
-        instance_mechanar(): InstanceMapScript("instance_mechanar", 554) { }
+        instance_mechanar()
+            : InstanceMapScript("instance_mechanar", 554)
+        {
+        }
 
         struct instance_mechanar_InstanceMapScript : public InstanceScript
         {
-            instance_mechanar_InstanceMapScript(Map* map) : InstanceScript(map)
+            instance_mechanar_InstanceMapScript(Map* map) : InstanceScript(map) {}
+
+            uint32 m_auiEncounter[MAX_ENCOUNTER];
+            uint64 pGobGuid;
+
+            void Initialize()
             {
-                SetBossNumber(EncounterCount);
-                LoadDoorData(doorData);
+                memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+                pGobGuid = 0;
             }
 
-
-            void OnGameObjectCreate(GameObject* gameObject)
+            bool IsEncounterInProgress() const
             {
-                switch (gameObject->GetEntry())
-                {
-                    case GO_DOOR_MOARG_1:
-                    case GO_DOOR_MOARG_2:
-                    case GO_DOOR_NETHERMANCER:
-                        AddDoor(gameObject, true);
-                        break;
-                    default:
-                        break;
-                }
+                for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+                    if (m_auiEncounter[i] == IN_PROGRESS)
+                        return true;
+
+                return false;
             }
 
-            void OnGameObjectRemove(GameObject* gameObject) OVERRIDE
+            uint32 GetData(uint32 type)
             {
-                switch (gameObject->GetEntry())
-                {
-                    case GO_DOOR_MOARG_1:
-                    case GO_DOOR_MOARG_2:
-                    case GO_DOOR_NETHERMANCER:
-                        AddDoor(gameObject, false);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
-            {
-                if (!InstanceScript::SetBossState(type, state))
-                    return false;
-
                 switch (type)
                 {
-                    case DATA_GATEWATCHER_GYROKILL:
-                    case DATA_GATEWATCHER_IRON_HAND:
-                    case DATA_MECHANOLORD_CAPACITUS:
-                    case DATA_NETHERMANCER_SEPRETHREA:
-                    case DATA_PATHALEON_THE_CALCULATOR:
-                        break;
-                    default:
-                        break;
+                case DATA_NETHERMANCER_EVENT:   return m_auiEncounter[0];
                 }
 
-                return true;
+                return false;
             }
 
-            std::string GetSaveData() OVERRIDE
+            uint64 GetData64(uint32 /*identifier*/)
             {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << "M C " << GetBossSaveData();
-
-                OUT_SAVE_INST_DATA_COMPLETE;
-                return saveStream.str();
+                return pGobGuid;
             }
 
-            void Load(const char* str) OVERRIDE
+            void OnGameObjectCreate(GameObject* go)
             {
-                if (!str)
+                if (go->GetEntry() == GOB_CACHE_LEGION)
+                    pGobGuid = go->GetGUID();
+            }
+
+            void SetData(uint32 type, uint32 data)
+            {
+                switch (type)
                 {
-                    OUT_LOAD_INST_DATA_FAIL;
-                    return;
+                case DATA_NETHERMANCER_EVENT:   m_auiEncounter[0] = data;   break;
                 }
-
-                OUT_LOAD_INST_DATA(str);
-
-                char dataHead1, dataHead2;
-
-                std::istringstream loadStream(str);
-                loadStream >> dataHead1 >> dataHead2;
-
-                if (dataHead1 == 'M' && dataHead2 == 'C')
-                {
-                    for (uint32 i = 0; i < EncounterCount; ++i)
-                    {
-                        uint32 tmpState;
-                        loadStream >> tmpState;
-                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                            tmpState = NOT_STARTED;
-                        SetBossState(i, EncounterState(tmpState));
-                    }
-                }
-                else
-                    OUT_LOAD_INST_DATA_FAIL;
-
-                OUT_LOAD_INST_DATA_COMPLETE;
             }
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
             return new instance_mechanar_InstanceMapScript(map);
         }
@@ -144,5 +97,6 @@ class instance_mechanar : public InstanceMapScript
 
 void AddSC_instance_mechanar()
 {
-    new instance_mechanar();
+    new instance_mechanar;
 }
+

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -38,8 +35,8 @@ enum Spells
 
 enum Creatures
 {
-    NPC_WEB_WRAP                = 16486,
-    NPC_SPIDERLING              = 17055,
+    MOB_WEB_WRAP                = 16486,
+    MOB_SPIDERLING              = 17055,
 };
 
 #define MAX_POS_WRAP            3
@@ -66,18 +63,18 @@ class boss_maexxna : public CreatureScript
 public:
     boss_maexxna() : CreatureScript("boss_maexxna") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_maexxnaAI(creature);
+        return new boss_maexxnaAI (creature);
     }
 
     struct boss_maexxnaAI : public BossAI
     {
-        boss_maexxnaAI(Creature* creature) : BossAI(creature, BOSS_MAEXXNA) { }
+        boss_maexxnaAI(Creature* creature) : BossAI(creature, BOSS_MAEXXNA) {}
 
         bool enraged;
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             _EnterCombat();
             enraged = false;
@@ -88,7 +85,7 @@ public:
             events.ScheduleEvent(EVENT_SUMMON, 30000);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim() || !CheckInRoom())
                 return;
@@ -106,7 +103,7 @@ public:
                 switch (eventId)
                 {
                     case EVENT_WRAP:
-                        /// @todo Add missing text
+                        // TODO : Add missing text
                         for (uint8 i = 0; i < RAID_MODE(1, 2); ++i)
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0, true, -SPELL_WEB_WRAP))
@@ -114,7 +111,7 @@ public:
                                 target->RemoveAura(RAID_MODE(SPELL_WEB_SPRAY_10, SPELL_WEB_SPRAY_25));
                                 uint8 pos = rand()%MAX_POS_WRAP;
                                 target->GetMotionMaster()->MoveJump(PosWrap[pos].GetPositionX(), PosWrap[pos].GetPositionY(), PosWrap[pos].GetPositionZ(), 20, 20);
-                                if (Creature* wrap = DoSummon(NPC_WEB_WRAP, PosWrap[pos], 0, TEMPSUMMON_CORPSE_DESPAWN))
+                                if (Creature* wrap = DoSummon(MOB_WEB_WRAP, PosWrap[pos], 0, TEMPSUMMON_CORPSE_DESPAWN))
                                     wrap->AI()->SetGUID(target->GetGUID());
                             }
                         }
@@ -129,7 +126,7 @@ public:
                         events.ScheduleEvent(EVENT_SHOCK, urand(10000, 20000));
                         break;
                     case EVENT_POISON:
-                        DoCastVictim(RAID_MODE(SPELL_NECROTIC_POISON_10, SPELL_NECROTIC_POISON_25));
+                        DoCast(me->getVictim(), RAID_MODE(SPELL_NECROTIC_POISON_10, SPELL_NECROTIC_POISON_25));
                         events.ScheduleEvent(EVENT_POISON, urand(10000, 20000));
                         break;
                     case EVENT_FRENZY:
@@ -137,10 +134,10 @@ public:
                         events.ScheduleEvent(EVENT_FRENZY, 600000);
                         break;
                     case EVENT_SUMMON:
-                        /// @todo Add missing text
+                        // TODO : Add missing text
                         uint8 amount = urand(8, 10);
                         for (uint8 i = 0; i < amount; ++i)
-                            DoSummon(NPC_SPIDERLING, me, 0, TEMPSUMMON_CORPSE_DESPAWN);
+                            DoSummon(MOB_SPIDERLING, me, 0, TEMPSUMMON_CORPSE_DESPAWN);
                         events.ScheduleEvent(EVENT_SUMMON, 40000);
                         break;
                 }
@@ -152,23 +149,23 @@ public:
 
 };
 
-class npc_webwrap : public CreatureScript
+class mob_webwrap : public CreatureScript
 {
 public:
-    npc_webwrap() : CreatureScript("npc_webwrap") { }
+    mob_webwrap() : CreatureScript("mob_webwrap") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_webwrapAI(creature);
+        return new mob_webwrapAI (creature);
     }
 
-    struct npc_webwrapAI : public NullCreatureAI
+    struct mob_webwrapAI : public NullCreatureAI
     {
-        npc_webwrapAI(Creature* creature) : NullCreatureAI(creature), victimGUID(0) { }
+        mob_webwrapAI(Creature* creature) : NullCreatureAI(creature), victimGUID(0) {}
 
         uint64 victimGUID;
 
-        void SetGUID(uint64 guid, int32 /*param*/) OVERRIDE
+        void SetGUID(uint64 guid, int32 /*param*/)
         {
             victimGUID = guid;
             if (me->m_spells[0] && victimGUID)
@@ -176,7 +173,7 @@ public:
                     victim->CastSpell(victim, me->m_spells[0], true, NULL, NULL, me->GetGUID());
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             if (me->m_spells[0] && victimGUID)
                 if (Unit* victim = Unit::GetUnit(*me, victimGUID))
@@ -189,5 +186,5 @@ public:
 void AddSC_boss_maexxna()
 {
     new boss_maexxna();
-    new npc_webwrap();
+    new mob_webwrap();
 }

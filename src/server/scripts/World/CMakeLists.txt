@@ -1,5 +1,4 @@
-# Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -13,7 +12,6 @@ set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   World/achievement_scripts.cpp
   World/areatrigger_scripts.cpp
-  World/boss_emerald_dragons.cpp
   World/chat_log.cpp
   World/go_scripts.cpp
   World/guards.cpp
@@ -22,7 +20,9 @@ set(scripts_STAT_SRCS
   World/npc_innkeeper.cpp
   World/npc_professions.cpp
   World/npc_taxi.cpp
+  World/npc_companions.cpp
   World/npcs_special.cpp
+  World/npc_mine_cart.cpp
 )
 
 message("  -> Prepared: World")

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,8 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
+#include "ScriptPCH.h"
 #include "violet_hold.h"
 
 enum Spells
@@ -38,9 +34,9 @@ class boss_lavanthor : public CreatureScript
 public:
     boss_lavanthor() : CreatureScript("boss_lavanthor") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_lavanthorAI(creature);
+        return new boss_lavanthorAI (creature);
     }
 
     struct boss_lavanthorAI : public ScriptedAI
@@ -57,7 +53,7 @@ public:
 
         InstanceScript* instance;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             uiFireboltTimer = 1000;
             uiFlameBreathTimer = 5000;
@@ -72,7 +68,7 @@ public:
             }
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             if (instance)
             {
@@ -89,7 +85,7 @@ public:
             }
         }
 
-        void AttackStart(Unit* who) OVERRIDE
+        void AttackStart(Unit* who)
         {
             if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC) || me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
                 return;
@@ -103,10 +99,9 @@ public:
             }
         }
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) {}
 
-
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -114,19 +109,19 @@ public:
 
             if (uiFireboltTimer <= diff)
             {
-                DoCastVictim(SPELL_FIREBOLT);
+                DoCast(me->getVictim(), SPELL_FIREBOLT);
                 uiFireboltTimer = urand(5000, 13000);
             } else uiFireboltTimer -= diff;
 
             if (uiFlameBreathTimer <= diff)
             {
-                DoCastVictim(SPELL_FLAME_BREATH);
+                DoCast(me->getVictim(), SPELL_FLAME_BREATH);
                 uiFlameBreathTimer = urand(10000, 15000);
             } else uiFlameBreathTimer -= diff;
 
             if (uiLavaBurnTimer <= diff)
             {
-                DoCastVictim(SPELL_LAVA_BURN);
+                DoCast(me->getVictim(), SPELL_LAVA_BURN);
                 uiLavaBurnTimer = urand(15000, 23000);
             }
 
@@ -134,7 +129,7 @@ public:
             {
                 if (uiCauterizingFlamesTimer <= diff)
                 {
-                    DoCastVictim(SPELL_CAUTERIZING_FLAMES);
+                    DoCast(me->getVictim(), SPELL_CAUTERIZING_FLAMES);
                     uiCauterizingFlamesTimer = urand(10000, 16000);
                 } else uiCauterizingFlamesTimer -= diff;
             }
@@ -142,7 +137,7 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             if (instance)
             {

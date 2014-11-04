@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -26,10 +25,10 @@ class IdleMovementGenerator : public MovementGenerator
 {
     public:
 
-        void Initialize(Unit*);
-        void Finalize(Unit*) {  }
-        void Reset(Unit*);
-        bool Update(Unit*, uint32) { return true; }
+        void Initialize(Unit &);
+        void Finalize(Unit &) {  }
+        void Reset(Unit &);
+        bool Update(Unit &, const uint32&) { return true; }
         MovementGeneratorType GetMovementGeneratorType() { return IDLE_MOTION_TYPE; }
 };
 
@@ -38,12 +37,12 @@ extern IdleMovementGenerator si_idleMovement;
 class RotateMovementGenerator : public MovementGenerator
 {
     public:
-        explicit RotateMovementGenerator(uint32 time, RotateDirection direction) : m_duration(time), m_maxDuration(time), m_direction(direction) { }
+        explicit RotateMovementGenerator(uint32 time, RotateDirection direction) : m_duration(time), m_maxDuration(time), m_direction(direction) {}
 
-        void Initialize(Unit*);
-        void Finalize(Unit*);
-        void Reset(Unit* owner) { Initialize(owner); }
-        bool Update(Unit*, uint32);
+        void Initialize(Unit& owner);
+        void Finalize(Unit& owner);
+        void Reset(Unit& owner) { Initialize(owner); }
+        bool Update(Unit& owner, const uint32& time_diff);
         MovementGeneratorType GetMovementGeneratorType() { return ROTATE_MOTION_TYPE; }
 
     private:
@@ -54,12 +53,12 @@ class RotateMovementGenerator : public MovementGenerator
 class DistractMovementGenerator : public MovementGenerator
 {
     public:
-        explicit DistractMovementGenerator(uint32 timer) : m_timer(timer) { }
+        explicit DistractMovementGenerator(uint32 timer) : m_timer(timer) {}
 
-        void Initialize(Unit*);
-        void Finalize(Unit*);
-        void Reset(Unit* owner) { Initialize(owner); }
-        bool Update(Unit*, uint32);
+        void Initialize(Unit& owner);
+        void Finalize(Unit& owner);
+        void Reset(Unit& owner) { Initialize(owner); }
+        bool Update(Unit& owner, const uint32& time_diff);
         MovementGeneratorType GetMovementGeneratorType() { return DISTRACT_MOTION_TYPE; }
 
     private:
@@ -70,10 +69,11 @@ class AssistanceDistractMovementGenerator : public DistractMovementGenerator
 {
     public:
         AssistanceDistractMovementGenerator(uint32 timer) :
-            DistractMovementGenerator(timer) { }
+            DistractMovementGenerator(timer) {}
 
         MovementGeneratorType GetMovementGeneratorType() { return ASSISTANCE_DISTRACT_MOTION_TYPE; }
-        void Finalize(Unit*);
+        void Finalize(Unit& unit);
 };
 
 #endif
+

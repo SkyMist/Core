@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -40,7 +39,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-char* command_finder(const char* text, int state)
+char * command_finder(const char* text, int state)
 {
     static int idx, len;
     const char* ret;
@@ -71,21 +70,26 @@ char* command_finder(const char* text, int state)
     return ((char*)NULL);
 }
 
-char** cli_completion(const char* text, int start, int /*end*/)
+char ** cli_completion(const char * text, int start, int /*end*/)
 {
-    char** matches = NULL;
+    char ** matches;
+    matches = (char**)NULL;
 
-    if (start)
-        rl_bind_key('\t', rl_abort);
-    else
+    if (start == 0)
         matches = rl_completion_matches((char*)text, &command_finder);
-    return matches;
+/*#ifdef PLATFORM != PLATFORM_APPLE
+    else
+        rl_bind_key('\t', rl_abort);
+#endif*/
+    return (matches);
 }
 
-int cli_hook_func()
+int cli_hook_func(void)
 {
+#ifdef PLATFORM != PLATFORM_APPLE
        if (World::IsStopped())
            rl_done = 1;
+#endif
        return 0;
 }
 
@@ -112,7 +116,7 @@ void utf8print(void* /*arg*/, const char* str)
 
 void commandFinished(void*, bool /*success*/)
 {
-    printf("SF> ");
+    printf("TC> ");
     fflush(stdout);
 }
 
@@ -135,18 +139,20 @@ int kb_hit_return()
 void CliRunnable::run()
 {
     ///- Display the list of available CLI functions then beep
-    //TC_LOG_INFO("server.worldserver", "");
+    //sLog->outInfo(LOG_FILTER_WORLDSERVER, "");
 #if PLATFORM != PLATFORM_WINDOWS
     rl_attempted_completion_function = cli_completion;
+    #ifdef PLATFORM != PLATFORM_APPLE
     rl_event_hook = cli_hook_func;
+    #endif
 #endif
 
-    if (sConfigMgr->GetBoolDefault("BeepAtStart", true))
+    if (ConfigMgr::GetBoolDefault("BeepAtStart", true))
         printf("\a");                                       // \a = Alert
 
     // print this here the first time
     // later it will be printed after command queue updates
-    printf("SF>");
+    printf("TC>");
 
     ///- As long as the World is running (no World::m_stopEvent), get the command line and handle it
     while (!World::IsStopped())
@@ -159,7 +165,7 @@ void CliRunnable::run()
         char commandbuf[256];
         command_str = fgets(commandbuf, sizeof(commandbuf), stdin);
 #else
-        command_str = readline("SF>");
+        command_str = readline("TC>");
         rl_bind_key('\t', rl_complete);
 #endif
 
@@ -175,7 +181,7 @@ void CliRunnable::run()
             if (!*command_str)
             {
 #if PLATFORM == PLATFORM_WINDOWS
-                printf("SF>");
+                printf("TC>");
 #else
                 free(command_str);
 #endif
@@ -186,7 +192,7 @@ void CliRunnable::run()
             if (!consoleToUtf8(command_str, command))         // convert from console encoding to utf8
             {
 #if PLATFORM == PLATFORM_WINDOWS
-                printf("SF>");
+                printf("TC>");
 #else
                 free(command_str);
 #endif

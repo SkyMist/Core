@@ -1,5 +1,4 @@
-# Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -23,5 +22,3 @@ include_directories(
 add_definitions(-D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=0)
 
 add_library(gsoap STATIC ${gsoap_STAT_SRCS})
-
-set_target_properties(gsoap PROPERTIES LINKER_LANGUAGE CXX)

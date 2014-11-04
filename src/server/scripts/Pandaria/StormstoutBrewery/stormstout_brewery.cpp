@@ -19,8 +19,8 @@
 
 First Alemental after Hoptallus:
 
-Ancient Brewmaster says: Whatzit... are they... what are they doin' to our alementals? 27509
-Ancient Brewmaster yells: Hey... hey YOU! Those are OUR, flying... beer monsters?      27510
+Ancient Brewmaster says: Whatzit... are they... what are they doin' to our alementals?
+Ancient Brewmaster yells: Hey... hey YOU! Those are OUR, flying... beer monsters?
 
 The Tasting Room:
 
@@ -29,86 +29,6 @@ Meteor-like shower. Two Bloated Brew Alementals spawn in the mid.
 Meteor-like shower. Nine Bubbling Brew Alementals spawn in the mid.
 Meteor-like shower. Four Sudsy Brew Alementals spawn in the mid.
 Meteor-like shower. Boss Yan-zhu the Uncasked spawn in the mid.
-
-Ancestral Brewmaster:
-Ancestral Brewmaster says(1): Do you think all of this fighting is educational for this group?
-Ancestral Brewmaster says(2): Yes, it will drive them to read books!
-
-Ancestral Brewmaster says(1): Do you think that undead party made it through in one piece?
-Ancestral Brewmaster says(2): No, I don't think they had the guts!
-
-Ancestral Brewmaster says(1): Do you think that we can return to life after death?
-Ancestral Brewmaster says(2): Sure! That last group did about thirty times!
-
-Ancestral Brewmaster says(1): Finally, we've seen a good group!
-Ancestral Brewmaster says(3): Does that mean we can stop coming here now?
-
-Ancestral Brewmaster says(1): How many of these outlanders does it take to paint a wall?
-Ancestral Brewmaster says(3): I don't know, how many?
-Ancestral Brewmaster says(1): It depends on how hard you throw them!
-
-Ancestral Brewmaster says(1): I liked that last group!
-Ancestral Brewmaster says(2): What did you like about it?
-Ancestral Brewmaster says(1): I thought it was the last group!
-
-Ancestral Brewmaster says(1): I think that druid had the hots for me!
-
-Ancestral Brewmaster says(1): I wonder if there's anything this healer isn't good at!
-Ancestral Brewmaster says(3): Sure! Choosing which group to be in!
-
-Ancestral Brewmaster says(1): I've got a great joke for you!
-Ancestral Brewmaster says(x): What's that?
-Ancestral Brewmaster says(1): These guys' weapons!
-
-Ancestral Brewmaster says(1): Just when I think a group is the worst, something wonderful happends!
-Ancestral Brewmaster says(3): What's that?
-Ancestral Brewmaster says(1): They leave!
-
-Ancestral Brewmaster says(1): That last priest had me smitten!
-
-Ancestral Brewmaster says(1): That last shaman really knew his place!
-Ancestral Brewmaster says(2): And where is that?
-Ancestral Brewmaster says(1): Outland!
-
-Ancestral Brewmaster says(1): The last paladin offered me eternal salvation!
-Ancestral Brewmaster says(x): What'd you say?
-Ancestral Brewmaster says(1): Kings, please.
-
-Ancestral Brewmaster says(1): This group is awful!
-Ancestral Brewmaster says(3): Terrible!
-Ancestral Brewmaster says(1): Disgusting!
-Ancestral Brewmaster says(3): See you here tomorrow?
-Ancestral Brewmaster says(1): Absolutely!
-
-Ancestral Brewmaster says(1): This view is terrible!
-Ancestral Brewmaster says(2): What, are you having trouble seeing the fight?
-Ancestral Brewmaster says(1): No, I can see it perfectly!
-
-Ancestral Brewmaster says(1): Why didn't that mage put intellect on his weapon?
-Ancestral Brewmaster says(2): Because he didn't want it to be smarter than he was!
-
-Ancestral Brewmaster says(1): You fool, you're sleeping through the fight!
-Ancestral Brewmaster says(x): Who's the fool? You're watching it!
-
-Ancestral Brewmaster says(1): You know what's the best thing about this group?
-Ancestral Brewmaster says(2): What?
-Ancestral Brewmaster says(1): They opened the doors so we can escape!
-
-Ancestral Brewmaster says(1): You know, I really envy these guys!
-Ancestral Brewmaster says(3): Why's that?
-Ancestral Brewmaster says(1): Becose they get to spend so much time with that foxy spirit healer!
-
-Ancestral Brewmaster says(1): You know, getting items must be hard for these guys!
-Ancestral Brewmaster says(3): Why's that?
-Ancestral Brewmaster says(1): Because pants never drop when they're around!
-
-Ancestral Brewmaster says(1): I think this group will really improve with age!
-Ancestral Brewmaster says(2): You think they'll get better?
-Ancestral Brewmaster says(1): No, my eyesight will get worse!
-
-Ancestral Brewmaster says(1): I think I'm going to need another drink!
-Ancestral Brewmaster says(2): Why do you say that?
-Ancestral Brewmaster says(1): I'm beginning to like these guys!
 */
 
 // Chen Stormstout / Auntie Stormstout intro yells.
@@ -258,13 +178,12 @@ enum Actions
 
 // Instance Scripted events and dialogues.
 
-// Areatrigger 7998.
 class at_stormstout_brewery_entrance : public AreaTriggerScript
 {
     public:
         at_stormstout_brewery_entrance() : AreaTriggerScript("at_stormstout_brewery_entrance") { }
 
-        bool OnTrigger(Player* player, AreaTriggerEntry const* /*areaTrigger*/) OVERRIDE
+        bool OnTrigger(Player* player, AreaTriggerEntry const* /*areaTrigger*/)
         {
             InstanceScript* instance = player->GetInstanceScript();
             if (!instance)
@@ -277,7 +196,7 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
                 {
                     if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
                         for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                            if (Player* member = itr->GetSource())
+                            if (Player* member = itr->getSource())
                                 if (!member->HasAura(SPELL_BANANA_BAR))
                                 {
                                     member->AddAura(SPELL_BANANA_BAR, member);
@@ -324,13 +243,13 @@ class npc_chen_stormstout_entrance : public CreatureScript
             Creature* auntieStormstout;
             bool introStarted;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 me->SetReactState(REACT_PASSIVE);
@@ -339,7 +258,7 @@ class npc_chen_stormstout_entrance : public CreatureScript
                 introStarted = false;
             }
 
-            void DoAction(int32 action) OVERRIDE
+            void DoAction(int32 const action)
             {
                 if (action == ACTION_START_INTRO && introStarted)
                     return;
@@ -357,7 +276,7 @@ class npc_chen_stormstout_entrance : public CreatureScript
                 }
             };
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 events.Update(diff);
 
@@ -435,7 +354,7 @@ class npc_chen_stormstout_entrance : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_chen_stormstout_entrance_AI(creature);
         }
@@ -462,13 +381,13 @@ class npc_sodden_hozen_brawler : public CreatureScript
             SummonList summons;
             bool summonedFirstHelper, helperDead;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 summons.DespawnAll();
@@ -482,9 +401,9 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 }
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE { }
+            void EnterCombat(Unit* /*who*/) { }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -492,23 +411,23 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void JustReachedHome() OVERRIDE
+            void JustReachedHome()
             {
                 if (helperDead)
                     me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 summons.DespawnAll();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
                 summon->setActive(true);
 
-		        if (me->IsInCombat())
+		        if (me->isInCombat())
                     summon->SetInCombatWithZone();
 
                 if (summon->GetEntry() == NPC_AQUA_DANCER)
@@ -520,7 +439,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 }
             }
 
-            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) OVERRIDE
+            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
             {
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_AQUATIC_ILLUSION);
@@ -528,7 +447,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 helperDead = true;
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -537,7 +456,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_sodden_hozen_brawler_AI(creature);
         }
@@ -562,13 +481,13 @@ class npc_inflamed_hozen_brawler : public CreatureScript
             SummonList summons;
             bool summonedFirstHelper, helperDead;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 summons.DespawnAll();
@@ -582,9 +501,9 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 }
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE { }
+            void EnterCombat(Unit* /*who*/) { }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -592,23 +511,23 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void JustReachedHome() OVERRIDE
+            void JustReachedHome()
             {
                 if (helperDead)
                     me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 summons.DespawnAll();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
                 summon->setActive(true);
 
-		        if (me->IsInCombat())
+		        if (me->isInCombat())
                     summon->SetInCombatWithZone();
 
                 if (summon->GetEntry() == NPC_FIERY_TRICKSTER)
@@ -620,7 +539,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 }
             }
 
-            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) OVERRIDE
+            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
             {
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_FIERY_ILLUSION);
@@ -628,7 +547,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 helperDead = true;
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -637,7 +556,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_inflamed_hozen_brawler_AI(creature);
         }
@@ -660,13 +579,13 @@ class npc_hozen_bouncer : public CreatureScript
             EventMap events;
             bool isInCombat;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 isInCombat = false;
@@ -676,14 +595,14 @@ class npc_hozen_bouncer : public CreatureScript
                 events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 isInCombat = true;
                 me->SetReactState(REACT_AGGRESSIVE);
                 events.CancelEvent(EVENT_CHECK_OOK);
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -692,15 +611,15 @@ class npc_hozen_bouncer : public CreatureScript
                 events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
-            void MovementInform(uint32 type, uint32 id) OVERRIDE
+            void MovementInform(uint32 type, uint32 id)
             {
-                if (!me->IsAlive() || type != POINT_MOTION_TYPE || id != 1)
+                if (!me->isAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
                 events.ScheduleEvent(EVENT_BOUNCER_DIE, 200);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim() && isInCombat)
                     return;
@@ -713,7 +632,7 @@ class npc_hozen_bouncer : public CreatureScript
                     {
                         case EVENT_CHECK_OOK:
                             // Check for Ook-ook killed.
-                            if (instance->GetData(DATA_OOKOOK_EVENT) == DONE)
+                            if (instance->GetBossState(DATA_OOKOOK_EVENT) == DONE)
                             {
                                 events.CancelEvent(EVENT_CHECK_OOK);
 
@@ -762,7 +681,7 @@ class npc_hozen_bouncer : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_hozen_bouncer_AI(creature);
         }
@@ -784,13 +703,13 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
 
@@ -799,7 +718,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
                     me->AddAura(SPELL_COSMETIC_SLEEP, me);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 if (me->GetEntry() == NPC_SLEEPY_HOZEN_BRAWLER)
                 {
@@ -814,7 +733,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
                 events.ScheduleEvent(EVENT_UPPERCUT, urand(4000, 8000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -822,14 +741,14 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void JustReachedHome() OVERRIDE
+            void JustReachedHome()
             {
                 // Add Sleep cosmetic to the Sleepy Hozen Brawlers.
                 if (me->GetEntry() == NPC_SLEEPY_HOZEN_BRAWLER && !me->HasAura(SPELL_COSMETIC_SLEEP))
                     me->AddAura(SPELL_COSMETIC_SLEEP, me);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -856,7 +775,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_drunken_sleepy_hozen_brawler_AI(creature);
         }
@@ -878,24 +797,24 @@ class npc_stout_brew_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT, urand(2000, 6000));
                 events.ScheduleEvent(EVENT_BLACKOUT_BREW, urand(12000, 17000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -903,7 +822,7 @@ class npc_stout_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -936,7 +855,7 @@ class npc_stout_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_stout_brew_alemental_AI(creature);
         }
@@ -958,24 +877,24 @@ class npc_sudsy_brew_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT2, urand(2000, 6000));
                 events.ScheduleEvent(EVENT_SUDS, urand(9000, 12000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -983,7 +902,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1017,7 +936,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_sudsy_brew_alemental_AI(creature);
         }
@@ -1038,21 +957,21 @@ class npc_pool_of_suds : public CreatureScript
 
             InstanceScript* instance;
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 me->AddAura(AURA_SUDS, me);
                 me->SetReactState(REACT_PASSIVE);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE { } // No melee.
+            void UpdateAI(const uint32 diff) { } // No melee.
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_pool_of_suds_AI(creature);
         }
@@ -1074,13 +993,13 @@ class npc_unruly_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
 
@@ -1088,12 +1007,12 @@ class npc_unruly_alemental : public CreatureScript
                     me->AddAura(SPELL_BREWHAHA, me);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT3, urand(2000, 6000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -1101,13 +1020,13 @@ class npc_unruly_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void JustReachedHome() OVERRIDE
+            void JustReachedHome()
             {
                 if (!me->HasAura(SPELL_BREWHAHA))
                     me->AddAura(SPELL_BREWHAHA, me);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 const diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1135,7 +1054,7 @@ class npc_unruly_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_unruly_alemental_AI(creature);
         }
@@ -1157,24 +1076,24 @@ class npc_fizzy_brew_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT2, urand(2000, 6000));
                 events.ScheduleEvent(EVENT_CARBONATION, urand(9000, 12000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -1182,7 +1101,7 @@ class npc_fizzy_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1216,7 +1135,7 @@ class npc_fizzy_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_fizzy_brew_alemental_AI(creature);
         }
@@ -1237,21 +1156,21 @@ class npc_pool_of_carbonation : public CreatureScript
 
             InstanceScript* instance;
 
-            void IsSummonedBy(Unit* /*summoner*/) OVERRIDE
+            void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 me->AddAura(AURA_CARBONATION, me);
                 me->SetReactState(REACT_PASSIVE);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE { } // No melee.
+            void UpdateAI(uint32 const diff) { } // No melee.
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_pool_of_carbonation_AI(creature);
         }
@@ -1273,24 +1192,24 @@ class npc_bloated_brew_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT, urand(2000, 6000));
                 events.ScheduleEvent(EVENT_BLOAT, urand(10000, 14000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -1298,7 +1217,7 @@ class npc_bloated_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1332,7 +1251,7 @@ class npc_bloated_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_bloated_brew_alemental_AI(creature);
         }
@@ -1355,25 +1274,25 @@ class npc_bubbling_brew_alemental : public CreatureScript
             EventMap events;
             SummonList summons;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 summons.DespawnAll();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT4, urand(2000, 6000));
                 events.ScheduleEvent(EVENT_BUBBLE_SHIELD, urand(9000, 17000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -1381,17 +1300,17 @@ class npc_bubbling_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 summons.DespawnAll();
             }
 
-            void JustSummoned(Creature* summon) OVERRIDE
+            void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
                 summon->setActive(true);
 
-		        if (me->IsInCombat())
+		        if (me->isInCombat())
                     summon->SetInCombatWithZone();
 
                 if (summon->GetEntry() == NPC_BUBBLE_SHIELD_TRASH)
@@ -1401,11 +1320,11 @@ class npc_bubbling_brew_alemental : public CreatureScript
                 }
             }
 
-            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) OVERRIDE
+            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
             {
                 summons.Despawn(summon);
 
-                if (Aura* aura = me->GetAura(SPELL_BUBBLE_SHIELD))
+				if (AuraPtr aura = me->GetAura(SPELL_BUBBLE_SHIELD))
                 {
                     if (aura->GetStackAmount() > 1)
                         me->SetAuraStack(SPELL_BUBBLE_SHIELD, me, aura->GetStackAmount() - 1);
@@ -1414,7 +1333,7 @@ class npc_bubbling_brew_alemental : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1448,7 +1367,7 @@ class npc_bubbling_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_bubbling_brew_alemental_AI(creature);
         }
@@ -1470,23 +1389,23 @@ class npc_yeasty_brew_alemental : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void InitializeAI() OVERRIDE
+            void InitializeAI()
             {
                 if (!me->isDead())
                     Reset();
             }
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_BREW_BOLT4, urand(2000, 6000));
             }
 
-            void EnterEvadeMode() OVERRIDE
+            void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
@@ -1494,7 +1413,7 @@ class npc_yeasty_brew_alemental : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -1522,7 +1441,7 @@ class npc_yeasty_brew_alemental : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_yeasty_brew_alemental_AI(creature);
         }
@@ -1565,14 +1484,14 @@ class spell_stormstout_brewery_habanero_beer : public SpellScriptLoader
                         caster->ToCreature()->DespawnOrUnsummon(1000);
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectHit += SpellEffectFn(spell_stormstout_brewery_habanero_beer_SpellScript::HandleInstaKill, EFFECT_1, SPELL_EFFECT_INSTAKILL);
                 AfterCast += SpellCastFn(spell_stormstout_brewery_habanero_beer_SpellScript::HandleAfterCast);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_stormstout_brewery_habanero_beer_SpellScript();
         }

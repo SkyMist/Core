@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -64,8 +62,6 @@ OPvPCapturePointHP::OPvPCapturePointHP(OutdoorPvP* pvp, OutdoorPvPHPTowerType ty
 OutdoorPvPHP::OutdoorPvPHP()
 {
     m_TypeId = OUTDOOR_PVP_HP;
-    m_AllianceTowersControlled = 0;
-    m_HordeTowersControlled = 0;
 }
 
 bool OutdoorPvPHP::SetupOutdoorPvP()
@@ -152,18 +148,19 @@ void OutdoorPvPHP::SendRemoveWorldStates(Player* player)
     }
 }
 
-void OutdoorPvPHP::FillInitialWorldStates(ByteBuffer& data)
+void OutdoorPvPHP::FillInitialWorldStates(WorldPacket &data)
 {
-    data << uint32(1)   << uint32(HP_UI_TOWER_DISPLAY_A);
-    data << uint32(1)   << uint32(HP_UI_TOWER_DISPLAY_H);
-    data << uint32(m_AllianceTowersControlled) << uint32(HP_UI_TOWER_COUNT_A);
-    data << uint32(m_HordeTowersControlled)    << uint32(HP_UI_TOWER_COUNT_H);
-    data << uint32(0)   << uint32(HP_UI_TOWER_SLIDER_DISPLAY);
-    data << uint32(50)  << uint32(HP_UI_TOWER_SLIDER_POS);
-    data << uint32(100) << uint32(HP_UI_TOWER_SLIDER_N);
-
+    data << uint32(HP_UI_TOWER_DISPLAY_A) << uint32(1);
+    data << uint32(HP_UI_TOWER_DISPLAY_H) << uint32(1);
+    data << uint32(HP_UI_TOWER_COUNT_A) << uint32(m_AllianceTowersControlled);
+    data << uint32(HP_UI_TOWER_COUNT_H) << uint32(m_HordeTowersControlled);
+    data << uint32(HP_UI_TOWER_SLIDER_DISPLAY) << uint32(0);
+    data << uint32(HP_UI_TOWER_SLIDER_POS) << uint32(50);
+    data << uint32(HP_UI_TOWER_SLIDER_N) << uint32(100);
     for (OPvPCapturePointMap::iterator itr = m_capturePoints.begin(); itr != m_capturePoints.end(); ++itr)
+    {
         itr->second->FillInitialWorldStates(data);
+    }
 }
 
 void OPvPCapturePointHP::ChangeState()
@@ -283,29 +280,29 @@ void OPvPCapturePointHP::SendChangePhase()
     SendUpdateWorldState(HP_UI_TOWER_SLIDER_DISPLAY, 1);
 }
 
-void OPvPCapturePointHP::FillInitialWorldStates(ByteBuffer& data)
+void OPvPCapturePointHP::FillInitialWorldStates(WorldPacket &data)
 {
     switch (m_State)
     {
         case OBJECTIVESTATE_ALLIANCE:
         case OBJECTIVESTATE_ALLIANCE_HORDE_CHALLENGE:
-            data << uint32(0) << uint32(HP_MAP_N[m_TowerType]);
-            data << uint32(1) << uint32(HP_MAP_A[m_TowerType]);
-            data << uint32(0) << uint32(HP_MAP_H[m_TowerType]);
+            data << uint32(HP_MAP_N[m_TowerType]) << uint32(0);
+            data << uint32(HP_MAP_A[m_TowerType]) << uint32(1);
+            data << uint32(HP_MAP_H[m_TowerType]) << uint32(0);
             break;
         case OBJECTIVESTATE_HORDE:
         case OBJECTIVESTATE_HORDE_ALLIANCE_CHALLENGE:
-            data << uint32(0) << uint32(HP_MAP_N[m_TowerType]);
-            data << uint32(0) << uint32(HP_MAP_A[m_TowerType]);
-            data << uint32(1) << uint32(HP_MAP_H[m_TowerType]);
+            data << uint32(HP_MAP_N[m_TowerType]) << uint32(0);
+            data << uint32(HP_MAP_A[m_TowerType]) << uint32(0);
+            data << uint32(HP_MAP_H[m_TowerType]) << uint32(1);
             break;
         case OBJECTIVESTATE_NEUTRAL:
         case OBJECTIVESTATE_NEUTRAL_ALLIANCE_CHALLENGE:
         case OBJECTIVESTATE_NEUTRAL_HORDE_CHALLENGE:
         default:
-            data << uint32(1) << uint32(HP_MAP_N[m_TowerType]);
-            data << uint32(0) << uint32(HP_MAP_A[m_TowerType]);
-            data << uint32(0) << uint32(HP_MAP_H[m_TowerType]);
+            data << uint32(HP_MAP_N[m_TowerType]) << uint32(1);
+            data << uint32(HP_MAP_A[m_TowerType]) << uint32(0);
+            data << uint32(HP_MAP_H[m_TowerType]) << uint32(0);
             break;
     }
 }
@@ -369,7 +366,7 @@ class OutdoorPvP_hellfire_peninsula : public OutdoorPvPScript
         {
         }
 
-        OutdoorPvP* GetOutdoorPvP() const OVERRIDE
+        OutdoorPvP* GetOutdoorPvP() const
         {
             return new OutdoorPvPHP();
         }

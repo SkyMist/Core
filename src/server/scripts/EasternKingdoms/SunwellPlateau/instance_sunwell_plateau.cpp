@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,7 +26,6 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "sunwell_plateau.h"
-#include "Player.h"
 
 #define MAX_ENCOUNTER 6
 
@@ -46,14 +43,14 @@ class instance_sunwell_plateau : public InstanceMapScript
 public:
     instance_sunwell_plateau() : InstanceMapScript("instance_sunwell_plateau", 580) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_sunwell_plateau_InstanceMapScript(map);
     }
 
     struct instance_sunwell_plateau_InstanceMapScript : public InstanceScript
     {
-        instance_sunwell_plateau_InstanceMapScript(Map* map) : InstanceScript(map) { }
+        instance_sunwell_plateau_InstanceMapScript(Map* map) : InstanceScript(map) {}
 
         uint32 m_auiEncounter[MAX_ENCOUNTER];
 
@@ -83,7 +80,7 @@ public:
         uint32 SpectralRealmTimer;
         std::vector<uint64> SpectralRealmList;
 
-        void Initialize() OVERRIDE
+        void Initialize()
         {
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
 
@@ -115,7 +112,7 @@ public:
             SpectralRealmTimer = 5000;
         }
 
-        bool IsEncounterInProgress() const OVERRIDE
+        bool IsEncounterInProgress() const
         {
             for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                 if (m_auiEncounter[i] == IN_PROGRESS)
@@ -124,7 +121,7 @@ public:
             return false;
         }
 
-        Player const* GetPlayerInMap() const
+        Player* GetPlayerInMap()
         {
             Map::PlayerList const& players = instance->GetPlayers();
 
@@ -132,18 +129,17 @@ public:
             {
                 for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
                 {
-                    Player* player = itr->GetSource();
+                    Player* player = itr->getSource();
                     if (player && !player->HasAura(45839, 0))
                             return player;
                 }
             }
-            else
-                TC_LOG_DEBUG("scripts", "Instance Sunwell Plateau: GetPlayerInMap, but PlayerList is empty!");
 
+            sLog->outDebug(LOG_FILTER_TSCR, "Instance Sunwell Plateau: GetPlayerInMap, but PlayerList is empty!");
             return NULL;
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnCreatureCreate(Creature* creature)
         {
             switch (creature->GetEntry())
             {
@@ -163,7 +159,7 @@ public:
             }
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
@@ -184,7 +180,7 @@ public:
             }
         }
 
-        uint32 GetData(uint32 id) const OVERRIDE
+        uint32 GetData(uint32 id)
         {
             switch (id)
             {
@@ -198,7 +194,7 @@ public:
             return 0;
         }
 
-        uint64 GetData64(uint32 id) const OVERRIDE
+        uint64 GetData64(uint32 id)
         {
             switch (id)
             {
@@ -217,13 +213,13 @@ public:
                 case DATA_ANVEENA:              return Anveena;
                 case DATA_KALECGOS_KJ:          return KalecgosKJ;
                 case DATA_PLAYER_GUID:
-                    Player const* target = GetPlayerInMap();
-                    return target ? target->GetGUID() : 0;
+                    Player* Target = GetPlayerInMap();
+                    return Target ? Target->GetGUID() : 0;
             }
             return 0;
         }
 
-        void SetData(uint32 id, uint32 data) OVERRIDE
+        void SetData(uint32 id, uint32 data)
         {
             switch (id)
             {
@@ -274,7 +270,7 @@ public:
                 SaveToDB();
         }
 
-        std::string GetSaveData() OVERRIDE
+        std::string GetSaveData()
         {
             OUT_SAVE_INST_DATA;
             std::ostringstream stream;
@@ -285,7 +281,7 @@ public:
             return stream.str();
         }
 
-        void Load(char const* in) OVERRIDE
+        void Load(const char* in)
         {
             if (!in)
             {
@@ -303,6 +299,7 @@ public:
             OUT_LOAD_INST_DATA_COMPLETE;
         }
     };
+
 };
 
 void AddSC_instance_sunwell_plateau()

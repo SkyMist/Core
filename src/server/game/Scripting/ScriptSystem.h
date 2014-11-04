@@ -1,21 +1,6 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+/* Copyright (C) 2006 - 2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+* This program is free software licensed under GPL version 2
+* Please see the included DOCS/LICENSE.TXT for more information */
 
 #ifndef SC_SYSTEM_H
 #define SC_SYSTEM_H
@@ -25,7 +10,7 @@
 
 #define TEXT_SOURCE_RANGE -1000000                          //the amount of entries each text source has available
 
-/// @todo find better namings and definitions.
+//TODO: find better namings and definitions.
 //N=Neutral, A=Alliance, H=Horde.
 //NEUTRAL or FRIEND = Hostility to player surroundings (not a good definition)
 //ACTIVE or PASSIVE = Hostility to environment surroundings.
@@ -61,17 +46,40 @@ struct ScriptPointMove
 
 typedef std::vector<ScriptPointMove> ScriptPointVector;
 
+struct StringTextData
+{
+    uint32 uiSoundId;
+    uint8  uiType;
+    uint32 uiLanguage;
+    uint32 uiEmote;
+};
+
 class SystemMgr
 {
         friend class ACE_Singleton<SystemMgr, ACE_Null_Mutex>;
-        SystemMgr() { }
-        ~SystemMgr() { }
+        SystemMgr() {}
+        ~SystemMgr() {}
 
     public:
+        //Maps and lists
+        typedef UNORDERED_MAP<int32, StringTextData> TextDataMap;
         typedef UNORDERED_MAP<uint32, ScriptPointVector> PointMoveMap;
 
         //Database
+        void LoadScriptTexts();
+        void LoadScriptTextsCustom();
         void LoadScriptWaypoints();
+
+        //Retrive from storage
+        StringTextData const* GetTextData(int32 textId) const
+        {
+            TextDataMap::const_iterator itr = m_mTextDataMap.find(textId);
+
+            if (itr == m_mTextDataMap.end())
+                return NULL;
+
+            return &itr->second;
+        }
 
         ScriptPointVector const& GetPointMoveList(uint32 creatureEntry) const
         {
@@ -84,6 +92,7 @@ class SystemMgr
         }
 
     protected:
+        TextDataMap     m_mTextDataMap;                     //additional data for text strings
         PointMoveMap    m_mPointMoveMap;                    //coordinates for waypoints
 
     private:

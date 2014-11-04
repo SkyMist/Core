@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,32 +26,35 @@
 4 - Toravon the Ice Watcher event
 */
 
-class instance_vault_of_archavon : public InstanceMapScript
+class instance_archavon : public InstanceMapScript
 {
     public:
-        instance_vault_of_archavon() : InstanceMapScript("instance_vault_of_archavon", 624) { }
+        instance_archavon() : InstanceMapScript("instance_archavon", 624) { }
 
-        struct instance_vault_of_archavon_InstanceMapScript : public InstanceScript
+        struct instance_archavon_InstanceMapScript : public InstanceScript
         {
-            instance_vault_of_archavon_InstanceMapScript(Map* map) : InstanceScript(map)
+            instance_archavon_InstanceMapScript(Map* map) : InstanceScript(map)
             {
-                SetBossNumber(EncounterCount);
-
-                EmalonGUID      = 0;
-                ToravonGUID     = 0;
-                ArchavonDeath   = 0;
-                EmalonDeath     = 0;
-                KoralonDeath    = 0;
+                SetBossNumber(MAX_ENCOUNTER);
             }
 
-            void OnCreatureCreate(Creature* creature) OVERRIDE
+            void Initialize()
+            {
+                EmalonGUID = 0;
+                ToravonGUID = 0;
+                ArchavonDeath = 0;
+                EmalonDeath = 0;
+                KoralonDeath = 0;
+            }
+
+            void OnCreatureCreate(Creature* creature)
             {
                 switch (creature->GetEntry())
                 {
-                    case NPC_EMALON:
+                    case CREATURE_EMALON:
                         EmalonGUID = creature->GetGUID();
                         break;
-                    case NPC_TORAVON:
+                    case CREATURE_TORAVON:
                         ToravonGUID = creature->GetGUID();
                         break;
                     default:
@@ -62,7 +62,7 @@ class instance_vault_of_archavon : public InstanceMapScript
                 }
             }
 
-            uint64 GetData64(uint32 identifier) const OVERRIDE
+            uint64 GetData64(uint32 identifier)
             {
                 switch (identifier)
                 {
@@ -77,7 +77,7 @@ class instance_vault_of_archavon : public InstanceMapScript
                 return 0;
             }
 
-            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
+            bool SetBossState(uint32 type, EncounterState state)
             {
                 if (!InstanceScript::SetBossState(type, state))
                     return false;
@@ -106,7 +106,7 @@ class instance_vault_of_archavon : public InstanceMapScript
                 return true;
             }
 
-            bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const* /*source*/, Unit const* /*target*/, uint32 /*miscvalue1*/) OVERRIDE
+            bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const* /*source*/, Unit const* /*target*/, uint32 /*miscvalue1*/)
             {
                 switch (criteria_id)
                 {
@@ -136,13 +136,13 @@ class instance_vault_of_archavon : public InstanceMapScript
             time_t KoralonDeath;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
-            return new instance_vault_of_archavon_InstanceMapScript(map);
+            return new instance_archavon_InstanceMapScript(map);
         }
 };
 
-void AddSC_instance_vault_of_archavon()
+void AddSC_instance_archavon()
 {
-    new instance_vault_of_archavon();
+    new instance_archavon();
 }

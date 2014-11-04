@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,15 +18,15 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "SpellScript.h"
-#include "Player.h"
+
 #include "naxxramas.h"
 
 //Stalagg
 enum StalaggYells
 {
-    SAY_STAL_AGGRO          = 0,
-    SAY_STAL_SLAY           = 1,
-    SAY_STAL_DEATH          = 2
+    SAY_STAL_AGGRO          = -1533023, //not used
+    SAY_STAL_SLAY           = -1533024, //not used
+    SAY_STAL_DEATH          = -1533025  //not used
 };
 
 enum StalagSpells
@@ -43,9 +40,9 @@ enum StalagSpells
 //Feugen
 enum FeugenYells
 {
-    SAY_FEUG_AGGRO          = 0,
-    SAY_FEUG_SLAY           = 1,
-    SAY_FEUG_DEATH          = 2
+    SAY_FEUG_AGGRO          = -1533026, //not used
+    SAY_FEUG_SLAY           = -1533027, //not used
+    SAY_FEUG_DEATH          = -1533028 //not used
 };
 
 enum FeugenSpells
@@ -70,12 +67,17 @@ enum ThaddiusActions
 //Thaddius
 enum ThaddiusYells
 {
-    SAY_GREET               = 0,
-    SAY_AGGRO               = 1,
-    SAY_SLAY                = 2,
-    SAY_ELECT               = 3,
-    SAY_DEATH               = 4,
-    SAY_SCREAM              = 5
+    SAY_GREET               = -1533029, //not used
+    SAY_AGGRO_1             = -1533030,
+    SAY_AGGRO_2             = -1533031,
+    SAY_AGGRO_3             = -1533032,
+    SAY_SLAY                = -1533033,
+    SAY_ELECT               = -1533034, //not used
+    SAY_DEATH               = -1533035,
+    SAY_SCREAM1             = -1533036, //not used
+    SAY_SCREAM2             = -1533037, //not used
+    SAY_SCREAM3             = -1533038, //not used
+    SAY_SCREAM4             = -1533039 //not used
 };
 
 enum ThaddiusSpells
@@ -111,9 +113,9 @@ class boss_thaddius : public CreatureScript
 public:
     boss_thaddius() : CreatureScript("boss_thaddius") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_thaddiusAI(creature);
+        return new boss_thaddiusAI (creature);
     }
 
     struct boss_thaddiusAI : public BossAI
@@ -127,11 +129,11 @@ public:
             // and each mob will send its status at reset (meaning that it is alive)
             checkFeugenAlive = false;
             if (Creature* pFeugen = me->GetCreature(*me, instance->GetData64(DATA_FEUGEN)))
-                checkFeugenAlive = pFeugen->IsAlive();
+                checkFeugenAlive = pFeugen->isAlive();
 
             checkStalaggAlive = false;
             if (Creature* pStalagg = me->GetCreature(*me, instance->GetData64(DATA_STALAGG)))
-                checkStalaggAlive = pStalagg->IsAlive();
+                checkStalaggAlive = pStalagg->isAlive();
 
             if (!checkFeugenAlive && !checkStalaggAlive)
             {
@@ -150,19 +152,19 @@ public:
         bool polaritySwitch;
         uint32 uiAddsTimer;
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
             if (!(rand()%5))
-                Talk(SAY_SLAY);
+                DoScriptText(SAY_SLAY, me);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             _JustDied();
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
         }
 
-        void DoAction(int32 action) OVERRIDE
+        void DoAction(const int32 action)
         {
             switch (action)
             {
@@ -193,27 +195,27 @@ public:
             }
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             _EnterCombat();
-            Talk(SAY_AGGRO);
+            DoScriptText(RAND(SAY_AGGRO_1, SAY_AGGRO_2, SAY_AGGRO_3), me);
             events.ScheduleEvent(EVENT_SHIFT, 30000);
             events.ScheduleEvent(EVENT_CHAIN, urand(10000, 20000));
             events.ScheduleEvent(EVENT_BERSERK, 360000);
         }
 
-        void DamageTaken(Unit* /*pDoneBy*/, uint32 & /*uiDamage*/) OVERRIDE
+        void DamageTaken(Unit* /*pDoneBy*/, uint32 & /*uiDamage*/)
         {
             me->SetReactState(REACT_AGGRESSIVE);
         }
 
-        void SetData(uint32 id, uint32 data) OVERRIDE
+        void SetData(uint32 id, uint32 data)
         {
             if (id == DATA_POLARITY_SWITCH)
                 polaritySwitch = data ? true : false;
         }
 
-        uint32 GetData(uint32 id) const OVERRIDE
+        uint32 GetData(uint32 id)
         {
             if (id != DATA_POLARITY_SWITCH)
                 return 0;
@@ -221,7 +223,7 @@ public:
             return uint32(polaritySwitch);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (checkFeugenAlive && checkStalaggAlive)
                 uiAddsTimer = 0;
@@ -263,7 +265,7 @@ public:
                         events.ScheduleEvent(EVENT_SHIFT, 30000);
                         return;
                     case EVENT_CHAIN:
-                        DoCastVictim(RAID_MODE(SPELL_CHAIN_LIGHTNING, H_SPELL_CHAIN_LIGHTNING));
+                        DoCast(me->getVictim(), RAID_MODE(SPELL_CHAIN_LIGHTNING, H_SPELL_CHAIN_LIGHTNING));
                         events.ScheduleEvent(EVENT_CHAIN, urand(10000, 20000));
                         return;
                     case EVENT_BERSERK:
@@ -272,8 +274,8 @@ public:
                 }
             }
 
-            if (events.GetTimer() > 15000 && !me->IsWithinMeleeRange(me->GetVictim()))
-                DoCastVictim(SPELL_BALL_LIGHTNING);
+            if (events.GetTimer() > 15000 && !me->IsWithinMeleeRange(me->getVictim()))
+                DoCast(me->getVictim(), SPELL_BALL_LIGHTNING);
             else
                 DoMeleeAttackIfReady();
         }
@@ -281,19 +283,19 @@ public:
 
 };
 
-class npc_stalagg : public CreatureScript
+class mob_stalagg : public CreatureScript
 {
 public:
-    npc_stalagg() : CreatureScript("npc_stalagg") { }
+    mob_stalagg() : CreatureScript("mob_stalagg") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_stalaggAI(creature);
+        return new mob_stalaggAI(creature);
     }
 
-    struct npc_stalaggAI : public ScriptedAI
+    struct mob_stalaggAI : public ScriptedAI
     {
-        npc_stalaggAI(Creature* creature) : ScriptedAI(creature)
+        mob_stalaggAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -303,7 +305,7 @@ public:
         uint32 powerSurgeTimer;
         uint32 magneticPullTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             if (instance)
                 if (Creature* pThaddius = me->GetCreature(*me, instance->GetData64(DATA_THADDIUS)))
@@ -313,28 +315,20 @@ public:
             magneticPullTimer = 20000;
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            if (!(rand()%5))
-                Talk(SAY_STAL_SLAY);
-        }
-
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-            Talk(SAY_STAL_AGGRO);
             DoCast(SPELL_STALAGG_TESLA);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_STAL_DEATH);
             if (instance)
                 if (Creature* pThaddius = me->GetCreature(*me, instance->GetData64(DATA_THADDIUS)))
                     if (pThaddius->AI())
                         pThaddius->AI()->DoAction(ACTION_STALAGG_DIED);
         }
 
-        void UpdateAI(uint32 uiDiff) OVERRIDE
+        void UpdateAI(const uint32 uiDiff)
         {
             if (!UpdateVictim())
                 return;
@@ -343,8 +337,8 @@ public:
             {
                 if (Creature* pFeugen = me->GetCreature(*me, instance->GetData64(DATA_FEUGEN)))
                 {
-                    Unit* pStalaggVictim = me->GetVictim();
-                    Unit* pFeugenVictim = pFeugen->GetVictim();
+                    Unit* pStalaggVictim = me->getVictim();
+                    Unit* pFeugenVictim = pFeugen->getVictim();
 
                     if (pFeugenVictim && pStalaggVictim)
                     {
@@ -375,19 +369,19 @@ public:
 
 };
 
-class npc_feugen : public CreatureScript
+class mob_feugen : public CreatureScript
 {
 public:
-    npc_feugen() : CreatureScript("npc_feugen") { }
+    mob_feugen() : CreatureScript("mob_feugen") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_feugenAI(creature);
+        return new mob_feugenAI(creature);
     }
 
-    struct npc_feugenAI : public ScriptedAI
+    struct mob_feugenAI : public ScriptedAI
     {
-        npc_feugenAI(Creature* creature) : ScriptedAI(creature)
+        mob_feugenAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -396,7 +390,7 @@ public:
 
         uint32 staticFieldTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             if (instance)
                 if (Creature* pThaddius = me->GetCreature(*me, instance->GetData64(DATA_THADDIUS)))
@@ -405,28 +399,20 @@ public:
             staticFieldTimer = 5000;
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            if (!(rand()%5))
-                Talk(SAY_FEUG_SLAY);
-        }
-
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-            Talk(SAY_FEUG_AGGRO);
             DoCast(SPELL_FEUGEN_TESLA);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_FEUG_DEATH);
             if (instance)
                 if (Creature* pThaddius = me->GetCreature(*me, instance->GetData64(DATA_THADDIUS)))
                     if (pThaddius->AI())
                         pThaddius->AI()->DoAction(ACTION_FEUGEN_DIED);
         }
 
-        void UpdateAI(uint32 uiDiff) OVERRIDE
+        void UpdateAI(const uint32 uiDiff)
         {
             if (!UpdateVictim())
                 return;
@@ -452,7 +438,7 @@ class spell_thaddius_pos_neg_charge : public SpellScriptLoader
         {
             PrepareSpellScript(spell_thaddius_pos_neg_charge_SpellScript);
 
-            bool Validate(SpellInfo const* /*spell*/) OVERRIDE
+            bool Validate(SpellInfo const* /*spell*/)
             {
                 if (!sSpellMgr->GetSpellInfo(SPELL_POSITIVE_CHARGE))
                     return false;
@@ -465,7 +451,7 @@ class spell_thaddius_pos_neg_charge : public SpellScriptLoader
                 return true;
             }
 
-            bool Load() OVERRIDE
+            bool Load()
             {
                 return GetCaster()->GetTypeId() == TYPEID_UNIT;
             }
@@ -509,14 +495,14 @@ class spell_thaddius_pos_neg_charge : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectHitTarget += SpellEffectFn(spell_thaddius_pos_neg_charge_SpellScript::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thaddius_pos_neg_charge_SpellScript::HandleTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ALLY);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_thaddius_pos_neg_charge_SpellScript();
         }
@@ -531,7 +517,7 @@ class spell_thaddius_polarity_shift : public SpellScriptLoader
         {
             PrepareSpellScript(spell_thaddius_polarity_shift_SpellScript);
 
-            bool Validate(SpellInfo const* /*spell*/) OVERRIDE
+            bool Validate(SpellInfo const* /*spell*/)
             {
                 if (!sSpellMgr->GetSpellInfo(SPELL_POSITIVE_POLARITY) || !sSpellMgr->GetSpellInfo(SPELL_NEGATIVE_POLARITY))
                     return false;
@@ -545,13 +531,13 @@ class spell_thaddius_polarity_shift : public SpellScriptLoader
                     target->CastSpell(target, roll_chance_i(50) ? SPELL_POSITIVE_POLARITY : SPELL_NEGATIVE_POLARITY, true, NULL, NULL, caster->GetGUID());
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectHitTarget += SpellEffectFn(spell_thaddius_polarity_shift_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_thaddius_polarity_shift_SpellScript();
         }
@@ -562,7 +548,7 @@ class achievement_polarity_switch : public AchievementCriteriaScript
     public:
         achievement_polarity_switch() : AchievementCriteriaScript("achievement_polarity_switch") { }
 
-        bool OnCheck(Player* /*source*/, Unit* target) OVERRIDE
+        bool OnCheck(Player* /*source*/, Unit* target)
         {
             return target && target->GetAI()->GetData(DATA_POLARITY_SWITCH);
         }
@@ -571,8 +557,8 @@ class achievement_polarity_switch : public AchievementCriteriaScript
 void AddSC_boss_thaddius()
 {
     new boss_thaddius();
-    new npc_stalagg();
-    new npc_feugen();
+    new mob_stalagg();
+    new mob_feugen();
     new spell_thaddius_pos_neg_charge();
     new spell_thaddius_polarity_shift();
     new achievement_polarity_switch();

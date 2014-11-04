@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -23,8 +22,8 @@
 #include "Common.h"
 #include <map>
 
+struct BMAuctionEntry;
 struct AuctionEntry;
-struct CalendarEvent;
 class Item;
 class Object;
 class Player;
@@ -38,17 +37,19 @@ enum MailMessageType
     MAIL_AUCTION        = 2,
     MAIL_CREATURE       = 3,                                // client send CMSG_CREATURE_QUERY on this mailmessagetype
     MAIL_GAMEOBJECT     = 4,                                // client send CMSG_GAMEOBJECT_QUERY on this mailmessagetype
-    MAIL_CALENDAR       = 5
+    MAIL_ITEM           = 5,                                // client send CMSG_ITEM_QUERY on this mailmessagetype
 };
 
 enum MailCheckMask
 {
-    MAIL_CHECK_MASK_NONE        = 0x00,
-    MAIL_CHECK_MASK_READ        = 0x01,
-    MAIL_CHECK_MASK_RETURNED    = 0x02,                     /// This mail was returned. Do not allow returning mail back again.
-    MAIL_CHECK_MASK_COPIED      = 0x04,                     /// This mail was copied. Do not allow making a copy of items in mail.
-    MAIL_CHECK_MASK_COD_PAYMENT = 0x08,
-    MAIL_CHECK_MASK_HAS_BODY    = 0x10                      /// This mail has body text.
+    MAIL_CHECK_MASK_NONE        = 0x000,
+    MAIL_CHECK_MASK_READ        = 0x001,
+    MAIL_CHECK_MASK_RETURNED    = 0x002,                    // This mail was returned. Do not allow returning mail back again.
+    MAIL_CHECK_MASK_COPIED      = 0x004,                    // This mail was copied. Do not allow making a copy of items in mail.
+    MAIL_CHECK_MASK_COD_PAYMENT = 0x008,
+    MAIL_CHECK_MASK_HAS_BODY    = 0x010,                    // This mail has body text.
+    MAIL_CHECK_UNK_1            = 0x044,                    // From 5.4.0 17399 sniffs
+    MAIL_CHECK_UNK_2            = 0x400,                    // From 5.4.0 17399 sniffs
 };
 
 // gathered from Stationery.dbc
@@ -60,7 +61,7 @@ enum MailStationery
     MAIL_STATIONERY_AUCTION = 62,
     MAIL_STATIONERY_VAL     = 64,                           // Valentine
     MAIL_STATIONERY_CHR     = 65,                           // Christmas
-    MAIL_STATIONERY_ORP     = 67                            // Orphan
+    MAIL_STATIONERY_ORP     = 67,                           // Orphan
 };
 
 enum MailState
@@ -76,7 +77,7 @@ enum MailShowFlags
     MAIL_SHOW_DELETE  = 0x0002,                             // forced show delete button instead return button
     MAIL_SHOW_AUCTION = 0x0004,                             // from old comment
     MAIL_SHOW_UNK2    = 0x0008,                             // unknown, COD will be shown even without that flag
-    MAIL_SHOW_RETURN  = 0x0010
+    MAIL_SHOW_RETURN  = 0x0010,
 };
 
 class MailSender
@@ -87,8 +88,8 @@ class MailSender
         {
         }
         MailSender(Object* sender, MailStationery stationery = MAIL_STATIONERY_DEFAULT);
-        MailSender(CalendarEvent* sender);
         MailSender(AuctionEntry* sender);
+        MailSender(BMAuctionEntry* sender);
         MailSender(Player* sender);
     public:                                                 // Accessors
         MailMessageType GetMailMessageType() const { return m_messageType; }
@@ -103,7 +104,7 @@ class MailSender
 class MailReceiver
 {
     public:                                                 // Constructors
-        explicit MailReceiver(uint32 receiver_lowguid) : m_receiver(NULL), m_receiver_lowguid(receiver_lowguid) { }
+        explicit MailReceiver(uint32 receiver_lowguid) : m_receiver(NULL), m_receiver_lowguid(receiver_lowguid) {}
         MailReceiver(Player* receiver);
         MailReceiver(Player* receiver, uint32 receiver_lowguid);
     public:                                                 // Accessors
@@ -121,9 +122,9 @@ class MailDraft
     public:                                                 // Constructors
         explicit MailDraft(uint16 mailTemplateId, bool need_items = true)
             : m_mailTemplateId(mailTemplateId), m_mailTemplateItemsNeed(need_items), m_money(0), m_COD(0)
-        { }
-        MailDraft(std::string const& subject, std::string const& body)
-            : m_mailTemplateId(0), m_mailTemplateItemsNeed(false), m_subject(subject), m_body(body), m_money(0), m_COD(0) { }
+        {}
+        MailDraft(std::string subject, std::string body)
+            : m_mailTemplateId(0), m_mailTemplateItemsNeed(false), m_subject(subject), m_body(body), m_money(0), m_COD(0) {}
     public:                                                 // Accessors
         uint16 GetMailTemplateId() const { return m_mailTemplateId; }
         std::string const& GetSubject() const { return m_subject; }
@@ -168,7 +169,7 @@ struct Mail
     uint8 messageType;
     uint8 stationery;
     uint16 mailTemplateId;
-    uint32 sender;  // TODO: change to uint64 and store full guids
+    uint32 sender;                                          // @TODO: change to uint64 and store full guids
     uint32 receiver;
     std::string subject;
     std::string body;

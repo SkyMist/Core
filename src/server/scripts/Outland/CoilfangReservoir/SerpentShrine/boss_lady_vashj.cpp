@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,50 +27,49 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "serpent_shrine.h"
 #include "Spell.h"
-#include "Player.h"
-#include "WorldSession.h"
 
-enum LadyVashj
-{
-    SAY_INTRO                   = 0,
-    SAY_AGGRO                   = 1,
-    SAY_PHASE1                  = 2,
-    SAY_PHASE2                  = 3,
-    SAY_PHASE3                  = 4,
-    SAY_BOWSHOT                 = 5,
-    SAY_SLAY                    = 6,
-    SAY_DEATH                   = 7,
+#define SAY_INTRO                   -1548042
+#define SAY_AGGRO1                  -1548043
+#define SAY_AGGRO2                  -1548044
+#define SAY_AGGRO3                  -1548045
+#define SAY_AGGRO4                  -1548046
+#define SAY_PHASE1                  -1548047
+#define SAY_PHASE2                  -1548048
+#define SAY_PHASE3                  -1548049
+#define SAY_BOWSHOT1                -1548050
+#define SAY_BOWSHOT2                -1548051
+#define SAY_SLAY1                   -1548052
+#define SAY_SLAY2                   -1548053
+#define SAY_SLAY3                   -1548054
+#define SAY_DEATH                   -1548055
 
-    SPELL_SURGE                 = 38044,
-    SPELL_MULTI_SHOT            = 38310,
-    SPELL_SHOCK_BLAST           = 38509,
-    SPELL_ENTANGLE              = 38316,
-    SPELL_STATIC_CHARGE_TRIGGER = 38280,
-    SPELL_FORKED_LIGHTNING      = 40088,
-    SPELL_SHOOT                 = 40873,
-    SPELL_POISON_BOLT           = 40095,
-    SPELL_TOXIC_SPORES          = 38575,
-    SPELL_MAGIC_BARRIER         = 38112,
+#define SPELL_SURGE                 38044
+#define SPELL_MULTI_SHOT            38310
+#define SPELL_SHOCK_BLAST           38509
+#define SPELL_ENTANGLE              38316
+#define SPELL_STATIC_CHARGE_TRIGGER 38280
+#define SPELL_FORKED_LIGHTNING      40088
+#define SPELL_SHOOT                 40873
+#define SPELL_POISON_BOLT           40095
+#define SPELL_TOXIC_SPORES          38575
+#define SPELL_MAGIC_BARRIER         38112
 
-    SHIED_GENERATOR_CHANNEL     = 19870,
-    ENCHANTED_ELEMENTAL         = 21958,
-    TAINTED_ELEMENTAL           = 22009,
-    COILFANG_STRIDER            = 22056,
-    COILFANG_ELITE              = 22055,
-    TOXIC_SPOREBAT              = 22140,
-    TOXIC_SPORES_TRIGGER        = 22207
-};
+#define MIDDLE_X                    30.134f
+#define MIDDLE_Y                    -923.65f
+#define MIDDLE_Z                    42.9f
 
-#define MIDDLE_X                30.134f
-#define MIDDLE_Y                -923.65f
-#define MIDDLE_Z                42.9f
-
-#define SPOREBAT_X              30.977156f
+#define SPOREBAT_X                  30.977156f
 #define SPOREBAT_Y                  -925.297761f
 #define SPOREBAT_Z                  77.176567f
 #define SPOREBAT_O                  5.223932f
 
-
+#define SHIED_GENERATOR_CHANNEL       19870
+#define ENCHANTED_ELEMENTAL           21958
+#define TAINTED_ELEMENTAL             22009
+#define COILFANG_STRIDER              22056
+#define COILFANG_ELITE                22055
+#define TOXIC_SPOREBAT                22140
+#define TOXIC_SPORES_TRIGGER          22207
 
 #define TEXT_NOT_INITIALIZED          "Instance script not initialized"
 #define TEXT_ALREADY_DEACTIVATED      "Already deactivated"
@@ -140,21 +137,19 @@ class boss_lady_vashj : public CreatureScript
 public:
     boss_lady_vashj() : CreatureScript("boss_lady_vashj") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_lady_vashjAI(creature);
+        return new boss_lady_vashjAI (creature);
     }
 
     struct boss_lady_vashjAI : public ScriptedAI
     {
-        boss_lady_vashjAI(Creature* creature) : ScriptedAI(creature)
+        boss_lady_vashjAI (Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
             Intro = false;
             JustCreated = true;
             creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE); // set it only once on Creature create (no need do intro if wiped)
-            for (uint8 i = 0; i < 4; ++i)
-                ShieldGeneratorChannel[i] = 0;
         }
 
         InstanceScript* instance;
@@ -181,7 +176,7 @@ public:
         bool CanAttack;
         bool JustCreated;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             AggroTimer = 19000;
             ShockBlastTimer = 1+rand()%60000;
@@ -205,20 +200,17 @@ public:
                 JustCreated = false;
             } else CanAttack = true;
 
+
             for (uint8 i = 0; i < 4; ++i)
-            {
-                if (ShieldGeneratorChannel[i])
-                {
-                    if (Unit* remo = Unit::GetUnit(*me, ShieldGeneratorChannel[i]))
-                    {
-                        remo->setDeathState(JUST_DIED);
-                        ShieldGeneratorChannel[i] = 0;
-                    }
-                }
-            }
+                if (Unit* remo = Unit::GetUnit(*me, ShieldGeneratorChannel[i]))
+                    remo->setDeathState(JUST_DIED);
 
             if (instance)
                 instance->SetData(DATA_LADYVASHJEVENT, NOT_STARTED);
+            ShieldGeneratorChannel[0] = 0;
+            ShieldGeneratorChannel[1] = 0;
+            ShieldGeneratorChannel[2] = 0;
+            ShieldGeneratorChannel[3] = 0;
 
             me->SetCorpseDelay(1000*60*60);
         }
@@ -230,14 +222,14 @@ public:
             if (TaintedElementalTimer > 50000)
                 TaintedElementalTimer = 50000;
         }
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY1, SAY_SLAY2, SAY_SLAY3), me);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
 
             if (instance)
                 instance->SetData(DATA_LADYVASHJEVENT, DONE);
@@ -245,7 +237,7 @@ public:
 
         void StartEvent()
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(RAND(SAY_AGGRO1, SAY_AGGRO2, SAY_AGGRO3, SAY_AGGRO4), me);
 
             Phase = 1;
 
@@ -253,7 +245,7 @@ public:
                 instance->SetData(DATA_LADYVASHJEVENT, IN_PROGRESS);
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who)
         {
             if (instance)
             {
@@ -261,7 +253,7 @@ public:
                 Map* map = me->GetMap();
                 Map::PlayerList const &PlayerList = map->GetPlayers();
                 for (Map::PlayerList::const_iterator itr = PlayerList.begin(); itr != PlayerList.end(); ++itr)
-                    if (Player* player = itr->GetSource())
+                    if (Player* player = itr->getSource())
                         player->DestroyItemCount(31088, 1, true);
             }
             StartEvent(); // this is EnterCombat(), so were are 100% in combat, start the event
@@ -270,25 +262,24 @@ public:
                 AttackStart(who);
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
-
+        void MoveInLineOfSight(Unit* who)
         {
             if (!Intro)
             {
                 Intro = true;
-                Talk(SAY_INTRO);
+                DoScriptText(SAY_INTRO, me);
             }
             if (!CanAttack)
                 return;
-            if (!who || me->GetVictim())
+            if (!who || me->getVictim())
                 return;
 
-            if (me->CanCreatureAttack(who))
+            if (me->canCreatureAttack(who))
             {
                 float attackRadius = me->GetAttackDistance(who);
                 if (me->IsWithinDistInMap(who, attackRadius) && me->GetDistanceZ(who) <= CREATURE_Z_ATTACK_RANGE && me->IsWithinLOSInMap(who))
                 {
-                    if (!me->IsInCombat()) // AttackStart() sets UNIT_FLAG_IN_COMBAT, so this msut be before attacking
+                    if (!me->isInCombat()) // AttackStart() sets UNIT_FLAG_IN_COMBAT, so this msut be before attacking
                         StartEvent();
 
                     if (Phase != 2)
@@ -304,21 +295,21 @@ public:
                 case 0:
                     // Shoot
                     // Used in Phases 1 and 3 after Entangle or while having nobody in melee range. A shot that hits her target for 4097-5543 Physical damage.
-                    DoCastVictim(SPELL_SHOOT);
+                    DoCast(me->getVictim(), SPELL_SHOOT);
                     break;
                 case 1:
                     // Multishot
                     // Used in Phases 1 and 3 after Entangle or while having nobody in melee range. A shot that hits 1 person and 4 people around him for 6475-7525 physical damage.
-                    DoCastVictim(SPELL_MULTI_SHOT);
+                    DoCast(me->getVictim(), SPELL_MULTI_SHOT);
                     break;
             }
             if (rand()%3)
             {
-                Talk(SAY_BOWSHOT);
+                DoScriptText(RAND(SAY_BOWSHOT1, SAY_BOWSHOT2), me);
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!CanAttack && Intro)
             {
@@ -335,7 +326,7 @@ public:
                 }
             }
             // to prevent abuses during phase 2
-            if (Phase == 2 && !me->GetVictim() && me->IsInCombat())
+            if (Phase == 2 && !me->getVictim() && me->isInCombat())
             {
                 EnterEvadeMode();
                 return;
@@ -351,8 +342,8 @@ public:
                 {
                     // Shock Burst
                     // Randomly used in Phases 1 and 3 on Vashj's target, it's a Shock spell doing 8325-9675 nature damage and stunning the target for 5 seconds, during which she will not attack her target but switch to the next person on the aggro list.
-                    DoCastVictim(SPELL_SHOCK_BLAST);
-                    me->TauntApply(me->GetVictim());
+                    DoCast(me->getVictim(), SPELL_SHOCK_BLAST);
+                    me->TauntApply(me->getVictim());
 
                     ShockBlastTimer = 1000+rand()%14000;       // random cooldown
                 } else ShockBlastTimer -= diff;
@@ -376,7 +367,7 @@ public:
                     {
                         // Entangle
                         // Used in Phases 1 and 3, it casts Entangling Roots on everybody in a 15 yard radius of Vashj, immobilzing them for 10 seconds and dealing 500 damage every 2 seconds. It's not a magic effect so it cannot be dispelled, but is removed by various buffs such as Cloak of Shadows or Blessing of Freedom.
-                        DoCastVictim(SPELL_ENTANGLE);
+                        DoCast(me->getVictim(), SPELL_ENTANGLE);
                         Entangle = true;
                         EntangleTimer = 10000;
                     }
@@ -396,15 +387,7 @@ public:
                     {
                         // Phase 2 begins when Vashj hits 70%. She will run to the middle of her platform and surround herself in a shield making her invulerable.
                         Phase = 2;
-
-                        me->GetMotionMaster()->Clear();
-                        DoTeleportTo(MIDDLE_X, MIDDLE_Y, MIDDLE_Z);
-
-                        for (uint8 i = 0; i < 4; ++i)
-                            if (Creature* creature = me->SummonCreature(SHIED_GENERATOR_CHANNEL, ShieldGeneratorChannelPos[i][0],  ShieldGeneratorChannelPos[i][1],  ShieldGeneratorChannelPos[i][2],  ShieldGeneratorChannelPos[i][3], TEMPSUMMON_CORPSE_DESPAWN, 0))
-                                ShieldGeneratorChannel[i] = creature->GetGUID();
-
-                        Talk(SAY_PHASE2);
+                        DoScriptText(SAY_PHASE2, me);
                     }
                 }
                 // Phase 3
@@ -465,7 +448,7 @@ public:
                     Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0);
 
                     if (!target)
-                        target = me->GetVictim();
+                        target = me->getVictim();
 
                     DoCast(target, SPELL_FORKED_LIGHTNING);
 
@@ -503,8 +486,8 @@ public:
                     {
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                             coilfangElite->AI()->AttackStart(target);
-                        else if (me->GetVictim())
-                            coilfangElite->AI()->AttackStart(me->GetVictim());
+                        else if (me->getVictim())
+                            coilfangElite->AI()->AttackStart(me->getVictim());
                     }
                     CoilfangEliteTimer = 45000+rand()%5000;
                 } else CoilfangEliteTimer -= diff;
@@ -517,8 +500,8 @@ public:
                     {
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                             CoilfangStrider->AI()->AttackStart(target);
-                        else if (me->GetVictim())
-                            CoilfangStrider->AI()->AttackStart(me->GetVictim());
+                        else if (me->getVictim())
+                            CoilfangStrider->AI()->AttackStart(me->getVictim());
                     }
                     CoilfangStriderTimer = 60000+rand()%10000;
                 } else CoilfangStriderTimer -= diff;
@@ -534,12 +517,12 @@ public:
 
                         me->RemoveAurasDueToSpell(SPELL_MAGIC_BARRIER);
 
-                        Talk(SAY_PHASE3);
+                        DoScriptText(SAY_PHASE3, me);
 
                         Phase = 3;
 
                         // return to the tank
-                        me->GetMotionMaster()->MoveChase(me->GetVictim());
+                        me->GetMotionMaster()->MoveChase(me->getVictim());
                     }
                     CheckTimer = 1000;
                 } else CheckTimer -= diff;
@@ -551,19 +534,19 @@ public:
 
 // Enchanted Elemental
 // If one of them reaches Vashj he will increase her damage done by 5%.
-class npc_enchanted_elemental : public CreatureScript
+class mob_enchanted_elemental : public CreatureScript
 {
 public:
-    npc_enchanted_elemental() : CreatureScript("npc_enchanted_elemental") { }
+    mob_enchanted_elemental() : CreatureScript("mob_enchanted_elemental") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_enchanted_elementalAI(creature);
+        return new mob_enchanted_elementalAI (creature);
     }
 
-    struct npc_enchanted_elementalAI : public ScriptedAI
+    struct mob_enchanted_elementalAI : public ScriptedAI
     {
-        npc_enchanted_elementalAI(Creature* creature) : ScriptedAI(creature)
+        mob_enchanted_elementalAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -575,7 +558,7 @@ public:
 
         uint64 VashjGUID;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             me->SetSpeed(MOVE_WALK, 0.6f); // walk
             me->SetSpeed(MOVE_RUN, 0.6f); // run
@@ -603,12 +586,11 @@ public:
                 VashjGUID = instance->GetData64(DATA_LADYVASHJ);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE { }
+        void EnterCombat(Unit* /*who*/) {}
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) {}
 
-
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!instance)
                 return;
@@ -635,7 +617,7 @@ public:
                         DoCast(me, SPELL_SURGE);
                 }
                 if (Creature* vashj = Unit::GetCreature(*me, VashjGUID))
-                    if (!vashj->IsInCombat() || CAST_AI(boss_lady_vashj::boss_lady_vashjAI, vashj->AI())->Phase != 2 || vashj->isDead())
+                    if (!vashj->isInCombat() || CAST_AI(boss_lady_vashj::boss_lady_vashjAI, vashj->AI())->Phase != 2 || vashj->isDead())
                         me->Kill(me);
                 Move = 1000;
             } else Move -= diff;
@@ -646,19 +628,19 @@ public:
 
 // Tainted Elemental
 // This mob has 7, 900 life, doesn't move, and shoots Poison Bolts at one person anywhere in the area, doing 3, 000 nature damage and placing a posion doing 2, 000 damage every 2 seconds. He will switch targets often, or sometimes just hang on a single player, but there is nothing you can do about it except heal the damage and kill the Tainted Elemental
-class npc_tainted_elemental : public CreatureScript
+class mob_tainted_elemental : public CreatureScript
 {
 public:
-    npc_tainted_elemental() : CreatureScript("npc_tainted_elemental") { }
+    mob_tainted_elemental() : CreatureScript("mob_tainted_elemental") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_tainted_elementalAI(creature);
+        return new mob_tainted_elementalAI (creature);
     }
 
-    struct npc_tainted_elementalAI : public ScriptedAI
+    struct mob_tainted_elementalAI : public ScriptedAI
     {
-        npc_tainted_elementalAI(Creature* creature) : ScriptedAI(creature)
+        mob_tainted_elementalAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -668,25 +650,25 @@ public:
         uint32 PoisonBoltTimer;
         uint32 DespawnTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             PoisonBoltTimer = 5000+rand()%5000;
             DespawnTimer = 30000;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             if (instance)
                 if (Creature* vashj = Unit::GetCreature((*me), instance->GetData64(DATA_LADYVASHJ)))
                     CAST_AI(boss_lady_vashj::boss_lady_vashjAI, vashj->AI())->EventTaintedElementalDeath();
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who)
         {
             me->AddThreat(who, 0.1f);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             // PoisonBoltTimer
             if (PoisonBoltTimer <= diff)
@@ -715,19 +697,19 @@ public:
 
 //Toxic Sporebat
 //Toxic Spores: Used in Phase 3 by the Spore Bats, it creates a contaminated green patch of ground, dealing about 2775-3225 nature damage every second to anyone who stands in it.
-class npc_toxic_sporebat : public CreatureScript
+class mob_toxic_sporebat : public CreatureScript
 {
 public:
-    npc_toxic_sporebat() : CreatureScript("npc_toxic_sporebat") { }
+    mob_toxic_sporebat() : CreatureScript("mob_toxic_sporebat") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_toxic_sporebatAI(creature);
+        return new mob_toxic_sporebatAI (creature);
     }
 
-    struct npc_toxic_sporebatAI : public ScriptedAI
+    struct mob_toxic_sporebatAI : public ScriptedAI
     {
-        npc_toxic_sporebatAI(Creature* creature) : ScriptedAI(creature)
+        mob_toxic_sporebatAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
             EnterEvadeMode();
@@ -740,7 +722,7 @@ public:
         uint32 BoltTimer;
         uint32 CheckTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             me->SetDisableGravity(true);
             me->setFaction(14);
@@ -750,12 +732,11 @@ public:
             CheckTimer = 1000;
         }
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE
-
+        void MoveInLineOfSight(Unit* /*who*/)
         {
         }
 
-        void MovementInform(uint32 type, uint32 id) OVERRIDE
+        void MovementInform(uint32 type, uint32 id)
         {
             if (type != POINT_MOTION_TYPE)
                 return;
@@ -764,7 +745,7 @@ public:
                 MovementTimer = 0;
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI (const uint32 diff)
         {
             // Random movement
             if (MovementTimer <= diff)
@@ -796,7 +777,7 @@ public:
                 {
                     // check if vashj is death
                     Unit* Vashj = Unit::GetUnit(*me, instance->GetData64(DATA_LADYVASHJ));
-                    if (!Vashj || !Vashj->IsAlive() || CAST_AI(boss_lady_vashj::boss_lady_vashjAI, Vashj->ToCreature()->AI())->Phase != 3)
+                    if (!Vashj || (Vashj && !Vashj->isAlive()) || (Vashj && CAST_AI(boss_lady_vashj::boss_lady_vashjAI, CAST_CRE(Vashj)->AI())->Phase != 3))
                     {
                         // remove
                         me->setDeathState(DEAD);
@@ -806,27 +787,25 @@ public:
                 }
 
                 CheckTimer = 1000;
-            }
-            else
-                CheckTimer -= diff;
+            } else CheckTimer -= diff;
         }
     };
 
 };
 
-class npc_shield_generator_channel : public CreatureScript
+class mob_shield_generator_channel : public CreatureScript
 {
 public:
-    npc_shield_generator_channel() : CreatureScript("npc_shield_generator_channel") { }
+    mob_shield_generator_channel() : CreatureScript("mob_shield_generator_channel") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_shield_generator_channelAI(creature);
+        return new mob_shield_generator_channelAI (creature);
     }
 
-    struct npc_shield_generator_channelAI : public ScriptedAI
+    struct mob_shield_generator_channelAI : public ScriptedAI
     {
-        npc_shield_generator_channelAI(Creature* creature) : ScriptedAI(creature)
+        mob_shield_generator_channelAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -835,7 +814,7 @@ public:
         uint32 CheckTimer;
         bool Casted;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             CheckTimer = 0;
             Casted = false;
@@ -844,10 +823,9 @@ public:
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
         }
 
-        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) {}
 
-
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI (const uint32 diff)
         {
             if (!instance)
                 return;
@@ -856,7 +834,7 @@ public:
             {
                 Unit* vashj = Unit::GetUnit(*me, instance->GetData64(DATA_LADYVASHJ));
 
-                if (vashj && vashj->IsAlive())
+                if (vashj && vashj->isAlive())
                 {
                     // start visual channel
                     if (!Casted || !vashj->HasAura(SPELL_MAGIC_BARRIER))
@@ -877,7 +855,7 @@ class item_tainted_core : public ItemScript
 public:
     item_tainted_core() : ItemScript("item_tainted_core") { }
 
-    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const& targets) OVERRIDE
+    bool OnUse(Player* player, Item* /*item*/, SpellCastTargets const& targets)
     {
         InstanceScript* instance = player->GetInstanceScript();
         if (!instance)
@@ -948,9 +926,9 @@ public:
 void AddSC_boss_lady_vashj()
 {
     new boss_lady_vashj();
-    new npc_enchanted_elemental();
-    new npc_tainted_elemental();
-    new npc_toxic_sporebat();
-    new npc_shield_generator_channel();
+    new mob_enchanted_elemental();
+    new mob_tainted_elemental();
+    new mob_toxic_sporebat();
+    new mob_shield_generator_channel();
     new item_tainted_core();
 }

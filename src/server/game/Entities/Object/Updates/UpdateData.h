@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -16,13 +15,11 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #ifndef __UPDATEDATA_H
 #define __UPDATEDATA_H
 
 #include "ByteBuffer.h"
-#include <set>
-
 class WorldPacket;
 
 enum OBJECT_UPDATE_TYPE
@@ -48,7 +45,7 @@ enum OBJECT_UPDATE_FLAGS
     UPDATEFLAG_ROTATION              = 0x0200,
     UPDATEFLAG_UNK3                  = 0x0400,
     UPDATEFLAG_ANIMKITS              = 0x0800,
-    UPDATEFLAG_TRANSPORT_ARR         = 0x1000,
+    UPDATEFLAG_UNK5                  = 0x1000,
     UPDATEFLAG_UNK6                  = 0x2000,
 };
 

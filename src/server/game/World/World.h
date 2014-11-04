@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -31,6 +30,7 @@
 #include "SharedDefines.h"
 #include "QueryResult.h"
 #include "Callback.h"
+#include "TimeDiffMgr.h"
 
 #include <map>
 #include <set>
@@ -59,30 +59,26 @@ enum ServerMessageType
     SERVER_MSG_TICKET_SERVICED_SOON   = 11,
     SERVER_MSG_WAIT_TIME_UNAVAILABLE  = 12,
     SERVER_MSG_TICKET_WAIT_TIME       = 13,
-    SERVER_MSG_ANNOUNCE_MOP           = 14,
-    SERVER_MSG_ANNOUNCE_MOP_SW        = 15,
-    SERVER_MSG_ANNOUNCE_MOP_ORG       = 16,
-    SERVER_MSG_XREALM_SHUTDOWN        = 17,
-    SERVER_MSG_XREALM_RESTART         = 18,
 };
 
 enum ShutdownMask
 {
     SHUTDOWN_MASK_RESTART = 1,
-    SHUTDOWN_MASK_IDLE    = 2
+    SHUTDOWN_MASK_IDLE    = 2,
 };
 
 enum ShutdownExitCode
 {
     SHUTDOWN_EXIT_CODE = 0,
     ERROR_EXIT_CODE    = 1,
-    RESTART_EXIT_CODE  = 2
+    RESTART_EXIT_CODE  = 2,
 };
 
 /// Timers for different object refresh rates
 enum WorldTimers
 {
     WUPDATE_AUCTIONS,
+    WUPDATE_BLACKMARKET,
     WUPDATE_WEATHERS,
     WUPDATE_UPTIME,
     WUPDATE_CORPSES,
@@ -105,18 +101,25 @@ enum WorldBoolConfigs
     CONFIG_CLEAN_CHARACTER_DB,
     CONFIG_GRID_UNLOAD,
     CONFIG_STATS_SAVE_ONLY_ON_LOGOUT,
+    CONFIG_ALLOW_TWO_SIDE_ACCOUNTS,
     CONFIG_ALLOW_TWO_SIDE_INTERACTION_CALENDAR,
+    CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHAT,
     CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL,
     CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP,
     CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD,
     CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION,
+    CONFIG_ALLOW_TWO_SIDE_INTERACTION_MAIL,
+    CONFIG_ALLOW_TWO_SIDE_WHO_LIST,
+    CONFIG_ALLOW_TWO_SIDE_ADD_FRIEND,
     CONFIG_ALLOW_TWO_SIDE_TRADE,
     CONFIG_ALL_TAXI_PATHS,
     CONFIG_INSTANT_TAXI,
     CONFIG_INSTANCE_IGNORE_LEVEL,
     CONFIG_INSTANCE_IGNORE_RAID,
     CONFIG_CAST_UNSTUCK,
+    CONFIG_GM_LOG_TRADE,
     CONFIG_ALLOW_GM_GROUP,
+    CONFIG_ALLOW_GM_FRIEND,
     CONFIG_GM_LOWER_SECURITY,
     CONFIG_SKILL_PROSPECTING,
     CONFIG_SKILL_MILLING,
@@ -125,6 +128,7 @@ enum WorldBoolConfigs
     CONFIG_QUEST_IGNORE_RAID,
     CONFIG_DETECT_POS_COLLISION,
     CONFIG_RESTRICTED_LFG_CHANNEL,
+    CONFIG_SILENTLY_GM_JOIN_TO_CHANNEL,
     CONFIG_TALENTS_INSPECTING,
     CONFIG_CHAT_FAKE_MESSAGE_PREVENTING,
     CONFIG_DEATH_CORPSE_RECLAIM_DELAY_PVP,
@@ -137,12 +141,14 @@ enum WorldBoolConfigs
     CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ENABLE,
     CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_PLAYERONLY,
     CONFIG_BG_XP_FOR_KILL,
+    CONFIG_ARENA_AUTO_DISTRIBUTE_POINTS,
     CONFIG_ARENA_QUEUE_ANNOUNCER_ENABLE,
     CONFIG_ARENA_QUEUE_ANNOUNCER_PLAYERONLY,
     CONFIG_ARENA_SEASON_IN_PROGRESS,
     CONFIG_ARENA_LOG_EXTENDED_INFO,
     CONFIG_OFFHAND_CHECK_AT_SPELL_UNLEARN,
     CONFIG_VMAP_INDOOR_CHECK,
+    CONFIG_PET_LOS,
     CONFIG_START_ALL_SPELLS,
     CONFIG_START_ALL_EXPLORED,
     CONFIG_START_ALL_REP,
@@ -159,24 +165,40 @@ enum WorldBoolConfigs
     CONFIG_CHATLOG_PUBLIC,
     CONFIG_CHATLOG_ADDON,
     CONFIG_CHATLOG_BGROUND,
+    CONFIG_DUNGEON_FINDER_ENABLE,
     CONFIG_AUTOBROADCAST,
     CONFIG_ALLOW_TICKETS,
     CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES,
     CONFIG_PRESERVE_CUSTOM_CHANNELS,
+    CONFIG_ANTICHEAT_ENABLE,
     CONFIG_PDUMP_NO_PATHS,
     CONFIG_PDUMP_NO_OVERWRITE,
     CONFIG_QUEST_IGNORE_AUTO_ACCEPT,
     CONFIG_QUEST_IGNORE_AUTO_COMPLETE,
     CONFIG_WARDEN_ENABLED,
-    CONFIG_ENABLE_MMAPS,
     CONFIG_WINTERGRASP_ENABLE,
     CONFIG_GUILD_LEVELING_ENABLED,
-    CONFIG_UI_QUESTLEVELS_IN_DIALOGS,     // Should we add quest levels to the title in the NPC dialogs?
-    CONFIG_EVENT_ANNOUNCE,
+    CONFIG_LIMIT_WHO_ONLINE,
+    CONFIG_ANNOUNCE_BAN,
+    CONFIG_ANNOUNCE_MUTE,
+    CONFIG_SPELL_FORBIDDEN,
     CONFIG_STATS_LIMITS_ENABLE,
-    CONFIG_INSTANCES_RESET_ANNOUNCE,
-    CONFIG_IS_TOURNAMENT_REALM,
-    CONFIG_IS_TRIAL_ACCOUNTS,
+    CONFIG_DUEL_RESET_COOLDOWN_ON_START,
+    CONFIG_DUEL_RESET_COOLDOWN_ON_FINISH,
+    CONFIG_DUEL_RESET_COOLDOWN_ONLY_IN_ELWYNN_AND_DUROTAR,
+    CONFIG_DUEL_RESET_COOLDOWN_RESET_ENERGY_ON_START,
+    CONFIG_DUEL_RESET_COOLDOWN_MAX_ENERGY_ON_START,
+    CONFIG_VIP_DEBUFF_COMMAND,
+    CONFIG_VIP_BANK_COMMAND,
+    CONFIG_VIP_REPAIR_COMMAND,
+    CONFIG_VIP_RESET_TALENTS_COMMAND,
+    CONFIG_VIP_TAXI_COMMAND,
+    CONFIG_VIP_HOME_COMMAND,
+    CONFIG_VIP_CAPITAL_COMMAND,
+    CONFIG_VIP_EXCHANGE_ARENA_COMMAND,
+    CONFIG_VIP_EXCHANGE_FROST_COMMAND,
+    CONFIG_ANTISPAM_ENABLED,
+    CONFIG_DISABLE_RESTART,
     BOOL_CONFIG_VALUE_COUNT
 };
 
@@ -224,7 +246,6 @@ enum WorldIntConfigs
     CONFIG_CHARACTER_CREATING_DISABLED_CLASSMASK,
     CONFIG_CHARACTERS_PER_ACCOUNT,
     CONFIG_CHARACTERS_PER_REALM,
-    CONFIG_HEROIC_CHARACTERS_PER_REALM,
     CONFIG_CHARACTER_CREATING_MIN_LEVEL_FOR_HEROIC_CHARACTER,
     CONFIG_SKIP_CINEMATICS,
     CONFIG_MAX_PLAYER_LEVEL,
@@ -239,6 +260,7 @@ enum WorldIntConfigs
     CONFIG_CURRENCY_START_CONQUEST_POINTS,
     CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP,
     CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD,
+    CONFIG_CURRENCY_CONQUEST_POINTS_RATED_BG_REWARD,
     CONFIG_CURRENCY_RESET_HOUR,
     CONFIG_CURRENCY_RESET_DAY,
     CONFIG_CURRENCY_RESET_INTERVAL,
@@ -272,6 +294,9 @@ enum WorldIntConfigs
     CONFIG_CHATFLOOD_MESSAGE_COUNT,
     CONFIG_CHATFLOOD_MESSAGE_DELAY,
     CONFIG_CHATFLOOD_MUTE_TIME,
+    CONFIG_CHATFLOOD_PRIVATE_MESSAGE_COUNT,
+    CONFIG_CHATFLOOD_PRIVATE_MESSAGE_DELAY,
+    CONFIG_EVENT_ANNOUNCE,
     CONFIG_CREATURE_FAMILY_ASSISTANCE_DELAY,
     CONFIG_CREATURE_FAMILY_FLEE_DELAY,
     CONFIG_WORLD_BOSS_LEVEL_DIFF,
@@ -300,6 +325,7 @@ enum WorldIntConfigs
     CONFIG_ARENA_MAX_RATING_DIFFERENCE,
     CONFIG_ARENA_RATING_DISCARD_TIMER,
     CONFIG_ARENA_RATED_UPDATE_TIMER,
+    CONFIG_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS,
     CONFIG_ARENA_SEASON_ID,
     CONFIG_ARENA_START_RATING,
     CONFIG_ARENA_START_PERSONAL_RATING,
@@ -317,23 +343,19 @@ enum WorldIntConfigs
     CONFIG_LOGDB_CLEARINTERVAL,
     CONFIG_LOGDB_CLEARTIME,
     CONFIG_CLIENTCACHE_VERSION,
-    CONFIG_GUILD_NEWS_LOG_COUNT,
     CONFIG_GUILD_EVENT_LOG_COUNT,
     CONFIG_GUILD_BANK_EVENT_LOG_COUNT,
     CONFIG_MIN_LEVEL_STAT_SAVE,
     CONFIG_RANDOM_BG_RESET_HOUR,
-    CONFIG_GUILD_RESET_HOUR,
     CONFIG_CHARDELETE_KEEP_DAYS,
     CONFIG_CHARDELETE_METHOD,
     CONFIG_CHARDELETE_MIN_LEVEL,
-    CONFIG_CHARDELETE_HEROIC_MIN_LEVEL,
     CONFIG_AUTOBROADCAST_CENTER,
     CONFIG_AUTOBROADCAST_INTERVAL,
     CONFIG_MAX_RESULTS_LOOKUP_COMMANDS,
     CONFIG_DB_PING_INTERVAL,
     CONFIG_PRESERVE_CUSTOM_CHANNEL_DURATION,
     CONFIG_PERSISTENT_CHARACTER_CLEAN_FLAGS,
-    CONFIG_LFG_OPTIONSMASK,
     CONFIG_MAX_INSTANCES_PER_HOUR,
     CONFIG_WARDEN_CLIENT_RESPONSE_DELAY,
     CONFIG_WARDEN_CLIENT_CHECK_HOLDOFF,
@@ -341,6 +363,9 @@ enum WorldIntConfigs
     CONFIG_WARDEN_CLIENT_BAN_DURATION,
     CONFIG_WARDEN_NUM_MEM_CHECKS,
     CONFIG_WARDEN_NUM_OTHER_CHECKS,
+    CONFIG_ANTICHEAT_REPORTS_INGAME_NOTIFICATION,
+    CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT,
+    CONFIG_ANTICHEAT_DETECTIONS_ENABLED,
     CONFIG_WINTERGRASP_PLR_MAX,
     CONFIG_WINTERGRASP_PLR_MIN,
     CONFIG_WINTERGRASP_PLR_MIN_LVL,
@@ -352,20 +377,14 @@ enum WorldIntConfigs
     CONFIG_GUILD_UNDELETABLE_LEVEL,
     CONFIG_GUILD_DAILY_XP_CAP,
     CONFIG_GUILD_WEEKLY_REP_CAP,
-    CONFIG_PACKET_SPOOF_POLICY,
-    CONFIG_PACKET_SPOOF_BANMODE,
-    CONFIG_PACKET_SPOOF_BANDURATION,
-    CONFIG_ACC_PASSCHANGESEC,
-    CONFIG_RBAC_FREE_PERMISSION_MODE,
-    CONFIG_BG_REWARD_WINNER_HONOR_FIRST,
-    CONFIG_BG_REWARD_WINNER_HONOR_LAST,
-    CONFIG_BG_REWARD_LOSER_HONOR_FIRST,
-    CONFIG_BG_REWARD_LOSER_HONOR_LAST,
-    CONFIG_BG_REWARD_WINNER_CONQUEST_FIRST,
-    CONFIG_BG_REWARD_WINNER_CONQUEST_LAST,
-    CONFIG_TRIAL_MAX_LEVEL,
-    CONFIG_TRIAL_MAX_MONEY,
-    CONFIG_TRIAL_ACTIVATE_TIME,
+    CONFIG_BLACKMARKET_MAX_AUCTIONS,
+    CONFIG_BLACKMARKET_AUCTION_DELAY,
+    CONFIG_BLACKMARKET_AUCTION_DELAY_MOD,
+    CONFIG_VIP_RATE_EXHANGE_HONOR_IN_ARENA,
+    CONFIG_VIP_RATE_EXHANGE_TRIUMPH_IN_FROST,
+    CONFIG_ANTISPAM_MAIL_TIMER,
+    CONFIG_ANTISPAM_MAIL_COUNT,
+    CONFIG_AUTO_SERVER_RESTART_HOUR,
     INT_CONFIG_VALUE_COUNT
 };
 
@@ -395,6 +414,7 @@ enum Rates
     RATE_XP_QUEST,
     RATE_XP_GUILD_MODIFIER,
     RATE_XP_EXPLORE,
+    RATE_XP_GATHERING,
     RATE_REPAIRCOST,
     RATE_REPUTATION_GAIN,
     RATE_REPUTATION_LOWLEVEL_KILL,
@@ -424,6 +444,9 @@ enum Rates
     RATE_AUCTION_DEPOSIT,
     RATE_AUCTION_CUT,
     RATE_HONOR,
+    RATE_MINING_AMOUNT,
+    RATE_MINING_NEXT,
+    RATE_TALENT,
     RATE_CORPSE_DECAY_LOOTED,
     RATE_INSTANCE_RESET_TIME,
     RATE_TARGET_POS_RECALCULATION_RANGE,
@@ -433,6 +456,12 @@ enum Rates
     RATE_DURABILITY_LOSS_ABSORB,
     RATE_DURABILITY_LOSS_BLOCK,
     RATE_MOVESPEED,
+    RATE_ONLINE,
+    RATE_XP_KILL_PREMIUM,
+    RATE_XP_QUEST_PREMIUM,
+    RATE_XP_EXPLORE_PREMIUM,
+    RATE_REPUTATION_GAIN_PREMIUM,
+    RATE_HONOR_PREMIUM,
     MAX_RATES
 };
 
@@ -447,18 +476,18 @@ enum BillingPlanFlags
     SESSION_USAGE           = 0x10,
     SESSION_TIME_MIXTURE    = 0x20,
     SESSION_RESTRICTED      = 0x40,
-    SESSION_ENABLE_CAIS     = 0x80
+    SESSION_ENABLE_CAIS     = 0x80,
 };
 
 /// Type of server, this is values from second column of Cfg_Configs.dbc
 enum RealmType
 {
-    REALM_TYPE_NORMAL       = 0,
-    REALM_TYPE_PVP          = 1,
-    REALM_TYPE_NORMAL2      = 4,
-    REALM_TYPE_RP           = 6,
-    REALM_TYPE_RPPVP        = 8,
-    REALM_TYPE_FFA_PVP      = 16                            // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
+    REALM_TYPE_NORMAL = 0,
+    REALM_TYPE_PVP = 1,
+    REALM_TYPE_NORMAL2 = 4,
+    REALM_TYPE_RP = 6,
+    REALM_TYPE_RPPVP = 8,
+    REALM_TYPE_FFA_PVP = 16                                 // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
                                                             // replaced by REALM_PVP in realm list
 };
 
@@ -508,12 +537,43 @@ enum WorldStates
 {
     WS_WEEKLY_QUEST_RESET_TIME  = 20002,                     // Next weekly reset time
     WS_BG_DAILY_RESET_TIME      = 20003,                     // Next daily BG reset time
-    WS_CLEANING_FLAGS           = 20004,                     // Cleaning Flags
-    WS_GUILD_DAILY_RESET_TIME   = 20006,                     // Next guild cap reset time
-    WS_MONTHLY_QUEST_RESET_TIME = 20007,                     // Next monthly reset time
-    WS_WEEKLY_SELECT_RATED_BG   = 20008,                     // The Rated BG selected it shows in the window.
-    // Cata specific custom worldstates
-    WS_GUILD_WEEKLY_RESET_TIME  = 20050,                     // Next guild week reset time
+    WS_MONTHLY_QUEST_RESET_TIME = 20004,                     // Next monthly reset time
+    WS_AUTO_SERVER_RESTART_TIME = 20005,                     // Next server restart time
+};
+
+// DB scripting commands
+enum ScriptCommands
+{
+    SCRIPT_COMMAND_TALK                  = 0,                // source/target = Creature, target = any, datalong = talk type (0=say, 1=whisper, 2=yell, 3=emote text, 4=boss emote text), datalong2 & 1 = player talk (instead of creature), dataint = string_id
+    SCRIPT_COMMAND_EMOTE                 = 1,                // source/target = Creature, datalong = emote id, datalong2 = 0: set emote state; > 0: play emote state
+    SCRIPT_COMMAND_FIELD_SET             = 2,                // source/target = Creature, datalong = field id, datalog2 = value
+    SCRIPT_COMMAND_MOVE_TO               = 3,                // source/target = Creature, datalong2 = time to reach, x/y/z = destination
+    SCRIPT_COMMAND_FLAG_SET              = 4,                // source/target = Creature, datalong = field id, datalog2 = bitmask
+    SCRIPT_COMMAND_FLAG_REMOVE           = 5,                // source/target = Creature, datalong = field id, datalog2 = bitmask
+    SCRIPT_COMMAND_TELEPORT_TO           = 6,                // source/target = Creature/Player (see datalong2), datalong = map_id, datalong2 = 0: Player; 1: Creature, x/y/z = destination, o = orientation
+    SCRIPT_COMMAND_QUEST_EXPLORED        = 7,                // target/source = Player, target/source = GO/Creature, datalong = quest id, datalong2 = distance or 0
+    SCRIPT_COMMAND_KILL_CREDIT           = 8,                // target/source = Player, datalong = creature entry, datalong2 = 0: personal credit, 1: group credit
+    SCRIPT_COMMAND_RESPAWN_GAMEOBJECT    = 9,                // source = WorldObject (summoner), datalong = GO guid, datalong2 = despawn delay
+    SCRIPT_COMMAND_TEMP_SUMMON_CREATURE  = 10,               // source = WorldObject (summoner), datalong = creature entry, datalong2 = despawn delay, x/y/z = summon position, o = orientation
+    SCRIPT_COMMAND_OPEN_DOOR             = 11,               // source = Unit, datalong = GO guid, datalong2 = reset delay (min 15)
+    SCRIPT_COMMAND_CLOSE_DOOR            = 12,               // source = Unit, datalong = GO guid, datalong2 = reset delay (min 15)
+    SCRIPT_COMMAND_ACTIVATE_OBJECT       = 13,               // source = Unit, target = GO
+    SCRIPT_COMMAND_REMOVE_AURA           = 14,               // source (datalong2 != 0) or target (datalong2 == 0) = Unit, datalong = spell id
+    SCRIPT_COMMAND_CAST_SPELL            = 15,               // source and/or target = Unit, datalong2 = cast direction (0: s->t 1: s->s 2: t->t 3: t->s 4: s->creature with dataint entry), dataint & 1 = triggered flag
+    SCRIPT_COMMAND_PLAY_SOUND            = 16,               // source = WorldObject, target = none/Player, datalong = sound id, datalong2 (bitmask: 0/1=anyone/player, 0/2=without/with distance dependency, so 1|2 = 3 is target with distance dependency)
+    SCRIPT_COMMAND_CREATE_ITEM           = 17,               // target/source = Player, datalong = item entry, datalong2 = amount
+    SCRIPT_COMMAND_DESPAWN_SELF          = 18,               // target/source = Creature, datalong = despawn delay
+
+    SCRIPT_COMMAND_LOAD_PATH             = 20,               // source = Unit, datalong = path id, datalong2 = is repeatable
+    SCRIPT_COMMAND_CALLSCRIPT_TO_UNIT    = 21,               // source = WorldObject (if present used as a search center), datalong = script id, datalong2 = unit lowguid, dataint = script table to use (see ScriptsType)
+    SCRIPT_COMMAND_KILL                  = 22,               // source/target = Creature, dataint = remove corpse attribute
+
+    // TrinityCore only
+    SCRIPT_COMMAND_ORIENTATION           = 30,               // source = Unit, target (datalong > 0) = Unit, datalong = > 0 turn source to face target, o = orientation
+    SCRIPT_COMMAND_EQUIP                 = 31,               // soucre = Creature, datalong = equipment id
+    SCRIPT_COMMAND_MODEL                 = 32,               // source = Creature, datalong = model id
+    SCRIPT_COMMAND_CLOSE_GOSSIP          = 33,               // source = Player
+    SCRIPT_COMMAND_PLAYMOVIE             = 34                // source = Player, datalong = movie id
 };
 
 /// Storage class for commands issued for delayed execution
@@ -550,6 +610,18 @@ struct CharacterNameData
     uint8 m_level;
 };
 
+enum RecordDiffType
+{
+    RECORD_DIFF_MAP,
+    RECORD_DIFF_BATTLEGROUND,
+    RECORD_DIFF_SESSION,
+    RECORD_DIFF_BATTLEFIELD,
+    RECORD_DIFF_OUTDOORPVP,
+    RECORD_DIFF_LFG,
+    RECORD_DIFF_CALLBACK,
+    RECORD_DIFF_MAX
+};
+
 /// The World
 class World
 {
@@ -566,12 +638,12 @@ class World
         /// Get the number of current active sessions
         void UpdateMaxSessionCounters();
         const SessionMap& GetAllSessions() const { return m_sessions; }
-        uint32 GetActiveAndQueuedSessionCount() const { return m_sessions.size(); }
-        uint32 GetActiveSessionCount() const { return m_sessions.size() - m_QueuedPlayer.size(); }
+        uint32 GetActiveAndQueuedSessionCount() const { return m_sessions.size() * getRate(RATE_ONLINE); }
+        uint32 GetActiveSessionCount() const { return (m_sessions.size() - m_QueuedPlayer.size()) * getRate(RATE_ONLINE); }
         uint32 GetQueuedSessionCount() const { return m_QueuedPlayer.size(); }
         /// Get the maximum number of parallel sessions on the server since last reboot
         uint32 GetMaxQueuedSessionCount() const { return m_maxQueuedSessionCount; }
-        uint32 GetMaxActiveSessionCount() const { return m_maxActiveSessionCount; }
+        uint32 GetMaxActiveSessionCount() const { return m_maxActiveSessionCount * getRate(RATE_ONLINE); }
         /// Get number of players
         inline uint32 GetPlayerCount() const { return m_PlayerCount; }
         inline uint32 GetMaxPlayerCount() const { return m_MaxPlayerCount; }
@@ -607,26 +679,28 @@ class World
         int32 GetQueuePos(WorldSession*);
         bool HasRecentlyDisconnected(WorldSession*);
 
-        /// @todo Actions on m_allowMovement still to be implemented
+        /// \todo Actions on m_allowMovement still to be implemented
         /// Is movement allowed?
         bool getAllowMovement() const { return m_allowMovement; }
         /// Allow/Disallow object movements
         void SetAllowMovement(bool allow) { m_allowMovement = allow; }
 
         /// Set a new Message of the Day
-        void SetMotd(std::string const& motd);
+        void SetMotd(const std::string& motd);
         /// Get the current Message of the Day
         const char* GetMotd() const;
+        /// Get lines count of current Message of the Day
+        const uint32 GetMotdLineCount() const;
 
         /// Set the string for new characters (first login)
-        void SetNewCharString(std::string const& str) { m_newCharString = str; }
+        void SetNewCharString(std::string str) { m_newCharString = str; }
         /// Get the string for new characters (first login)
-        std::string const& GetNewCharString() const { return m_newCharString; }
+        const std::string& GetNewCharString() const { return m_newCharString; }
 
         LocaleConstant GetDefaultDbcLocale() const { return m_defaultDbcLocale; }
 
         /// Get the path where data (dbc, maps) are stored on disk
-        std::string const& GetDataPath() const { return m_dataPath; }
+        std::string GetDataPath() const { return m_dataPath; }
 
         /// When server started?
         time_t const& GetStartTime() const { return m_startTime; }
@@ -647,7 +721,7 @@ class World
         uint16 GetConfigMaxSkillValue() const
         {
             uint8 lvl = uint8(getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
-            return lvl > 60 ? 300 + ((lvl - 60) * 75) / 10 : lvl * 5;
+            return lvl > 60 ? 300 + ((lvl - 60) * 75) / 10 : lvl*5;
         }
 
         void SetInitialWorldSettings();
@@ -658,7 +732,7 @@ class World
         void SendGMText(int32 string_id, ...);
         void SendGlobalMessage(WorldPacket* packet, WorldSession* self = 0, uint32 team = 0);
         void SendGlobalGMMessage(WorldPacket* packet, WorldSession* self = 0, uint32 team = 0);
-        bool SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self = 0, uint32 team = 0);
+        void SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self = 0, uint32 team = 0);
         void SendZoneText(uint32 zone, const char *text, WorldSession* self = 0, uint32 team = 0);
         void SendServerMessage(ServerMessageType type, const char *text = "", Player* player = NULL);
 
@@ -729,20 +803,23 @@ class World
 
         void KickAll();
         void KickAllLess(AccountTypes sec);
-        BanReturn BanAccount(BanMode mode, std::string const& nameOrIP, std::string const& duration, std::string const& reason, std::string const& author);
-        BanReturn BanAccount(BanMode mode, std::string const& nameOrIP, uint32 duration_secs, std::string const& reason, std::string const& author);
-        bool RemoveBanAccount(BanMode mode, std::string const& nameOrIP);
-        BanReturn BanCharacter(std::string const& name, std::string const& duration, std::string const& reason, std::string const& author);
-        bool RemoveBanCharacter(std::string const& name);
+        BanReturn BanAccount(BanMode mode, std::string nameOrIP, std::string duration, std::string reason, std::string author);
+        bool RemoveBanAccount(BanMode mode, std::string nameOrIP);
+        BanReturn BanCharacter(std::string name, std::string duration, std::string reason, std::string author);
+        bool RemoveBanCharacter(std::string name);
 
         // for max speed access
         static float GetMaxVisibleDistanceOnContinents()    { return m_MaxVisibleDistanceOnContinents; }
         static float GetMaxVisibleDistanceInInstances()     { return m_MaxVisibleDistanceInInstances;  }
-        static float GetMaxVisibleDistanceInBGArenas()      { return m_MaxVisibleDistanceInBGArenas;   }
+        static float GetMaxVisibleDistanceInBGs()           { return m_MaxVisibleDistanceInBGs;        }
+        static float GetMaxVisibleDistanceInArenas()        { return m_MaxVisibleDistanceInArenas;     }
 
         static int32 GetVisibilityNotifyPeriodOnContinents(){ return m_visibility_notify_periodOnContinents; }
         static int32 GetVisibilityNotifyPeriodInInstances() { return m_visibility_notify_periodInInstances;  }
         static int32 GetVisibilityNotifyPeriodInBGArenas()  { return m_visibility_notify_periodInBGArenas;   }
+
+        static float Visibility_RelocationLowerLimit;
+        static uint32 Visibility_AINotifyDelay;
 
         void ProcessCliCommands();
         void QueueCliCommand(CliCommandHolder* commandHolder) { cliCmdQueue.add(commandHolder); }
@@ -769,8 +846,6 @@ class World
 
         bool isEventKillStart;
 
-        bool FindWorldState(uint32 index); // Returns if a worldstate exists in the character database or not, useful for BF's and other stuff.
-
         CharacterNameData const* GetCharacterNameData(uint32 guid) const;
         void AddCharacterNameData(uint32 guid, std::string const& name, uint8 gender, uint8 race, uint8 playerClass, uint8 level);
         void UpdateCharacterNameData(uint32 guid, std::string const& name, uint8 gender = GENDER_NONE, uint8 race = RACE_NONE);
@@ -781,11 +856,24 @@ class World
         uint32 GetCleaningFlags() const { return m_CleaningFlags; }
         void   SetCleaningFlags(uint32 flags) { m_CleaningFlags = flags; }
         void   ResetEventSeasonalQuests(uint16 event_id);
-
+        std::string GetRealmName() { return m_realmName; }
         void UpdatePhaseDefinitions();
-        void ReloadRBAC();
 
-        void SendDefenseMessage(uint32 zoneId, int32 textId);
+        bool AddCharacterName(std::string name)
+        {
+            if (nameMap.find(name) != nameMap.end())
+                return false;
+
+            nameMap[name] = true;
+            return true;
+        }
+
+        void DeleteCharName(std::string name) { nameMap.erase(name); }
+
+        void SetRecordDiff(RecordDiffType recordDiff, uint32 diff) { m_recordDiff[recordDiff] = diff; }
+        uint32 GetRecordDiff(RecordDiffType recordDiff) { return m_recordDiff[recordDiff]; }
+
+        void ResetCurrencyWeekCap();
 
     protected:
         void _UpdateGameTime();
@@ -796,14 +884,13 @@ class World
         void InitWeeklyQuestResetTime();
         void InitMonthlyQuestResetTime();
         void InitRandomBGResetTime();
-        void InitGuildResetTime();
+        void InitServerAutoRestartTime();
         void InitCurrencyResetTime();
         void ResetDailyQuests();
         void ResetWeeklyQuests();
         void ResetMonthlyQuests();
         void ResetRandomBG();
-        void ResetGuildCap();
-        void ResetCurrencyWeekCap();
+        void AutoRestartServer();
     private:
         static ACE_Atomic_Op<ACE_Thread_Mutex, bool> m_stopEvent;
         static uint8 m_ExitCode;
@@ -832,6 +919,7 @@ class World
         uint32 m_MaxPlayerCount;
 
         std::string m_newCharString;
+        std::string m_realmName;
 
         float rate_values[MAX_RATES];
         uint32 m_int_configs[INT_CONFIG_VALUE_COUNT];
@@ -843,6 +931,7 @@ class World
         AccountTypes m_allowedSecurityLevel;
         LocaleConstant m_defaultDbcLocale;                     // from config for one from loaded DBC locales
         uint32 m_availableDbcLocaleMask;                       // by loaded DBC
+        void DetectDBCLang();
         bool m_allowMovement;
         std::string m_motd;
         std::string m_dataPath;
@@ -850,7 +939,8 @@ class World
         // for max speed access
         static float m_MaxVisibleDistanceOnContinents;
         static float m_MaxVisibleDistanceInInstances;
-        static float m_MaxVisibleDistanceInBGArenas;
+        static float m_MaxVisibleDistanceInBGs;
+        static float m_MaxVisibleDistanceInArenas;
 
         static int32 m_visibility_notify_periodOnContinents;
         static int32 m_visibility_notify_periodInInstances;
@@ -859,13 +949,13 @@ class World
         // CLI command holder to be thread safe
         ACE_Based::LockedQueue<CliCommandHolder*, ACE_Thread_Mutex> cliCmdQueue;
 
-        // scheduled reset times
+        // next daily quests and random bg reset time
         time_t m_NextDailyQuestReset;
         time_t m_NextWeeklyQuestReset;
         time_t m_NextMonthlyQuestReset;
         time_t m_NextRandomBGReset;
-        time_t m_NextGuildReset;
         time_t m_NextCurrencyReset;
+        time_t m_NextServerRestart;
 
         //Player Queue
         Queue m_QueuedPlayer;
@@ -877,22 +967,18 @@ class World
         // used versions
         std::string m_DBVersion;
 
-        typedef std::map<uint8, std::string> AutobroadcastsMap;
-        AutobroadcastsMap m_Autobroadcasts;
-
-        typedef std::map<uint8, uint8> AutobroadcastsWeightMap;
-        AutobroadcastsWeightMap m_AutobroadcastsWeights;
+        std::list<std::string> m_Autobroadcasts;
 
         std::map<uint32, CharacterNameData> _characterNameDataMap;
         void LoadCharacterNameData();
 
+        std::map<std::string, bool> nameMap;
+
         void ProcessQueryCallbacks();
         ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;
+        uint32 m_recordDiff[RECORD_DIFF_MAX];
 };
 
-typedef std::map<uint32, std::string> RealmNameMap;
-
-extern RealmNameMap realmNameStore;
 extern uint32 realmID;
 
 #define sWorld ACE_Singleton<World, ACE_Null_Mutex>::instance()

@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,56 +17,50 @@
  */
 
 #include "ChannelMgr.h"
-#include "Player.h"
+
 #include "World.h"
-#include "WorldSession.h"
 
-ChannelMgr::~ChannelMgr()
-{
-    for (ChannelMap::iterator itr = channels.begin(); itr != channels.end(); ++itr)
-        delete itr->second;
-}
-
-ChannelMgr* ChannelMgr::forTeam(uint32 team)
+ChannelMgr* channelMgr(uint32 team)
 {
     if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
         return ACE_Singleton<AllianceChannelMgr, ACE_Null_Mutex>::instance();        // cross-faction
 
     if (team == ALLIANCE)
         return ACE_Singleton<AllianceChannelMgr, ACE_Null_Mutex>::instance();
-
     if (team == HORDE)
         return ACE_Singleton<HordeChannelMgr, ACE_Null_Mutex>::instance();
 
     return NULL;
 }
 
-Channel* ChannelMgr::GetJoinChannel(std::string const& name, uint32 channelId)
+ChannelMgr::~ChannelMgr()
+{
+    for (ChannelMap::iterator itr = channels.begin(); itr != channels.end(); ++itr)
+        delete itr->second;
+
+    channels.clear();
+}
+
+Channel* ChannelMgr::GetJoinChannel(std::string name, uint32 channel_id)
 {
     std::wstring wname;
-    if (!Utf8toWStr(name, wname))
-        return NULL;
-
+    Utf8toWStr(name, wname);
     wstrToLower(wname);
 
-    ChannelMap::const_iterator i = channels.find(wname);
-
-    if (i == channels.end())
+    if (channels.find(wname) == channels.end())
     {
-        Channel* nchan = new Channel(name, channelId, team);
+        Channel* nchan = new Channel(name, channel_id, team);
         channels[wname] = nchan;
         return nchan;
     }
 
-    return i->second;
+    return channels[wname];
 }
 
-Channel* ChannelMgr::GetChannel(std::string const& name, Player* player, bool pkt)
+Channel* ChannelMgr::GetChannel(std::string name, Player* p, bool pkt)
 {
     std::wstring wname;
-    if (!Utf8toWStr(name, wname))
-        return NULL;
-
+    Utf8toWStr(name, wname);
     wstrToLower(wname);
 
     ChannelMap::const_iterator i = channels.find(wname);
@@ -78,21 +71,19 @@ Channel* ChannelMgr::GetChannel(std::string const& name, Player* player, bool pk
         {
             WorldPacket data;
             MakeNotOnPacket(&data, name);
-            player->GetSession()->SendPacket(&data);
+            p->GetSession()->SendPacket(&data);
         }
 
         return NULL;
     }
-
-    return i->second;
+    else
+        return i->second;
 }
 
-void ChannelMgr::LeftChannel(std::string const& name)
+void ChannelMgr::LeftChannel(std::string name)
 {
     std::wstring wname;
-    if (!Utf8toWStr(name, wname))
-        return;
-
+    Utf8toWStr(name, wname);
     wstrToLower(wname);
 
     ChannelMap::const_iterator i = channels.find(wname);
@@ -102,15 +93,15 @@ void ChannelMgr::LeftChannel(std::string const& name)
 
     Channel* channel = i->second;
 
-    if (!channel->GetNumPlayers() && !channel->IsConstant())
+    if (channel->GetNumPlayers() == 0 && !channel->IsConstant())
     {
         channels.erase(wname);
         delete channel;
     }
 }
 
-void ChannelMgr::MakeNotOnPacket(WorldPacket* data, std::string const& name)
+void ChannelMgr::MakeNotOnPacket(WorldPacket* data, std::string name)
 {
-    data->Initialize(SMSG_CHANNEL_NOTIFY, 1 + name.size());
-    (*data) << uint8(5) << name;
+    data->Initialize(SMSG_CHANNEL_NOTIFY, (1+10));  // we guess size
+    (*data) << (uint8)0x05 << name;
 }

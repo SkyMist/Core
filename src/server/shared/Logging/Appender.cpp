@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -35,9 +33,13 @@ std::string LogMessage::getTimeStr()
 }
 
 Appender::Appender(uint8 _id, std::string const& _name, AppenderType _type /* = APPENDER_NONE*/, LogLevel _level /* = LOG_LEVEL_DISABLED */, AppenderFlags _flags /* = APPENDER_FLAGS_NONE */):
-id(_id), name(_name), type(_type), level(_level), flags(_flags) { }
+id(_id), name(_name), type(_type), level(_level), flags(_flags)
+{
+}
 
-Appender::~Appender() { }
+Appender::~Appender()
+{
+}
 
 uint8 Appender::getId() const
 {
@@ -72,11 +74,14 @@ void Appender::setLogLevel(LogLevel _level)
 void Appender::write(LogMessage& message)
 {
     if (!level || level > message.level)
+    {
+        //fprintf(stderr, "Appender::write: Appender %s, Level %s. Msg %s Level %s Type %s WRONG LEVEL MASK\n", getName().c_str(), getLogLevelString(level), message.text.c_str(), getLogLevelString(message.level), getLogFilterTypeString(message.type)); // DEBUG - RemoveMe
         return;
+    }
 
     message.prefix.clear();
     if (flags & APPENDER_FLAGS_PREFIX_TIMESTAMP)
-        message.prefix.append(message.getTimeStr());
+        message.prefix.append(message.getTimeStr().c_str());
 
     if (flags & APPENDER_FLAGS_PREFIX_LOGLEVEL)
     {
@@ -93,9 +98,9 @@ void Appender::write(LogMessage& message)
         if (!message.prefix.empty())
             message.prefix.push_back(' ');
 
-        message.prefix.push_back('[');
-        message.prefix.append(message.type);
-        message.prefix.push_back(']');
+        char text[MAX_QUERY_LEN];
+        snprintf(text, MAX_QUERY_LEN, "[%s]", Appender::getLogFilterTypeString(message.type));
+        message.prefix.append(text);
     }
 
     if (!message.prefix.empty())
@@ -123,4 +128,98 @@ const char* Appender::getLogLevelString(LogLevel level)
         default:
             return "DISABLED";
     }
+}
+
+char const* Appender::getLogFilterTypeString(LogFilterType type)
+{
+    switch (type)
+    {
+        case LOG_FILTER_GENERAL:
+            return "GENERAL";
+        case LOG_FILTER_UNITS:
+            return "UNITS";
+        case LOG_FILTER_PETS:
+            return "PETS";
+        case LOG_FILTER_VEHICLES:
+            return "VEHICLES";
+        case LOG_FILTER_TSCR:
+            return "TSCR";
+        case LOG_FILTER_DATABASE_AI:
+            return "DATABASE_AI";
+        case LOG_FILTER_MAPSCRIPTS:
+            return "MAPSCRIPTS";
+        case LOG_FILTER_NETWORKIO:
+            return "NETWORKIO";
+        case LOG_FILTER_SPELLS_AURAS:
+            return "SPELLS_AURAS";
+        case LOG_FILTER_ACHIEVEMENTSYS:
+            return "ACHIEVEMENTSYS";
+        case LOG_FILTER_CONDITIONSYS:
+            return "CONDITIONSYS";
+        case LOG_FILTER_POOLSYS:
+            return "POOLSYS";
+        case LOG_FILTER_AUCTIONHOUSE:
+            return "AUCTIONHOUSE";
+        case LOG_FILTER_BATTLEGROUND:
+            return "BATTLEGROUND";
+        case LOG_FILTER_OUTDOORPVP:
+            return "OUTDOORPVP";
+        case LOG_FILTER_CHATSYS:
+            return "CHATSYS";
+        case LOG_FILTER_LFG:
+            return "LFG";
+        case LOG_FILTER_MAPS:
+            return "MAPS";
+        case LOG_FILTER_PLAYER:
+            return "PLAYER";
+        case LOG_FILTER_PLAYER_LOADING:
+            return "PLAYER LOADING";
+        case LOG_FILTER_PLAYER_ITEMS:
+            return "PLAYER ITEMS";
+        case LOG_FILTER_PLAYER_SKILLS:
+            return "PLAYER SKILLS";
+        case LOG_FILTER_PLAYER_CHATLOG:
+            return "PLAYER CHATLOG";
+        case LOG_FILTER_LOOT:
+            return "LOOT";
+        case LOG_FILTER_GUILD:
+            return "GUILD";
+        case LOG_FILTER_TRANSPORTS:
+            return "TRANSPORTS";
+        case LOG_FILTER_SQL:
+            return "SQL";
+        case LOG_FILTER_GMCOMMAND:
+            return "GMCOMMAND";
+        case LOG_FILTER_REMOTECOMMAND:
+            return "REMOTECOMMAND";
+        case LOG_FILTER_WARDEN:
+            return "WARDEN";
+        case LOG_FILTER_AUTHSERVER:
+            return "AUTHSERVER";
+        case LOG_FILTER_WORLDSERVER:
+            return "WORLDSERVER";
+        case LOG_FILTER_GAMEEVENTS:
+            return "GAMEEVENTS";
+        case LOG_FILTER_CALENDAR:
+            return "CALENDAR";
+        case LOG_FILTER_CHARACTER:
+            return "CHARACTER";
+        case LOG_FILTER_ARENAS:
+            return "ARENAS";
+        case LOG_FILTER_SQL_DRIVER:
+            return "SQL DRIVER";
+        case LOG_FILTER_SQL_DEV:
+            return "SQL DEV";
+        case LOG_FILTER_PLAYER_DUMP:
+            return "PLAYER DUMP";
+        case LOG_FILTER_BATTLEFIELD:
+            return "BATTLEFIELD";
+        case LOG_FILTER_SERVER_LOADING:
+            return "SERVER LOADING";
+        case LOG_FILTER_OPCODES:
+            return "OPCODE";
+        default:
+            break;
+    }
+    return "???";
 }

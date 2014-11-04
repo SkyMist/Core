@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,11 +19,8 @@
 #ifndef TRINITY_CONDITIONMGR_H
 #define TRINITY_CONDITIONMGR_H
 
-#include "Define.h"
-#include "Errors.h"
+#include "LootMgr.h"
 #include <ace/Singleton.h>
-#include <list>
-#include <map>
 
 class Player;
 class Unit;
@@ -47,18 +43,18 @@ enum ConditionTypes
     CONDITION_DRUNKENSTATE          = 10,                   // DrunkenState     0,             0                  true if player is drunk enough
     CONDITION_WORLD_STATE           = 11,                   // index            value          0                  true if world has the value for the index
     CONDITION_ACTIVE_EVENT          = 12,                   // event_id         0              0                  true if event is active
-    CONDITION_INSTANCE_INFO         = 13,                   // entry            data           type               true if the instance info defined by type (enum InstanceInfo) equals data.
+    CONDITION_INSTANCE_DATA         = 13,                   // entry            data           0                  true if data is set in current instance
     CONDITION_QUEST_NONE            = 14,                   // quest_id         0              0                  true if doesn't have quest saved
     CONDITION_CLASS                 = 15,                   // class            0              0                  true if player's class is equal to class
     CONDITION_RACE                  = 16,                   // race             0              0                  true if player's race is equal to race
     CONDITION_ACHIEVEMENT           = 17,                   // achievement_id   0              0                  true if achievement is complete
     CONDITION_TITLE                 = 18,                   // title id         0              0                  true if player has title
-    CONDITION_SPAWNMASK             = 19,                   // spawnMask        0              0                  true if in spawnMask
+    CONDITION_SPAWNMASK             = 19,                   // spawnMask        0              0
     CONDITION_GENDER                = 20,                   // gender           0              0                  true if player's gender is equal to gender
-    CONDITION_UNIT_STATE            = 21,                   // unitState        0              0                  true if unit has unitState
+    CONDITION_UNUSED_21             = 21,                   //
     CONDITION_MAPID                 = 22,                   // map_id           0              0                  true if in map_id
     CONDITION_AREAID                = 23,                   // area_id          0              0                  true if in area_id
-    CONDITION_CREATURE_TYPE         = 24,                   // cinfo.type       0              0                  true if creature_template.type = value1
+    CONDITION_CREATURE_TYPE         = 24,                   //
     CONDITION_SPELL                 = 25,                   // spell_id         0              0                  true if player has learned spell
     CONDITION_PHASEMASK             = 26,                   // phasemask        0              0                  true if object is in phasemask
     CONDITION_LEVEL                 = 27,                   // level            ComparisonType 0                  true if unit's level is equal to param1 (param2 can modify the statement)
@@ -129,9 +125,19 @@ enum ConditionSourceType
     CONDITION_SOURCE_TYPE_VEHICLE_SPELL                  = 21,
     CONDITION_SOURCE_TYPE_SMART_EVENT                    = 22,
     CONDITION_SOURCE_TYPE_NPC_VENDOR                     = 23,
-    CONDITION_SOURCE_TYPE_SPELL_PROC                     = 24,
-    CONDITION_SOURCE_TYPE_PHASE_DEFINITION               = 25, // only 4.3.4
-    CONDITION_SOURCE_TYPE_MAX                            = 26  // MAX
+    CONDITION_SOURCE_TYPE_PHASE_DEFINITION               = 24,
+    CONDITION_SOURCE_TYPE_SPELL_PROC                     = 25,
+    CONDITION_SOURCE_TYPE_MAX                            = 26  //MAX
+};
+
+enum ComparisionType
+{
+    COMP_TYPE_EQ = 0,
+    COMP_TYPE_HIGH,
+    COMP_TYPE_LOW,
+    COMP_TYPE_HIGH_EQ,
+    COMP_TYPE_LOW_EQ,
+    COMP_TYPE_MAX
 };
 
 enum RelationType
@@ -143,13 +149,6 @@ enum RelationType
     RELATION_PASSENGER_OF,
     RELATION_CREATED_BY,
     RELATION_MAX
-};
-
-enum InstanceInfo
-{
-    INSTANCE_INFO_DATA = 0,
-    INSTANCE_INFO_DATA64,
-    INSTANCE_INFO_BOSS_STATE
 };
 
 enum MaxConditionTargets
@@ -181,7 +180,6 @@ struct Condition
     uint32                  ConditionValue1;
     uint32                  ConditionValue2;
     uint32                  ConditionValue3;
-    uint32                  ErrorType;
     uint32                  ErrorTextId;
     uint32                  ReferenceId;
     uint32                  ScriptId;
@@ -200,7 +198,6 @@ struct Condition
         ConditionValue2    = 0;
         ConditionValue3    = 0;
         ReferenceId        = 0;
-        ErrorType          = 0;
         ErrorTextId        = 0;
         ScriptId           = 0;
         NegativeCondition  = false;
@@ -245,8 +242,8 @@ class ConditionMgr
         ConditionList GetConditionsForSpellClickEvent(uint32 creatureId, uint32 spellId);
         ConditionList GetConditionsForSmartEvent(int32 entryOrGuid, uint32 eventId, uint32 sourceType);
         ConditionList GetConditionsForVehicleSpell(uint32 creatureId, uint32 spellId);
-        ConditionList const* GetConditionsForPhaseDefinition(uint32 zone, uint32 entry);
         ConditionList GetConditionsForNpcVendorEvent(uint32 creatureId, uint32 itemId);
+        ConditionList GetConditionsForPhaseDefinition(uint32 zone, uint32 entry);
 
     private:
         bool isSourceTypeValid(Condition* cond);
@@ -267,6 +264,27 @@ class ConditionMgr
         SmartEventConditionContainer      SmartEventConditionStore;
         PhaseDefinitionConditionContainer PhaseDefinitionsConditionStore;
 };
+
+template <class T> bool CompareValues(ComparisionType type,  T val1, T val2)
+{
+    switch (type)
+    {
+        case COMP_TYPE_EQ:
+            return val1 == val2;
+        case COMP_TYPE_HIGH:
+            return val1 > val2;
+        case COMP_TYPE_LOW:
+            return val1 < val2;
+        case COMP_TYPE_HIGH_EQ:
+            return val1 >= val2;
+        case COMP_TYPE_LOW_EQ:
+            return val1 <= val2;
+        default:
+            // incorrect parameter
+            ASSERT(false);
+            return false;
+    }
+}
 
 #define sConditionMgr ACE_Singleton<ConditionMgr, ACE_Null_Mutex>::instance()
 

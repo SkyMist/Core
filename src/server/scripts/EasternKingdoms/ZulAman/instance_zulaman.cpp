@@ -1,354 +1,361 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "ScriptMgr.h"
-#include "InstanceScript.h"
-#include "ScriptedCreature.h"
+#include "ScriptPCH.h"
 #include "zulaman.h"
+
+#define MAX_ENCOUNTER 6
+
+static const DoorData doordata[] = 
+{
+    {GO_AKILZON_EXIT,           DATA_AKILZON,            DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_HALAZZI_ENTRANCE,       DATA_HALAZZI,            DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+    {GO_HALAZZI_EXIT,           DATA_HALAZZI,            DOOR_TYPE_PASSAGE,  BOUNDARY_NONE},
+    {GO_MALACRASS_EXIT,         DATA_HEX_LORD_MALACRASS, DOOR_TYPE_PASSAGE,  BOUNDARY_NONE},
+    {GO_DAAKARA_EXIT,           DATA_DAAKARA,            DOOR_TYPE_ROOM,     BOUNDARY_NONE},
+};
 
 class instance_zulaman : public InstanceMapScript
 {
     public:
-        instance_zulaman() : InstanceMapScript(ZulAmanScriptName, 568) { }
-
-        struct instance_zulaman_InstanceScript : public InstanceScript
+        instance_zulaman() : InstanceMapScript("instance_zulaman", 568){}
+        
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
         {
-            instance_zulaman_InstanceScript(InstanceMap* map) : InstanceScript(map)
-            {
-                SetBossNumber(EncounterCount);
+            return new instance_zulaman_InstanceMapScript(map);
+        }
 
-                AkilzonGUID             = 0;
-                NalorakkGUID            = 0;
-                JanalaiGUID             = 0;
-                HalazziGUID             = 0;
-                HexLordMalacrassGUID    = 0;
-                DaakaraGUID             = 0;
-                VoljinGUID              = 0;
-                HexLordTriggerGUID      = 0;
-                SpeedRunTimer           = 16;
-                ZulAmanState            = NOT_STARTED;
-                ZulAmanBossCount        = 0;
-            }
-
-            void FillInitialWorldStates(ByteBuffer& data) OVERRIDE
+        struct instance_zulaman_InstanceMapScript : public InstanceScript
+        {
+            instance_zulaman_InstanceMapScript(Map* map) : InstanceScript(map) 
             {
-                data << uint32(WORLD_STATE_ZULAMAN_TIMER_ENABLED) << uint32(ZulAmanState ? 1 : 0);
-                data << uint32(WORLD_STATE_ZULAMAN_TIMER)         << uint32(SpeedRunTimer);
-            }
+                SetBossNumber(MAX_ENCOUNTER);
+                LoadDoorData(doordata);
 
-            void OnCreatureCreate(Creature* creature) OVERRIDE
-            {
-                switch (creature->GetEntry())
+                HexLordGateGUID = 0;
+                MainGateGUID    = 0;
+                StrangeGongGUID = 0;
+
+                QuestTimer = 0;
+                QuestMinute = 21;
+                uiMainGate = 0;
+                uiVendor1 = 0;
+                uiVendor2 = 0;
+
+                for (uint8 i = 0; i < 4; ++i)
                 {
-                    case NPC_AKILZON:
-                        AkilzonGUID = creature->GetGUID();
+                    _hostages[i].realGUID = 0;
+                    _hostages[i].corpseGUID = 0;
+                    _hostages[i].lootGUID = 0;
+                    _hostages[i].state = 0;
+                }
+            }
+
+            void OnCreatureCreate(Creature* pCreature)
+            {
+                switch (pCreature->GetEntry())
+                {
+                    case NPC_AMANISHI_TEMPEST:
+                        AmanishiTempestGUID = pCreature->GetGUID();
                         break;
-                    case NPC_NALORAKK:
-                        NalorakkGUID = creature->GetGUID();
+                    case NPC_BAKKALZU:
+                        _hostages[0].realGUID = pCreature->GetGUID();
+                        _hostages[0].state = 0;
                         break;
-                    case NPC_JANALAI:
-                        JanalaiGUID = creature->GetGUID();
+                    case NPC_BAKKALZU_CORPSE:
+                        _hostages[0].corpseGUID = pCreature->GetGUID();
+                        pCreature->SetVisible(false);
                         break;
-                    case NPC_HALAZZI:
-                        HalazziGUID = creature->GetGUID();
+                    case NPC_HAZLEK:
+                        _hostages[1].realGUID = pCreature->GetGUID();
+                        _hostages[1].state = 0;
                         break;
-                    case NPC_HEXLORD:
-                        HexLordMalacrassGUID = creature->GetGUID();
+                    case NPC_HAZLEK_CORPSE:
+                        _hostages[1].corpseGUID = pCreature->GetGUID();
+                        pCreature->SetVisible(false);
                         break;
-                    case NPC_DAAKARA:
-                        DaakaraGUID = creature->GetGUID();
+                    case NPC_NORKANI:
+                        _hostages[2].realGUID = pCreature->GetGUID();
+                        _hostages[2].state = 0;
                         break;
-                    case NPC_VOLJIN:
-                        VoljinGUID = creature->GetGUID();
+                    case NPC_NORKANI_CORPSE:
+                        _hostages[2].corpseGUID = pCreature->GetGUID();
+                        pCreature->SetVisible(false);
                         break;
-                    case NPC_HEXLORD_TRIGGER:
-                        HexLordTriggerGUID = creature->GetGUID();
+                    case NPC_KASHA:
+                        _hostages[3].realGUID = pCreature->GetGUID();
+                        _hostages[3].state = 0;
+                        break;
+                    case NPC_KASHA_CORPSE:
+                        _hostages[3].corpseGUID = pCreature->GetGUID();
+                        pCreature->SetVisible(false);
                         break;
                     default:
                         break;
                 }
             }
 
-            void OnGameObjectCreate(GameObject* go) OVERRIDE
+            void OnGameObjectCreate(GameObject* pGo)
             {
-                switch (go->GetEntry())
+                switch (pGo->GetEntry())
                 {
                     case GO_STRANGE_GONG:
-                        StrangeGongGUID = go->GetGUID();
+                        StrangeGongGUID = pGo->GetGUID();
+                        if (uiMainGate == 1)
+                            pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
                         break;
-                    case GO_MASSIVE_GATE:
-                        MasiveGateGUID = go->GetGUID();
-                        AddDoor(go, true);
-                        if (ZulAmanState != NOT_STARTED)
-                            go->SetGoState(GO_STATE_ACTIVE);
+                    case GO_MAIN_GATE:
+                        MainGateGUID = pGo->GetGUID();
+                        if (uiMainGate == 1)
+                            HandleGameObject(MainGateGUID, true);
+                        break;
+                    case GO_AKILZON_EXIT:
+                        AddDoor(pGo, true);
+                        break;
+                    case GO_HALAZZI_ENTRANCE:
+                        AddDoor(pGo, true);
+                        break;
+                    case GO_HALAZZI_EXIT:
+                        AddDoor(pGo, true);
+                        break;
+                    case GO_MALACRASS_ENTRANCE:
+                        HexLordGateGUID = pGo->GetGUID(); 
+                        if (GetBossesDone() >= 2)
+                            HandleGameObject(HexLordGateGUID, true, pGo);
+                        break;
+                    case GO_MALACRASS_EXIT:
+                        AddDoor(pGo, true);
+                        break;
+                    case GO_DAAKARA_EXIT:
+                        AddDoor(pGo, true);
+                        break;
+                    case GO_HAZLEK_TRUNK:
+                        _hostages[1].lootGUID = pGo->GetGUID();
+                        break;
+                    case GO_NORKANI_PACKAGE:
+                        _hostages[2].lootGUID = pGo->GetGUID();
+                        break;
+                    case GO_KASHA_BAG:
+                        //_hostages[3].lootGUID = pGo->GetGUID();
+                        uiKashaBagGUID = pGo->GetGUID();
                         break;
                     default:
                         break;
                 }
             }
 
-            void OnGameObjectRemove(GameObject* go) OVERRIDE
+            std::string GetSaveData()
             {
-                switch (go->GetEntry())
+                OUT_SAVE_INST_DATA;
+
+                std::ostringstream ss;
+                ss << "ZA " << GetBossSaveData() << uiMainGate << " " << QuestMinute << " " << uiVendor1 << " " << uiVendor2 << " ";
+
+                OUT_SAVE_INST_DATA_COMPLETE;
+                return ss.str();
+            }
+
+            void Load(const char* in)
+            {
+                if (!in)
                 {
-                    case GO_MASSIVE_GATE:
-                        AddDoor(go, false);
-                        break;
-                    default:
-                        break;
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
                 }
-            }
 
-            uint64 GetData64(uint32 type) const OVERRIDE
-            {
-                switch (type)
+                OUT_LOAD_INST_DATA(in);
+
+                char dataHead1, dataHead2;
+
+                std::istringstream loadStream(in);
+                loadStream >> dataHead1 >> dataHead2;
+
+                if (dataHead1 == 'Z' && dataHead2 == 'A')
                 {
-                    case DATA_AKILZON:
-                        return AkilzonGUID;
-                    case DATA_NALORAKK:
-                        return NalorakkGUID;
-                    case DATA_JANALAI:
-                        return JanalaiGUID;
-                    case DATA_HALAZZI:
-                        return HalazziGUID;
-                    case DATA_HEXLORD:
-                        return HexLordMalacrassGUID;
-                    case DATA_DAAKARA:
-                        return DaakaraGUID;
-                    case DATA_HEXLORD_TRIGGER:
-                        return HexLordTriggerGUID;
-                    case DATA_STRANGE_GONG:
-                        return StrangeGongGUID;
-                    case DATA_MASSIVE_GATE:
-                        return MasiveGateGUID;
-                    default:
-                        break;
-                }
+                    for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+				    {
+					    uint32 tmpState;
+					    loadStream >> tmpState;
+					    if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+						    tmpState = NOT_STARTED;
+					    SetBossState(i, EncounterState(tmpState));
+				    }
+                    loadStream >> uiMainGate;
+                    loadStream >> QuestMinute;
+                    DoUpdateWorldState(3104, QuestMinute);
+                    loadStream >> uiVendor1;
+                    loadStream >> uiVendor2;
 
-                return 0;
+                } else OUT_LOAD_INST_DATA_FAIL;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
             }
-
-            void SetData(uint32 type, uint32 data) OVERRIDE
+            
+            bool SetBossState(uint32 id, EncounterState state)
             {
-                switch (type)
-                {
-                    case DATA_ZULAMAN_STATE:
-                    {
-                        if (data == IN_PROGRESS)
-                        {
-                            DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER_ENABLED, 1);
-                            DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER, 15);
-                            events.ScheduleEvent(EVENT_UPDATE_ZULAMAN_TIMER, 60000);
-                            SpeedRunTimer = 15;
-                            ZulAmanState = data;
-                            SaveToDB();
-                        }
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
-
-            uint32 GetData(uint32 type) const OVERRIDE
-            {
-                switch (type)
-                {
-                    case DATA_ZULAMAN_STATE:
-                        return ZulAmanState;
-                    default:
-                        break;
-                }
-
-                return 0;
-            }
-
-            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
-            {
-                if (!InstanceScript::SetBossState(type, state))
+                if (!InstanceScript::SetBossState(id, state))
                     return false;
 
                 if (state == DONE)
                 {
-                    if (ZulAmanState == IN_PROGRESS && SpeedRunTimer)
+                    switch (id)
                     {
-                        ++ZulAmanBossCount;
+                        case DATA_AKILZON:
+                        case DATA_NALORAKK:
+                        case DATA_JANALAI:
+                        case DATA_HALAZZI:
+                        {
+                            if (id == DATA_AKILZON) QuestMinute += 15;
+                            else if (id == DATA_NALORAKK) QuestMinute += 10;
+                            DoUpdateWorldState(3106, QuestMinute);
 
-                        if (ZulAmanBossCount < 2)
-                        {
-                            SpeedRunTimer = SpeedRunTimer + 5;
-                            DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER, SpeedRunTimer);
+                            if (_hostages[id].state == 0)
+                            {
+                                _hostages[id].state = 1;
+                                if (_hostages[id].lootGUID)
+                                    DoRespawnGameObject(_hostages[id].lootGUID, DAY);
+                            }
+
+                            uint8 _bosses = GetBossesDone();
+
+                            if (_bosses >= 2)
+                                HandleGameObject(HexLordGateGUID, true);
+
+                            if (_bosses >= 4)
+                            {
+                                if (QuestMinute)
+                                {
+                                    DoCastSpellOnPlayers(SPELL_ZULAMAN_ACHIEVEMENT);
+                                    if (uiKashaBagGUID)
+                                        DoRespawnGameObject(uiKashaBagGUID, DAY);
+                                    QuestMinute = 0;
+                                    DoUpdateWorldState(3104, 0);
+                                }
+                            }
+                            break;
                         }
-                        else if (ZulAmanBossCount == 4)
-                        {
-                            DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER_ENABLED, 0);
-                            events.CancelEvent(EVENT_UPDATE_ZULAMAN_TIMER);
-                            ZulAmanState = DONE;
-                        }
+                        default:
+                            break;
                     }
                 }
-
-                switch (type)
-                {
-                    case DATA_AKILZON:
-                        break;
-                    case DATA_NALORAKK:
-                        break;
-                    case DATA_JANALAI:
-                        break;
-                    case DATA_HALAZZI:
-                    case DATA_HEXLORD:
-                    case DATA_DAAKARA:
-                        break;
-                    default:
-                        break;
-                }
-
                 return true;
             }
 
-            void ProcessEvent(WorldObject* /*obj*/, uint32 eventId) OVERRIDE
+            void SetData(uint32 type, uint32 data)
             {
-                switch (eventId)
+                switch (type)
                 {
-                    case EVENT_START_ZULAMAN:
-                        if (Creature* voljin = instance->GetCreature(VoljinGUID))
+                    case DATA_MAIN_GATE:
+                        uiMainGate = data;
+                        if (data == 1)
                         {
-                            if (voljin->IsAIEnabled)
-                                voljin->AI()->DoAction(ACTION_START_ZULAMAN);
+                            HandleGameObject(MainGateGUID, true);
+                            if (GameObject* pGo = instance->GetGameObject(StrangeGongGUID))
+                                pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
+                            SaveToDB();
                         }
+                        break;
+                    case DATA_VENDOR_1:
+                        uiVendor1 = data;
+                        SaveToDB();
+                        break;
+                    case DATA_VENDOR_2:
+                        uiVendor2 = data;
+                        SaveToDB();
                         break;
                     default:
                         break;
+                }
+            }
+
+            uint32 GetData(uint32 type)
+            {
+                switch (type)
+                {
+                    case DATA_MAIN_GATE:
+                        return MainGateGUID;
+                    case DATA_TEMPEST:
+                        return AmanishiTempestGUID;
+                    case DATA_VENDOR_1:
+                        return uiVendor1;
+                    case DATA_VENDOR_2:
+                        return uiVendor2;
+                    default: 
+                        return 0;
                 }
             }
 
             void Update(uint32 diff)
             {
-                if (events.Empty())
-                    return;
-
-                events.Update(diff);
-
-                while (uint32 eventId = events.ExecuteEvent())
+                if (QuestMinute)
                 {
-                    switch (eventId)
+                    if (QuestTimer <= diff)
                     {
-                        case EVENT_UPDATE_ZULAMAN_TIMER:
-                            SaveToDB();
-                            DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER, --SpeedRunTimer);
-                            if (SpeedRunTimer)
-                                events.ScheduleEvent(EVENT_UPDATE_ZULAMAN_TIMER, 60000);
-                            else
+                        QuestMinute--;
+                        SaveToDB();
+                        QuestTimer += 60000;
+                        if (QuestMinute)
+                        {
+                            DoUpdateWorldState(3104, 1);
+                            DoUpdateWorldState(3106, QuestMinute);
+                        } 
+                        else
+                        {
+                            DoUpdateWorldState(3104, 0);
+                            for (uint8 i = 0; i < 4; ++i)
                             {
-                                DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER_ENABLED, 0);
-                                events.CancelEvent(EVENT_UPDATE_ZULAMAN_TIMER);
-                                ZulAmanState = FAIL;
+                                if (Creature* pHostage = instance->GetCreature(_hostages[i].realGUID))
+                                {
+                                    if (_hostages[i].state != 0)
+                                        continue;
+
+                                    pHostage->DespawnOrUnsummon();
+                                    if (Creature* pCorpse = instance->GetCreature(_hostages[i].corpseGUID))
+                                        pCorpse->SetVisible(true);
+                                    _hostages[i].state = 2;
+                                }
                             }
-                            break;
-                        default:
-                            break;
+                                    
+                        }
+
                     }
+                    QuestTimer -= diff;
                 }
             }
 
-            std::string GetSaveData() OVERRIDE
-            {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << "Z A " << GetBossSaveData() << ZulAmanState
-                    << ' ' << SpeedRunTimer << ' ' << ZulAmanBossCount;
-
-                OUT_SAVE_INST_DATA_COMPLETE;
-                return saveStream.str();
-            }
-
-            void Load(char const* str) OVERRIDE
-            {
-                if (!str)
-                {
-                    OUT_LOAD_INST_DATA_FAIL;
-                    return;
-                }
-
-                OUT_LOAD_INST_DATA(str);
-
-                char dataHead1, dataHead2;
-
-                std::istringstream loadStream(str);
-                loadStream >> dataHead1 >> dataHead2;
-
-                if (dataHead1 == 'Z' && dataHead2 == 'A')
-                {
-                    for (uint8 i = 0; i < EncounterCount; ++i)
-                    {
-                        uint32 tmpState;
-                        loadStream >> tmpState;
-                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                            tmpState = NOT_STARTED;
-
-                        SetBossState(i, EncounterState(tmpState));
-                    }
-
-                    loadStream >> ZulAmanState;
-                    loadStream >> SpeedRunTimer;
-                    loadStream >> ZulAmanBossCount;
-
-                    if (ZulAmanState == IN_PROGRESS && SpeedRunTimer && SpeedRunTimer <= 15)
-                    {
-                        events.ScheduleEvent(EVENT_UPDATE_ZULAMAN_TIMER, 60000);
-                        DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER_ENABLED, 1);
-                        DoUpdateWorldState(WORLD_STATE_ZULAMAN_TIMER, SpeedRunTimer);
-                    }
-                }
-                else
-                    OUT_LOAD_INST_DATA_FAIL;
-
-                OUT_LOAD_INST_DATA_COMPLETE;
-            }
-
-        protected:
-            EventMap events;
-            uint64 AkilzonGUID;
-            uint64 NalorakkGUID;
-            uint64 JanalaiGUID;
-            uint64 HalazziGUID;
-            uint64 HexLordMalacrassGUID;
-            uint64 DaakaraGUID;
-            uint64 VoljinGUID;
-            uint64 HexLordTriggerGUID;
+        private:
+            uint64 HexLordGateGUID;
+            uint64 MainGateGUID;
             uint64 StrangeGongGUID;
-            uint64 MasiveGateGUID;
-            uint32 SpeedRunTimer;
-            uint32 ZulAmanState;
-            uint32 ZulAmanBossCount;
-        };
+            uint64 AmanishiTempestGUID;
+            uint64 uiKashaBagGUID;
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
-        {
-            return new instance_zulaman_InstanceScript(map);
-        }
+            uint32 uiMainGate;
+            uint32 uiVendor1;
+            uint32 uiVendor2;
+            uint32 QuestTimer;
+            uint16 QuestMinute;
+
+            uint8 GetBossesDone()
+            {
+                uint8 _bosses = 0;
+                for (uint8 i = 0; i < 4; ++i)
+                    if (GetBossState(i) == DONE)
+                        _bosses++;
+                return _bosses;
+            }
+
+            struct Hostage
+            {
+                uint64 realGUID;
+                uint64 corpseGUID;
+                uint64 lootGUID;
+                uint8 state; // 0 - neutral, 1 - saved, 2 - killed
+            };
+
+            Hostage _hostages[4];
+        };
 };
 
 void AddSC_instance_zulaman()
 {
     new instance_zulaman();
 }
+

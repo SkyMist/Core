@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,6 +17,25 @@
 
 #ifndef DEF_VIOLET_HOLD_H
 #define DEF_VIOLET_HOLD_H
+
+enum Creatures
+{
+    CREATURE_TELEPORTATION_PORTAL                   = 31011,
+    CREATURE_PORTAL_GUARDIAN                        = 30660,
+    CREATURE_PORTAL_KEEPER                          = 30695,
+    CREATURE_XEVOZZ                                 = 29266,
+    CREATURE_LAVANTHOR                              = 29312,
+    CREATURE_ICHORON                                = 29313,
+    CREATURE_ZURAMAT                                = 29314,
+    CREATURE_EREKEM                                 = 29315,
+    CREATURE_EREKEM_GUARD                           = 29395,
+    CREATURE_MORAGG                                 = 29316,
+    CREATURE_CYANIGOSA                              = 31134,
+    CREATURE_SINCLARI                               = 30658,
+    CREATURE_SABOTEOUR                              = 31079,
+    NPC_VIOLET_HOLD_GUARD                           = 30659,
+    CREATURE_DEFENSE_SYSTEM                         = 30837
+};
 
 enum Data
 {
@@ -64,8 +80,6 @@ enum Data64
     DATA_SINCLARI,
     DATA_TELEPORTATION_PORTAL,
     DATA_SABOTEUR_PORTAL,
-    DATA_ADD_TRASH_MOB,
-    DATA_DEL_TRASH_MOB
 };
 
 enum Bosses
@@ -80,35 +94,11 @@ enum Bosses
     BOSS_CYANIGOSA
 };
 
-enum CreaturesIds
-{
-    CREATURE_TELEPORTATION_PORTAL                   = 31011,
-    CREATURE_PORTAL_GUARDIAN                        = 30660,
-    CREATURE_PORTAL_KEEPER                          = 30695,
-    CREATURE_XEVOZZ                                 = 29266,
-    CREATURE_LAVANTHOR                              = 29312,
-    CREATURE_ICHORON                                = 29313,
-    CREATURE_ZURAMAT                                = 29314,
-    CREATURE_EREKEM                                 = 29315,
-    CREATURE_EREKEM_GUARD                           = 29395,
-    CREATURE_MORAGG                                 = 29316,
-    CREATURE_CYANIGOSA                              = 31134,
-    CREATURE_SINCLARI                               = 30658,
-    CREATURE_SABOTEOUR                              = 31079,
-    NPC_VIOLET_HOLD_GUARD                           = 30659,
-    NPC_DEFENSE_SYSTEM                              = 30837
-};
-
-enum WorldStateIds
+enum VHWorldStates
 {
     WORLD_STATE_VH              = 3816,
     WORLD_STATE_VH_PRISON_STATE = 3815,
     WORLD_STATE_VH_WAVE_COUNT   = 3810,
-};
-
-enum Events
-{
-    EVENT_ACTIVATE_CRYSTAL = 20001
 };
 
 #endif

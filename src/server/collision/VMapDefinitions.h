@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,6 +19,7 @@
 #ifndef _VMAPDEFINITIONS_H
 #define _VMAPDEFINITIONS_H
 #include <cstring>
+#include "GridDefines.h" 
 
 #define LIQUID_TILE_SIZE (533.333f / 128.f)
 
@@ -31,6 +31,14 @@ namespace VMAP
 
     // defined in TileAssembler.cpp currently...
     bool readChunk(FILE* rf, char *dest, const char *compare, uint32 len);
+
+    inline bool CheckPosition(float const& x, float const& y, float const& z)
+    {
+        return
+            std::fabs(z) < MAX_HEIGHT   &&
+            std::fabs(y) < MAP_HALFSIZE &&
+            std::fabs(x) < MAP_HALFSIZE;
+    };
 }
 
 // Set of helper macros for extractors (VMAP and MMAP)

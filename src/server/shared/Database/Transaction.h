@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -30,12 +28,10 @@ class Transaction
 {
     friend class TransactionTask;
     friend class MySQLConnection;
-
-    template <typename T>
-    friend class DatabaseWorkerPool;
+    friend class DatabaseWokerPool;
 
     public:
-        Transaction() : _cleanedUp(false) { }
+        Transaction() : _cleanedUp(false) {}
         ~Transaction() { Cleanup(); }
 
         void Append(PreparedStatement* statement);
@@ -52,7 +48,7 @@ class Transaction
         bool _cleanedUp;
 
 };
-typedef Trinity::AutoPtr<Transaction, ACE_Thread_Mutex> SQLTransaction;
+typedef JadeCore::AutoPtr<Transaction, ACE_Thread_Mutex> SQLTransaction;
 
 /*! Low level class*/
 class TransactionTask : public SQLOperation
@@ -61,8 +57,8 @@ class TransactionTask : public SQLOperation
     friend class DatabaseWorker;
 
     public:
-        TransactionTask(SQLTransaction trans) : m_trans(trans) { } ;
-        ~TransactionTask(){ };
+        TransactionTask(SQLTransaction trans) : m_trans(trans) {} ;
+        ~TransactionTask(){};
 
     protected:
         bool Execute();

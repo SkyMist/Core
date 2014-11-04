@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -30,17 +28,6 @@
 OutdoorPvPTF::OutdoorPvPTF()
 {
     m_TypeId = OUTDOOR_PVP_TF;
-
-    m_IsLocked = false;
-    m_LockTimer = TF_LOCK_TIME;
-    m_LockTimerUpdate = 0;
-
-    m_AllianceTowersControlled = 0;
-    m_HordeTowersControlled = 0;
-
-    hours_left = 6;
-    second_digit = 0;
-    first_digit = 0;
 }
 
 OPvPCapturePointTF::OPvPCapturePointTF(OutdoorPvP* pvp, OutdoorPvPTF_TowerType type)
@@ -49,33 +36,35 @@ OPvPCapturePointTF::OPvPCapturePointTF(OutdoorPvP* pvp, OutdoorPvPTF_TowerType t
     SetCapturePointData(TFCapturePoints[type].entry, TFCapturePoints[type].map, TFCapturePoints[type].x, TFCapturePoints[type].y, TFCapturePoints[type].z, TFCapturePoints[type].o, TFCapturePoints[type].rot0, TFCapturePoints[type].rot1, TFCapturePoints[type].rot2, TFCapturePoints[type].rot3);
 }
 
-void OPvPCapturePointTF::FillInitialWorldStates(ByteBuffer& data)
+void OPvPCapturePointTF::FillInitialWorldStates(WorldPacket &data)
 {
-    data << uint32(bool(m_TowerState & TF_TOWERSTATE_N)) << uint32(TFTowerWorldStates[m_TowerType].n);
-    data << uint32(bool(m_TowerState & TF_TOWERSTATE_H)) << uint32(TFTowerWorldStates[m_TowerType].h);
-    data << uint32(bool(m_TowerState & TF_TOWERSTATE_A)) << uint32(TFTowerWorldStates[m_TowerType].a);
+    data << uint32(TFTowerWorldStates[m_TowerType].n) << uint32(bool(m_TowerState & TF_TOWERSTATE_N));
+    data << uint32(TFTowerWorldStates[m_TowerType].h) << uint32(bool(m_TowerState & TF_TOWERSTATE_H));
+    data << uint32(TFTowerWorldStates[m_TowerType].a) << uint32(bool(m_TowerState & TF_TOWERSTATE_A));
 }
 
-void OutdoorPvPTF::FillInitialWorldStates(ByteBuffer& data)
+void OutdoorPvPTF::FillInitialWorldStates(WorldPacket &data)
 {
-    data << uint32(50)  << TF_UI_TOWER_SLIDER_POS;
-    data << uint32(100) << TF_UI_TOWER_SLIDER_N;
-    data << uint32(0)   << TF_UI_TOWER_SLIDER_DISPLAY;
+    data << TF_UI_TOWER_SLIDER_POS << uint32(50);
+    data << TF_UI_TOWER_SLIDER_N << uint32(100);
+    data << TF_UI_TOWER_SLIDER_DISPLAY << uint32(0);
 
-    data << m_HordeTowersControlled    << TF_UI_TOWER_COUNT_H;
-    data << m_AllianceTowersControlled << TF_UI_TOWER_COUNT_A;
-    data << uint32(!m_IsLocked)        << TF_UI_TOWERS_CONTROLLED_DISPLAY;
+    data << TF_UI_TOWER_COUNT_H << m_HordeTowersControlled;
+    data << TF_UI_TOWER_COUNT_A << m_AllianceTowersControlled;
+    data << TF_UI_TOWERS_CONTROLLED_DISPLAY << uint32(!m_IsLocked);
 
-    data << first_digit                << TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT;
-    data << second_digit               << TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT;
-    data << hours_left                 << TF_UI_LOCKED_TIME_HOURS;
+    data << TF_UI_LOCKED_TIME_MINUTES_FIRST_DIGIT << first_digit;
+    data << TF_UI_LOCKED_TIME_MINUTES_SECOND_DIGIT << second_digit;
+    data << TF_UI_LOCKED_TIME_HOURS << hours_left;
 
-    data << uint32(m_IsLocked && !m_HordeTowersControlled && !m_AllianceTowersControlled) << TF_UI_LOCKED_DISPLAY_NEUTRAL;
-    data << uint32(m_IsLocked && (m_HordeTowersControlled > m_AllianceTowersControlled))  << TF_UI_LOCKED_DISPLAY_HORDE;
-    data << uint32(m_IsLocked && (m_HordeTowersControlled < m_AllianceTowersControlled))  << TF_UI_LOCKED_DISPLAY_ALLIANCE;
+    data << TF_UI_LOCKED_DISPLAY_NEUTRAL << uint32(m_IsLocked && !m_HordeTowersControlled && !m_AllianceTowersControlled);
+    data << TF_UI_LOCKED_DISPLAY_HORDE << uint32(m_IsLocked && (m_HordeTowersControlled > m_AllianceTowersControlled));
+    data << TF_UI_LOCKED_DISPLAY_ALLIANCE << uint32(m_IsLocked && (m_HordeTowersControlled < m_AllianceTowersControlled));
 
     for (OPvPCapturePointMap::iterator itr = m_capturePoints.begin(); itr != m_capturePoints.end(); ++itr)
+    {
         itr->second->FillInitialWorldStates(data);
+    }
 }
 
 void OutdoorPvPTF::SendRemoveWorldStates(Player* player)
@@ -307,12 +296,9 @@ void OPvPCapturePointTF::ChangeState()
         uint32 alliance_towers = ((OutdoorPvPTF*)m_PvP)->GetAllianceTowersControlled();
         if (alliance_towers < TF_TOWER_NUM)
             ((OutdoorPvPTF*)m_PvP)->SetAllianceTowersControlled(++alliance_towers);
-
         sWorld->SendZoneText(OutdoorPvPTFBuffZones[0], sObjectMgr->GetTrinityStringForDBCLocale(LANG_OPVP_TF_CAPTURE_A));
-
         for (PlayerSet::iterator itr = m_activePlayers[0].begin(); itr != m_activePlayers[0].end(); ++itr)
-            if (Player* player = ObjectAccessor::FindPlayer(*itr))
-                player->AreaExploredOrEventHappens(TF_ALLY_QUEST);
+            (*itr)->AreaExploredOrEventHappens(TF_ALLY_QUEST);
         break;
     }
     case OBJECTIVESTATE_HORDE:
@@ -322,12 +308,9 @@ void OPvPCapturePointTF::ChangeState()
         uint32 horde_towers = ((OutdoorPvPTF*)m_PvP)->GetHordeTowersControlled();
         if (horde_towers < TF_TOWER_NUM)
             ((OutdoorPvPTF*)m_PvP)->SetHordeTowersControlled(++horde_towers);
-
         sWorld->SendZoneText(OutdoorPvPTFBuffZones[0], sObjectMgr->GetTrinityStringForDBCLocale(LANG_OPVP_TF_CAPTURE_H));
-
         for (PlayerSet::iterator itr = m_activePlayers[1].begin(); itr != m_activePlayers[1].end(); ++itr)
-            if (Player* player = ObjectAccessor::FindPlayer(*itr))
-                player->AreaExploredOrEventHappens(TF_HORDE_QUEST);
+            (*itr)->AreaExploredOrEventHappens(TF_HORDE_QUEST);
         break;
     }
     case OBJECTIVESTATE_NEUTRAL:
@@ -366,7 +349,7 @@ class OutdoorPvP_terokkar_forest : public OutdoorPvPScript
         {
         }
 
-        OutdoorPvP* GetOutdoorPvP() const OVERRIDE
+        OutdoorPvP* GetOutdoorPvP() const
         {
             return new OutdoorPvPTF();
         }

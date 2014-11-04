@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,12 +28,12 @@
 
 enum GameEventState
 {
-    GAMEEVENT_NORMAL           = 0, // standard game events
-    GAMEEVENT_WORLD_INACTIVE   = 1, // not yet started
-    GAMEEVENT_WORLD_CONDITIONS = 2, // condition matching phase
-    GAMEEVENT_WORLD_NEXTPHASE  = 3, // conditions are met, now 'length' timer to start next event
-    GAMEEVENT_WORLD_FINISHED   = 4, // next events are started, unapply this one
-    GAMEEVENT_INTERNAL         = 5  // never handled in update
+    GAMEEVENT_NORMAL = 0,   // standard game events
+    GAMEEVENT_WORLD_INACTIVE = 1,   // not yet started
+    GAMEEVENT_WORLD_CONDITIONS = 2,  // condition matching phase
+    GAMEEVENT_WORLD_NEXTPHASE = 3,   // conditions are met, now 'length' timer to start next event
+    GAMEEVENT_WORLD_FINISHED = 4,    // next events are started, unapply this one
+    GAMEEVENT_INTERNAL = 5, // never handled in update
 };
 
 struct GameEventFinishCondition
@@ -56,7 +55,7 @@ typedef std::map<uint32 /*condition id*/, GameEventFinishCondition> GameEventCon
 
 struct GameEventData
 {
-    GameEventData() : start(1), end(0), nextstart(0), occurence(0), length(0), holiday_id(HOLIDAY_NONE), state(GAMEEVENT_NORMAL) { }
+    GameEventData() : start(1), end(0), nextstart(0), occurence(0), length(0), holiday_id(HOLIDAY_NONE), state(GAMEEVENT_NORMAL) {}
     time_t start;           // occurs after this time
     time_t end;             // occurs before this time
     time_t nextstart;       // after this time the follow-up events count this phase completed
@@ -67,7 +66,6 @@ struct GameEventData
     GameEventConditionMap conditions;  // conditions to finish
     std::set<uint16 /*gameevent id*/> prerequisite_events;  // events that must be completed before starting this event
     std::string description;
-    uint8 announce;         // if 0 dont announce, if 1 announce, if 2 take config value
 
     bool isValid() const { return length > 0 || state > GAMEEVENT_NORMAL; }
 };
@@ -75,9 +73,9 @@ struct GameEventData
 struct ModelEquip
 {
     uint32 modelid;
+    uint32 equipment_id;
     uint32 modelid_prev;
-    uint8 equipment_id;
-    uint8 equipement_id_prev;
+    uint32 equipement_id_prev;
 };
 
 struct NPCVendorEntry
@@ -100,7 +98,7 @@ class GameEventMgr
 
     private:
         GameEventMgr();
-        ~GameEventMgr() { };
+        ~GameEventMgr() {};
 
     public:
         typedef std::set<uint16> ActiveEvents;
@@ -170,7 +168,6 @@ class GameEventMgr
         //GameEventGuidMap  mGameEventGameobjectGuids;
         GameEventIdMap    mGameEventPoolIds;
         GameEventDataMap  mGameEvent;
-        GameEventBitmask  mGameEventBattlegroundHolidays;
         QuestIdToEventConditionMap mQuestToEventConditions;
         GameEventNPCFlagMap mGameEventNPCFlags;
         ActiveEvents m_ActiveEvents;

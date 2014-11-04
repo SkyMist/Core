@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -46,7 +44,7 @@ protected:
 
     virtual int handle_timeout(const ACE_Time_Value& /*current_time*/, const void* /*act = 0*/)
     {
-        TC_LOG_DEBUG("misc", "Resuming acceptor");
+        sLog->outDebug(LOG_FILTER_GENERAL, "Resuming acceptor");
         reactor()->cancel_timer(this, 1);
         return reactor()->register_handler(this, ACE_Event_Handler::ACCEPT_MASK);
     }
@@ -56,7 +54,7 @@ protected:
 #if defined(ENFILE) && defined(EMFILE)
         if (errno == ENFILE || errno == EMFILE)
         {
-            TC_LOG_ERROR("misc", "Out of file descriptors, suspending incoming connections for 10 seconds");
+            sLog->outError(LOG_FILTER_GENERAL, "Out of file descriptors, suspending incoming connections for 10 seconds");
             reactor()->remove_handler(this, ACE_Event_Handler::ACCEPT_MASK | ACE_Event_Handler::DONT_CALL);
             reactor()->schedule_timer(this, NULL, ACE_Time_Value(10));
         }

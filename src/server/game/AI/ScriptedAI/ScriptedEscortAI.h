@@ -1,26 +1,15 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+/* Copyright (C) 2006 - 2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+ * This program is free software licensed under GPL version 2
+ * Please see the included DOCS/LICENSE.TXT for more information */
 
 #ifndef SC_ESCORTAI_H
 #define SC_ESCORTAI_H
 
 #include "ScriptSystem.h"
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedEscortAI.h"
+#include "ScriptedGossip.h"
 
 #define DEFAULT_MAX_PLAYER_DISTANCE 50
 
@@ -54,7 +43,7 @@ struct npc_escortAI : public ScriptedAI
 {
     public:
         explicit npc_escortAI(Creature* creature);
-        ~npc_escortAI() { }
+        ~npc_escortAI() {}
 
         // CreatureAI functions
         void AttackStart(Unit* who);
@@ -69,7 +58,7 @@ struct npc_escortAI : public ScriptedAI
 
         void EnterEvadeMode();
 
-        void UpdateAI(uint32 diff);                   //the "internal" update, calls UpdateEscortAI()
+        void UpdateAI(uint32 const diff);                   //the "internal" update, calls UpdateEscortAI()
         virtual void UpdateEscortAI(uint32 const diff);     //used when it's needed to add code in update (abilities, scripted events, etc)
 
         void MovementInform(uint32, uint32);
@@ -87,7 +76,8 @@ struct npc_escortAI : public ScriptedAI
         bool GetWaypointPosition(uint32 pointId, float& x, float& y, float& z);
 
         virtual void WaypointReached(uint32 pointId) = 0;
-        virtual void WaypointStart(uint32 /*pointId*/) { }
+        virtual void LastWaypointReached() {}
+        virtual void WaypointStart(uint32 /*pointId*/) {}
 
         void Start(bool isActiveAttacker = true, bool run = false, uint64 playerGUID = 0, Quest const* quest = NULL, bool instantRespawn = false, bool canLoopPath = false, bool resetWaypoints = true);
 
@@ -107,7 +97,7 @@ struct npc_escortAI : public ScriptedAI
         uint64 GetEventStarterGUID() { return m_uiPlayerGUID; }
 
     protected:
-        Player* GetPlayerForEscort() { return ObjectAccessor::GetPlayer(*me, m_uiPlayerGUID); }
+        Player* GetPlayerForEscort() { return (Player*)Unit::GetUnit(*me, m_uiPlayerGUID); }
 
     private:
         bool AssistPlayerInCombat(Unit* who);

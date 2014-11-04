@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,22 +27,19 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "stratholme.h"
 
-enum Spells
-{
-    SPELL_BANSHEEWAIL       = 16565,
-    SPELL_BANSHEECURSE      = 16867,
-    SPELL_SILENCE           = 18327
-    //SPELL_POSSESS           = 17244
-};
+#define SPELL_BANSHEEWAIL   16565
+#define SPELL_BANSHEECURSE    16867
+#define SPELL_SILENCE    18327
+//#define SPELL_POSSESS   17244
 
 class boss_baroness_anastari : public CreatureScript
 {
 public:
     boss_baroness_anastari() : CreatureScript("boss_baroness_anastari") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_baroness_anastariAI(creature);
+        return new boss_baroness_anastariAI (creature);
     }
 
     struct boss_baroness_anastariAI : public ScriptedAI
@@ -61,7 +56,7 @@ public:
         uint32 Silence_Timer;
         //uint32 Possess_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             BansheeWail_Timer = 1000;
             BansheeCurse_Timer = 11000;
@@ -69,17 +64,17 @@ public:
             //Possess_Timer = 35000;
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
         }
 
-         void JustDied(Unit* /*killer*/) OVERRIDE
+         void JustDied(Unit* /*killer*/)
          {
              if (instance)
                  instance->SetData(TYPE_BARONESS, IN_PROGRESS);
          }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -88,43 +83,51 @@ public:
             if (BansheeWail_Timer <= diff)
             {
                 if (rand()%100 < 95)
-                    DoCastVictim(SPELL_BANSHEEWAIL);
+                    DoCast(me->getVictim(), SPELL_BANSHEEWAIL);
                 //4 seconds until we should cast this again
                 BansheeWail_Timer = 4000;
-            } else BansheeWail_Timer -= diff;
+            }
+            else
+                BansheeWail_Timer -= diff;
 
             //BansheeCurse
             if (BansheeCurse_Timer <= diff)
             {
                 if (rand()%100 < 75)
-                    DoCastVictim(SPELL_BANSHEECURSE);
+                    DoCast(me->getVictim(), SPELL_BANSHEECURSE);
                 //18 seconds until we should cast this again
                 BansheeCurse_Timer = 18000;
-            } else BansheeCurse_Timer -= diff;
+            }
+            else
+                BansheeCurse_Timer -= diff;
 
             //Silence
             if (Silence_Timer <= diff)
             {
                 if (rand()%100 < 80)
-                    DoCastVictim(SPELL_SILENCE);
+                    DoCast(me->getVictim(), SPELL_SILENCE);
                 //13 seconds until we should cast this again
                 Silence_Timer = 13000;
-            } else Silence_Timer -= diff;
+            }
+            else
+                Silence_Timer -= diff;
 
             //Possess
-            /*            if (Possess_Timer <= diff)
-            {
-            //Cast
-              if (rand()%100 < 65)
-            {
-            Unit* target = NULL;
-            target = SelectUnit(SELECT_TARGET_RANDOM, 0);
-            if (target)DoCast(target, SPELL_POSSESS);
-            }
-            //50 seconds until we should cast this again
-            Possess_Timer = 50000;
-            } else Possess_Timer -= diff;
-            */
+            //if (Possess_Timer <= diff)
+            //{
+            //    //Cast
+            //    if (rand()%100 < 65)
+            //    {
+            //        Unit* target = NULL;
+            //        target = SelectUnit(SELECT_TARGET_RANDOM, 0);
+            //        if (target)DoCast(target, SPELL_POSSESS);
+            //    }
+            //    //50 seconds until we should cast this again
+            //    Possess_Timer = 50000;
+            //}
+            //else
+            //    Possess_Timer -= diff;
+
 
             DoMeleeAttackIfReady();
         }

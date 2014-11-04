@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,12 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
-#include "InstanceScript.h"
+#include "ScriptPCH.h"
 #include "violet_hold.h"
-#include "Player.h"
-#include "TemporarySummon.h"
 
 #define MAX_ENCOUNTER          3
 
@@ -64,7 +57,12 @@ enum AzureSaboteurSpells
 
 enum CrystalSpells
 {
-    SPELL_ARCANE_LIGHTNING                          = 57930
+    SPELL_ARCANE_LIGHTNING                          = 57912
+};
+
+enum Events
+{
+    EVENT_ACTIVATE_CRYSTAL                          = 20001
 };
 
 const Position PortalLocation[] =
@@ -77,7 +75,6 @@ const Position PortalLocation[] =
     {1908.31f, 809.657f, 38.7037f, 3.08701f}      // WP 6
 };
 
-const Position ArcaneSphere    = {1887.060059f, 806.151001f, 61.321602f, 0.0f};
 const Position BossStartMove1  = {1894.684448f, 739.390503f, 47.668003f, 0.0f};
 const Position BossStartMove2  = {1875.173950f, 860.832703f, 43.333565f, 0.0f};
 const Position BossStartMove21 = {1858.854614f, 855.071411f, 43.333565f, 0.0f};
@@ -94,7 +91,7 @@ const Position MiddleRoomPortalSaboLocation = {1896.622925f, 804.854126f, 38.504
 //Cyanigosa's prefight event data
 enum Yells
 {
-    CYANIGOSA_SAY_SPAWN                           = 0
+    CYANIGOSA_SAY_SPAWN                           = -1608005
 };
 
 enum Spells
@@ -108,14 +105,14 @@ class instance_violet_hold : public InstanceMapScript
 public:
     instance_violet_hold() : InstanceMapScript("instance_violet_hold", 608) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
     {
         return new instance_violet_hold_InstanceMapScript(map);
     }
 
     struct instance_violet_hold_InstanceMapScript : public InstanceScript
     {
-        instance_violet_hold_InstanceMapScript(Map* map) : InstanceScript(map) { }
+        instance_violet_hold_InstanceMapScript(Map* map) : InstanceScript(map) {}
 
         uint64 uiMoragg;
         uint64 uiErekem;
@@ -139,13 +136,12 @@ public:
         uint64 uiTeleportationPortal;
         uint64 uiSaboteurPortal;
 
-        uint64 uiActivationCrystal[4];
+        uint64 uiActivationCrystal[3];
+        uint64 uiDefenseSystem;
 
         uint32 uiActivationTimer;
         uint32 uiCyanigosaEventTimer;
         uint32 uiDoorSpellTimer;
-
-        std::set<uint64> trashMobs; // to kill with crystal
 
         uint8 uiWaveCount;
         uint8 uiLocation;
@@ -171,7 +167,7 @@ public:
 
         std::string str_data;
 
-        void Initialize() OVERRIDE
+        void Initialize()
         {
             uiMoragg = 0;
             uiErekem = 0;
@@ -193,8 +189,7 @@ public:
             uiMainDoor = 0;
             uiTeleportationPortal = 0;
             uiSaboteurPortal = 0;
-
-            trashMobs.clear();
+            uiDefenseSystem = 0;
 
             uiRemoveNpc = 0;
 
@@ -221,7 +216,7 @@ public:
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
         }
 
-        bool IsEncounterInProgress() const OVERRIDE
+        bool IsEncounterInProgress() const
         {
             for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                 if (m_auiEncounter[i] == IN_PROGRESS)
@@ -230,10 +225,13 @@ public:
             return false;
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnCreatureCreate(Creature* creature)
         {
             switch (creature->GetEntry())
             {
+                case CREATURE_DEFENSE_SYSTEM:
+                    uiDefenseSystem = creature->GetGUID();
+                    break;
                 case CREATURE_XEVOZZ:
                     uiXevozz = creature->GetGUID();
                     break;
@@ -275,7 +273,7 @@ public:
             }
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
@@ -307,13 +305,13 @@ public:
                     uiMainDoor = go->GetGUID();
                     break;
                 case GO_ACTIVATION_CRYSTAL:
-                    if (uiCountActivationCrystals < 4)
+                    if (uiCountActivationCrystals < 3)
                         uiActivationCrystal[uiCountActivationCrystals++] = go->GetGUID();
                     break;
             }
         }
 
-        void SetData(uint32 type, uint32 data) OVERRIDE
+        void SetData(uint32 type, uint32 data)
         {
             switch (type)
             {
@@ -396,33 +394,17 @@ public:
                     uiMainEventPhase = data;
                     if (data == IN_PROGRESS) // Start event
                     {
-                        if (GameObject* mainDoor = instance->GetGameObject(uiMainDoor))
-                            mainDoor->SetGoState(GO_STATE_READY);
+                        if (GameObject* pMainDoor = instance->GetGameObject(uiMainDoor))
+                            pMainDoor->SetGoState(GO_STATE_READY);
                         uiWaveCount = 1;
                         bActive = true;
-                        for (int i = 0; i < 4; ++i)
-                            if (GameObject* crystal = instance->GetGameObject(uiActivationCrystal[i]))
-                                crystal->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
                         uiRemoveNpc = 0; // might not have been reset after a wipe on a boss.
                     }
                     break;
             }
         }
 
-        void SetData64(uint32 type, uint64 data) OVERRIDE
-        {
-            switch (type)
-            {
-                case DATA_ADD_TRASH_MOB:
-                    trashMobs.insert(data);
-                    break;
-                case DATA_DEL_TRASH_MOB:
-                    trashMobs.erase(data);
-                    break;
-            }
-        }
-
-        uint32 GetData(uint32 type) const OVERRIDE
+        uint32 GetData(uint32 type)
         {
             switch (type)
             {
@@ -443,7 +425,7 @@ public:
             return 0;
         }
 
-        uint64 GetData64(uint32 identifier) const OVERRIDE
+        uint64 GetData64(uint32 identifier)
         {
             switch (identifier)
             {
@@ -611,7 +593,6 @@ public:
                     if (GameObject* pMainDoor = instance->GetGameObject(uiMainDoor))
                         pMainDoor->SetGoState(GO_STATE_READY);
                     DoUpdateWorldState(WORLD_STATE_VH_PRISON_STATE, 100);
-                    // no break
                 }
                 default:
                     SpawnPortal();
@@ -619,7 +600,7 @@ public:
             }
         }
 
-        std::string GetSaveData() OVERRIDE
+        std::string GetSaveData()
         {
             OUT_SAVE_INST_DATA;
 
@@ -636,7 +617,7 @@ public:
             return str_data;
         }
 
-        void Load(const char* in) OVERRIDE
+        void Load(const char* in)
         {
             if (!in)
             {
@@ -674,18 +655,18 @@ public:
             Map::PlayerList const &players = instance->GetPlayers();
             for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
             {
-                Player* player = itr->GetSource();
-                if (player->IsGameMaster())
+                Player* player = itr->getSource();
+                if (player->isGameMaster())
                     continue;
 
-                if (player->IsAlive())
+                if (player->isAlive())
                     return false;
             }
 
             return true;
         }
 
-        void Update(uint32 diff) OVERRIDE
+        void Update(uint32 diff)
         {
             if (!instance->HavePlayers())
                 return;
@@ -703,7 +684,7 @@ public:
             }
 
             // if main event is in progress and players have wiped then reset instance
-            if (uiMainEventPhase == IN_PROGRESS && CheckWipe())
+            if ( uiMainEventPhase == IN_PROGRESS && CheckWipe())
             {
                 SetData(DATA_REMOVE_NPC, 1);
                 StartBossEncounter(uiFirstBoss, false);
@@ -712,10 +693,6 @@ public:
                 SetData(DATA_MAIN_DOOR, GO_STATE_ACTIVE);
                 SetData(DATA_WAVE_COUNT, 0);
                 uiMainEventPhase = NOT_STARTED;
-
-                for (int i = 0; i < 4; ++i)
-                    if (GameObject* crystal = instance->GetGameObject(uiActivationCrystal[i]))
-                        crystal->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
 
                 if (Creature* pSinclari = instance->GetCreature(uiSinclari))
                 {
@@ -750,7 +727,7 @@ public:
                     {
                         case 1:
                             pCyanigosa->CastSpell(pCyanigosa, CYANIGOSA_BLUE_AURA, false);
-                            pCyanigosa->AI()->Talk(CYANIGOSA_SAY_SPAWN);
+                            DoScriptText(CYANIGOSA_SAY_SPAWN, pCyanigosa);
                             uiCyanigosaEventTimer = 7*IN_MILLISECONDS;
                             ++uiCyanigosaEventPhase;
                             break;
@@ -796,34 +773,6 @@ public:
             }
         }
 
-        void ActivateCrystal()
-        {
-            // just to make things easier we'll get the gameobject from the map
-            GameObject* invoker = instance->GetGameObject(uiActivationCrystal[0]);
-            if (!invoker)
-                return;
-
-            SpellInfo const* spellInfoLightning = sSpellMgr->GetSpellInfo(SPELL_ARCANE_LIGHTNING);
-            if (!spellInfoLightning)
-                return;
-
-            // the orb
-            TempSummon* trigger = invoker->SummonCreature(NPC_DEFENSE_SYSTEM, ArcaneSphere, TEMPSUMMON_MANUAL_DESPAWN, 0);
-            if (!trigger)
-                return;
-
-            // visuals
-            trigger->CastSpell(trigger, spellInfoLightning, true, 0, 0, trigger->GetGUID());
-
-            // Kill all mobs registered with SetData64(ADD_TRASH_MOB)
-            for (std::set<uint64>::const_iterator itr = trashMobs.begin(); itr != trashMobs.end(); ++itr)
-            {
-                Creature* creature = instance->GetCreature(*itr);
-                if (creature && creature->IsAlive())
-                    trigger->Kill(creature);
-            }
-        }
-
         void ProcessEvent(WorldObject* /*go*/, uint32 uiEventId)
         {
             switch (uiEventId)
@@ -833,6 +782,13 @@ public:
                     ActivateCrystal();
                     break;
             }
+        }
+
+        void ActivateCrystal()
+        {
+            if (uiDefenseSystem)
+                if (Creature* pSystem = instance->GetCreature(uiDefenseSystem))
+                    pSystem->CastSpell(pSystem, SPELL_ARCANE_LIGHTNING);
         }
     };
 };

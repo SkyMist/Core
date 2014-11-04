@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -129,7 +128,7 @@ class HostileReference : public Reference<Unit, ThreatManager>
         // Inform the source, that the status of that reference was changed
         void fireStatusChanged(ThreatRefStatusChangeEvent& threatRefStatusChangeEvent);
 
-        Unit* GetSourceUnit();
+        Unit* getSourceUnit();
     private:
         float iThreat;
         float iTempThreatModifier;                          // used for taunt
@@ -143,57 +142,39 @@ class ThreatManager;
 
 class ThreatContainer
 {
+    private:
+        std::list<HostileReference*> iThreatList;
+        bool iDirty;
+    protected:
         friend class ThreatManager;
 
+        void remove(HostileReference* hostileRef) { iThreatList.remove(hostileRef); }
+        void addReference(HostileReference* hostileRef) { iThreatList.push_back(hostileRef); }
+        void clearReferences();
+
+        // Sort the list if necessary
+        void update();
     public:
-        typedef std::list<HostileReference*> StorageType;
-
-        ThreatContainer(): iDirty(false) { }
-
+        ThreatContainer() { iDirty = false; }
         ~ThreatContainer() { clearReferences(); }
 
         HostileReference* addThreat(Unit* victim, float threat);
 
         void modifyThreatPercent(Unit* victim, int32 percent);
 
-        HostileReference* selectNextVictim(Creature* attacker, HostileReference* currentVictim) const;
+        HostileReference* selectNextVictim(Creature* attacker, HostileReference* currentVictim);
 
         void setDirty(bool isDirty) { iDirty = isDirty; }
 
         bool isDirty() const { return iDirty; }
 
-        bool empty() const
-        {
-            return iThreatList.empty();
-        }
+        bool empty() const { return iThreatList.empty(); }
 
-        HostileReference* getMostHated() const
-        {
-            return iThreatList.empty() ? NULL : iThreatList.front();
-        }
+        HostileReference* getMostHated() { return iThreatList.empty() ? NULL : iThreatList.front(); }
 
-        HostileReference* getReferenceByTarget(Unit* victim) const;
+        HostileReference* getReferenceByTarget(Unit* victim);
 
-        StorageType const & getThreatList() const { return iThreatList; }
-
-    private:
-        void remove(HostileReference* hostileRef)
-        {
-            iThreatList.remove(hostileRef);
-        }
-
-        void addReference(HostileReference* hostileRef)
-        {
-            iThreatList.push_back(hostileRef);
-        }
-
-        void clearReferences();
-
-        // Sort the list if necessary
-        void update();
-
-        StorageType iThreatList;
-        bool iDirty;
+        std::list<HostileReference*>& getThreatList() { return iThreatList; }
 };
 
 //=================================================
@@ -217,15 +198,15 @@ class ThreatManager
 
         float getThreat(Unit* victim, bool alsoSearchOfflineList = false);
 
-        bool isThreatListEmpty() const { return iThreatContainer.empty(); }
+        bool isThreatListEmpty() { return iThreatContainer.empty(); }
 
         void processThreatEvent(ThreatRefStatusChangeEvent* threatRefStatusChangeEvent);
 
         bool isNeedUpdateToClient(uint32 time);
 
-        HostileReference* getCurrentVictim() const { return iCurrentVictim; }
+        HostileReference* getCurrentVictim() { return iCurrentVictim; }
 
-        Unit* GetOwner() const { return iOwner; }
+        Unit* getOwner() { return iOwner; }
 
         Unit* getHostilTarget();
 
@@ -242,11 +223,11 @@ class ThreatManager
         // Reset all aggro of unit in threadlist satisfying the predicate.
         template<class PREDICATE> void resetAggro(PREDICATE predicate)
         {
-            ThreatContainer::StorageType &threatList = iThreatContainer.iThreatList;
+            std::list<HostileReference*> &threatList = getThreatList();
             if (threatList.empty())
                 return;
 
-            for (ThreatContainer::StorageType::iterator itr = threatList.begin(); itr != threatList.end(); ++itr)
+            for (std::list<HostileReference*>::iterator itr = threatList.begin(); itr != threatList.end(); ++itr)
             {
                 HostileReference* ref = (*itr);
 
@@ -260,8 +241,8 @@ class ThreatManager
 
         // methods to access the lists from the outside to do some dirty manipulation (scriping and such)
         // I hope they are used as little as possible.
-        ThreatContainer::StorageType const & getThreatList() const { return iThreatContainer.getThreatList(); }
-        ThreatContainer::StorageType const & getOfflineThreatList() const { return iThreatOfflineContainer.getThreatList(); }
+        std::list<HostileReference*>& getThreatList() { return iThreatContainer.getThreatList(); }
+        std::list<HostileReference*>& getOfflineThreatList() { return iThreatOfflineContainer.getThreatList(); }
         ThreatContainer& getOnlineContainer() { return iThreatContainer; }
         ThreatContainer& getOfflineContainer() { return iThreatOfflineContainer; }
     private:
@@ -276,13 +257,13 @@ class ThreatManager
 
 //=================================================
 
-namespace Trinity
+namespace JadeCore
 {
     // Binary predicate for sorting HostileReferences based on threat value
     class ThreatOrderPred
     {
         public:
-            ThreatOrderPred(bool ascending = false) : m_ascending(ascending) { }
+            ThreatOrderPred(bool ascending = false) : m_ascending(ascending) {}
             bool operator() (HostileReference const* a, HostileReference const* b) const
             {
                 return m_ascending ? a->getThreat() < b->getThreat() : a->getThreat() > b->getThreat();
@@ -292,3 +273,4 @@ namespace Trinity
     };
 }
 #endif
+

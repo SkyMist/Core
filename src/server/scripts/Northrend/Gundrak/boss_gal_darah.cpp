@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -41,12 +38,16 @@ enum Spells
 //Yells
 enum Yells
 {
-    SAY_AGGRO                                     = 0,
-    SAY_SLAY                                      = 1,
-    SAY_DEATH                                     = 2,
-    SAY_SUMMON_RHINO                              = 3,
-    SAY_TRANSFORM_1                               = 4,
-    SAY_TRANSFORM_2                               = 5
+    SAY_AGGRO                                     = -1604000,
+    SAY_SLAY_1                                    = -1604001,
+    SAY_SLAY_2                                    = -1604002,
+    SAY_SLAY_3                                    = -1604003,
+    SAY_DEATH                                     = -1604004,
+    SAY_SUMMON_RHINO_1                            = -1604005,
+    SAY_SUMMON_RHINO_2                            = -1604006,
+    SAY_SUMMON_RHINO_3                            = -1604007,
+    SAY_TRANSFORM_1                               = -1604008,  //Phase change
+    SAY_TRANSFORM_2                               = -1604009
 };
 
 enum Displays
@@ -61,19 +62,16 @@ enum CombatPhase
     RHINO
 };
 
-enum Misc
-{
-    DATA_SHARE_THE_LOVE                         = 1
-};
+#define DATA_SHARE_THE_LOVE                       1
 
 class boss_gal_darah : public CreatureScript
 {
 public:
     boss_gal_darah() : CreatureScript("boss_gal_darah") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_gal_darahAI(creature);
+        return new boss_gal_darahAI (creature);
     }
 
     struct boss_gal_darahAI : public ScriptedAI
@@ -101,7 +99,7 @@ public:
 
         InstanceScript* instance;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             uiStampedeTimer = 10*IN_MILLISECONDS;
             uiWhirlingSlashTimer = 21*IN_MILLISECONDS;
@@ -125,15 +123,15 @@ public:
                 instance->SetData(DATA_GAL_DARAH_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
 
             if (instance)
                 instance->SetData(DATA_GAL_DARAH_EVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -148,7 +146,7 @@ public:
                             me->SetDisplayId(DISPLAY_RHINO);
                             Phase = RHINO;
                             uiPhaseCounter = 0;
-                            Talk(SAY_TRANSFORM_1);
+                            DoScriptText(SAY_TRANSFORM_1, me);
                             uiTransformationTimer = 5*IN_MILLISECONDS;
                             bStartOfTransformation = true;
                             me->ClearUnitState(UNIT_STATE_STUNNED|UNIT_STATE_ROOT);
@@ -171,13 +169,13 @@ public:
                         if (uiStampedeTimer <= diff)
                         {
                             DoCast(me, SPELL_STAMPEDE);
-                            Talk(SAY_SUMMON_RHINO);
+                            DoScriptText(RAND(SAY_SUMMON_RHINO_1, SAY_SUMMON_RHINO_2, SAY_SUMMON_RHINO_3), me);
                             uiStampedeTimer = 15*IN_MILLISECONDS;
                         } else uiStampedeTimer -= diff;
 
                         if (uiWhirlingSlashTimer <= diff)
                         {
-                            DoCastVictim(SPELL_WHIRLING_SLASH);
+                            DoCast(me->getVictim(), SPELL_WHIRLING_SLASH);
                             uiWhirlingSlashTimer = 21*IN_MILLISECONDS;
                             ++uiPhaseCounter;
                         } else uiWhirlingSlashTimer -= diff;
@@ -191,7 +189,7 @@ public:
                             me->SetDisplayId(DISPLAY_TROLL);
                             Phase = TROLL;
                             uiPhaseCounter = 0;
-                            Talk(SAY_TRANSFORM_2);
+                            DoScriptText(SAY_TRANSFORM_2, me);
                             uiTransformationTimer = 9*IN_MILLISECONDS;
                             bStartOfTransformation = true;
                             me->ClearUnitState(UNIT_STATE_STUNNED|UNIT_STATE_ROOT);
@@ -213,19 +211,19 @@ public:
                     {
                         if (uiPunctureTimer <= diff)
                         {
-                            DoCastVictim(SPELL_PUNCTURE);
+                            DoCast(me->getVictim(), SPELL_PUNCTURE);
                             uiPunctureTimer = 8*IN_MILLISECONDS;
                         } else uiPunctureTimer -= diff;
 
                         if (uiEnrageTimer <= diff)
                         {
-                            DoCastVictim(SPELL_ENRAGE);
+                            DoCast(me->getVictim(), SPELL_ENRAGE);
                             uiEnrageTimer = 20*IN_MILLISECONDS;
                         } else uiEnrageTimer -= diff;
 
                         if (uiStompTimer <= diff)
                         {
-                            DoCastVictim(SPELL_STOMP);
+                            DoCast(me->getVictim(), SPELL_STOMP);
                             uiStompTimer = 20*IN_MILLISECONDS;
                         } else uiStompTimer -= diff;
 
@@ -260,7 +258,7 @@ public:
             impaledList.push_back(guid);
         }
 
-        uint32 GetData(uint32 type) const OVERRIDE
+        uint32 GetData(uint32 type)
         {
             if (type == DATA_SHARE_THE_LOVE)
                 return shareTheLove;
@@ -268,20 +266,20 @@ public:
             return 0;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
 
             if (instance)
                 instance->SetData(DATA_GAL_DARAH_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* victim) OVERRIDE
+        void KilledUnit(Unit* victim)
         {
-            if (victim->GetTypeId() != TYPEID_PLAYER)
+            if (victim == me)
                 return;
 
-            Talk(SAY_SLAY);
+            DoScriptText(RAND(SAY_SLAY_1, SAY_SLAY_2, SAY_SLAY_3), me);
         }
     };
 
@@ -294,7 +292,7 @@ class achievement_share_the_love : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
+        bool OnCheck(Player* /*player*/, Unit* target)
         {
             if (!target)
                 return false;

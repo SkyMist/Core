@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,7 +21,6 @@
 #include "SpellScript.h"
 #include "Map.h"
 #include "Creature.h"
-#include "SpellMgr.h"
 
 #define ICCScriptName "instance_icecrown_citadel"
 
@@ -47,6 +43,9 @@ enum SharedSpells
     SPELL_BERSERK                       = 26662,
     SPELL_BERSERK2                      = 47008,
 
+    SPELL_HELLSCREAM_S_WARSONG          = 73822,
+    SPELL_STRENGTH_OF_WRYNN             = 73828,
+
     // Deathbound Ward
     SPELL_STONEFORM                     = 70733,
 
@@ -57,10 +56,6 @@ enum SharedSpells
     // The Lich King
     SPELL_ARTHAS_TELEPORTER_CEREMONY    = 72915,
     SPELL_FROSTMOURNE_TELEPORT_VISUAL   = 73078,
-
-    // Shadowmourne questline
-    SPELL_UNSATED_CRAVING               = 71168,
-    SPELL_SHADOWS_FATE                  = 71169
 };
 
 enum TeleporterSpells
@@ -92,33 +87,55 @@ enum DataTypes
     DATA_THE_LICH_KING              = 12,
 
     // Additional data
-    DATA_SAURFANG_EVENT_NPC         = 13,
-    DATA_BONED_ACHIEVEMENT          = 14,
-    DATA_OOZE_DANCE_ACHIEVEMENT     = 15,
-    DATA_PUTRICIDE_TABLE            = 16,
-    DATA_NAUSEA_ACHIEVEMENT         = 17,
-    DATA_ORB_WHISPERER_ACHIEVEMENT  = 18,
-    DATA_PRINCE_KELESETH_GUID       = 19,
-    DATA_PRINCE_TALDARAM_GUID       = 20,
-    DATA_PRINCE_VALANAR_GUID        = 21,
-    DATA_BLOOD_PRINCES_CONTROL      = 22,
-    DATA_SINDRAGOSA_FROSTWYRMS      = 23,
-    DATA_SPINESTALKER               = 24,
-    DATA_RIMEFANG                   = 25,
-    DATA_COLDFLAME_JETS             = 26,
-    DATA_TEAM_IN_INSTANCE           = 27,
-    DATA_BLOOD_QUICKENING_STATE     = 28,
-    DATA_HEROIC_ATTEMPTS            = 29,
-    DATA_CROK_SCOURGEBANE           = 30,
-    DATA_CAPTAIN_ARNATH             = 31,
-    DATA_CAPTAIN_BRANDON            = 32,
-    DATA_CAPTAIN_GRONDEL            = 33,
-    DATA_CAPTAIN_RUPERT             = 34,
-    DATA_VALITHRIA_TRIGGER          = 35,
-    DATA_VALITHRIA_LICH_KING        = 36,
-    DATA_HIGHLORD_TIRION_FORDRING   = 37,
-    DATA_ARTHAS_PLATFORM            = 38,
-    DATA_TERENAS_MENETHIL           = 39,
+    DATA_SINDRAGOSA_GAUNTLET        = 13,
+    DATA_SAURFANG_EVENT_NPC         = 14,
+    DATA_BONED_ACHIEVEMENT          = 15,
+    DATA_OOZE_DANCE_ACHIEVEMENT     = 16,
+    DATA_PUTRICIDE_TABLE            = 17,
+    DATA_NAUSEA_ACHIEVEMENT         = 18,
+    DATA_ORB_WHISPERER_ACHIEVEMENT  = 19,
+    DATA_PRINCE_KELESETH_GUID       = 20,
+    DATA_PRINCE_TALDARAM_GUID       = 21,
+    DATA_PRINCE_VALANAR_GUID        = 22,
+    DATA_BLOOD_PRINCES_CONTROL      = 23,
+    DATA_SINDRAGOSA_FROSTWYRMS      = 24,
+    DATA_SPINESTALKER               = 25,
+    DATA_RIMEFANG                   = 26,
+    DATA_COLDFLAME_JETS             = 27,
+    DATA_TEAM_IN_INSTANCE           = 28,
+    DATA_BLOOD_QUICKENING_STATE     = 29,
+    DATA_HEROIC_ATTEMPTS            = 30,
+    DATA_CROK_SCOURGEBANE           = 31,
+    DATA_CAPTAIN_ARNATH             = 32,
+    DATA_CAPTAIN_BRANDON            = 33,
+    DATA_CAPTAIN_GRONDEL            = 34,
+    DATA_CAPTAIN_RUPERT             = 35,
+    DATA_VALITHRIA_TRIGGER          = 36,
+    DATA_VALITHRIA_LICH_KING        = 37,
+    DATA_HIGHLORD_TIRION_FORDRING   = 38,
+    DATA_ARTHAS_PLATFORM            = 39,
+    DATA_TERENAS_MENETHIL           = 40,
+    DATA_BUFF_REMOVED               = 41,
+
+    // Gunship: Data for achievements
+    DATA_BEEN_WAITING_ACHIEVEMENT   = 49,
+    DATA_NECK_DEEP_ACHIEVEMENT      = 50,
+
+    // Gunship: Data for the fight
+    // The numbering is very high for safety -- custom patch!
+    DATA_FIRST_SQUAD_STATE                  = 100,
+    DATA_SECOND_SQUAD_STATE                 = 101,
+    DATA_SPIRE_FROSTWYRM_STATE              = 102,
+    DATA_GB_HIGH_OVERLORD_SAURFANG          = 103,
+    DATA_GB_MURADIN_BRONZEBEARD             = 104,
+    DATA_HIGH_OVERLORD_SAURFANG_NOT_VISUAL  = 105,
+    DATA_GB_BATTLE_MAGE                     = 106,
+    DATA_SKYBREAKER_BOSS                    = 107,
+    DATA_ORGRIMMAR_HAMMER_BOSS              = 108,
+    DATA_MURADIN_BRONZEBEARD_NOT_VISUAL     = 109,
+    DATA_MURADIN_BRONZEBEARD                = 110,
+    DATA_GUNSHIP_BATTLE                     = 111,
+    GUID_PLAYER_LOCATION                    = 112,
 };
 
 enum CreaturesIds
@@ -186,14 +203,13 @@ enum CreaturesIds
     // Festergut
     NPC_FESTERGUT                               = 36626,
     NPC_GAS_DUMMY                               = 36659,
-    NPC_MALLEABLE_OOZE_STALKER                  = 38556,
+    NPC_MALLEABLE_GOO                           = 38556,
 
     // Rotface
     NPC_ROTFACE                                 = 36627,
     NPC_OOZE_SPRAY_STALKER                      = 37986,
     NPC_PUDDLE_STALKER                          = 37013,
     NPC_UNSTABLE_EXPLOSION_STALKER              = 38107,
-    NPC_VILE_GAS_STALKER                        = 38548,
 
     // Professor Putricide
     NPC_PROFESSOR_PUTRICIDE                     = 36678,
@@ -286,9 +302,51 @@ enum CreaturesIds
     NPC_WORLD_TRIGGER_INFINITE_AOI              = 36171,
     NPC_SPIRIT_BOMB                             = 39189,
     NPC_FROSTMOURNE_TRIGGER                     = 38584,
+    NPC_SHADOW_TRAP                             = 39137,
 
     // Generic
     NPC_INVISIBLE_STALKER                       = 30298,
+
+    // Sindragosas Ward
+    NPC_SINDRAGOSAS_WARD                        = 37503,
+    NPC_NERUBAR_WEBWEAVER                       = 37502,
+    NPC_NERUBAR_CHAMPION                        = 37501,
+    NPC_NERUBAR_BROODLING                       = 37232,
+    NPC_FROSTWARDEN_WARRIOR                     = 37228,
+    NPC_FROSTWARDEN_SORCERESS                   = 37229,
+
+    // Gunship: Ids of NPCs
+    NPC_GB_SKYBREAKER                           = 37540,
+    NPC_GB_ORGRIMS_HAMMER                       = 37215,
+    NPC_GB_HIGH_OVERLORD_SAURFANG               = 36939,
+    NPC_GB_MURADIN_BRONZEBEARD                  = 36948,
+    NPC_GB_HIHG_CAPTAIN_JUSTIN_BARTLETT         = 37182,
+    NPC_GB_HIGH_OVERLORD_SAURFANG_NOT_VISUAL    = 300000,
+    NPC_GB_MURADIN_BRONZEBEARD_NOT_VISUAL       = 300001,
+    NPC_GB_SKYBREAKER_SORCERER                  = 37026,
+    NPC_GB_SKYBREAKER_SORCERERS                 = 37116,
+    NPC_GB_KORKRON_REAVER                       = 37920,
+    NPC_GB_KORKRON_REAVERS                      = 36957,
+    NPC_GB_KORKRON_SERGANTE                     = 36960,
+    NPC_GB_SKYBREAKER_SERGANTE                  = 36961,
+    NPC_GB_KORKRON_BATTLE_MAGE                  = 37117,
+    NPC_GB_SKYBREAKER_MARINE                    = 36950,
+    NPC_GB_KORKRON_ROCKETEER                    = 36982,
+    NPC_GB_SKYBREAKER_MORTAR_SOLDIER            = 36978,
+    NPC_GB_KORKRON_AXETHROWER                   = 36968,
+    NPC_GB_SKYBREAKER_RIFLEMAN                  = 36969,
+    NPC_GB_SKYBREAKER_DECKHAND                  = 36970,
+    NPC_GB_ZAFOD_BOOMBOX                        = 37184,
+    NPC_GB_ALLIANCE_CANON                       = 36838,
+    NPC_GB_HORDE_CANON                          = 36839,
+    NPC_GB_INVISIBLE_STALKER                    = 32780,
+    NPC_GB_PORTAL                               = 37227,
+    NPC_GB_GUNSHIP_HULL                         = 37547,
+
+    // Gunship: Ids missing from trash
+    NPC_KORKRON_INVOKER                         = 37033,
+    NPC_SPIRE_FROSTWYRM                         = 37230,
+    NPC_SKYBREAKER_SORCERER                     = 37026,
 };
 
 enum GameObjectsIds
@@ -314,7 +372,7 @@ enum GameObjectsIds
     GO_DEATHBRINGER_S_CACHE_25N             = 202240,
     GO_DEATHBRINGER_S_CACHE_10H             = 202238,
     GO_DEATHBRINGER_S_CACHE_25H             = 202241,
-    GO_SCOURGE_TRANSPORTER_SAURFANG         = 202244,
+    GO_SCOURGE_TRANSPORTER_SAURFANG         = 202245,
 
     // Professor Putricide
     GO_ORANGE_PLAGUE_MONSTER_ENTRANCE       = 201371,
@@ -372,6 +430,20 @@ enum GameObjectsIds
     GO_FROZEN_LAVAMAN                       = 202436,
     GO_LAVAMAN_PILLARS_CHAINED              = 202437,
     GO_LAVAMAN_PILLARS_UNCHAINED            = 202438,
+
+    // Gunship: Ids of GameObjects
+    GO_ORGRIM_S_HAMMER_HORDE_ICC            = 201812,
+    GO_ORGRIM_S_HAMMER_ALLIANCE_ICC         = 201581,
+    GO_THE_SKYBREAKER_HORDE_ICC             = 201811,
+    GO_THE_SKYBREAKER_ALLIANCE_ICC          = 201580,
+    GO_CAPITAN_CHEST_A_10N                  = 201872,
+    GO_CAPITAN_CHEST_A_25N                  = 201873,
+    GO_CAPITAN_CHEST_A_10H                  = 201874,
+    GO_CAPITAN_CHEST_A_25H                  = 201875,
+    GO_CAPITAN_CHEST_H_10N                  = 202177,
+    GO_CAPITAN_CHEST_H_25N                  = 202178,
+    GO_CAPITAN_CHEST_H_10H                  = 202179,
+    GO_CAPITAN_CHEST_H_25H                  = 202180,
 };
 
 enum AchievementCriteriaIds
@@ -477,7 +549,7 @@ class spell_trigger_spell_from_caster : public SpellScriptLoader
         public:
             spell_trigger_spell_from_caster_SpellScript(uint32 triggerId) : SpellScript(), _triggerId(triggerId) { }
 
-            bool Validate(SpellInfo const* /*spell*/) OVERRIDE
+            bool Validate(SpellInfo const* /*spell*/)
             {
                 if (!sSpellMgr->GetSpellInfo(_triggerId))
                     return false;
@@ -489,7 +561,7 @@ class spell_trigger_spell_from_caster : public SpellScriptLoader
                 GetCaster()->CastSpell(GetHitUnit(), _triggerId, true);
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 AfterHit += SpellHitFn(spell_trigger_spell_from_caster_SpellScript::HandleTrigger);
             }
@@ -497,7 +569,7 @@ class spell_trigger_spell_from_caster : public SpellScriptLoader
             uint32 _triggerId;
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_trigger_spell_from_caster_SpellScript(_triggerId);
         }

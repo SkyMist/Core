@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -71,14 +70,6 @@
 #  define ATTR_DEPRECATED
 #endif //COMPILER == COMPILER_GNU
 
-#if COMPILER_HAS_CPP11_SUPPORT
-#  define OVERRIDE override
-#  define FINAL final
-#else
-#  define OVERRIDE
-#  define FINAL
-#endif //COMPILER_HAS_CPP11_SUPPORT
-
 #define UI64FMTD ACE_UINT64_FORMAT_SPECIFIER
 #define UI64LIT(N) ACE_UINT64_LITERAL(N)
 
@@ -106,8 +97,8 @@ enum DBCFormer
     FT_BYTE='b',                                            //uint8
     FT_SORT='d',                                            //sorted by this field, field is not included
     FT_IND='n',                                             //the same, but parsed to data
+    FT_LOGIC='l',                                           //Logical (boolean)
     FT_SQL_PRESENT='p',                                     //Used in sql format to mark column present in sql dbc
     FT_SQL_ABSENT='a'                                       //Used in sql format to mark column absent in sql dbc
 };
-
 #endif //TRINITY_DEFINE_H

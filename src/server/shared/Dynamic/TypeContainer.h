@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -61,7 +60,7 @@ template<class OBJECT> struct ContainerArrayList
 };
 
 // termination condition
-template<> struct ContainerArrayList<TypeNull> { };
+template<> struct ContainerArrayList<TypeNull> {};
 // recursion
 template<class H, class T> struct ContainerArrayList<TypeList<H, T> >
 {
@@ -79,7 +78,7 @@ template<class OBJECT> struct ContainerList
 };
 
 /* TypeNull is underfined */
-template<> struct ContainerList<TypeNull> { };
+template<> struct ContainerList<TypeNull> {};
 template<class H, class T> struct ContainerList<TypeList<H, T> >
 {
     ContainerList<H> _elements;
@@ -99,19 +98,19 @@ template<class OBJECT_TYPES>
 class TypeMapContainer
 {
     public:
-        template<class SPECIFIC_TYPE> size_t Count() const { return Trinity::Count(i_elements, (SPECIFIC_TYPE*)NULL); }
+        template<class SPECIFIC_TYPE> size_t Count() const { return JadeCore::Count(i_elements, (SPECIFIC_TYPE*)NULL); }
 
         /// inserts a specific object into the container
         template<class SPECIFIC_TYPE> bool insert(SPECIFIC_TYPE *obj)
         {
-            SPECIFIC_TYPE* t = Trinity::Insert(i_elements, obj);
+            SPECIFIC_TYPE* t = JadeCore::Insert(i_elements, obj);
             return (t != NULL);
         }
 
         ///  Removes the object from the container, and returns the removed object
         //template<class SPECIFIC_TYPE> bool remove(SPECIFIC_TYPE* obj)
         //{
-        //    SPECIFIC_TYPE* t = Trinity::Remove(i_elements, obj);
+        //    SPECIFIC_TYPE* t = JadeCore::Remove(i_elements, obj);
         //    return (t != NULL);
         //}
 

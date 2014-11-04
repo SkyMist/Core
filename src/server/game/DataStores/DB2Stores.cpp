@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2011 TrintiyCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,42 +16,46 @@
  */
 
 #include "DB2Stores.h"
-#include "DB2fmt.h"
-#include "DB2Utility.h"
-#include "Common.h"
 #include "Log.h"
-#include "World.h"
-#include "DBCStores.h"
+#include "SharedDefines.h"
+#include "SpellMgr.h"
+#include "DB2fmt.h"
 
-DB2Storage<BroadcastTextEntry> sBroadcastTextStore(BroadcastTextfmt/*, &DB2Utilities::HasBroadcastTextEntry, &DB2Utilities::WriteBroadcastTextDbReply*/);
-DB2Storage<ItemEntry> sItemStore(Itemfmt, &DB2Utilities::HasItemEntry, &DB2Utilities::WriteItemDbReply);
-DB2Storage<ItemCurrencyCostEntry> sItemCurrencyCostStore(ItemCurrencyCostfmt);
-DB2Storage<ItemExtendedCostEntry> sItemExtendedCostStore(ItemExtendedCostEntryfmt);
-DB2Storage<ItemSparseEntry> sItemSparseStore(ItemSparsefmt, &DB2Utilities::HasItemSparseEntry, &DB2Utilities::WriteItemSparseDbReply);
-DB2Storage<KeyChainEntry> sKeyChainStore(KeyChainfmt);
-DB2Storage<QuestPackageItemEntry> sQuestPackageItemStore(QuestPackageItemfmt);
-DB2Storage<SceneScriptEntry> sSceneScriptStore(SceneScriptfmt);
-DB2Storage<SpellReagentsEntry> sSpellReagentsStore(SpellReagentsfmt);
+#include <map>
+
+DB2Storage <ItemEntry> sItemStore(Itemfmt);
+DB2Storage <ItemCurrencyCostEntry> sItemCurrencyCostStore(ItemCurrencyCostfmt);
+DB2Storage <ItemExtendedCostEntry> sItemExtendedCostStore(ItemExtendedCostEntryfmt);
+DB2Storage <ItemSparseEntry> sItemSparseStore (ItemSparsefmt);
+DB2Storage <BattlePetSpeciesEntry> sBattlePetSpeciesStore(BattlePetSpeciesEntryfmt);
+DB2Storage <SpellReagentsEntry> sSpellReagentsStore(SpellReagentsEntryfmt);
 DB2Storage <ItemUpgradeEntry> sItemUpgradeStore(ItemUpgradeEntryfmt);
 DB2Storage <RulesetItemUpgradeEntry> sRulesetItemUpgradeStore(RulesetItemUpgradeEntryfmt);
 
-typedef std::list<std::string> DB2StoreProblemList;
-
-typedef std::map<uint32 /*hash*/, DB2StorageBase*> DB2StorageMap;
-DB2StorageMap DB2Stores;
+typedef std::list<std::string> StoreProblemList1;
 
 uint32 DB2FilesCount = 0;
 
-static bool LoadDB2_assert_print(uint32 fsize, uint32 rsize, std::string const& filename)
+static bool LoadDB2_assert_print(uint32 fsize,uint32 rsize, const std::string& filename)
 {
-    TC_LOG_ERROR("misc", "Size of '%s' setted by format string (%u) not equal size of C++ structure (%u).", filename.c_str(), fsize, rsize);
+    sLog->outError(LOG_FILTER_GENERAL, "Size of '%s' setted by format string (%u) not equal size of C++ structure (%u).", filename.c_str(), fsize, rsize);
 
     // ASSERT must fail after function call
     return false;
 }
 
+struct LocalDB2Data
+{
+    LocalDB2Data(LocaleConstant loc) : defaultLocale(loc), availableDb2Locales(0xFFFFFFFF) {}
+
+    LocaleConstant defaultLocale;
+
+    // bitmasks for index of fullLocaleNameList
+    uint32 availableDb2Locales;
+};
+
 template<class T>
-inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, DB2Storage<T>& storage, std::string const& db2_path, std::string const& filename)
+inline void LoadDB2(StoreProblemList1& errlist, DB2Storage<T>& storage, const std::string& db2_path, const std::string& filename)
 {
     // compatibility format and C++ structure sizes
     ASSERT(DB2FileLoader::GetFormatRecordSize(storage.GetFormat()) == sizeof(T) || LoadDB2_assert_print(DB2FileLoader::GetFormatRecordSize(storage.GetFormat()), sizeof(T), filename));
@@ -61,29 +63,10 @@ inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, D
     ++DB2FilesCount;
 
     std::string db2_filename = db2_path + filename;
-    if (storage.Load(db2_filename.c_str(), uint32(sWorld->GetDefaultDbcLocale())))
-    {
-        for (uint32 i = 0; i < TOTAL_LOCALES; ++i)
-        {
-            if (!(availableDb2Locales & (1 << i)))
-                continue;
-
-            if (uint32(sWorld->GetDefaultDbcLocale()) == i)
-                continue;
-
-            std::string localizedName(db2_path);
-            localizedName.append(localeNames[i]);
-            localizedName.push_back('/');
-            localizedName.append(filename);
-
-            if (!storage.LoadStringsFrom(localizedName.c_str(), i))
-                availableDb2Locales &= ~(1<<i);             // mark as not available for speedup next checks
-        }
-    }
-    else
+    if (!storage.Load(db2_filename.c_str()))
     {
         // sort problematic db2 to (1) non compatible and (2) nonexistent
-        if (FILE* f = fopen(db2_filename.c_str(), "rb"))
+        if (FILE * f = fopen(db2_filename.c_str(), "rb"))
         {
             char buf[100];
             snprintf(buf, 100,"(exist, but have %d fields instead " SIZEFMTD ") Wrong client version DBC file?", storage.GetFieldCount(), strlen(storage.GetFormat()));
@@ -93,33 +76,27 @@ inline void LoadDB2(uint32& availableDb2Locales, DB2StoreProblemList& errlist, D
         else
             errlist.push_back(db2_filename);
     }
-
-    DB2Stores[storage.GetHash()] = &storage;
 }
 
-void LoadDB2Stores(std::string const& dataPath)
+void LoadDB2Stores(const std::string& dataPath)
 {
     std::string db2Path = dataPath + "dbc/";
 
-    DB2StoreProblemList bad_db2_files;
-    uint32 availableDb2Locales = 0xFF;
+    StoreProblemList1 bad_db2_files;
 
-    LoadDB2(availableDb2Locales, bad_db2_files, sBroadcastTextStore, db2Path, "BroadcastText.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sItemStore, db2Path, "Item.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sItemCurrencyCostStore, db2Path, "ItemCurrencyCost.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sItemSparseStore, db2Path, "Item-sparse.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sItemExtendedCostStore, db2Path, "ItemExtendedCost.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sKeyChainStore, db2Path, "KeyChain.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sQuestPackageItemStore, db2Path, "QuestPackageItem.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sSceneScriptStore, db2Path, "SceneScript.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sSpellReagentsStore, db2Path, "SpellReagents.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sItemUpgradeStore, db2Path, "ItemUpgrade.db2");
-    LoadDB2(availableDb2Locales, bad_db2_files, sRulesetItemUpgradeStore, db2Path, "RulesetItemUpgrade.db2");
+    LoadDB2(bad_db2_files, sBattlePetSpeciesStore, db2Path, "BattlePetSpecies.db2");
+    LoadDB2(bad_db2_files, sItemStore, db2Path, "Item.db2");
+    LoadDB2(bad_db2_files, sItemCurrencyCostStore, db2Path, "ItemCurrencyCost.db2");
+    LoadDB2(bad_db2_files, sItemSparseStore, db2Path, "Item-sparse.db2");
+    LoadDB2(bad_db2_files, sItemExtendedCostStore, db2Path, "ItemExtendedCost.db2");
+    LoadDB2(bad_db2_files, sSpellReagentsStore, db2Path, "SpellReagents.db2");                                                 // 17399
+    LoadDB2(bad_db2_files, sItemUpgradeStore, db2Path, "ItemUpgrade.db2");
+    LoadDB2(bad_db2_files, sRulesetItemUpgradeStore, db2Path, "RulesetItemUpgrade.db2");
 
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)
     {
-        TC_LOG_ERROR("misc", "\nIncorrect DataDir value in worldserver.conf or ALL required *.db2 files (%d) not found by path: %sdb2", DB2FilesCount, dataPath.c_str());
+        sLog->outError(LOG_FILTER_GENERAL, "\nIncorrect DataDir value in worldserver.conf or ALL required *.db2 files (%d) not found by path: %sdb2", DB2FilesCount, dataPath.c_str());
         exit(1);
     }
     else if (!bad_db2_files.empty())
@@ -128,29 +105,17 @@ void LoadDB2Stores(std::string const& dataPath)
         for (std::list<std::string>::iterator i = bad_db2_files.begin(); i != bad_db2_files.end(); ++i)
             str += *i + "\n";
 
-        TC_LOG_ERROR("misc", "\nSome required *.db2 files (%u from %d) not found or not compatible:\n%s", (uint32)bad_db2_files.size(), DB2FilesCount, str.c_str());
+        sLog->outError(LOG_FILTER_GENERAL, "\nSome required *.db2 files (%u from %d) not found or not compatible:\n%s", (uint32)bad_db2_files.size(), DB2FilesCount,str.c_str());
         exit(1);
     }
 
     // Check loaded DB2 files proper version
-    if (!sBroadcastTextStore.LookupEntry(77161)     ||       // last broadcast text added in 5.4.7 (18019)
-        !sItemStore.LookupEntry(109014)             ||       // last item added in 5.4.7 (18019)
-        !sItemExtendedCostStore.LookupEntry(5268)   ||       // last item extended cost added in 5.4.7 (18019)
-        !sQuestPackageItemStore.LookupEntry(2256)   ||       // last quest package item in 5.4.7 (18019)
-        !sSceneScriptStore.LookupEntry(11156))               // last scene script added in 5.4.7 (18019)
+    if (!sItemStore.LookupEntry(106130)             ||      // last item added in 5.4 (17371)
+        !sItemExtendedCostStore.LookupEntry(5268)  )        // last item extended cost added in 5.4 (17371)
     {
-        TC_LOG_ERROR("misc", "You have _outdated_ DB2 files, Please extract correct db2 files from client 5.4.7 18019.");
+        sLog->outError(LOG_FILTER_GENERAL, "Please extract correct db2 files from client 5.4 17371.");
         exit(1);
     }
 
-    TC_LOG_INFO("server.loading", ">> Initialized %d DB2 data stores.", DB2FilesCount);
-}
-
-DB2StorageBase const* GetDB2Storage(uint32 type)
-{
-    DB2StorageMap::const_iterator itr = DB2Stores.find(type);
-    if (itr != DB2Stores.end())
-        return itr->second;
-
-    return NULL;
+    sLog->outInfo(LOG_FILTER_GENERAL, ">> Initialized %d DB2 data stores.", DB2FilesCount);
 }

@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -23,25 +22,23 @@
 #include "World.h"
 #include "SharedDefines.h"
 #include "ScriptMgr.h"
-#include "Player.h"
 
-namespace Trinity
+namespace JadeCore
 {
     namespace Honor
     {
         inline float hk_honor_at_level_f(uint8 level, float multiplier = 1.0f)
         {
-            float honor = multiplier * float(level / 10) * 100; // MOP: 9 Honor points per kill divided among all friendly players in range from group @ lvl 90.
+            float honor = multiplier * level * 1.55f;
             sScriptMgr->OnHonorCalculation(honor, level, multiplier);
-            return honor;
+            return honor * 2.4; // http://www.wowwiki.com/Honorable_kill#Honorable_kills 1 old points = 0.024 new points
         }
 
         inline uint32 hk_honor_at_level(uint8 level, float multiplier = 1.0f)
         {
             return uint32(ceil(hk_honor_at_level_f(level, multiplier)));
         }
-    } // namespace Trinity::Honor
-
+    }
     namespace XP
     {
         inline uint8 GetGrayLevel(uint8 pl_level)
@@ -133,10 +130,10 @@ namespace Trinity
                     nBaseExp = 1878;
                     break;
                 case CONTENT_86_90:
-                    nBaseExp = 7194;
+                    nBaseExp = 7512;
                     break;
                 default:
-                    TC_LOG_ERROR("misc", "BaseGain: Unsupported content level %u", content);
+                    sLog->outError(LOG_FILTER_GENERAL, "BaseGain: Unsupported content level %u", content);
                     nBaseExp = 45;
                     break;
             }
@@ -170,7 +167,7 @@ namespace Trinity
             uint32 gain;
 
             if (u->GetTypeId() == TYPEID_UNIT &&
-                (((Creature*)u)->IsTotem() || ((Creature*)u)->IsPet() ||
+                (((Creature*)u)->isTotem() || ((Creature*)u)->isPet() ||
                 (((Creature*)u)->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_XP_AT_KILL) ||
                 ((Creature*)u)->GetCreatureTemplate()->type == CREATURE_TYPE_CRITTER))
                 gain = 0;
@@ -187,7 +184,17 @@ namespace Trinity
                         gain *= 2;
                 }
 
-                gain = uint32(gain * sWorld->getRate(RATE_XP_KILL));
+                float KillXpRate = 1;
+
+                if (player->GetPersonnalXpRate())
+                    KillXpRate = player->GetPersonnalXpRate();
+                else
+                    KillXpRate = sWorld->getRate(RATE_XP_KILL);
+
+                gain = uint32(gain * KillXpRate);
+
+                float premium_rate = player->GetSession()->IsPremium() ? sWorld->getRate(RATE_XP_KILL_PREMIUM) : 1.0f;
+                gain *= premium_rate;
             }
 
             sScriptMgr->OnGainCalculation(gain, player, u);
@@ -227,7 +234,7 @@ namespace Trinity
             sScriptMgr->OnGroupRateCalculation(rate, count, isRaid);
             return rate;
         }
-    } // namespace Trinity::XP
+    }
 
     namespace Currency
     {
@@ -247,7 +254,7 @@ namespace Trinity
             // WowWiki: Battleground ratings receive a bonus of 22.2% to the cap they generate
             return uint32((ConquestRatingCalculator(rate) * 1.222f) + 0.5f);
         }
-    } // namespace Trinity::Currency
-} // namespace Trinity
+    }
+}
 
 #endif

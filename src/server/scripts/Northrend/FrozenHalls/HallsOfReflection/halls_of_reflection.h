@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -30,6 +27,12 @@
 2- The Lich King
 */
 
+const Position OutroSpawns[2] =
+{
+    {5564.25f, 2274.69f, 733.01f, 3.93f}, // Lich King
+    {5556.27f, 2266.28f, 733.01f, 0.8f},  // Jaina/Sylvana
+};
+
 enum Data
 {
     DATA_FALRIC_EVENT                           = 0,
@@ -42,11 +45,28 @@ enum Data
     DATA_TEAM_IN_INSTANCE                       = 6,
     DATA_FROSTMOURNE                            = 7,
     DATA_FROSTWORN_DOOR                         = 8,
-    DATA_ESCAPE_EVENT                           = 9,
-    DATA_ESCAPE_LEADER                          = 10,
-    DATA_SUMMONS                                = 11,
-    DATA_ICEWALL                                = 12,
-    DATA_CAVE_IN                                = 13
+
+    DATA_ESCAPE_LIDER                           = 9,
+    DATA_ICE_WALL_1                             = 10,
+    DATA_ICE_WALL_2                             = 11,
+    DATA_ICE_WALL_3                             = 12,
+    DATA_ICE_WALL_4                             = 13,
+    DATA_ICE_WALL_STATE_1                       = 14,
+    DATA_ICE_WALL_STATE_2                       = 15,
+    DATA_ICE_WALL_STATE_3                       = 16,
+    DATA_ICE_WALL_STATE_4                       = 17,
+    DATA_LICH_LING_PART2                        = 18,
+    DATA_SUMMONS                                = 19,
+    DATA_PHASE                                  = 20,
+    DATA_SKYBREAKER                             = 21,
+    DATA_ORGRIM_HAMMER                          = 22,
+    DATA_CAVE                                   = 23,
+    DATA_CAPTAIN_CHEST_1                        = 24,
+    DATA_CAPTAIN_CHEST_2                        = 25,
+    DATA_CAPTAIN_CHEST_3                        = 26,
+    DATA_CAPTAIN_CHEST_4                        = 27,
+
+    DATA_LORALEN_OR_KORELN                      = 28
 };
 
 enum Creatures
@@ -57,6 +77,7 @@ enum Creatures
     NPC_LICH_KING_PART1                           = 37226,
     NPC_LORALEN                                   = 37779,
     NPC_KORELN                                    = 37582,
+    NPC_QUELDELAR                                 = 37158,
 
     NPC_FALRIC                                    = 38112,
     NPC_MARWYN                                    = 38113,
@@ -65,6 +86,7 @@ enum Creatures
     NPC_WAVE_RIFLEMAN                             = 38176,
     NPC_WAVE_PRIEST                               = 38175,
     NPC_WAVE_MAGE                                 = 38172,
+    NPC_PHANTOM_HALLUCINATION                     = 38567,
 
     NPC_FROSTWORN_GENERAL                         = 36723,
     NPC_REFLECTION                                = 37068, // 37107 for tank only?
@@ -74,11 +96,11 @@ enum Creatures
     NPC_LICH_KING_PART2                           = 36954,
     NPC_BARTLETT                                  = 37182, // High Captain Justin Bartlett
     NPC_KORM                                      = 37833, // Sky-Reaver Korm Blackscar
-    NPC_ICE_WALL                                  = 37014, // Ice Wall Target
-
+    
+    NPC_ICE_WALL                                  = 37014,
     NPC_RAGING_GNOUL                              = 36940,
     NPC_RISEN_WITCH_DOCTOR                        = 36941,
-    NPC_ABON                                      = 37069
+    NPC_ABON                                      = 37069,
 };
 
 enum GameObjects
@@ -87,9 +109,12 @@ enum GameObjects
     GO_ENTRANCE_DOOR                              = 201976,
     GO_FROSTWORN_DOOR                             = 197341,
     GO_ARTHAS_DOOR                                = 197342,
-    //GO_ESCAPE_DOOR                                = 197343, // always open ?
+    GO_ESCAPE_DOOR                                = 197343,
 
-    GO_ICE_WALL                                   = 201385,
+    GO_ICE_WALL_1                                 = 201385,
+    GO_ICE_WALL_2                                 = 201885,
+    GO_ICE_WALL_3                                 = 202396,
+    GO_ICE_WALL_4                                 = 500001,
     GO_CAVE                                       = 201596,
 
     GO_STAIRS_SKYBREAKER                          = 201709,
@@ -114,8 +139,6 @@ enum HorWorldStates
 enum Actions
 {
     ACTION_ENTER_COMBAT,
-    ACTION_START_ESCAPING,
-    ACTION_WALL_BROKEN
 };
 
 enum TrashGeneralSpells
@@ -123,6 +146,7 @@ enum TrashGeneralSpells
     // General spells
     SPELL_WELL_OF_SOULS                           = 72630, // cast when spawn(become visible)
     SPELL_SPIRIT_ACTIVATE                         = 72130, // cast when unit activates
+    SPELL_QUELDELAR_AURA                          = 70013,
 };
 
 enum InstanceEvents
@@ -131,6 +155,14 @@ enum InstanceEvents
     EVENT_NEXT_WAVE                               = 2,
     EVENT_DO_WIPE                                 = 3,
     EVENT_ADD_WAVE                                = 4,
+};
+
+enum Achievements
+{
+    ACHIEV_HALLS_OF_REFLECTION_N   = 4518,
+    ACHIEV_HALLS_OF_REFLECTION_H   = 4521,
+    ACHIEV_NOT_RETREATING_EVENT    = 22615,
+    SPELL_ACHIEV_CHECK             = 72830,
 };
 
 // Base class for FALRIC and MARWYN
@@ -152,11 +184,11 @@ struct boss_horAI : ScriptedAI
         me->SetVisible(false);
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_IMMUNE_TO_NPC);
         me->SetReactState(REACT_PASSIVE);
-        if (instance && instance->GetData(DATA_WAVE_COUNT) != NOT_STARTED)
+        if (instance->GetData(DATA_WAVE_COUNT) != NOT_STARTED)
             instance->ProcessEvent(0, EVENT_DO_WIPE);
     }
 
-    void DoAction(int32 actionID)
+    void DoAction(int32 const actionID)
     {
         switch (actionID)
         {
@@ -177,11 +209,5 @@ struct boss_horAI : ScriptedAI
         summons.Summon(summoned);
     }
 };
-
-template<class AI>
-AI* GetHallsOfReflectionAI(Creature* creature)
-{
-    return GetInstanceAI<AI>(creature, HoRScriptName);
-}
 
 #endif

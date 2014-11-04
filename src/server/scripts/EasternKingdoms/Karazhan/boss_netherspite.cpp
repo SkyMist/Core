@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -28,23 +26,18 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "karazhan.h"
-#include "Player.h"
 
-enum Netherspite
-{
-    EMOTE_PHASE_PORTAL          = 0,
-    EMOTE_PHASE_BANISH          = 1,
+#define EMOTE_PHASE_PORTAL          -1532089
+#define EMOTE_PHASE_BANISH          -1532090
 
-    SPELL_NETHERBURN_AURA       = 30522,
-    SPELL_VOIDZONE              = 37063,
-    SPELL_NETHER_INFUSION       = 38688,
-    SPELL_NETHERBREATH          = 38523,
-    SPELL_BANISH_VISUAL         = 39833,
-    SPELL_BANISH_ROOT           = 42716,
-    SPELL_EMPOWERMENT           = 38549,
-    SPELL_NETHERSPITE_ROAR      = 38684,
-};
-
+#define SPELL_NETHERBURN_AURA       30522
+#define SPELL_VOIDZONE              37063
+#define SPELL_NETHER_INFUSION       38688
+#define SPELL_NETHERBREATH          38523
+#define SPELL_BANISH_VISUAL         39833
+#define SPELL_BANISH_ROOT           42716
+#define SPELL_EMPOWERMENT           38549
+#define SPELL_NETHERSPITE_ROAR      38684
 
 const float PortalCoord[3][3] =
 {
@@ -71,7 +64,7 @@ class boss_netherspite : public CreatureScript
 public:
     boss_netherspite() : CreatureScript("boss_netherspite") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_netherspiteAI(creature);
     }
@@ -129,7 +122,7 @@ public:
             return sqrt((xa-xb)*(xa-xb) + (ya-yb)*(ya-yb));
         }
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Berserk = false;
             NetherInfusionTimer = 540000;
@@ -186,8 +179,8 @@ public:
                         // get the best suitable target
                         for (Map::PlayerList::const_iterator i = players.begin(); i != players.end(); ++i)
                         {
-                            Player* p = i->GetSource();
-                            if (p && p->IsAlive() // alive
+                            Player* p = i->getSource();
+                            if (p && p->isAlive() // alive
                                 && (!target || target->GetDistance2d(portal)>p->GetDistance2d(portal)) // closer than current best
                                 && !p->HasAura(PlayerDebuff[j], 0) // not exhausted
                                 && !p->HasAura(PlayerBuff[(j+1)%3], 0) // not on another beam
@@ -221,8 +214,8 @@ public:
                         }
                     }
                     // aggro target if Red Beam
-                    if (j == RED_PORTAL && me->GetVictim() != target && target->GetTypeId() == TYPEID_PLAYER)
-                        me->getThreatManager().addThreat(target, 100000.0f+DoGetThreat(me->GetVictim()));
+                    if (j == RED_PORTAL && me->getVictim() != target && target->GetTypeId() == TYPEID_PLAYER)
+                        me->getThreatManager().addThreat(target, 100000.0f+DoGetThreat(me->getVictim()));
                 }
         }
 
@@ -235,7 +228,7 @@ public:
             PortalPhase = true;
             PortalTimer = 10000;
             EmpowermentTimer = 10000;
-            Talk(EMOTE_PHASE_PORTAL);
+            DoScriptText(EMOTE_PHASE_PORTAL, me);
         }
 
         void SwitchToBanishPhase()
@@ -247,7 +240,7 @@ public:
             DestroyPortals();
             PhaseTimer = 30000;
             PortalPhase = false;
-            Talk(EMOTE_PHASE_BANISH);
+            DoScriptText(EMOTE_PHASE_BANISH, me);
 
             for (int i=0; i<3; ++i)
                 me->RemoveAurasDueToSpell(NetherBuff[i]);
@@ -259,19 +252,19 @@ public:
                 Door->SetGoState(open ? GO_STATE_ACTIVE : GO_STATE_READY);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             HandleDoors(false);
             SwitchToPortalPhase();
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             HandleDoors(true);
             DestroyPortals();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -340,6 +333,7 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
 void AddSC_boss_netherspite()

@@ -19,7 +19,7 @@
 #ifndef __BATTLEGROUNDRB_H
 #define __BATTLEGROUNDRB_H
 
-#include "Battleground.h"
+class Battleground;
 
 class BattlegroundRBScore : public BattlegroundScore
 {
@@ -34,9 +34,9 @@ class BattlegroundRB : public Battleground
         BattlegroundRB();
         ~BattlegroundRB();
 
-        void AddPlayer(Player* player);
-        void StartingEventCloseDoors();
-        void StartingEventOpenDoors();
+        virtual void AddPlayer(Player* player);
+        virtual void StartingEventCloseDoors();
+        virtual void StartingEventOpenDoors();
 
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
@@ -46,5 +46,4 @@ class BattlegroundRB : public Battleground
 
     private:
 };
-
 #endif

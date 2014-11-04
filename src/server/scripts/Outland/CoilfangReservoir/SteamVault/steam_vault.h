@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,36 +19,13 @@
 #ifndef DEF_STEAM_VAULT_H
 #define DEF_STEAM_VAULT_H
 
-#define SteamVaultScriptName "instance_steam_vault"
+#define TYPE_HYDROMANCER_THESPIA        1
+#define TYPE_MEKGINEER_STEAMRIGGER      2
+#define TYPE_WARLORD_KALITHRESH         3
+#define TYPE_DISTILLER                  4
 
-uint32 const EncounterCount = 3;
-
-enum DataTypes
-{
-    DATA_HYDROMANCER_THESPIA        = 0,
-    DATA_MEKGINEER_STEAMRIGGER      = 1,
-    DATA_WARLORD_KALITHRESH         = 2,
-    DATA_DISTILLER                  = 3
-};
-
-enum CreatureIds
-{
-    NPC_HYDROMANCER_THESPIA         = 17797,
-    NPC_MEKGINEER_STEAMRIGGER       = 17796,
-    NPC_WARLORD_KALITHRESH          = 17798
-};
-
-enum GameObjectIds
-{
-    GO_MAIN_CHAMBERS_DOOR           = 183049,
-    GO_ACCESS_PANEL_HYDRO           = 184125,
-    GO_ACCESS_PANEL_MEK             = 184126
-};
-
-template<class AI>
-AI* GetSteamVaultAI(Creature* creature)
-{
-    return GetInstanceAI<AI>(creature, SteamVaultScriptName);
-}
-
+#define DATA_MEKGINEERSTEAMRIGGER       5
+#define DATA_KALITRESH                  6
+#define DATA_THESPIA                    7
 #endif
+

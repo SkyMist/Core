@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -26,8 +24,9 @@ struct LogMessage;
 class LogOperation
 {
     public:
-        LogOperation(Logger const* _logger, LogMessage* _msg)
-            : logger(_logger), msg(_msg)
+        LogOperation(Logger* _logger, LogMessage* _msg)
+            : logger(_logger)
+            , msg(_msg)
         { }
 
         ~LogOperation();
@@ -35,8 +34,8 @@ class LogOperation
         int call();
 
     protected:
-        Logger const* logger;
-        LogMessage* msg;
+        Logger *logger;
+        LogMessage *msg;
 };
 
 #endif

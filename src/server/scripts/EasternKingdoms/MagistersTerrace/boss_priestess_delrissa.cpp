@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -36,49 +34,34 @@ struct Speech
 
 static Speech LackeyDeath[]=
 {
-    {1},
-    {2},
-    {3},
-    {4},
+    {-1585013},
+    {-1585014},
+    {-1585015},
+    {-1585016},
 };
 
 static Speech PlayerDeath[]=
 {
-    {5},
-    {6},
-    {7},
-    {8},
-    {9},
+    {-1585017},
+    {-1585018},
+    {-1585019},
+    {-1585020},
+    {-1585021},
 };
 
-enum Yells
+enum eEnums
 {
-    SAY_AGGRO               = 0,
-    SAY_DEATH               = 10,
-};
+    SAY_AGGRO               = -1585012,
+    SAY_DEATH               = -1585022,
 
-enum Spells
-{
-    SPELL_DISPEL_MAGIC          = 27609,
-    SPELL_FLASH_HEAL            = 17843,
-    SPELL_SW_PAIN_NORMAL        = 14032,
-    SPELL_SW_PAIN_HEROIC        = 15654,
-    SPELL_SHIELD                = 44291,
-    SPELL_RENEW_NORMAL          = 44174,
-    SPELL_RENEW_HEROIC          = 46192,
+    SPELL_DISPEL_MAGIC      = 27609,
+    SPELL_FLASH_HEAL        = 17843,
+    SPELL_SW_PAIN_NORMAL    = 14032,
+    SPELL_SW_PAIN_HEROIC    = 15654,
+    SPELL_SHIELD            = 44291,
+    SPELL_RENEW_NORMAL      = 44174,
+    SPELL_RENEW_HEROIC      = 46192,
 
-    // Apoko
-    SPELL_WINDFURY_TOTEM        = 27621,
-    SPELL_WAR_STOMP             = 46026,
-    SPELL_PURGE                 = 27626,
-    SPELL_LESSER_HEALING_WAVE   = 44256,
-    SPELL_FROST_SHOCK           = 21401,
-    SPELL_FIRE_NOVA_TOTEM       = 44257,
-    SPELL_EARTHBIND_TOTEM       = 15786
-};
-
-enum Misc
-{
     MAX_ACTIVE_LACKEY       = 4
 };
 
@@ -110,7 +93,7 @@ class boss_priestess_delrissa : public CreatureScript
 public:
     boss_priestess_delrissa() : CreatureScript("boss_priestess_delrissa") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_priestess_delrissaAI(creature);
     }
@@ -138,7 +121,7 @@ public:
         uint32 DispelTimer;
         uint32 ResetTimer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             PlayersKilled = 0;
 
@@ -153,21 +136,21 @@ public:
         }
 
         //this mean she at some point evaded
-        void JustReachedHome() OVERRIDE
+        void JustReachedHome()
         {
             if (instance)
                  instance->SetData(DATA_DELRISSA_EVENT, FAIL);
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
 
             for (uint8 i = 0; i < MAX_ACTIVE_LACKEY; ++i)
             {
                 if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUID[i]))
                 {
-                    if (!pAdd->GetVictim())
+                    if (!pAdd->getVictim())
                     {
                         who->SetInCombatWith(pAdd);
                         pAdd->AddThreat(who, 0.0f);
@@ -182,7 +165,7 @@ public:
         void InitializeLackeys()
         {
             //can be called if Creature are dead, so avoid
-            if (!me->IsAlive())
+            if (!me->isAlive())
                 return;
 
             uint8 j = 0;
@@ -228,20 +211,20 @@ public:
             }
         }
 
-        void KilledUnit(Unit* victim) OVERRIDE
+        void KilledUnit(Unit* victim)
         {
             if (victim->GetTypeId() != TYPEID_PLAYER)
                 return;
 
-            Talk(PlayerDeath[PlayersKilled].id);
+            DoScriptText(PlayerDeath[PlayersKilled].id, me);
 
             if (PlayersKilled < 4)
                 ++PlayersKilled;
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(SAY_DEATH);
+            DoScriptText(SAY_DEATH, me);
 
             if (!instance)
                 return;
@@ -255,7 +238,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -280,7 +263,7 @@ public:
                 {
                     if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUID[i]))
                     {
-                        if (pAdd->IsAlive() && pAdd->GetHealth() < health)
+                        if (pAdd->isAlive() && pAdd->GetHealth() < health)
                             target = pAdd;
                     }
                 }
@@ -295,7 +278,7 @@ public:
 
                 if (urand(0, 1))
                     if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUID[rand()%MAX_ACTIVE_LACKEY]))
-                        if (pAdd->IsAlive())
+                        if (pAdd->isAlive())
                             target = pAdd;
 
                 DoCast(target, SPELL_RENEW_NORMAL);
@@ -308,7 +291,7 @@ public:
 
                 if (urand(0, 1))
                     if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUID[rand()%MAX_ACTIVE_LACKEY]))
-                        if (pAdd->IsAlive() && !pAdd->HasAura(SPELL_SHIELD))
+                        if (pAdd->isAlive() && !pAdd->HasAura(SPELL_SHIELD))
                             target = pAdd;
 
                 DoCast(target, SPELL_SHIELD);
@@ -327,7 +310,7 @@ public:
                         target = me;
                     else
                         if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUID[rand()%MAX_ACTIVE_LACKEY]))
-                            if (pAdd->IsAlive())
+                            if (pAdd->isAlive())
                                 target = pAdd;
                 }
 
@@ -348,9 +331,10 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum HealingPotion
+enum eHealingPotion
 {
     SPELL_HEALING_POTION    = 15503
 };
@@ -372,7 +356,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
 
     bool UsedPotion;
 
-    void Reset() OVERRIDE
+    void Reset()
     {
         UsedPotion = false;
 
@@ -385,12 +369,12 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
         // in case she is not alive and Reset was for some reason called, respawn her (most likely party wipe after killing her)
         if (Creature* pDelrissa = Unit::GetCreature(*me, instance ? instance->GetData64(DATA_DELRISSA) : 0))
         {
-            if (!pDelrissa->IsAlive())
+            if (!pDelrissa->isAlive())
                 pDelrissa->Respawn();
         }
     }
 
-    void EnterCombat(Unit* who) OVERRIDE
+    void EnterCombat(Unit* who)
     {
         if (!who)
             return;
@@ -401,7 +385,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
             {
                 if (Unit* pAdd = Unit::GetUnit(*me, m_auiLackeyGUIDs[i]))
                 {
-                    if (!pAdd->GetVictim() && pAdd != me)
+                    if (!pAdd->getVictim() && pAdd != me)
                     {
                         who->SetInCombatWith(pAdd);
                         pAdd->AddThreat(who, 0.0f);
@@ -411,7 +395,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
 
             if (Creature* pDelrissa = Unit::GetCreature(*me, instance->GetData64(DATA_DELRISSA)))
             {
-                if (pDelrissa->IsAlive() && !pDelrissa->GetVictim())
+                if (pDelrissa->isAlive() && !pDelrissa->getVictim())
                 {
                     who->SetInCombatWith(pDelrissa);
                     pDelrissa->AddThreat(who, 0.0f);
@@ -420,7 +404,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
         }
     }
 
-    void JustDied(Unit* /*killer*/) OVERRIDE
+    void JustDied(Unit* /*killer*/)
     {
         if (!instance)
             return;
@@ -432,7 +416,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
             return;
 
         //should delrissa really yell if dead?
-        pDelrissa->AI()->Talk(LackeyDeath[uiLackeyDeathCount].id);
+        DoScriptText(LackeyDeath[uiLackeyDeathCount].id, pDelrissa);
 
         instance->SetData(DATA_DELRISSA_DEATH_COUNT, SPECIAL);
 
@@ -442,7 +426,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
         if (uiLackeyDeathCount == MAX_ACTIVE_LACKEY)
         {
             //time to make her lootable and complete event if she died before lackeys
-            if (!pDelrissa->IsAlive())
+            if (!pDelrissa->isAlive())
             {
                 if (!pDelrissa->HasFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE))
                     pDelrissa->SetFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
@@ -452,7 +436,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
         }
     }
 
-    void KilledUnit(Unit* victim) OVERRIDE
+    void KilledUnit(Unit* victim)
     {
         if (!instance)
             return;
@@ -473,7 +457,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
         }
     }
 
-    void UpdateAI(uint32 diff) OVERRIDE
+    void UpdateAI(const uint32 diff)
     {
         if (!UsedPotion && HealthBelowPct(25))
         {
@@ -489,7 +473,7 @@ struct boss_priestess_lackey_commonAI : public ScriptedAI
     }
 };
 
-enum RogueSpells
+enum eRogueSpells
 {
     SPELL_KIDNEY_SHOT       = 27615,
     SPELL_GOUGE             = 12540,
@@ -504,7 +488,7 @@ class boss_kagani_nightstrike : public CreatureScript
 public:
     boss_kagani_nightstrike() : CreatureScript("boss_kagani_nightstrike") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_kagani_nightstrikeAI(creature);
     }
@@ -512,7 +496,7 @@ public:
     struct boss_kagani_nightstrikeAI : public boss_priestess_lackey_commonAI
     {
         //Rogue
-        boss_kagani_nightstrikeAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_kagani_nightstrikeAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Gouge_Timer;
         uint32 Kick_Timer;
@@ -521,7 +505,7 @@ public:
         uint32 Wait_Timer;
         bool InVanish;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Gouge_Timer = 5500;
             Kick_Timer = 7000;
@@ -534,7 +518,7 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -561,8 +545,8 @@ public:
             {
                 if (Wait_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_BACKSTAB, true);
-                    DoCastVictim(SPELL_KIDNEY_SHOT, true);
+                    DoCast(me->getVictim(), SPELL_BACKSTAB, true);
+                    DoCast(me->getVictim(), SPELL_KIDNEY_SHOT, true);
                     me->SetVisible(true);       // ...? Hacklike
                     InVanish = false;
                 } else Wait_Timer -= diff;
@@ -570,19 +554,19 @@ public:
 
             if (Gouge_Timer <= diff)
             {
-                DoCastVictim(SPELL_GOUGE);
+                DoCast(me->getVictim(), SPELL_GOUGE);
                 Gouge_Timer = 5500;
             } else Gouge_Timer -= diff;
 
             if (Kick_Timer <= diff)
             {
-                DoCastVictim(SPELL_KICK);
+                DoCast(me->getVictim(), SPELL_KICK);
                 Kick_Timer = 7000;
             } else Kick_Timer -= diff;
 
             if (Eviscerate_Timer <= diff)
             {
-                DoCastVictim(SPELL_EVISCERATE);
+                DoCast(me->getVictim(), SPELL_EVISCERATE);
                 Eviscerate_Timer = 4000;
             } else Eviscerate_Timer -= diff;
 
@@ -590,9 +574,10 @@ public:
                 DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum WarlockSpells
+enum eWarlockSpells
 {
     SPELL_IMMOLATE              = 44267,
     SPELL_SHADOW_BOLT           = 12471,
@@ -608,7 +593,7 @@ class boss_ellris_duskhallow : public CreatureScript
 public:
     boss_ellris_duskhallow() : CreatureScript("boss_ellris_duskhallow") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_ellris_duskhallowAI(creature);
     }
@@ -616,7 +601,7 @@ public:
     struct boss_ellris_duskhallowAI : public boss_priestess_lackey_commonAI
     {
         //Warlock
-        boss_ellris_duskhallowAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_ellris_duskhallowAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Immolate_Timer;
         uint32 Shadow_Bolt_Timer;
@@ -624,7 +609,7 @@ public:
         uint32 Curse_of_Agony_Timer;
         uint32 Fear_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Immolate_Timer = 6000;
             Shadow_Bolt_Timer = 3000;
@@ -635,12 +620,12 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             DoCast(me, SPELL_SUMMON_IMP);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -649,13 +634,13 @@ public:
 
             if (Immolate_Timer <= diff)
             {
-                DoCastVictim(SPELL_IMMOLATE);
+                DoCast(me->getVictim(), SPELL_IMMOLATE);
                 Immolate_Timer = 6000;
             } else Immolate_Timer -= diff;
 
             if (Shadow_Bolt_Timer <= diff)
             {
-                DoCastVictim(SPELL_SHADOW_BOLT);
+                DoCast(me->getVictim(), SPELL_SHADOW_BOLT);
                 Shadow_Bolt_Timer = 5000;
             } else Shadow_Bolt_Timer -= diff;
 
@@ -686,9 +671,10 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum KickDown
+enum eKickDown
 {
     SPELL_KNOCKDOWN     = 11428,
     SPELL_SNAP_KICK     = 46182
@@ -699,7 +685,7 @@ class boss_eramas_brightblaze : public CreatureScript
 public:
     boss_eramas_brightblaze() : CreatureScript("boss_eramas_brightblaze") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_eramas_brightblazeAI(creature);
     }
@@ -707,12 +693,12 @@ public:
     struct boss_eramas_brightblazeAI : public boss_priestess_lackey_commonAI
     {
         //Monk
-        boss_eramas_brightblazeAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_eramas_brightblazeAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Knockdown_Timer;
         uint32 Snap_Kick_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Knockdown_Timer = 6000;
             Snap_Kick_Timer = 4500;
@@ -720,7 +706,7 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -729,22 +715,23 @@ public:
 
             if (Knockdown_Timer <= diff)
             {
-                DoCastVictim(SPELL_KNOCKDOWN);
+                DoCast(me->getVictim(), SPELL_KNOCKDOWN);
                 Knockdown_Timer = 6000;
             } else Knockdown_Timer -= diff;
 
             if (Snap_Kick_Timer <= diff)
             {
-                DoCastVictim(SPELL_SNAP_KICK);
+                DoCast(me->getVictim(), SPELL_SNAP_KICK);
                 Snap_Kick_Timer  = 4500;
             } else Snap_Kick_Timer -= diff;
 
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum MageSpells
+enum eMageSpells
 {
     SPELL_POLYMORPH         = 13323,
     SPELL_ICE_BLOCK         = 27619,
@@ -760,7 +747,7 @@ class boss_yazzai : public CreatureScript
 public:
     boss_yazzai() : CreatureScript("boss_yazzai") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_yazzaiAI(creature);
     }
@@ -768,7 +755,7 @@ public:
     struct boss_yazzaiAI : public boss_priestess_lackey_commonAI
     {
         //Mage
-        boss_yazzaiAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_yazzaiAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         bool HasIceBlocked;
 
@@ -781,7 +768,7 @@ public:
         uint32 Frostbolt_Timer;
         uint32 Blink_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             HasIceBlocked = false;
 
@@ -797,7 +784,7 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -829,27 +816,27 @@ public:
 
             if (Ice_Lance_Timer <= diff)
             {
-                DoCastVictim(SPELL_ICE_LANCE);
+                DoCast(me->getVictim(), SPELL_ICE_LANCE);
                 Ice_Lance_Timer = 12000;
             } else Ice_Lance_Timer -= diff;
 
             if (Cone_of_Cold_Timer <= diff)
             {
-                DoCastVictim(SPELL_CONE_OF_COLD);
+                DoCast(me->getVictim(), SPELL_CONE_OF_COLD);
                 Cone_of_Cold_Timer = 10000;
             } else Cone_of_Cold_Timer -= diff;
 
             if (Frostbolt_Timer <= diff)
             {
-                DoCastVictim(SPELL_FROSTBOLT);
+                DoCast(me->getVictim(), SPELL_FROSTBOLT);
                 Frostbolt_Timer = 8000;
             } else Frostbolt_Timer -= diff;
 
             if (Blink_Timer <= diff)
             {
                 bool InMeleeRange = false;
-                ThreatContainer::StorageType const &t_list = me->getThreatManager().getThreatList();
-                for (ThreatContainer::StorageType::const_iterator itr = t_list.begin(); itr!= t_list.end(); ++itr)
+                std::list<HostileReference*>& t_list = me->getThreatManager().getThreatList();
+                for (std::list<HostileReference*>::const_iterator itr = t_list.begin(); itr!= t_list.end(); ++itr)
                 {
                     if (Unit* target = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
                     {
@@ -872,9 +859,10 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum WarriorSpells
+enum eWarriorSpells
 {
     SPELL_INTERCEPT_STUN        = 27577,
     SPELL_DISARM                = 27581,
@@ -890,7 +878,7 @@ class boss_warlord_salaris : public CreatureScript
 public:
     boss_warlord_salaris() : CreatureScript("boss_warlord_salaris") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_warlord_salarisAI(creature);
     }
@@ -898,7 +886,7 @@ public:
     struct boss_warlord_salarisAI : public boss_priestess_lackey_commonAI
     {
         //Warrior
-        boss_warlord_salarisAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_warlord_salarisAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Intercept_Stun_Timer;
         uint32 Disarm_Timer;
@@ -907,7 +895,7 @@ public:
         uint32 Hamstring_Timer;
         uint32 Mortal_Strike_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Intercept_Stun_Timer = 500;
             Disarm_Timer = 6000;
@@ -919,12 +907,12 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             DoCast(me, SPELL_BATTLE_SHOUT);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -934,8 +922,8 @@ public:
             if (Intercept_Stun_Timer <= diff)
             {
                 bool InMeleeRange = false;
-                ThreatContainer::StorageType const &t_list = me->getThreatManager().getThreatList();
-                for (ThreatContainer::StorageType::const_iterator itr = t_list.begin(); itr!= t_list.end(); ++itr)
+                std::list<HostileReference*>& t_list = me->getThreatManager().getThreatList();
+                for (std::list<HostileReference*>::const_iterator itr = t_list.begin(); itr!= t_list.end(); ++itr)
                 {
                     if (Unit* target = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
                     {
@@ -960,40 +948,41 @@ public:
 
             if (Disarm_Timer <= diff)
             {
-                DoCastVictim(SPELL_DISARM);
+                DoCast(me->getVictim(), SPELL_DISARM);
                 Disarm_Timer = 6000;
             } else Disarm_Timer -= diff;
 
             if (Hamstring_Timer <= diff)
             {
-                DoCastVictim(SPELL_HAMSTRING);
+                DoCast(me->getVictim(), SPELL_HAMSTRING);
                 Hamstring_Timer = 4500;
             } else Hamstring_Timer -= diff;
 
             if (Mortal_Strike_Timer <= diff)
             {
-                DoCastVictim(SPELL_MORTAL_STRIKE);
+                DoCast(me->getVictim(), SPELL_MORTAL_STRIKE);
                 Mortal_Strike_Timer = 4500;
             } else Mortal_Strike_Timer -= diff;
 
             if (Piercing_Howl_Timer <= diff)
             {
-                DoCastVictim(SPELL_PIERCING_HOWL);
+                DoCast(me->getVictim(), SPELL_PIERCING_HOWL);
                 Piercing_Howl_Timer = 10000;
             } else Piercing_Howl_Timer -= diff;
 
             if (Frightening_Shout_Timer <= diff)
             {
-                DoCastVictim(SPELL_FRIGHTENING_SHOUT);
+                DoCast(me->getVictim(), SPELL_FRIGHTENING_SHOUT);
                 Frightening_Shout_Timer = 18000;
             } else Frightening_Shout_Timer -= diff;
 
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum HunterSpells
+enum eHunterSpells
 {
     SPELL_AIMED_SHOT            = 44271,
     SPELL_SHOOT                 = 15620,
@@ -1010,7 +999,7 @@ class boss_garaxxas : public CreatureScript
 public:
     boss_garaxxas() : CreatureScript("boss_garaxxas") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_garaxxasAI(creature);
     }
@@ -1032,7 +1021,7 @@ public:
         uint32 Wing_Clip_Timer;
         uint32 Freezing_Trap_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Aimed_Shot_Timer = 6000;
             Shoot_Timer = 2500;
@@ -1048,23 +1037,23 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void JustSummoned(Creature* summoned) OVERRIDE
+        void JustSummoned(Creature* summoned)
         {
             m_uiPetGUID = summoned->GetGUID();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
 
             boss_priestess_lackey_commonAI::UpdateAI(diff);
 
-            if (me->IsWithinDistInMap(me->GetVictim(), ATTACK_DISTANCE))
+            if (me->IsWithinDistInMap(me->getVictim(), ATTACK_DISTANCE))
             {
                 if (Wing_Clip_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_WING_CLIP);
+                    DoCast(me->getVictim(), SPELL_WING_CLIP);
                     Wing_Clip_Timer = 4000;
                 } else Wing_Clip_Timer -= diff;
 
@@ -1079,7 +1068,7 @@ public:
                     else
                     {
                         //if go does not exist, then we can cast
-                        DoCastVictim(SPELL_FREEZING_TRAP);
+                        DoCast(me->getVictim(), SPELL_FREEZING_TRAP);
                         Freezing_Trap_Timer = 15000;
                     }
                 } else Freezing_Trap_Timer -= diff;
@@ -1090,30 +1079,42 @@ public:
             {
                 if (Concussive_Shot_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_CONCUSSIVE_SHOT);
+                    DoCast(me->getVictim(), SPELL_CONCUSSIVE_SHOT);
                     Concussive_Shot_Timer = 8000;
                 } else Concussive_Shot_Timer -= diff;
 
                 if (Multi_Shot_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_MULTI_SHOT);
+                    DoCast(me->getVictim(), SPELL_MULTI_SHOT);
                     Multi_Shot_Timer = 10000;
                 } else Multi_Shot_Timer -= diff;
 
                 if (Aimed_Shot_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_AIMED_SHOT);
+                    DoCast(me->getVictim(), SPELL_AIMED_SHOT);
                     Aimed_Shot_Timer = 6000;
                 } else Aimed_Shot_Timer -= diff;
 
                 if (Shoot_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_SHOOT);
+                    DoCast(me->getVictim(), SPELL_SHOOT);
                     Shoot_Timer = 2500;
                 } else Shoot_Timer -= diff;
             }
         }
     };
+
+};
+
+enum Spells
+{
+    SPELL_WINDFURY_TOTEM        = 27621,
+    SPELL_WAR_STOMP             = 46026,
+    SPELL_PURGE                 = 27626,
+    SPELL_LESSER_HEALING_WAVE   = 44256,
+    SPELL_FROST_SHOCK           = 21401,
+    SPELL_FIRE_NOVA_TOTEM       = 44257,
+    SPELL_EARTHBIND_TOTEM       = 15786
 };
 
 class boss_apoko : public CreatureScript
@@ -1121,7 +1122,7 @@ class boss_apoko : public CreatureScript
 public:
     boss_apoko() : CreatureScript("boss_apoko") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_apokoAI(creature);
     }
@@ -1129,7 +1130,7 @@ public:
     struct boss_apokoAI : public boss_priestess_lackey_commonAI
     {
         //Shaman
-        boss_apokoAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_apokoAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Totem_Timer;
         uint8  Totem_Amount;
@@ -1138,7 +1139,7 @@ public:
         uint32 Healing_Wave_Timer;
         uint32 Frost_Shock_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Totem_Timer = 2000;
             Totem_Amount = 1;
@@ -1150,7 +1151,7 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -1180,7 +1181,7 @@ public:
 
             if (Frost_Shock_Timer <= diff)
             {
-                DoCastVictim(SPELL_FROST_SHOCK);
+                DoCast(me->getVictim(), SPELL_FROST_SHOCK);
                 Frost_Shock_Timer = 7000;
             } else Frost_Shock_Timer -= diff;
 
@@ -1191,7 +1192,7 @@ public:
                 // if (guid)
                 // {
                 //   Unit* pAdd = Unit::GetUnit(*me, (*itr)->guid);
-                //   if (pAdd && pAdd->IsAlive())
+                //   if (pAdd && pAdd->isAlive())
                 //   {
                 DoCast(me, SPELL_LESSER_HEALING_WAVE);
                 Healing_Wave_Timer = 5000;
@@ -1202,9 +1203,10 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
-enum EngineerSpells
+enum eEngineerSpells
 {
     SPELL_GOBLIN_DRAGON_GUN     = 44272,
     SPELL_ROCKET_LAUNCH         = 44137,
@@ -1219,7 +1221,7 @@ class boss_zelfan : public CreatureScript
 public:
     boss_zelfan() : CreatureScript("boss_zelfan") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_zelfanAI(creature);
     }
@@ -1227,7 +1229,7 @@ public:
     struct boss_zelfanAI : public boss_priestess_lackey_commonAI
     {
         //Engineer
-        boss_zelfanAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) { }
+        boss_zelfanAI(Creature* creature) : boss_priestess_lackey_commonAI(creature) {}
 
         uint32 Goblin_Dragon_Gun_Timer;
         uint32 Rocket_Launch_Timer;
@@ -1235,7 +1237,7 @@ public:
         uint32 High_Explosive_Sheep_Timer;
         uint32 Fel_Iron_Bomb_Timer;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             Goblin_Dragon_Gun_Timer = 20000;
             Rocket_Launch_Timer = 7000;
@@ -1246,7 +1248,7 @@ public:
             boss_priestess_lackey_commonAI::Reset();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!UpdateVictim())
                 return;
@@ -1255,19 +1257,19 @@ public:
 
             if (Goblin_Dragon_Gun_Timer <= diff)
             {
-                DoCastVictim(SPELL_GOBLIN_DRAGON_GUN);
+                DoCast(me->getVictim(), SPELL_GOBLIN_DRAGON_GUN);
                 Goblin_Dragon_Gun_Timer = 10000;
             } else Goblin_Dragon_Gun_Timer -= diff;
 
             if (Rocket_Launch_Timer <= diff)
             {
-                DoCastVictim(SPELL_ROCKET_LAUNCH);
+                DoCast(me->getVictim(), SPELL_ROCKET_LAUNCH);
                 Rocket_Launch_Timer = 9000;
             } else Rocket_Launch_Timer -= diff;
 
             if (Fel_Iron_Bomb_Timer <= diff)
             {
-                DoCastVictim(SPELL_FEL_IRON_BOMB);
+                DoCast(me->getVictim(), SPELL_FEL_IRON_BOMB);
                 Fel_Iron_Bomb_Timer = 15000;
             } else Fel_Iron_Bomb_Timer -= diff;
 
@@ -1296,17 +1298,18 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
 /*
-class npc_high_explosive_sheep : public CreatureScript
+class mob_high_explosive_sheep : public CreatureScript
 {
 public:
-    npc_high_explosive_sheep() : CreatureScript("npc_high_explosive_sheep") { }
+    mob_high_explosive_sheep() : CreatureScript("mob_high_explosive_sheep") { }
 
-    //CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    //CreatureAI* GetAI(Creature* creature) const
     //{
-    //    return new npc_high_explosive_sheepAI(creature);
+    //    return new mob_high_explosive_sheepAI (creature);
     //};
 };
 */
@@ -1322,5 +1325,5 @@ void AddSC_boss_priestess_delrissa()
     new boss_garaxxas();
     new boss_apoko();
     new boss_zelfan();
-    // new npc_high_explosive_sheep();
+    // new mob_high_explosive_sheep();
 }

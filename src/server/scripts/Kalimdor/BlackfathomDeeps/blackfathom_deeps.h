@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -18,8 +16,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BFD_H_
-#define BFD_H_
+#ifndef DEF_BFD_H
+#define DEF_BFD_H
 
 enum Data64
 {
@@ -43,7 +41,7 @@ enum Data
     DATA_EVENT
 };
 
-enum CreatureIds
+enum Creatures
 {
     NPC_TWILIGHT_LORD_KELRIS                               = 4832,
     NPC_LORGUS_JETT                                        = 12902,
@@ -56,7 +54,7 @@ enum CreatureIds
     NPC_MORRIDUNE                                          = 6729
 };
 
-enum GameObjectIds
+enum GameObjects
 {
     GO_SHRINE_OF_GELIHAST                                  = 103015,
     GO_FIRE_OF_AKU_MAI_1                                   = 21118,
@@ -66,5 +64,4 @@ enum GameObjectIds
     GO_AKU_MAI_DOOR                                        = 21117,
     GO_ALTAR_OF_THE_DEEPS                                  = 103016
 };
-
-#endif // BFD_H_
+#endif

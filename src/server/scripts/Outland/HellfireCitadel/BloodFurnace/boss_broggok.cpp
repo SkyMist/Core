@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,13 +27,10 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "blood_furnace.h"
 
-enum Yells
+enum eEnums
 {
-    SAY_AGGRO               = 0
-};
+    SAY_AGGRO               = -1542008,
 
-enum Spells
-{
     SPELL_SLIME_SPRAY       = 30913,
     SPELL_POISON_CLOUD      = 30916,
     SPELL_POISON_BOLT       = 30917,
@@ -66,7 +61,8 @@ class boss_broggok : public CreatureScript
             uint32 PoisonBolt_Timer;
             bool canAttack;
 
-            void Reset() OVERRIDE
+
+            void Reset()
             {
                 _Reset();
                 AcidSpray_Timer = 10000;
@@ -76,28 +72,29 @@ class boss_broggok : public CreatureScript
                 instance->SetData(TYPE_BROGGOK_EVENT, NOT_STARTED);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
-                Talk(SAY_AGGRO);
+                DoScriptText(SAY_AGGRO, me);
             }
 
-            void JustSummoned(Creature* summoned) OVERRIDE
+            void JustSummoned(Creature* summoned)
             {
                 summoned->setFaction(16);
                 summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                summoned->CastSpell(summoned, SPELL_POISON, false, 0, 0, me->GetGUID());
+                summoned->CastSpell(summoned, SPELL_POISON, false, 0, NULLAURA_EFFECT, me->GetGUID());
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
                 if (!canAttack)
                     return;
+
                 if (AcidSpray_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_SLIME_SPRAY);
+                    DoCast(me->getVictim(), SPELL_SLIME_SPRAY);
                     AcidSpray_Timer = 4000+rand()%8000;
                 }
                 else
@@ -105,7 +102,7 @@ class boss_broggok : public CreatureScript
 
                 if (PoisonBolt_Timer <= diff)
                 {
-                    DoCastVictim(SPELL_POISON_BOLT);
+                    DoCast(me->getVictim(), SPELL_POISON_BOLT);
                     PoisonBolt_Timer = 4000+rand()%8000;
                 }
                 else
@@ -122,7 +119,7 @@ class boss_broggok : public CreatureScript
                 DoMeleeAttackIfReady();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/)
             {
                 if (instance)
                 {
@@ -132,29 +129,9 @@ class boss_broggok : public CreatureScript
                 }
             }
 
-            void DoAction(int32 action) OVERRIDE
-            {
-                switch (action)
-                {
-                    case ACTION_PREPARE_BROGGOK:
-                        me->SetInCombatWithZone();
-                        break;
-                    case ACTION_ACTIVATE_BROGGOK:
-                        me->SetReactState(REACT_AGGRESSIVE);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NON_ATTACKABLE);
-                        canAttack = true;
-                        break;
-                    case ACTION_RESET_BROGGOK:
-                        me->SetReactState(REACT_PASSIVE);
-                        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_NON_ATTACKABLE);
-                        canAttack = false;
-                        break;
-                }
-            }
-
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_broggokAI(creature);
         }
@@ -162,21 +139,21 @@ class boss_broggok : public CreatureScript
 
 class go_broggok_lever : public GameObjectScript
 {
-    public:
-        go_broggok_lever() : GameObjectScript("go_broggok_lever") { }
+public:
+    go_broggok_lever() : GameObjectScript("go_broggok_lever") {}
 
-        bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
-        {
-            if (InstanceScript* instance = go->GetInstanceScript())
-                if (instance->GetData(TYPE_BROGGOK_EVENT) != DONE && instance->GetData(TYPE_BROGGOK_EVENT) != IN_PROGRESS)
-                {
-                    instance->SetData(TYPE_BROGGOK_EVENT, IN_PROGRESS);
-                    if (Creature* broggok = Creature::GetCreature(*go, instance->GetData64(DATA_BROGGOK)))
-                        broggok->AI()->DoAction(ACTION_PREPARE_BROGGOK);
-                }
+    bool OnGossipHello(Player* /*player*/, GameObject* go)
+    {
+        if (InstanceScript* instance = go->GetInstanceScript())
+            if (instance->GetData(TYPE_BROGGOK_EVENT) != DONE && instance->GetData(TYPE_BROGGOK_EVENT) != IN_PROGRESS)
+            {
+                instance->SetData(TYPE_BROGGOK_EVENT, IN_PROGRESS);
+                if (Creature* broggok = Creature::GetCreature(*go, instance->GetData64(DATA_BROGGOK)))
+                    broggok->AI()->DoAction(ACTION_PREPARE_BROGGOK);
+            }
             go->UseDoorOrButton();
             return false;
-        }
+    }
 };
 
 void AddSC_boss_broggok()

@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -21,14 +18,13 @@
 #ifndef DEF_GNOMEREGAN_H
 #define DEF_GNOMEREGAN_H
 
-enum GameObjectIds
+enum eGameObjects
 {
-    GO_CAVE_IN_LEFT     = 146085,
-    GO_CAVE_IN_RIGHT    = 146086,
-    GO_RED_ROCKET       = 103820
+    GO_CAVE_IN_LEFT                 = 146085,
+    GO_CAVE_IN_RIGHT                = 146086
 };
 
-enum CreatureIds
+enum eCreatures
 {
     NPC_BLASTMASTER_EMI_SHORTFUSE   = 7998,
     NPC_CAVERNDEEP_AMBUSHER         = 6207,
@@ -36,12 +32,12 @@ enum CreatureIds
     NPC_CHOMPER                     = 6215
 };
 
-enum Data
+enum eData
 {
-    TYPE_EVENT = 1
+    TYPE_EVENT                      = 1
 };
 
-enum Data64
+enum eData64
 {
     DATA_GO_CAVE_IN_LEFT,
     DATA_GO_CAVE_IN_RIGHT,

@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -37,7 +36,7 @@ namespace VMAP
     class MeshTriangle
     {
         public:
-            MeshTriangle(){ }
+            MeshTriangle() : idx0(0), idx1(0), idx2(0) { }
             MeshTriangle(uint32 na, uint32 nb, uint32 nc): idx0(na), idx1(nb), idx2(nc) { }
 
             uint32 idx0;
@@ -60,7 +59,7 @@ namespace VMAP
             bool writeToFile(FILE* wf);
             static bool readFromFile(FILE* rf, WmoLiquid* &liquid);
         private:
-            WmoLiquid(): iHeight(0), iFlags(0) { }
+            WmoLiquid(): iTilesX(0), iTilesY(0), iType(0), iHeight(0), iFlags(0) { }
             uint32 iTilesX;       //!< number of tiles in x direction, each
             uint32 iTilesY;
             G3D::Vector3 iCorner; //!< the lower corner
@@ -75,7 +74,7 @@ namespace VMAP
     class GroupModel
     {
         public:
-            GroupModel(): iLiquid(0) { }
+            GroupModel(): iMogpFlags(0), iGroupWMOID(0), iLiquid(0) { }
             GroupModel(const GroupModel &other);
             GroupModel(uint32 mogpFlags, uint32 groupWMOID, const G3D::AABox &bound):
                         iBound(bound), iMogpFlags(mogpFlags), iGroupWMOID(groupWMOID), iLiquid(0) { }

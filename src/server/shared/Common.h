@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -17,11 +16,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRINITYCORE_COMMON_H
-#define TRINITYCORE_COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 
 // config.h needs to be included 1st
-/// @todo this thingy looks like hack, but its not, need to
+// TODO this thingy looks like hack, but its not, need to
 // make separate header however, because It makes mess here.
 #ifdef HAVE_CONFIG_H
 // Remove Some things that we will define
@@ -72,6 +71,12 @@
 #include <signal.h>
 #include <assert.h>
 
+#if PLATFORM == PLATFORM_WINDOWS
+#define STRCASECMP stricmp
+#else
+#define STRCASECMP strcasecmp
+#endif
+
 #include <set>
 #include <list>
 #include <string>
@@ -109,6 +114,8 @@
 
 #include <float.h>
 
+#define I32FMT "%08I32X"
+#define I64FMT "%016I64X"
 #define snprintf _snprintf
 #define atoll _atoi64
 #define vsnprintf _vsnprintf
@@ -119,6 +126,8 @@
 
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
+#define I32FMT "%08X"
+#define I64FMT "%016llX"
 
 #endif
 
@@ -141,31 +150,33 @@ enum TimeConstants
 
 enum AccountTypes
 {
-    SEC_PLAYER         = 0,
-    SEC_MODERATOR      = 1,
-    SEC_GAMEMASTER     = 2,
-    SEC_ADMINISTRATOR  = 3,
-    SEC_CONSOLE        = 4                                  // must be always last in list, accounts must have less security level always also
+    SEC_PLAYER                = 0,
+    SEC_MODERATOR             = 1,
+    SEC_GAMEMASTER            = 2,
+    SEC_CONFIRMED_GAMEMASTER  = 3,
+    SEC_REALM_LEADER          = 4,
+    SEC_GM_LEADER             = 5,
+    SEC_ADMINISTRATOR         = 6,
+    SEC_CONSOLE               = 7                                  // must be always last in list, accounts must have less security level always also
 };
 
 enum LocaleConstant
 {
-    LOCALE_enUS = 0,
-    LOCALE_koKR = 1,
-    LOCALE_frFR = 2,
-    LOCALE_deDE = 3,
-    LOCALE_zhCN = 4,
-    LOCALE_zhTW = 5,
-    LOCALE_esES = 6,
-    LOCALE_esMX = 7,
-    LOCALE_ruRU = 8,
-    LOCALE_itIT = 9,
-    LOCALE_ptBR = 10,
-    LOCALE_ptPT = 11
+    LOCALE_enUS =  0,
+    LOCALE_koKR =  1,
+    LOCALE_frFR =  2,
+    LOCALE_deDE =  3,
+    LOCALE_zhCN =  4,
+    LOCALE_zhTW =  5,
+    LOCALE_esES =  6,
+    LOCALE_esMX =  7,
+    LOCALE_ruRU =  8,
+    LOCALE_ptPT =  9,
+    LOCALE_itIT = 10,
 };
 
-const uint8 TOTAL_LOCALES = 12;
-#define DEFAULT_LOCALE LOCALE_enUS
+const uint8 TOTAL_LOCALES = 11;
+const LocaleConstant DEFAULT_LOCALE = LOCALE_enUS;
 
 #define MAX_LOCALES 11
 #define MAX_ACCOUNT_TUTORIAL_VALUES 8
@@ -176,22 +187,36 @@ LocaleConstant GetLocaleByName(const std::string& name);
 
 typedef std::vector<std::string> StringVector;
 
-#if defined(__GNUC__)
-#pragma pack(1)
-#else
-#pragma pack(push, 1)
-#endif
-
-struct LocalizedString
+enum GM_COMMAND_TAB
 {
-    char const* Str[TOTAL_LOCALES];
+    GM,
+    PLAYER
 };
 
-#if defined(__GNUC__)
-#pragma pack()
-#else
-#pragma pack(pop)
-#endif
+struct GmCommand
+{
+    uint32 accountID[2];
+    std::string accountName[2];
+    uint32 characterID[2];
+    std::string characterName[2];
+    std::string command;
+};
+
+struct GmChat
+{
+    uint32 type;
+    uint32 accountID[2];
+    std::string accountName[2];
+    uint32 characterID[2];
+    std::string characterName[2];
+    std::string message;
+};
+
+struct ArenaLog
+{
+    uint32 timestamp;
+    std::string str;
+};
 
 // we always use stdlibc++ std::max/std::min, undefine some not C++ standard defines (Win API and some other platforms)
 #ifdef max

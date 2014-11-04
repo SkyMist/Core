@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,7 +23,7 @@
 #include "DBCFileLoader.h"
 #include "Errors.h"
 
-DBCFileLoader::DBCFileLoader() : fieldsOffset(NULL), data(NULL), stringTable(NULL) { }
+DBCFileLoader::DBCFileLoader() : recordSize(0), recordCount(0), fieldCount(0), stringSize(0), fieldsOffset(NULL), data(NULL), stringTable(NULL) { }
 
 bool DBCFileLoader::Load(const char* filename, const char* fmt)
 {
@@ -156,6 +155,9 @@ uint32 DBCFileLoader::GetFormatRecordSize(const char* format, int32* index_pos)
             case FT_NA:
             case FT_NA_BYTE:
                 break;
+            case FT_LOGIC:
+                ASSERT(false && "Attempted to load DBC files that do not have field types that match what is in the core. Check DBCfmt.h or your DBC files.");
+                break;
             default:
                 ASSERT(false && "Unknown field format character in DBCfmt.h");
                 break;
@@ -247,6 +249,9 @@ char* DBCFileLoader::AutoProduceData(const char* format, uint32& records, char**
                     *((char**)(&dataTable[offset])) = NULL;   // will replace non-empty or "" strings in AutoProduceStrings
                     offset += sizeof(char*);
                     break;
+                case FT_LOGIC:
+                    ASSERT(false && "Attempted to load DBC files that do not have field types that match what is in the core. Check DBCfmt.h or your DBC files.");
+                    break;
                 case FT_NA:
                 case FT_NA_BYTE:
                 case FT_SORT:
@@ -301,6 +306,9 @@ char* DBCFileLoader::AutoProduceStrings(const char* format, char* dataTable)
                     offset += sizeof(char*);
                     break;
                  }
+                 case FT_LOGIC:
+                     ASSERT(false && "Attempted to load DBC files that does not have field types that match what is in the core. Check DBCfmt.h or your DBC files.");
+                     break;
                  case FT_NA:
                  case FT_NA_BYTE:
                  case FT_SORT:

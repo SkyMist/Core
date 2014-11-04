@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -16,11 +15,10 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 #ifndef __BATTLEGROUNDAB_H
 #define __BATTLEGROUNDAB_H
 
-#include "Battleground.h"
+class Battleground;
 
 enum BG_AB_WorldStates
 {
@@ -104,7 +102,7 @@ enum BG_AB_ObjectType
     BG_AB_OBJECT_SPEEDBUFF_GOLD_MINE     = 54,
     BG_AB_OBJECT_REGENBUFF_GOLD_MINE     = 55,
     BG_AB_OBJECT_BERSERKBUFF_GOLD_MINE   = 56,
-    BG_AB_OBJECT_MAX                     = 57
+    BG_AB_OBJECT_MAX                     = 57,
 };
 
 /* Object id templates from DB */
@@ -125,7 +123,7 @@ enum BG_AB_ObjectTypes
 
 enum BG_AB_Timers
 {
-    BG_AB_FLAG_CAPTURING_TIME           = 60000
+    BG_AB_FLAG_CAPTURING_TIME           = 60000,
 };
 
 enum BG_AB_Score
@@ -148,7 +146,7 @@ enum BG_AB_BattlegroundNodes
     BG_AB_SPIRIT_ALIANCE        = 5,
     BG_AB_SPIRIT_HORDE          = 6,
 
-    BG_AB_ALL_NODES_COUNT       = 7                         // all nodes (dynamic and static)
+    BG_AB_ALL_NODES_COUNT       = 7,                        // all nodes (dynamic and static)
 };
 
 enum BG_AB_NodeStatus
@@ -180,10 +178,8 @@ enum BG_AB_Objectives
 
 #define BG_AB_NotABBGWeekendHonorTicks      260
 #define BG_AB_ABBGWeekendHonorTicks         160
-
-// Patch 4.2.0 (2011-06-28): Reputation is now earned for every 260 resources (250 during Call to Arms).
-#define BG_AB_NotABBGWeekendReputationTicks 260
-#define BG_AB_ABBGWeekendReputationTicks    250
+#define BG_AB_NotABBGWeekendReputationTicks 160
+#define BG_AB_ABBGWeekendReputationTicks    120
 
 #define AB_EVENT_START_BATTLE               9158 // Achievement: Let's Get This Done
 
@@ -240,13 +236,13 @@ struct BG_AB_BannerTimer
     uint8       teamIndex;
 };
 
-struct BattlegroundABScore : public BattlegroundScore
+class BattlegroundABScore : public BattlegroundScore
 {
-    BattlegroundABScore(): BasesAssaulted(0), BasesDefended(0) { }
-    ~BattlegroundABScore() { }
-
-    uint32 BasesAssaulted;
-    uint32 BasesDefended;
+    public:
+        BattlegroundABScore(): BasesAssaulted(0), BasesDefended(0) {};
+        virtual ~BattlegroundABScore() {};
+        uint32 BasesAssaulted;
+        uint32 BasesDefended;
 };
 
 class BattlegroundAB : public Battleground
@@ -256,37 +252,35 @@ class BattlegroundAB : public Battleground
         ~BattlegroundAB();
 
         void AddPlayer(Player* player);
-        void StartingEventCloseDoors();
-        void StartingEventOpenDoors();
+        virtual void StartingEventCloseDoors();
+        virtual void StartingEventOpenDoors();
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        bool SetupBattleground();
-        void Reset();
+        virtual bool SetupBattleground();
+        virtual void Reset();
         void EndBattleground(uint32 winner);
-        WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
+        virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 
         /* Scorekeeping */
-        void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
+        virtual void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
 
-        void FillInitialWorldStates(ByteBuffer& data);
+        virtual void FillInitialWorldStates(WorldPacket& data);
 
         /* Nodes occupying */
-        void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
+        virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
 
         /* achievement req. */
-        bool IsAllNodesControlledByTeam(uint32 team) const;
-        bool CheckAchievementCriteriaMeet(uint32 /*criteriaId*/, Player const* /*player*/, Unit const* /*target*/ = NULL, uint32 /*miscvalue1*/ = 0);
-
-        uint32 GetPrematureWinner();
+        bool IsAllNodesControlledByTeam(uint32 team) const;  // overwrited
+        bool IsTeamScores500Disadvantage(uint32 team) const { return m_TeamScores500Disadvantage[GetTeamIndexByTeamId(team)]; }
     private:
-        void PostUpdateImpl(uint32 diff);
+        virtual void PostUpdateImpl(uint32 diff);
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
         void _DelBanner(uint8 node, uint8 type, uint8 teamIndex);
         void _SendNodeUpdate(uint8 node);
 
         /* Creature spawning/despawning */
-        /// @todo working, scripted peons spawning
+        // TODO: working, scripted peons spawning
         void _NodeOccupied(uint8 node, Team team);
         void _NodeDeOccupied(uint8 node);
 
@@ -310,5 +304,6 @@ class BattlegroundAB : public Battleground
         uint32              m_ReputationTics;
         // need for achievements
         bool                m_TeamScores500Disadvantage[BG_TEAMS_COUNT];
+        int32 m_CheatersCheckTimer;
 };
 #endif

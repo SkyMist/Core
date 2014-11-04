@@ -1,5 +1,4 @@
-# Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -9,13 +8,20 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+if( USE_COREPCH )
+  include_directories(${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
 file(GLOB_RECURSE sources_Accounts Accounts/*.cpp Accounts/*.h)
+file(GLOB_RECURSE sources_Anticheat Anticheat/*.cpp Anticheat/*.h)
 file(GLOB_RECURSE sources_Achievements Achievements/*.cpp Achievements/*.h)
 file(GLOB_RECURSE sources_Addons Addons/*.cpp Addons/*.h)
 file(GLOB_RECURSE sources_AI AI/*.cpp AI/*.h)
 file(GLOB_RECURSE sources_AuctionHouse AuctionHouse/*.cpp AuctionHouse/*.h)
 file(GLOB_RECURSE sources_Battlefield Battlefield/*.cpp Battlefield/*.h)
 file(GLOB_RECURSE sources_Battlegrounds Battlegrounds/*.cpp Battlegrounds/*.h)
+file(GLOB_RECURSE sources_BattlePet BattlePet/*.cpp BattlePet/*.h)
+file(GLOB_RECURSE sources_BlackMarket BlackMarket/*.cpp BlackMarket/*.h)
 file(GLOB_RECURSE sources_Calendar Calendar/*.cpp Calendar/*.h)
 file(GLOB_RECURSE sources_Chat Chat/*.cpp Chat/*.h)
 file(GLOB_RECURSE sources_Combat Combat/*.cpp Combat/*.h)
@@ -37,7 +43,6 @@ file(GLOB_RECURSE sources_Miscellaneous Miscellaneous/*.cpp Miscellaneous/*.h)
 file(GLOB_RECURSE sources_Movement Movement/*.cpp Movement/*.h)
 file(GLOB_RECURSE sources_OutdoorPvP OutdoorPvP/*.cpp OutdoorPvP/*.h)
 file(GLOB_RECURSE sources_Pools Pools/*.cpp Pools/*.h)
-file(GLOB_RECURSE sources_PrecompiledHeaders PrecompiledHeaders/*.cpp PrecompiledHeaders/*.h)
 file(GLOB_RECURSE sources_Quests Quests/*.cpp Quests/*.h)
 file(GLOB_RECURSE sources_Reputation Reputation/*.cpp Reputation/*.h)
 file(GLOB_RECURSE sources_Scripting Scripting/*.cpp Scripting/*.h)
@@ -50,65 +55,29 @@ file(GLOB_RECURSE sources_Tickets Tickets/*.cpp Tickets/*.h)
 file(GLOB_RECURSE sources_Warden Warden/*.cpp Warden/*.h)
 file(GLOB_RECURSE sources_Weather Weather/*.cpp Weather/*.h)
 file(GLOB_RECURSE sources_World World/*.cpp World/*.h)
+file(GLOB_RECURSE sources_shared_ptrs SharedPtrs/*.h)
 
-source_group(CMake FILES CMakeLists.txt)
-source_group(Accounts FILES ${sources_Accounts})
-source_group(Achievements FILES ${sources_Achievements})
-source_group(Addons FILES ${sources_Addons})
-source_group(AI FILES ${sources_AI})
-source_group(AuctionHouse FILES ${sources_AuctionHouse})
-source_group(Battlefield FILES ${sources_Battlefield})
-source_group(Battlegrounds FILES ${sources_Battlegrounds})
-source_group(Calendar FILES ${sources_Calendar})
-source_group(Chat FILES ${sources_Chat})
-source_group(Combat FILES ${sources_Combat})
-source_group(Conditions FILES ${sources_Conditions})
-source_group(DataStores FILES ${sources_DataStores})
-source_group(DungeonFinding FILES ${sources_DungeonFinding})
-source_group(Entities FILES ${sources_Entities})
-source_group(Events FILES ${sources_Events})
-source_group(Globals FILES ${sources_Globals})
-source_group(Grids FILES ${sources_Grids})
-source_group(Groups FILES ${sources_Groups})
-source_group(Guilds FILES ${sources_Guilds})
-source_group(Handlers FILES ${sources_Handlers})
-source_group(Instances FILES ${sources_Instances})
-source_group(Loot FILES ${sources_Loot})
-source_group(Mails FILES ${sources_Mails})
-source_group(Maps FILES ${sources_Maps})
-source_group(Miscellaneous FILES ${sources_Miscellaneous})
-source_group(Movement FILES ${sources_Movement})
-source_group(OutdoorPvP FILES ${sources_OutdoorPvP})
-source_group(Pools FILES ${sources_Pools})
-source_group(PrecompiledHeaders FILES ${sources_PrecompiledHeaders})
-source_group(Quests FILES ${sources_Quests})
-source_group(Reputation FILES ${sources_Reputation})
-source_group(Scripting FILES ${sources_Scripting})
-source_group(Server FILES ${sources_Server})
-source_group(Skills FILES ${sources_Skills})
-source_group(Spells FILES ${sources_Spells})
-source_group(Texts FILES ${sources_Texts})
-source_group(Tools FILES ${sources_Tools})
-source_group(Tickets FILES ${sources_Tickets})
-source_group(Warden FILES ${sources_Warden})
-source_group(Weather FILES ${sources_Weather})
-source_group(World FILES ${sources_World})
 # Create game-libary
 
-if (USE_COREPCH)
-  set(game_STAT_PCH_HDR PrecompiledHeaders/gamePCH.h)
-  set(game_STAT_PCH_SRC PrecompiledHeaders/gamePCH.cpp)
-endif ()
+if( USE_COREPCH AND MSVC )
+  set(game_STAT_SRCS
+    PrecompiledHeaders/gamePCH.cpp
+    PrecompiledHeaders/gamePCH.h
+  )
+endif()
 
 set(game_STAT_SRCS
   ${game_STAT_SRCS}
   ${sources_Accounts}
+  ${sources_Anticheat}
   ${sources_Achievements}
   ${sources_Addons}
   ${sources_AI}
   ${sources_AuctionHouse}
   ${sources_Battlefield}
   ${sources_Battlegrounds}
+  ${sources_BattlePet}
+  ${sources_BlackMarket}
   ${sources_Calendar}
   ${sources_Chat}
   ${sources_Combat}
@@ -142,12 +111,11 @@ set(game_STAT_SRCS
   ${sources_Warden}
   ${sources_Weather}
   ${sources_World}
+  ${sources_shared_ptrs}
 )
 
 include_directories(
   ${CMAKE_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
   ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
   ${CMAKE_SOURCE_DIR}/dep/SFMT
   ${CMAKE_SOURCE_DIR}/dep/zlib
@@ -170,6 +138,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Accounts
+  ${CMAKE_CURRENT_SOURCE_DIR}/Anticheat
   ${CMAKE_CURRENT_SOURCE_DIR}/Achievements
   ${CMAKE_CURRENT_SOURCE_DIR}/Addons
   ${CMAKE_CURRENT_SOURCE_DIR}/AI
@@ -181,6 +150,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Battlefield/Zones
   ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds
   ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds/Zones
+  ${CMAKE_CURRENT_SOURCE_DIR}/BattlePet
+  ${CMAKE_CURRENT_SOURCE_DIR}/BlackMarket
   ${CMAKE_CURRENT_SOURCE_DIR}/Calendar
   ${CMAKE_CURRENT_SOURCE_DIR}/Chat
   ${CMAKE_CURRENT_SOURCE_DIR}/Chat/Channels
@@ -239,20 +210,22 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Warden/Modules
   ${CMAKE_CURRENT_SOURCE_DIR}/Weather
   ${CMAKE_CURRENT_SOURCE_DIR}/World
+  ${CMAKE_CURRENT_SOURCE_DIR}/SharedPtrs
   ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders
   ${ACE_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
   ${OPENSSL_INCLUDE_DIR}
 )
 
-add_library(game STATIC
-  ${game_STAT_SRCS}
-  ${game_STAT_PCH_SRC}
-)
+add_library(game STATIC ${game_STAT_SRCS})
 
 add_dependencies(game revision.h)
 
 # Generate precompiled header
-if (USE_COREPCH)
-  add_cxx_pch(game ${game_STAT_PCH_HDR} ${game_STAT_PCH_SRC})
-endif ()
+if( USE_COREPCH )
+  if(CMAKE_COMPILER_IS_GNUCXX)
+    add_precompiled_header(game ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/gamePCH.h)
+  elseif(MSVC)
+    add_native_precompiled_header(game ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/gamePCH)
+  endif()
+endif()

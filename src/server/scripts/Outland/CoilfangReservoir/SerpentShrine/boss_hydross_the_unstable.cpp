@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -29,45 +27,43 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "serpent_shrine.h"
 
-enum HydrossTheUnstable
-{
-    SAY_AGGRO                   = 0,
-    SAY_SWITCH_TO_CLEAN         = 1,
-    SAY_CLEAN_SLAY              = 2,
-    SAY_CLEAN_DEATH             = 3,
-    SAY_SWITCH_TO_CORRUPT       = 4,
-    SAY_CORRUPT_SLAY            = 5,
-    SAY_CORRUPT_DEATH           = 6,
+#define SAY_AGGRO                   -1548000
+#define SAY_SWITCH_TO_CLEAN         -1548001
+#define SAY_CLEAN_SLAY1             -1548002
+#define SAY_CLEAN_SLAY2             -1548003
+#define SAY_CLEAN_DEATH             -1548004
+#define SAY_SWITCH_TO_CORRUPT       -1548005
+#define SAY_CORRUPT_SLAY1           -1548006
+#define SAY_CORRUPT_SLAY2           -1548007
+#define SAY_CORRUPT_DEATH           -1548008
 
-    SWITCH_RADIUS               = 18,
+#define SWITCH_RADIUS               18
 
-    MODEL_CORRUPT               = 20609,
-    MODEL_CLEAN                 = 20162,
+#define MODEL_CORRUPT               20609
+#define MODEL_CLEAN                 20162
 
-    SPELL_WATER_TOMB            = 38235,
-    SPELL_MARK_OF_HYDROSS1      = 38215,
-    SPELL_MARK_OF_HYDROSS2      = 38216,
-    SPELL_MARK_OF_HYDROSS3      = 38217,
-    SPELL_MARK_OF_HYDROSS4      = 38218,
-    SPELL_MARK_OF_HYDROSS5      = 38231,
-    SPELL_MARK_OF_HYDROSS6      = 40584,
-    SPELL_MARK_OF_CORRUPTION1   = 38219,
-    SPELL_MARK_OF_CORRUPTION2   = 38220,
-    SPELL_MARK_OF_CORRUPTION3   = 38221,
-    SPELL_MARK_OF_CORRUPTION4   = 38222,
-    SPELL_MARK_OF_CORRUPTION5   = 38230,
-    SPELL_MARK_OF_CORRUPTION6   = 40583,
-    SPELL_VILE_SLUDGE           = 38246,
-    SPELL_ENRAGE                = 27680,                   //this spell need verification
-    SPELL_SUMMON_WATER_ELEMENT  = 36459,                   //not in use yet(in use ever?)
-    SPELL_ELEMENTAL_SPAWNIN     = 25035,
-    SPELL_BLUE_BEAM             = 40227,                   //channeled Hydross Beam Helper (not in use yet)
+#define SPELL_WATER_TOMB            38235
+#define SPELL_MARK_OF_HYDROSS1      38215
+#define SPELL_MARK_OF_HYDROSS2      38216
+#define SPELL_MARK_OF_HYDROSS3      38217
+#define SPELL_MARK_OF_HYDROSS4      38218
+#define SPELL_MARK_OF_HYDROSS5      38231
+#define SPELL_MARK_OF_HYDROSS6      40584
+#define SPELL_MARK_OF_CORRUPTION1   38219
+#define SPELL_MARK_OF_CORRUPTION2   38220
+#define SPELL_MARK_OF_CORRUPTION3   38221
+#define SPELL_MARK_OF_CORRUPTION4   38222
+#define SPELL_MARK_OF_CORRUPTION5   38230
+#define SPELL_MARK_OF_CORRUPTION6   40583
+#define SPELL_VILE_SLUDGE           38246
+#define SPELL_ENRAGE                27680                   //this spell need verification
+#define SPELL_SUMMON_WATER_ELEMENT  36459                   //not in use yet(in use ever?)
+#define SPELL_ELEMENTAL_SPAWNIN     25035
+#define SPELL_BLUE_BEAM             40227                   //channeled Hydross Beam Helper (not in use yet)
 
-    ENTRY_PURE_SPAWN            = 22035,
-    ENTRY_TAINTED_SPAWN         = 22036,
-    ENTRY_BEAM_DUMMY            = 21934
-};
-
+#define ENTRY_PURE_SPAWN            22035
+#define ENTRY_TAINTED_SPAWN         22036
+#define ENTRY_BEAM_DUMMY            21934
 
 #define HYDROSS_X                   -239.439f
 #define HYDROSS_Y                   -363.481f
@@ -86,9 +82,9 @@ class boss_hydross_the_unstable : public CreatureScript
 public:
     boss_hydross_the_unstable() : CreatureScript("boss_hydross_the_unstable") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
-        return new boss_hydross_the_unstableAI(creature);
+        return new boss_hydross_the_unstableAI (creature);
     }
 
     struct boss_hydross_the_unstableAI : public ScriptedAI
@@ -96,8 +92,6 @@ public:
         boss_hydross_the_unstableAI(Creature* creature) : ScriptedAI(creature), Summons(me)
         {
             instance = creature->GetInstanceScript();
-            beams[0] = 0;
-            beams[1] = 0;
         }
 
         InstanceScript* instance;
@@ -115,7 +109,7 @@ public:
         bool beam;
         SummonList Summons;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             DeSummonBeams();
             beams[0] = 0;
@@ -163,29 +157,33 @@ public:
         }
         void DeSummonBeams()
         {
-            for (uint8 i = 0; i < 2; ++i)
+            for (uint8 i=0; i<2; ++i)
             {
-                if (Creature* mob = Unit::GetCreature(*me, beams[i]))
+                Creature* mob = Unit::GetCreature(*me, beams[i]);
+                if (mob)
                 {
                     mob->setDeathState(DEAD);
                     mob->RemoveCorpse();
                 }
             }
         }
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
-            Talk(SAY_AGGRO);
+            DoScriptText(SAY_AGGRO, me);
 
             if (instance)
                 instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, IN_PROGRESS);
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
-            Talk(CorruptedForm ? SAY_CORRUPT_SLAY : SAY_CLEAN_SLAY);
+            if (CorruptedForm)
+                DoScriptText(RAND(SAY_CORRUPT_SLAY1, SAY_CORRUPT_SLAY2), me);
+            else
+                DoScriptText(RAND(SAY_CLEAN_SLAY1, SAY_CLEAN_SLAY2), me);
         }
 
-        void JustSummoned(Creature* summoned) OVERRIDE
+        void JustSummoned(Creature* summoned)
         {
             if (summoned->GetEntry() == ENTRY_PURE_SPAWN)
             {
@@ -201,21 +199,24 @@ public:
             }
         }
 
-        void SummonedCreatureDespawn(Creature* summon) OVERRIDE
+        void SummonedCreatureDespawn(Creature* summon)
         {
             Summons.Despawn(summon);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
-            Talk(CorruptedForm ? SAY_CORRUPT_DEATH : SAY_CLEAN_DEATH);
+            if (CorruptedForm)
+                DoScriptText(SAY_CORRUPT_DEATH, me);
+            else
+                DoScriptText(SAY_CLEAN_DEATH, me);
 
             if (instance)
                 instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, DONE);
             Summons.DespawnAll();
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(const uint32 diff)
         {
             if (!beam)
             {
@@ -263,7 +264,7 @@ public:
                                 break;
                         }
 
-                        DoCastVictim(mark_spell);
+                        DoCast(me->getVictim(), mark_spell);
 
                         if (MarkOfCorruption_Count < 5)
                             ++MarkOfCorruption_Count;
@@ -275,7 +276,8 @@ public:
                 //VileSludge_Timer
                 if (VileSludge_Timer <= diff)
                 {
-                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
+                    Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0);
+                    if (target)
                         DoCast(target, SPELL_VILE_SLUDGE);
 
                     VileSludge_Timer = 15000;
@@ -291,7 +293,7 @@ public:
                         CorruptedForm = false;
                         MarkOfHydross_Count = 0;
 
-                        Talk(SAY_SWITCH_TO_CLEAN);
+                        DoScriptText(SAY_SWITCH_TO_CLEAN, me);
                         DoResetThreat();
                         SummonBeams();
 
@@ -346,7 +348,7 @@ public:
                                 break;
                         }
 
-                        DoCastVictim(mark_spell);
+                        DoCast(me->getVictim(), mark_spell);
 
                         if (MarkOfHydross_Count < 5)
                             ++MarkOfHydross_Count;
@@ -375,7 +377,7 @@ public:
                         MarkOfCorruption_Count = 0;
                         CorruptedForm = true;
 
-                        Talk(SAY_SWITCH_TO_CORRUPT);
+                        DoScriptText(SAY_SWITCH_TO_CORRUPT, me);
                         DoResetThreat();
                         DeSummonBeams();
 

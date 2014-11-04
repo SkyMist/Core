@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -56,10 +55,14 @@ struct FriendInfo
     std::string Note;
 
     FriendInfo() : Status(FRIEND_STATUS_OFFLINE), Flags(0), Area(0), Level(0), Class(0), Note()
-    { }
+    {
 
-    FriendInfo(uint8 flags, std::string const& note) : Status(FRIEND_STATUS_OFFLINE), Flags(flags), Area(0), Level(0), Class(0), Note(note)
-    { }
+    }
+
+    FriendInfo(uint8 flags, const std::string& note) : Status(FRIEND_STATUS_OFFLINE), Flags(flags), Area(0), Level(0), Class(0), Note(note)
+    {
+
+    }
 };
 
 typedef std::map<uint32, FriendInfo> PlayerSocialMap;
@@ -105,6 +108,7 @@ class PlayerSocial
     friend class SocialMgr;
     public:
         PlayerSocial();
+        ~PlayerSocial();
         // adding/removing
         bool AddToSocialList(uint32 friend_guid, bool ignore);
         void RemoveFromSocialList(uint32 friend_guid, bool ignore);
@@ -147,3 +151,4 @@ class SocialMgr
 
 #define sSocialMgr ACE_Singleton<SocialMgr, ACE_Null_Mutex>::instance()
 #endif
+

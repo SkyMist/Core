@@ -1,21 +1,6 @@
-/*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+/* Copyright (C) 2006 - 2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+ * This program is free software licensed under GPL version 2
+ * Please see the included DOCS/LICENSE.TXT for more information */
 
 #ifndef SC_FOLLOWERAI_H
 #define SC_FOLLOWERAI_H
@@ -37,7 +22,7 @@ class FollowerAI : public ScriptedAI
 {
     public:
         explicit FollowerAI(Creature* creature);
-        ~FollowerAI() { }
+        ~FollowerAI() {}
 
         //virtual void WaypointReached(uint32 uiPointId) = 0;
 
@@ -53,8 +38,8 @@ class FollowerAI : public ScriptedAI
 
         void JustRespawned();
 
-        void UpdateAI(uint32);                        //the "internal" update, calls UpdateFollowerAI()
-        virtual void UpdateFollowerAI(uint32);        //used when it's needed to add code in update (abilities, scripted events, etc)
+        void UpdateAI(const uint32);                        //the "internal" update, calls UpdateFollowerAI()
+        virtual void UpdateFollowerAI(const uint32);        //used when it's needed to add code in update (abilities, scripted events, etc)
 
         void StartFollow(Player* player, uint32 factionForFollower = 0, const Quest* quest = NULL);
 

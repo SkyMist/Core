@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -20,38 +17,26 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "SpellScript.h"
 #include "vault_of_archavon.h"
 
-enum Emotes
-{
-    EMOTE_BERSERK           = 0,
-    EMOTE_LEAP              = 1 // Not in use
-};
+#define EMOTE_BERSERK           -1590002
 
-enum Spells
-{
-    // Spells Archavon
-    SPELL_ROCK_SHARDS           = 58678,
-    SPELL_ROCK_SHARDS_VISUAL_L  = 58689,
-    SPELL_ROCK_SHARDS_VISUAL_R  = 58692,
-    SPELL_ROCK_SHARDS_DAMAGE_L  = 58695,
-    SPELL_ROCK_SHARDS_DAMAGE_R  = 58696,
-    SPELL_CRUSHING_LEAP         = 58960,
-    SPELL_STOMP                 = 58663,
-    SPELL_IMPALE                = 58666,
-    SPELL_BERSERK               = 47008,
+//Spells Archavon
+#define SPELL_ROCK_SHARDS        58678
+#define SPELL_CRUSHING_LEAP      RAID_MODE(58960, 60894)//Instant (10-80yr range) -- Leaps at an enemy, inflicting 8000 Physical damage, knocking all nearby enemies away, and creating a cloud of choking debris.
+#define SPELL_STOMP              RAID_MODE(58663, 60880)
+#define SPELL_IMPALE             RAID_MODE(58666, 60882) //Lifts an enemy off the ground with a spiked fist, inflicting 47125 to 52875 Physical damage and 9425 to 10575 additional damage each second for 8 sec.
+#define SPELL_BERSERK            47008
+//Spells Archavon Warders
+#define SPELL_ROCK_SHOWER        RAID_MODE(60919, 60923)
+#define SPELL_SHIELD_CRUSH       RAID_MODE(60897, 60899)
+#define SPELL_WHIRL              RAID_MODE(60902, 60916)
 
-    // Archavon Warders
-    SPELL_ROCK_SHOWER           = 60919,
-    SPELL_SHIELD_CRUSH          = 60897,
-    SPELL_WHIRL                 = 60902
-};
+//4 Warders spawned
+#define ARCHAVON_WARDER          32353 //npc 32353
 
-enum Creatures
-{
-    NPC_ARCHAVON_WARDER         = 32353
-};
+//Yell
+#define SAY_LEAP "Archavon the Stone Watcher lunges for $N!" //$N should be the target
 
 enum Events
 {
@@ -79,7 +64,7 @@ class boss_archavon : public CreatureScript
             {
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 events.ScheduleEvent(EVENT_ROCK_SHARDS, 15000);
                 events.ScheduleEvent(EVENT_CHOKING_CLOUD, 30000);
@@ -90,7 +75,7 @@ class boss_archavon : public CreatureScript
             }
 
             // Below UpdateAI may need review/debug.
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -115,7 +100,7 @@ class boss_archavon : public CreatureScript
                             events.ScheduleEvent(EVENT_CHOKING_CLOUD, 30000);
                             break;
                         case EVENT_STOMP:
-                            DoCastVictim(SPELL_STOMP);
+                            //DoCastVictim(SPELL_STOMP);
                             events.ScheduleEvent(EVENT_IMPALE, 3000);
                             events.ScheduleEvent(EVENT_STOMP, 45000);
                             break;
@@ -124,7 +109,7 @@ class boss_archavon : public CreatureScript
                             break;
                         case EVENT_BERSERK:
                             DoCast(me, SPELL_BERSERK);
-                            Talk(EMOTE_BERSERK);
+                            DoScriptText(EMOTE_BERSERK, me);
                             break;
                         default:
                             break;
@@ -135,7 +120,7 @@ class boss_archavon : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
             return new boss_archavonAI(creature);
         }
@@ -144,20 +129,20 @@ class boss_archavon : public CreatureScript
 /*######
 ##  Mob Archavon Warder
 ######*/
-class npc_archavon_warder : public CreatureScript
+class mob_archavon_warder : public CreatureScript
 {
     public:
-        npc_archavon_warder() : CreatureScript("npc_archavon_warder") { }
+        mob_archavon_warder() : CreatureScript("mob_archavon_warder") { }
 
-        struct npc_archavon_warderAI : public ScriptedAI //npc 32353
+        struct mob_archavon_warderAI : public ScriptedAI //npc 32353
         {
-            npc_archavon_warderAI(Creature* creature) : ScriptedAI(creature)
+            mob_archavon_warderAI(Creature* creature) : ScriptedAI(creature)
             {
             }
 
             EventMap events;
 
-            void Reset() OVERRIDE
+            void Reset()
             {
                 events.Reset();
                 events.ScheduleEvent(EVENT_ROCK_SHOWER, 2000);
@@ -165,12 +150,12 @@ class npc_archavon_warder : public CreatureScript
                 events.ScheduleEvent(EVENT_WHIRL, 7500);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/)
             {
                 DoZoneInCombat();
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
                     return;
@@ -206,61 +191,14 @@ class npc_archavon_warder : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_archavon_warderAI(creature);
-        }
-};
-
-// 58941 - Rock Shards
-class spell_archavon_rock_shards : public SpellScriptLoader
-{
-    public:
-        spell_archavon_rock_shards() : SpellScriptLoader("spell_archavon_rock_shards") { }
-
-        class spell_archavon_rock_shards_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_archavon_rock_shards_SpellScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_ROCK_SHARDS_VISUAL_L)
-                    || !sSpellMgr->GetSpellInfo(SPELL_ROCK_SHARDS_VISUAL_R)
-                    || !sSpellMgr->GetSpellInfo(SPELL_ROCK_SHARDS_DAMAGE_L)
-                    || !sSpellMgr->GetSpellInfo(SPELL_ROCK_SHARDS_DAMAGE_R))
-                    return false;
-                return true;
-            }
-
-            void HandleScript(SpellEffIndex /*effIndex*/)
-            {
-                Unit* caster = GetCaster();
-
-                for (uint8 i = 0; i < 3; ++i)
-                {
-                    caster->CastSpell((Unit*)NULL, SPELL_ROCK_SHARDS_VISUAL_L, true);
-                    caster->CastSpell((Unit*)NULL, SPELL_ROCK_SHARDS_VISUAL_R, true);
-                }
-
-                caster->CastSpell((Unit*)NULL, SPELL_ROCK_SHARDS_DAMAGE_L, true);
-                caster->CastSpell((Unit*)NULL, SPELL_ROCK_SHARDS_DAMAGE_R, true);
-            }
-
-            void Register() OVERRIDE
-            {
-                OnEffectHit += SpellEffectFn(spell_archavon_rock_shards_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-            }
-        };
-
-        SpellScript* GetSpellScript() const OVERRIDE
-        {
-            return new spell_archavon_rock_shards_SpellScript();
+            return new mob_archavon_warderAI(creature);
         }
 };
 
 void AddSC_boss_archavon()
 {
     new boss_archavon();
-    new npc_archavon_warder();
-    new spell_archavon_rock_shards();
+    new mob_archavon_warder();
 }

@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,37 +22,35 @@ Comment: All honor related commands
 Category: commandscripts
 EndScriptData */
 
-#include "Chat.h"
-#include "Language.h"
-#include "ObjectMgr.h"
-#include "Player.h"
 #include "ScriptMgr.h"
+#include "ObjectMgr.h"
+#include "Chat.h"
 
 class honor_commandscript : public CommandScript
 {
 public:
     honor_commandscript() : CommandScript("honor_commandscript") { }
 
-    ChatCommand* GetCommands() const OVERRIDE
+    ChatCommand* GetCommands() const
     {
         static ChatCommand honorAddCommandTable[] =
         {
-            { "kill", rbac::RBAC_PERM_COMMAND_HONOR_ADD_KILL, false, &HandleHonorAddKillCommand,         "", NULL },
-            { "",     rbac::RBAC_PERM_COMMAND_HONOR_ADD,      false, &HandleHonorAddCommand,             "", NULL },
-            { NULL,   0,                                false, NULL,                               "", NULL }
+            { "kill",           SEC_GAMEMASTER,     false, &HandleHonorAddKillCommand,         "", NULL },
+            { "",               SEC_GAMEMASTER,     false, &HandleHonorAddCommand,             "", NULL },
+            { NULL,             0,                  false, NULL,                               "", NULL }
         };
 
         static ChatCommand honorCommandTable[] =
         {
-            { "add",    rbac::RBAC_PERM_COMMAND_HONOR_ADD,    false, NULL,               "", honorAddCommandTable },
-            { "update", rbac::RBAC_PERM_COMMAND_HONOR_UPDATE, false, &HandleHonorUpdateCommand,          "", NULL },
-            { NULL,     0,                              false, NULL,                               "", NULL }
+            { "add",            SEC_GAMEMASTER,     false, NULL,               "", honorAddCommandTable },
+            { "update",         SEC_GAMEMASTER,     false, &HandleHonorUpdateCommand,          "", NULL },
+            { NULL,             0,                  false, NULL,                               "", NULL }
         };
 
         static ChatCommand commandTable[] =
         {
-            { "honor", rbac::RBAC_PERM_COMMAND_HONOR, false, NULL, "", honorCommandTable },
-            { NULL,    0,                       false, NULL, "", NULL }
+            { "honor",          SEC_GAMEMASTER,     false, NULL,                  "", honorCommandTable },
+            { NULL,             0,                  false, NULL,                               "", NULL }
         };
         return commandTable;
     }
@@ -92,9 +88,8 @@ public:
         }
 
         // check online security
-        if (Player* player = target->ToPlayer())
-            if (handler->HasLowerSecurity(player, 0))
-                return false;
+        if (target->GetTypeId() == TYPEID_PLAYER && handler->HasLowerSecurity((Player*)target, 0))
+            return false;
 
         handler->GetSession()->GetPlayer()->RewardHonor(target, 1);
         return true;

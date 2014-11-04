@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -54,7 +53,7 @@ class FormationMgr
 class CreatureGroup
 {
     private:
-        Creature* m_leader; //Important do not forget sometimes to work with pointers instead synonims :D:D
+        Creature* m_leader;                             // Important do not forget sometimes to work with pointers instead synonims
         typedef std::map<Creature*, FormationInfo*>  CreatureGroupMemberType;
         CreatureGroupMemberType m_members;
 
@@ -62,9 +61,9 @@ class CreatureGroup
         bool m_Formed;
 
     public:
-        //Group cannot be created empty
-        explicit CreatureGroup(uint32 id) : m_leader(NULL), m_groupID(id), m_Formed(false) { }
-        ~CreatureGroup() { }
+        // Group cannot be created empty
+        explicit CreatureGroup(uint32 id) : m_leader(NULL), m_groupID(id), m_Formed(false) {}
+        ~CreatureGroup() {}
 
         Creature* getLeader() const { return m_leader; }
         uint32 GetId() const { return m_groupID; }

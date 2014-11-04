@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2013 MaNGOS <http://www.getmangos.com/>
+ * Copyright (C) 2008-2013 Trinity <http://www.trinitycore.org/>
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
- * option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -94,7 +94,7 @@ float CONF_float_to_int16_limit = 2048.0f;   // Max accuracy = val/65536
 float CONF_flat_height_delta_limit = 0.005f; // If max - min less this value - surface is flat
 float CONF_flat_liquid_delta_limit = 0.001f; // If max - min less this value - liquid surface is flat
 
-uint32 CONF_TargetBuild = 17898;              // 5.4.7 17898 -- current build is 18019, but no MPQ files rename.
+uint32 CONF_TargetBuild = 17399;              // 5.4.0 17399
 
 // List MPQ for extract maps from
 char const* CONF_mpq_list[] =
@@ -112,7 +112,7 @@ char const* CONF_mpq_dbc_list[] =
     "misc.MPQ"
 };
 
-uint32 const Builds[] = {16016, 16048, 16057, 16309, 16357, 16516, 16650, 16844, 16965, 17116, 17266, 17325, 17345, 17538, 17645, 17688, 17898};
+uint32 const Builds[] = {16016, 16048, 16057, 16309, 16357, 16516, 16650, 16844, 16965, 17116, 17266, 17325, 17345, 17538, 0};
 #define NEW_BASE_SET_BUILD  16016
 
 char const* Locales[] =
@@ -122,9 +122,7 @@ char const* Locales[] =
     "frFR", "koKR",
     "zhCN", "zhTW",
     "enCN", "enTW",
-    "esMX", "ruRU",
-    "ptBR", "ptPT",
-    "itIT",
+    "esMX", "ruRU"
 };
 
 TCHAR const* LocalesT[] =
@@ -135,11 +133,9 @@ TCHAR const* LocalesT[] =
     _T("zhCN"), _T("zhTW"),
     _T("enCN"), _T("enTW"),
     _T("esMX"), _T("ruRU"),
-    _T("ptBR"), _T("ptPT"),
-    _T("itIT"),
 };
 
-#define LOCALES_COUNT 15
+#define LOCALES_COUNT 12
 
 void CreateDir(std::string const& path)
 {
@@ -522,11 +518,11 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     //============================================
     bool fullAreaData = false;
     uint32 areaflag = area_flags[0][0];
-    for (int y=0;y<ADT_CELLS_PER_GRID;y++)
+    for (int y = 0; y < ADT_CELLS_PER_GRID; y++)
     {
-        for(int x=0;x<ADT_CELLS_PER_GRID;x++)
+        for (int x = 0; x < ADT_CELLS_PER_GRID; x++)
         {
-            if(area_flags[y][x]!=areaflag)
+            if (area_flags[y][x] != areaflag)
             {
                 fullAreaData = true;
                 break;
@@ -543,7 +539,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     if (fullAreaData)
     {
         areaHeader.gridArea = 0;
-        map.areaMapSize+=sizeof(area_flags);
+        map.areaMapSize += sizeof(area_flags);
     }
     else
     {
@@ -554,9 +550,9 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     //
     // Get Height map from grid
     //
-    for (int i=0;i<ADT_CELLS_PER_GRID;i++)
+    for (int i = 0; i < ADT_CELLS_PER_GRID; i++)
     {
-        for(int j=0;j<ADT_CELLS_PER_GRID;j++)
+        for (int j = 0; j < ADT_CELLS_PER_GRID; j++)
         {
             adt_MCNK * cell = adt.cells[i][j];
             if (!cell)
@@ -578,46 +574,51 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
             // . . . . . . . .
 
             // Set map height as grid height
-            for (int y=0; y <= ADT_CELL_SIZE; y++)
+            for (int y = 0; y <= ADT_CELL_SIZE; y++)
             {
-                int cy = i*ADT_CELL_SIZE + y;
-                for (int x=0; x <= ADT_CELL_SIZE; x++)
+                int cy = i * ADT_CELL_SIZE + y;
+                for (int x = 0; x <= ADT_CELL_SIZE; x++)
                 {
-                    int cx = j*ADT_CELL_SIZE + x;
-                    V9[cy][cx]=cell->ypos;
+                    int cx = j * ADT_CELL_SIZE + x;
+                    V9[cy][cx] = cell->ypos;
                 }
             }
-            for (int y=0; y < ADT_CELL_SIZE; y++)
+            for (int y = 0; y < ADT_CELL_SIZE; y++)
             {
-                int cy = i*ADT_CELL_SIZE + y;
-                for (int x=0; x < ADT_CELL_SIZE; x++)
+                int cy = i * ADT_CELL_SIZE + y;
+                for (int x = 0; x < ADT_CELL_SIZE; x++)
                 {
-                    int cx = j*ADT_CELL_SIZE + x;
+                    int cx = j * ADT_CELL_SIZE + x;
                     V8[cy][cx]=cell->ypos;
                 }
             }
+
+            // Since approx. 5.3, WoW uses a new 64-bit hole map if needed. If so, flag 0x10000 is set in the MCNK header and the 8 bytes at offset chunkBegin+0x14 (ofsHeight and ofsNormal) contain the hole map.
+            if (cell->flags & 0x10000)
+                continue;
+
             // Get custom height
             adt_MCVT *v = cell->getMCVT();
             if (!v)
                 continue;
             // get V9 height map
-            for (int y=0; y <= ADT_CELL_SIZE; y++)
+            for (int y = 0; y <= ADT_CELL_SIZE; y++)
             {
-                int cy = i*ADT_CELL_SIZE + y;
-                for (int x=0; x <= ADT_CELL_SIZE; x++)
+                int cy = i * ADT_CELL_SIZE + y;
+                for (int x = 0; x <= ADT_CELL_SIZE; x++)
                 {
-                    int cx = j*ADT_CELL_SIZE + x;
-                    V9[cy][cx]+=v->height_map[y*(ADT_CELL_SIZE*2+1)+x];
+                    int cx = j * ADT_CELL_SIZE + x;
+                    V9[cy][cx] += v->height_map[y * (ADT_CELL_SIZE * 2 + 1) + x];
                 }
             }
             // get V8 height map
-            for (int y=0; y < ADT_CELL_SIZE; y++)
+            for (int y = 0; y < ADT_CELL_SIZE; y++)
             {
-                int cy = i*ADT_CELL_SIZE + y;
-                for (int x=0; x < ADT_CELL_SIZE; x++)
+                int cy = i * ADT_CELL_SIZE + y;
+                for (int x = 0; x < ADT_CELL_SIZE; x++)
                 {
-                    int cx = j*ADT_CELL_SIZE + x;
-                    V8[cy][cx]+=v->height_map[y*(ADT_CELL_SIZE*2+1)+ADT_CELL_SIZE+1+x];
+                    int cx = j * ADT_CELL_SIZE + x;
+                    V8[cy][cx] += v->height_map[y * (ADT_CELL_SIZE * 2 + 1) + ADT_CELL_SIZE + 1 + x];
                 }
             }
         }
@@ -627,18 +628,18 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     //============================================
     float maxHeight = -20000;
     float minHeight =  20000;
-    for (int y=0; y<ADT_GRID_SIZE; y++)
+    for (int y = 0; y < ADT_GRID_SIZE; y++)
     {
-        for(int x=0;x<ADT_GRID_SIZE;x++)
+        for(int x = 0; x < ADT_GRID_SIZE; x++)
         {
             float h = V8[y][x];
             if (maxHeight < h) maxHeight = h;
             if (minHeight > h) minHeight = h;
         }
     }
-    for (int y=0; y<=ADT_GRID_SIZE; y++)
+    for (int y = 0; y <= ADT_GRID_SIZE; y++)
     {
-        for(int x=0;x<=ADT_GRID_SIZE;x++)
+        for (int x = 0; x <= ADT_GRID_SIZE; x++)
         {
             float h = V9[y][x];
             if (maxHeight < h) maxHeight = h;
@@ -649,12 +650,12 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     // Check for allow limit minimum height (not store height in deep ochean - allow save some memory)
     if (CONF_allow_height_limit && minHeight < CONF_use_minHeight)
     {
-        for (int y=0; y<ADT_GRID_SIZE; y++)
-            for(int x=0;x<ADT_GRID_SIZE;x++)
+        for (int y = 0; y < ADT_GRID_SIZE; y++)
+            for (int x = 0; x < ADT_GRID_SIZE; x++)
                 if (V8[y][x] < CONF_use_minHeight)
                     V8[y][x] = CONF_use_minHeight;
-        for (int y=0; y<=ADT_GRID_SIZE; y++)
-            for(int x=0;x<=ADT_GRID_SIZE;x++)
+        for (int y = 0; y <= ADT_GRID_SIZE; y++)
+            for (int x = 0; x <= ADT_GRID_SIZE; x++)
                 if (V9[y][x] < CONF_use_minHeight)
                     V9[y][x] = CONF_use_minHeight;
         if (minHeight < CONF_use_minHeight)
@@ -689,39 +690,39 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
             float diff = maxHeight - minHeight;
             if (diff < CONF_float_to_int8_limit)      // As uint8 (max accuracy = CONF_float_to_int8_limit/256)
             {
-                heightHeader.flags|=MAP_HEIGHT_AS_INT8;
+                heightHeader.flags |= MAP_HEIGHT_AS_INT8;
                 step = selectUInt8StepStore(diff);
             }
-            else if (diff<CONF_float_to_int16_limit)  // As uint16 (max accuracy = CONF_float_to_int16_limit/65536)
+            else if (diff < CONF_float_to_int16_limit)  // As uint16 (max accuracy = CONF_float_to_int16_limit/65536)
             {
-                heightHeader.flags|=MAP_HEIGHT_AS_INT16;
+                heightHeader.flags |= MAP_HEIGHT_AS_INT16;
                 step = selectUInt16StepStore(diff);
             }
         }
 
         // Pack it to int values if need
-        if (heightHeader.flags&MAP_HEIGHT_AS_INT8)
+        if (heightHeader.flags & MAP_HEIGHT_AS_INT8)
         {
-            for (int y=0; y<ADT_GRID_SIZE; y++)
-                for(int x=0;x<ADT_GRID_SIZE;x++)
+            for (int y = 0; y < ADT_GRID_SIZE; y++)
+                for(int x = 0; x < ADT_GRID_SIZE; x++)
                     uint8_V8[y][x] = uint8((V8[y][x] - minHeight) * step + 0.5f);
-            for (int y=0; y<=ADT_GRID_SIZE; y++)
-                for(int x=0;x<=ADT_GRID_SIZE;x++)
+            for (int y = 0; y <= ADT_GRID_SIZE; y++)
+                for(int x = 0; x <= ADT_GRID_SIZE; x++)
                     uint8_V9[y][x] = uint8((V9[y][x] - minHeight) * step + 0.5f);
-            map.heightMapSize+= sizeof(uint8_V9) + sizeof(uint8_V8);
+            map.heightMapSize += sizeof(uint8_V9) + sizeof(uint8_V8);
         }
-        else if (heightHeader.flags&MAP_HEIGHT_AS_INT16)
+        else if (heightHeader.flags & MAP_HEIGHT_AS_INT16)
         {
-            for (int y=0; y<ADT_GRID_SIZE; y++)
-                for(int x=0;x<ADT_GRID_SIZE;x++)
+            for (int y = 0; y < ADT_GRID_SIZE; y++)
+                for(int x = 0; x < ADT_GRID_SIZE; x++)
                     uint16_V8[y][x] = uint16((V8[y][x] - minHeight) * step + 0.5f);
-            for (int y=0; y<=ADT_GRID_SIZE; y++)
-                for(int x=0;x<=ADT_GRID_SIZE;x++)
+            for (int y = 0; y <= ADT_GRID_SIZE; y++)
+                for(int x = 0; x <= ADT_GRID_SIZE; x++)
                     uint16_V9[y][x] = uint16((V9[y][x] - minHeight) * step + 0.5f);
-            map.heightMapSize+= sizeof(uint16_V9) + sizeof(uint16_V8);
+            map.heightMapSize += sizeof(uint16_V9) + sizeof(uint16_V8);
         }
         else
-            map.heightMapSize+= sizeof(V9) + sizeof(V8);
+            map.heightMapSize += sizeof(V9) + sizeof(V8);
     }
 
     // Get from MCLQ chunk (old)
@@ -747,7 +748,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
                     if (liquid->flags[y][x] != 0x0F)
                     {
                         liquid_show[cy][cx] = true;
-                        if (liquid->flags[y][x] & (1<<7))
+                        if (liquid->flags[y][x] & (1 << 7))
                             liquid_flags[i][j] |= MAP_LIQUID_TYPE_DARK_WATER;
                         ++count;
                     }
@@ -755,17 +756,17 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
             }
 
             uint32 c_flag = cell->flags;
-            if (c_flag & (1<<2))
+            if (c_flag & (1 << 2))
             {
                 liquid_entry[i][j] = 1;
                 liquid_flags[i][j] |= MAP_LIQUID_TYPE_WATER;            // water
             }
-            if (c_flag & (1<<3))
+            if (c_flag & (1 << 3))
             {
                 liquid_entry[i][j] = 2;
                 liquid_flags[i][j] |= MAP_LIQUID_TYPE_OCEAN;            // ocean
             }
-            if (c_flag & (1<<4))
+            if (c_flag & (1 << 4))
             {
                 liquid_entry[i][j] = 3;
                 liquid_flags[i][j] |= MAP_LIQUID_TYPE_MAGMA;            // magma/slime
@@ -891,9 +892,9 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
         int maxX = 0, maxY = 0;
         maxHeight = -20000;
         minHeight = 20000;
-        for (int y=0; y<ADT_GRID_SIZE; y++)
+        for (int y = 0; y < ADT_GRID_SIZE; y++)
         {
-            for(int x=0; x<ADT_GRID_SIZE; x++)
+            for (int x = 0; x < ADT_GRID_SIZE; x++)
             {
                 if (liquid_show[y][x])
                 {
@@ -936,7 +937,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
             map.liquidMapSize += sizeof(liquid_entry) + sizeof(liquid_flags);
 
         if (!(liquidHeader.flags & MAP_LIQUID_NO_HEIGHT))
-            map.liquidMapSize += sizeof(float)*liquidHeader.width*liquidHeader.height;
+            map.liquidMapSize += sizeof(float) * liquidHeader.width * liquidHeader.height;
     }
 
     // map hole info
@@ -978,7 +979,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     fwrite(&map, sizeof(map), 1, output);
     // Store area data
     fwrite(&areaHeader, sizeof(areaHeader), 1, output);
-    if (!(areaHeader.flags&MAP_AREA_NO_AREA))
+    if (!(areaHeader.flags & MAP_AREA_NO_AREA))
         fwrite(area_flags, sizeof(area_flags), 1, output);
 
     // Store height data

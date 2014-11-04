@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -24,31 +22,29 @@ Comment: All event related commands
 Category: commandscripts
 EndScriptData */
 
-#include "Chat.h"
-#include "GameEventMgr.h"
-#include "Language.h"
-#include "Player.h"
 #include "ScriptMgr.h"
+#include "GameEventMgr.h"
+#include "Chat.h"
 
 class event_commandscript : public CommandScript
 {
 public:
     event_commandscript() : CommandScript("event_commandscript") { }
 
-    ChatCommand* GetCommands() const OVERRIDE
+    ChatCommand* GetCommands() const
     {
         static ChatCommand eventCommandTable[] =
         {
-            { "activelist", rbac::RBAC_PERM_COMMAND_EVENT_ACTIVELIST, true, &HandleEventActiveListCommand, "", NULL },
-            { "start",      rbac::RBAC_PERM_COMMAND_EVENT_START,      true, &HandleEventStartCommand,      "", NULL },
-            { "stop",       rbac::RBAC_PERM_COMMAND_EVENT_STOP,       true, &HandleEventStopCommand,       "", NULL },
-            { "",           rbac::RBAC_PERM_COMMAND_EVENT,            true, &HandleEventInfoCommand,       "", NULL },
-            { NULL,         0,                                 false, NULL,                          "", NULL }
+            { "activelist",     SEC_GAMEMASTER,     true,  &HandleEventActiveListCommand,     "", NULL },
+            { "start",          SEC_GAMEMASTER,     true,  &HandleEventStartCommand,          "", NULL },
+            { "stop",           SEC_GAMEMASTER,     true,  &HandleEventStopCommand,           "", NULL },
+            { "",               SEC_GAMEMASTER,     true,  &HandleEventInfoCommand,           "", NULL },
+            { NULL,             0,                  false, NULL,                              "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "event", rbac::RBAC_PERM_COMMAND_EVENT, false, NULL, "", eventCommandTable },
-            { NULL,    0,                       false, NULL, "", NULL }
+            { "event",          SEC_GAMEMASTER,     false, NULL,                  "", eventCommandTable },
+            { NULL,             0,                  false, NULL,                               "", NULL }
         };
         return commandTable;
     }

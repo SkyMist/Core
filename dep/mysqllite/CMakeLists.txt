@@ -1,5 +1,5 @@
-# Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
-# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2006 MySQL AB
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -42,7 +42,7 @@ set(MYSQL_DATADIR "${DEFAULT_MYSQL_HOME}/data")
 set(DEFAULT_CHARSET_HOME "${DEFAULT_MYSQL_HOME}")
 set(PLUGINDIR "${DEFAULT_MYSQL_HOME}/lib/plugin")
 
-set(COMPILATION_COMMENT "Source distribution lite for TrinityCore")
+set(COMPILATION_COMMENT "Source distribution lite for JadeCore")
 
 # Run platform tests
 include(${CMAKE_CURRENT_SOURCE_DIR}/configure.cmake)

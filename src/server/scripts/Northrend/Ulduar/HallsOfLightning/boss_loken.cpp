@@ -1,12 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -30,8 +28,10 @@ EndScriptData */
 #include "SpellScript.h"
 #include "halls_of_lightning.h"
 
-enum Yells
+enum eEnums
 {
+    ACHIEV_TIMELY_DEATH_START_EVENT               = 20384,
+
     SAY_INTRO_1                                   = 0,
     SAY_INTRO_2                                   = 1,
     SAY_AGGRO                                     = 2,
@@ -41,11 +41,8 @@ enum Yells
     SAY_50HEALTH                                  = 6,
     SAY_25HEALTH                                  = 7,
     SAY_DEATH                                     = 8,
-    EMOTE_NOVA                                    = 9
-};
+    EMOTE_NOVA                                    = 9,
 
-enum Spells
-{
     SPELL_ARC_LIGHTNING                           = 52921,
     SPELL_LIGHTNING_NOVA_N                        = 52960,
     SPELL_LIGHTNING_NOVA_H                        = 59835,
@@ -53,11 +50,6 @@ enum Spells
     SPELL_PULSING_SHOCKWAVE_N                     = 52961,
     SPELL_PULSING_SHOCKWAVE_H                     = 59836,
     SPELL_PULSING_SHOCKWAVE_AURA                  = 59414
-};
-
-enum Misc
-{
-    ACHIEV_TIMELY_DEATH_START_EVENT               = 20384
 };
 
 /*######
@@ -69,7 +61,7 @@ class boss_loken : public CreatureScript
 public:
     boss_loken() : CreatureScript("boss_loken") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const
     {
         return new boss_lokenAI(creature);
     }
@@ -89,7 +81,7 @@ public:
 
         uint32 m_uiHealthAmountModifier;
 
-        void Reset() OVERRIDE
+        void Reset()
         {
             m_uiArcLightning_Timer = 15000;
             m_uiLightningNova_Timer = 20000;
@@ -99,39 +91,39 @@ public:
 
             if (instance)
             {
-                instance->SetBossState(DATA_LOKEN, NOT_STARTED);
+                instance->SetData(TYPE_LOKEN, NOT_STARTED);
                 instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
             }
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/)
         {
             Talk(SAY_AGGRO);
 
             if (instance)
             {
-                instance->SetBossState(DATA_LOKEN, IN_PROGRESS);
+                instance->SetData(TYPE_LOKEN, IN_PROGRESS);
                 instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMELY_DEATH_START_EVENT);
             }
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/)
         {
             Talk(SAY_DEATH);
 
             if (instance)
             {
-                instance->SetBossState(DATA_LOKEN, DONE);
+                instance->SetData(TYPE_LOKEN, DONE);
                 instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_PULSING_SHOCKWAVE_AURA);
             }
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/)
         {
             Talk(SAY_SLAY);
         }
 
-        void UpdateAI(uint32 uiDiff) OVERRIDE
+        void UpdateAI(const uint32 uiDiff)
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -142,7 +134,6 @@ public:
                 if (m_uiResumePulsingShockwave_Timer <= uiDiff)
                 {
                     DoCast(me, SPELL_PULSING_SHOCKWAVE_AURA, true);
-                    me->ClearUnitState(UNIT_STATE_CASTING); // this flag breaks movement
 
                     DoCast(me, SPELL_PULSING_SHOCKWAVE_N, true);
                     m_uiResumePulsingShockwave_Timer = 0;
@@ -167,8 +158,8 @@ public:
                 Talk(EMOTE_NOVA);
                 DoCast(me, SPELL_LIGHTNING_NOVA_N);
 
-                me->RemoveAurasDueToSpell(SPELL_PULSING_SHOCKWAVE_N);
-                m_uiResumePulsingShockwave_Timer = DUNGEON_MODE(5000, 4000, 5000); // Pause Pulsing Shockwave aura
+                me->RemoveAurasDueToSpell(DUNGEON_MODE<uint32>(SPELL_PULSING_SHOCKWAVE_N, SPELL_PULSING_SHOCKWAVE_H));
+                m_uiResumePulsingShockwave_Timer = DUNGEON_MODE(5000, 4000); // Pause Pulsing Shockwave aura
                 m_uiLightningNova_Timer = urand(20000, 21000);
             }
             else
@@ -212,13 +203,13 @@ class spell_loken_pulsing_shockwave : public SpellScriptLoader
                     SetHitDamage(int32(GetHitDamage() * distance));
             }
 
-            void Register() OVERRIDE
+            void Register()
             {
                 OnEffectHitTarget += SpellEffectFn(spell_loken_pulsing_shockwave_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const
         {
             return new spell_loken_pulsing_shockwave_SpellScript();
         }

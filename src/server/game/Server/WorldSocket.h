@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -45,6 +44,8 @@
 class ACE_Message_Block;
 class WorldPacket;
 class WorldSession;
+
+struct z_stream_s;
 
 /// Handler that can communicate over stream sockets.
 typedef ACE_Svc_Handler<ACE_SOCK_STREAM, ACE_NULL_SYNCH> WorldHandler;
@@ -98,75 +99,76 @@ class WorldSocket : public WorldHandler
         typedef ACE_Guard<LockType> GuardType;
 
         /// Check if socket is closed.
-        bool IsClosed(void) const;
+        bool IsClosed (void) const;
 
         /// Close the socket.
-        void CloseSocket(void);
+        void CloseSocket (void);
 
         /// Get address of connected peer.
-        const std::string& GetRemoteAddress(void) const;
+        const std::string& GetRemoteAddress (void) const;
 
         /// Send A packet on the socket, this function is reentrant.
         /// @param pct packet to send
         /// @return -1 of failure
-        int SendPacket(const WorldPacket& pct);
+        int SendPacket(const WorldPacket* pct);
 
         /// Add reference to this object.
-        long AddReference(void);
+        long AddReference (void);
 
         /// Remove reference to this object.
-        long RemoveReference(void);
+        long RemoveReference (void);
 
         /// things called by ACE framework.
 
         /// Called on open, the void* is the acceptor.
-        virtual int open(void *);
+        virtual int open (void *);
 
         /// Called on failures inside of the acceptor, don't call from your code.
-        virtual int close(u_long);
+        virtual int close (u_long);
 
         /// Called when we can read from the socket.
-        virtual int handle_input(ACE_HANDLE = ACE_INVALID_HANDLE);
+        virtual int handle_input (ACE_HANDLE = ACE_INVALID_HANDLE);
 
         /// Called when the socket can write.
-        virtual int handle_output(ACE_HANDLE = ACE_INVALID_HANDLE);
+        virtual int handle_output (ACE_HANDLE = ACE_INVALID_HANDLE);
 
         /// Called when connection is closed or error happens.
-        virtual int handle_close(ACE_HANDLE = ACE_INVALID_HANDLE,
+        virtual int handle_close (ACE_HANDLE = ACE_INVALID_HANDLE,
             ACE_Reactor_Mask = ACE_Event_Handler::ALL_EVENTS_MASK);
 
         /// Called by WorldSocketMgr/ReactorRunnable.
-        int Update(void);
+        int Update (void);
 
     private:
         /// Helper functions for processing incoming data.
-        int handle_input_header(void);
-        int handle_input_payload(void);
-        int handle_input_missing_data(void);
+        int handle_input_header (void);
+        int handle_input_payload (void);
+        int handle_input_missing_data (void);
 
         /// Help functions to mark/unmark the socket for output.
         /// @param g the guard is for m_OutBufferLock, the function will release it
-        int cancel_wakeup_output(GuardType& g);
-        int schedule_wakeup_output(GuardType& g);
+        int cancel_wakeup_output (GuardType& g);
+        int schedule_wakeup_output (GuardType& g);
 
         /// Drain the queue if its not empty.
-        int handle_output_queue(GuardType& g);
+        int handle_output_queue (GuardType& g);
 
         /// process one incoming packet.
         /// @param new_pct received packet, note that you need to delete it.
-        int ProcessIncoming(WorldPacket* new_pct);
+        int ProcessIncoming (WorldPacket* new_pct);
 
         /// Called by ProcessIncoming() on CMSG_AUTH_SESSION.
-        int HandleAuthSession(WorldPacket& recvPacket);
+        int HandleAuthSession (WorldPacket& recvPacket);
 
         /// Called by ProcessIncoming() on CMSG_PING.
-        int HandlePing(WorldPacket& recvPacket);
+        int HandlePing (WorldPacket& recvPacket);
 
-        /// Called by MSG_VERIFY_CONNECTIVITY_RESPONSE
+        /// Called by CMSG_VERIFY_CONNECTIVITY_RESPONSE
         int HandleSendAuthSession();
 
+        void SendAuthResponse(uint8 code, bool queued, uint32 queuePos);
+
     private:
-        void SendAuthResponseError(uint8);
         /// Time in which the last ping was received
         ACE_Time_Value m_LastPingTime;
 
@@ -211,9 +213,9 @@ class WorldSocket : public WorldHandler
 
         uint32 m_Seed;
 
+        z_stream_s* m_zstream;
 };
 
 #endif  /* _WORLDSOCKET_H */
 
 /// @}
-

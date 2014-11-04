@@ -5,12 +5,11 @@
 
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
+#include "stormstout_brewery.h"
+#include "Player.h"
+#include "Unit.h"
 #include "ObjectAccessor.h"
 #include "Group.h"
-#include "Unit.h"
-#include "Player.h"
-
-#include "stormstout_brewery.h"
 
 class instance_stormstout_brewery : public InstanceMapScript
 {
@@ -101,13 +100,13 @@ class instance_stormstout_brewery : public InstanceMapScript
                         // Increase Hozen killed count.
                         HozenKilled++;
                         // Increase player powers.
-						if (Player* player = killed->FindNearestPlayer(20.0f))
+                        if (Player* player = killed->FindNearestPlayer(20.0f))
                         {
                             if (player->GetGroup())
                             {
                                 if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
                                 {
-                                    if (Aura* bananas = Leader->GetAura(SPELL_BANANA_BAR))
+                                    if (AuraPtr bananas = Leader->GetAura(SPELL_BANANA_BAR))
                                     {
                                         if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
                                         {
@@ -116,7 +115,7 @@ class instance_stormstout_brewery : public InstanceMapScript
 
                                             // Update group members.
                                             for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                                                if (Player* member = itr->GetSource())
+                                                if (Player* member = itr->getSource())
                                                     if (member != Leader)
                                                         member->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
                                         }
@@ -128,7 +127,7 @@ class instance_stormstout_brewery : public InstanceMapScript
 
                                                 // Update group members and remove aura.
                                                 for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                                                    if (Player* member = itr->GetSource())
+                                                    if (Player* member = itr->getSource())
                                                         member->RemoveAurasDueToSpell(SPELL_BANANA_BAR);
 
                                                 OokOokSummoned = true;
@@ -139,7 +138,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                             }
                             else // Solo.
                             {
-                                if (Aura* bananas = player->GetAura(SPELL_BANANA_BAR))
+                                if (AuraPtr bananas = player->GetAura(SPELL_BANANA_BAR))
                                 {
                                     if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
                                         player->SetPower(POWER_ALTERNATE_POWER, HozenKilled); // // Update player power.
@@ -196,7 +195,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                     SaveToDB();
             }
 
-            uint32 GetData(uint32 type) const OVERRIDE
+            uint32 GetData(uint32 type)
             {
                 // First check for type.
                 if (type == DATA_HOZEN_KILLED)
@@ -205,7 +204,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                 return GetBossState(type);
             }
 
-            uint64 GetData64(uint32 data) const OVERRIDE
+            uint64 GetData64(uint32 data)
             {
                 switch(data)
                 {

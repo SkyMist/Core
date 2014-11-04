@@ -1,12 +1,9 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2006-2014 ScriptDev2 <https://github.com/scriptdev2/scriptdev2/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -46,31 +43,12 @@ enum Data64
 
 enum mainCreatures
 {
-    CREATURE_RUIN_DWELLER               = 29920,
-    CREATURE_SLAD_RAN                   = 29304,
-    CREATURE_MOORABI                    = 29305,
-    CREATURE_GALDARAH                   = 29306,
-    CREATURE_DRAKKARICOLOSSUS           = 29307,
-    CREATURE_ECK                        = 29932
-};
-
-enum Gameobjects
-{
-
-    GO_SLADRAN_ALTAR                    = 192518,
-    GO_MOORABI_ALTAR                    = 192519,
-    GO_DRAKKARI_COLOSSUS_ALTAR          = 192520,
-    GO_SLADRAN_STATUE                   = 192564,
-    GO_MOORABI_STATUE                   = 192565,
-    GO_GALDARAH_STATUE                  = 192566,
-    GO_DRAKKARI_COLOSSUS_STATUE         = 192567,
-    GO_ECK_THE_FEROCIOUS_DOOR           = 192632,
-    GO_ECK_THE_FEROCIOUS_DOOR_BEHIND    = 192569,
-    GO_GALDARAH_DOOR1                   = 193208,
-    GO_GALDARAH_DOOR2                   = 193209,
-    GO_GALDARAH_DOOR3                   = 192568,
-    GO_BRIDGE                           = 193188,
-    GO_COLLISION                        = 192633
+    CREATURE_RUIN_DWELLER                         = 29920,
+    CREATURE_SLAD_RAN                             = 29304,
+    CREATURE_MOORABI                              = 29305,
+    CREATURE_GALDARAH                             = 29306,
+    CREATURE_DRAKKARICOLOSSUS                     = 29307,
+    CREATURE_ECK                                  = 29932
 };
 
 #endif

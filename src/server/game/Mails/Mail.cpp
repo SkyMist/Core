@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -27,7 +26,7 @@
 #include "BattlegroundMgr.h"
 #include "Item.h"
 #include "AuctionHouseMgr.h"
-#include "CalendarMgr.h"
+#include "BlackMarket/BlackMarketMgr.h"
 
 MailSender::MailSender(Object* sender, MailStationery stationery) : m_stationery(stationery)
 {
@@ -41,10 +40,10 @@ MailSender::MailSender(Object* sender, MailStationery stationery) : m_stationery
             m_messageType = MAIL_GAMEOBJECT;
             m_senderId = sender->GetEntry();
             break;
-        /*case TYPEID_ITEM:
+        case TYPEID_ITEM:
             m_messageType = MAIL_ITEM;
             m_senderId = sender->GetEntry();
-            break;*/
+            break;
         case TYPEID_PLAYER:
             m_messageType = MAIL_NORMAL;
             m_senderId = sender->GetGUIDLow();
@@ -52,27 +51,31 @@ MailSender::MailSender(Object* sender, MailStationery stationery) : m_stationery
         default:
             m_messageType = MAIL_NORMAL;
             m_senderId = 0;                                 // will show mail from not existed player
-            TC_LOG_ERROR("misc", "MailSender::MailSender - Mail have unexpected sender typeid (%u)", sender->GetTypeId());
+            sLog->outError(LOG_FILTER_GENERAL, "MailSender::MailSender - Mail have unexpected sender typeid (%u)", sender->GetTypeId());
             break;
     }
 }
 
-MailSender::MailSender(CalendarEvent* sender)
-    : m_messageType(MAIL_CALENDAR), m_senderId(sender->GetEventId()), m_stationery(MAIL_STATIONERY_DEFAULT) // what stationery we should use here?
+MailSender::MailSender(AuctionEntry* sender)
+    : m_messageType(MAIL_AUCTION), m_senderId(sender->GetHouseId()), m_stationery(MAIL_STATIONERY_AUCTION)
 {
 }
 
-MailSender::MailSender(AuctionEntry* sender)
-    : m_messageType(MAIL_AUCTION), m_senderId(sender->GetHouseId()), m_stationery(MAIL_STATIONERY_AUCTION) { }
+MailSender::MailSender(BMAuctionEntry* sender)
+    : m_messageType(MAIL_AUCTION), m_senderId(BLACKMARKET_AUCTION_HOUSE), m_stationery(MAIL_STATIONERY_AUCTION)
+{
+}
 
 MailSender::MailSender(Player* sender)
 {
     m_messageType = MAIL_NORMAL;
-    m_stationery = sender->IsGameMaster() ? MAIL_STATIONERY_GM : MAIL_STATIONERY_DEFAULT;
+    m_stationery = sender->isGameMaster() ? MAIL_STATIONERY_GM : MAIL_STATIONERY_DEFAULT;
     m_senderId = sender->GetGUIDLow();
 }
 
-MailReceiver::MailReceiver(Player* receiver) : m_receiver(receiver), m_receiver_lowguid(receiver->GetGUIDLow()) { }
+MailReceiver::MailReceiver(Player* receiver) : m_receiver(receiver), m_receiver_lowguid(receiver->GetGUIDLow())
+{
+}
 
 MailReceiver::MailReceiver(Player* receiver, uint32 receiver_lowguid) : m_receiver(receiver), m_receiver_lowguid(receiver_lowguid)
 {
@@ -197,28 +200,47 @@ void MailDraft::SendMailTo(SQLTransaction& trans, MailReceiver const& receiver, 
         if (m_COD)
             expire_delay = 3 * DAY;
         else
-            expire_delay = pSender && pSender->IsGameMaster() ? 90 * DAY : 30 * DAY;
+            expire_delay = pSender && pSender->isGameMaster() ? 90 * DAY : 30 * DAY;
 
     time_t expire_time = deliver_time + expire_delay;
 
     // Add to DB
     uint8 index = 0;
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
-    stmt->setUInt32(  index, mailId);
-    stmt->setUInt8 (++index, uint8(sender.GetMailMessageType()));
-    stmt->setInt8  (++index, int8(sender.GetStationery()));
-    stmt->setUInt16(++index, GetMailTemplateId());
-    stmt->setUInt32(++index, sender.GetSenderId());
-    stmt->setUInt32(++index, receiver.GetPlayerGUIDLow());
-    stmt->setString(++index, GetSubject());
-    stmt->setString(++index, GetBody());
-    stmt->setBool  (++index, !m_items.empty());
-    stmt->setUInt64(++index, uint64(expire_time));
-    stmt->setUInt64(++index, uint64(deliver_time));
-    stmt->setUInt32(++index, m_money);
-    stmt->setUInt32(++index, m_COD);
-    stmt->setUInt8 (++index, uint8(checked));
+    stmt->setUInt32(index++, mailId);
+    stmt->setUInt8 (index++, uint8(sender.GetMailMessageType()));
+    stmt->setInt8  (index++, int8(sender.GetStationery()));
+    stmt->setUInt16(index++, GetMailTemplateId());
+    stmt->setUInt32(index++, sender.GetSenderId());
+    stmt->setUInt32(index++, receiver.GetPlayerGUIDLow());
+    stmt->setString(index++, GetSubject());
+    stmt->setString(index++, GetBody());
+    stmt->setBool  (index++, !m_items.empty());
+    stmt->setUInt64(index++, uint64(expire_time));
+    stmt->setUInt64(index++, uint64(deliver_time));
+    stmt->setUInt64(index++, m_money);
+    stmt->setUInt32(index++, m_COD);
+    stmt->setUInt8 (index, uint8(checked));
     trans->Append(stmt);
+
+    // Logging
+    index = 0;
+    PreparedStatement* stmt_log = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL_LOG);
+    stmt_log->setUInt32(index++, mailId);
+    stmt_log->setUInt8 (index++, uint8(sender.GetMailMessageType()));
+    stmt_log->setInt8  (index++, int8(sender.GetStationery()));
+    stmt_log->setUInt16(index++, GetMailTemplateId());
+    stmt_log->setUInt32(index++, sender.GetSenderId());
+    stmt_log->setUInt32(index++, receiver.GetPlayerGUIDLow());
+    stmt_log->setString(index++, GetSubject());
+    stmt_log->setString(index++, GetBody());
+    stmt_log->setBool  (index++, !m_items.empty());
+    stmt_log->setUInt64(index++, uint64(expire_time));
+    stmt_log->setUInt64(index++, uint64(deliver_time));
+    stmt_log->setUInt64(index++, m_money);
+    stmt_log->setUInt32(index++, m_COD);
+    stmt_log->setUInt8 (index, uint8(checked));
+    trans->Append(stmt_log);
 
     for (MailItemMap::const_iterator mailItemIter = m_items.begin(); mailItemIter != m_items.end(); ++mailItemIter)
     {

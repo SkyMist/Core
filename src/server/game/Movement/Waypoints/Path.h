@@ -1,11 +1,10 @@
 /*
- * Copyright (C) 2011-2014 Project SkyFire <http://www.projectskyfire.org/>
- * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2014 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 3 of the License, or (at your
+ * Free Software Foundation; either version 2 of the License, or (at your
  * option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
@@ -17,16 +16,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRINITYCORE_PATH_H
-#define TRINITYCORE_PATH_H
+#ifndef PATH_H
+#define PATH_H
 
 #include "Common.h"
-#include <deque>
+#include <vector>
 
-struct PathNode
+struct SimplePathNode
 {
-    PathNode(): x(0.0f), y(0.0f), z(0.0f) { }
-    PathNode(float _x, float _y, float _z): x(_x), y(_y), z(_z) { }
     float x, y, z;
 };
 template<typename PathElem, typename PathNode = PathElem>
@@ -39,20 +36,6 @@ class Path
         void resize(unsigned int sz) { i_nodes.resize(sz); }
         void clear() { i_nodes.clear(); }
         void erase(uint32 idx) { i_nodes.erase(i_nodes.begin()+idx); }
-        void crop(unsigned int start, unsigned int end)
-        {
-            while (start && !i_nodes.empty())
-            {
-                i_nodes.pop_front();
-                --start;
-            }
-
-            while (end && !i_nodes.empty())
-            {
-                i_nodes.pop_back();
-                --end;
-            }
-        }
 
         float GetTotalLength(uint32 start, uint32 end) const
         {
@@ -93,9 +76,10 @@ class Path
         void set(size_t idx, PathElem elem) { i_nodes[idx] = elem; }
 
     protected:
-        std::deque<PathElem> i_nodes;
+        std::vector<PathElem> i_nodes;
 };
 
-typedef Path<PathNode> SimplePath;
+typedef Path<SimplePathNode> SimplePath;
 
 #endif
+
