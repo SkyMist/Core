@@ -38,8 +38,9 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket & recvData)
     ObjectGuid guid;
 
     uint8 bitOrder[8] = {2, 7, 3, 1, 6, 0, 4, 5};
-    recvData.FlushBits();
     recvData.ReadBitInOrder(guid, bitOrder);
+
+    recvData.FlushBits();
 
     uint8 byteOrder[8] = {2, 3, 6, 5, 4, 1, 0, 7};
     recvData.ReadBytesSeq(guid, byteOrder);
@@ -134,12 +135,16 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
     guid[3] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
+
     unk1 = recvData.ReadBit();
+
     guid[5] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
     guid[6] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     uint8 byteOrder[8] = {3, 4, 7, 2, 5, 1, 6, 0};
     recvData.ReadBytesSeq(guid, byteOrder);
@@ -361,15 +366,20 @@ void WorldSession::HandleQuestgiverQueryQuestOpcode(WorldPacket& recvData)
     bool unk1;
 
     recvData >> questId;
+
     guid[6] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
+
     unk1 = recvData.ReadBit();
+
     guid[5] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[5]);
     recvData.ReadByteSeq(guid[6]);
@@ -426,6 +436,7 @@ void WorldSession::HandleQuestQueryOpcode(WorldPacket & recvData)
 
     uint32 questId;
     recvData >> questId;
+
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_QUEST_QUERY quest = %u", questId);
 
     if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
@@ -441,6 +452,9 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
 
     uint8 bitOrder[8] = {2, 0, 7, 5, 6, 4, 1, 3};
     recvData.ReadBitInOrder(guid, bitOrder);
+
+    recvData.FlushBits();
+
     uint8 byteOrder[8] = {7, 2, 4, 5, 3, 6, 1, 0}; 
     recvData.ReadBytesSeq(guid, byteOrder);
 
@@ -545,8 +559,11 @@ void WorldSession::HandleQuestgiverRequestRewardOpcode(WorldPacket & recvData)
     recvData >> questId;
     
     uint8 bitOrder[8] = {4, 1, 7, 0, 3, 2, 6, 5};
-    uint8 byteOrder[8] = {7, 2, 6, 4, 3, 1, 5, 0};
     recvData.ReadBitInOrder(guid, bitOrder);
+
+    recvData.FlushBits();
+
+    uint8 byteOrder[8] = {7, 2, 6, 4, 3, 1, 5, 0};
     recvData.ReadBytesSeq(guid, byteOrder);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_QUESTGIVER_REQUEST_REWARD npc = %u, quest = %u", uint32(GUID_LOPART(guid)), questId);
@@ -642,6 +659,7 @@ void WorldSession::HandleQuestgiverCompleteQuest(WorldPacket& recvData)
     uint32 questId;
     ObjectGuid playerGuid;
     bool autoCompleteMode;      // 0 - standard complete quest mode with npc, 1 - auto-complete mode
+
     recvData >> questId;
 
     playerGuid[6] = recvData.ReadBit();
@@ -650,9 +668,12 @@ void WorldSession::HandleQuestgiverCompleteQuest(WorldPacket& recvData)
     playerGuid[4] = recvData.ReadBit();
     playerGuid[3] = recvData.ReadBit();
     playerGuid[0] = recvData.ReadBit();
+
     autoCompleteMode = recvData.ReadBit();
+
     playerGuid[1] = recvData.ReadBit();
     playerGuid[2] = recvData.ReadBit();
+
     recvData.FlushBits();
 
     uint8 byteOrder[8] = {0, 5, 3, 2, 4, 6, 1, 7};
@@ -784,13 +805,19 @@ void WorldSession::HandleQuestPushResult(WorldPacket& recvPacket)
         Player* player = ObjectAccessor::FindPlayer(_player->GetDivider());
         if (player)
         {
-            WorldPacket data(SMSG_QUEST_PUSH_RESULT, (8+1));
+            WorldPacket data(SMSG_QUEST_PUSH_RESULT, 8 + 1 + 1);
             ObjectGuid guidObj = player->GetGUID();
+
             uint8 bitOrder[8] = {1, 0, 6, 5, 7, 4, 3, 2};
-            uint8 byteOrder[8] = {7, 5, 1, 6, 3, 2, 4, 0};
             data.WriteBitInOrder(guidObj, bitOrder);
+
+            data.FlushBits();
+
+            uint8 byteOrder[8] = {7, 5, 1, 6, 3, 2, 4, 0};
             data.WriteBytesSeq(guidObj, byteOrder);
+
             data << uint8(msg); 
+
             player->GetSession()->SendPacket(&data);
             _player->SetDivider(0);
         }

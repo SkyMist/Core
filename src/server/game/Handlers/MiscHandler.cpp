@@ -2400,7 +2400,7 @@ void WorldSession::HandleInstanceLockResponse(WorldPacket& recvPacket)
 
 void WorldSession::HandleRequestHotfix(WorldPacket& recvPacket)
 {
-    uint32 type, count;
+    uint32 type, count, entry;
     recvPacket >> type;
 
     count = recvPacket.ReadBits(21);
@@ -2411,8 +2411,8 @@ void WorldSession::HandleRequestHotfix(WorldPacket& recvPacket)
     for (uint32 i = 0; i < count; ++i)
         recvPacket.ReadBitInOrder(guids[i], order);
 
-    uint32 entry;
     recvPacket.FlushBits();
+
     for (uint32 i = 0; i < count; ++i)
     {
         recvPacket.ReadByteSeq(guids[i][5]);
@@ -2508,6 +2508,8 @@ void WorldSession::HandleObjectUpdateFailedOpcode(WorldPacket& recvPacket)
 
     uint8 bitOrder[8] = {4, 6, 3, 0, 7, 5, 1, 2};
     recvPacket.ReadBitInOrder(guid, bitOrder);
+
+    recvPacket.FlushBits();
 
     uint8 byteOrder[8] = {4, 7, 0, 6, 5, 2, 1, 3};
     recvPacket.ReadBytesSeq(guid, byteOrder);

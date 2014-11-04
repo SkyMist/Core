@@ -29751,32 +29751,44 @@ void Player::SendMovementSetCollisionHeight(float height)
 {
     CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID));
 
+    bool hasMountDisplayInfoScale = mountDisplayInfo ? true : false;
+    float mountDisplayScale = hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f;
+
     ObjectGuid guid = GetGUID();
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HEIGHT, 2 + 8 + 4 + 4);
 
-    data.WriteBit(!mountDisplayInfo); // mountDisplayInfo scale, inverse
+    data.WriteBit(!hasMountDisplayInfoScale); // mountDisplayInfo scale, inversed.
+
     data.WriteBit(guid[7]);
     data.WriteBit(guid[6]);
     data.WriteBit(guid[1]);
-    data.WriteBits(3, 2);                   // Unk, 3 on retail sniff
+
+    data.WriteBits(3, 2);                     // Unk, 3 on retail sniff
+
     data.WriteBit(guid[2]);
     data.WriteBit(guid[5]);
     data.WriteBit(guid[3]);
     data.WriteBit(guid[0]);
     data.WriteBit(guid[4]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[7]);
     data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[1]);    
-    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[4]);    
+    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
+
     data << float(height);
-    data << float(1.0f);
+    data << float(mountDisplayScale);
     data << uint32(sWorld->GetGameTime());  // Packet counter
+
     data.WriteByteSeq(guid[3]);
-    if (mountDisplayInfo)
+
+    if (hasMountDisplayInfoScale)
         data << uint32(mountDisplayInfo->Displayid);
+
     data.WriteByteSeq(guid[0]);
 
     SendDirectMessage(&data);
@@ -29790,12 +29802,14 @@ void Player::SetMover(Unit* target)
 
     if (m_mover)
     {
-        WorldPacket data(SMSG_MOVE_SET_ACTIVE_MOVER, 8);
+        WorldPacket data(SMSG_MOVE_SET_ACTIVE_MOVER, 8 + 1);
         ObjectGuid guid = target->GetGUID();
     
         uint8 bitOrder[8] = { 1, 2, 4, 5, 3, 0, 7, 6 };
         data.WriteBitInOrder(guid, bitOrder);
-    
+
+        data.FlushBits();
+
         uint8 byteOrder[8] = { 4, 1, 5, 7, 3, 2, 0, 6 };
         data.WriteBytesSeq(guid, byteOrder);
 

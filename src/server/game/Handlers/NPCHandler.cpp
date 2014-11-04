@@ -70,10 +70,12 @@ void WorldSession::HandleTabardVendorActivateOpcode(WorldPacket& recvData)
 void WorldSession::SendTabardVendorActivate(uint64 guid)
 {
     ObjectGuid playerGuid = guid;
-    WorldPacket data(SMSG_PLAYER_TABAR_VENDOR_SHOW);
+    WorldPacket data(SMSG_PLAYER_TABAR_VENDOR_SHOW, 1 + 8);
 
     uint8 bitsOrder[8] = { 6, 3, 0, 1, 4, 2, 5, 7 };
     data.WriteBitInOrder(playerGuid, bitsOrder);
+
+    data.FlushBits();
 
     uint8 bytesOrder[8] = { 2, 5, 1, 7, 6, 0, 3, 4 };
     data.WriteBytesSeq(playerGuid, bytesOrder);
@@ -111,7 +113,7 @@ void WorldSession::HandleBankerActivateOpcode(WorldPacket& recvData)
 
 void WorldSession::SendShowBank(uint64 guid)
 {
-    WorldPacket data(SMSG_SHOW_BANK, 8);
+    WorldPacket data(SMSG_SHOW_BANK, 1 + 8);
     ObjectGuid npcGuid = guid;
 
     uint8 bitsOrder[8] = { 7, 1, 6, 4, 3, 5, 0, 2 };
@@ -250,6 +252,7 @@ void WorldSession::SendTrainerList(uint64 guid, const std::string& strTitle)
     data.WriteBits(strTitle.size(), 11);
     data.WriteBit(npcGuid[6]);
     data.WriteBit(npcGuid[4]);
+
     data.FlushBits();
 
     data.WriteByteSeq(npcGuid[3]);
@@ -265,10 +268,12 @@ void WorldSession::SendTrainerList(uint64 guid, const std::string& strTitle)
         data.append(strTitle.c_str(), strTitle.size());
 
     data << uint32(unit->GetCreatureTemplate()->trainer_type);
+
     data.WriteByteSeq(npcGuid[2]);
     data.WriteByteSeq(npcGuid[4]);
     data.WriteByteSeq(npcGuid[5]);
     data.WriteByteSeq(npcGuid[7]);
+
     data << uint32(1); // different value for each trainer, also found in CMSG_TRAINER_BUY_SPELL
 
     SendPacket(&data);
@@ -365,6 +370,8 @@ void WorldSession::SendTrainerService(uint64 guid, uint32 spellId, uint32 result
     uint8 bitsOrder[8] = { 4, 5, 1, 2, 3, 6, 0, 7 };
     data.WriteBitInOrder(npcGuid, bitsOrder);
 
+    data.FlushBits();
+
     data.WriteByteSeq(npcGuid[4]);
     data.WriteByteSeq(npcGuid[0]);
     data.WriteByteSeq(npcGuid[6]);
@@ -387,6 +394,8 @@ void WorldSession::HandleGossipHelloOpcode(WorldPacket& recvData)
 
     uint8 bitsOrder[8] = { 6, 3, 4, 5, 1, 7, 2, 0 };
     recvData.ReadBitInOrder(guid, bitsOrder);
+
+    recvData.FlushBits();
 
     uint8 bytesOrder[8] = { 6, 0, 1, 7, 2, 5, 4, 3 };
     recvData.ReadBytesSeq(guid, bytesOrder);
@@ -795,7 +804,9 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recvData)
     npcGUID[3] = recvData.ReadBit();
     itemGUID[3] = recvData.ReadBit();
     itemGUID[6] = recvData.ReadBit();
+
     guildBank = recvData.ReadBit();
+
     npcGUID[2] = recvData.ReadBit();
     itemGUID[0] = recvData.ReadBit();
     npcGUID[7] = recvData.ReadBit();
@@ -809,6 +820,8 @@ void WorldSession::HandleRepairItemOpcode(WorldPacket& recvData)
     itemGUID[2] = recvData.ReadBit();
     npcGUID[1] = recvData.ReadBit();
     itemGUID[1] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(itemGUID[6]);
     recvData.ReadByteSeq(npcGUID[1]);

@@ -235,44 +235,56 @@ bool LoginQueryHolder::Initialize()
 
 void WorldSession::HandleCharEnum(PreparedQueryResult result)
 {
-    WorldPacket data(SMSG_CHAR_ENUM);
-
     uint32 unkCount = 0;
     uint32 charCount = 0;
     ByteBuffer bitBuffer;
     ByteBuffer dataBuffer;
-
-    bitBuffer.WriteBit(1); // Must send 1, else receive CHAR_LIST_FAILED error
-    bitBuffer.WriteBits(unkCount, 21); // unk uint32 count
 
     if (result)
     {
         _allowedCharsToLogin.clear();
 
         charCount = uint32(result->GetRowCount());
-        
+
+        bitBuffer.reserve(24 * charCount / 8);
+        dataBuffer.reserve(charCount * 381);
+
+        bitBuffer.WriteBit(1);             // Must send 1, else receive CHAR_LIST_FAILED error.
+        bitBuffer.WriteBits(unkCount, 21); // Unk uint32 count. Loop at the end - { uint32(); uint8; }.
         bitBuffer.WriteBits(charCount, 16);
 
         do
         {
             uint32 guidLow = (*result)[0].GetUInt32();
 
+            sLog->outInfo(LOG_FILTER_CHARACTER, "Loading char guid %u from account %u.", guidLow, GetAccountId());
+
             Player::BuildEnumData(result, &dataBuffer, &bitBuffer);
 
-            if (!sWorld->HasCharacterNameData(guidLow)) // This can happen if characters are inserted into the database manually. Core hasn't loaded name data yet.
-                 sWorld->AddCharacterNameData(guidLow, (*result)[1].GetString(), (*result)[4].GetUInt8(), (*result)[2].GetUInt8(), (*result)[3].GetUInt8(), (*result)[7].GetUInt8());
+            // Do not allow banned characters to log in
+            if (!(*result)[20].GetUInt32())
+                _allowedCharsToLogin.insert(guidLow);
 
-            _allowedCharsToLogin.insert(guidLow);
+            if (!sWorld->HasCharacterNameData(guidLow)) // This can happen if characters are inserted into the database manually. Core hasn't loaded name data yet.
+                sWorld->AddCharacterNameData(guidLow, (*result)[1].GetString(), (*result)[4].GetUInt8(), (*result)[2].GetUInt8(), (*result)[3].GetUInt8(), (*result)[7].GetUInt8());
         }
         while (result->NextRow());
+
+        bitBuffer.FlushBits();
     }
     else
+    {		
+        bitBuffer.WriteBit(1);
+        bitBuffer.WriteBits(0, 21);
         bitBuffer.WriteBits(0, 16);
+        bitBuffer.FlushBits();
+    }
 
-    bitBuffer.FlushBits();
+    WorldPacket data(SMSG_CHAR_ENUM, 7 + bitBuffer.size() + dataBuffer.size());
 
     data.append(bitBuffer);
-    if (dataBuffer.size())
+
+    if (charCount)
         data.append(dataBuffer);
 
     SendPacket(&data);
@@ -844,6 +856,8 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recvData)
 
     uint8 bitOrder[8] = { 7, 6, 0, 4, 5, 2, 3, 1 };
     recvData.ReadBitInOrder(playerGuid, bitOrder);
+
+    recvData.FlushBits();
 
     uint8 byteOrder[8] = { 5, 0, 1, 6, 7, 2, 3, 4 };
     recvData.ReadBytesSeq(playerGuid, byteOrder);
@@ -1558,6 +1572,7 @@ void WorldSession::HandleSetPlayerDeclinedNames(WorldPacket& recvData)
     }
     
     guid[2] = recvData.ReadBit();
+
     recvData.FlushBits();
 
     recvData.ReadByteSeq(guid[3]);
@@ -1634,15 +1649,20 @@ void WorldSession::HandleSetPlayerDeclinedNames(WorldPacket& recvData)
 
 void WorldSession::SendPlayerDeclinedNamesResult(ObjectGuid guid, uint32 result)
 {
-    uint8 bitsOrder[8] = { 3, 7, 1, 6, 4, 5, 0, 2 };
-    uint8 bytesOrder[8] = { 4, 3, 0, 7, 1, 6, 5, 2 };
-    
     WorldPacket data(SMSG_SET_PLAYER_DECLINED_NAMES_RESULT, 1+8+4);
 
     data.WriteBit(false);
+
+    uint8 bitsOrder[8] = { 3, 7, 1, 6, 4, 5, 0, 2 };
     data.WriteBitInOrder(guid, bitsOrder);
+
+    data.FlushBits();
+
+    uint8 bytesOrder[8] = { 4, 3, 0, 7, 1, 6, 5, 2 };
     data.WriteBytesSeq(guid, bytesOrder);
+
     data << uint32(result);
+
     SendPacket(&data);
 }
 
@@ -1755,6 +1775,7 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     playerGuid[1] = recvData.ReadBit();
     playerGuid[6] = recvData.ReadBit();
     playerGuid[0] = recvData.ReadBit();
+
     recvData.FlushBits();
     
     recvData.ReadByteSeq(playerGuid[2]);
@@ -1773,13 +1794,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
 
     if (!result)
     {
-        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
         uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
         data.WriteBitInOrder(playerGuid, bits);
 
+        data.FlushBits();
+
         data.WriteByteSeq(playerGuid[7]);
+
         data << uint8(CHAR_CREATE_ERROR);
+
         data.WriteByteSeq(playerGuid[5]);
         data.WriteByteSeq(playerGuid[2]);
         data.WriteByteSeq(playerGuid[1]);
@@ -1797,13 +1822,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
 
     if (!(at_loginFlags & AT_LOGIN_CUSTOMIZE))
     {
-        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
         uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
         data.WriteBitInOrder(playerGuid, bits);
 
+        data.FlushBits();
+
         data.WriteByteSeq(playerGuid[7]);
+
         data << uint8(CHAR_CREATE_ERROR);
+
         data.WriteByteSeq(playerGuid[5]);
         data.WriteByteSeq(playerGuid[2]);
         data.WriteByteSeq(playerGuid[1]);
@@ -1819,13 +1848,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     // prevent character rename to invalid name
     if (!normalizePlayerName(newName))
     {
-        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
         uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
         data.WriteBitInOrder(playerGuid, bits);
 
+        data.FlushBits();
+
         data.WriteByteSeq(playerGuid[7]);
+
         data << uint8(CHAR_NAME_NO_NAME);
+
         data.WriteByteSeq(playerGuid[5]);
         data.WriteByteSeq(playerGuid[2]);
         data.WriteByteSeq(playerGuid[1]);
@@ -1841,13 +1874,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     uint8 res = ObjectMgr::CheckPlayerName(newName, true);
     if (res != CHAR_NAME_SUCCESS)
     {
-        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
         uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
         data.WriteBitInOrder(playerGuid, bits);
 
+        data.FlushBits();
+
         data.WriteByteSeq(playerGuid[7]);
+
         data << uint8(res);
+
         data.WriteByteSeq(playerGuid[5]);
         data.WriteByteSeq(playerGuid[2]);
         data.WriteByteSeq(playerGuid[1]);
@@ -1863,13 +1900,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     // check name limitations
     if (AccountMgr::IsPlayerAccount(GetSecurity()) && sObjectMgr->IsReservedName(newName))
     {
-        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+        WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
         uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
         data.WriteBitInOrder(playerGuid, bits);
 
+        data.FlushBits();
+
         data.WriteByteSeq(playerGuid[7]);
+
         data << uint8(CHAR_NAME_RESERVED);
+
         data.WriteByteSeq(playerGuid[5]);
         data.WriteByteSeq(playerGuid[2]);
         data.WriteByteSeq(playerGuid[1]);
@@ -1887,13 +1928,17 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     {
         if (newguid != playerGuid)
         {
-            WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);
+            WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1 + 8 + 1);
 
             uint8 bits[8] = { 4, 0, 7, 5, 2, 1, 6, 3 };
             data.WriteBitInOrder(playerGuid, bits);
 
+            data.FlushBits();
+
             data.WriteByteSeq(playerGuid[7]);
+
             data << uint8(CHAR_CREATE_NAME_IN_USE);
+
             data.WriteByteSeq(playerGuid[5]);
             data.WriteByteSeq(playerGuid[2]);
             data.WriteByteSeq(playerGuid[1]);
@@ -1941,6 +1986,7 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     data.WriteBitInOrder(playerGuid, bits);
 
     data.WriteByteSeq(playerGuid[7]);
+
     data << uint8(RESPONSE_SUCCESS);
     data << uint8(hairStyle);
     data << uint8(skin);
@@ -1948,6 +1994,7 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     data << uint8(facialHair);
     data << uint8(face);
     data << uint8(gender);
+
     data.WriteByteSeq(playerGuid[5]);
     data.WriteByteSeq(playerGuid[2]);
     data.WriteByteSeq(playerGuid[1]);
@@ -1955,8 +2002,11 @@ void WorldSession::HandleCharCustomize(WorldPacket& recvData)
     data.WriteByteSeq(playerGuid[4]);
     data.WriteByteSeq(playerGuid[3]);
     data.WriteByteSeq(playerGuid[0]);
+
     data.WriteBits(newName.size(), 6);
+
     data.FlushBits();
+
     data.append(newName.c_str(), newName.size());
 
     SendPacket(&data);
@@ -1993,6 +2043,7 @@ void WorldSession::HandleEquipmentSetSave(WorldPacket& recvData)
     setGuid[0] = recvData.ReadBit();
     iconNameLen = recvData.ReadBits(9);
     setGuid[2] = recvData.ReadBit();
+
     recvData.FlushBits();
 
     std::string name = recvData.ReadString(setNameLen);
@@ -2170,7 +2221,9 @@ void WorldSession::HandleCharFactionOrRaceChange(WorldPacket& recvData)
     hasFace = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
     unk = recvData.ReadBit();
-    
+
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[2]);
     recvData.ReadByteSeq(guid[0]);
     newname = recvData.ReadString(nameLen);
@@ -2769,10 +2822,15 @@ void WorldSession::HandleRandomizeCharNameOpcode(WorldPacket& recvData)
     }
 
     std::string const* name = GetRandomCharacterName(race, gender);
-    WorldPacket data(SMSG_RANDOMIZE_CHAR_NAME, 10);
+    WorldPacket data(SMSG_RANDOMIZE_CHAR_NAME, 1 + name->size());
+
     data.WriteBit(0); // unk
     data.WriteBits(name->size(), 6);
+
+    data.FlushBits();
+
     data.WriteString(name->c_str());
+
     SendPacket(&data);
 }
 

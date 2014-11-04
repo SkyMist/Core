@@ -202,7 +202,8 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
     CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry);
     uint32 entryToSend = info ? entry : 0x80000000 | entry;
 
-    WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 128);
+    WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 500);
+
     data << uint32(entryToSend);
     data.WriteBit(info != 0);                                    // Has data
 
@@ -221,10 +222,11 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
                 ObjectMgr::GetLocaleString(cl->SubName, loc_idx, SubName);
             }
         }
+
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", info->Name.c_str(), entry);
 
         data.WriteBit(info->RacialLeader);
-        data.WriteBits(info->IconName.size() ? info->IconName.size() + 1 : 0, 6);
+        data.WriteBits(info->IconName.length() ? info->IconName.length() + 1 : 0, 6);
 
         for (int i = 0; i < 8; i++)
         {
@@ -241,6 +243,7 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
 
         data.WriteBits(itemCount, 22);
         data.WriteBits(SubName.length() ? SubName.length() + 1 : 0, 11);
+
         data.WriteBits(0, 11);
         data.FlushBits();
 
@@ -258,8 +261,10 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
                 itemCount--;
             }
         }
+
         data << uint32(info->type);                           // CreatureType.dbc
-        if (info->IconName.size())
+
+        if (info->IconName.length())
             data << info->IconName;                           // Icon Name
 
         data << uint32(info->type_flags);                     // Flag
@@ -271,18 +276,16 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         data << uint32(info->Modelid1);                       // Modelid1
         data << uint32(info->Modelid3);                       // Modelid3
         data << uint32(info->rank);                           // Creature Rank (elite, boss, etc)
-        if (SubName.size())
+        if (SubName.length())
             data << SubName;                                  // Sub Name
 
         data << uint32(info->Modelid4);                       // Modelid4
+
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }
     else
-    {
-        data.FlushBits();
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_CREATURE_QUERY - NO CREATURE INFO! (ENTRY: %u)", entry);
-    }
-    
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
+
     SendPacket(&data);
 }
 

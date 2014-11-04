@@ -759,14 +759,20 @@ namespace JadeCore
                 data.WriteBit(playerGuid[1]);
                 data.WriteBit(targetGuid[6]);
                 data.WriteBit(playerGuid[7]);
-                
+
+                data.FlushBits();
+
                 data.WriteByteSeq(playerGuid[0]);
                 data.WriteByteSeq(playerGuid[5]);
                 data.WriteByteSeq(playerGuid[6]);
+
                 data << int32(i_text_emote);
+
                 data.WriteByteSeq(playerGuid[7]);
                 data.WriteByteSeq(playerGuid[2]);
+
                 data << int32(i_emote_num);
+
                 data.WriteByteSeq(targetGuid[3]);
                 data.WriteByteSeq(targetGuid[1]);
                 data.WriteByteSeq(targetGuid[6]);
