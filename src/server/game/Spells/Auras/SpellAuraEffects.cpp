@@ -2295,10 +2295,8 @@ void AuraEffect::HandleModInvisibility(AuraApplication const* aurApp, uint8 mode
     if (apply)
     {
         // apply glow vision
-        //if (target->GetTypeId() == TYPEID_PLAYER && GetSpellInfo()->GetMaxDuration() != -1)
-        //{
-        //    target->SetByteFlag(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 3, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
-        //}
+        if (target->GetTypeId() == TYPEID_PLAYER && GetSpellInfo()->GetMaxDuration() != -1)
+            target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
 
         if (GetBase()->GetId() == 32612) // invisible mage pet
             if (Unit* pet = target->GetGuardianPet())
@@ -2311,10 +2309,9 @@ void AuraEffect::HandleModInvisibility(AuraApplication const* aurApp, uint8 mode
     {
         if (!target->HasAuraType(SPELL_AURA_MOD_INVISIBILITY))
         {
-            // if not have different invisibility auras.
-            // remove glow vision
-            //if (target->GetTypeId() == TYPEID_PLAYER)
-            //    target->RemoveByteFlag(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 3, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+            // if not having different invisibility auras, remove glow vision.
+            if (target->GetTypeId() == TYPEID_PLAYER)
+                target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0, 0);
 
             target->m_invisibility.DelFlag(type);
         }
@@ -2409,11 +2406,16 @@ void AuraEffect::HandleModStealth(AuraApplication const* aurApp, uint8 mode, boo
 
         target->SetStandFlags(UNIT_STAND_FLAGS_CREEP);
 
+        if (target->GetTypeId() == TYPEID_PLAYER)
+            target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0, PLAYER_FIELD_BYTE2_STEALTH);
+
         WorldPacket data(SMSG_CLEAR_TARGET, 8);
         ObjectGuid casterGuid = target->GetGUID();
 
         uint8 bitsOrder[8] = { 0, 5, 7, 2, 1, 6, 3, 4 };
         data.WriteBitInOrder(casterGuid, bitsOrder);
+
+        data.FlushBits();
 
         uint8 bytesOrder[8] = { 2, 1, 5, 7, 4, 0, 6, 3 };
         data.WriteBytesSeq(casterGuid, bytesOrder);
@@ -2437,6 +2439,9 @@ void AuraEffect::HandleModStealth(AuraApplication const* aurApp, uint8 mode, boo
             target->m_stealth.DelFlag(type);
 
             target->RemoveStandFlags(UNIT_STAND_FLAGS_CREEP);
+
+            if (target->GetTypeId() == TYPEID_PLAYER)
+                target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0, 0);
         }
     }
 
@@ -6711,7 +6716,7 @@ void AuraEffect::HandleAuraOverrideSpells(AuraApplication const* aurApp, uint8 m
 
     if (apply)
     {
-        target->SetUInt32Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, overrideId);
+        target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 1, overrideId);
         if (OverrideSpellDataEntry const* overrideSpells = sOverrideSpellDataStore.LookupEntry(overrideId))
             for (uint8 i = 0; i < MAX_OVERRIDE_SPELL; ++i)
                 if (uint32 spellId = overrideSpells->spellId[i])
@@ -6719,7 +6724,7 @@ void AuraEffect::HandleAuraOverrideSpells(AuraApplication const* aurApp, uint8 m
     }
     else
     {
-        target->SetUInt32Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 0);
+        target->SetUInt16Value(PLAYER_FIELD_OVERRIDE_SPELLS_ID, 1, 0);
         if (OverrideSpellDataEntry const* overrideSpells = sOverrideSpellDataStore.LookupEntry(overrideId))
             for (uint8 i = 0; i < MAX_OVERRIDE_SPELL; ++i)
                 if (uint32 spellId = overrideSpells->spellId[i])

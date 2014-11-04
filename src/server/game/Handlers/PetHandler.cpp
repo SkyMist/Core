@@ -1052,7 +1052,7 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
         
         recvPacket.ReadByteSeq(moveGuid1[4]);
         
-        for (int i = 0; i < unkCount; ++i)
+        for (uint8 i = 0; i < unkCount; ++i)
         {
             recvPacket.read_skip<uint32>();
         }

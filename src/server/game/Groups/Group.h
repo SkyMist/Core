@@ -249,7 +249,7 @@ class Group
         typedef UNORDERED_MAP< uint32 /*mapId*/, InstanceGroupBind> BoundInstancesMap;
     protected:
         typedef MemberSlotList::iterator member_witerator;
-        typedef std::set<uint64> InvitesList;
+        typedef std::set<Player*> InvitesList;
 
         typedef std::vector<Roll*> Rolls;
 
@@ -429,7 +429,6 @@ class Group
         MemberSlotList      m_memberSlots;
         RaidMarkerList      m_raidMarkers;
         GroupRefManager     m_memberMgr;
-        mutable ACE_Thread_Mutex    m_inviteesLock;
         InvitesList         m_invitees;
         uint64              m_leaderGuid;
         std::string         m_leaderName;
@@ -452,6 +451,5 @@ class Group
         uint8               m_readyCheckCount;
         uint8               m_membersInInstance;
         bool                m_readyCheck;
-        ACE_RW_Thread_Mutex m_invitesLock;
 };
 #endif

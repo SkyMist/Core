@@ -36,14 +36,14 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
     Player* player = ObjectAccessor::FindPlayer(guid);
     CharacterNameData const* nameData = sWorld->GetCharacterNameData(GUID_LOPART(guid));
 
-    WorldPacket data(SMSG_NAME_QUERY_RESPONSE, 64);
+    WorldPacket data(SMSG_NAME_QUERY_RESPONSE, 500);
 
     uint8 guidOrder[8] = {4, 0, 2, 6, 5, 3, 1, 7};
-
     data.WriteBitInOrder(guid, guidOrder);
+
     data.WriteByteSeq(guid[1]);
+
     data << uint8(!nameData);
-    
     if (nameData)
     {
         data << uint32(realmID);
@@ -112,8 +112,8 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
         data.WriteByteSeq(pGuid2[7]);
         data.WriteByteSeq(pGuid2[0]);
         data.WriteByteSeq(unkGuid[7]);
-        data.WriteByteSeq(unkGuid[1]);
         data.WriteByteSeq(unkGuid[0]);
+        data.WriteByteSeq(unkGuid[1]);
         data.WriteByteSeq(unkGuid[4]);
         data.WriteByteSeq(pGuid2[1]);
         data.WriteByteSeq(unkGuid[2]);
@@ -427,9 +427,11 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
     data.WriteBit(1);
     data.WriteBit(guid[7]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(guid[3]);
-    data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
     data << uint32(mapid);
     data << float(x);
     data.WriteByteSeq(guid[6]);
@@ -456,8 +458,9 @@ void WorldSession::HandleForcedReactionsOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
-    uint32 textID;
     ObjectGuid guid;
+    uint32 textID;
+    bool hasGossip;
 
     recvData >> textID;
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_NPC_TEXT_QUERY ID '%u'", textID);
@@ -465,91 +468,46 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     uint8 bitOrder[8] = {0, 1, 2, 6, 4, 3, 7, 5};
     recvData.ReadBitInOrder(guid, bitOrder);
 
+    recvData.FlushBits();
+
     uint8 byteOrder[8] = {3, 1, 4, 6, 2, 0, 5, 7};
     recvData.ReadBytesSeq(guid, byteOrder);
 
     GetPlayer()->SetSelection(guid);
 
-    GossipText const* pGossip = sObjectMgr->GetGossipText(textID);
+    GossipText const* gossip = sObjectMgr->GetGossipText(textID);
 
-    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 100);          // guess size
-
-    data << uint32(64);                                 // size (8 * 4) * 2
-
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
-        data << float(/*pGossip ? pGossip->Options[i].Probability : 0*/0);
-
-    data << textID;                                     // should be a broadcast id
-
-    for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
-        data << uint32(0);
-
-    data << textID;
-
-    data.WriteBit(1);                                   // has data
-    data.FlushBits();
-
-    /*if (!pGossip)
+    if (Unit* interactionUnit = ObjectAccessor::FindUnit(uint64(guid)))
     {
-        for (uint32 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; ++i)
-        {
-            data << float(0);
-            data << "Greetings $N";
-            data << "Greetings $N";
-            data << uint32(0);
-            data << uint32(0);
-            data << uint32(0);
-            data << uint32(0);
-            data << uint32(0);
-            data << uint32(0);
-            data << uint32(0);
-        }
+        if (interactionUnit->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
+            hasGossip = true;
+        else
+            hasGossip = false;
+    }
+    else if (GameObject* go = GetPlayer()->GetMap()->GetGameObject(uint64(guid)))
+    {
+        if (gossip)
+            hasGossip = true;
     }
     else
-    {
-        std::string Text_0[MAX_LOCALES], Text_1[MAX_LOCALES];
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; ++i)
-        {
-            Text_0[i]=pGossip->Options[i].Text_0;
-            Text_1[i]=pGossip->Options[i].Text_1;
-        }
+	    hasGossip = false;
 
-        int loc_idx = GetSessionDbLocaleIndex();
-        if (loc_idx >= 0)
-        {
-            if (NpcTextLocale const* nl = sObjectMgr->GetNpcTextLocale(textID))
-            {
-                for (int i = 0; i < MAX_LOCALES; ++i)
-                {
-                    ObjectMgr::GetLocaleString(nl->Text_0[i], loc_idx, Text_0[i]);
-                    ObjectMgr::GetLocaleString(nl->Text_1[i], loc_idx, Text_1[i]);
-                }
-            }
-        }
+    WorldPacket data(SMSG_NPC_TEXT_UPDATE, 4 + 32 + 32 + 4 + 1);
 
-        for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; ++i)
-        {
-            data << pGossip->Options[i].Probability;
+    data << uint32(64);                                 // size: (MAX_GOSSIP_TEXT_OPTIONS(8) * 4) * 2. Common value seems to be 64.
 
-            if (Text_0[i].empty())
-                data << Text_1[i];
-            else
-                data << Text_0[i];
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS; i++)
+        data << float(gossip ? gossip->Options[i].Probability : 0);
 
-            if (Text_1[i].empty())
-                data << Text_0[i];
-            else
-                data << Text_1[i];
+    data << uint32(textID);                              // Send the Text Id as first broadcast id. This is the gossip textID the creature updates to.
 
-            data << pGossip->Options[i].Language;
+    for (uint8 i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
+        data << uint32(0);                               // Broadcast Text Id for all other slots.
 
-            for (int j = 0; j < MAX_GOSSIP_TEXT_EMOTES; ++j)
-            {
-                data << pGossip->Options[i].Emotes[j]._Delay;
-                data << pGossip->Options[i].Emotes[j]._Emote;
-            }
-        }
-    }*/
+    data << uint32(textID);                              // This is the gossip textID and first to show when speaking to something.
+
+    data.WriteBit(hasGossip);                            // Has gossip data - controls gossip window opening.
+    data.FlushBits();
 
     SendPacket(&data);
 
@@ -648,6 +606,7 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recvData)
                     ObjectMgr::GetLocaleString(player->Text, loc_idx, Text);
 
             data.WriteBits(Text.size(), 12);
+
             data.FlushBits();
 
             data << uint32(pageID);
@@ -671,8 +630,25 @@ void WorldSession::HandleCorpseMapPositionQuery(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recv CMSG_CORPSE_MAP_POSITION_QUERY");
 
-    // Read guid, useless
-    recvData.rfinish();
+    ObjectGuid TransportGuid;
+    
+    TransportGuid[6] = recvData.ReadBit();
+    TransportGuid[1] = recvData.ReadBit();
+    TransportGuid[7] = recvData.ReadBit();
+    TransportGuid[2] = recvData.ReadBit();
+    TransportGuid[4] = recvData.ReadBit();
+    TransportGuid[0] = recvData.ReadBit();
+    TransportGuid[5] = recvData.ReadBit();
+    TransportGuid[3] = recvData.ReadBit();
+    
+    recvData.ReadByteSeq(TransportGuid[5]);
+    recvData.ReadByteSeq(TransportGuid[2]);
+    recvData.ReadByteSeq(TransportGuid[3]);
+    recvData.ReadByteSeq(TransportGuid[6]);
+    recvData.ReadByteSeq(TransportGuid[1]);
+    recvData.ReadByteSeq(TransportGuid[0]);
+    recvData.ReadByteSeq(TransportGuid[7]);
+    recvData.ReadByteSeq(TransportGuid[4]);
 
     WorldPacket data(SMSG_CORPSE_MAP_POSITION_QUERY_RESPONSE, 4+4+4+4);
     data << float(0);

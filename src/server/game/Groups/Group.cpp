@@ -325,11 +325,9 @@ bool Group::AddInvite(Player* player)
 
     RemoveInvite(player);
 
-    m_inviteesLock.acquire();
-    m_invitees.insert(player->GetGUID());
-    m_inviteesLock.release();
+    m_invitees.insert(player);
 
-    player->SetGroupInvite(this->GetGUID());
+    player->SetGroupInvite(this);
 
     sScriptMgr->OnGroupInviteMember(this, player->GetGUID());
 
@@ -349,55 +347,36 @@ bool Group::AddLeaderInvite(Player* player)
 
 void Group::RemoveInvite(Player* player)
 {
-    if (!player)
-        return;
-
-    // Critical section
+    if (player)
     {
-        TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, m_invitesLock);
-
-        m_invitees.erase(player->GetGUID());
-        player->SetGroupInvite(0);
+        m_invitees.erase(player);
+        player->SetGroupInvite(NULL);
     }
 }
 
 void Group::RemoveAllInvites()
 {
-    m_inviteesLock.acquire();
-    for (InvitesList::iterator itr=m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if (Player* plr = sObjectAccessor->FindPlayer(*itr))
-            plr->SetGroupInvite(0);
+    for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+        if (*itr) (*itr)->SetGroupInvite(NULL);
 
     m_invitees.clear();
-    m_inviteesLock.release();
 }
 
 Player* Group::GetInvited(uint64 guid) const
 {
     for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-    {
-        if ((*itr) == guid)
-            return sObjectAccessor->FindPlayer(*itr);
-    }
+        if ((*itr) && (*itr)->GetGUID() == guid)
+            return (*itr);
+
     return NULL;
 }
 
 Player* Group::GetInvited(const std::string& name) const
 {
-    m_inviteesLock.acquire();
     for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-    {
-        Player* plr = sObjectAccessor->FindPlayer(*itr);
-        if (!plr)
-            continue;
+        if ((*itr) && (*itr)->GetName() == name)
+            return (*itr);
 
-        if (plr->GetName() == name)
-        {
-            m_inviteesLock.release();
-            return plr;
-        }
-    }
-    m_inviteesLock.release();
     return NULL;
 }
 
@@ -433,7 +412,8 @@ bool Group::AddMember(Player* player)
 
     if (player)
     {
-        player->SetGroupInvite(0);
+        player->SetGroupInvite(NULL);
+
         if (player->GetGroup() && (isBGGroup() || isBFGroup())) // if player is in group and he is being added to BG raid group, then call SetBattlegroundRaid()
             player->SetBattlegroundOrBattlefieldRaid(this, subGroup);
         else if (player->GetGroup()) //if player is in bg raid and we are adding him to normal group, then call SetOriginalGroup()
@@ -448,10 +428,8 @@ bool Group::AddMember(Player* player)
     }
 
     if (!isRaidGroup())                                      // reset targetIcons for non-raid-groups
-    {
         for (uint8 i = 0; i < TARGETICONCOUNT; ++i)
             m_targetIcons[i] = 0;
-    }
 
     // insert into the table if we're not a battleground group
     if (!isBGGroup() && !isBFGroup())
@@ -494,6 +472,7 @@ bool Group::AddMember(Player* player)
                 }
             }
         }
+
         player->SetGroupUpdateFlag(GROUP_UPDATE_FULL);
         UpdatePlayerOutOfRange(player);
 

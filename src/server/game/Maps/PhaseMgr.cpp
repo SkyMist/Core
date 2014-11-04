@@ -273,6 +273,18 @@ void PhaseData::SendPhaseshiftToPlayer()
     player->GetSession()->SendSetPhaseShift(phaseIds, terrainswaps);
 }
 
+void PhaseData::GetActivePhases(std::set<uint32>& phases) const
+{
+    for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
+        if (itr->second.phaseId)
+            phases.insert(itr->second.phaseId);
+
+    // Phase Definitions
+    for (std::list<PhaseDefinition const*>::const_iterator itr = activePhaseDefinitions.begin(); itr != activePhaseDefinitions.end(); ++itr)
+        if ((*itr)->phaseId)
+            phases.insert((*itr)->phaseId);
+}
+
 void PhaseData::AddPhaseDefinition(PhaseDefinition const* phaseDefinition)
 {
     if (phaseDefinition->IsOverwritingExistingPhases())
@@ -371,4 +383,9 @@ bool PhaseMgr::IsConditionTypeSupported(ConditionTypes const conditionType)
         default:
             return false;
     }
+}
+
+void PhaseMgr::GetActivePhases(std::set<uint32>& phases) const
+{
+    phaseData.GetActivePhases(phases);
 }

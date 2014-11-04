@@ -105,6 +105,8 @@ struct PhaseData
     void SendPhaseMaskToPlayer();
     void SendPhaseshiftToPlayer();
 
+    void GetActivePhases(std::set<uint32>& phases) const;
+
 private:
     Player* player;
     std::list<PhaseDefinition const*> activePhaseDefinitions;
@@ -153,6 +155,8 @@ public:
     void SendDebugReportToPlayer(Player* const debugger);
 
     static bool IsConditionTypeSupported(ConditionTypes const conditionType);
+
+    void GetActivePhases(std::set<uint32>& phases) const;
 
 private:
     void Recalculate();

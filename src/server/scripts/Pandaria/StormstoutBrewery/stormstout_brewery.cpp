@@ -29,6 +29,86 @@ Meteor-like shower. Two Bloated Brew Alementals spawn in the mid.
 Meteor-like shower. Nine Bubbling Brew Alementals spawn in the mid.
 Meteor-like shower. Four Sudsy Brew Alementals spawn in the mid.
 Meteor-like shower. Boss Yan-zhu the Uncasked spawn in the mid.
+
+Ancestral Brewmaster:
+Ancestral Brewmaster says(1): Do you think all of this fighting is educational for this group?
+Ancestral Brewmaster says(2): Yes, it will drive them to read books!
+
+Ancestral Brewmaster says(1): Do you think that undead party made it through in one piece?
+Ancestral Brewmaster says(2): No, I don't think they had the guts!
+
+Ancestral Brewmaster says(1): Do you think that we can return to life after death?
+Ancestral Brewmaster says(2): Sure! That last group did about thirty times!
+
+Ancestral Brewmaster says(1): Finally, we've seen a good group!
+Ancestral Brewmaster says(3): Does that mean we can stop coming here now?
+
+Ancestral Brewmaster says(1): How many of these outlanders does it take to paint a wall?
+Ancestral Brewmaster says(3): I don't know, how many?
+Ancestral Brewmaster says(1): It depends on how hard you throw them!
+
+Ancestral Brewmaster says(1): I liked that last group!
+Ancestral Brewmaster says(2): What did you like about it?
+Ancestral Brewmaster says(1): I thought it was the last group!
+
+Ancestral Brewmaster says(1): I think that druid had the hots for me!
+
+Ancestral Brewmaster says(1): I wonder if there's anything this healer isn't good at!
+Ancestral Brewmaster says(3): Sure! Choosing which group to be in!
+
+Ancestral Brewmaster says(1): I've got a great joke for you!
+Ancestral Brewmaster says(x): What's that?
+Ancestral Brewmaster says(1): These guys' weapons!
+
+Ancestral Brewmaster says(1): Just when I think a group is the worst, something wonderful happends!
+Ancestral Brewmaster says(3): What's that?
+Ancestral Brewmaster says(1): They leave!
+
+Ancestral Brewmaster says(1): That last priest had me smitten!
+
+Ancestral Brewmaster says(1): That last shaman really knew his place!
+Ancestral Brewmaster says(2): And where is that?
+Ancestral Brewmaster says(1): Outland!
+
+Ancestral Brewmaster says(1): The last paladin offered me eternal salvation!
+Ancestral Brewmaster says(x): What'd you say?
+Ancestral Brewmaster says(1): Kings, please.
+
+Ancestral Brewmaster says(1): This group is awful!
+Ancestral Brewmaster says(3): Terrible!
+Ancestral Brewmaster says(1): Disgusting!
+Ancestral Brewmaster says(3): See you here tomorrow?
+Ancestral Brewmaster says(1): Absolutely!
+
+Ancestral Brewmaster says(1): This view is terrible!
+Ancestral Brewmaster says(2): What, are you having trouble seeing the fight?
+Ancestral Brewmaster says(1): No, I can see it perfectly!
+
+Ancestral Brewmaster says(1): Why didn't that mage put intellect on his weapon?
+Ancestral Brewmaster says(2): Because he didn't want it to be smarter than he was!
+
+Ancestral Brewmaster says(1): You fool, you're sleeping through the fight!
+Ancestral Brewmaster says(x): Who's the fool? You're watching it!
+
+Ancestral Brewmaster says(1): You know what's the best thing about this group?
+Ancestral Brewmaster says(2): What?
+Ancestral Brewmaster says(1): They opened the doors so we can escape!
+
+Ancestral Brewmaster says(1): You know, I really envy these guys!
+Ancestral Brewmaster says(3): Why's that?
+Ancestral Brewmaster says(1): Becose they get to spend so much time with that foxy spirit healer!
+
+Ancestral Brewmaster says(1): You know, getting items must be hard for these guys!
+Ancestral Brewmaster says(3): Why's that?
+Ancestral Brewmaster says(1): Because pants never drop when they're around!
+
+Ancestral Brewmaster says(1): I think this group will really improve with age!
+Ancestral Brewmaster says(2): You think they'll get better?
+Ancestral Brewmaster says(1): No, my eyesight will get worse!
+
+Ancestral Brewmaster says(1): I think I'm going to need another drink!
+Ancestral Brewmaster says(2): Why do you say that?
+Ancestral Brewmaster says(1): I'm beginning to like these guys!
 */
 
 // Chen Stormstout / Auntie Stormstout intro yells.

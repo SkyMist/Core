@@ -77,13 +77,13 @@ void WorldSession::HandleSwapInvItemOpcode(WorldPacket& recvData)
     if (size != 2)
         return;
 
-    for (int i = 0; i < size; ++i)
+    for (uint8 i = 0; i < size; ++i)
     {
         bools1[i] = recvData.ReadBit();
         bools2[i] = recvData.ReadBit();
     }
 
-    for (int i = 0; i < size; ++i)
+    for (uint8 i = 0; i < size; ++i)
     {
         uint8 temp1 = 0;
         uint8 temp2 = 0;
@@ -1428,7 +1428,7 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recvData)
     if (size != 2)
         return;
 
-    for (int i = 0; i < size; ++i)
+    for (uint8 i = 0; i < size; ++i)
     {
         bools2[i] = !recvData.ReadBit();
         bools1[i] = !recvData.ReadBit();
@@ -2358,7 +2358,8 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
     if (item->IsEquipped())
         player->ApplyItemUpgrade(item, true);
 
-    player->ModifyCurrency(itemUpEntry->currencyId, -itemUpEntry->currencyCost, false, true, true);
+	int32 count = itemUpEntry->currencyCost;
+    player->ModifyCurrency(itemUpEntry->currencyId, -count, false, true, true);
 }
 
 void WorldSession::HandleSetLootSpecialization(WorldPacket& recvData)
