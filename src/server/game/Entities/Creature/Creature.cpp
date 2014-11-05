@@ -1290,16 +1290,9 @@ void Creature::SelectLevel(const CreatureTemplate* cinfo)
     {
         case CLASS_WARRIOR:
             setPowerType(POWER_RAGE);
-            // SetMaxPower(POWER_RAGE, GetCreatePowers(POWER_RAGE));
-            // SetPower(POWER_RAGE, GetCreatePowers(POWER_RAGE));
             break;
         case CLASS_ROGUE:
             setPowerType(POWER_ENERGY);
-            if (cinfo->VehicleId != 0) // Only for vehicles, allow Energy showing if class is Rogue.
-            {
-                SetMaxPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
-                SetPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
-            }
             break;
         default:
             setPowerType(POWER_MANA);

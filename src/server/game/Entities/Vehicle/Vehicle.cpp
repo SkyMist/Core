@@ -74,6 +74,7 @@ void Vehicle::Install()
                 _me->SetMaxPower(POWER_ENERGY, 50);
                 break;
             default:
+                // Vehicles having energy - usage spells should have energy by default.
                 for (uint32 i = 0; i < MAX_SPELL_VEHICLE; ++i)
                 {
                     if (!creature->m_spells[i])
@@ -89,6 +90,13 @@ void Vehicle::Install()
                         _me->SetMaxPower(POWER_ENERGY, 100);
                         break;
                     }
+                }
+                // Rogue - class creature vehicles should have energy by default.
+                if (_me->getClass() == CLASS_ROGUE)
+                {
+                    _me->setPowerType(POWER_ENERGY);
+                    _me->SetMaxPower(POWER_ENERGY, 100);
+                    break;
                 }
                 break;
         }

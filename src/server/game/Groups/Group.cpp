@@ -347,35 +347,40 @@ bool Group::AddLeaderInvite(Player* player)
 
 void Group::RemoveInvite(Player* player)
 {
+    // Check if the playerexists and is invited and remove the invite.
     if (player)
     {
-        m_invitees.erase(player);
+        if (GetInvited(player->GetGUID()))
+            m_invitees.erase(player);
         player->SetGroupInvite(NULL);
     }
 }
 
 void Group::RemoveAllInvites()
 {
-    for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if (*itr) (*itr)->SetGroupInvite(NULL);
+    if (!m_invitees.empty())
+        for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+            if (*itr) (*itr)->SetGroupInvite(NULL);
 
     m_invitees.clear();
 }
 
 Player* Group::GetInvited(uint64 guid) const
 {
-    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if ((*itr) && (*itr)->GetGUID() == guid)
-            return (*itr);
+    if (!m_invitees.empty())
+        for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+            if ((*itr) && (*itr)->GetGUID() == guid)
+                return (*itr);
 
     return NULL;
 }
 
 Player* Group::GetInvited(const std::string& name) const
 {
-    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if ((*itr) && (*itr)->GetName() == name)
-            return (*itr);
+    if (!m_invitees.empty())
+        for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+            if ((*itr) && (*itr)->GetName() == name)
+                return (*itr);
 
     return NULL;
 }
@@ -412,7 +417,8 @@ bool Group::AddMember(Player* player)
 
     if (player)
     {
-        player->SetGroupInvite(NULL);
+        // Remove the player from the invited list and clear his invitation, he is now becoming a member.
+        RemoveInvite(player);
 
         if (player->GetGroup() && (isBGGroup() || isBFGroup())) // if player is in group and he is being added to BG raid group, then call SetBattlegroundRaid()
             player->SetBattlegroundOrBattlefieldRaid(this, subGroup);
