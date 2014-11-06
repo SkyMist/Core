@@ -2177,11 +2177,11 @@ struct SpellFocusObjectEntry
 // @author Selenium: 5.4 valid
 struct SpellRadiusEntry
 {
-    uint32    ID;                                           // 0
-    float     radiusHostile;                                // 1
-    //uint32    unk_1;                                      // 2    always 0
-    float     radiusFriend;                                 // 3
-    //float    unk_2                                        // 4
+    uint32    ID;
+    float     RadiusMin;
+    float     RadiusPerLevel;
+    //float unkRadius;
+    float     RadiusMax;
 };
 
 // @author Selenium: todo for 5.4 valid

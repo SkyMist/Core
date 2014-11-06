@@ -326,7 +326,7 @@ void WorldSession::HandleLootOpcode(WorldPacket & recvData)
     recvData.ReadBytesSeq(guid, byteOrder);
 
     // Check possible cheat
-    if (!_player->isAlive())
+    if (!GetPlayer()->IsAlive() || !IS_CRE_OR_VEH_GUID(guid))
         return;
 
     GetPlayer()->SendLoot(guid, LOOT_CORPSE);
@@ -616,6 +616,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
         recvData.ReadBitInOrder(guids[i], bitOrder);
     
     target_playerguid[1] = recvData.ReadBit();
+
     recvData.FlushBits();
 
     recvData.ReadByteSeq(target_playerguid[5]);

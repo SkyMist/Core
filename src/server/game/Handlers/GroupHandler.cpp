@@ -1283,6 +1283,9 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
             if (player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
                 status |= MEMBER_STATUS_GHOST;
 
+            if (player->IsFFAPvP())
+                status |= MEMBER_STATUS_PVP_FFA;
+
             if (player->isAFK())
                 status |= MEMBER_STATUS_AFK;
 

@@ -1,0 +1,1 @@
+ALTER TABLE `skymist547_characters`.`guild` CHANGE `info` `info` VARCHAR(500) CHARSET utf8 COLLATE utf8_general_ci DEFAULT '' NOT NULL;

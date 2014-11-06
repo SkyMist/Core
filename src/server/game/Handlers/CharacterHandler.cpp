@@ -2144,7 +2144,7 @@ void WorldSession::HandleEquipmentSetUse(WorldPacket& recvData)
         if (i < uint32(startSlot))
             continue;
 
-        // check if item slot is set to "ignored" (raw value == 1), must not be unequipped then
+        // Check if item slot is set to "ignored" (raw value == 1), must not be unequipped then
         if (itemGuid[i] == 1)
             continue;
 

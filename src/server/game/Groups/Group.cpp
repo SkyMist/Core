@@ -106,7 +106,6 @@ bool Group::Create(Player* leader)
 
     leader->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
 
-
     m_groupType  = (isBGGroup() || isBFGroup()) ? GROUPTYPE_BGRAID : GROUPTYPE_NORMAL;
 
     if (m_groupType & GROUPTYPE_RAID)
@@ -341,13 +340,13 @@ bool Group::AddLeaderInvite(Player* player)
 
     m_leaderGuid = player->GetGUID();
     m_leaderName = player->GetName();
-    player->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
+    // player->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER); // Set in InviteResponse opcode.
     return true;
 }
 
 void Group::RemoveInvite(Player* player)
 {
-    // Check if the playerexists and is invited and remove the invite.
+    // Check if the player exists and is invited and remove the invite.
     if (player)
     {
         if (GetInvited(player->GetGUID()))
@@ -750,8 +749,12 @@ void Group::Disband(bool hideDestroy /* = false */)
         if (!player)
             continue;
 
-        //we cannot call _removeMember because it would invalidate member iterator
-        //if we are removing player from battleground raid
+        // Remove flag from group leader.
+        if (m_leaderGuid)
+            if (m_leaderGuid == citr->guid)
+                player->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
+
+        // We cannot call _removeMember because it would invalidate member iterator if we are removing player from battleground raid.
         if (isBGGroup() || isBFGroup())
             player->RemoveFromBattlegroundOrBattlefieldRaid();
         else
@@ -2723,23 +2726,19 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
         if (isEmpty || method == INSTANCE_RESET_GROUP_DISBAND || method == INSTANCE_RESET_CHANGE_DIFFICULTY)
         {
             // do not reset the instance, just unbind if others are permanently bound to it
-            if (instanceSave->CanReset())
+            if (isEmpty && instanceSave->CanReset())
                 instanceSave->DeleteFromDB();
             else
             {
                 PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_INSTANCE_BY_INSTANCE);
-
                 stmt->setUInt32(0, instanceSave->GetInstanceId());
-
                 CharacterDatabase.Execute(stmt);
             }
-
 
             // i don't know for sure if hash_map iterators
             m_boundInstances[diff].erase(itr);
             itr = m_boundInstances[diff].begin();
-            // this unloads the instance save unless online players are bound to it
-            // (eg. permanent binds or GM solo binds)
+            // this unloads the instance save unless online players are bound to it (eg. permanent binds or GM solo binds)
             instanceSave->RemoveGroup(this);
         }
         else

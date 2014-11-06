@@ -1391,6 +1391,11 @@ bool ObjectMgr::SetCreatureLinkedRespawn(uint32 guidLow, uint32 linkedGuidLow)
     }
 
     const CreatureData* slave = GetCreatureData(linkedGuidLow);
+    if (!slave)
+    {
+        sLog->outError(LOG_FILTER_SQL, "Creature '%u' linking to non-existent creature '%u'.", guidLow, linkedGuidLow);
+        return false;
+    }
 
     const MapEntry* const map = sMapStore.LookupEntry(master->mapid);
     if (!map || !map->Instanceable() || (master->mapid != slave->mapid))
@@ -2237,7 +2242,7 @@ uint32 FillItemArmor(uint32 itemlevel, uint32 itemClass, uint32 itemSubclass, ui
         if (!location)
             return 0;
 
-        if (itemSubclass < ITEM_SUBCLASS_ARMOR_CLOTH)
+        if (itemSubclass < ITEM_SUBCLASS_ARMOR_CLOTH || itemSubclass > ITEM_SUBCLASS_ARMOR_PLATE)
             return 0;
 
         return uint32(armorQuality->Value[quality] * armorTotal->Value[itemSubclass - 1] * location->Value[itemSubclass - 1] + 0.5f);
@@ -7166,7 +7171,6 @@ void ObjectMgr::LoadQuestPOI()
     if (!result)
     {
         sLog->outError(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 quest POI definitions. DB table `quest_poi` is empty.");
-
         return;
     }
 
@@ -7214,9 +7218,13 @@ void ObjectMgr::LoadQuestPOI()
         uint32 unk4               = fields[7].GetUInt32();
 
         QuestPOI POI(id, objIndex, mapId, WorldMapAreaId, FloorId, unk3, unk4);
-        POI.points = POIs[questId][id];
-
-        _questPOIStore[questId].push_back(POI);
+        if (questId < POIs.size() && id < POIs[questId].size())
+        {
+            POI.points = POIs[questId][id];
+            _questPOIStore[questId].push_back(POI);
+        }
+        else
+            sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Table quest_poi references unknown quest points for quest %u POI id %u", questId, id);
 
         ++count;
     }

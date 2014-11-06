@@ -218,8 +218,10 @@ void WorldSession::SendDiscoverNewTaxiNode(uint32 nodeid)
 void WorldSession::HandleActivateTaxiExpressOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_ACTIVATETAXIEXPRESS");
+
     ObjectGuid guid;
     uint32 node_count;
+
     guid[4] = recvData.ReadBit();
     guid[6] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
@@ -228,15 +230,20 @@ void WorldSession::HandleActivateTaxiExpressOpcode(WorldPacket& recvData)
     guid[5] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
+
     node_count = recvData.ReadBits(22);
+
     recvData.FlushBits();
+
     recvData.ReadByteSeq(guid[7]);
     recvData.ReadByteSeq(guid[4]);
+
     std::vector<uint32> nodes;
     for (uint32 i = 0; i < node_count; ++i)
     {
         uint32 node;
         recvData >> node;
+
         nodes.push_back(node);
     }
     recvData.ReadByteSeq(guid[3]);

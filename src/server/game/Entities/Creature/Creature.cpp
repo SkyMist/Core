@@ -1566,7 +1566,7 @@ bool Creature::IsInvisibleDueToDespawn() const
     if (Unit::IsInvisibleDueToDespawn())
         return true;
 
-    if (isAlive() || m_corpseRemoveTime > time(NULL))
+    if (isAlive() || isDying() || m_corpseRemoveTime > time(NULL))
         return false;
 
     return true;
@@ -1782,9 +1782,14 @@ void Creature::Respawn(bool force)
 
         GetMotionMaster()->InitDefault();
 
-        //Call AI respawn virtual function
+        // Call AI respawn virtual function
         if (IsAIEnabled)
+        {
+            // Reset the AI to be sure no dirty or uninitialized values will be used till next tick
+            AI()->Reset();
+
             TriggerJustRespawned = true;//delay event to next tick so all creatures are created on the map before processing
+        }
 
         uint32 poolid = GetDBTableGUIDLow() ? sPoolMgr->IsPartOfAPool<Creature>(GetDBTableGUIDLow()) : 0;
         if (poolid)

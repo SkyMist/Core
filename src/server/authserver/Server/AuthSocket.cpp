@@ -416,8 +416,8 @@ bool AuthSocket::_HandleLogonChallenge()
             if (!locked)
             {
                 //set expired bans to inactive
-                LoginDatabase.Execute(LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPIRED_ACCOUNT_BANS));
-                LoginDatabase.Execute(LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_PREMIUM));
+                LoginDatabase.DirectExecute(LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPIRED_ACCOUNT_BANS));
+                LoginDatabase.DirectExecute(LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_PREMIUM));
 
                 // If the account is banned, reject the logon attempt
                 stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BANNED);
@@ -629,7 +629,7 @@ bool AuthSocket::_HandleLogonProof()
         stmt->setUInt32(2, GetLocaleByName(_localizationName));
         stmt->setString(3, _os);
         stmt->setString(4, _login);
-        LoginDatabase.Execute(stmt);
+        LoginDatabase.DirectExecute(stmt);
 
         QueryResult AccountIdResult = LoginDatabase.PQuery("SELECT id FROM account WHERE username = '%s'", _login.c_str());
 
@@ -640,7 +640,7 @@ bool AuthSocket::_HandleLogonProof()
             stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_LOG_IP);
             stmt->setUInt32(0, accountid);
             stmt->setString(1, socket().getRemoteAddress().c_str());
-            LoginDatabase.Execute(stmt);
+            LoginDatabase.DirectExecute(stmt);
         }
 
         OPENSSL_free((void*)K_hex);

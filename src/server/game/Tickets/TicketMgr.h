@@ -28,24 +28,24 @@ class ChatHandler;
 // from blizzard lua
 enum GMTicketSystemStatus
 {
-    GMTICKET_QUEUE_STATUS_DISABLED = 0,
-    GMTICKET_QUEUE_STATUS_ENABLED = 1,
+    GMTICKET_QUEUE_STATUS_DISABLED        = 0,
+    GMTICKET_QUEUE_STATUS_ENABLED         = 1
 };
 
 enum GMTicketStatus
 {
-    GMTICKET_STATUS_HASTEXT                      = 0x06,
-    GMTICKET_STATUS_DEFAULT                      = 0x0A,
+    GMTICKET_STATUS_HASTEXT               = 0x06,
+    GMTICKET_STATUS_DEFAULT               = 0x0A
 };
 
 enum GMTicketResponse : uint8
 {
-    GMTICKET_RESPONSE_ALREADY_EXIST               = 1,
-    GMTICKET_RESPONSE_CREATE_SUCCESS              = 2,
-    GMTICKET_RESPONSE_CREATE_ERROR                = 3,
-    GMTICKET_RESPONSE_UPDATE_SUCCESS              = 4,
-    GMTICKET_RESPONSE_UPDATE_ERROR                = 5,
-    GMTICKET_RESPONSE_TICKET_DELETED              = 9,
+    GMTICKET_RESPONSE_ALREADY_EXIST       = 1,
+    GMTICKET_RESPONSE_CREATE_SUCCESS      = 2,
+    GMTICKET_RESPONSE_CREATE_ERROR        = 3,
+    GMTICKET_RESPONSE_UPDATE_SUCCESS      = 4,
+    GMTICKET_RESPONSE_UPDATE_ERROR        = 5,
+    GMTICKET_RESPONSE_TICKET_DELETED      = 9
 };
 
 // from Blizzard LUA:
@@ -55,27 +55,27 @@ enum GMTicketResponse : uint8
 // 3 is a custom value and should never actually be sent
 enum GMTicketEscalationStatus
 {
-    TICKET_UNASSIGNED                             = 0,
-    TICKET_ASSIGNED                               = 1,
-    TICKET_IN_ESCALATION_QUEUE                    = 2,
-    TICKET_ESCALATED_ASSIGNED                     = 3,
+    TICKET_UNASSIGNED                     = 0,
+    TICKET_ASSIGNED                       = 1,
+    TICKET_IN_ESCALATION_QUEUE            = 2,
+    TICKET_ESCALATED_ASSIGNED             = 3
 };
 
 // from blizzard lua
 enum GMTicketOpenedByGMStatus
 {
     GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED = 0,      // ticket has never been opened by a gm
-    GMTICKET_OPENEDBYGM_STATUS_OPENED = 1,          // ticket has been opened by a gm
+    GMTICKET_OPENEDBYGM_STATUS_OPENED     = 1       // ticket has been opened by a gm
 };
 
 enum LagReportType
 {
-    LAG_REPORT_TYPE_LOOT = 1,
-    LAG_REPORT_TYPE_AUCTION_HOUSE = 2,
-    LAG_REPORT_TYPE_MAIL = 3,
-    LAG_REPORT_TYPE_CHAT = 4,
-    LAG_REPORT_TYPE_MOVEMENT = 5,
-    LAG_REPORT_TYPE_SPELL = 6
+    LAG_REPORT_TYPE_LOOT                  = 1,
+    LAG_REPORT_TYPE_AUCTION_HOUSE         = 2,
+    LAG_REPORT_TYPE_MAIL                  = 3,
+    LAG_REPORT_TYPE_CHAT                  = 4,
+    LAG_REPORT_TYPE_MOVEMENT              = 5,
+    LAG_REPORT_TYPE_SPELL                 = 6
 };
 
 class GmTicket
@@ -120,6 +120,7 @@ public:
             _escalatedStatus = TICKET_ASSIGNED;
     }
     void SetClosedBy(const int64& value) { _closedBy = value; }
+    void SetCompleted(bool complete) { _completed = complete; }
     void SetMessage(const std::string& message)
     {
         _message = message;
@@ -128,7 +129,6 @@ public:
     void SetComment(const std::string& comment) { _comment = comment; }
     void SetViewed() { _viewed = true; }
     void SetUnassigned();
-    void SetCompleted(bool complete) { _completed = complete; }
 
     void AppendResponse(const std::string& response) { _response += response; }
 
