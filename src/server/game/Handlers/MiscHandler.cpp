@@ -1775,8 +1775,8 @@ void WorldSession::HandleClientReportError(WorldPacket& recvData)
 
 void WorldSession::HandleInspectRatedBGStatsOpcode(WorldPacket& recvData)
 {
-    uint32 unk;
     ObjectGuid guid;
+    uint32 unk;
 
     recvData >> unk;
 

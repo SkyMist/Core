@@ -958,10 +958,27 @@ void WorldSession::HandlePetitionShowListOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Received CMSG_PETITION_SHOWLIST");
 
-    uint64 guid;
-    recvData >> guid;
+    ObjectGuid PetitionGuid;
+    
+    PetitionGuid[4] = recvData.ReadBit();
+    PetitionGuid[3] = recvData.ReadBit();
+    PetitionGuid[2] = recvData.ReadBit();
+    PetitionGuid[7] = recvData.ReadBit();
+    PetitionGuid[6] = recvData.ReadBit();
+    PetitionGuid[1] = recvData.ReadBit();
+    PetitionGuid[0] = recvData.ReadBit();
+    PetitionGuid[5] = recvData.ReadBit();
+    
+    recvData.ReadByteSeq(PetitionGuid[5]);
+    recvData.ReadByteSeq(PetitionGuid[0]);
+    recvData.ReadByteSeq(PetitionGuid[6]);
+    recvData.ReadByteSeq(PetitionGuid[2]);
+    recvData.ReadByteSeq(PetitionGuid[1]);
+    recvData.ReadByteSeq(PetitionGuid[7]);
+    recvData.ReadByteSeq(PetitionGuid[3]);
+    recvData.ReadByteSeq(PetitionGuid[4]);
 
-    SendPetitionShowList(guid);
+    SendPetitionShowList(PetitionGuid);
 }
 
 void WorldSession::SendPetitionShowList(uint64 guid)
@@ -990,6 +1007,7 @@ void WorldSession::SendPetitionShowList(uint64 guid)
     data.WriteByteSeq(npcGuid[6]);
 
     SendPacket(&data);
+
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Sent SMSG_PETITION_SHOW_LIST");
 }
 

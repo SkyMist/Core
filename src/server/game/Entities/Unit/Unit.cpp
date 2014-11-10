@@ -21876,6 +21876,8 @@ void Unit::SendThreatListUpdate()
         uint8 bitsOrder[8] = { 7, 2, 4, 5, 0, 6, 1, 3 };
         data.WriteBitInOrder(thisGuid, bitsOrder);
 
+        data.FlushBits();
+
         for (std::list<HostileReference*>::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
         {
             ObjectGuid unitGuid = (*itr)->getUnitGuid();
@@ -21938,6 +21940,8 @@ void Unit::SendChangeCurrentVictimOpcode(HostileReference* pHostileReference)
         data.WriteBit(hostileGuid[2]);
         data.WriteBit(hostileGuid[0]);
 
+        data.FlushBits();
+
         data.WriteByteSeq(hostileGuid[7]);
 
         for (std::list<HostileReference*>::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
@@ -21984,6 +21988,8 @@ void Unit::SendClearThreatListOpcode()
     uint8 bitsOrder[8] = { 5, 7, 1, 2, 6, 3, 4, 0 };
     data.WriteBitInOrder(guid, bitsOrder);
 
+    data.FlushBits();
+
     uint8 bytesOrder[8] = { 2, 0, 6, 7, 5, 4, 1, 3 };
     data.WriteBytesSeq(guid, bytesOrder);
 
@@ -21993,8 +21999,8 @@ void Unit::SendClearThreatListOpcode()
 void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
 {
     WorldPacket data(SMSG_THREAT_REMOVE, 8 + 8);
-    ObjectGuid guid1 = GetGUID();
-    ObjectGuid guid2 = pHostileReference->getUnitGuid();
+    ObjectGuid guid1 = pHostileReference->getUnitGuid();
+    ObjectGuid guid2 = GetGUID();
 
     data.WriteBit(guid2[2]);
     data.WriteBit(guid2[1]);
@@ -22012,6 +22018,8 @@ void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
     data.WriteBit(guid1[0]);
     data.WriteBit(guid2[7]);
     data.WriteBit(guid2[0]);
+
+    data.FlushBits();
 
     data.WriteByteSeq(guid2[1]);
     data.WriteByteSeq(guid1[3]);

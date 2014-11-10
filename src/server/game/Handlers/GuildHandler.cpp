@@ -28,15 +28,16 @@
 #include "GossipDef.h"
 #include "SocialMgr.h"
 
-// Helper for getting guild object of session's player.
-// If guild does not exist, sends error (if necessary).
+// Helper for getting guild object of session's player. If guild does not exist, sends error (if necessary).
 inline Guild* _GetPlayerGuild(WorldSession* session, bool sendError = false)
 {
     if (uint32 guildId = session->GetPlayer()->GetGuildId())    // If guild id = 0, player is not in guild
-        if (Guild* guild = sGuildMgr->GetGuildById(guildId))   // Find guild by id
+        if (Guild* guild = sGuildMgr->GetGuildById(guildId))    // Find guild by id
             return guild;
+
     if (sendError)
         Guild::SendCommandResult(session, GUILD_CREATE_S, ERR_GUILD_PLAYER_NOT_IN_GUILD);
+
     return NULL;
 }
 
@@ -64,6 +65,8 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
     guildGuid[2] = recvPacket.ReadBit();
     guildGuid[3] = recvPacket.ReadBit();
 
+    recvPacket.FlushBits();
+
     recvPacket.ReadByteSeq(guildGuid[7]);
     recvPacket.ReadByteSeq(playerGuid[4]);
     recvPacket.ReadByteSeq(playerGuid[0]);
@@ -83,11 +86,13 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
 
     // If guild doesn't exist or player is not part of the guild send error
     if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
+    {
         if (guild->IsMember(playerGuid))
         {
             guild->HandleQuery(this);
             return;
         }
+    }
 
     Guild::SendCommandResult(this, GUILD_CREATE_S, ERR_GUILD_PLAYER_NOT_IN_GUILD);
 }
@@ -265,6 +270,7 @@ void WorldSession::HandleSwapRanks(WorldPacket& recvPacket)
 
     recvPacket >> id;
     up = recvPacket.ReadBit();
+
     if (Guild* guild = _GetPlayerGuild(this, true))
         guild->HandleSwapRanks(this, id, up);
 }
@@ -279,18 +285,24 @@ void WorldSession::HandleGuildSetNoteOpcode(WorldPacket& recvPacket)
     playerGuid[5] = recvPacket.ReadBit();
     bool ispublic = recvPacket.ReadBit();      // 0 == Officer, 1 == Public
     playerGuid[2] = recvPacket.ReadBit();
+
     uint32 noteLength = recvPacket.ReadBits(8);
+
     playerGuid[0] = recvPacket.ReadBit();
     playerGuid[4] = recvPacket.ReadBit();
     playerGuid[3] = recvPacket.ReadBit();
     playerGuid[7] = recvPacket.ReadBit();
     playerGuid[6] = recvPacket.ReadBit();
 
+    recvPacket.FlushBits();
+
     recvPacket.ReadByteSeq(playerGuid[7]);
     recvPacket.ReadByteSeq(playerGuid[0]);
     recvPacket.ReadByteSeq(playerGuid[4]);
     recvPacket.ReadByteSeq(playerGuid[1]);
+
     std::string note = recvPacket.ReadString(noteLength);
+
     recvPacket.ReadByteSeq(playerGuid[5]);
     recvPacket.ReadByteSeq(playerGuid[6]);
     recvPacket.ReadByteSeq(playerGuid[3]);
@@ -473,15 +485,19 @@ void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvData)
     GoGuid[2] = recvData.ReadBit();
     GoGuid[5] = recvData.ReadBit();
 
+    recvPacket.FlushBits();
+
     uint8 bytesOrder[8] = { 0, 6, 1, 7, 5, 2, 3, 4 };
     recvData.ReadBytesSeq(GoGuid, bytesOrder);
 
     if (GetPlayer()->GetGameObjectIfCanInteractWith(GoGuid, GAMEOBJECT_TYPE_GUILD_BANK))
+    {
         if (Guild* guild = _GetPlayerGuild(this))
         {
             guild->SendBankList(this, tabId, true, true);
             guild->SendMoneyInfo(this);
         }
+    }
 }
 
 void WorldSession::HandleGuildBankDepositMoney(WorldPacket& recvData)
@@ -845,8 +861,7 @@ void WorldSession::HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket)
 
 void WorldSession::HandleAutoDeclineGuildInvites(WorldPacket& recvPacket)
 {
-    bool enable;
-    enable = recvPacket.ReadBit();
+    bool enable = recvPacket.ReadBit();
 
     GetPlayer()->ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_AUTO_DECLINE_GUILD, enable);
 }
@@ -929,6 +944,8 @@ void WorldSession::HandleGuildNewsUpdateStickyOpcode(WorldPacket& recvPacket)
     guid[1] = recvPacket.ReadBit();
     guid[4] = recvPacket.ReadBit();
 
+    recvPacket.FlushBits();
+
     uint8 byteOrder[8] = {3, 4, 7, 2, 5, 1, 6, 0};
     recvPacket.ReadBytesSeq(guid, byteOrder);
 
@@ -975,7 +992,7 @@ void WorldSession::HandleGuildRequestChallengeUpdate(WorldPacket& recvPacket)
 
 void WorldSession::HandleGuildRequestGuildRecipes(WorldPacket& recvPacket)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_GUILD_REQUEST_CHALLENGE_UPDATE");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_GUILD_REQUEST_GUILD_RECIPES");
 
     ObjectGuid guildGuid;
 

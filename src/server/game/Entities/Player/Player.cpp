@@ -5289,11 +5289,13 @@ void Player::ReduceSpellCooldown(uint32 spell_id, time_t modifyTime)
 
     AddSpellCooldown(spell_id, 0, uint32(time(NULL) + newCooldown / 1000));
 
-    WorldPacket data(SMSG_MODIFY_COOLDOWN, 4+8+4);
+    WorldPacket data(SMSG_MODIFY_COOLDOWN, 1 + 8 + 4 + 4);
     ObjectGuid guid = GetGUID();
 
     uint8 bits[8] = { 6, 1, 2, 0, 3, 7, 5, 4 };
     data.WriteBitInOrder(guid, bits);
+
+    data.FlushBits();
 
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[6]);
@@ -7805,7 +7807,7 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
 
 void Player::SendActionButtons(uint32 state) const
 {
-    WorldPacket data(SMSG_UPDATE_ACTION_BUTTONS);
+    WorldPacket data(SMSG_UPDATE_ACTION_BUTTONS, 1 + (MAX_ACTION_BUTTONS * 8));
 
     /*
         state can be 0, 1, 2
@@ -22945,6 +22947,8 @@ inline void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std:
         data->WriteBits(channelLength, 7);
 
     data->WriteBit(true);                                       // unk uint block
+
+    data->FlushBits();
 
     uint8 byteOrder3[8] = { 7, 2, 1, 4, 6, 5, 3, 0 };
     data->WriteBytesSeq(guildGuid, byteOrder3);
