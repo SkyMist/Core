@@ -2221,18 +2221,21 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
         if (item->GetReforgeId() != 0) // If the item has a reforge id.
             item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
 
-        if (item->CanUpgrade())
-            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-        else
-        {
-            if (item->CanTransmogrify())
-                item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-            else
-                item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-        }
+        item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+        // if (item->CanUpgrade())
+        //     item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+        // else
+        // {
+        //     if (item->CanTransmogrify())
+        //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+        //     else
+        //         item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+        // }
 
         item->SetState(ITEM_CHANGED, player);
         SendReforgeResult(true);
+
+        item->HasBeenReforged = true;
         return;
     }
 
@@ -2266,15 +2269,16 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, reforgeEntry);
 
-    if (item->CanUpgrade())
-        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-    else
-    {
-        if (item->CanTransmogrify())
-            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-        else
-            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-    }
+    item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+    // if (item->CanUpgrade())
+    //     item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+    // else
+    // {
+    //     if (item->CanTransmogrify())
+    //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+    //     else
+    //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+    // }
 
     item->SetState(ITEM_CHANGED, player);
 
@@ -2282,6 +2286,8 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     if (item->IsEquipped() && !item->IsBroken())
         player->ApplyReforgeEnchantment(item, true);
+
+    item->HasBeenReforged = true;
 }
 
 void WorldSession::HandleChangeCurrencyFlags(WorldPacket& recvPacket)

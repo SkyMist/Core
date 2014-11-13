@@ -9000,8 +9000,8 @@ void ObjectMgr::LoadPhaseDefinitions()
 
     uint32 oldMSTime = getMSTime();
 
-    //                                                 0       1       2         3            4           5
-    QueryResult result = WorldDatabase.Query("SELECT zoneId, entry, phasemask, phaseId, terrainswapmap, flags FROM `phase_definitions` ORDER BY `entry` ASC");
+    //                                                 0       1       2         3            4             5           6
+    QueryResult result = WorldDatabase.Query("SELECT zoneId, entry, phasemask, phaseId, terrainswapmap, worldmaparea, flags FROM `phase_definitions` ORDER BY `entry` ASC");
 
     if (!result)
     {
@@ -9013,16 +9013,17 @@ void ObjectMgr::LoadPhaseDefinitions()
 
     do
     {
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
 
         PhaseDefinition pd;
 
-        pd.zoneId                = fields[0].GetUInt32();
-        pd.entry                 = fields[1].GetUInt16();
-        pd.phasemask             = fields[2].GetUInt64();
-        pd.phaseId               = fields[3].GetUInt8();
-        pd.terrainswapmap        = fields[4].GetUInt16();
-        pd.flags                 = fields[5].GetUInt8();
+        pd.zoneId                = fields[0].GetUInt32();     // Zone ID. THis and Entry are PK's.
+        pd.entry                 = fields[1].GetUInt32();     // Ordered entry (1 - X) for the zone.
+        pd.phasemask             = fields[2].GetUInt32();     // Actual Phasemask.
+        pd.phaseId               = fields[3].GetUInt32();     // From Phase.dbc, relation with changes, flags etc.
+        pd.terrainswapmap        = fields[4].GetUInt32();     // From Map.dbc, actual map chunk replaced ingame.
+        pd.worldmaparea          = fields[5].GetUInt32();     // From WorldMapArea.dbc, world map display changes (using M).
+        pd.flags                 = fields[6].GetUInt8();      // Flags (Override, negate etc. - check PhaseMgr.h).
 
         // Checks
         if ((pd.flags & PHASE_FLAG_OVERWRITE_EXISTING) && (pd.flags & PHASE_FLAG_NEGATE_PHASE))
@@ -9046,8 +9047,8 @@ void ObjectMgr::LoadSpellPhaseInfo()
 
     uint32 oldMSTime = getMSTime();
 
-    //                                               0       1            2
-    QueryResult result = WorldDatabase.Query("SELECT id, phasemask, terrainswapmap FROM `spell_phase`");
+    //                                               0       1            2             3
+    QueryResult result = WorldDatabase.Query("SELECT id, phasemask, terrainswapmap, worldmaparea FROM `spell_phase`");
 
     if (!result)
     {
@@ -9058,7 +9059,7 @@ void ObjectMgr::LoadSpellPhaseInfo()
     uint32 count = 0;
     do
     {
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
 
         SpellPhaseInfo spellPhaseInfo;
         spellPhaseInfo.spellId                = fields[0].GetUInt32();
@@ -9078,6 +9079,7 @@ void ObjectMgr::LoadSpellPhaseInfo()
 
         spellPhaseInfo.phasemask              = fields[1].GetUInt32();
         spellPhaseInfo.terrainswapmap         = fields[2].GetUInt32();
+        spellPhaseInfo.worldmaparea           = fields[3].GetUInt32();
 
         _SpellPhaseStore[spellPhaseInfo.spellId] = spellPhaseInfo;
 

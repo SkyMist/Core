@@ -2266,6 +2266,28 @@ void Player::Update(uint32 p_time)
         m_needSummonPetAlterStopFlying = false;
     }
 
+    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; i++)
+    {
+        if (Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+        {
+            if (item->HasBeenReforged && (m_itemUpdateQueue.empty() || !m_itemUpdateQueue.empty() && std::find(m_itemUpdateQueue.begin(), m_itemUpdateQueue.end(), item) == m_itemUpdateQueue.end()))
+            {
+                if (item->CanUpgrade())
+                    item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+                else
+                {
+                    if (item->CanTransmogrify())
+                        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+                    else
+                        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+                }
+
+                item->SetState(ITEM_CHANGED, this);
+                item->HasBeenReforged = false;
+            }
+        }
+    }
+
     //we should execute delayed teleports only for alive(!) players
     //because we don't want player's ghost teleported from graveyard
     if (IsHasDelayedTeleport())
@@ -26946,7 +26968,7 @@ bool Player::HasItemFitToSpellRequirements(SpellInfo const* spellInfo, Item cons
         case ITEM_CLASS_ARMOR:
         {
             // tabard not have dependent spells
-            for (uint8 i= EQUIPMENT_SLOT_START; i< EQUIPMENT_SLOT_MAINHAND; ++i)
+            for (uint8 i= EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_MAINHAND; ++i)
                 if (Item* item = GetUseableItemByPos(INVENTORY_SLOT_BAG_0, i))
                     if (item != ignoreItem && item->IsFitToSpellRequirements(spellInfo))
                         return true;

@@ -2238,44 +2238,60 @@ void WorldSession::HandleReadyForAccountDataTimes(WorldPacket& /*recvData*/)
     SendAccountDataTimes(GLOBAL_CACHE_MASK);
 }
 
-void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps)
+void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps, std::set<uint32> const& worldmaps)
 {
     ObjectGuid guid = _player->GetGUID();
 
-    uint32 worldMapAreas      = 0;
-    uint32 inactiveSwapsCount = 0;
-    uint32 activeSwapsCount   = terrainswaps.empty() ? 0 : terrainswaps.size();
+    // Note: As the actual values are sent as uint16, just remember to not set any of the 4 over 65535 (uint16 maximum), even if the DB table allows it.
+    // Note 2:     // In sniffs these phase ID's are seen like this:
+  /*| PhaseMask | PhaseID |
+    |         1 |     169 |
+    |         2 |     170 |
+    |         4 |     171 |
+    |         8 |     172 |
+    |        16 |     173 |
+    |        32 |     174 |
+    |        64 |     175 |
+    |       128 |     176 |
+    |       256 |     177 | */
+
     bool hasPhases = phaseIds.empty() ? false : true;
+
+    uint32 phaseFlags         = hasPhases ? 0x10 : 0x8;  // In sniffs, if phasesCount is 0 (player in default / all - map phase), 0x8. Specific: 0x10.
+
     uint32 phasesCount        = hasPhases ? phaseIds.size() : 0;
+    uint32 activeSwapsCount   = terrainswaps.empty() ? 0 : terrainswaps.size();
+    uint32 worldMapAreas      = worldmaps.empty() ? 0 : worldmaps.size();
+    uint32 inactiveSwapsCount = 0; // Not implemented yet. These and Active swaps "shift" on off based on player zoning (in / out).
 
-    WorldPacket data(SMSG_SET_PHASE_SHIFT, 1 + 8 + 4 + 4 + 4 + 4 + 2 * phaseIds.size() + 4 + terrainswaps.size() * 2);
+    WorldPacket data(SMSG_SET_PHASE_SHIFT, 1 + 8 + 4 + 4 + 4 + 4 + phaseIds.size() * 2 + 2 + terrainswaps.size() * 2 + 2 + worldmaps.size() * 2 + 2);
 
-    // Phase flags - Flags 0x8 and 0x10 are related to areatriggers, if we send flags 0x00 areatriggers don't work in some cases.
-    data << uint32(hasPhases ? 0 : 8);     // Flags, 0x18 mostly on retail sniffs.
+    // Phase flags - Flags 0x8 and 0x10 are related to areatriggers and affected areas.
+    data << uint32(phaseFlags);     // Flags.
 
     // Phases the player is in - Phase.dbc IDs.
     data << uint32(phasesCount * 2);
     if (hasPhases)    
         for (std::set<uint32>::const_iterator itr = phaseIds.begin(); itr != phaseIds.end(); ++itr)
-            data << uint16(*itr); // Most of the phase IDs on retail sniffs have 0x8000 mask.
-
-    // Inactive terrain swaps.
-    data << uint32(inactiveSwapsCount);
-    // if (inactiveSwapsCount > 0)
-        // for (uint8 i = 0; i < inactiveSwapsCount; ++i)
-            // data << uint16(0);
+            data << uint16(*itr);
 
     // Map (M) display control - WorldMapArea.dbc IDs.
-    data << uint32(worldMapAreas);
-    // if (worldMapAreas > 0)
-        //for (uint32 i = 0; i < worldMapAreas; i++)
-            //data << uint16(0);
+    data << uint32(worldMapAreas * 2);
+    if (worldMapAreas > 0)
+        for (std::set<uint32>::const_iterator itr = worldmaps.begin(); itr != worldmaps.end(); ++itr)
+            data << uint16(*itr);
 
     // Active terrain swaps.
     data << uint32(activeSwapsCount * 2);
     if (activeSwapsCount > 0)
         for (std::set<uint32>::const_iterator itr = terrainswaps.begin(); itr != terrainswaps.end(); ++itr)
             data << uint16(*itr);
+
+    // Inactive terrain swaps.
+    data << uint32(inactiveSwapsCount);
+    // if (inactiveSwapsCount > 0)
+        // for (uint8 i = 0; i < inactiveSwapsCount; ++i)
+            // data << uint16(0);
 
     uint8 bitOrder[8] = { 4, 6, 1, 7, 2, 0, 5, 3 };
     data.WriteBitInOrder(guid, bitOrder);
@@ -2288,7 +2304,7 @@ void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<
     SendPacket(&data);
 }
 
-// Battlefield and Battleground
+// Battlefields and Battlegrounds.
 void WorldSession::HandleAreaSpiritHealerQueryOpcode(WorldPacket& recv_data)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_AREA_SPIRIT_HEALER_QUERY");
@@ -2323,8 +2339,8 @@ void WorldSession::HandleAreaSpiritHealerQueueOpcode(WorldPacket& recv_data)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_AREA_SPIRIT_HEALER_QUEUE");
 
-    Battleground* bg = _player->GetBattleground();
     ObjectGuid npcGuid;
+    Battleground* bg = _player->GetBattleground();
 
     uint8 bitsOrder[8] = { 5, 1, 0, 2, 3, 7, 6, 4 };
     recv_data.ReadBitInOrder(npcGuid, bitsOrder);

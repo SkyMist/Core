@@ -1278,18 +1278,23 @@ class debug_commandscript : public CommandScript
 
             char* t = strtok((char*)args, " ");
             char* p = strtok(NULL, " ");
+            char* w = strtok(NULL, " ");
             if (!t)
                 return false;
 
             std::set<uint32> terrainswap;
             std::set<uint32> phaseId;
+            std::set<uint32> worldmap;
 
             terrainswap.insert((uint32)atoi(t));
 
             if (p)
                 phaseId.insert((uint32)atoi(p));
 
-            handler->GetSession()->SendSetPhaseShift(phaseId, terrainswap);
+            if (w)
+                worldmap.insert((uint32)atoi(w));
+
+            handler->GetSession()->SendSetPhaseShift(phaseId, terrainswap, worldmap);
             return true;
         }
 
