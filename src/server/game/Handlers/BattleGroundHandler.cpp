@@ -363,27 +363,29 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket& recvData)
 
     uint32 time;
     uint32 queueSlot;                                            // guessed
-    uint32 unk;                                       // type id from dbc
-    uint8 action;                                           // enter battle 0x1, leave queue 0x0
+    uint32 unk;                                                  // type id from dbc
+    uint8 action;                                                // enter battle 0x1, leave queue 0x0
     ObjectGuid guid;
     
-    action = recvData.ReadBit();
+    action = recvData.ReadBit() ? 1 : 0; // 1 = accept and port; 0 = cancel.
     recvData.FlushBits();
+
+    recvData >> unk;
     recvData >> queueSlot;
     recvData >> time;
-    recvData >> unk;
 
-    guid[7] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
-    guid[4] = recvData.ReadBit();
-    guid[2] = recvData.ReadBit();
     guid[1] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
     guid[5] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[4] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+
     recvData.FlushBits();
 
-    uint8 byteOrder[8] = { 0, 7, 2, 6, 3, 5, 1, 4 };
+    uint8 byteOrder[8] = { 1, 3, 5, 7, 0, 2, 6, 4 };
     recvData.ReadBytesSeq(guid, byteOrder);
 
     if (!_player->InBattlegroundQueue())

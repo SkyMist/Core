@@ -229,6 +229,9 @@ void WorldSession::HandleGuildLeaderOpcode(WorldPacket& recvPacket)
     std::string name;
     uint32 len = recvPacket.ReadBits(9);
 
+    // This is related to guild master inactivity.
+    /*bool isDethrone = */recvPacket.ReadBit();
+
     recvPacket.FlushBits();
 
     name = recvPacket.ReadString(len);

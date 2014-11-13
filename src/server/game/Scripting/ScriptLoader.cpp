@@ -736,40 +736,50 @@ void AddSC_spine_of_deathwing();
 void AddSC_madness_of_deathwing();
 
 // Pandaria
+void AddSC_boss_sha_of_anger();                     // Pandaria World Bosses
+void AddSC_boss_galion();
+void AddSC_boss_chi_ji();
+void AddSC_boss_nalak();
+void AddSC_boss_ordos();
+
 void AddSC_instance_temple_of_jade_serpent();       // Temple of Jade Serpent
 void AddSC_boss_wise_mari();
 void AddSC_boss_lorewalker_stonestep();
 void AddSC_boss_liu_flameheat();
 void AddSC_boss_sha_of_doubt();
-void AddSC_boss_hoptallus();           // The Stormstout Brewery
+
+void AddSC_boss_hoptallus();                        // The Stormstout Brewery
 void AddSC_boss_ook_ook();
 void AddSC_boss_yan_zhu_the_uncasked();
 void AddSC_instance_stormstout_brewery();
 void AddSC_stormstout_brewery();
+
 void AddSC_instance_gate_setting_sun();             // Gate of the Setting Sun
 void AddSC_gate_setting_sun();
 void AddSC_boss_saboteur_kiptilak();
 void AddSC_boss_striker_gadok();
 void AddSC_boss_commander_rimok();
 void AddSC_boss_raigonn();
-void AddSC_boss_sha_of_anger();
-void AddSC_boss_galion();
-void AddSC_boss_chi_ji();
-void AddSC_boss_nalak();
-void AddSC_boss_ordos();
+
 void AddSC_instance_mogu_shan_palace();             // Mogu'Shan Palace
 void AddSC_boss_trial_of_the_king();
 void AddSC_boss_gekkan();
 void AddSC_boss_xin_the_weaponmaster();
+
 void AddSC_instance_shadopan_monastery();           // Shadopan Monastery
 void AddSC_shadopan_monastery();
 void AddSC_boss_gu_cloudstrike();
 void AddSC_boss_master_snowdrift();
 void AddSC_boss_sha_of_violence();
 void AddSC_boss_taran_zhu();
-void AddSC_instance_siege_of_the_niuzoa_temple();   // Siege of the Niuzoa Temple
-void AddSC_siege_of_the_niuzoa_temple();
-void AddSC_boss_jinbak();
+
+void AddSC_instance_siege_of_niuzao_temple();       // Siege of Niuzao Temple
+void AddSC_siege_of_niuzao_temple();
+void AddSC_boss_vizier_jinbak();
+void AddSC_boss_commander_vojak();
+void AddSC_boss_general_pavalak();
+void AddSC_boss_wing_leader_neronok();
+
 void AddSC_instance_mogu_shan_vault();              // Mogu'Shan Vault
 void AddSC_mogu_shan_vault();
 void AddSC_boss_stone_guard();
@@ -787,12 +797,37 @@ void AddSC_boss_garalon();
 void AddSC_boss_meljarak();
 void AddSC_boss_unsok();
 void AddSC_boss_shekzeer();
+
 void AddSC_instance_terrace_of_endless_spring();    // Terrace of Endless Spring
 void AddSC_terrace_of_endless_spring();
 void AddSC_boss_protectors_of_the_endless();
 void AddSC_boss_tsulong();
 void AddSC_boss_lei_shi();
 void AddSC_boss_sha_of_fear();
+
+void AddSC_boss_jin_rokh_breaker();                 // Throne of Thunder
+void AddSC_boss_horridon();
+void AddSC_boss_tortos();
+void AddSC_boss_council_of_elders();
+void AddSC_boss_megaera();
+void AddSC_instance_throne_of_thunder();
+
+void AddSC_instance_siege_of_orgrimmar();           // Siege of Orgrimmar
+void AddSC_siege_of_orgrimmar();
+void AddSC_immerseus();
+void AddSC_fallen_protectors();
+void AddSC_norushen();
+void AddSC_sha_of_pride();
+void AddSC_galakras();
+void AddSC_iron_juggernaut();
+void AddSC_korkron_dark_shamans();
+void AddSC_general_nazgrim();
+void AddSC_malkorok();
+void AddSC_spoils_of_pandaria();
+void AddSC_thok_the_bloodthirsty();
+void AddSC_siegecrafter_blackfuse();
+void AddSC_paragons_of_the_klaxxi();
+void AddSC_garrosh_hellscream();
 
 void AddSC_townlong_steppes();
 void AddSC_dread_wastes();
@@ -833,7 +868,7 @@ void AddScripts()
     AddKalimdorScripts();
     AddOutlandScripts();
     AddNorthrendScripts();
-    AddPandarieScripts();
+    AddPandariaScripts();
     AddBattlegroundScripts();
     AddOutdoorPvPScripts();
     AddCustomScripts();
@@ -1412,35 +1447,35 @@ void AddOutlandScripts()
 void AddNorthrendScripts()
 {
 #ifdef SCRIPTS
-    AddSC_boss_slad_ran();               //Gundrak
+    AddSC_boss_slad_ran();               // Gundrak
     AddSC_boss_moorabi();
     AddSC_boss_drakkari_colossus();
     AddSC_boss_gal_darah();
     AddSC_boss_eck();
     AddSC_instance_gundrak();
     AddSC_boss_amanitar();
-    AddSC_boss_taldaram();              //Azjol-Nerub Ahn'kahet
+    AddSC_boss_taldaram();              // Azjol-Nerub Ahn'kahet
     AddSC_boss_elder_nadox();
     AddSC_boss_jedoga_shadowseeker();
     AddSC_boss_volazj();
     AddSC_instance_ahnkahet();
-    AddSC_boss_argent_challenge();      //Trial of the Champion
+    AddSC_boss_argent_challenge();      // Trial of the Champion
     AddSC_boss_black_knight();
     AddSC_boss_grand_champions();
     AddSC_instance_trial_of_the_champion();
     AddSC_trial_of_the_champion();
-    AddSC_boss_anubarak_trial();        //Trial of the Crusader
+    AddSC_boss_anubarak_trial();        // Trial of the Crusader
     AddSC_boss_faction_champions();
     AddSC_boss_jaraxxus();
     AddSC_trial_of_the_crusader();
     AddSC_boss_twin_valkyr();
     AddSC_boss_northrend_beasts();
     AddSC_instance_trial_of_the_crusader();
-    AddSC_boss_krik_thir();             //Azjol-Nerub Azjol-Nerub
+    AddSC_boss_krik_thir();             // Azjol-Nerub Azjol-Nerub
     AddSC_boss_hadronox();
     AddSC_boss_anub_arak();
     AddSC_instance_azjol_nerub();
-    AddSC_boss_anubrekhan();            //Naxxramas
+    AddSC_boss_anubrekhan();            // Naxxramas
     AddSC_boss_maexxna();
     AddSC_boss_patchwerk();
     AddSC_boss_grobbulus();
@@ -1456,33 +1491,33 @@ void AddNorthrendScripts()
     AddSC_boss_gothik();
     AddSC_boss_thaddius();
     AddSC_instance_naxxramas();
-    AddSC_boss_magus_telestra();        //The Nexus Nexus
+    AddSC_boss_magus_telestra();        // The Nexus Nexus
     AddSC_boss_anomalus();
     AddSC_boss_ormorok();
     AddSC_boss_keristrasza();
     AddSC_boss_commander_nexus();
     AddSC_instance_nexus();
-    AddSC_boss_drakos();                //The Nexus The Oculus
+    AddSC_boss_drakos();                // The Nexus The Oculus
     AddSC_boss_urom();
     AddSC_boss_varos();
     AddSC_boss_eregos();
     AddSC_instance_oculus();
     AddSC_oculus();
-    AddSC_boss_malygos();              // The Nexus: Eye of Eternity
+    AddSC_boss_malygos();               // The Nexus: Eye of Eternity
     AddSC_instance_eye_of_eternity();
-    AddSC_boss_sartharion();            //Obsidian Sanctum
+    AddSC_boss_sartharion();            // Obsidian Sanctum
     AddSC_instance_obsidian_sanctum();
-    AddSC_boss_bjarngrim();             //Ulduar Halls of Lightning
+    AddSC_boss_bjarngrim();             // Ulduar Halls of Lightning
     AddSC_boss_loken();
     AddSC_boss_ionar();
     AddSC_boss_volkhan();
     AddSC_instance_halls_of_lightning();
-    AddSC_boss_maiden_of_grief();       //Ulduar Halls of Stone
+    AddSC_boss_maiden_of_grief();       // Ulduar Halls of Stone
     AddSC_boss_krystallus();
     AddSC_boss_sjonnir();
     AddSC_instance_halls_of_stone();
     AddSC_halls_of_stone();
-    AddSC_instance_ulduar();  //Ulduar Ulduar
+    AddSC_instance_ulduar();            //Ulduar Ulduar
     AddSC_ulduar_teleporter();
     AddSC_ulduar_scripts();
     AddSC_boss_flame_leviathan();
@@ -1498,27 +1533,27 @@ void AddNorthrendScripts()
     AddSC_boss_thorim();
     AddSC_boss_general_vezax();
     AddSC_boss_algalon_the_observer();
-    AddSC_boss_keleseth();              //Utgarde Keep
+    AddSC_boss_keleseth();              // Utgarde Keep
     AddSC_boss_skarvald_dalronn();
     AddSC_boss_ingvar_the_plunderer();
     AddSC_instance_utgarde_keep();
-    AddSC_boss_svala();                 //Utgarde pinnacle
+    AddSC_boss_svala();                 // Utgarde pinnacle
     AddSC_boss_palehoof();
     AddSC_boss_skadi();
     AddSC_boss_ymiron();
     AddSC_instance_utgarde_pinnacle();
     AddSC_utgarde_keep();
-    AddSC_boss_archavon();              //Vault of Archavon
+    AddSC_boss_archavon();              // Vault of Archavon
     AddSC_boss_emalon();
     AddSC_boss_koralon();
     AddSC_boss_toravon();
     AddSC_instance_archavon();
-    AddSC_boss_trollgore();             //Drak'Tharon Keep
+    AddSC_boss_trollgore();             // Drak'Tharon Keep
     AddSC_boss_novos();
     AddSC_boss_dred();
     AddSC_boss_tharon_ja();
     AddSC_instance_drak_tharon();
-    AddSC_boss_cyanigosa();             //Violet Hold
+    AddSC_boss_cyanigosa();             // Violet Hold
     AddSC_boss_erekem();
     AddSC_boss_ichoron();
     AddSC_boss_lavanthor();
@@ -1527,11 +1562,11 @@ void AddNorthrendScripts()
     AddSC_boss_zuramat();
     AddSC_instance_violet_hold();
     AddSC_violet_hold();
-    AddSC_instance_forge_of_souls();   //Forge of Souls
+    AddSC_instance_forge_of_souls();    // Forge of Souls
     AddSC_forge_of_souls();
     AddSC_boss_bronjahm();
     AddSC_boss_devourer_of_souls();
-    AddSC_instance_pit_of_saron();      //Pit of Saron
+    AddSC_instance_pit_of_saron();      // Pit of Saron
     AddSC_pit_of_saron();
     AddSC_boss_garfrost();
     AddSC_boss_ick();
@@ -1578,43 +1613,53 @@ void AddNorthrendScripts()
 #endif
 }
 
-void AddPandarieScripts()
+void AddPandariaScripts()
 {
 #ifdef SCRIPTS
+    AddSC_boss_sha_of_anger();                      // Pandaria World Bosses
+    AddSC_boss_galion();
+    AddSC_boss_chi_ji();
+    AddSC_boss_nalak();
+    AddSC_boss_ordos();
+
     AddSC_instance_temple_of_jade_serpent();        // Temple of Jade Serpent
     AddSC_boss_wise_mari();
     AddSC_boss_lorewalker_stonestep();
     AddSC_boss_liu_flameheat();
     AddSC_boss_sha_of_doubt();
- AddSC_boss_hoptallus();           // The Stormstout Brewery
- AddSC_boss_ook_ook();
- AddSC_boss_yan_zhu_the_uncasked();
- AddSC_instance_stormstout_brewery();
- AddSC_stormstout_brewery();
+
+    AddSC_boss_hoptallus();                         // The Stormstout Brewery
+    AddSC_boss_ook_ook();
+    AddSC_boss_yan_zhu_the_uncasked();
+    AddSC_instance_stormstout_brewery();
+    AddSC_stormstout_brewery();
+
     AddSC_instance_mogu_shan_palace();              // The Mogu'Shan Palace
     AddSC_boss_trial_of_the_king();
     AddSC_boss_gekkan();
     AddSC_boss_xin_the_weaponmaster();
+
     AddSC_instance_gate_setting_sun();              // Gate of the Setting Sun
     AddSC_gate_setting_sun();
     AddSC_boss_saboteur_kiptilak();
     AddSC_boss_striker_gadok();
     AddSC_boss_commander_rimok();
     AddSC_boss_raigonn();
-    AddSC_boss_sha_of_anger();                      // Pandaria World Bosses
-    AddSC_boss_galion();
-    AddSC_boss_chi_ji();
-    AddSC_boss_nalak();
-    AddSC_boss_ordos();
+
     AddSC_instance_shadopan_monastery();            // Shadopan Monastery
     AddSC_shadopan_monastery();
     AddSC_boss_gu_cloudstrike();
     AddSC_boss_master_snowdrift();
     AddSC_boss_sha_of_violence();
     AddSC_boss_taran_zhu();
-    AddSC_instance_siege_of_the_niuzoa_temple();    // Siege of the Niuzoa Temple
-    AddSC_siege_of_the_niuzoa_temple();
-    AddSC_boss_jinbak();
+
+    AddSC_instance_siege_of_niuzao_temple();        // Siege of the Niuzao Temple
+    AddSC_siege_of_niuzao_temple();
+    AddSC_boss_vizier_jinbak();
+    AddSC_boss_commander_vojak();
+    AddSC_boss_general_pavalak();
+    AddSC_boss_wing_leader_neronok();
+
     AddSC_instance_mogu_shan_vault();               // Mogu'Shan Vault
     AddSC_mogu_shan_vault();
     AddSC_boss_stone_guard();
@@ -1632,12 +1677,36 @@ void AddPandarieScripts()
     AddSC_boss_meljarak();
     AddSC_boss_unsok();
     AddSC_boss_shekzeer();
+
     AddSC_instance_terrace_of_endless_spring();    // Terrace of Endless Spring
     AddSC_terrace_of_endless_spring();
     AddSC_boss_protectors_of_the_endless();
     AddSC_boss_tsulong();
     AddSC_boss_lei_shi();
     AddSC_boss_sha_of_fear();
+
+    AddSC_boss_jin_rokh_breaker();                  // Throne of Thunder
+    AddSC_boss_horridon();
+    AddSC_boss_tortos();
+    AddSC_boss_council_of_elders();
+    AddSC_boss_megaera();
+
+    AddSC_instance_siege_of_orgrimmar();            // Siege of Orgrimmar
+    AddSC_siege_of_orgrimmar();
+    AddSC_immerseus();
+    AddSC_fallen_protectors();
+    AddSC_norushen();
+    AddSC_sha_of_pride();
+    AddSC_galakras();
+    AddSC_iron_juggernaut();
+    AddSC_korkron_dark_shamans();
+    AddSC_general_nazgrim();
+    AddSC_malkorok();
+    AddSC_spoils_of_pandaria();
+    AddSC_thok_the_bloodthirsty();
+    AddSC_siegecrafter_blackfuse();
+    AddSC_paragons_of_the_klaxxi();
+    AddSC_garrosh_hellscream();
 
     AddSC_townlong_steppes();
     AddSC_dread_wastes();

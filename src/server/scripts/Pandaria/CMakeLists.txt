@@ -50,10 +50,13 @@ set(scripts_STAT_SRCS
   Pandaria/ShadopanMonastery/boss_sha_of_violence.cpp
   Pandaria/ShadopanMonastery/boss_taran_zhu.cpp
   
-  Pandaria/SiegeNiuzaoTemple/instance_siege_of_the_niuzoa_temple.cpp
-  Pandaria/SiegeNiuzaoTemple/siege_of_the_niuzoa_temple.cpp
-  Pandaria/SiegeNiuzaoTemple/siege_of_the_niuzoa_temple.h
-  Pandaria/SiegeNiuzaoTemple/boss_jinbak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/instance_siege_of_niuzao_temple.cpp
+  Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.cpp
+  Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.h
+  Pandaria/SiegeOfNiuzaoTemple/boss_vizier_jinbak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_general_pavalak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_commander_vojak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_wing_leader_neronok.cpp
 
   Pandaria/MogushanVault/instance_mogu_shan_vault.cpp
   Pandaria/MogushanVault/mogu_shan_vault.cpp
@@ -83,6 +86,31 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/boss_lei_shi.cpp
   Pandaria/TerraceOfEndlessSpring/boss_sha_of_fear.cpp
 
+  Pandaria/ToT/instance_throne_of_thunder.cpp
+  Pandaria/ToT/throne_of_thunder.h
+  Pandaria/ToT/boss_jin_rokh_breaker.cpp
+  Pandaria/ToT/boss_horridon.cpp
+  Pandaria/ToT/boss_tortos.cpp
+  Pandaria/ToT/boss_council_of_elders.cpp
+  Pandaria/ToT/boss_megaera.cpp
+
+  Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
+  Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp
+  Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.h
+  Pandaria/SiegeOfOrgrimmar/boss_immerseus.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_fallen_protectors.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_norushen.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_sha_of_pride.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_galakras.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_iron_juggernaut.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_korkron_dark_shamans.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_general_nazgrim.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_malkorok.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_spoils_of_pandaria.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_thok_the_bloodthirsty.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_siegecrafter_blackfuse.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_paragons_of_the_klaxxi.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_garrosh_hellscream.cpp
 
   Pandaria/WanderingIsland/WanderingIsland_North.cpp
   Pandaria/WanderingIsland/WanderingIsland_East.cpp

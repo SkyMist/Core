@@ -9088,8 +9088,8 @@ void Player::UpdateConquestCurrencyCap(uint32 currency)
         uint32 cap = GetCurrencyWeekCap(currencyEntry->ID);
 
         WorldPacket packet(SMSG_UPDATE_CURRENCY_WEEK_LIMIT, 8);
-        packet << uint32(cap / precision);
         packet << uint32(currenciesToUpdate[i]);
+        packet << uint32(cap / precision);
         GetSession()->SendPacket(&packet);
     }
 }
