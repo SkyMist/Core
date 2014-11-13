@@ -766,7 +766,7 @@ inline void Guild::Member::ResetMoneyTime()
     m_bankRemaining[GUILD_BANK_MAX_TABS].resetTime = 0;
 }
 
-void Guild::Member::AddReputation(uint32 value)
+void Guild::Member::GiveReputation(uint32 value)
 {
     m_totalReputation += value;
     m_weekReputation += value;

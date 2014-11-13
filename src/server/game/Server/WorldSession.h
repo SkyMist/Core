@@ -260,6 +260,7 @@ class WorldSession
         void SendPartyResult(PartyOperation operation, const std::string& member, PartyResult res, uint32 val = 0);
         void SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps, std::set<uint32> const& worldmaps);
         void SendQueryTimeResponse();
+        void SendServerWorldInfo();
         void HandleLearnPetSpecialization(WorldPacket& data);
 
         void SendAuthResponse(uint8 code, bool queued, uint32 queuePos = 0);

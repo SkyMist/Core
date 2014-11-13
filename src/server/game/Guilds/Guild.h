@@ -482,7 +482,7 @@ class Guild
                 uint32 GetAchievementPoints() const { return m_achievementPoints; }
 
                 // Reputation.
-                void AddReputation(uint32 value);
+                void GiveReputation(uint32 value);
                 void SetReputation(uint32 value) { m_totalReputation = value; }
                 uint32 GetReputation() const { return m_totalReputation; }
 

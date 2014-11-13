@@ -30,6 +30,7 @@
 #include "NPCHandler.h"
 #include "Pet.h"
 #include "MapManager.h"
+#include "Group.h"
 
 void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 {
@@ -182,6 +183,78 @@ void WorldSession::SendQueryTimeResponse()
     WorldPacket data(SMSG_QUERY_TIME_RESPONSE, 4+4);
     data << uint32(time(NULL));
     data << uint32(sWorld->GetNextDailyQuestsResetTime() - time(NULL));
+    SendPacket(&data);
+}
+
+void WorldSession::SendServerWorldInfo()
+{
+    bool IsInInstance = GetPlayer()->GetMap()->IsRaidOrHeroicDungeon();                   // Check being in raid / heroic dungeon map.
+    bool HasGroup = GetPlayer()->GetGroup() != NULL;                                      // Check having a group.
+    uint32 InstanceGroupSize = HasGroup ? GetPlayer()->GetGroup()->GetMembersCount() : 0; // Check if we need to send the instance group size - for Flex Raids.
+    uint32 difficultyNumberToDisplay = 0;                                                 // Number to display in minimap text.
+
+    switch(GetPlayer()->GetMap()->GetDifficulty())
+    {
+        case DUNGEON_DIFFICULTY_HEROIC:
+            difficultyNumberToDisplay = 5;
+            break;
+
+        case RAID_DIFFICULTY_10MAN_NORMAL:
+        case RAID_DIFFICULTY_10MAN_HEROIC:
+            difficultyNumberToDisplay = 10;
+            break;
+
+        case RAID_DIFFICULTY_25MAN_NORMAL:
+        case RAID_DIFFICULTY_25MAN_HEROIC:
+        case RAID_DIFFICULTY_25MAN_LFR:
+            difficultyNumberToDisplay = 25;
+            break;
+
+        case RAID_DIFFICULTY_40MAN:
+            difficultyNumberToDisplay = 40;
+            break;
+
+        case SCENARIO_DIFFICULTY_HEROIC:
+            difficultyNumberToDisplay = 3;
+            break;
+
+        case RAID_DIFFICULTY_1025MAN_FLEX:
+            difficultyNumberToDisplay = HasGroup ? InstanceGroupSize : 10;
+            break;
+
+        case REGULAR_DIFFICULTY:
+        case DUNGEON_DIFFICULTY_NORMAL:
+        case DUNGEON_DIFFICULTY_CHALLENGE:
+        case SCENARIO_DIFFICULTY_NORMAL:
+        default: break;
+    }
+
+    WorldPacket data(SMSG_WORLD_SERVER_INFO);
+
+    data.WriteBit(0);                                                // IsTrialAccount() - Has restriction on level.
+    data.WriteBit(IsInInstance);
+    data.WriteBit(0);                                                // IsTrialAccount() - Has money restriction.             
+    data.WriteBit(0);                                                // IsTrialAccount() - Is ineligible for loot.
+
+    data.FlushBits();
+
+    // if (IsTrialAccount()) 
+    //     data << uint32(0);                                                          // Is ineligible for loot - EncounterMask of the creatures the player cannot loot.
+
+    data << uint32(sWorld->GetNextWeeklyQuestsResetTime() - WEEK);                  // LastWeeklyReset (quests, not instance reset).
+    data << uint32(GetPlayer()->GetMap()->GetDifficulty());                         // Current Map Difficulty.
+    data << uint8(0);                                                               // sWorld->getBoolConfig(CONFIG_IS_TOURNAMENT_REALM) IsOnTournamentRealm.
+
+    // if (IsTrialAccount()) 
+    //     data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_MONEY));               // Has money restriction - Max amount of money allowed.
+
+    // if (IsTrialAccount()) 
+    //     data << uint32(sWorld->getIntConfig(CONFIG_TRIAL_MAX_LEVEL));               // Has restriction on level - Max level allowed.
+
+    // This should be sent with the maximum player number as text, for raids & heroic dungeons, except for flex raids where they scale (that's why lua uses instanceGroupSize).
+    if (IsInInstance)
+        data << uint32(difficultyNumberToDisplay);
+
     SendPacket(&data);
 }
 
