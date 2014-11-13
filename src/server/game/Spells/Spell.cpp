@@ -956,6 +956,7 @@ void Spell::SelectEffectImplicitTargets(SpellEffIndex effIndex, SpellImplicitTar
                              break;
                          case TARGET_REFERENCE_TYPE_TARGET:
                              SelectImplicitTargetDestTargets(effIndex, targetType);
+                             SelectImplicitChainTargets(effIndex, targetType, m_targets.GetObjectTarget(), effectMask); // Must check this too.
                              break;
                          case TARGET_REFERENCE_TYPE_DEST:
                              SelectImplicitDestDestTargets(effIndex, targetType);

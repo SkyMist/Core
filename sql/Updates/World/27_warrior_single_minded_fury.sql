@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='81099',`ScriptName`='spell_warr_single_minded_furry';

@@ -234,7 +234,7 @@ enum Opcodes
     CMSG_GUILD_BANK_BUY_TAB                           = 0x02D6, // 5.4.7 18019
     CMSG_GUILD_BANK_DEPOSIT_MONEY                     = 0x03FC, // 5.4.7 18019
     CMSG_GUILD_BANK_LOG_QUERY                         = 0x1D97, // 5.4.7 18019
-    CMSG_GUILD_BANK_MONEY_WITHDRAWN_QUERY             = 0x1BB7, // Or 0x03FC // 5.4.7 18019 - CHECK!
+    CMSG_GUILD_BANK_MONEY_WITHDRAWN_QUERY             = 0x1BB7, // 5.4.7 18019
     CMSG_GUILD_BANK_QUERY_TAB                         = 0x07DC, // 5.4.7 18019
     CMSG_GUILD_BANK_QUERY_TEXT                        = 0x19A6, // 5.4.7 18019
     CMSG_GUILD_BANK_SWAP_ITEMS                        = 0x02DF, // 5.4.7 18019
@@ -243,7 +243,7 @@ enum Opcodes
     CMSG_GUILD_CHANGE_NAME_REQUEST                    = 0x0000,
     CMSG_GUILD_DECLINE                                = 0x1B05, // 5.4.7 18019
     CMSG_GUILD_DEL_RANK                               = 0x1D3C, // 5.4.7 18019
-    // CMSG_GUILD_DEMOTE                                 = 0x1B1C, // 5.4.7 18019 - CHECK!
+    CMSG_GUILD_DEMOTE                                 = 0x1B1C, // 5.4.7 18019 - Not finished - CHECK!
     CMSG_GUILD_DISBAND                                = 0x190E, // 5.4.7 18019
     CMSG_GUILD_EVENT_LOG_QUERY                        = 0x1D17, // 5.4.7 18019
     CMSG_GUILD_INFO_TEXT                              = 0x1DAD, // 5.4.7 18019
@@ -253,14 +253,13 @@ enum Opcodes
     CMSG_GUILD_MOTD                                   = 0x1DB4, // 5.4.7 18019
     CMSG_GUILD_NEWS_UPDATE_STICKY                     = 0x1984, // 5.4.7 18019
     CMSG_GUILD_PERMISSIONS                            = 0x1D0F, // 5.4.7 18019
-    // CMSG_GUILD_PROMOTE                                = 0x19B5, // 5.4.7 18019
+    CMSG_GUILD_PROMOTE                                = 0x19B5, // 5.4.7 18019 - Not finished - CHECK!
     CMSG_GUILD_QUERY                                  = 0x1280, // 5.4.7 18019
     CMSG_GUILD_QUERY_NEWS                             = 0x1D35, // 5.4.7 18019
     CMSG_GUILD_QUERY_RANKS                            = 0x1BBC, // 5.4.7 18019
     CMSG_GUILD_REMOVE                                 = 0x1D9F, // 5.4.7 18019
     CMSG_GUILD_REPLACE_GUILD_MASTER                   = 0x0000,
     CMSG_GUILD_REQUEST_CHALLENGE_UPDATE               = 0x192E, // 5.4.7 18019
-    CMSG_GUILD_REQUEST_MAX_DAILY_XP                   = 0x0000,
     CMSG_GUILD_REQUEST_PARTY_STATE                    = 0x14A8, // 5.4.7 18019
     CMSG_GUILD_ROSTER                                 = 0x19BC, // 5.4.7 18019
     CMSG_GUILD_SET_ACHIEVEMENT_TRACKING               = 0x1BA7, // 5.4.7 18019
@@ -841,7 +840,6 @@ enum Opcodes
     SMSG_GUILD_INVITE                                 = 0x185A, // 5.4.7 18019
     SMSG_GUILD_INVITE_CANCEL                          = 0x0000,
     SMSG_GUILD_KNOWN_RECIPES                          = 0x0000,
-    SMSG_GUILD_MAX_DAILY_XP                           = 0x0000,
     SMSG_GUILD_MEMBERS_FOR_RECIPE                     = 0x0000,
     SMSG_GUILD_MEMBER_DAILY_RESET                     = 0x0000,
     SMSG_GUILD_MEMBER_RECIPES                         = 0x0000,
@@ -1305,7 +1303,7 @@ enum Opcodes
     SMSG_WHOIS                                        = 0x1513, // 5.4.7 18019
     SMSG_WORLD_SERVER_INFO                            = 0x1D01, // 5.4.7 18019
     SMSG_WORLD_STATE_UI_TIMER_UPDATE                  = 0x0C22, // 5.4.7 18019
-    SMSG_XP_GAIN_ABORTED                              = 0x0000, // 0x1E32, // 5.4.7 18019 - CHECK!
+    SMSG_XP_GAIN_ABORTED                              = 0x1E32, // 5.4.7 18019 - Not finished - CHECK!
     SMSG_ZONE_UNDER_ATTACK                            = 0x1400, // 5.4.7 18019
 
     // Not found opcodes / unsure if deprecated.

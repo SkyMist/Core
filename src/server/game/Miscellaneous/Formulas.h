@@ -49,9 +49,9 @@ namespace JadeCore
             if (pl_level <= 5)
                 level = 0;
             else if (pl_level <= 39)
-                level = pl_level - 5 - pl_level / 10;
+                level = (pl_level - 5) - floor(pl_level / 10);
             else if (pl_level <= 59)
-                level = pl_level - 1 - pl_level / 5;
+                level = (pl_level - 1) - floor(pl_level / 5);
             else
                 level = pl_level - 9;
 
@@ -139,24 +139,35 @@ namespace JadeCore
                     break;
             }
 
-            if (mob_level >= pl_level)
+            uint32 baseXp = pl_level * 5 + nBaseExp;
+
+            if (mob_level == pl_level)
+                baseGain = baseXp;
+            else if (mob_level > pl_level) // Creature level is higher.
             {
+                // Starting from Cataclysm: XP = (Base XP) * (1 + 0.05 * (Mob Level - Char Level) ), where Mob Level > Char Level.
+                // This is the amount of experience you will get for a solo kill on a mob whose level is higher than your level.
+                // This is known to be valid for up to Mob Level = Char Level + 4 (Orange and high-Yellow Mobs).
+                // Red mobs cap out at the same experience as orange. Higher elite mobs may also cap at the same amount (ie are not doubled).
+
                 uint8 nLevelDiff = mob_level - pl_level;
-                if (nLevelDiff > 4)
+                if (nLevelDiff > 4) // Orange is pl_level + 4. Red caps at Orange, does not double.
                     nLevelDiff = 4;
 
-                baseGain = ((pl_level * 5 + nBaseExp) * (20 + nLevelDiff) / 10 + 1) / 2;
+                baseGain = baseXp * (1 + 0.05 * nLevelDiff); // Old Patches: (baseXp * (20 + nLevelDiff) / 10 + 1) / 2.
             }
-            else
+            else                           // Creature level is lower.
             {
+                // Starting from Cataclysm: XP = (Base XP) * (1 - ((Char Level - Mob Level) / ZD)), where Mob Level < Char Level, and Mob Level > Gray Level.
+                // For a given character level, the amount of XP given by lower-level mobs is a linear function of the Mob Level.
+                // The amount of experience reaches zero when the difference between the Char Level and Mob Level reaches a certain point (Zero Difference).
                 uint8 gray_level = GetGrayLevel(pl_level);
                 if (mob_level > gray_level)
                 {
                     uint8 ZD = GetZeroDifference(pl_level);
-                    baseGain = (pl_level * 5 + nBaseExp) * (ZD + mob_level - pl_level) / ZD;
+                    baseGain = baseXp * (1 - ((pl_level - mob_level) / ZD)); // Old Patches: baseXp * (ZD + mob_level - pl_level) / ZD.
                 }
-                else
-                    baseGain = 0;
+                else baseGain = 0;
             }
 
             sScriptMgr->OnBaseGainCalculation(baseGain, pl_level, mob_level, content);
@@ -178,6 +189,7 @@ namespace JadeCore
 
                 if (gain != 0 && u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->isElite())
                 {
+                    // Mobs that are flagged as elite will give twice the amount of experience as a normal mob for the same level.
                     // Elites in instances have a 2.75x XP bonus instead of the regular 2x world bonus.
                     if (u->GetMap() && u->GetMap()->IsDungeon())
                        gain = uint32(gain * 2.75);

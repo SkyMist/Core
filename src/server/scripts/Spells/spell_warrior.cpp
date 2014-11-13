@@ -119,6 +119,57 @@ class spell_warr_victorious_state : public SpellScriptLoader
         }
 };
 
+// Single - Minded Furry 81099
+class spell_warr_single_minded_furry : public SpellScriptLoader
+{
+    public:
+        spell_warr_single_minded_furry() : SpellScriptLoader("spell_warr_single_minded_furry") { }
+
+        class spell_warr_single_minded_furry_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_warr_single_minded_furry_AuraScript);
+
+            void OnUpdate(uint32 diff, AuraEffectPtr aurEff)
+            {
+                if (!GetCaster())
+                    return;
+
+                int32 amount = aurEff->GetAmount();
+                bool Check = false;
+
+                if (Player* owner = GetCaster()->ToPlayer()) // if owner is player
+                    if (Item *mainhand = owner->GetWeaponForAttack(BASE_ATTACK, true)) // if have mainhand
+                        if (Item *offhand = owner->GetWeaponForAttack(OFF_ATTACK, true)) // if have offhand
+                            if (mainhand->GetTemplate() && mainhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_AXE2 && mainhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_MACE2 
+                                && mainhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_SWORD2 && mainhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_EXOTIC2) // if mainhand is one hand weapon
+                                if (offhand->GetTemplate() && offhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_AXE2 && offhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_MACE2 
+                                    && offhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_SWORD2 && offhand->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_EXOTIC2)// if offhand is one hand weapon
+                                        Check = true;
+
+                if (!Check && amount != 0)
+                {
+                    aurEff->GetBase()->GetEffect(EFFECT_0)->ChangeAmount(0);
+                    aurEff->GetBase()->GetEffect(EFFECT_1)->ChangeAmount(0);
+                }
+                else if (Check && amount == 0)
+                {
+                    aurEff->GetBase()->GetEffect(EFFECT_0)->ChangeAmount(35);
+                    aurEff->GetBase()->GetEffect(EFFECT_1)->ChangeAmount(35);
+                }
+            }
+
+            void Register()
+            {
+                OnEffectUpdate += AuraEffectUpdateFn(spell_warr_single_minded_furry_AuraScript::OnUpdate, EFFECT_1, SPELL_AURA_MOD_OFFHAND_DAMAGE_PCT);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_warr_single_minded_furry_AuraScript();
+        }
+};
+
 // Called by Heroic Strike - 78 and Cleave - 845
 // Glyph of Hindering Strikes - 58366
 class spell_warr_glyph_of_hindering_strikes : public SpellScriptLoader
@@ -1332,6 +1383,7 @@ class spell_warr_charge : public SpellScriptLoader
             DOUBLE_TIME        = 103827,
             WARBRINGER         = 103828,
             WARBRINGER_STUN    = 105771,
+            WARBRINGER_SLOW    = 137637,
             DOUBLE_TIME_MARKER = 124184
         };
 
@@ -1359,6 +1411,8 @@ class spell_warr_charge : public SpellScriptLoader
 
             uint32 stunSpellId = caster->HasAura(WARBRINGER) ? WARBRINGER_STUN : CHARGE_STUN;
             caster->CastSpell(target, stunSpellId, true);
+            if (caster->HasAura(WARBRINGER))
+                caster->CastSpell(target, WARBRINGER_SLOW, true);
         }
 
         void HandleDummy(SpellEffIndex effIndex)
@@ -1695,7 +1749,13 @@ class spell_warr_glyph_of_gag_order : public SpellScriptLoader
                     if (Unit* target = GetHitUnit())
                     {
                         if (target->GetTypeId() != TYPEID_PLAYER)
-                            caster->CastSpell(target, WARRIOR_SPELL_GAG_ORDER_SILENCE, true);
+                        {
+                            if (caster->ToPlayer() && !caster->ToPlayer()->HasSpellCooldown(WARRIOR_SPELL_IMPENDING_VICTORY))
+                            {
+                                caster->ToPlayer()->AddSpellCooldown(WARRIOR_SPELL_IMPENDING_VICTORY, 0, time(NULL) + 30);
+                                caster->CastSpell(target, WARRIOR_SPELL_GAG_ORDER_SILENCE, true);
+                            }
+                        }
                     }
                 }
             }
@@ -1709,6 +1769,35 @@ class spell_warr_glyph_of_gag_order : public SpellScriptLoader
         SpellScript* GetSpellScript() const
         {
             return new spell_warr_glyph_of_gag_order_SpellScript();
+        }
+};
+
+// Glyph of Hamstring
+class spell_warr_glyph_of_hamstring : public SpellScriptLoader
+{
+    public:
+        spell_warr_glyph_of_hamstring() : SpellScriptLoader("spell_warr_glyph_of_hamstring") { }
+
+        class spell_warr_glyph_of_hamstring_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_warr_glyph_of_hamstring_SpellScript);
+
+            void HandleOnHit()
+            {
+                if (Unit* caster = GetCaster())
+                    if (caster->HasAura(58385))
+                        caster->CastSpell(caster, 115945, true);
+            }
+
+            void Register()
+            {
+                OnHit += SpellHitFn(spell_warr_glyph_of_hamstring_SpellScript::HandleOnHit);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_warr_glyph_of_hamstring_SpellScript();
         }
 };
 
@@ -1743,9 +1832,41 @@ class spell_warr_intervene : public SpellScriptLoader
         }
 };
 
+// Glyph of Sweeping Strikes - 58384
+class spell_warr_glyph_sweeping_strikes : public SpellScriptLoader
+{
+    public:
+        spell_warr_glyph_sweeping_strikes() : SpellScriptLoader("spell_warr_glyph_sweeping_strikes") { }
+
+        class spell_warr_glyph_sweeping_strikes_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_warr_glyph_sweeping_strikes_SpellScript);
+
+            void HandleOnHit()
+            {
+                if (!GetCaster())
+                    return;
+
+                if (GetCaster()->HasAura(58384))
+                    GetCaster()->CastSpell(GetCaster(),124333,true);
+            }
+
+            void Register()
+            {
+                OnHit += SpellHitFn(spell_warr_glyph_sweeping_strikes_SpellScript::HandleOnHit);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_warr_glyph_sweeping_strikes_SpellScript();
+        }
+};
+
 void AddSC_warrior_spell_scripts()
 {
     new spell_warr_victorious_state();
+    new spell_warr_single_minded_furry();
     new spell_warr_glyph_of_hindering_strikes();
     new spell_warr_stampeding_shout();
     new spell_warr_shield_barrier();
@@ -1784,5 +1905,7 @@ void AddSC_warrior_spell_scripts()
     new spell_warr_slam();
     new spell_warr_checkway();
     new spell_warr_glyph_of_gag_order();
+    new spell_warr_glyph_of_hamstring();
     new spell_warr_intervene();
+    new spell_warr_glyph_sweeping_strikes();
 }

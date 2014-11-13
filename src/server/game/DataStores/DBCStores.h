@@ -56,6 +56,7 @@ enum ContentLevels
     MAX_CONTENT
 };
 
+uint32 GetMinLevelForExpansion(uint32 expansion);
 uint32 GetMaxLevelForExpansion(uint32 expansion);
 
 ContentLevels GetContentLevelsForMapAndZone(uint32 mapid, uint32 zoneId);

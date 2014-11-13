@@ -518,7 +518,7 @@ class spell_mage_arcane_missile : public SpellScriptLoader
 
                 if (Player* _player = GetCaster()->ToPlayer())
                     if (AuraPtr arcaneMissiles = _player->GetAura(SPELL_MAGE_ARCANE_MISSILES))
-                        arcaneMissiles->DropCharge();
+                        arcaneMissiles->ModStackAmount(-1);
             }
 
             void Register()

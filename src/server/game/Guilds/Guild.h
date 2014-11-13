@@ -42,7 +42,10 @@ enum GuildMisc
     GUILD_WITHDRAW_SLOT_UNLIMITED        = 0xFFFFFFFF,
     GUILD_EVENT_LOG_GUID_UNDEFINED       = 0xFFFFFFFF,
 
-    GUILD_EXPERIENCE_UNCAPPED_LEVEL      = 20,                   // Hardcoded in client, starting from this level, guild daily experience gain is unlimited.
+    GUILD_EXPERIENCE_ABOVE_LEVEL_QUEST   = 90000,
+    GUILD_EXPERIENCE_SAME_LEVEL_QUEST    = 60000,
+    GUILD_EXPERIENCE_BELOW_LEVEL_QUEST   = 30000,
+
     TAB_UNDEFINED                        = 0xFF
 };
 
@@ -400,8 +403,9 @@ typedef std::set <uint8> SlotIds;
 class Guild
 {
     private:
-        // Class representing guild member
-        class Member
+
+        // Member class, representing guild members.
+        class Member 
         {
             struct RemainingValue
             {
@@ -425,8 +429,7 @@ class Guild
                     m_totalActivity(0),
                     m_weekActivity(0),
                     m_totalReputation(0),
-                    m_weekReputation(0)
-				{ }
+                    m_weekReputation(0) { }
 
                 void SetStats(Player* player);
                 void SetStats(const std::string& name, uint8 level, uint8 _class, uint32 zoneId, uint32 accountId);
@@ -439,42 +442,57 @@ class Guild
                 std::string GetOfficerNote() { return m_officerNote; };
 
                 void SetZoneId(uint32 id) { m_zoneId = id; }
-                void SetAchievementPoints(uint32 val) { m_achievementPoints = val; }
                 void SetLevel(uint8 var) { m_level = var; }
 
                 bool LoadFromDB(Field* fields);
                 void SaveToDB(SQLTransaction& trans) const;
 
-                uint64 GetGUID() const { return m_guid; }
                 std::string GetName() const { return m_name; }
+
+                uint64 GetGUID() const { return m_guid; }
+
                 uint32 GetAccountId() const { return m_accountId; }
                 uint32 GetRankId() const { return m_rankId; }
+
                 uint8 GetClass() const { return m_class; }
                 uint8 GetLevel() const { return m_level; }
                 uint8 GetZoneId() const { return m_zoneId; }
-                uint32 GetAchievementPoints() const { return m_achievementPoints; }
-                uint64 GetLogoutTime() const { return m_logoutTime; }
-
-                void ChangeRank(uint8 newRank);
 
                 inline void UpdateLogoutTime() { m_logoutTime = ::time(NULL); }
+                uint64 GetLogoutTime() const { return m_logoutTime; }
+
+                inline Player* FindPlayer() const { return ObjectAccessor::FindPlayer(m_guid); }
+
+                // Guild Ranks.
+                void ChangeRank(uint8 newRank);
+
                 inline bool IsRank(uint8 rankId) const { return m_rankId == rankId; }
                 inline bool IsRankNotLower(uint8 rankId) const { return m_rankId <= rankId; }
                 inline bool IsSamePlayer(uint64 guid) const { return m_guid == guid; }
 
+                // Guild Bank.
                 void DecreaseBankRemainingValue(SQLTransaction& trans, uint8 tabId, uint32 amount);
                 uint32 GetBankRemainingValue(uint8 tabId, const Guild* guild) const;
 
                 void ResetTabTimes();
                 void ResetMoneyTime();
 
-                inline Player* FindPlayer() const { return ObjectAccessor::FindPlayer(m_guid); }
+                // Achievements.
+                void SetAchievementPoints(uint32 val) { m_achievementPoints = val; }
+                uint32 GetAchievementPoints() const { return m_achievementPoints; }
 
-                uint32 GetRemainingWeeklyReputation() const { return 0; }
+                // Reputation.
+                void AddReputation(uint32 value);
+                void SetReputation(uint32 value) { m_totalReputation = value; }
+                uint32 GetReputation() const { return m_totalReputation; }
+
+                void SetWeeklyReputation(uint32 value) { m_weekReputation = value; }
+                uint32 GetWeeklyReputation() const { return m_weekReputation; }
 
             private:
                 uint32 m_guildId;
-                // Fields from characters table
+
+                // Fields from characters table.
                 uint64 m_guid;
                 std::string m_name;
                 uint32 m_zoneId;
@@ -483,7 +501,8 @@ class Guild
                 uint8 m_flags;
                 uint64 m_logoutTime;
                 uint32 m_accountId;
-                // Fields from guild_member table
+
+                // Fields from guild_member table.
                 uint32 m_rankId;
                 std::string m_publicNote;
                 std::string m_officerNote;
@@ -912,10 +931,16 @@ class Guild
 
          // Guild leveling
         uint32 GetLevel() const { return _level; }
+
         void GiveXP(uint32 xp, Player* source);
         uint64 GetExperience() const { return _experience; }
         uint64 GetTodayExperience() const { return _todayExperience; }
+
+        uint32 CalculateQuestExperienceReward(uint8 playerLevel, uint32 questLevel);
+
         void ResetDailyExperience();
+        void ResetWeeklyReputation();
+
         GuildNewsLog& GetNewsLog() { return _newsLog; }
 
         EmblemInfo const& GetEmblemInfo() const { return m_emblemInfo; }

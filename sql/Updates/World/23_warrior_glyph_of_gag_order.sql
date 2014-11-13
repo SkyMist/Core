@@ -1,0 +1,2 @@
+INSERT INTO `spell_script_names` SET `spell_id`='6552',`ScriptName`='spell_warr_glyph_of_gag_order';
+INSERT INTO `spell_script_names` SET `spell_id`='57755',`ScriptName`='spell_warr_glyph_of_gag_order';

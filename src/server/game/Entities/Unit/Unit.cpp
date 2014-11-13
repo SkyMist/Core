@@ -705,10 +705,6 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         this->RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
     }
 
-    // Custom MoP Script - Subterfuge , should be called from normal hit
-    if (this && victim && this->HasAura(108208) && this->HasAura(115191) && !this->HasAura(115192) && (damagetype == DIRECT_DAMAGE || this->HasAura(121471)))
-        this->CastSpell(this, 115192, true);
-
     // Fix Nightstalker damage from stealth
     if (GetTypeId() == TYPEID_PLAYER  && this && this->getClass() == CLASS_ROGUE && victim && this->HasAura(14062) && this->HasAura(130493))
     {
@@ -925,33 +921,6 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         }
     }
 
-    // Rage from Damage made (only from direct weapon damage)
-    if (cleanDamage && damagetype == DIRECT_DAMAGE && this != victim && getPowerType() == POWER_RAGE
-        && (!spellProto || !spellProto->HasAura(SPELL_AURA_SPLIT_DAMAGE_PCT)))
-    {
-        uint32 weaponSpeedHitFactor;
-        uint32 rage_damage = damage + cleanDamage->absorbed_damage;
-
-        switch (cleanDamage->attackType)
-        {
-            case BASE_ATTACK:
-            {
-                weaponSpeedHitFactor = uint32(GetAttackTime(cleanDamage->attackType) / 1000.0f * 6.5f);
-                RewardRage(weaponSpeedHitFactor, true);
-                break;
-            }
-            case OFF_ATTACK:
-            {
-                weaponSpeedHitFactor = uint32(GetAttackTime(cleanDamage->attackType) / 1000.0f * 3.25f);
-                RewardRage(weaponSpeedHitFactor, true);
-                break;
-            }
-            case RANGED_ATTACK:
-                break;
-            default:
-                break;
-        }
-    }
     if (damagetype != NODAMAGE && (damage || (cleanDamage && cleanDamage->absorbed_damage) ))
     {
         if (victim != this && victim->GetTypeId() == TYPEID_PLAYER) // does not support creature push_back
@@ -972,15 +941,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
     }
 
     if (!damage)
-    {
-        // Rage from absorbed damage
-        if (cleanDamage && cleanDamage->absorbed_damage && victim->getPowerType() == POWER_RAGE)
-        {
-            victim->RewardRage(cleanDamage->absorbed_damage, false);
-        }
-
         return 0;
-    }
 
     uint32 health = victim->GetHealth();
 
@@ -1078,13 +1039,6 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
                 EquipmentSlots slot = EquipmentSlots(urand(0, EQUIPMENT_SLOT_END-1));
                 victim->ToPlayer()->DurabilityPointLossForEquipSlot(slot);
             }
-        }
-
-        // Rage from damage received
-        if (this != victim && victim->getPowerType() == POWER_RAGE)
-        {
-            uint32 rage_damage = damage + (cleanDamage ? cleanDamage->absorbed_damage : 0);
-            victim->RewardRage(rage_damage, false);
         }
 
         if (GetTypeId() == TYPEID_PLAYER)
@@ -1687,6 +1641,10 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
     else // Impossible get negative result but....
         damageInfo->damage = 0;
 
+    // Subterfuge - If we try attack from melee must remove stealth.
+    if (HasAura(115191) && !HasAura(115192))
+        CastSpell(this, 115192, true);
+
     // Soul link
     if (victim->GetTypeId() == TYPEID_PLAYER && victim->getClass() == CLASS_WARLOCK && victim->HasAura(108446) && damageInfo->attackType != SELF_DAMAGE)
     {
@@ -1819,6 +1777,21 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     // Call default DealDamage
     CleanDamage cleanDamage(damageInfo->cleanDamage, damageInfo->absorb, damageInfo->attackType, damageInfo->hitOutCome);
     DealDamage(victim, damageInfo->damage, &cleanDamage, DIRECT_DAMAGE, SpellSchoolMask(damageInfo->damageSchoolMask), NULL, durabilityLoss);
+
+    // Rage from Damage made (only from direct weapon damage)
+    if (this != victim && GetTypeId() == TYPEID_PLAYER && getPowerType() == POWER_RAGE && (GetShapeshiftForm() == FORM_BATTLESTANCE || GetShapeshiftForm() == FORM_BERSERKERSTANCE))
+    {
+        bool cooldown = false;
+        if (ToPlayer()->HasSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381))
+            cooldown = true;
+
+        if (!cooldown)
+        {
+            ToPlayer()->AddSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381, 0, time(NULL) + 1.5);
+            float weaponSpeed = GetAttackTime(damageInfo->attackType) / 100.0f;
+            RewardRage(weaponSpeed,true);
+        }
+    }
 
     // If this is a creature and it attacks from behind it has a probability to daze it's victim
     if ((damageInfo->hitOutCome == MELEE_HIT_CRIT || damageInfo->hitOutCome == MELEE_HIT_CRUSHING || damageInfo->hitOutCome == MELEE_HIT_NORMAL || damageInfo->hitOutCome == MELEE_HIT_GLANCING) &&
@@ -4235,10 +4208,6 @@ void Unit::RemoveAura(AuraApplication * aurApp, AuraRemoveMode mode)
         return;
     uint32 spellId = aurApp->GetBase()->GetId();
 
-    // Hack Fix : Subterfuge aura can't be removed by any action
-    //if (spellId == 115191) // третий
-    //    return;
-
     if ((spellId == 51713 || spellId == 115192) && mode != AURA_REMOVE_BY_EXPIRE)
         return;
 
@@ -4428,13 +4397,6 @@ void Unit::RemoveAurasByType(AuraType auraType, uint64 casterGUID, AuraPtr excep
 
         ++iter;
 
-        if (aura->GetSpellInfo()->Id == 1784 && HasAura(115192))
-            continue;
-
-        // Hack Fix : Subterfuge aura can't be removed by any action - первый
-        if (aura->GetSpellInfo()->Id == 115191)
-            continue;
-
         if (aura != exceptAura && (!exceptAuraId || aura->GetId() != exceptAuraId) &&
             (!casterGUID || aura->GetCasterGUID() == casterGUID) &&
             ((negative && !aurApp->IsPositive()) || (positive && aurApp->IsPositive())))
@@ -4511,9 +4473,6 @@ void Unit::RemoveAurasWithInterruptFlags(uint32 flag, uint32 except)
         ++iter;
         if ((aura->GetSpellInfo()->AuraInterruptFlags & flag) && (!except || aura->GetId() != except))
         {
-            if (aura->GetSpellInfo()->Id == 1784 && HasAura(115192))
-                continue;
-
             uint32 removedAuras = m_removedAurasCount;
             RemoveAura(aura);
             if (m_removedAurasCount > removedAuras + 1)
@@ -7026,6 +6985,23 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
         {
             switch (dummySpell->Id)
             {
+                // Berserk stances - rage generate when got attack
+                case 7381:
+                    if (GetTypeId() != TYPEID_PLAYER)
+                        return false;
+
+                    if (ToPlayer()->HasSpellCooldown(7381))
+                        return false;
+
+                    ToPlayer()->AddSpellCooldown(7381, 0, time(NULL) + 1.5);
+
+                    if (getPowerType() == POWER_RAGE)
+                    {
+                        // every hit got 3 rage
+                        RewardRage(30, false);
+                        return true;
+                    }
+                    break;
                 // Item - Warrior T13 Protection 2P Bonus (Revenge)
                 case 105908:
                     if (!victim)
@@ -9683,6 +9659,20 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 damage, AuraPtr triggeredByAura, 
             }
             break;
         }
+        case SPELLFAMILY_ROGUE:
+        {
+            // Subterfuge
+            if (dummySpell->Id == 115191)
+            {
+                *handled = true;
+                if (HasAura(115192))
+                    return false;
+
+                CastSpell(this, 115192, true);
+                return false;
+            }
+            break;
+        }
         case SPELLFAMILY_PALADIN:
         {
             // Judgements of the Just.
@@ -10209,6 +10199,13 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
     // Custom triggered spells
     switch (auraSpellInfo->Id)
     {
+        // Victorious state
+        case 32215:
+        {
+            if (triggeredByAura->GetCaster() && triggeredByAura->GetCaster()->getLevel() < 5)
+                return false;
+            break;
+        }
         // Seal of insight
         case 20165:
         {
@@ -10554,18 +10551,11 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
             if (!procSpell)
                 return false;
 
-            if (procSpell->Id == 4143 || procSpell->Id == 7268)
+            if (procSpell->Id == 7268)
                 return false;
 
             if (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) != SPEC_MAGE_ARCANE)
                 return false;
-
-            if (AuraPtr arcaneMissiles = GetAura(79683))
-            {
-                arcaneMissiles->ModCharges(1);
-                arcaneMissiles->RefreshDuration();
-                return false;
-            }
 
             break;
         }
@@ -12829,10 +12819,6 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
         AddPct(DoneTotalMod, PvPPower);
     }
 
-    // 146631 - Glyph of Hemorrhaging Veins
-    if (victim && pdamage != 0 && spellProto->Id !=  2098 && GetTypeId() == TYPEID_PLAYER && HasAura(146631) && HasAura(79147) && victim->HasAura(89775) && !victim->HasAura(124271))
-        AddPct(DoneTotalMod, 35);
-
     // Custom MoP Script
     // 76658 - Mastery : Essence of the Viper
     if (GetTypeId() == TYPEID_PLAYER && spellProto
@@ -12875,7 +12861,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
 
     // Custom MoP Script
     // 76808 - Mastery : Executioner
-    if (GetTypeId() == TYPEID_PLAYER && spellProto && (spellProto->Id == 1943 || spellProto->Id == 121411) && HasAura(76808))
+    if (GetTypeId() == TYPEID_PLAYER && spellProto && (spellProto->Id == 1943 || spellProto->Id == 121411 || spellProto->Id == 2098) && HasAura(76808))
     {
         float Mastery = GetFloatValue(PLAYER_MASTERY) * 3.0f;
         AddPct(DoneTotalMod, Mastery);
@@ -14466,10 +14452,6 @@ uint32 Unit::MeleeDamageBonusDone(Unit* victim, uint32 pdamage, WeaponAttackType
         float Mastery = GetFloatValue(PLAYER_MASTERY) * 1.375f;
         AddPct(DoneTotalMod, Mastery);
     }
-
-    // 146631 - Glyph of Hemorrhaging Veins
-    if (victim && pdamage != 0 && GetTypeId() == TYPEID_PLAYER && HasAura(146631) && HasAura(79147) && victim->HasAura(89775) && !victim->HasAura(124271))
-        AddPct(DoneTotalMod, 35);
 
     // While Killing Spree - 51690 damage must be increased
     if (victim && pdamage != 0 && GetTypeId() == TYPEID_PLAYER && HasAura(51690))
@@ -17807,7 +17789,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
         ((procSpell->CastTimeEntry && procSpell->CastTimeEntry->CastTime > 0 && procSpell->CastTimeEntry->CastTime < 4000)
         || (procSpell->DurationEntry && procSpell->DurationEntry->Duration[0] > 0 && procSpell->DurationEntry->Duration[0] < 4000 && procSpell->AttributesEx & SPELL_ATTR1_CHANNELED_2)))
         if (AuraApplication* aura = GetAuraApplication(108839, GetGUID()))
-            aura->GetBase()->DropCharge();
+            aura->GetBase()->ModStackAmount(-1);
 
     // Hack Fix Cobra Strikes - Drop charge
     if (GetTypeId() == TYPEID_UNIT && damage > 0 && HasAura(53257))
@@ -18011,15 +17993,6 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
 
         // Hack Fix : Stealth is not removed on absorb damage
         if (spellInfo->HasAura(SPELL_AURA_MOD_STEALTH) && procExtra & PROC_EX_ABSORB && isVictim)
-            useCharges = false;
-
-        // Hack Fix : Subterfuge aura can't be removed by any action
-        if (spellInfo->Id == 115191 && procExtra & PROC_EX_INTERNAL_DOT && !HasAura(115192) && !HasAura(131369))
-        {
-            useCharges = false;
-            CastSpell(this, 115192, true);
-        }
-        else if (spellInfo->Id == 115191)
             useCharges = false;
 
         // Hack Fix - Vanish :  If rogue has vanish aura stealth is not removed on periodic damage
@@ -19551,6 +19524,10 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellProto)
                 bg->HandleKillUnit(victim->ToCreature(), player);
         }
     }
+
+    // Glyph of the Executor
+    if (player && spellProto && player->HasAura(146971) && spellProto->Id == 5308)
+        player->CastSpell(player,147352,true);
 
     // achievement stuff
     if (victim->GetTypeId() == TYPEID_PLAYER)
@@ -22217,8 +22194,8 @@ void Unit::RewardRage(uint32 baseRage, bool attacker)
 
     if (attacker)
     {
-        // talent who gave more rage on attack
-        addRage *= 1.0f + GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT) / 100.0f;
+        // Talent which gives more rage on attack.
+        addRage += GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT);
 
         // Sentinel - Protection Warrior Mastery
         if (AuraEffectPtr aurEff = GetAuraEffect(29144, 1))
@@ -22227,21 +22204,12 @@ void Unit::RewardRage(uint32 baseRage, bool attacker)
     }
     else
     {
-        addRage /= (GetCreateHealth()/35);
-
         // Generate rage from damage taken only in Berserker Stance
         if (!HasAura(2458))
             return;
-
-        // Berserker Rage effect
-        if (HasAura(18499))
-        {
-            float mod = 2.0f;
-            addRage *= mod;
-        }
     }
 
-    ModifyPower(POWER_RAGE, uint32(addRage * 3));
+    ModifyPower(POWER_RAGE, uint32(addRage));
 }
 
 void Unit::StopAttackFaction(uint32 faction_id)

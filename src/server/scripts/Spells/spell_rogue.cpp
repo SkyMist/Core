@@ -537,7 +537,7 @@ class spell_rog_nightstalker : public SpellScriptLoader
         }
 };
 
-// Called by Rupture - 1943, Garrote - 703 and Crimson Tempest - 121411
+// Called by Rupture - 1943, Garrote - 703, hemorrage - 89775 and Crimson Tempest - 122233
 // Sanguinary Vein - 79147
 class spell_rog_sanguinary_vein : public SpellScriptLoader
 {
@@ -553,22 +553,32 @@ class spell_rog_sanguinary_vein : public SpellScriptLoader
                 if (!GetCaster())
                     return;
 
+                if (GetSpellInfo()->Id == 89775 && !GetCaster()->HasAura(146631))
+                    return;
+
                 if (Player* _player = GetCaster()->ToPlayer())
                     if (Unit* target = GetTarget())
-                        if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
+                        if (_player->HasAura(79147))
                             _player->CastSpell(target, ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, true);
             }
 
             void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
-                if (!GetCaster())
+                if (!GetCaster() || !GetTarget())
                     return;
 
-                if (Player* _player = GetCaster()->ToPlayer())
-                    if (Unit* target = GetTarget())
-                        if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_ROGUE_SUBTLETY)
-                            if (target->HasAura(ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, _player->GetGUID()))
-                                _player->RemoveAura(ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, _player->GetGUID());
+                bool Remove = false;
+
+                if (GetCaster()->HasAura(146631)) // with glyph check 3 aurs + hemorrhage
+                {
+                    if (!GetTarget()->HasAura(122233,GetCasterGUID()) && !GetTarget()->HasAura(703,GetCasterGUID()) && !GetTarget()->HasAura(1943,GetCasterGUID() && !GetTarget()->HasAura(89775,GetCasterGUID())))
+                        Remove = true;
+                }
+                else if (!GetTarget()->HasAura(122233,GetCasterGUID()) && !GetTarget()->HasAura(703,GetCasterGUID()) && !GetTarget()->HasAura(1943,GetCasterGUID())) // without glyph just 3 aur check
+                    Remove = true;
+
+                if (Remove && GetTarget()->HasAura(ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, GetCasterGUID()))
+                    GetTarget()->RemoveAura(ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, GetCasterGUID());
             }
 
             void Register()
@@ -1707,9 +1717,9 @@ class spell_rog_subterfuge_effect : public SpellScriptLoader
                 if (!GetCaster())
                     return;
 
-                // We need to call Subterfuge aura, if stealth is removed by AOE damage (AURA_REMOVE_BY_DEFAULT) or other spells
+                // Remove Stealth.
                 if (AuraPtr subterfuge = GetCaster()->GetAura(115191))
-                    GetCaster()->RemoveAura(subterfuge, AURA_REMOVE_BY_CANCEL);
+                    GetCaster()->RemoveAura(subterfuge);
             }
 
             void Register()
@@ -1783,7 +1793,7 @@ class spell_rog_find_weakness : public SpellScriptLoader
                 GetExplTargetUnit()->GetPosition(&targetPos);
                 spellRange = GetSpellInfo()->GetMaxRange(true);
 
-                if (caster->HasAura(ROGUE_SPELL_CLOAK_AND_DAGGER) && !caster->IsWithinDist3d(&targetPos, spellRange) && !caster->HasAura(1784))
+                if (caster->HasAura(ROGUE_SPELL_CLOAK_AND_DAGGER) && !caster->IsWithinDist3d(&targetPos, spellRange) && (!caster->HasAura(1784) && !caster->HasAura(115191)))
                     return SPELL_FAILED_OUT_OF_RANGE;
 
                 return SPELL_CAST_OK;

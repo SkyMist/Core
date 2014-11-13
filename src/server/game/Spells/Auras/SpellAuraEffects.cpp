@@ -946,23 +946,6 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     break;
                 }
-                // Recuperate
-                case 73651:
-                {
-                    int32 heal_pct = amount * 1000;
-
-                    // Glyph of Recuperate
-                    if (caster->HasAura(56806))
-                        heal_pct += caster->GetMaxHealth() * 0.01; 
-
-                    // Improved Recuperate
-                    if (constAuraEffectPtr aurEff = caster->GetAuraEffect(SPELL_AURA_DUMMY, SPELLFAMILY_ROGUE, 4819, 0))
-                        heal_pct += aurEff->GetAmount();
-                    
-                    amount = CalculatePct(caster->GetMaxHealth(), 0.001 * heal_pct);
-
-                    break;
-                }
 
                 default: break;
             }
@@ -7109,6 +7092,11 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
                     break;
                 }
             }
+            break;
+        case SPELLFAMILY_WARRIOR:
+            // Regenerate 1 rage every 3 sec in combat in Defensive Stance.
+            if (GetId() == 7376 && caster->isInCombat())
+                caster->ModifyPower(POWER_RAGE, 10);
             break;
 
         default: break;

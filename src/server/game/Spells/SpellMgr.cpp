@@ -4061,15 +4061,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Attributes |= SPELL_ATTR0_PASSIVE;
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_DEATH_PERSISTENT;
                     break;
-                case 81099: // Single-Minded Fury
-                    spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
-                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_PERCENT_DONE;
-                    spellInfo->Effects[0].BasePoints = 35;
-                    spellInfo->Effects[0].MiscValue = 127;
-                    spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
-                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_MOD_OFFHAND_DAMAGE_PCT;
-                    spellInfo->Effects[1].BasePoints = 35;
-                    break;
                 case 118314:// Enchant Weapon - Colossus
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_PROC_TRIGGER_SPELL;
@@ -4283,6 +4274,10 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 128939:// Elusive brew stacks
                     spellInfo->StackAmount = 15;
+                    break;
+                case 7376: // Defensive Stance
+                    spellInfo->Effects[3].ApplyAuraName = SPELL_AURA_PERIODIC_DUMMY;
+                    spellInfo->Effects[3].Amplitude = 3000;
                     break;
                 case 120267:// Vengeance
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
@@ -4922,19 +4917,19 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 115191:// Subterfuge
                     spellInfo->Attributes &= ~SPELL_ATTR0_BREAKABLE_BY_DAMAGE;
                     spellInfo->AttributesEx |= SPELL_ATTR0_DISABLED_WHILE_ACTIVE;
-                    spellInfo->Attributes |= SPELL_ATTR0_ABILITY;
-                    spellInfo->Attributes |= SPELL_ATTR0_NOT_SHAPESHIFT;
-                    spellInfo->Attributes |= SPELL_ATTR0_DONT_AFFECT_SHEATH_STATE;
                     spellInfo->Attributes |= SPELL_ATTR0_STOP_ATTACK_TARGET;
-                    spellInfo->Attributes |= SPELL_ATTR0_CASTABLE_WHILE_SITTING;
-                    spellInfo->Attributes |= SPELL_ATTR0_CANT_USED_IN_COMBAT;
-                    spellInfo->AttributesEx |= SPELL_ATTR1_UNK4;
-                    spellInfo->AttributesEx |= SPELL_ATTR1_NO_THREAT;
-                    spellInfo->AttributesEx2 |= SPELL_ATTR2_DAMAGE_REDUCED_SHIELD;
-                    spellInfo->AttributesEx3 |= SPELL_ATTR3_CAN_PROC_WITH_TRIGGERED;
-                    spellInfo->AttributesEx4 |= SPELL_ATTR4_UNK19;
                     spellInfo->AttributesEx8 |= SPELL_ATTR8_AURA_SEND_AMOUNT;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_MELEE_DMG_CLASS;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_RANGED_DMG_CLASS;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_POS;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_NONE_DMG_CLASS_NEG;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_POS;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_PERIODIC;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_MELEE_AUTO_ATTACK;
+                    spellInfo->ProcFlags &= ~PROC_FLAG_DONE_RANGED_AUTO_ATTACK;
                     break;
+                case 128766:// Shadowstep teleport only (talent)
                 case 36554: // Shadowstep
                 case 36563: // Shadowstep (trigger)
                     spellInfo->AttributesEx |= SPELL_ATTR1_NOT_BREAK_STEALTH;
@@ -5012,6 +5007,9 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 17767:  // Shadow bulwark
                 case 132413: // Shadow bulwark
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT;
+                    break;
+                case 107566: // Staggering Shout
+                    spellInfo->ProcCharges = 1;
                     break;
                 case 122507:// Rallying Cry
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;

@@ -450,6 +450,7 @@ bool Guild::BankTab::LoadItemFromDB(Field* fields)
     uint8 slotId = fields[13].GetUInt8();
     uint32 itemGuid = fields[14].GetUInt32();
     uint32 itemEntry = fields[15].GetUInt32();
+
     if (slotId >= GUILD_BANK_MAX_SLOTS)
     {
         sLog->outError(LOG_FILTER_GUILD, "Invalid slot for item (GUID: %u, id: %u) in guild bank, skipped.", itemGuid, itemEntry);
@@ -763,6 +764,12 @@ inline void Guild::Member::ResetTabTimes()
 inline void Guild::Member::ResetMoneyTime()
 {
     m_bankRemaining[GUILD_BANK_MAX_TABS].resetTime = 0;
+}
+
+void Guild::Member::AddReputation(uint32 value)
+{
+    m_totalReputation += value;
+    m_weekReputation += value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1395,7 +1402,7 @@ void Guild::HandleRoster(WorldSession* session /*= NULL*/)
         memberData << uint32(player ? player->GetReputation(REP_GUILD) : 0);
         memberData << uint8(member->GetClass());
         memberData << uint8(member->GetLevel());
-        memberData << uint32(sWorld->getIntConfig(CONFIG_GUILD_WEEKLY_REP_CAP));
+        memberData << uint32(0); // sWorld->getIntConfig(CONFIG_GUILD_WEEKLY_REP_CAP)
         memberData << uint64(0); // Total activity
         memberData.WriteString(member->GetPublicNote());
         memberData.WriteByteSeq(guid[1]);
@@ -2535,11 +2542,11 @@ void Guild::SendLoginInfo(WorldSession* session)
 
 void Guild::SendGuildReputationWeeklyCap(WorldSession* session) const
 {
-    // On 5.0.4 The cap on weekly reputation gains has been removed, but always sent ...
+    // On 5.0.4 The cap on weekly reputation gains has been removed, but always sent. As 0 remaining.
     if (Member const* member = GetMember(session->GetPlayer()->GetGUID()))
     {
         WorldPacket data(SMSG_GUILD_REPUTATION_WEEKLY_CAP, 4);
-        data << uint32(member->GetRemainingWeeklyReputation());
+        data << uint32(0);
         session->SendPacket(&data);
     }
 }
@@ -3779,10 +3786,29 @@ void Guild::SendGuildXP(WorldSession* session) const
 
     WorldPacket data(SMSG_GUILD_XP, 32);
     data << uint64(GetExperience());
-    data << uint64(0);
+    data << uint64(0); // Max daily XP. Starting with patch 5.0.4, there is no longer any cap on how much Guild XP your guild can earn each day. 
     data << uint64(sGuildMgr->GetXPForGuildLevel(GetLevel()) - GetExperience());    // XP missing for next level
     data << uint64(GetTodayExperience());
     session->SendPacket(&data);
+}
+
+// Starting with 5.0.4, the amount of Guild XP for quest turn-ins by low-level characters is similar to high-level.
+// The exact formula appears to be 60k Guild XP for every level-appropriate quest.
+// Any quests that are too low for your character to earn XP will earn zero Guild XP.
+// Red caps at Orange. Red / Orange quests 90k, Yellow quests 60k, Green 30k, Grey 0.
+uint32 Guild::CalculateQuestExperienceReward(uint8 playerLevel, uint32 questLevel)
+{
+    uint32 experience = 0;
+
+	uint32 pLevel = playerLevel;
+    if (questLevel >= pLevel + 3)                                       // Red + Orange (High level) quests (questLevel >= playerLevel + 3 (O) / 5 (R)) award N x 1.5.
+        experience = GUILD_EXPERIENCE_ABOVE_LEVEL_QUEST;
+    else if (questLevel >= pLevel - 2 && questLevel < pLevel + 3)       // Yellow (Normal) quests (questLevel >= playerLevel - 2) award N x 1.
+        experience = GUILD_EXPERIENCE_SAME_LEVEL_QUEST;
+    else                                                                // Green (Low level) quests award N x 0.5.
+        experience = GUILD_EXPERIENCE_BELOW_LEVEL_QUEST;
+
+    return experience;
 }
 
 void Guild::ResetDailyExperience()
@@ -3792,6 +3818,13 @@ void Guild::ResetDailyExperience()
     for (Members::const_iterator itr = m_members.begin(); itr != m_members.end(); ++itr)
         if (Player* player = itr->second->FindPlayer())
             SendGuildXP(player->GetSession());
+}
+
+void Guild::ResetWeeklyReputation()
+{
+    for (Members::const_iterator itr = m_members.begin(); itr != m_members.end(); ++itr)
+        if (Member* guildMember = itr->second)
+            guildMember->SetWeeklyReputation(0);
 }
 
 void Guild::GuildNewsLog::AddNewEvent(GuildNews eventType, time_t date, uint64 playerGuid, uint32 flags, uint32 data)
