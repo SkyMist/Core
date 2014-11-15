@@ -288,8 +288,6 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     if (!itemProto)
         return false;
 
-    SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
-
     HasBeenReforged = false;
 
     // For Item Upgrade
@@ -317,8 +315,9 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
             }
         }
 
-        SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+        SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
     }
+    else SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
 
     SetUInt32Value(ITEM_FIELD_STACK_COUNT, 1);
     SetUInt32Value(ITEM_FIELD_MAXDURABILITY, itemProto->MaxDurability);
@@ -574,19 +573,19 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
     if (reforgeApplied || transmogApplied || upgradeApplied)
     {
         if (upgradeApplied)
-            SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+            SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
         else
         {
             if (transmogApplied)
-                SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+                SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
             else
             {
                 if (reforgeApplied)
-                    SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+                    SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
             }
         }
     }
-    else SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
+    else SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
 
     uint32 durability = fields[11].GetUInt16();
     SetUInt32Value(ITEM_FIELD_DURABILITY, durability);

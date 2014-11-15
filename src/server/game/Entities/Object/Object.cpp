@@ -1173,6 +1173,20 @@ void Object::SetFlag(uint16 index, uint32 newFlag)
     }
 }
 
+void Object::SetFixedFlag(uint16 index, uint32 newFlag)
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+
+    m_uint32Values[index] = newFlag;
+    _changedFields[index] = true;
+
+    if (m_inWorld && !m_objectUpdated)
+    {
+        sObjectAccessor->AddUpdateObject(this);
+        m_objectUpdated = true;
+    }
+}
+
 void Object::RemoveFlag(uint16 index, uint32 oldFlag)
 {
     ASSERT(index < m_valuesCount || PrintIndexError(index, true));
