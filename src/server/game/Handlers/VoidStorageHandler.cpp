@@ -140,16 +140,16 @@ void WorldSession::HandleVoidStorageQuery(WorldPacket& recvData)
         itemData.WriteByteSeq(guid1[3]);
         itemData.WriteByteSeq(guid1[1]);
         itemData.WriteByteSeq(guid1[6]);
-        
+
         itemData << uint32(i);
-        itemData << uint32(item->ItemSuffixFactor);
-        
+        itemData << uint32(item->ItemSuffixFactor);             /// UniqueID from itemString, check http://wowpedia.org/ItemString .
+
         itemData.WriteByteSeq(guid2[5]);
         itemData.WriteByteSeq(guid1[5]);
         itemData.WriteByteSeq(guid1[2]);
-        
-        itemData << uint32(0);                          // @TODO : Item Upgrade level !
-        
+
+        itemData << uint32(item->ItemUpgradeId);                /// UpgradeID, new to mop, check http://wowpedia.org/ItemString .
+
         itemData.WriteByteSeq(guid1[7]);
         itemData.WriteByteSeq(guid2[7]);
         itemData.WriteByteSeq(guid2[6]);
@@ -172,19 +172,17 @@ void WorldSession::HandleVoidStorageTransfer(WorldPacket& recvData)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_VOID_STORAGE_TRANSFER");
     Player* player = GetPlayer();
 
-    // Read everything
-
     ObjectGuid npcGuid;
-    
+
     npcGuid[2] = recvData.ReadBit();
     npcGuid[7] = recvData.ReadBit();
-    
+
     uint32 countDeposit = recvData.ReadBits(24);
 
     npcGuid[0] = recvData.ReadBit();
     npcGuid[6] = recvData.ReadBit();
     npcGuid[5] = recvData.ReadBit();
-    
+
     std::vector<ObjectGuid> itemGuids(countDeposit);
 
     uint8 bitOrder2[8] = { 7, 2, 0, 4, 6, 1, 5, 3 };
@@ -288,7 +286,8 @@ void WorldSession::HandleVoidStorageTransfer(WorldPacket& recvData)
             continue;
         }
 
-        VoidStorageItem itemVS(sObjectMgr->GenerateVoidStorageItemId(), item->GetEntry(), item->GetUInt64Value(ITEM_FIELD_CREATOR), item->GetItemRandomPropertyId(), item->GetItemSuffixFactor());
+        VoidStorageItem itemVS(sObjectMgr->GenerateVoidStorageItemId(), item->GetEntry(), item->GetUInt64Value(ITEM_FIELD_CREATOR), item->GetItemRandomPropertyId(), item->GetReforgeId(),
+                               item->GetTransmogrifyId(), item->GetUpgradeId(), item->GetItemSuffixFactor());
 
         uint8 slot = player->AddVoidStorageItem(itemVS);
 
@@ -376,7 +375,7 @@ void WorldSession::HandleVoidStorageTransfer(WorldPacket& recvData)
         ObjectGuid guid1 = depositItems[i].first.ItemId;
         ObjectGuid guid2 = depositItems[i].first.CreatorGuid;
 
-        data << uint32(0);                          // @TODO : Item Upgrade level ! 32
+        data << uint32(depositItems[i].first.ItemUpgradeId);        // 32
         data << uint32(depositItems[i].first.ItemRandomPropertyId); // 24
 
         data.WriteByteSeq(guid2[3]);
@@ -389,26 +388,26 @@ void WorldSession::HandleVoidStorageTransfer(WorldPacket& recvData)
         data.WriteByteSeq(guid2[6]);
         data.WriteByteSeq(guid2[2]);
         data.WriteByteSeq(guid2[4]);
-        
+
         data << uint32(depositItems[i].first.ItemSuffixFactor); // 20
-        
+
         data.WriteByteSeq(guid1[2]);
         data.WriteByteSeq(guid2[0]);
         data.WriteByteSeq(guid1[3]);
-        
+
         data << uint32(depositItems[i].second); // slot 28
-        
+
         data.WriteByteSeq(guid2[5]);
         data.WriteByteSeq(guid2[1]);
         data.WriteByteSeq(guid1[4]);
-        
+
         data << uint32(depositItems[i].first.ItemEntry); // 16
     }
 
     for (uint8 i = 0; i < withdrawCount; ++i)
     {
         ObjectGuid itemId = withdrawItems[i].ItemId;
-    
+
         uint8 byteOrder[8] = { 0, 1, 5, 7, 3, 6, 4, 2 };
         data.WriteBytesSeq(itemId, byteOrder);
     }
@@ -464,7 +463,7 @@ void WorldSession::HandleVoidSwapItem(WorldPacket& recvData)
     recvData.ReadByteSeq(guid2[5]);
     recvData.ReadByteSeq(guid2[2]);
     recvData.ReadByteSeq(guid1[6]);
-    recvData.ReadByteSeq(guid1[6]);
+    recvData.ReadByteSeq(guid1[3]);
     recvData.ReadByteSeq(guid2[3]);
     recvData.ReadByteSeq(guid2[0]);
 
@@ -509,7 +508,7 @@ void WorldSession::HandleVoidSwapItem(WorldPacket& recvData)
 
     uint8 bitsDestOrder[8] = { 2, 0, 6, 4, 7, 1, 5, 3 };
     data.WriteBitInOrder(itemIdDest, bitsDestOrder);
-    
+
     data.WriteBit(!usedSrcSlot);
 
     uint8 bitsItemOrder[8] = { 1, 5, 2, 3, 4, 7, 0, 6 };

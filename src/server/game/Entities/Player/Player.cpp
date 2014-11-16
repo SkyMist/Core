@@ -2276,6 +2276,36 @@ void Player::Update(uint32 p_time)
         m_needSummonPetAlterStopFlying = false;
     }
 
+    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; i++)
+    {
+        if (Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+        {
+            if (item->HasBeenReforged && item->GetReforgeTimer() > 0)
+            {
+                if (item->GetReforgeTimer() < p_time)
+                {
+                    if (item->CanUpgrade() || item->CanTransmogrify())
+                    {
+                        if (item->CanUpgrade())
+                            item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+                        else
+                        {
+                            if (item->CanTransmogrify())
+                                item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+                        }
+
+                        item->SetState(ITEM_CHANGED, this);
+                    }
+
+                    item->HasBeenReforged = false;
+                    item->SetReforgeTimer(0);
+                }
+                else
+                    item->SetReforgeTimer(item->GetReforgeTimer() - p_time);
+            }
+        }
+    }
+
     //we should execute delayed teleports only for alive(!) players
     //because we don't want player's ghost teleported from graveyard
     if (IsHasDelayedTeleport())
@@ -6298,6 +6328,10 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SKILLS);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_VOID_STORAGE_ITEMS);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -20733,41 +20767,44 @@ void Player::_LoadVoidStorage(PreparedQueryResult result)
 
     do
     {
-        // SELECT itemid, itemEntry, slot, creatorGuid FROM character_void_storage WHERE playerGuid = ?
+        // SELECT itemId, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor FROM character_void_storage WHERE playerGuid = ?
         Field* fields = result->Fetch();
 
-        uint64 itemId = fields[0].GetUInt64();
-        uint32 itemEntry = fields[1].GetUInt32();
-        uint8 slot = fields[2].GetUInt8();
-        uint32 creatorGuid = fields[3].GetUInt32();
+        uint64 itemId         = fields[0].GetUInt64();
+        uint32 itemEntry      = fields[1].GetUInt32();
+        uint8 slot            = fields[2].GetUInt8();
+        uint32 creatorGuid    = fields[3].GetUInt32();
         uint32 randomProperty = fields[4].GetUInt32();
-        uint32 suffixFactor = fields[5].GetUInt32();
+        uint32 reforgeId      = fields[5].GetUInt32();
+        uint32 transmogrifyId = fields[6].GetUInt32();
+        uint32 upgradeId      = fields[7].GetUInt32();
+        uint32 suffixFactor   = fields[8].GetUInt32();
 
         if (!itemId)
         {
-            //sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid id (item id: " UI64FMTD ", entry: %u).", GetGUIDLow(), GetName(), itemId, itemEntry);
+            sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid id (item id: " UI64FMTD ", entry: %u).", GetGUIDLow(), GetName(), itemId, itemEntry);
             continue;
         }
 
         if (!sObjectMgr->GetItemTemplate(itemEntry))
         {
-            //sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid entry (item id: " UI64FMTD ", entry: %u).", GetGUIDLow(), GetName(), itemId, itemEntry);
+            sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid entry (item id: " UI64FMTD ", entry: %u).", GetGUIDLow(), GetName(), itemId, itemEntry);
             continue;
         }
 
         if (slot >= VOID_STORAGE_MAX_SLOT)
         {
-            //sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid slot (item id: " UI64FMTD ", entry: %u, slot: %u).", GetGUIDLow(), GetName(), itemId, itemEntry, slot);
+            sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid slot (item id: " UI64FMTD ", entry: %u, slot: %u).", GetGUIDLow(), GetName(), itemId, itemEntry, slot);
             continue;
         }
 
         if (!sObjectMgr->GetPlayerByLowGUID(creatorGuid))
         {
-            //sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid creator guid, set to 0 (item id: " UI64FMTD ", entry: %u, creatorGuid: %u).", GetGUIDLow(), GetName(), itemId, itemEntry, creatorGuid);
+            sLog->outError(LOG_FILTER_PLAYER, "Player::_LoadVoidStorage - Player (GUID: %u, name: %s) has an item with an invalid creator guid, set to 0 (item id: " UI64FMTD ", entry: %u, creatorGuid: %u).", GetGUIDLow(), GetName(), itemId, itemEntry, creatorGuid);
             creatorGuid = 0;
         }
 
-        _voidStorageItems[slot] = new VoidStorageItem(itemId, itemEntry, creatorGuid, randomProperty, suffixFactor);
+        _voidStorageItems[slot] = new VoidStorageItem(itemId, itemEntry, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor);
     }
     while (result->NextRow());
 }
@@ -22386,15 +22423,18 @@ void Player::_SaveVoidStorage(SQLTransaction& trans)
         }
         else
         {
-            // REPLACE INTO character_inventory (itemId, playerGuid, itemEntry, slot, creatorGuid) VALUES (?, ?, ?, ?, ?)
+            // REPLACE INTO character_void_storage (itemId, playerGuid, itemEntry, slot, creatorGuid, randomProperty, reforgeId, transmogrifyId, upgradeId, suffixFactor)...
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CHAR_VOID_STORAGE_ITEM);
             stmt->setUInt64(0, _voidStorageItems[i]->ItemId);
             stmt->setUInt32(1, lowGuid);
             stmt->setUInt32(2, _voidStorageItems[i]->ItemEntry);
             stmt->setUInt8(3, i);
             stmt->setUInt32(4, _voidStorageItems[i]->CreatorGuid);
-            stmt->setUInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
-            stmt->setUInt32(6, _voidStorageItems[i]->ItemSuffixFactor);
+            stmt->setInt32(5, _voidStorageItems[i]->ItemRandomPropertyId);
+            stmt->setUInt32(6, _voidStorageItems[i]->ItemReforgeId);
+            stmt->setUInt32(7, _voidStorageItems[i]->ItemTransmogrifyId);
+            stmt->setUInt32(8, _voidStorageItems[i]->ItemUpgradeId);
+            stmt->setUInt32(9, _voidStorageItems[i]->ItemSuffixFactor);
         }
 
         trans->Append(stmt);
@@ -30045,7 +30085,7 @@ void Player::SendPetTameResult(PetTameResult result)
 
 uint8 Player::GetNextVoidStorageFreeSlot() const
 {
-    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; ++i)
+    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; i++)
         if (!_voidStorageItems[i]) // unused item
             return i;
 
@@ -30056,7 +30096,7 @@ uint8 Player::GetNumOfVoidStorageFreeSlots() const
 {
     uint8 count = 0;
 
-    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; ++i)
+    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; i++)
         if (!_voidStorageItems[i])
             count++;
 
@@ -30073,8 +30113,9 @@ uint8 Player::AddVoidStorageItem(const VoidStorageItem& item)
         return 255;
     }
 
-    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemEntry,
-        item.CreatorGuid, item.ItemRandomPropertyId, item.ItemSuffixFactor);
+    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemEntry, item.CreatorGuid, item.ItemRandomPropertyId,
+        item.ItemReforgeId, item.ItemTransmogrifyId, item.ItemUpgradeId, item.ItemSuffixFactor);
+
     return slot;
 }
 
@@ -30093,8 +30134,8 @@ void Player::AddVoidStorageItemAtSlot(uint8 slot, const VoidStorageItem& item)
         return;
     }
 
-    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemId,
-        item.CreatorGuid, item.ItemRandomPropertyId, item.ItemSuffixFactor);
+    _voidStorageItems[slot] = new VoidStorageItem(item.ItemId, item.ItemId, item.CreatorGuid, item.ItemRandomPropertyId,
+        item.ItemReforgeId, item.ItemTransmogrifyId, item.ItemUpgradeId, item.ItemSuffixFactor);
 }
 
 void Player::DeleteVoidStorageItem(uint8 slot)
@@ -30131,7 +30172,7 @@ VoidStorageItem* Player::GetVoidStorageItem(uint8 slot) const
 
 VoidStorageItem* Player::GetVoidStorageItem(uint64 id, uint8& slot) const
 {
-    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; ++i)
+    for (uint8 i = 0; i < VOID_STORAGE_MAX_SLOT; i++)
     {
         if (_voidStorageItems[i] && _voidStorageItems[i]->ItemId == id)
         {
