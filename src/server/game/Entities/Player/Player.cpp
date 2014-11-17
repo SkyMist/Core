@@ -21754,6 +21754,7 @@ bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report
             return false;
         }
     }
+
     return true;
 }
 
@@ -26307,11 +26308,16 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg)
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data.WriteBit(!arg);
+    WorldPacket data(SMSG_TRANSFER_ABORTED, 4 + 2);
+
+    bool HasExtraArgument = (arg && arg > 0) ? true : false;
+
+    data.WriteBit(!HasExtraArgument);
     data.WriteBits(reason, 5);
-    if (arg)
+
+    if (HasExtraArgument)
         data << uint8(arg);
+
     data << uint32(mapid);
 
     GetSession()->SendPacket(&data);

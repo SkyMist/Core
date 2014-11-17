@@ -6603,7 +6603,7 @@ void Spell::EffectSummonRaidMarker(SpellEffIndex effIndex)
     if (!group)
         return;
 
-    if (group->isRaidGroup() && ((!group->IsAssistant(player->GetGUID()) && !group->IsLeader(player->GetGUID())) || !(group->GetGroupType() & GROUPTYPE_EVERYONE_IS_ASSISTANT)))
+    if (group->isRaidGroup() && (!group->IsAssistant(player->GetGUID()) && !group->IsLeader(player->GetGUID()) && !(group->GetGroupType() & GROUPTYPE_EVERYONE_IS_ASSISTANT)))
         return;
 
     Group::RaidMarkerList& markers = group->GetRaidMarkers();

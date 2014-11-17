@@ -2257,11 +2257,11 @@ bool InstanceMap::CanEnter(Player* player)
         return false;
     }
 
-    // allow GM's to enter
+    // Allow GM's to enter
     if (player->isGameMaster())
         return Map::CanEnter(player);
 
-    // cannot enter if the instance is full (player cap), GMs don't count
+    // Cannot enter if the instance is full (player cap), GMs don't count.
     uint32 maxPlayers = GetMaxPlayers();
     if (GetPlayersCountExceptGMs() >= maxPlayers)
     {
@@ -2270,39 +2270,42 @@ bool InstanceMap::CanEnter(Player* player)
         return false;
     }
 
-    // cannot enter while an encounter is in progress on raids
-    /*Group* group = player->GetGroup();
-    if (!player->isGameMaster() && group && group->InCombatToInstance(GetInstanceId()) && player->GetMapId() != GetId())*/
+    // Cannot enter while an encounter is in progress on raids.
     if (IsRaid() && GetInstanceScript() && GetInstanceScript()->IsEncounterInProgress())
     {
         player->SendTransferAborted(GetId(), TRANSFER_ABORT_ZONE_IN_COMBAT);
         return false;
     }
 
-    // cannot enter if instance is in use by another party/soloer that have a
-    // permanent save in the same instance id
-
+    // Cannot enter if instance is in use by another party / soloer that have a permanent save in the same instance id.
     PlayerList const &playerList = GetPlayers();
-
     if (!playerList.isEmpty())
+    {
         for (PlayerList::const_iterator i = playerList.begin(); i != playerList.end(); ++i)
+        {
             if (Player* iPlayer = i->getSource())
             {
-                if (iPlayer->isGameMaster()) // bypass GMs
+                if (iPlayer->isGameMaster()) // Bypass GMs.
                     continue;
-                if (!player->GetGroup()) // player has not group and there is someone inside, deny entry
+
+                if (!player->GetGroup()) // Player has no group and there is someone inside, deny entry.
                 {
-                    player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                    player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAX_PLAYERS); // TRANSFER_ABORT_MAP_NOT_ALLOWED better?
                     return false;
                 }
-                // player inside instance has no group or his groups is different to entering player's one, deny entry
+
+                // Player inside instance has no group or his group is different than the entering player's one, deny entry.
                 if (!iPlayer->GetGroup() || iPlayer->GetGroup() != player->GetGroup())
                 {
-                    player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAX_PLAYERS);
+                    player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAX_PLAYERS); // TRANSFER_ABORT_MAP_NOT_ALLOWED better?
                     return false;
                 }
+
+                // Only need to check one of the players inside.
                 break;
             }
+        }
+    }
 
     return Map::CanEnter(player);
 }

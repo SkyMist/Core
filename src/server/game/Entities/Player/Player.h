@@ -781,42 +781,25 @@ enum TradeSlots
 
 enum TransferAbortReason
 {
-    TRANSFER_ABORT_NONE                          = 0x00,
-    TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY = 0x01,
-    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER   = 0x02,
-    TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE  = 0x03,
-    TRANSFER_ABORT_MAP_NOT_ALLOWED               = 0x04,
-    TRANSFER_ABORT_TOO_MANY_REALM_INSTANCES      = 0x05,
-    TRANSFER_ABORT_UNIQUE_MESSAGE                = 0x06,
-    TRANSFER_ABORT_DIFFICULTY                    = 0x07,
-    TRANSFER_ABORT_REALM_ONLY                    = 0x08,
-    TRANSFER_ABORT_NEED_GROUP                    = 0x09,
-    TRANSFER_ABORT_INSUF_EXPAN_LVL               = 0x0A,
-    TRANSFER_ABORT_ZONE_IN_COMBAT                = 0x0B,
-    TRANSFER_ABORT_TOO_MANY_INSTANCES            = 0x0C,
-    TRANSFER_ABORT_NOT_FOUND                     = 0x0D,
-    TRANSFER_ABORT_XREALM_ZONE_DOWN              = 0x0E,
-    TRANSFER_ABORT_MAX_PLAYERS                   = 0x0F,
-    TRANSFER_ABORT_ERROR                         = 0x10
-/*
-    TRANSFER_ABORT_ERROR                        = 0x01,
-    TRANSFER_ABORT_MAX_PLAYERS                  = 0x02,         // Transfer Aborted: instance is full
-    TRANSFER_ABORT_NOT_FOUND                    = 0x03,         // Transfer Aborted: instance not found
-    TRANSFER_ABORT_TOO_MANY_INSTANCES           = 0x04,         // You have entered too many instances recently.
-    TRANSFER_ABORT_ZONE_IN_COMBAT               = 0x06,         // Unable to zone in while an encounter is in progress.
-    TRANSFER_ABORT_INSUF_EXPAN_LVL              = 0x07,         // You must have <TBC, WotLK> expansion installed to access this area.
-    TRANSFER_ABORT_DIFFICULTY                   = 0x08,         // <Normal, Heroic, Epic> difficulty mode is not available for %s.
-    TRANSFER_ABORT_UNIQUE_MESSAGE               = 0x09,         // Until you've escaped TLK's grasp, you cannot leave this place!
-    TRANSFER_ABORT_TOO_MANY_REALM_INSTANCES     = 0x0A,         // Additional instances cannot be launched, please try again later.
-    TRANSFER_ABORT_NEED_GROUP                   = 0x0B,         // Transfer Aborted: you must be in a raid group to enter this instance
-    TRANSFER_ABORT_NOT_FOUND1                   = 0x0C,         // 3.1
-    TRANSFER_ABORT_NOT_FOUND2                   = 0x0D,         // 3.1
-    TRANSFER_ABORT_NOT_FOUND3                   = 0x0E,         // 3.2
-    TRANSFER_ABORT_REALM_ONLY                   = 0x0F,         // All players on party must be from the same realm.
-    TRANSFER_ABORT_MAP_NOT_ALLOWED              = 0x10,         // Map can't be entered at this time.
-    TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE = 0x12,         // You are already locked to %s.
-    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER  = 0x13,         // You are ineligible to participate in at least one encounter in this instance because you are already locked to an instance in which it has been defeated.
-*/
+    TRANSFER_ABORT_DIFFICULTY                    = 0x00, // <Normal, Heroic, Epic> difficulty mode is not available for %s.
+    TRANSFER_ABORT_NEED_GROUP                    = 0x01, // Transfer Aborted: you must be in a raid group to enter this instance.
+    TRANSFER_ABORT_MAX_PLAYERS                   = 0x02, // Transfer Aborted: instance is full.
+    TRANSFER_ABORT_NOT_FOUND                     = 0x05, // Transfer Aborted: instance not found.
+    TRANSFER_ABORT_INSUF_EXPAN_LVL               = 0x06, // You must have <TBC, WotLK> expansion installed to access this area.
+    TRANSFER_ABORT_TOO_MANY_INSTANCES            = 0x07, // You have entered too many instances recently.
+    TRANSFER_ABORT_REALM_ONLY                    = 0x08, // All players on party must be from the same realm.
+    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER   = 0x09, // You are ineligible to participate in at least one encounter in this instance because you are already locked to an instance in which it has been defeated.
+    TRANSFER_ABORT_MAP_NOT_ALLOWED               = 0x0A, // Map can't be entered at this time.
+    // TRANSFER_ABORT_NOT_FOUND1                    = 0x0B, // 3.1.
+    // TRANSFER_ABORT_NOT_FOUND2                    = 0x0D, // 3.1.
+    TRANSFER_ABORT_XREALM_ZONE_DOWN              = 0x0F, // Transfer aborted: cross - realm zone is down.
+    TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE  = 0x13, // You are already locked to %s.
+    TRANSFER_ABORT_UNIQUE_MESSAGE                = 0x14, // Until you've escaped TLK's grasp, you cannot leave this place!
+    TRANSFER_ABORT_TOO_MANY_REALM_INSTANCES      = 0x15, // Additional instances cannot be launched, please try again later.
+    TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY = 0x16, // This instance is already in progress. You may only switch difficulties from inside the instance.
+    TRANSFER_ABORT_ZONE_IN_COMBAT                = 0x18, // Unable to zone in while an encounter is in progress.
+    // TRANSFER_ABORT_NOT_FOUND3                    = 0x1A, // 3.2.
+    // TRANSFER_ABORT_NOT_FOUND4                    = 0x1B  // 3.3.5.
 };
 
 enum InstanceResetWarningType
