@@ -3502,9 +3502,18 @@ void Spell::prepare(SpellCastTargets const* targets, constAuraEffectPtr triggere
     if (((m_spellInfo->IsChanneled() || m_casttime) && m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->isMoving() && 
         m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT) && !m_caster->HasAuraTypeWithAffectMask(SPELL_AURA_CAST_WHILE_WALKING, m_spellInfo))
     {
-        SendCastResult(SPELL_FAILED_MOVING);
-        finish(false);
-        return;
+        // Glyph of Water Elemental.
+        bool glyphwaterelemen = false;
+
+        if (m_spellInfo->Id == 31707 && m_caster->HasAura(63090))
+            glyphwaterelemen = true;
+
+        if (!glyphwaterelemen)
+        {
+            SendCastResult(SPELL_FAILED_MOVING);
+            finish(false);
+            return;
+        }
     }
 
     // set timer base at cast time
@@ -9465,25 +9474,24 @@ void Spell::TriggerGlobalCooldown()
                return;
 
     // Global cooldown can't leave range 1..1.5 secs
-    // There are some spells (mostly not casted directly by player) that have < 1 sec and > 1.5 sec global cooldowns
-    // but as tests show are not affected by any spell mods.
+    // There are some spells (mostly not casted directly by player) that have < 1 sec and > 1.5 sec global cooldowns but are not affected by any spell mods.
     if (m_spellInfo->StartRecoveryTime >= MIN_GCD && m_spellInfo->StartRecoveryTime <= MAX_GCD)
     {
-        // gcd modifier auras are applied only to own spells and only players have such mods
+        // Apply haste rating
+        if (gcd)
+        {
+            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                gcd = int32(float(gcd) * m_caster->GetFloatValue(UNIT_MOD_CAST_SPEED));
+
+            if (gcd < MIN_GCD)
+                gcd = MIN_GCD;
+            else if (gcd > MAX_GCD)
+                gcd = MAX_GCD;
+        }
+
+        // gcd modifier auras are applied only to own spells and only players have such mods.
         if (m_caster->GetTypeId() == TYPEID_PLAYER)
             m_caster->ToPlayer()->ApplySpellMod(m_spellInfo->Id, SPELLMOD_GLOBAL_COOLDOWN, gcd, this);
-
-        if (gcd == 0)
-            return;
-
-        // Apply haste rating
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            gcd = int32(float(gcd) * m_caster->GetFloatValue(UNIT_MOD_CAST_SPEED));
-
-        if (gcd < MIN_GCD)
-            gcd = MIN_GCD;
-        else if (gcd > MAX_GCD)
-            gcd = MAX_GCD;
     }
 
     // Only players or controlled units have global cooldown

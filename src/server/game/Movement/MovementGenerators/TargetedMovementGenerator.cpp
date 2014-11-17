@@ -170,9 +170,18 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
     // prevent movement while casting spells with cast time or channel time
     if (owner.HasUnitState(UNIT_STATE_CASTING))
     {
-        if (!owner.IsStopped())
-            owner.StopMoving();
-        return true;
+        bool glyphwaterelemn = false;
+
+        if (owner.GetOwner() && owner.GetOwner()->HasAura(63090) && owner.GetCharmInfo() && owner.GetCharmInfo()->HasCommandState(COMMAND_FOLLOW) && owner.ToPet() && owner.ToPet()->HasReactState(REACT_HELPER))
+            glyphwaterelemn = true;
+
+        if (!glyphwaterelemn)
+        {
+            if (!owner.IsStopped())
+                owner.StopMoving();
+
+            return true;
+        }
     }
 
     // prevent crash after creature killed pet

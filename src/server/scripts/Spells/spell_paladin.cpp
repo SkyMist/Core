@@ -195,6 +195,8 @@ class spell_pal_daybreak : public SpellScriptLoader
                 {
                     if (_player->HasAura(PALADIN_SPELL_DAYBREAK_AURA))
                         _player->AddAura(PALADIN_SPELL_DAYBREAK_PROC, _player);
+
+                    _player->EnergizeBySpell(_player, 82327, 1, POWER_HOLY_POWER);
                 }
             }
 
@@ -486,8 +488,7 @@ class spell_pal_selfless_healer_spell : public SpellScriptLoader
                 {
                     if (Unit* target = GetExplTargetUnit())
                     {
-                        // Report just for Divine Light, so we add bonus only for it
-                        if (_player->HasAura(PALADIN_SPELL_SELFLESS_HEALER_STACK) && GetSpellInfo()->Id == 82326)
+                        if (_player->HasAura(PALADIN_SPELL_SELFLESS_HEALER_STACK) && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_PALADIN_HOLY)
                         {
                             int32 charges = _player->GetAura(PALADIN_SPELL_SELFLESS_HEALER_STACK)->GetStackAmount();
 
@@ -998,16 +999,14 @@ class spell_pal_execution_sentence : public SpellScriptLoader
         {
             PrepareSpellScript(spell_pal_execution_sentence_SpellScript);
 
-            void HandleBeforeCast()
+            void HandleOnHit()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
                 {
-                    if (Unit* target = GetExplTargetUnit())
+                    if (Unit* target = GetHitUnit())
                     {
                         if (_player->IsValidAttackTarget(target))
                             _player->CastSpell(target, PALADIN_SPELL_EXECUTION_SENTENCE, true);
-                        else if (_player->GetGUID() == target->GetGUID())
-                            _player->CastSpell(_player, PALADIN_SPELL_STAY_OF_EXECUTION, true);
                         else
                             _player->CastSpell(target, PALADIN_SPELL_STAY_OF_EXECUTION, true);
                     }
@@ -1016,7 +1015,7 @@ class spell_pal_execution_sentence : public SpellScriptLoader
 
             void Register()
             {
-                BeforeCast += SpellCastFn(spell_pal_execution_sentence_SpellScript::HandleBeforeCast);
+                OnHit += SpellHitFn(spell_pal_execution_sentence_SpellScript::HandleOnHit);
             }
         };
 
@@ -1912,47 +1911,6 @@ class spell_pal_crusader_strike : public SpellScriptLoader
         }
 };
 
-// Selfless Healer - 85804
-// Selfless Healer Effect (trigger) - 114250
-class spell_pal_selfless_healer_aura : public SpellScriptLoader
-{
-    public:
-        spell_pal_selfless_healer_aura() : SpellScriptLoader("spell_pal_selfless_healer_aura") { }
-
-        class spell_pal_selfless_healer_aura_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_pal_selfless_healer_aura_AuraScript);
-
-            uint32 holyPowerConsumed;
-
-            void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (!GetCaster())
-                    return;
-
-                if (Player* _player = GetCaster()->ToPlayer())
-                {
-                    if (AuraPtr selflessHealer = _player->GetAura(PALADIN_SPELL_SELFLESS_HEALER_STACK))
-                    {
-                        uint8 charges = selflessHealer->GetStackAmount();
-                        if (_player && charges == 3)
-                            _player->AddAura(128863, _player);
-                    }
-                }
-            }
-			
-            void Register()
-            {
-                AfterEffectApply += AuraEffectApplyFn(spell_pal_selfless_healer_aura_AuraScript::OnApply, EFFECT_1, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_pal_selfless_healer_aura_AuraScript();
-        }
-};
-
 class spell_pal_glyph_of_devotian_aura : public SpellScriptLoader
 {
     public:
@@ -2147,7 +2105,6 @@ void AddSC_paladin_spell_scripts()
     new spell_pal_hammer_of_wrath();
     new spell_pal_exorcism();
     new spell_pal_crusader_strike();
-    new spell_pal_selfless_healer_aura();
     new spell_pal_selfless_healer_spell();
     new spell_pal_beacon_of_light();
 }

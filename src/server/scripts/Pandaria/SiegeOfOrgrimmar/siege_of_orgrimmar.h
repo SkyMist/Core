@@ -189,7 +189,7 @@ enum FallenProtectors
 {
     ROOK_STONETOE                       = 0,
     HE_SOFTFOOT,
-    SUN_THUNDERHEART
+    SUN_TENDERHEART
 };
 
 #define MAX_FALLEN_PROTECTORS 3

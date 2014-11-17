@@ -458,7 +458,9 @@ void WorldSession::HandlePetActionHelper(Unit* pet, uint64 guid1, uint32 spellid
                     {
                         if (pet->getVictim())
                             pet->AttackStop();
-                        pet->GetMotionMaster()->Clear();
+
+                        pet->GetMotionMaster()->MovementExpired();
+
                         if (pet->ToCreature()->IsAIEnabled)
                             pet->ToCreature()->AI()->AttackStart(unit_target);
                     }
@@ -1200,6 +1202,7 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
         result = spell->CheckPetCast(caster->m_movedPlayer->GetSelectedUnit());
     else
         result = spell->CheckPetCast(NULL);
+
     if (result == SPELL_CAST_OK)
     {
         if (caster->GetTypeId() == TYPEID_UNIT)

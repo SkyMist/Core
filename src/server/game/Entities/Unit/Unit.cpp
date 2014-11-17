@@ -9697,6 +9697,13 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 damage, AuraPtr triggeredByAura, 
         {
             switch (dummySpell->Id)
             {
+                // Ring of frost.
+                case 82691:
+                {
+                    AddAura(91264, this);
+                    RemoveAurasDueToSpell(82691);
+                    break;
+                }
                 // Empowered Fire.
                 case 31656:
                 case 31657:
@@ -10199,6 +10206,14 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
     // Custom triggered spells
     switch (auraSpellInfo->Id)
     {
+        // Glyph of Incite
+        // Glyph of Hamstring
+        case 122013:
+        case 58385:
+        {
+            return false;
+            break;
+        }
         // Victorious state
         case 32215:
         {
@@ -10331,24 +10346,6 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
 
             // procs only from Shadow Word: Pain
             if (procSpell->Id != 589 && procSpell->Id != 124464)
-                return false;
-
-            break;
-        }
-        case 122013:// Glyph of Incite
-        {
-            if (GetTypeId() != TYPEID_PLAYER)
-                return false;
-
-            if (!procSpell)
-                return false;
-
-            // Only triggered by Devastate
-            if (procSpell->Id != 20243)
-                return false;
-
-            // Mortal Peace
-            if (!HasAura(85730))
                 return false;
 
             break;
@@ -10629,6 +10626,10 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
 
             if (procSpell->Id != 20271)
                 return false;
+
+            // In Holy spec give 1 Holy Power on proc.
+            if (ToPlayer() && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_PALADIN_HOLY)
+                CastSpell(this,148502,true);
 
             break;
         }
@@ -14052,10 +14053,6 @@ uint32 Unit::SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, u
 
     // No bonus for Devouring Plague heal
     if (spellProto->Id == 127626)
-        return healamount;
-
-	// No bonus for Evocation
-    if (spellProto->Id == 12051)
         return healamount;
 
     AuraEffectList const& modHealingPct = GetAuraEffectsByType(SPELL_AURA_MOD_HEALING_PCT);

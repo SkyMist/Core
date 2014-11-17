@@ -781,37 +781,37 @@ void Player::UpdateMasteryPercentage()
 {
     // No mastery
     float value = 0.0f;
+
     if (CanMastery() && getLevel() >= 80)
     {
         // Mastery from SPELL_AURA_MASTERY aura
         value += GetTotalAuraModifier(SPELL_AURA_MASTERY);
+
         // Mastery from rating
         value += GetRatingBonusValue(CR_MASTERY);
         value = value < 0.0f ? 0.0f : value;
     }
+
     // Custom MoP Script
     // 113861 - Dark Soul: Knowledge
     if (HasAura(113861))
         value += 30.0f;
+
     SetFloatValue(PLAYER_MASTERY, value);
+
     // Custom MoP Script
     // 76671 - Mastery : Divine Bulwark - Update Block Percentage
     // 76857 - Mastery : Critical Block - Update Block Percentage
     if (HasAura(76671) || HasAura(76857))
         UpdateBlockPercentage();
+
     // 77494 - Mastery : Nature's Guardian - Update Armor
     if (HasAura(77494))
         UpdateArmor();
 
     // Metamorphis
     if (HasAura(103958))
-        GetAura(103958)->GetEffect(EFFECT_1)->ChangeAmount(value*3);
-
-    // Demonology
- /* if (HasAura(77219))
-        if (Pet *pet = GetPet())
-            if (pet->HasAura(115556))
-                pet->GetAura(115556)->GetEffect(EFFECT_0)->ChangeAmount(value); */
+        GetAura(103958)->GetEffect(EFFECT_1)->ChangeAmount(value * 3);
 }
 
 void Player::UpdatePvPPowerPercentage()
@@ -954,65 +954,57 @@ void Player::UpdateManaRegen()
 
     // Mana regen from spirit
     float spirit_regen = OCTRegenMPPerSpirit();
-    spirit_regen *= GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_POWER_REGEN_PERCENT, POWER_MANA);
-    float HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
+    float HastePct = 1.0f + (GetRatingBonusValue(CR_HASTE_SPELL) + GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW) + GetTotalAuraModifier(SPELL_AURA_HASTE_SPELLS) + GetTotalAuraModifier(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK)) / 100.0f;
 
-    float combat_regen = 0.004f * GetMaxPower(POWER_MANA) + spirit_regen + (GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f);
-    float base_regen = 0.004f * GetMaxPower(POWER_MANA) + (GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f);
+    float CombatRegenFromSpirit = 0;
+    float CombatRegenFromAurPct = 0;
+    float BaseRegenFromAurPct = 0;
+    float RegenFromModPowerRegen = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f;
 
-    if (getClass() == CLASS_WARLOCK)
-    {
-        combat_regen = 0.01f * GetMaxPower(POWER_MANA) + spirit_regen + GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA);
-        base_regen = 0.01f * GetMaxPower(POWER_MANA) + GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA);
-    }
+    float combat_regen = int32(CalculatePct(GetCreateMana(), 5)) / 5.0f;
+    float base_regen = CountPctFromMaxMana(5) / 5.0f;
 
-    // Mana Meditation && Meditation
-    if (HasAuraType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT))
-        base_regen += 0.5 * spirit_regen; // Allows 50% of your mana regeneration from Spirit to continue while in combat.
-    // Rune of Power : Increase Mana regeneration by 100%
-    if (HasAura(116014))
+    // Chaotic Energy : Haste also increase your mana regeneration
+    // Nether Attunement - 117957 : Haste also increase your mana regeneration.
+    if (HasAura(111546) || HasAura(117957))
     {
-        combat_regen *= 2;
-        base_regen *= 2;
-    }
-    // Incanter's Ward : Increase Mana regen by 65%
-    if (HasAura(118858))
-    {
-        combat_regen *= 1.65f;
-        base_regen *= 1.65f;
-    }
-    // Chaotic Energy : Increase Mana regen by 625%
-    if (HasAura(111546))
-    {
-        // haste also increase your mana regeneration
-        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
-
-        combat_regen = combat_regen + (combat_regen * 6.25f);
-        combat_regen *= HastePct;
-        base_regen = base_regen + (base_regen * 6.25f);
-        base_regen *= HastePct;
-    }
-    // Nether Attunement - 117957 : Haste also increase your mana regeneration
-    if (HasAura(117957))
-    {
-        HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
-
         combat_regen *= HastePct;
         base_regen *= HastePct;
     }
-    // Mana Attunement : Increase Mana regen by 50%
-    if (HasAura(121039))
+
+    // Try to get aura with spirit addition to combat mana regen.
+    int32 PercentIncreaseCOmbatRegenBySpirit = 0;
+    Unit::AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT);
+    for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
+        PercentIncreaseCOmbatRegenBySpirit += (*i)->GetAmount();
+
+    if (HasAuraType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT) && PercentIncreaseCOmbatRegenBySpirit != 0)
+        CombatRegenFromSpirit += (PercentIncreaseCOmbatRegenBySpirit / 100.0f) * spirit_regen; // Allows you mana regeneration from Spirit to continue while in combat.
+
+    // Increase mana regen.
+    int32 PercentIncreaseManaRegen = 0;
+    Unit::AuraEffectList const& ModRegenPct = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
+    for (AuraEffectList::const_iterator i = ModRegenPct.begin(); i != ModRegenPct.end(); ++i)
+        if (Powers((*i)->GetMiscValue()) == POWER_MANA)
+            PercentIncreaseManaRegen += (*i)->GetAmount();
+
+    Unit::AuraEffectList const& ModManaRegenPct = GetAuraEffectsByType(SPELL_AURA_379); // SPELL_AURA_MOD_MANA_REGEN_PERCENT
+    for (AuraEffectList::const_iterator i = ModManaRegenPct.begin(); i != ModManaRegenPct.end(); ++i)
+        PercentIncreaseManaRegen += (*i)->GetAmount();
+
+    if ((HasAuraType(SPELL_AURA_MOD_POWER_REGEN_PERCENT) || HasAuraType(SPELL_AURA_379)) && PercentIncreaseManaRegen != 0)
     {
-        combat_regen = combat_regen + (combat_regen * 0.5f);
-        combat_regen *= HastePct;
-        base_regen = base_regen + (base_regen * 0.5f);
-        base_regen *= HastePct;
+        CombatRegenFromAurPct = combat_regen*(PercentIncreaseManaRegen / 100.0f);
+        BaseRegenFromAurPct = base_regen*(PercentIncreaseManaRegen / 100.0f); 
     }
-    
+
+    combat_regen += CombatRegenFromSpirit + CombatRegenFromAurPct + RegenFromModPowerRegen;
+    base_regen += BaseRegenFromAurPct + RegenFromModPowerRegen + spirit_regen;
+
     // Not In Combat : 2% of base mana + spirit_regen
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, base_regen);
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, base_regen);
     // In Combat : 2% of base mana
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, combat_regen);
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, combat_regen);
 }
 
 void Player::UpdateEnergyRegen()
@@ -1292,8 +1284,7 @@ bool Guardian::UpdateStats(Stats stat)
                 }
             }
 
-            ownersBonus = float(owner->GetStat(stat)) * mod;
-            ownersBonus *= GetModifierValue(UNIT_MOD_STAT_STAMINA, TOTAL_PCT);
+            ownersBonus = float(owner->GetTotalStatValue(stat)) * mod;
             value += ownersBonus;
             break;
         }
@@ -1304,7 +1295,7 @@ bool Guardian::UpdateStats(Stats stat)
 
             mod = 0.7f;
 
-            ownersBonus = owner->GetStat(stat) * mod;
+            ownersBonus = float(owner->GetTotalStatValue(stat)) * mod;
             value += ownersBonus;
             break;
         }
@@ -1313,15 +1304,15 @@ bool Guardian::UpdateStats(Stats stat)
             if (owner->getClass() == CLASS_WARLOCK || owner->getClass() == CLASS_MAGE)
             {
                 mod = 0.3f;
-                ownersBonus = owner->GetStat(stat) * mod;
+                ownersBonus = float(owner->GetTotalStatValue(stat)) * mod;
             }
             else if (owner->getClass() == CLASS_DEATH_KNIGHT && GetEntry() == 31216)
             {
                 mod = 0.3f;
                 if (owner->GetSimulacrumTarget())
-                    ownersBonus = owner->GetSimulacrumTarget()->GetStat(stat) * mod;
+                    ownersBonus = float(owner->GetSimulacrumTarget()->GetStat(stat)) * mod;
                 else
-                    ownersBonus = owner->GetStat(stat) * mod;
+                    ownersBonus = float(owner->GetTotalStatValue(stat)) * mod;
             }
 
             value += ownersBonus;
@@ -1422,6 +1413,10 @@ void Guardian::UpdateArmor()
     value *= GetModifierValue(unitMod, BASE_PCT);
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
+    // Ghouls do not inherit any armor.
+    if (GetEntry() == ENTRY_GHOUL)
+        return;
+
     SetArmor(int32(value));
 }
 
@@ -1434,19 +1429,9 @@ void Guardian::UpdateMaxHealth()
     switch (GetEntry())
     {
         // DK.
-        case ENTRY_GHOUL:
-        case ENTRY_GARGOYLE:
-            multiplicator = 15.0f;
-            break;
         case ENTRY_BLOODWORM:
             SetMaxHealth(GetCreateHealth());
             return;
-            break;
-
-        // Mage.
-        case ENTRY_WATER_ELEMENTAL:
-            multiplicator = 1.0f;
-            stamina = 0.0f;
             break;
 
         default:
@@ -1470,6 +1455,9 @@ void Guardian::UpdateMaxHealth()
         case ENTRY_FEL_IMP:
             value = owner->CountPctFromMaxHealth(40);
             break;
+        case ENTRY_GHOUL:
+            value = owner->CountPctFromMaxHealth(45);
+            break;
         case ENTRY_SHIVARRA:
         case ENTRY_OBSERVER:
         case ENTRY_VOIDWALKER:
@@ -1486,6 +1474,8 @@ void Guardian::UpdateMaxHealth()
         default: break;
     }
 
+    value += GetCreateHealth();
+
     // Pets from Grimmuar have 20% increase max health.
     switch (GetEntry())
     {
@@ -1501,6 +1491,12 @@ void Guardian::UpdateMaxHealth()
 
         default: break;
     }
+
+    // Glyph of water elemental.
+    if (GetEntry() == ENTRY_WATER_ELEMENTAL)
+        if (Unit* owner = GetOwner())
+            if (owner->HasAura(63090))
+                value += value * 0.4;
 
     SetMaxHealth((uint32)value);
 }
@@ -1559,10 +1555,10 @@ void Guardian::UpdateAttackPowerAndDamage(bool ranged)
             bonusAP = owner->GetTotalAttackPowerValue(RANGED_ATTACK); // Hunter pets gain 100% of owner's AP
             SetBonusDamage(int32(owner->GetTotalAttackPowerValue(RANGED_ATTACK) * 0.5f)); // Bonus damage is equal to 50% of owner's AP
         }
-        else if (IsPetGhoul()) // ghouls benefit from deathknight's attack power (may be summon pet or not)
+        else if (IsPetGhoul())
         {
-            bonusAP = owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.22f;
-            SetBonusDamage(int32(owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.1287f));
+            bonusAP = owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f;
+            SetBonusDamage(owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f);
         }
         else if (isPet() && GetEntry() != ENTRY_WATER_ELEMENTAL) // demons benefit from warlocks shadow or fire damage
         {
@@ -1684,6 +1680,8 @@ void Guardian::UpdateDamagePhysical(WeaponAttackType attType)
                 break;
         }
     }
+    else if (IsPetGhoul() && m_owner)
+        base_value = m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f + bonusDamage;
 
     float mindamage = ((base_value + weapon_mindamage) * base_pct + total_value) * total_pct;
     float maxdamage = ((base_value + weapon_maxdamage) * base_pct + total_value) * total_pct;

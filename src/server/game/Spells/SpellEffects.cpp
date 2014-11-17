@@ -903,20 +903,8 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                         if (m_caster->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
                             damage += int32(((Guardian*)m_caster)->GetBonusDamage() * 0.15f);
                         break;
-                    // Frost Bomb
-                    case 113092:
-                    {
-                        if (effIndex == 0)
-                            damage += m_caster->SpellBaseDamageBonusDone(m_spellInfo->GetSchoolMask()) * 3.447f;
-                        else if (effIndex == 1)
-                            damage += m_caster->SpellBaseDamageBonusDone(m_spellInfo->GetSchoolMask()) * 1.725f;
-                        if (unitTarget->GetTypeId() == TYPEID_PLAYER)
-                            damage *= 0.7f;
 
-                        break;
-                    }
-                    default:
-                        break;
+                    default: break;
                 }
                 break;
             }
@@ -1032,6 +1020,10 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
             damage = m_originalCaster->SpellDamageBonusDone(unitTarget, m_spellInfo, (uint32)damage, SPELL_DIRECT_DAMAGE);
             damage = unitTarget->SpellDamageBonusTaken(m_originalCaster, m_spellInfo, (uint32)damage, SPELL_DIRECT_DAMAGE);
         }
+
+        // Frost Bomb - aoe targets get only half dmg.
+        if (m_spellInfo->Id == 113092 && effIndex == 1)
+            damage /= 2;
 
         m_damage += damage;
     }
@@ -2446,6 +2438,8 @@ void Spell::EffectHeal(SpellEffIndex effIndex)
                     caster->RemoveAurasDueToSpell(114637);
                     caster->RemoveAurasDueToSpell(114250);
                 }
+
+                addhealth = caster->SpellHealingBonusDone(unitTarget, m_spellInfo, addhealth, HEAL);
                 break;
             }
             case 115072:// Expel Harm
@@ -4739,19 +4733,33 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
     if (!unitTarget || !unitTarget->isAlive())
         return;
 
-    // multiple weapon dmg effect workaround
-    // execute only the last weapon damage
-    // and handle all effects at once
-    for (uint32 j = effIndex + 1; j < MAX_SPELL_EFFECTS; ++j)
+    // We must try to find SPELL_EFFECT_WEAPON_PERCENT_DAMAGE. If found, the damage mod comes just from it.
+    bool hasPercentEff = false;
+    for (uint32 j = 1; j < MAX_SPELL_EFFECTS; ++j)
     {
         switch (m_spellInfo->Effects[j].Effect)
         {
-            case SPELL_EFFECT_WEAPON_DAMAGE:
-            case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
-            case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
             case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
-                return;     // we must calculate only at last weapon effect
+                if (effIndex != j)
+                    return;
+                hasPercentEff = true;
             break;
+        }
+    }
+
+    // If we haven't found SPELL_EFFECT_WEAPON_PERCENT_DAMAGE then the damage mod is adjusted just from the last weapon effect.
+    if (!hasPercentEff)
+    {
+        for (uint32 j = effIndex+1; j < MAX_SPELL_EFFECTS; ++j)
+        {
+            switch (m_spellInfo->Effects[j].Effect)
+            {
+                case SPELL_EFFECT_WEAPON_DAMAGE:
+                case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+                case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+                    return;
+                break;
+            }
         }
     }
 
@@ -4976,8 +4984,9 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
                 break;
             case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
                 weaponDamage = int32(weaponDamage* weaponDamagePercentMod);
-            default:
-                break;                                      // not weapon damage effect, just skip
+                break;
+
+            default: break; // Not weapon damage effect, skip.
         }
     }
 
@@ -4989,6 +4998,20 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
 
     if (totalDamagePercentMod != 1.0f)
         weaponDamage = int32(weaponDamage* totalDamagePercentMod);
+
+    // We may damage only with weapon percent eff or just from the last effect, find all other effects with weapon damage and apply the points to this one.
+    for (uint32 j = EFFECT_0; j < MAX_SPELL_EFFECTS; ++j)
+    {
+        switch (m_spellInfo->Effects[j].Effect)
+        {
+            case SPELL_EFFECT_WEAPON_DAMAGE:
+            case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+            case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+                if (j != effIndex)
+                    weaponDamage += m_spellInfo->Effects[effIndex].CalcValue(m_caster);
+            break;
+        }
+    }
 
     // prevent negative damage
     uint32 eff_damage(std::max(weaponDamage, 0));

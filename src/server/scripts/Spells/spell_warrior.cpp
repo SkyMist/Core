@@ -1772,6 +1772,64 @@ class spell_warr_glyph_of_gag_order : public SpellScriptLoader
         }
 };
 
+// Glyph of Impaling Throws (Heroic Throw - 57755) and (periodic 147838)
+class spell_warr_glyph_of_impaling_throws : public SpellScriptLoader
+{
+    public:
+        spell_warr_glyph_of_impaling_throws() : SpellScriptLoader("spell_warr_glyph_of_impaling_throws") { }
+
+        class spell_warr_glyph_of_impaling_throws_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_warr_glyph_of_impaling_throws_SpellScript);
+
+            void HandleOnHit()
+            {
+                if (GetSpellInfo()->Id == 57755)
+                    if (Unit* caster = GetCaster())
+                        if (Unit* target = GetHitUnit())
+                            if (caster->HasAura(146970) && caster->GetDistance(target) > 10.0f)
+                                caster->CastSpell(target,147838,true);
+            }
+
+            void Register()
+            {
+                OnHit += SpellHitFn(spell_warr_glyph_of_impaling_throws_SpellScript::HandleOnHit);
+            }
+        };
+
+        class spell_warr_glyph_of_impaling_throws_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_warr_glyph_of_impaling_throws_AuraScript);
+
+            void OnPeriodic(constAuraEffectPtr aurEff)
+            {
+                if (Unit* caster = GetCaster())
+                    if (Unit* target = GetTarget())
+                        if (caster->GetDistance(target) < 5.0f)
+                        {
+                            if (Player *player = caster->ToPlayer())
+                                player->RemoveSpellCooldown(57755,true);
+                            target->RemoveAurasDueToSpell(147838);
+                        }
+            }
+
+            void Register()
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_warr_glyph_of_impaling_throws_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_warr_glyph_of_impaling_throws_SpellScript();
+        }
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_warr_glyph_of_impaling_throws_AuraScript();
+        }
+};
+
 // Glyph of Hamstring
 class spell_warr_glyph_of_hamstring : public SpellScriptLoader
 {
@@ -1798,6 +1856,48 @@ class spell_warr_glyph_of_hamstring : public SpellScriptLoader
         SpellScript* GetSpellScript() const
         {
             return new spell_warr_glyph_of_hamstring_SpellScript();
+        }
+};
+
+// Glyph of Incite
+class spell_warr_glyph_of_incite : public SpellScriptLoader
+{
+    public:
+        spell_warr_glyph_of_incite() : SpellScriptLoader("spell_warr_glyph_of_incite") { }
+
+        class spell_warr_glyph_of_incite_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_warr_glyph_of_incite_SpellScript);
+
+            void HandleOnHit()
+            {
+                if (Unit* caster = GetCaster())
+                    if (caster->HasAura(122013))
+                        if (GetSpellInfo()->Id == 1160) // Demoralzing shout
+                        {
+                            caster->CastSpell(caster, 122016, true);
+                            if (caster->HasAura(122016))
+                                caster->GetAura(122016)->SetStackAmount(3);
+                        }
+            }
+
+            void HandleAfterCast()
+            {
+                if (Unit* caster = GetCaster())
+                    if (caster->HasAura(122016) && GetSpellInfo()->Id != 1160)
+                        caster->GetAura(122016)->ModStackAmount(-1);
+            }
+
+            void Register()
+            {
+                OnHit += SpellHitFn(spell_warr_glyph_of_incite_SpellScript::HandleOnHit);
+                AfterCast += SpellCastFn(spell_warr_glyph_of_incite_SpellScript::HandleAfterCast);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_warr_glyph_of_incite_SpellScript();
         }
 };
 
@@ -1848,7 +1948,7 @@ class spell_warr_glyph_sweeping_strikes : public SpellScriptLoader
                     return;
 
                 if (GetCaster()->HasAura(58384))
-                    GetCaster()->CastSpell(GetCaster(),124333,true);
+                    GetCaster()->CastSpell(GetCaster(), 124333, true);
             }
 
             void Register()
@@ -1908,4 +2008,6 @@ void AddSC_warrior_spell_scripts()
     new spell_warr_glyph_of_hamstring();
     new spell_warr_intervene();
     new spell_warr_glyph_sweeping_strikes();
+    new spell_warr_glyph_of_incite();
+    new spell_warr_glyph_of_impaling_throws();
 }

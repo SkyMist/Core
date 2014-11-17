@@ -3562,6 +3562,14 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].Effect = 0;
                     spellInfo->Effects[1].Mechanic = MECHANIC_NONE;
                     break;
+                case 91264:
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(31); // 8s
+                    break;
+                case 121039:
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_PERIODIC_DUMMY;
+                    spellInfo->Effects[1].Amplitude = 1000;
+                    break;
                 case 117052:// Corruption Sha
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
                     spellInfo->Effects[0].TargetB = 0;
@@ -3892,8 +3900,8 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AREA_AURA_RAID;
                     break;
                 case 121129:// Daybreak (heal)
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
                     spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
-                    spellInfo->Effects[1].TargetB = TARGET_UNIT_DEST_AREA_PARTY;
                     break;
                 case 88819: // Daybreak buff
                     spellInfo->StackAmount = 2;
@@ -4118,6 +4126,10 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[1].TargetB = 0;
                     spellInfo->Effects[1].MiscValue = 0;
+                    break;
+                case 147838:// Glyph of Impaling Throws
+                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_PERIODIC_DUMMY;
+                    spellInfo->Effects[0].Amplitude = 1000;
                     break;
                 case 118522:// Elemental Blast
                     spellInfo->Effects[0].BasePoints = 3500;
@@ -4533,9 +4545,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 119049:// Kil'Jaeden's Cunning
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
                     break;
-                case 121039:// Mana Attunement (400%)
-                    spellInfo->Effects[0].BasePoints = 50;
-                    break;
                 case 116833:// Cosmetic Spirit Totem - Gara'Jal
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
                     break;
@@ -4565,7 +4574,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 24259: // Spell Lock (Felhunter)
                 case 115782:// Optical Blast (Observer)
-                    spellInfo->Speed = 80;
+                    spellInfo->Speed = 80.0f;
                     break;
                 case 108199:// Gorefiend's Grasp
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
@@ -5300,7 +5309,7 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 119931:
                 case 119932:
                 case 119933:
-                    spellInfo->Speed = 5.f;
+                    spellInfo->Speed = 5.0f;
                     break;
                 case 106112:
                     {
@@ -5464,7 +5473,10 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 // Silencing Shot
                 case 34490:
-                    spellInfo->Speed = 0;
+                    spellInfo->Speed = 0.0f;
+                    break;
+                case 114157:
+                    spellInfo->Speed = 0.0f;
                     break;
                 case 132626: // Alliance Portal - Mage
                     spellInfo->AttributesEx7 |= SPELL_ATTR7_ALLIANCE_ONLY;
@@ -5908,7 +5920,7 @@ void SpellMgr::LoadSpellCustomAttr()
                 spellInfo->TargetAuraSpell = 0;
                 break;
             case 92153: // Blazing Inferno missile
-                spellInfo->Speed = 6;
+                spellInfo->Speed = 6.0f;
                 break;
             case 92154: // Blazing Inferno dmg
             case 92190:
@@ -6651,7 +6663,7 @@ void SpellMgr::LoadSpellCustomAttr()
             case 92898:
             case 92899:
             case 92900:
-                spellInfo->Speed = 15;
+                spellInfo->Speed = 15.0f;
                 break;
             case 86371: // Twilight Blast dmg
             case 92903:
@@ -6663,7 +6675,7 @@ void SpellMgr::LoadSpellCustomAttr()
             case 92920:
             case 92921:
             case 92922:
-                spellInfo->Speed = 15;
+                spellInfo->Speed = 15.0f;
                 break;
             case 86406: // Dazzling Destruction dmg
             case 92926:
@@ -6696,7 +6708,7 @@ void SpellMgr::LoadSpellCustomAttr()
             case 92859:
             case 92860:
             case 92861:
-                spellInfo->Speed = 15;
+                spellInfo->Speed = 15.0f;
                 break;
             case 86014: // Twilight Meteorite dmg
             case 92863:

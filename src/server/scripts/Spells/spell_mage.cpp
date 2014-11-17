@@ -183,7 +183,28 @@ class spell_mage_greater_invisibility_triggered : public SpellScriptLoader
             void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (Player* _player = GetTarget()->ToPlayer())
+                {
                     _player->CastSpell(_player, SPELL_MAGE_GREATER_INVISIBILITY_LESS_DAMAGE, true);
+
+                    uint8 size = 2; // must remove only two periodic auras
+                    for (Unit::AuraApplicationMap::iterator iter = _player->GetAppliedAuras().begin(); iter != _player->GetAppliedAuras().end();++iter)
+                    {
+                        if (constAuraPtr aura = iter->second->GetBase())
+                        {
+                            if (const SpellInfo * spell = aura->GetSpellInfo())
+                            {
+                                if (spell->HasAura(SPELL_AURA_PERIODIC_DAMAGE) || spell->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
+                                {
+                                    size -= 1;
+                                    _player->RemoveAurasDueToSpell(spell->Id);
+                                }
+                            }
+                        }
+
+                        if (size == 0)
+                            break;
+                    }
+                }
             }
 
             void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -944,6 +965,44 @@ class spell_mage_nether_tempest : public SpellScriptLoader
         }
 };
 
+// Mana Attunement - 121039
+class spell_mage_mana_attunement : public SpellScriptLoader
+{
+    public:
+        spell_mage_mana_attunement() : SpellScriptLoader("spell_mage_mana_attunement") { }
+
+        class spell_mage_mana_attunement_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_mage_mana_attunement_AuraScript);
+
+            void OnTick(constAuraEffectPtr aurEff)
+            {
+                if (GetCaster())
+                    if (Player *_player = GetCaster()->ToPlayer())
+                    {
+                        int32 amount = 0;
+                        if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_MAGE_ARCANE)
+                            amount = 300;
+                        else
+                            amount = 50;
+
+                        if (_player->HasAura(121039))
+                            _player->GetAura(121039)->GetEffect(EFFECT_0)->ChangeAmount(amount);
+                    }
+            }
+
+            void Register()
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_mage_mana_attunement_AuraScript::OnTick, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_mage_mana_attunement_AuraScript();
+        }
+};
+
 // Blazing Speed - 108843
 class spell_mage_blazing_speed : public SpellScriptLoader
 {
@@ -1126,14 +1185,20 @@ class spell_mage_inferno_blast : public SpellScriptLoader
 
                         _player->CastSpell(target, SPELL_MAGE_INFERNO_BLAST_IMPACT, true);
 
-                        // Spreads any Pyroblast, Ignite, and Combustion effects to up to 2 nearby enemy targets within 10 yards
+                        // Spreads any Pyroblast, Ignite, and Combustion effects to up to 3 nearby enemy targets within 10 yards
 
                         target->GetAttackableUnitListInRange(targetList, 10.0f);
 
                         targetList.remove_if(CheckInfernoBlastImpactPredicate(_player, target));
 
-                        if (targetList.size() > 2)
-                            JadeCore::Containers::RandomResizeList(targetList, 2);
+                        int32 targets = 3;
+
+                        // Glyph of inferno blast
+                        if (_player->HasAura(89926))
+                            targets = 4;
+
+                        if (targetList.size() > targets)
+                            JadeCore::Containers::RandomResizeList(targetList, targets);
 
                         for (auto itr : targetList)
                         {
@@ -1794,31 +1859,6 @@ class spell_mage_ring_of_frost_frozen : public SpellScriptLoader
 public:
 	spell_mage_ring_of_frost_frozen() : SpellScriptLoader("spell_mage_ring_of_frost_frozen") { }
 
-	class spell_mage_ring_of_frost_frozen_AuraScript : public AuraScript
-	{
-		PrepareAuraScript(spell_mage_ring_of_frost_frozen_AuraScript);
-
-		void AfterRemove(constAuraEffectPtr aurEff, AuraEffectHandleModes /*mode*/)
-		{
-			AuraRemoveMode removeMode = GetTargetApplication()->GetRemoveMode();
-			if (removeMode != AURA_REMOVE_BY_ENEMY_SPELL)
-				return;
-
-			if (Unit* target = GetUnitOwner())
-				target->CastSpell(target, 91264, true);
-		}
-
-		void Register()
-		{
-			AfterEffectRemove += AuraEffectRemoveFn(spell_mage_ring_of_frost_frozen_AuraScript::AfterRemove, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
-		}
-	};
-
-	AuraScript* GetAuraScript() const
-	{
-		return new spell_mage_ring_of_frost_frozen_AuraScript();
-	}
-
 	class spell_mage_ring_of_frost_frozen_SpellScript : public SpellScript
 	{
 		PrepareSpellScript(spell_mage_ring_of_frost_frozen_SpellScript);
@@ -1941,4 +1981,5 @@ void AddSC_mage_spell_scripts()
     new spell_mage_ring_of_frost();
     new spell_mage_ring_of_frost_frozen();
     new spell_mage_ring_of_frost_boot();
+    new spell_mage_mana_attunement();
 }

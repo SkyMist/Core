@@ -435,10 +435,10 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //376 SPELL_AURA_376
     &AuraEffect::HandleNULL,                                      //377 SPELL_AURA_377
     &AuraEffect::HandleNULL,                                      //378 SPELL_AURA_378
-    &AuraEffect::HandleNULL,                                      //379 SPELL_AURA_379
+    &AuraEffect::HandleModManaRegen,                              //379 SPELL_AURA_MOD_MANA_REGEN_PERCENT
     &AuraEffect::HandleNULL,                                      //380 SPELL_AURA_380
     &AuraEffect::HandleNULL,                                      //381 SPELL_AURA_381
-    &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_382
+    &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_MODE_PET_HEALTH_PCT
     &AuraEffect::HandleNoImmediateEffect,                         //383 SPELL_AURA_ALLOW_CAST_WHILE_IN_COOLDOWN
     &AuraEffect::HandleNULL,                                      //384 SPELL_AURA_384
     &AuraEffect::HandleNoImmediateEffect,                         //385 SPELL_AURA_STRIKE_SELF in Unit::AttackerStateUpdate
@@ -855,12 +855,16 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                     ApplyPct(amount, GetBase()->GetUnitOwner()->GetCreatePowers(POWER_MANA));
                     break;
                 case 54428: // Divine Plea
+                {
                     if (!caster)
                         break;
-                    amount = caster->GetStat(STAT_SPIRIT) * 1.35f;
+
+                    int32 percent = caster->HasAura(63223) ? 0.68f : 1.35f;
+                    amount = caster->GetStat(STAT_SPIRIT) * percent >= caster->GetMaxPower(POWER_MANA) * 0.12 ? caster->GetStat(STAT_SPIRIT) * percent : caster->GetMaxPower(POWER_MANA) * 0.12;
                     break;
-                default:
-                    break;
+                }
+
+                default: break;
             }
 
             break;
@@ -4528,6 +4532,12 @@ void AuraEffect::HandleModMechanicImmunity(AuraApplication const* aurApp, uint8 
             // Actually we should apply immunities here, too, but the aura has only 100 ms duration, so there is practically no point
             break;
         }
+        case 1953: // Glyph of Rapid Displacement
+        {
+            if (target && target->HasAura(146659))
+                return;
+            break;
+        }
         case 54508: // Demonic Empowerment
         {
             mechanic = (1 << MECHANIC_SNARE) | (1 << MECHANIC_ROOT) | (1 << MECHANIC_FEAR) | (1 << MECHANIC_BANISH);
@@ -5412,6 +5422,9 @@ void AuraEffect::HandleModCastingSpeed(AuraApplication const* aurApp, uint8 mode
     float value = float(GetAmount());
 
     target->ApplyCastTimePercentMod(value, apply);
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+        target->ToPlayer()->UpdateRating(CR_HASTE_SPELL);
 }
 
 void AuraEffect::HandleModMeleeRangedSpeedPct(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -5428,6 +5441,12 @@ void AuraEffect::HandleModMeleeRangedSpeedPct(AuraApplication const* aurApp, uin
 
     if (target->getClass() == CLASS_DEATH_KNIGHT && target->ToPlayer())
         target->ToPlayer()->UpdateAllRunesRegen();
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+    {
+        target->ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+        target->ToPlayer()->UpdateRating(CR_HASTE_RANGED);
+    }
 }
 
 void AuraEffect::HandleModCombatSpeedPct(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -5441,6 +5460,13 @@ void AuraEffect::HandleModCombatSpeedPct(AuraApplication const* aurApp, uint8 mo
     target->ApplyAttackTimePercentMod(BASE_ATTACK, float(GetAmount()), apply);
     target->ApplyAttackTimePercentMod(OFF_ATTACK, float(GetAmount()), apply);
     target->ApplyAttackTimePercentMod(RANGED_ATTACK, float(GetAmount()), apply);
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+    {
+        target->ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+        target->ToPlayer()->UpdateRating(CR_HASTE_RANGED);
+        target->ToPlayer()->UpdateRating(CR_HASTE_SPELL);
+    }
 }
 
 void AuraEffect::HandleModAttackSpeed(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -5451,7 +5477,14 @@ void AuraEffect::HandleModAttackSpeed(AuraApplication const* aurApp, uint8 mode,
     Unit* target = aurApp->GetTarget();
 
     target->ApplyAttackTimePercentMod(BASE_ATTACK, (float)GetAmount(), apply);
-    target->UpdateDamagePhysical(BASE_ATTACK);
+    target->ApplyAttackTimePercentMod(OFF_ATTACK, float(GetAmount()), apply);
+    target->ApplyAttackTimePercentMod(RANGED_ATTACK, float(GetAmount()), apply);
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+    {
+        target->ToPlayer()->UpdateRating(CR_HASTE_RANGED);
+        target->ToPlayer()->UpdateRating(CR_HASTE_MELEE);
+    }
 }
 
 void AuraEffect::HandleModMeleeSpeedPct(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -5467,7 +5500,7 @@ void AuraEffect::HandleModMeleeSpeedPct(AuraApplication const* aurApp, uint8 mod
     target->ApplyAttackTimePercentMod(BASE_ATTACK,   (float)value, apply);
     target->ApplyAttackTimePercentMod(OFF_ATTACK,    (float)value, apply);
 
-    if (this->GetId() == 120275 && target->GetTypeId() == TYPEID_PLAYER)
+    if (target->GetTypeId() == TYPEID_PLAYER)
         target->ToPlayer()->UpdateRating(CR_HASTE_MELEE);
 }
 
@@ -5480,6 +5513,9 @@ void AuraEffect::HandleAuraModRangedHaste(AuraApplication const* aurApp, uint8 m
     Unit* target = aurApp->GetTarget();
 
     target->ApplyAttackTimePercentMod(RANGED_ATTACK, (float)GetAmount(), apply);
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+        target->ToPlayer()->UpdateRating(CR_HASTE_RANGED);
 }
 
 /********************************/
@@ -7840,7 +7876,7 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
         if (GetSpellInfo()->Id == 114916)
         {
             int32 spellPowerBonus = int32(5.936 * caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY));
-            damage = 12989 + spellPowerBonus;
+            damage = 26.72716306 * GetSpellInfo()->Effects[EFFECT_0].CalcValue(caster) + spellPowerBonus;
 
             float PvPPower = (1 + GetCaster()->GetFloatValue(PLAYER_FIELD_PVP_POWER_DAMAGE) / 100);
             // We need to calculate damage with PvPPower
@@ -8137,7 +8173,8 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
     if (GetSpellInfo()->Id == 114917 && caster->GetTypeId() == TYPEID_PLAYER)
     {
         int32 spellPowerBonus = int32(5.936 * caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY));
-        damage = 12989 + spellPowerBonus;
+        damage = 26.72716306 * GetSpellInfo()->Effects[EFFECT_0].CalcValue(caster) + spellPowerBonus;
+
         float PvPPower = (1 + GetCaster()->GetFloatValue(PLAYER_FIELD_PVP_POWER_HEALING) / 100);
         // We need to calculate damage with PvPPower
         if (PvPPower > 1.0f)
