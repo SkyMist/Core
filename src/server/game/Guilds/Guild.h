@@ -19,6 +19,7 @@
 #ifndef GUILD_H
 #define GUILD_H
 
+#include "AchievementMgr.h"
 #include "World.h"
 #include "Item.h"
 #include "WorldPacket.h"
@@ -30,122 +31,186 @@ class Item;
 
 enum GuildMisc
 {
-    GUILD_BANK_MAX_TABS                 = 8,                    // send by client for money log also
-    GUILD_BANK_MAX_SLOTS                = 98,
-    GUILD_BANK_MONEY_LOGS_TAB           = 100,                  // used for money log in DB
-    GUILD_RANKS_MIN_COUNT               = 5,
-    GUILD_RANKS_MAX_COUNT               = 10,
-    GUILD_RANK_NONE                     = 0xFF,
-    GUILD_WITHDRAW_MONEY_UNLIMITED      = 0xFFFFFFFF,
-    GUILD_WITHDRAW_SLOT_UNLIMITED       = 0xFFFFFFFF,
-    GUILD_EVENT_LOG_GUID_UNDEFINED      = 0xFFFFFFFF
+    GUILD_BANK_MAX_TABS                  = 8,                    // Sent by client for money log also
+    GUILD_BANK_MAX_SLOTS                 = 98,
+    GUILD_BANK_MONEY_LOGS_TAB            = 100,                  // Used for money log in DB
+    GUILD_RANKS_MIN_COUNT                = 5,                    // Guilds must have a minimum of 5 ranks. More ranks can be added by the Leader, up to a maximum of 10 ranks. 
+    GUILD_RANKS_MAX_COUNT                = 10,
+    GUILD_RANK_NONE                      = 0xFF,
+
+    GUILD_WITHDRAW_MONEY_UNLIMITED       = 0xFFFFFFFF,
+    GUILD_WITHDRAW_SLOT_UNLIMITED        = 0xFFFFFFFF,
+    GUILD_EVENT_LOG_GUID_UNDEFINED       = 0xFFFFFFFF,
+
+    GUILD_EXPERIENCE_UNCAPPED_LEVEL      = 20,                   // Hardcoded in client, starting from this level, guild daily experience gain is unlimited.
+    TAB_UNDEFINED                        = 0xFF
+};
+
+enum GuildMemberData
+{
+    GUILD_MEMBER_DATA_ZONEID             = 0,
+    GUILD_MEMBER_DATA_ACHIEVEMENT_POINTS = 1,
+    GUILD_MEMBER_DATA_LEVEL              = 2
 };
 
 enum GuildDefaultRanks
 {
-    // These ranks can be modified, but they cannot be deleted
-    GR_GUILDMASTER  = 0,
-    GR_OFFICER      = 1,
-    GR_VETERAN      = 2,
-    GR_MEMBER       = 3,
-    GR_INITIATE     = 4
-    // When promoting member server does: rank--
-    // When demoting member server does: rank++
+    // These ranks can be modified, but they cannot be deleted.
+    // When promoting member server does: rank-- ; When demoting member server does: rank++.
+    // Higher rank -> less privileges.
+
+    GR_GUILDMASTER                       = 0,
+    GR_OFFICER                           = 1,
+    GR_VETERAN                           = 2,
+    GR_MEMBER                            = 3,
+    GR_INITIATE                          = 4
 };
 
 enum GuildRankRights
 {
-    GR_RIGHT_EMPTY              = 0x00000040,
-    GR_RIGHT_GCHATLISTEN        = GR_RIGHT_EMPTY | 0x00000001,
-    GR_RIGHT_GCHATSPEAK         = GR_RIGHT_EMPTY | 0x00000002,
-    GR_RIGHT_OFFCHATLISTEN      = GR_RIGHT_EMPTY | 0x00000004,
-    GR_RIGHT_OFFCHATSPEAK       = GR_RIGHT_EMPTY | 0x00000008,
-    GR_RIGHT_INVITE             = GR_RIGHT_EMPTY | 0x00000010,
-    GR_RIGHT_REMOVE             = GR_RIGHT_EMPTY | 0x00000020,
-    GR_RIGHT_PROMOTE            = GR_RIGHT_EMPTY | 0x00000080,
-    GR_RIGHT_DEMOTE             = GR_RIGHT_EMPTY | 0x00000100,
-    GR_RIGHT_SETMOTD            = GR_RIGHT_EMPTY | 0x00001000,
-    GR_RIGHT_EPNOTE             = GR_RIGHT_EMPTY | 0x00002000,
-    GR_RIGHT_VIEWOFFNOTE        = GR_RIGHT_EMPTY | 0x00004000,
-    GR_RIGHT_EOFFNOTE           = GR_RIGHT_EMPTY | 0x00008000,
-    GR_RIGHT_MODIFY_GUILD_INFO  = GR_RIGHT_EMPTY | 0x00010000,
-    GR_RIGHT_WITHDRAW_GOLD_LOCK = 0x00020000,                   // remove money withdraw capacity
-    GR_RIGHT_WITHDRAW_REPAIR    = 0x00040000,                   // withdraw for repair
-    GR_RIGHT_WITHDRAW_GOLD      = 0x00080000,                   // withdraw gold
-    GR_RIGHT_CREATE_GUILD_EVENT = 0x00100000,                   // wotlk
-    GR_RIGHT_ALL                = 0x00DDFFBF
+    GR_RIGHT_EMPTY                       = 0x00000040,
+    GR_RIGHT_GCHATLISTEN                 = GR_RIGHT_EMPTY | 0x00000001,
+    GR_RIGHT_GCHATSPEAK                  = GR_RIGHT_EMPTY | 0x00000002,
+    GR_RIGHT_OFFCHATLISTEN               = GR_RIGHT_EMPTY | 0x00000004,
+    GR_RIGHT_OFFCHATSPEAK                = GR_RIGHT_EMPTY | 0x00000008,
+    GR_RIGHT_INVITE                      = GR_RIGHT_EMPTY | 0x00000010,
+    GR_RIGHT_REMOVE                      = GR_RIGHT_EMPTY | 0x00000020,
+    GR_RIGHT_PROMOTE                     = GR_RIGHT_EMPTY | 0x00000080,
+    GR_RIGHT_DEMOTE                      = GR_RIGHT_EMPTY | 0x00000100,
+    GR_RIGHT_SETMOTD                     = GR_RIGHT_EMPTY | 0x00001000,
+    GR_RIGHT_EPNOTE                      = GR_RIGHT_EMPTY | 0x00002000,
+    GR_RIGHT_VIEWOFFNOTE                 = GR_RIGHT_EMPTY | 0x00004000,
+    GR_RIGHT_EOFFNOTE                    = GR_RIGHT_EMPTY | 0x00008000,
+    GR_RIGHT_MODIFY_GUILD_INFO           = GR_RIGHT_EMPTY | 0x00010000,
+    GR_RIGHT_WITHDRAW_GOLD_LOCK          = 0x00020000,                   // remove money withdraw capacity
+    GR_RIGHT_WITHDRAW_REPAIR             = 0x00040000,                   // withdraw for repair
+    GR_RIGHT_WITHDRAW_GOLD               = 0x00080000,                   // withdraw gold
+    GR_RIGHT_CREATE_GUILD_EVENT          = 0x00100000,                   // wotlk
+    GR_RIGHT_ALL                         = 0x00DDFFBF
 };
 
 enum GuildCommandType
 {
-    GUILD_CREATE_S  = 0x00,
-    GUILD_INVITE_S  = 0x01,
-    GUILD_QUIT_S    = 0x03,
-    GUILD_FOUNDER_S = 0x0E,
-    GUILD_BANK      = 0x13,
-    GUILD_UNK2      = 0x14
+    GUILD_COMMAND_CREATE                 = 0,
+    GUILD_COMMAND_INVITE                 = 1,
+    GUILD_COMMAND_QUIT                   = 3,
+    GUILD_COMMAND_ROSTER                 = 5,
+    GUILD_COMMAND_PROMOTE                = 6,
+    GUILD_COMMAND_DEMOTE                 = 7,
+    GUILD_COMMAND_REMOVE                 = 8,
+    GUILD_COMMAND_CHANGE_LEADER          = 10,
+    GUILD_COMMAND_EDIT_MOTD              = 11,
+    GUILD_COMMAND_GUILD_CHAT             = 13,
+    GUILD_COMMAND_FOUNDER                = 14,
+    GUILD_COMMAND_CHANGE_RANK            = 16,
+    GUILD_COMMAND_PUBLIC_NOTE            = 19,
+    GUILD_COMMAND_VIEW_TAB               = 21,
+    GUILD_COMMAND_MOVE_ITEM              = 22,
+    GUILD_COMMAND_REPAIR                 = 25
 };
 
 enum GuildCommandError
 {
-    ERR_PLAYER_NO_MORE_IN_GUILD         = 0x00,
-    ERR_GUILD_INTERNAL                  = 0x01,
-    ERR_ALREADY_IN_GUILD                = 0x02,
-    ERR_ALREADY_IN_GUILD_S              = 0x03,
-    ERR_INVITED_TO_GUILD                = 0x04,
-    ERR_ALREADY_INVITED_TO_GUILD_S      = 0x05,
-    ERR_GUILD_NAME_INVALID              = 0x06,
-    ERR_GUILD_NAME_EXISTS_S             = 0x07,
-    ERR_GUILD_LEADER_LEAVE              = 0x08,
-    ERR_GUILD_PERMISSIONS               = 0x08,
-    ERR_GUILD_PLAYER_NOT_IN_GUILD       = 0x09,
-    ERR_GUILD_PLAYER_NOT_IN_GUILD_S     = 0x0A,
-    ERR_GUILD_PLAYER_NOT_FOUND_S        = 0x0B,
-    ERR_GUILD_NOT_ALLIED                = 0x0C,
-    ERR_GUILD_RANK_TOO_HIGH_S           = 0x0D,
-    ERR_GUILD_RANK_TOO_LOW_S            = 0x0E,
-    ERR_GUILD_RANKS_LOCKED              = 0x11,
-    ERR_GUILD_RANK_IN_USE               = 0x12,
-    ERR_GUILD_IGNORING_YOU_S            = 0x13,
-    ERR_GUILD_UNK1                      = 0x14,
-    ERR_GUILD_WITHDRAW_LIMIT            = 0x19,
-    ERR_GUILD_NOT_ENOUGH_MONEY          = 0x1A,
-    ERR_GUILD_BANK_FULL                 = 0x1C,
-    ERR_GUILD_ITEM_NOT_FOUND            = 0x1D,
-    ERR_GUILD_TOO_MUCH_MONEY            = 0x1F,
-    ERR_GUILD_BANK_WRONG_TAB            = 0x20,
-    ERR_RANK_REQUIRES_AUTHENTICATOR     = 0x22,
-    ERR_GUILD_BANK_VOUCHER_FAILED       = 0x23,
-    ERR_GUILD_TRIAL_ACCOUNT             = 0x24,
-    ERR_GUILD_UNDELETABLE_DUE_TO_LEVEL  = 0x25,
-    ERR_GUILD_MOVE_STARTING             = 0x26,
-    ERR_GUILD_REP_TOO_LOW               = 0x27
+    ERR_PLAYER_NO_MORE_IN_GUILD          = 0,  // ! Obsolete?
+    ERR_GUILD_INTERNAL                   = 1,  // "Internal guild error.";
+    ERR_ALREADY_IN_GUILD                 = 2,  // "You are already in a guild."
+    ERR_ALREADY_IN_GUILD_S               = 3,  // "%s is already in a guild."
+    ERR_INVITED_TO_GUILD                 = 4,  // "You have already been invited into a guild."
+    ERR_ALREADY_INVITED_TO_GUILD_S       = 5,  // "|Hplayer:%s|h[%s]|h invites you to join %s."
+    ERR_GUILD_NAME_INVALID               = 6,  // "Invalid guild name."
+    ERR_GUILD_NAME_EXISTS_S              = 7,  // "There is already a guild named \"%s\"."
+    ERR_GUILD_LEADER_LEAVE               = 8,  // "You must promote a new Guild Master using /gleader before leaving the guild."
+    ERR_GUILD_PERMISSIONS                = 8,  // "You don't have permission to do that."
+    ERR_GUILD_PLAYER_NOT_IN_GUILD        = 9,  // "You are not in a guild."
+    ERR_GUILD_PLAYER_NOT_IN_GUILD_S      = 10, // "%s is not in your guild."
+    ERR_GUILD_PLAYER_NOT_FOUND_S         = 11, // \"%s\" not found."
+    ERR_GUILD_NOT_ALLIED                 = 12, // "You cannot invite players from the opposing alliance"
+    ERR_GUILD_RANK_TOO_HIGH_S            = 13, // "%s's rank is too high"
+    ERR_GUILD_RANK_TOO_LOW_S             = 14, // "%s is already at the lowest rank"
+    ERR_GUILD_RANKS_LOCKED               = 17, // "Temporary guild error.  Please try again!"
+    ERR_GUILD_RANK_IN_USE                = 18, // "That guild rank is currently in use."
+    ERR_GUILD_IGNORING_YOU_S             = 19, // ! Obsolete or actually player error, not guild?
+    ERR_GUILD_UNK1                       = 20, // Forces roster update
+    ERR_GUILD_WITHDRAW_LIMIT             = 25, // "You cannot withdraw that much from the guild bank."
+    ERR_GUILD_NOT_ENOUGH_MONEY           = 26, // "The guild bank does not have enough money"
+    ERR_GUILD_BANK_FULL                  = 28, // "This guild bank tab is full"
+    ERR_GUILD_ITEM_NOT_FOUND             = 29, // ! Obsolete?
+    ERR_GUILD_TOO_MUCH_MONEY             = 31, // "The guild bank is at gold limit"
+    ERR_GUILD_BANK_WRONG_TAB             = 32, // "Incorrect bank tab"
+    ERR_RANK_REQUIRES_AUTHENTICATOR      = 34, // "Guild rank requires an authenticator."
+    ERR_GUILD_BANK_VOUCHER_FAILED        = 35, // "You must purchase all guild bank tabs before using this voucher."
+    ERR_GUILD_TRIAL_ACCOUNT              = 36, // "Feature not available for Starter Edition accounts."
+    ERR_GUILD_UNDELETABLE_DUE_TO_LEVEL   = 37, // "Your guild is too high level to be deleted."
+    ERR_GUILD_MOVE_STARTING              = 38, // ! Obsolete?
+    ERR_GUILD_REP_TOO_LOW                = 39  // "Your guild reputation isn't high enough to do that."
+
+    // ToDo: Find and update with these.
+    // ERR_GUILD_CREATE_S           = "%s created.";
+    // ERR_GUILD_DECLINE_S          = "%s declines your guild invitation.";
+    // ERR_GUILD_DEMOTE_SS          = "%s  has been demoted to %s.";
+    // ERR_GUILD_DEMOTE_SSS         = "%s has demoted %s to %s.";
+    // ERR_GUILD_DISBANDED          = "Guild has been disbanded.";
+    // ERR_GUILD_DISBAND_S          = "%s has disbanded the guild.";
+    // ERR_GUILD_DISBAND_SELF       = "You have disbanded the guild.";
+    // ERR_GUILD_FOUNDER_S          = "Congratulations, you are a founding member of %s!";
+    // ERR_GUILD_ACCEPT             = "You have joined the guild.";
+    // ERR_GUILD_INVITE_S           = "You have invited %s to join your guild.";
+    // ERR_GUILD_INVITE_SELF        = "You can't invite yourself to a guild.";
+    // ERR_GUILD_JOIN_S             = "%s has joined the guild.";
+    // ERR_GUILD_LEADER_CHANGED_SS  = "%s has made %s the new Guild Master.";
+    // ERR_GUILD_LEADER_IS_S        = "%s is the leader of your guild.";
+    // ERR_GUILD_LEADER_REPLACED    = "Because the previous guild master %s has not logged in for an extended time, %s has become the new Guild Master.";
+    // ERR_GUILD_LEADER_S           = "%s has been promoted to Guild Master.";
+    // ERR_GUILD_LEADER_SELF        = "You are now the Guild Master.";
+    // ERR_GUILD_LEAVE_RESULT       = "You have left the guild.";
+    // ERR_GUILD_LEAVE_S            = "%s has left the guild.";
+    // ERR_GUILD_PROMOTE_SSS        = "%s has promoted %s to %s.";
+    // ERR_GUILD_QUIT_S             = "You are no longer a member of %s.";
+    // ERR_GUILD_REMOVE_SELF        = "You have been kicked out of the guild.";
+    // ERR_GUILD_REMOVE_SS          = "%s has been kicked out of the guild by %s.";
+    // ERR_GUILD_BANK_BOUND_ITEM    = "You cannot store soulbound items in the guild bank";
+    // ERR_GUILD_BANK_CONJURED_ITEM = "You cannot store conjured items in the guild bank";
+    // ERR_GUILD_BANK_EQUIPPED_ITEM = "You must unequip that item first";
+    // ERR_GUILD_BANK_QUEST_ITEM    = "You cannot store quest items in the guild bank";
+    // ERR_GUILD_BANK_WRAPPED_ITEM  = "You cannot store wrapped items in the guild bank";
 };
 
-enum GuildEvents
+enum GuildEvents // API Lua Bank events.
 {
-    GE_MOTD                         = 3,
-    GE_JOINED                       = 4,
-    GE_LEFT                         = 5,
-    GE_REMOVED                      = 6,
-    GE_LEADER_IS                    = 7,
-    GE_LEADER_CHANGED               = 8,
-    GE_DISBANDED                    = 9,
-    GE_TABARDCHANGE                 = 10,
-    GE_RANK_UPDATED                 = 11,
-    GE_RANK_CREATED                 = 12,
-    GE_RANK_DELETED                 = 13,
-    GE_RANK_ORDER_CHANGED           = 14,
-    GE_FOUNDER                      = 15, // At guild creation - Set founder
-    GE_GUILDBANKBAGSLOTS_CHANGED    = 18,
-    GE_BANK_TAB_PURCHASED           = 19,
-    GE_BANK_TAB_UPDATED             = 20,
-    GE_BANK_MONEY_UPDATED           = 21,
-    GE_BANK_MONEY_WITHDRAWN         = 22,
-    GE_BANK_TEXT_CHANGED            = 23,
+    GE_PROMOTION                        = 1,  // Fired when a guild member is promoted.
+    GE_DEMOTION                         = 2,  // Fired when a guild member is demoted.
+    GE_MOTD                             = 3,  // Fired when a guild member logs in or the MOTD is changed.
+    GE_JOINED                           = 4,  // Fired when a player joins the guild.
+    GE_LEFT                             = 5,  // Fired when a player leaves the guild.
+    GE_REMOVED                          = 6,  // Fired when a player is removed from the guild.
+    GE_LEADER_IS                        = 7,  // Fired when the guild roster is opened / the ranks queried. Also at creation.
+    GE_LEADER_CHANGED                   = 8,  // Fired when guild leader changes.
+    GE_DISBANDED                        = 9,  // Fired when the guild is disbanded.
+    GE_TABARDCHANGE                     = 10, // Fired when the guild tabard (emblem) changes.
+    GE_RANK_UPDATED                     = 11, // Fired when a rank is updated (name / permissions).
+    GE_RANK_CREATED                     = 12, // Fired when a rank is created.
+    GE_RANK_DELETED                     = 13, // Fired when a rank is deleted.
+    GE_RANK_ORDER_CHANGED               = 14, // Fired when the rank orders are changed.
+    GE_FOUNDER                          = 15, // Fired when the guild is created.
+    GE_SIGNED_ON                        = 16, // Fired when a guild member comes online.
+    GE_SIGNED_OFF                       = 17, // Fired when a guild member goes offline.
+    GE_GUILDBANKBAGSLOTS_CHANGED        = 18, // Fired when the guild-bank contents change.
+    GE_BANK_TAB_PURCHASED               = 19, // This event only fires when bank bags slots are purchased. It no longer fires when bags in the slots are changed. Instead, when the bags are changed, PLAYERBANKSLOTS_CHANGED will fire, and arg1 will be NUM_BANKGENERIC_SLOTS + BagIndex.
+    GE_BANK_TAB_UPDATED                 = 20, // Fired when the One of the slots in the player's 24 bank slots has changed, or when any of the equipped bank bags have changed. Does not fire when an item is added to or removed from a bank bag. When (arg1 <= NUM_BANKGENERIC_SLOTS), arg1 is the index of the generic bank slot that changed. When (arg1 > NUM_BANKGENERIC_SLOTS), (arg1 - NUM_BANKGENERIC_SLOTS) is the index of the equipped bank bag that changed. 
+    GE_BANK_MONEY_UPDATED               = 21, // Fired when guild-bank money changes.
+    GE_BANK_MONEY_WITHDRAWN             = 22, // Fired when guild-bank money is withdrawn.
+    GE_BANK_TEXT_CHANGED                = 23, // Fired when guild-bank text changes.
     // 24 - error 795
-    GE_SIGNED_ON_MOBILE             = 25,
-    GE_SIGNED_Off_MOBILE            = 26
+    GE_SIGNED_ON_MOBILE                 = 25, // Fired when a guild member comes online via mobile.
+    GE_SIGNED_Off_MOBILE                = 26  // Fired when a guild member goes offline via mobile.
+
+    // ToDo: Find and update with these.
+    // BANKFRAME_CLOSED            // Fired twice when the bank window is closed. Only at the first one of them the bank data is still available (GetNumBankSlots(), GetContainerItemLink(), ...). 
+    // BANKFRAME_OPENED            // Fired when the bank frame is opened.
+    // GUILDBANKFRAME_CLOSED       // Fired when the guild-bank frame is closed.
+    // GUILDBANKFRAME_OPENED       // Fired when the guild-bank frame is opened.
+    // GUILDBANKLOG_UPDATE         // Fired when the guild-bank log is updated.
+    // GUILDBANK_ITEM_LOCK_CHANGED // Fired when the guild-bank items are locked / unlocked.
 };
 
 enum PetitionTurns
@@ -172,12 +237,12 @@ enum PetitionSigns
 
 enum GuildBankRights
 {
-    GUILD_BANK_RIGHT_VIEW_TAB       = 0x01,
-    GUILD_BANK_RIGHT_PUT_ITEM       = 0x02,
-    GUILD_BANK_RIGHT_UPDATE_TEXT    = 0x04,
+    GUILD_BANK_RIGHT_VIEW_TAB           = 0x01,
+    GUILD_BANK_RIGHT_PUT_ITEM           = 0x02,
+    GUILD_BANK_RIGHT_UPDATE_TEXT        = 0x04,
 
-    GUILD_BANK_RIGHT_DEPOSIT_ITEM   = GUILD_BANK_RIGHT_VIEW_TAB | GUILD_BANK_RIGHT_PUT_ITEM,
-    GUILD_BANK_RIGHT_FULL           = 0xFF
+    GUILD_BANK_RIGHT_DEPOSIT_ITEM       = GUILD_BANK_RIGHT_VIEW_TAB | GUILD_BANK_RIGHT_PUT_ITEM,
+    GUILD_BANK_RIGHT_FULL               = 0xFF
 };
 
 enum GuildBankEventLogTypes
@@ -196,22 +261,26 @@ enum GuildBankEventLogTypes
 
 enum GuildEventLogTypes
 {
-    GUILD_EVENT_LOG_INVITE_PLAYER     = 1,
-    GUILD_EVENT_LOG_JOIN_GUILD        = 2,
-    GUILD_EVENT_LOG_PROMOTE_PLAYER    = 3,
-    GUILD_EVENT_LOG_DEMOTE_PLAYER     = 4,
-    GUILD_EVENT_LOG_UNINVITE_PLAYER   = 5,
-    GUILD_EVENT_LOG_LEAVE_GUILD       = 6
+    GUILD_EVENT_LOG_INVITE_PLAYER       = 1,
+    GUILD_EVENT_LOG_JOIN_GUILD          = 2,
+    GUILD_EVENT_LOG_PROMOTE_PLAYER      = 3,
+    GUILD_EVENT_LOG_DEMOTE_PLAYER       = 4,
+    GUILD_EVENT_LOG_UNINVITE_PLAYER     = 5,
+    GUILD_EVENT_LOG_LEAVE_GUILD         = 6
 };
 
 enum GuildEmblemError
 {
-    ERR_GUILDEMBLEM_SUCCESS               = 0,
-    ERR_GUILDEMBLEM_INVALID_TABARD_COLORS = 1,
-    ERR_GUILDEMBLEM_NOGUILD               = 2,
-    ERR_GUILDEMBLEM_NOTGUILDMASTER        = 3,
-    ERR_GUILDEMBLEM_NOTENOUGHMONEY        = 4,
-    ERR_GUILDEMBLEM_INVALIDVENDOR         = 5
+    ERR_GUILDEMBLEM_SUCCESS               = 0, // "Guild Emblem saved."
+    ERR_GUILDEMBLEM_INVALID_TABARD_COLORS = 1, // "Invalid Guild Emblem colors."
+    ERR_GUILDEMBLEM_NOGUILD               = 2, // "You are not part of a guild!"
+    ERR_GUILDEMBLEM_NOTGUILDMASTER        = 3, // "Only guild leaders can create emblems."
+    ERR_GUILDEMBLEM_NOTENOUGHMONEY        = 4, // "You can't afford to do that."
+    ERR_GUILDEMBLEM_INVALIDVENDOR         = 5  // "That's not an emblem vendor!"
+
+    // ToDo: Find and update with these.
+    // ERR_GUILDEMBLEM_COLORSPRESENT      = "Your guild already has an emblem!"
+    // ERR_GUILDEMBLEM_SAME               = "Not saved, your tabard is already like that."
 };
 
 enum GuildMemberFlags
@@ -236,14 +305,14 @@ enum GuildNews
 
 enum GuildChallengeType
 {
-    CHALLENGE_NONE              = 0,
-    CHALLENGE_DUNGEON           = 1,
-    CHALLENGE_SCENARIO          = 2,
-    CHALLENGE_DUNGEON_CHALLENGE = 3,
-    CHALLENGE_RAID              = 4,
-    CHALLENGE_RATED_BG          = 5,
+    CHALLENGE_NONE                  = 0,
+    CHALLENGE_DUNGEON               = 1,
+    CHALLENGE_SCENARIO              = 2,
+    CHALLENGE_DUNGEON_CHALLENGE     = 3,
+    CHALLENGE_RAID                  = 4,
+    CHALLENGE_RATED_BG              = 5,
 
-    CHALLENGE_MAX
+    CHALLENGE_MAX                   = 6
 };
 
 struct GuildNewsEntry
@@ -267,8 +336,6 @@ struct GuildReward
 uint32 const MinNewsItemLevel[MAX_CONTENT] = { 61, 90, 200, 353 };
 
 typedef std::map<uint32, GuildNewsEntry> GuildNewsLogMap;
-
-#define GUILD_EXPERIENCE_UNCAPPED_LEVEL 20  ///> Hardcoded in client, starting from this level, guild daily experience 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Emblem info
@@ -348,7 +415,13 @@ class Guild
                     m_class(0),
                     m_logoutTime(::time(NULL)),
                     m_accountId(0),
-                    m_rankId(rankId) { }
+                    m_rankId(rankId),
+                    m_achievementPoints(0),
+                    m_totalActivity(0),
+                    m_weekActivity(0),
+                    m_totalReputation(0),
+                    m_weekReputation(0)
+				{ }
 
                 void SetStats(Player* player);
                 void SetStats(const std::string& name, uint8 level, uint8 _class, uint32 zoneId, uint32 accountId);
@@ -360,6 +433,10 @@ class Guild
                 std::string GetPublicNote() { return m_publicNote; };
                 std::string GetOfficerNote() { return m_officerNote; };
 
+                void SetZoneId(uint32 id) { m_zoneId = id; }
+                void SetAchievementPoints(uint32 val) { m_achievementPoints = val; }
+                void SetLevel(uint8 var) { m_level = var; }
+
                 bool LoadFromDB(Field* fields);
                 void SaveToDB(SQLTransaction& trans) const;
 
@@ -369,7 +446,8 @@ class Guild
                 uint32 GetRankId() const { return m_rankId; }
                 uint8 GetClass() const { return m_class; }
                 uint8 GetLevel() const { return m_level; }
-                uint8 GetZone() const { return m_zoneId; }
+                uint8 GetZoneId() const { return m_zoneId; }
+                uint32 GetAchievementPoints() const { return m_achievementPoints; }
                 uint64 GetLogoutTime() const { return m_logoutTime; }
 
                 void ChangeRank(uint8 newRank);
@@ -397,6 +475,7 @@ class Guild
                 uint32 m_zoneId;
                 uint8  m_level;
                 uint8  m_class;
+                uint8 m_flags;
                 uint64 m_logoutTime;
                 uint32 m_accountId;
                 // Fields from guild_member table
@@ -405,6 +484,12 @@ class Guild
                 std::string m_officerNote;
 
                 RemainingValue m_bankRemaining[GUILD_BANK_MAX_TABS + 1];
+
+                uint32 m_achievementPoints;
+                uint64 m_totalActivity;
+                uint64 m_weekActivity;
+                uint32 m_totalReputation;
+                uint32 m_weekReputation;
         };
 
         // News Log class
@@ -756,6 +841,8 @@ class Guild
         void HandleDisband(WorldSession* session);
         void HandleGuildPartyRequest(WorldSession* session);
 
+        void UpdateMemberData(Player* player, uint8 dataid, uint32 value);
+
         // Send info to client
         void SendEventLog(WorldSession* session) const;
         void SendBankLog(WorldSession* session, uint8 tabId) const;
@@ -891,7 +978,7 @@ class Guild
                 if (itr->second->GetName() == name)
                     return itr->second;
 
-            SendCommandResult(session, GUILD_INVITE_S, ERR_GUILD_PLAYER_NOT_IN_GUILD_S, name);
+            SendCommandResult(session, GUILD_COMMAND_INVITE, ERR_GUILD_PLAYER_NOT_IN_GUILD_S, name);
             return NULL;
         }
         inline void _DeleteMemberFromDB(uint32 lowguid) const

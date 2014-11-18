@@ -36,7 +36,7 @@ inline Guild* _GetPlayerGuild(WorldSession* session, bool sendError = false)
             return guild;
 
     if (sendError)
-        Guild::SendCommandResult(session, GUILD_CREATE_S, ERR_GUILD_PLAYER_NOT_IN_GUILD);
+        Guild::SendCommandResult(session, GUILD_COMMAND_ROSTER, ERR_GUILD_PLAYER_NOT_IN_GUILD);
 
     return NULL;
 }
@@ -94,7 +94,7 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
         }
     }
 
-    Guild::SendCommandResult(this, GUILD_CREATE_S, ERR_GUILD_PLAYER_NOT_IN_GUILD);
+    Guild::SendCommandResult(this, GUILD_COMMAND_ROSTER, ERR_GUILD_PLAYER_NOT_IN_GUILD);
 }
 
 void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
@@ -463,7 +463,7 @@ void WorldSession::HandleGuildBankerActivate(WorldPacket& recvData)
         if (Guild* guild = _GetPlayerGuild(this))
             guild->SendBankList(this, 0, true, true);
         else
-            Guild::SendCommandResult(this, GUILD_BANK, ERR_GUILD_PLAYER_NOT_IN_GUILD);
+            Guild::SendCommandResult(this, GUILD_COMMAND_VIEW_TAB, ERR_GUILD_PLAYER_NOT_IN_GUILD);
     }
 }
 
@@ -488,7 +488,7 @@ void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvData)
     GoGuid[2] = recvData.ReadBit();
     GoGuid[5] = recvData.ReadBit();
 
-    recvPacket.FlushBits();
+    recvData.FlushBits();
 
     uint8 bytesOrder[8] = { 0, 6, 1, 7, 5, 2, 3, 4 };
     recvData.ReadBytesSeq(GoGuid, bytesOrder);
@@ -527,8 +527,8 @@ void WorldSession::HandleGuildBankDepositMoney(WorldPacket& recvData)
             if (Guild* guild = _GetPlayerGuild(this))
             {
                 uint64 amount = guild->GetBankMoney();
-                if ((amount + money) > MAX_MONEY_AMOUNT)
-                    guild->SendCommandResult(this, GUILD_BANK, ERR_GUILD_TOO_MUCH_MONEY);
+                if ((amount + money) > uint64(MAX_MONEY_AMOUNT))
+                    guild->SendCommandResult(this, GUILD_COMMAND_MOVE_ITEM, ERR_GUILD_TOO_MUCH_MONEY);
                 else
                     guild->HandleMemberDepositMoney(this, money);
             }

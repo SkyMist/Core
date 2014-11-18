@@ -2114,14 +2114,17 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
         case FORM_GHOSTWOLF:
             spellId = 67116;
             break;
+        case FORM_WISE_SERPENT:
+        case FORM_STURDY_OX:
+        case FORM_FIERCE_TIGER:
         case FORM_GHOUL:
         case FORM_AMBIENT:
         case FORM_STEALTH:
         case FORM_CREATURECAT:
         case FORM_CREATUREBEAR:
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     if (apply)
@@ -2644,8 +2647,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
         case FORM_MOONKIN:                                  // 0x1F
         case FORM_SPIRITOFREDEMPTION:                       // 0x20
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     modelid = target->GetModelForForm(form);
@@ -2680,8 +2683,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
                     target->RemoveAurasDueToSpell(target->getTransForm());
                 break;
             }
-            default:
-               break;
+
+            default: break;
         }
 
         // remove other shapeshift before applying a new one
@@ -3043,7 +3046,9 @@ void AuraEffect::HandleAuraModScale(AuraApplication const* aurApp, uint8 mode, b
 
     Unit* target = aurApp->GetTarget();
 
-    target->ApplyPercentModFloatValue(OBJECT_FIELD_SCALE_X, (float)GetAmount(), apply);
+    float scale = target->GetObjectScale();
+    ApplyPercentModFloatVar(scale, float(GetAmount()), apply);
+    target->SetObjectScale(scale);
 }
 
 void AuraEffect::HandleAuraCloneCaster(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -7866,6 +7871,13 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
     }
     else
         damage = uint32(target->CountPctFromMaxHealth(damage));
+
+    if (m_spellInfo->Effects[m_effIndex].IsTargetingArea() || m_spellInfo->Effects[m_effIndex].IsAreaAuraEffect() || m_spellInfo->Effects[m_effIndex].IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA))
+    {
+        damage = int32(float(damage) * target->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_AOE_DAMAGE_AVOIDANCE, m_spellInfo->SchoolMask));
+        if (caster->GetTypeId() != TYPEID_PLAYER)
+            damage = int32(float(damage) * target->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE, m_spellInfo->SchoolMask));
+    }
 
     bool crit = false;
 

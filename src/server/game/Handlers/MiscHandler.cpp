@@ -1714,54 +1714,43 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recvData)
 void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
-    uint8 bitOrder[8] = { 2, 5, 0, 7, 3, 4, 6, 1 };
+
+    uint8 bitOrder[8] = { 1, 7, 0, 5, 2, 3, 6, 4 };
     recvData.ReadBitInOrder(guid, bitOrder);
 
     recvData.FlushBits();
 
-    uint8 byteOrder[8] = { 2, 5, 4, 6, 1, 3, 0, 7 };
+    uint8 byteOrder[8] = { 3, 7, 5, 4, 0, 1, 6, 2 };
     recvData.ReadBytesSeq(guid, byteOrder);
 
     Player* player = ObjectAccessor::FindPlayer(guid);
     if (!player)
     {
-        //sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_INSPECT_HONOR_STATS: No player found from GUID: " UI64FMTD, guid);
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_INSPECT_HONOR_STATS: No player found from GUID: " UI64FMTD, (uint64)guid);
         return;
     }
 
-    ObjectGuid playerGuid = guid;
-    WorldPacket data(SMSG_INSPECT_HONOR_STATS);
+    ObjectGuid playerGuid = player->GetGUID();
+    WorldPacket data(SMSG_INSPECT_HONOR_STATS, 8 + 1 + 1 + 4 + 4);
 
-    uint8 bitOrder2[8] = { 5, 3, 7, 2, 1, 6, 0, 4 };
+    data << uint16(player->GetUInt16Value(PLAYER_FIELD_KILLS, 1));  // yesterday kills
+    data << uint8(0);                                                                   // PLAYER_FIELD_LIFETIME_MAX_RANK, offset 0 - Lifetime PVP Rank.
+    data << uint32(player->GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS));      // lifetime kills
+    data << uint16(player->GetUInt16Value(PLAYER_FIELD_KILLS, 0));  // today kills
+
+    uint8 bitOrder2[8] = { 4, 3, 5, 7, 6, 0, 2, 1 };
     data.WriteBitInOrder(playerGuid, bitOrder2);
 
-    data.WriteBits(MAX_PVP_SLOT, 3);
-    
-    data.WriteByteSeq(playerGuid[7]);
+    data.FlushBits();
 
-    for (int i = 0; i < MAX_PVP_SLOT; ++i)
-    {
-        // Client display only this two fields
-
-        data << uint32(player->GetSeasonWins(i));
-        data << uint32(0);
-        data << uint32(0);
-        
-        data << uint8(i);
-        
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(player->GetArenaPersonalRating(i));
-        data << uint32(0);
-    }
-
-    data.WriteByteSeq(playerGuid[1]);
-    data.WriteByteSeq(playerGuid[5]);
-    data.WriteByteSeq(playerGuid[0]);
     data.WriteByteSeq(playerGuid[3]);
+    data.WriteByteSeq(playerGuid[0]);
+    data.WriteByteSeq(playerGuid[5]);
     data.WriteByteSeq(playerGuid[2]);
     data.WriteByteSeq(playerGuid[6]);
+    data.WriteByteSeq(playerGuid[7]);
     data.WriteByteSeq(playerGuid[4]);
+    data.WriteByteSeq(playerGuid[1]);
 
     SendPacket(&data);
 }
@@ -1813,6 +1802,26 @@ void WorldSession::HandleInspectRatedBGStatsOpcode(WorldPacket& recvData)
     data.WriteBytesSeq(gguid, byteOrder2);
 
     SendPacket(&data);
+
+/*
+    data.WriteBits(MAX_PVP_SLOT, 3);
+
+    for (int i = 0; i < MAX_PVP_SLOT; ++i)
+    {
+        // Client display only this two fields
+
+        data << uint32(player->GetSeasonWins(i));
+        data << uint32(0);
+        data << uint32(0);
+        
+        data << uint8(i);
+        
+        data << uint32(0);
+        data << uint32(0);
+        data << uint32(player->GetArenaPersonalRating(i));
+        data << uint32(0);
+    }
+*/
 }
 
 void WorldSession::HandleWorldTeleportOpcode(WorldPacket& recvData)

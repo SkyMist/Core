@@ -73,7 +73,7 @@ enum ItemModType
     ITEM_MOD_SHADOW_RESISTANCE        = 54,
     ITEM_MOD_NATURE_RESISTANCE        = 55,
     ITEM_MOD_ARCANE_RESISTANCE        = 56,
-    ITEM_MOD_PVP_POWER                = 57,
+    ITEM_MOD_PVP_POWER                = 57
 };
 
 #define MAX_ITEM_MOD                    58
@@ -201,7 +201,7 @@ enum ItemFlagsExtra
     ITEM_FLAGS_EXTRA_BNET_ACCOUNT_BOUND      = 0x00020000,
     ITEM_FLAGS_EXTRA_CANNOT_BE_TRANSMOG      = 0x00200000,
     ITEM_FLAGS_EXTRA_CANNOT_TRANSMOG         = 0x00400000,
-    ITEM_FLAGS_EXTRA_CAN_TRANSMOG            = 0x00800000,
+    ITEM_FLAGS_EXTRA_CAN_TRANSMOG            = 0x00800000
 };
 
 enum ItemFlagsCustom
@@ -222,7 +222,7 @@ enum CurrencyCategory
 enum ItemVendorType
 {
     ITEM_VENDOR_TYPE_ITEM     = 1,
-    ITEM_VENDOR_TYPE_CURRENCY = 2,
+    ITEM_VENDOR_TYPE_CURRENCY = 2
 };
 
 enum BAG_FAMILY_MASK
@@ -253,11 +253,11 @@ enum SocketColor
     SOCKET_COLOR_RED                            = 2,
     SOCKET_COLOR_YELLOW                         = 4,
     SOCKET_COLOR_BLUE                           = 8,
-    SOCKET_COLOR_HYDRAULIC                      = 16, // not used
+    SOCKET_COLOR_SHA                            = 16, // Pandaria.
     SOCKET_COLOR_COGWHEEL                       = 32,
 };
 
-#define SOCKET_COLOR_ALL (SOCKET_COLOR_META | SOCKET_COLOR_RED | SOCKET_COLOR_YELLOW | SOCKET_COLOR_BLUE | SOCKET_COLOR_COGWHEEL)
+#define SOCKET_COLOR_ALL (SOCKET_COLOR_META | SOCKET_COLOR_RED | SOCKET_COLOR_YELLOW | SOCKET_COLOR_BLUE | SOCKET_COLOR_SHA | SOCKET_COLOR_COGWHEEL)
 
 enum InventoryType
 {
@@ -411,7 +411,7 @@ enum ItemSubclassArmor
     ITEM_SUBCLASS_ARMOR_IDOL                    = 8,
     ITEM_SUBCLASS_ARMOR_TOTEM                   = 9,
     ITEM_SUBCLASS_ARMOR_SIGIL                   = 10,
-    ITEM_SUBCLASS_ARMOR_RELIC                   = 11,
+    ITEM_SUBCLASS_ARMOR_RELIC                   = 11
 };
 
 #define MAX_ITEM_SUBCLASS_ARMOR                   12
@@ -483,7 +483,7 @@ enum ItemSubclassRecipe
 enum ItemSubclassMoney
 {
     ITEM_SUBCLASS_MONEY                         = 0,  // OBSOLETE
-    ITEM_SUBCLASS_MONEY_UNK_7                   = 7,  // OBSOLETE, 1 item (41749)
+    ITEM_SUBCLASS_MONEY_UNK_7                   = 7   // OBSOLETE, 1 item (41749)
 };
 
 #define MAX_ITEM_SUBCLASS_MONEY                   8
@@ -502,7 +502,7 @@ enum ItemSubclassQuest
 {
     ITEM_SUBCLASS_QUEST                         = 0,
     ITEM_SUBCLASS_QUEST_UNK3                    = 3, // 1 item (33604)
-    ITEM_SUBCLASS_QUEST_UNK8                    = 8, // 2 items (37445, 49700)
+    ITEM_SUBCLASS_QUEST_UNK8                    = 8  // 2 items (37445, 49700)
 };
 
 #define MAX_ITEM_SUBCLASS_QUEST                   9
@@ -530,7 +530,7 @@ enum ItemSubclassJunk
     ITEM_SUBCLASS_JUNK_HOLIDAY                  = 3,
     ITEM_SUBCLASS_JUNK_OTHER                    = 4,
     ITEM_SUBCLASS_JUNK_MOUNT                    = 5,
-    ITEM_SUBCLASS_JUNK_UNK12                    = 12, // 1 item (37677)
+    ITEM_SUBCLASS_JUNK_UNK12                    = 12  // 1 item (37677)
 };
 
 #define MAX_ITEM_SUBCLASS_JUNK                    13

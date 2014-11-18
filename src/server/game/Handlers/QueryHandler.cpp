@@ -735,7 +735,7 @@ void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
                 }
 
                 data << uint32(itr->MapId);             // MapId
-                data << uint32(itr->Unk2);              // FloorId
+                data << uint32(itr->FloorId);           // FloorId
                 data << uint32(itr->Unk3);              // Unk 3 (Ok).
 
                 data << uint32(itr->points.size());     // POI points count

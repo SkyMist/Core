@@ -82,6 +82,7 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
     SetUInt32Value(AREATRIGGER_SPELLID, spell->Id);
     SetUInt32Value(AREATRIGGER_SPELLVISUALID, spell->SpellVisual[0]);
     SetUInt32Value(AREATRIGGER_DURATION, spell->GetDuration());
+    SetFloatValue(AREATRIGGER_FIELD_EXPLICIT_SCALE, GetObjectScale());
 
     switch (spell->Id)
     {
@@ -91,11 +92,15 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
         case 116235:// Amethyst Pool
             SetVisualRadius(3.5f);
             break;
-        case 123811:
-            SetDuration(500000000);
+        case 123811: // Pheromones of Zeal Zor'lok
+            SetVisualRadius(100.0f);
+            SetDuration(5000000);
             break;
-        default:
+        case 122731: // Noise Cancelling Zor'lok
+            SetVisualRadius(4.0f);
             break;
+
+        default: break;
     }
 
     if (!GetMap()->AddToMap(this))
@@ -112,6 +117,8 @@ void AreaTrigger::Update(uint32 p_time)
         Remove(); // expired
 
     WorldObject::Update(p_time);
+
+    // Handle all special AreaTriggers here.
 
     SpellInfo const* m_spellInfo = sSpellMgr->GetSpellInfo(GetUInt32Value(AREATRIGGER_SPELLID));
     if (!m_spellInfo)
@@ -159,26 +166,26 @@ void AreaTrigger::Update(uint32 p_time)
 
             break;
         }
-case 144692: // Pool of Fire Ordos
-{
-    std::list<Player*> targetList;
-    radius = 15.0f; // Not sure, needs check.
-
-    GetPlayerListInGrid(targetList, 200.0f);
-
-    if (!targetList.empty())
-    {
-        for (auto itr : targetList)
+        case 144692: // Pool of Fire Ordos
         {
-            // Pool of Fire - Periodic Damage
-            if (itr->GetDistance(this) > radius)
-                itr->RemoveAurasDueToSpell(144693);
-            else if (!itr->HasAura(144693))
-                caster->AddAura(144693, itr);
+            std::list<Player*> targetList;
+            radius = 15.0f; // Not sure, needs check.
+
+            GetPlayerListInGrid(targetList, 200.0f);
+
+            if (!targetList.empty())
+            {
+                for (auto itr : targetList)
+                {
+                    // Pool of Fire - Periodic Damage
+                    if (itr->GetDistance(this) > radius)
+                        itr->RemoveAurasDueToSpell(144693);
+                    else if (!itr->HasAura(144693))
+                        caster->AddAura(144693, itr);
+                }
+            }
+            break;
         }
-    }
-    break;
-}
         case 115460:// Healing Sphere
         {
             std::list<Unit*> targetList;
@@ -270,6 +277,30 @@ case 144692: // Pool of Fire Ordos
 
             break;
         }
+        case 123811: // Pheromones of Zeal Zor'lok
+        {
+            std::list<Player*> targetList;
+            radius = 100.0f;
+            float zPos = 407.0f;
+
+            GetPlayerListInGrid(targetList, 200.0f);
+
+            if (!targetList.empty())
+            {
+                for (auto player : targetList)
+                {
+                    // Pheromones of Zeal - Periodic Damage
+                    if (player->GetDistance(this) > radius || player->GetPositionZ() > zPos)
+                        player->RemoveAurasDueToSpell(123812);
+                    else
+                    {
+					    if (!player->HasAura(123812))
+                            caster->AddAura(123812, player);
+                    }
+                }
+            }
+            break;
+        }
         case 122731:// Create Cancelling Noise Area trigger
         {
             std::list<Unit*> targetList;
@@ -313,26 +344,6 @@ case 144692: // Pool of Fire Ordos
                     player->SendApplyMovementForce(false, pos);
             }
 
-            break;
-        }
-        case 123811:// Pheromones of Zeal
-        {
-            std::list<Player*> targetList;
-            radius = 35.0f;
-
-            GetPlayerListInGrid(targetList, 200.0f);
-
-            if (!targetList.empty())
-            {
-                for (auto itr : targetList)
-                {
-                    // Pheromones of Zeal - Periodic Damage
-                    if (itr->GetDistance(this) > radius)
-                        itr->RemoveAura(123812);
-                    else if (!itr->HasAura(123812))
-                        caster->AddAura(123812, itr);
-                }
-            }
             break;
         }
         case 116546:// Draw Power
@@ -490,8 +501,8 @@ case 144692: // Pool of Fire Ordos
 
             break;
         }
-        default:
-            break;
+
+        default: break;
     }
 }
 
@@ -519,16 +530,16 @@ void AreaTrigger::Remove()
                         player->RemoveAura(122706);
                 break;
             }
-case 144692: // Pool of Fire Ordos
-{
-    std::list<Player*> targetList;
-    GetPlayerListInGrid(targetList, 100.0f);
+            case 144692: // Pool of Fire Ordos
+            {
+                std::list<Player*> targetList;
+                GetPlayerListInGrid(targetList, 100.0f);
 
-    if (!targetList.empty())
-        for (auto itr : targetList)
-            itr->RemoveAurasDueToSpell(144693); // Pool of Fire - Periodic Damage Remove.
-    break;
-}
+                if (!targetList.empty())
+                    for (auto itr : targetList)
+                        itr->RemoveAurasDueToSpell(144693); // Pool of Fire - Periodic Damage Remove.
+                break;
+            }
             case 123461:// Get Away!
             {
                 std::list<Player*> playerList;
@@ -542,8 +553,8 @@ case 144692: // Pool of Fire Ordos
 
                 break;
             }
-            default:
-                break;
+
+            default: break;
         }
 
         SendObjectDeSpawnAnim(GetGUID());
@@ -554,10 +565,8 @@ case 144692: // Pool of Fire Ordos
 
 void AreaTrigger::BindToCaster()
 {
-    //ASSERT(!m_caster);
     m_caster = ObjectAccessor::GetUnit(*this, GetCasterGUID());
-    //ASSERT(GetCaster());
-    //ASSERT(GetCaster()->GetMap() == GetMap());
+
     if (m_caster)
         m_caster->_RegisterAreaTrigger(this);
 }

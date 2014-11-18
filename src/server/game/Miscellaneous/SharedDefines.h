@@ -3227,44 +3227,44 @@ enum Anim
 
 enum LockKeyType
 {
-    LOCK_KEY_NONE  = 0,
-    LOCK_KEY_ITEM  = 1,
-    LOCK_KEY_SKILL = 2
+    LOCK_KEY_NONE                          = 0,
+    LOCK_KEY_ITEM                          = 1,
+    LOCK_KEY_SKILL                         = 2
 };
 
 enum LockType
 {
-    LOCKTYPE_PICKLOCK              = 1,
-    LOCKTYPE_HERBALISM             = 2,
-    LOCKTYPE_MINING                = 3,
-    LOCKTYPE_DISARM_TRAP           = 4,
-    LOCKTYPE_OPEN                  = 5,
-    LOCKTYPE_TREASURE              = 6,
-    LOCKTYPE_CALCIFIED_ELVEN_GEMS  = 7,
-    LOCKTYPE_CLOSE                 = 8,
-    LOCKTYPE_ARM_TRAP              = 9,
-    LOCKTYPE_QUICK_OPEN            = 10,
-    LOCKTYPE_QUICK_CLOSE           = 11,
-    LOCKTYPE_OPEN_TINKERING        = 12,
-    LOCKTYPE_OPEN_KNEELING         = 13,
-    LOCKTYPE_OPEN_ATTACKING        = 14,
-    LOCKTYPE_GAHZRIDIAN            = 15,
-    LOCKTYPE_BLASTING              = 16,
-    LOCKTYPE_PVP_OPEN              = 17,
-    LOCKTYPE_PVP_CLOSE             = 18,
-    LOCKTYPE_FISHING               = 19,
-    LOCKTYPE_INSCRIPTION           = 20,
-    LOCKTYPE_OPEN_FROM_VEHICLE     = 21,
-    LOCKTYPE_ARCHAEOLOGY           = 22,
-    LOCKTYPE_QUICK_OPEN_JCJ        = 23
+    LOCKTYPE_PICKLOCK                      = 1,
+    LOCKTYPE_HERBALISM                     = 2,
+    LOCKTYPE_MINING                        = 3,
+    LOCKTYPE_DISARM_TRAP                   = 4,
+    LOCKTYPE_OPEN                          = 5,
+    LOCKTYPE_TREASURE                      = 6,
+    LOCKTYPE_CALCIFIED_ELVEN_GEMS          = 7,
+    LOCKTYPE_CLOSE                         = 8,
+    LOCKTYPE_ARM_TRAP                      = 9,
+    LOCKTYPE_QUICK_OPEN                    = 10,
+    LOCKTYPE_QUICK_CLOSE                   = 11,
+    LOCKTYPE_OPEN_TINKERING                = 12,
+    LOCKTYPE_OPEN_KNEELING                 = 13,
+    LOCKTYPE_OPEN_ATTACKING                = 14,
+    LOCKTYPE_GAHZRIDIAN                    = 15,
+    LOCKTYPE_BLASTING                      = 16,
+    LOCKTYPE_PVP_OPEN                      = 17,
+    LOCKTYPE_PVP_CLOSE                     = 18,
+    LOCKTYPE_FISHING                       = 19,
+    LOCKTYPE_INSCRIPTION                   = 20,
+    LOCKTYPE_OPEN_FROM_VEHICLE             = 21,
+    LOCKTYPE_ARCHAEOLOGY                   = 22,
+    LOCKTYPE_QUICK_OPEN_JCJ                = 23
 };
 
 enum TrainerType                                            // this is important type for npcs!
 {
-    TRAINER_TYPE_CLASS             = 0,                     // On MoP spell auto learn by level
-    TRAINER_TYPE_MOUNTS            = 1,                     // on blizz it's 2
-    TRAINER_TYPE_TRADESKILLS       = 2,
-    TRAINER_TYPE_PETS              = 3
+    TRAINER_TYPE_CLASS                     = 0,                     // On MoP spell auto learn by level
+    TRAINER_TYPE_MOUNTS                    = 1,                     // on blizz it's 2
+    TRAINER_TYPE_TRADESKILLS               = 2,
+    TRAINER_TYPE_PETS                      = 3
 };
 
 #define MAX_TRAINER_TYPE 4
@@ -3272,21 +3272,21 @@ enum TrainerType                                            // this is important
 // CreatureType.dbc
 enum CreatureType
 {
-    CREATURE_TYPE_BEAST            = 1,
-    CREATURE_TYPE_DRAGONKIN        = 2,
-    CREATURE_TYPE_DEMON            = 3,
-    CREATURE_TYPE_ELEMENTAL        = 4,
-    CREATURE_TYPE_GIANT            = 5,
-    CREATURE_TYPE_UNDEAD           = 6,
-    CREATURE_TYPE_HUMANOID         = 7,
-    CREATURE_TYPE_CRITTER          = 8,
-    CREATURE_TYPE_MECHANICAL       = 9,
-    CREATURE_TYPE_NOT_SPECIFIED    = 10,
-    CREATURE_TYPE_TOTEM            = 11,
-    CREATURE_TYPE_NON_COMBAT_PET   = 12,
-    CREATURE_TYPE_GAS_CLOUD        = 13,
-    CREATURE_TYPE_WILD_PET         = 14,                    // New on MoP 5.0.5, used for battle pet
-    CREATURE_TYPE_ABBERATION       = 15                     // 5.4
+    CREATURE_TYPE_BEAST                    = 1,
+    CREATURE_TYPE_DRAGONKIN                = 2,
+    CREATURE_TYPE_DEMON                    = 3,
+    CREATURE_TYPE_ELEMENTAL                = 4,
+    CREATURE_TYPE_GIANT                    = 5,
+    CREATURE_TYPE_UNDEAD                   = 6,
+    CREATURE_TYPE_HUMANOID                 = 7,
+    CREATURE_TYPE_CRITTER                  = 8,
+    CREATURE_TYPE_MECHANICAL               = 9,
+    CREATURE_TYPE_NOT_SPECIFIED            = 10,
+    CREATURE_TYPE_TOTEM                    = 11,
+    CREATURE_TYPE_NON_COMBAT_PET           = 12,
+    CREATURE_TYPE_GAS_CLOUD                = 13,
+    CREATURE_TYPE_WILD_PET                 = 14,                    // New on MoP 5.0.5, used for battle pet
+    CREATURE_TYPE_ABBERATION               = 15                     // 5.4
 };
 
 uint32 const CREATURE_TYPEMASK_DEMON_OR_UNDEAD = (1 << (CREATURE_TYPE_DEMON-1)) | (1 << (CREATURE_TYPE_UNDEAD-1));
@@ -3296,74 +3296,73 @@ uint32 const CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL = (1 << (CREATURE_TYPE_ME
 // CreatureFamily.dbc
 enum CreatureFamily
 {
-    CREATURE_FAMILY_WOLF                = 1,
-    CREATURE_FAMILY_CAT                 = 2,
-    CREATURE_FAMILY_SPIDER              = 3,
-    CREATURE_FAMILY_BEAR                = 4,
-    CREATURE_FAMILY_BOAR                = 5,
-    CREATURE_FAMILY_CROCOLISK           = 6,
-    CREATURE_FAMILY_CARRION_BIRD        = 7,
-    CREATURE_FAMILY_CRAB                = 8,
-    CREATURE_FAMILY_GORILLA             = 9,
-    CREATURE_FAMILY_HORSE_CUSTOM        = 10,   // Does not exist in DBC but used for horse like beasts in DB
-    CREATURE_FAMILY_RAPTOR              = 11,
-    CREATURE_FAMILY_TALLSTRIDER         = 12,
-    CREATURE_FAMILY_FELHUNTER           = 15,
-    CREATURE_FAMILY_VOIDWALKER          = 16,
-    CREATURE_FAMILY_SUCCUBUS            = 17,
-    CREATURE_FAMILY_DOOMGUARD           = 19,
-    CREATURE_FAMILY_SCORPID             = 20,
-    CREATURE_FAMILY_TURTLE              = 21,
-    CREATURE_FAMILY_IMP                 = 23,
-    CREATURE_FAMILY_BAT                 = 24,
-    CREATURE_FAMILY_HYENA               = 25,
-    CREATURE_FAMILY_BIRD_OF_PREY        = 26,
-    CREATURE_FAMILY_WIND_SERPENT        = 27,
-    CREATURE_FAMILY_REMOTE_CONTROL      = 28,
-    CREATURE_FAMILY_FELGUARD            = 29,
-    CREATURE_FAMILY_DRAGONHAWK          = 30,
-    CREATURE_FAMILY_RAVAGER             = 31,
-    CREATURE_FAMILY_WARP_STALKER        = 32,
-    CREATURE_FAMILY_SPOREBAT            = 33,
-    CREATURE_FAMILY_NETHER_RAY          = 34,
-    CREATURE_FAMILY_SERPENT             = 35,
-    CREATURE_FAMILY_MOTH                = 37,
-    CREATURE_FAMILY_CHIMAERA            = 38,
-    CREATURE_FAMILY_DEVILSAUR           = 39,
-    CREATURE_FAMILY_GHOUL               = 40,
-    CREATURE_FAMILY_SILITHID            = 41,
-    CREATURE_FAMILY_WORM                = 42,
-    CREATURE_FAMILY_RHINO               = 43,
-    CREATURE_FAMILY_WASP                = 44,
-    CREATURE_FAMILY_CORE_HOUND          = 45,
-    CREATURE_FAMILY_SPIRIT_BEAST        = 46,
-    CREATURE_FAMILY_WATER_ELEMENTAL     = 49,
-    CREATURE_FAMILY_FOX                 = 50,
-    CREATURE_FAMILY_MONKEY              = 51,
-    CREATURE_FAMILY_DOG                 = 52,
-    CREATURE_FAMILY_BEETLE              = 53,
-    CREATURE_FAMILY_SHALE_SPIDER        = 55,
-    CREATURE_FAMILY_ZOMBIE              = 56,
-    CREATURE_FAMILY_BEETLE_OLD          = 57,
-    CREATURE_FAMILY_SILITHID_2          = 59,
-    CREATURE_FAMILY_WASP_2              = 66,
-    CREATURE_FAMILY_HYDRA               = 68,       // New on MoP 5.0.5
-    CREATURE_FAMILY_FEL_IMP             = 100,      // New on MoP 5.0.5
-    CREATURE_FAMILY_VOID_WALKER         = 101,      // New on MoP 5.0.5
-    CREATURE_FAMILY_SHIVARRA            = 102,      // New on MoP 5.0.5
-    CREATURE_FAMILY_OBSERVER            = 103,      // New on MoP 5.0.5
-    CREATURE_FAMILY_WRATH_GUARD         = 104,      // New on MoP 5.0.5
-    CREATURE_FAMILY_INFERNAL            = 108,      // New on MoP 5.0.5
-    CREATURE_FAMILY_ELEMENTAL_FIRE_TOTEM = 116,     // New on MoP 5.0.5
-    CREATURE_FAMILY_ELEMENTAL_EARTH_TOTEM =117,     // New on MoP 5.0.5
-    CREATURE_FAMILY_CRANE               = 125,      // New on MoP 5.0.5
-    CREATURE_FAMILY_WATER_STRIDER       = 126,      // New on MoP 5.0.5
-    CREATURE_FAMILY_PORCUPINE           = 127,      // New on MoP 5.0.5
-    CREATURE_FAMILY_QUIEL               = 128,      // New on MoP 5.0.5
-    CREATURE_FAMILY_GOAT                = 129,      // New on MoP 5.0.5
-    CREATURE_FAMILY_BASILISK            = 130,      // New on MoP 5.0.5
-    CREATURE_FAMILY_DIREHORN            = 138       // New on MoP 5.2.0
-
+    CREATURE_FAMILY_WOLF                   = 1,
+    CREATURE_FAMILY_CAT                    = 2,
+    CREATURE_FAMILY_SPIDER                 = 3,
+    CREATURE_FAMILY_BEAR                   = 4,
+    CREATURE_FAMILY_BOAR                   = 5,
+    CREATURE_FAMILY_CROCOLISK              = 6,
+    CREATURE_FAMILY_CARRION_BIRD           = 7,
+    CREATURE_FAMILY_CRAB                   = 8,
+    CREATURE_FAMILY_GORILLA                = 9,
+    CREATURE_FAMILY_HORSE_CUSTOM           = 10,   // Does not exist in DBC but used for horse like beasts in DB
+    CREATURE_FAMILY_RAPTOR                 = 11,
+    CREATURE_FAMILY_TALLSTRIDER            = 12,
+    CREATURE_FAMILY_FELHUNTER              = 15,
+    CREATURE_FAMILY_VOIDWALKER             = 16,
+    CREATURE_FAMILY_SUCCUBUS               = 17,
+    CREATURE_FAMILY_DOOMGUARD              = 19,
+    CREATURE_FAMILY_SCORPID                = 20,
+    CREATURE_FAMILY_TURTLE                 = 21,
+    CREATURE_FAMILY_IMP                    = 23,
+    CREATURE_FAMILY_BAT                    = 24,
+    CREATURE_FAMILY_HYENA                  = 25,
+    CREATURE_FAMILY_BIRD_OF_PREY           = 26,
+    CREATURE_FAMILY_WIND_SERPENT           = 27,
+    CREATURE_FAMILY_REMOTE_CONTROL         = 28,
+    CREATURE_FAMILY_FELGUARD               = 29,
+    CREATURE_FAMILY_DRAGONHAWK             = 30,
+    CREATURE_FAMILY_RAVAGER                = 31,
+    CREATURE_FAMILY_WARP_STALKER           = 32,
+    CREATURE_FAMILY_SPOREBAT               = 33,
+    CREATURE_FAMILY_NETHER_RAY             = 34,
+    CREATURE_FAMILY_SERPENT                = 35,
+    CREATURE_FAMILY_MOTH                   = 37,
+    CREATURE_FAMILY_CHIMAERA               = 38,
+    CREATURE_FAMILY_DEVILSAUR              = 39,
+    CREATURE_FAMILY_GHOUL                  = 40,
+    CREATURE_FAMILY_SILITHID               = 41,
+    CREATURE_FAMILY_WORM                   = 42,
+    CREATURE_FAMILY_RHINO                  = 43,
+    CREATURE_FAMILY_WASP                   = 44,
+    CREATURE_FAMILY_CORE_HOUND             = 45,
+    CREATURE_FAMILY_SPIRIT_BEAST           = 46,
+    CREATURE_FAMILY_WATER_ELEMENTAL        = 49,
+    CREATURE_FAMILY_FOX                    = 50,
+    CREATURE_FAMILY_MONKEY                 = 51,
+    CREATURE_FAMILY_DOG                    = 52,
+    CREATURE_FAMILY_BEETLE                 = 53,
+    CREATURE_FAMILY_SHALE_SPIDER           = 55,
+    CREATURE_FAMILY_ZOMBIE                 = 56,
+    CREATURE_FAMILY_BEETLE_OLD             = 57,
+    CREATURE_FAMILY_SILITHID_2             = 59,
+    CREATURE_FAMILY_WASP_2                 = 66,
+    CREATURE_FAMILY_HYDRA                  = 68,  // New on MoP 5.0.5
+    CREATURE_FAMILY_FEL_IMP                = 100, // New on MoP 5.0.5
+    CREATURE_FAMILY_VOID_WALKER            = 101, // New on MoP 5.0.5
+    CREATURE_FAMILY_SHIVARRA               = 102, // New on MoP 5.0.5
+    CREATURE_FAMILY_OBSERVER               = 103, // New on MoP 5.0.5
+    CREATURE_FAMILY_WRATH_GUARD            = 104, // New on MoP 5.0.5
+    CREATURE_FAMILY_INFERNAL               = 108, // New on MoP 5.0.5
+    CREATURE_FAMILY_ELEMENTAL_FIRE_TOTEM   = 116, // New on MoP 5.0.5
+    CREATURE_FAMILY_ELEMENTAL_EARTH_TOTEM  = 117, // New on MoP 5.0.5
+    CREATURE_FAMILY_CRANE                  = 125, // New on MoP 5.0.5
+    CREATURE_FAMILY_WATER_STRIDER          = 126, // New on MoP 5.0.5
+    CREATURE_FAMILY_PORCUPINE              = 127, // New on MoP 5.0.5
+    CREATURE_FAMILY_QUILEN                 = 128, // New on MoP 5.0.5
+    CREATURE_FAMILY_GOAT                   = 129, // New on MoP 5.0.5
+    CREATURE_FAMILY_BASILISK               = 130, // New on MoP 5.0.5
+    CREATURE_FAMILY_DIREHORN               = 138  // New on MoP 5.2.0
 };
 
 enum CreatureTypeFlags

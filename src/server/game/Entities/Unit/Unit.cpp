@@ -15813,16 +15813,12 @@ bool Unit::CanHaveThreatList(bool skipAliveCheck) const
         return false;
 
     // Alive units can have a threat list
-    if (!skipAliveCheck && !IsAlive())
+    if (!skipAliveCheck && !isAlive())
         return false;
 
     // Totems can't have a threat list
     if (ToCreature()->isTotem())
         return false;
-
-    // Vehicles can't have a threat list - wrong, some can!
-    //if (ToCreature()->IsVehicle())
-    //    return false;
 
     // Summons can not have a threat list, unless they are controlled by a creature
     if (HasUnitTypeMask(UNIT_MASK_MINION | UNIT_MASK_GUARDIAN | UNIT_MASK_CONTROLABLE_GUARDIAN) && IS_PLAYER_GUID(((Pet*)this)->GetOwnerGUID()))

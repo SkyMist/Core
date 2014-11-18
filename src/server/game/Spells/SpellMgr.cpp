@@ -5526,6 +5526,10 @@ void SpellMgr::LoadSpellCustomAttr()
             case 78628:
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
+            // Vengeful Strikes (Rook Stonetoe)
+            case 144396:
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
             // Flamebreaker, Flameseer's Staff, Flamebreaker quest
             case 75206:
                 spellInfo->Effects[EFFECT_0].Effect = 0;

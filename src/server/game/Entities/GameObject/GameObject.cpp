@@ -1834,6 +1834,11 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
         && dz < info->maxZ + radius && dz > info->minZ - radius;
 }
 
+void GameObject::Rebuild()
+{
+    SetDestructibleState(GO_DESTRUCTIBLE_REBUILDING, NULL, true); // May also use GO_DESTRUCTIBLE_INTACT. Model may differ though, needs a test.
+}
+
 void GameObject::EventInform(uint32 eventId)
 {
     if (!eventId)
@@ -2000,8 +2005,15 @@ void GameObject::SetDestructibleState(GameObjectDestructibleState state, Player*
     switch (state)
     {
         case GO_DESTRUCTIBLE_INTACT:
+		{
             RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
-            SetDisplayId(m_goInfo->displayId);
+
+            uint32 modelId = m_goInfo->displayId;
+            if (DestructibleModelDataEntry const* modelData = sDestructibleModelDataStore.LookupEntry(m_goInfo->building.destructibleData))
+                if (modelData->IntactDisplayId)
+                    modelId = modelData->IntactDisplayId;
+            SetDisplayId(modelId);
+
             if (setHealth)
             {
                 m_goValue->Building.Health = m_goValue->Building.MaxHealth;
@@ -2009,6 +2021,7 @@ void GameObject::SetDestructibleState(GameObjectDestructibleState state, Player*
             }
             EnableCollision(true);
             break;
+		}
         case GO_DESTRUCTIBLE_DAMAGED:
         {
             EventInform(m_goInfo->building.damagedEvent);

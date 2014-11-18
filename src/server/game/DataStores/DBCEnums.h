@@ -476,11 +476,12 @@ enum TotemCategoryType
 // SummonProperties.dbc, col 1
 enum SummonPropGroup
 {
-    SUMMON_PROP_GROUP_UNKNOWN1       = 0,                   // 1160 spells in 3.0.3
-    SUMMON_PROP_GROUP_UNKNOWN2       = 1,                   // 861 spells in 3.0.3
+    SUMMON_PROP_GROUP_WILD           = 0,                   // 1160 spells in 3.0.3
+    SUMMON_PROP_GROUP_FRIENDLY       = 1,                   // 861 spells in 3.0.3
     SUMMON_PROP_GROUP_PETS           = 2,                   // 52 spells in 3.0.3, pets mostly
     SUMMON_PROP_GROUP_CONTROLLABLE   = 3,                   // 13 spells in 3.0.3, mostly controllable
-    SUMMON_PROP_GROUP_UNKNOWN3       = 4                    // 86 spells in 3.0.3, taxi/mounts
+    SUMMON_PROP_GROUP_VEHICLE        = 4,                   // 86 spells in 3.0.3, taxi/mounts
+    SUMMON_PROP_GROUP_UNK1           = 5                    // Pandaria, since 5.0.0. Either Battle Pets or Scene Objects.
 };
 
 // SummonProperties.dbc, col 3

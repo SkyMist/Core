@@ -82,6 +82,7 @@
 #include "TicketMgr.h"
 #include "UpdateFieldFlags.h"
 #include "LootMgr.h"
+#include "GameObjectAI.h"
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -2760,7 +2761,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
             // Apply Hover Height.
             if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-                z += GetFloatValue(UNIT_FIELD_HOVER_HEIGHT);
+                z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
             Relocate(x, y, z, orientation);
             SendTeleportPacket(oldPos); // this automatically relocates to oldPos in order to broadcast the packet in the right place
@@ -3950,13 +3951,15 @@ void Player::GiveGatheringXP()
     GiveXP(gain, nullptr);
 }
 
-// Update player to next level
-// Current player experience not update (must be update by caller)
+// Update player to next level. Current player experience does not update (must be updated by caller).
 void Player::GiveLevel(uint8 level)
 {
     uint8 oldLevel = getLevel();
     if (level == oldLevel)
         return;
+
+    if (Guild* guild = GetGuild())
+        guild->UpdateMemberData(this, GUILD_MEMBER_DATA_LEVEL, level);
 
     PlayerLevelInfo info;
     sObjectMgr->GetPlayerLevelInfo(getRace(), getClass(), level, &info);
@@ -8526,6 +8529,7 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
 
     uint8 bits[8] = { 7, 0, 1, 3, 5, 4, 2, 6 };
     data.WriteBitInOrder(guid, bits);
+
     data.FlushBits();
 
     data.WriteByteSeq(guid[1]);
@@ -9234,6 +9238,9 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
         sBattlefieldMgr->HandlePlayerLeaveZone(this, m_zoneUpdateId);
         sBattlefieldMgr->HandlePlayerEnterZone(this, newZone);
         SendInitWorldStates(newZone, newArea);              // only if really enters to new zone, not just area change, works strange...
+
+        if (Guild* guild = GetGuild())
+            guild->UpdateMemberData(this, GUILD_MEMBER_DATA_ZONEID, newZone);
     }
 
     // group update
@@ -19533,7 +19540,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
     // load the player's map here if it's not already loaded
     Map* map = sMapMgr->CreateMap(mapId, this);
 
-    AreaTrigger const* areaTrigger = NULL;
+    AreaTriggerStruct const* areaTrigger = NULL;
     bool check = false;
 
     if (!map)
@@ -23610,7 +23617,7 @@ void Player::RestoreSpellMods(Spell* spell, uint32 ownerAuraId, AuraPtr aura)
             // Remove from list - This will be done after all mods have been gone through
             // to ensure we iterate over all mods of an aura before removing said aura from applied mods 
             // (Else, an aura with two mods on the current spell would only see the first of its modifier restored).
-            aurasQueue.push_back(mod->ownerAura);
+            aurasQueue.push_back(std::const_pointer_cast<Aura>(mod->ownerAura));
 
             // add mod charges back to mod
             if (mod->charges == -1)

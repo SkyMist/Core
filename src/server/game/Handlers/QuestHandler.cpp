@@ -65,7 +65,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket & recvData)
             {
                 questStatus = sScriptMgr->GetDialogStatus(_player, cr_questgiver);
                 if (questStatus > 6)
-                    questStatus = getDialogStatus(_player, cr_questgiver, defstatus);
+                    questStatus = getDialogStatus(_player, cr_questgiver);
             }
             break;
         }
@@ -75,7 +75,7 @@ void WorldSession::HandleQuestgiverStatusQueryOpcode(WorldPacket & recvData)
             GameObject* go_questgiver=(GameObject*)questgiver;
             questStatus = sScriptMgr->GetDialogStatus(_player, go_questgiver);
             if (questStatus > 6)
-                questStatus = getDialogStatus(_player, go_questgiver, defstatus);
+                questStatus = getDialogStatus(_player, go_questgiver);
             break;
         }
         default:
@@ -709,7 +709,7 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
     if (!quest)
         return;
 
-    Player const* sender = GetPlayer();
+    Player* sender = GetPlayer();
 
     Group* group = sender->GetGroup();
     if (!group)

@@ -2474,7 +2474,7 @@ void World::SendGlobalText(const char* text, WorldSession* self)
 }
 
 /// Send a packet to all players (or players selected team) in the zone (except self if mentioned)
-void World::SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self, uint32 team)
+bool World::SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self, uint32 team)
 {
     bool foundPlayerToSend = false;
     SessionMap::const_iterator itr;
@@ -3446,4 +3446,26 @@ void World::UpdatePhaseDefinitions()
     for (itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (itr->second && itr->second->GetPlayer() && itr->second->GetPlayer()->IsInWorld())
             itr->second->GetPlayer()->GetPhaseMgr().NotifyStoresReloaded();
+}
+
+// Sends a world defense message to all players not in an instance - Outdoor PVP.
+void World::SendDefenseMessage(uint32 zoneId, int32 textId)
+{
+    for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+    {
+        if (WorldSession* session = itr->second)
+        {
+            if (session && session->GetPlayer() && session->GetPlayer()->IsInWorld() && !session->GetPlayer()->GetMap()->Instanceable())
+            {
+                std::string message = session->GetTrinityString(textId);
+                uint32 messageLength = message.length() + 1;
+
+                WorldPacket data(SMSG_DEFENSE_MESSAGE);
+                data.WriteBits(messageLength, 12);
+                data << uint32(zoneId);
+                data << message;
+                session->SendPacket(&data);
+            }
+        }
+    }
 }

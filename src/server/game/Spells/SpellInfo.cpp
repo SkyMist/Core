@@ -662,12 +662,10 @@ bool SpellEffectInfo::HasRadius() const
 
 float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
 {
-    if (!HasRadius() && !HasMaxRadius())
+    if (!HasRadius())
         return 0.0f; // No radius.
 
     const SpellRadiusEntry* entry = RadiusEntry;
-    if (!HasRadius() && HasMaxRadius())
-        entry = MaxRadiusEntry;
 
     float radius = entry->RadiusMin;
     if (caster)

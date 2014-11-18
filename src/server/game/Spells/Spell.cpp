@@ -6518,7 +6518,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         // check if we are using a potion in combat for the 2nd+ time. Cooldown is added only after caster gets out of combat
-        if (m_caster->ToPlayer()->GetLastPotionId() && m_CastItem && (m_CastItem->IsPotion() || m_spellInfo->IsCooldownStartedOnEvent()))
+        if (m_caster->ToPlayer()->GetLastPotionId() && m_CastItem && (m_CastItem->IsPotion())) //  || m_spellInfo->IsCooldownStartedOnEvent()
             return SPELL_FAILED_NOT_READY;
     }
 
@@ -7313,6 +7313,10 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
             case SPELL_AURA_MOUNTED:
             {
+                // Except for water mounts, this fixes Vashj'ir and older ones.
+                if (m_caster->IsInWater() && !(m_spellInfo->AttributesEx8 & SPELL_ATTR8_WATER_MOUNT))
+                    return SPELL_FAILED_ONLY_ABOVEWATER;
+
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
                 bool allowMount = !m_caster->GetMap()->IsDungeon() || m_caster->GetMap()->IsBattlegroundOrArena();
                 InstanceTemplate const* it = sObjectMgr->GetInstanceTemplate(m_caster->GetMapId());
@@ -8782,8 +8786,12 @@ void Spell::DoAllEffectOnLaunchTarget(TargetInfo& targetInfo, float* multiplier)
 
             if (m_damage > 0)
             {
-                if (m_spellInfo->Effects[i].IsTargetingArea())
+                if (m_spellInfo->Effects[i].IsTargetingArea() || m_spellInfo->Effects[i].IsAreaAuraEffect() || m_spellInfo->Effects[i].IsEffect(SPELL_EFFECT_PERSISTENT_AREA_AURA))
                 {
+                    m_damage = int32(float(m_damage) * unit->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_AOE_DAMAGE_AVOIDANCE, m_spellInfo->SchoolMask));
+                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                        m_damage = int32(float(m_damage) * unit->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE, m_spellInfo->SchoolMask));
+
                     if (m_caster->GetTypeId() == TYPEID_PLAYER)
                     {
                         uint32 targetAmount = m_UniqueTargetInfo.size();

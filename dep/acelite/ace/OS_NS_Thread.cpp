@@ -875,33 +875,36 @@ ACE_TSS_Cleanup::remove_key (ACE_TSS_Info &info)
 int
 ACE_TSS_Cleanup::thread_detach_key (ACE_thread_key_t key)
 {
-  // variables to hold the destructor and the object to be destructed
-  // the actual call is deferred until the guard is released
-  ACE_TSS_Info::Destructor destructor = 0;
-  void * tss_obj = 0;
+    // Variables to hold the destructor and the object to be destructed. The actual call is deferred until the guard is released.
+    ACE_TSS_Info::Destructor destructor = 0;
+    void * tss_obj = 0;
 
-  // scope the guard
-  {
-    ACE_TSS_CLEANUP_GUARD
-
-    u_int key_index = key;
-    ACE_ASSERT (key_index < sizeof(this->table_)/sizeof(this->table_[0])
-        && this->table_[key_index].key_ == key);
-    ACE_TSS_Info &info = this->table_ [key_index];
-
-    // sanity check
-    if (!info.key_in_use ())
-      {
-        return -1;
-      }
-
-    this->thread_release (info, destructor, tss_obj);
-  } // end of scope for the Guard
-  // if there's a destructor and an object to be destroyed
-  if (destructor != 0 && tss_obj != 0)
+    // Scope the guard
     {
-      (*destructor) (tss_obj);
-    }
+        ACE_TSS_CLEANUP_GUARD
+
+        u_int key_index = key;
+
+        ACE_ASSERT (key_index < sizeof(this->table_) / sizeof(this->table_[0]));
+
+        // If this entry was never set, just bug out. If it is set, but is the wrong key, assert.
+        if (this->table_[key_index].key_ == 0)
+            return 0;
+
+        ACE_ASSERT(this->table_[key_index].key_ == key);
+        ACE_TSS_Info &info = this->table_ [key_index];
+
+        // Sanity check
+        if (!info.key_in_use())
+            return -1;
+
+        this->thread_release (info, destructor, tss_obj);
+    } // End of scope for the Guard
+
+    // If there's a destructor and an object to be destroyed
+    if (destructor != 0 && tss_obj != 0)
+        (*destructor) (tss_obj);
+
   return 0;
 }
 

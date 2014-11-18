@@ -1662,6 +1662,9 @@ void Creature::setDeathState(DeathState s)
 
     if (s == JUST_DIED)
     {
+        if (m_corpseDelay > m_respawnDelay) // Avoid creatures not respawning when not looted (corpse removal time > respawn time). 
+            m_corpseDelay = m_respawnDelay  * 0.9;
+
         m_corpseRemoveTime = time(NULL) + m_corpseDelay;
         m_respawnTime = time(NULL) + m_respawnDelay + m_corpseDelay;
 

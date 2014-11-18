@@ -338,8 +338,7 @@ enum Events
 
 enum Actions
 {
-    ACTION_EVADE_COMBAT           = 1,
-    ACTION_EVENT_COMPLETE
+    ACTION_EVENT_COMPLETE         = 1
 };
 
 enum Npcs
@@ -409,6 +408,13 @@ class boss_rook_stonetoe : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
+                if (Creature* heSoftfoot = me->FindNearestCreature(BOSS_HE_SOFTFOOT, 300.0f, true))
+                    if (!heSoftfoot->isInCombat())
+                        heSoftfoot->AI()->DoZoneInCombat();
+                if (Creature* sunTenderheart = me->FindNearestCreature(BOSS_SUN_TENDERHEART, 300.0f, true))
+                    if (!sunTenderheart->isInCombat())
+                        sunTenderheart->AI()->DoZoneInCombat();
+
                 Talk(ROOK_SAY_AGGRO);
 
 				events.ScheduleEvent(EVENT_ROOK_VENGEFUL_STRIKES, 7000);
@@ -456,29 +462,9 @@ class boss_rook_stonetoe : public CreatureScript
                     Talk(ROOK_SAY_KILL);
             }
 
-            void DoAction(int32 const action)
-            {
-                switch (action)
-                {
-                    case ACTION_EVADE_COMBAT:
-                        // Avoid bad calls / loops.
-                        if (me->HasUnitState(UNIT_STATE_EVADE))
-                            return;
-                        EnterEvadeMode();
-                        break;
-
-                    default: break;
-                }
-            };
-
 			void EnterEvadeMode()
             {
                 me->AddUnitState(UNIT_STATE_EVADE);
-
-                if (Creature* heSoftfoot = me->FindNearestCreature(BOSS_HE_SOFTFOOT, 300.0f, true))
-                    heSoftfoot->AI()->DoAction(ACTION_EVADE_COMBAT);
-                if (Creature* sunTenderheart = me->FindNearestCreature(BOSS_SUN_TENDERHEART, 300.0f, true))
-                    sunTenderheart->AI()->DoAction(ACTION_EVADE_COMBAT);
 
                 me->RemoveAllAuras();
                 me->RemoveAllAreasTrigger();
@@ -535,7 +521,7 @@ class boss_rook_stonetoe : public CreatureScript
 
             void UpdateAI(uint32 const diff)
             {
-                if (!UpdateVictim() || !CheckInRoom())
+                if (!UpdateVictim())
                     return;
 
                 if (lotusScheduled && !eventComplete)
@@ -558,11 +544,11 @@ class boss_rook_stonetoe : public CreatureScript
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                if (instance && instance->IsWipe())
-                {
-                    EnterEvadeMode();
-                    return;
-                }
+                // if (instance && instance->IsWipe())
+                // {
+                //     EnterEvadeMode();
+                //     return;
+                // }
 
                 // Schedule Desperate Measures phase entrance.
                 if (me->HealthBelowPct(67) && !doneDesperateMeasuresPhase ||  me->HealthBelowPct(34) && !doneDesperateMeasuresPhase2)
@@ -704,6 +690,13 @@ class boss_he_softfoot : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
+                if (Creature* rookStonetoe = me->FindNearestCreature(BOSS_ROOK_STONETOE, 300.0f, true))
+                    if (!rookStonetoe->isInCombat())
+                        rookStonetoe->AI()->DoZoneInCombat();
+                if (Creature* sunTenderheart = me->FindNearestCreature(BOSS_SUN_TENDERHEART, 300.0f, true))
+                    if (!sunTenderheart->isInCombat())
+                        sunTenderheart->AI()->DoZoneInCombat();
+
                 Talk(HE_SAY_AGGRO);
 
 				events.ScheduleEvent(EVENT_HE_GARROTE, 15000);
@@ -744,13 +737,6 @@ class boss_he_softfoot : public CreatureScript
             {
                 switch (action)
                 {
-                    case ACTION_EVADE_COMBAT:
-                        // Avoid bad calls / loops.
-                        if (me->HasUnitState(UNIT_STATE_EVADE))
-                            return;
-                        EnterEvadeMode();
-                        break;
-
                     case ACTION_EVENT_COMPLETE:
                         JustDied(NULL);
                         break;
@@ -762,11 +748,6 @@ class boss_he_softfoot : public CreatureScript
 			void EnterEvadeMode()
             {
                 me->AddUnitState(UNIT_STATE_EVADE);
-
-                if (Creature* rookStonetoe = me->FindNearestCreature(BOSS_ROOK_STONETOE, 300.0f, true))
-                    rookStonetoe->AI()->DoAction(ACTION_EVADE_COMBAT);
-                if (Creature* sunTenderheart = me->FindNearestCreature(BOSS_SUN_TENDERHEART, 300.0f, true))
-                    sunTenderheart->AI()->DoAction(ACTION_EVADE_COMBAT);
 
                 me->RemoveAllAuras();
                 me->RemoveAllAreasTrigger();
@@ -816,14 +797,14 @@ class boss_he_softfoot : public CreatureScript
 
             void UpdateAI(uint32 const diff)
             {
-                if (!UpdateVictim() || !CheckInRoom() || me->HasUnitState(UNIT_STATE_CASTING))
+                if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                if (instance && instance->IsWipe())
-                {
-                    EnterEvadeMode();
-                    return;
-                }
+                // if (instance && instance->IsWipe())
+                // {
+                //     EnterEvadeMode();
+                //     return;
+                // }
 
                 // Schedule Desperate Measures phase entrance.
                 if (me->HealthBelowPct(67) && !doneDesperateMeasuresPhase ||  me->HealthBelowPct(34) && !doneDesperateMeasuresPhase2)
@@ -978,6 +959,13 @@ class boss_sun_tenderheart : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
+                if (Creature* rookStonetoe = me->FindNearestCreature(BOSS_ROOK_STONETOE, 300.0f, true))
+                    if (!rookStonetoe->isInCombat())
+                        rookStonetoe->AI()->DoZoneInCombat();
+                if (Creature* heSoftfoot = me->FindNearestCreature(BOSS_HE_SOFTFOOT, 300.0f, true))
+                    if (!heSoftfoot->isInCombat())
+                        heSoftfoot->AI()->DoZoneInCombat();
+
                 Talk(SUN_SAY_AGGRO);
 
 				events.ScheduleEvent(EVENT_SUN_SHA_SHEAR, 2000);
@@ -1024,13 +1012,6 @@ class boss_sun_tenderheart : public CreatureScript
             {
                 switch (action)
                 {
-                    case ACTION_EVADE_COMBAT:
-                        // Avoid bad calls / loops.
-                        if (me->HasUnitState(UNIT_STATE_EVADE))
-                            return;
-                        EnterEvadeMode();
-                        break;
-
                     case ACTION_EVENT_COMPLETE:
                         JustDied(NULL);
                         break;
@@ -1042,11 +1023,6 @@ class boss_sun_tenderheart : public CreatureScript
 			void EnterEvadeMode()
             {
                 me->AddUnitState(UNIT_STATE_EVADE);
-
-                if (Creature* rookStonetoe = me->FindNearestCreature(BOSS_ROOK_STONETOE, 300.0f, true))
-                    rookStonetoe->AI()->DoAction(ACTION_EVADE_COMBAT);
-                if (Creature* heSoftfoot = me->FindNearestCreature(BOSS_HE_SOFTFOOT, 300.0f, true))
-                    heSoftfoot->AI()->DoAction(ACTION_EVADE_COMBAT);
 
                 me->RemoveAllAuras();
                 me->RemoveAllAreasTrigger();
@@ -1097,15 +1073,15 @@ class boss_sun_tenderheart : public CreatureScript
 
             void UpdateAI(uint32 const diff)
             {
-                if (!UpdateVictim() || !CheckInRoom() || me->HasUnitState(UNIT_STATE_CASTING))
+                if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                if (instance && instance->IsWipe())
-                {
-                    Talk(SUN_SAY_WIPE);
-                    EnterEvadeMode();
-                    return;
-                }
+                // if (instance && instance->IsWipe())
+                // {
+                //     Talk(SUN_SAY_WIPE);
+                //     EnterEvadeMode();
+                //     return;
+                // }
 
                 // Schedule Desperate Measures phase entrance.
                 if (me->HealthBelowPct(67) && !doneDesperateMeasuresPhase ||  me->HealthBelowPct(34) && !doneDesperateMeasuresPhase2)
@@ -1623,11 +1599,11 @@ class spell_rook_corrupted_brew : public SpellScriptLoader
 
                 uint32 count = 1; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
+                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
                     count = 2;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
                     count = 3;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
                     count = 6;
 
                 std::list<Unit*> targets;
@@ -1916,11 +1892,11 @@ class spell_sun_shadow_word_bane : public SpellScriptLoader
 
                 uint32 count = 2; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
+                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
                     count = 5;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
                     count = 4;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
                     count = 10;
 
                 std::list<Unit*> targets;
@@ -2099,11 +2075,11 @@ class spell_embodied_gloom_corruption_shock : public SpellScriptLoader
 
                 uint32 count = 2; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
+                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
                     count = 5;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
                     count = 4;
-                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
                     count = 10;
 
                 std::list<Unit*> targets;
