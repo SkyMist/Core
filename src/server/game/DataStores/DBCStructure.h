@@ -2533,6 +2533,51 @@ struct TotemCategoryEntry
     uint32    categoryMask;                                 // 3        m_totemCategoryMask (compatibility mask for same type: different for totems, compatible from high to low for rods)
 };
 
+struct UnitPowerBarEntry
+{
+    uint32  Id;
+    uint32  MinPower;
+    uint32  MaxPower;
+    //uint32  Unk0;
+    //uint32  Unk1;
+    //float   Unk2;
+    //float   Unk3;
+    //uint32  BarType;
+    //uint32  TextureFile[6];
+    //uint32  Unk4[6];
+    //uint32  DisplayFlags;
+    //char*   PowerName;
+    //char*   CostString;
+    //char*   EmptyMessage;
+    //char*   Tooltip;
+    //float   StartInset;
+    //float   EndInset;
+};
+
+struct TransportAnimationEntry
+{
+    //uint32  Id;
+    uint32  TransportEntry;
+    uint32  TimeSeg;
+    float   X;
+    float   Y;
+    float   Z;
+    //uint32  MovementId;
+};
+
+/*
+struct TransportRotationEntry
+{
+    //uint32  Id;
+    uint32  TransportEntry;
+    uint32  TimeSeg;
+    float   X;
+    float   Y;
+    float   Z;
+    float   W;
+};
+*/
+
 #define MAX_VEHICLE_SEATS 8
 
 struct VehicleEntry
@@ -2820,6 +2865,10 @@ struct TaxiPathNodePtr
 
 typedef Path<TaxiPathNodePtr, TaxiPathNodeEntry const> TaxiPathNodeList;
 typedef std::vector<TaxiPathNodeList> TaxiPathNodesByPath;
+
+// Elevators and other types of transports not included in TaxiPathNode.dbc, but in TransportAnimation.dbc.
+typedef UNORDERED_MAP<uint32 /*frame*/, TransportAnimationEntry const*> TransportAnimationEntryMap;
+typedef UNORDERED_MAP<uint32, TransportAnimationEntryMap> TransportAnimationsByEntry;
 
 #define TaxiMaskSize 162
 typedef uint8 TaxiMask[TaxiMaskSize];

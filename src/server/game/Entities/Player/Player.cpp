@@ -25416,8 +25416,8 @@ inline void UpdateVisibilityOf_helper(std::set<uint64>& s64, T* target, std::set
 template<>
 inline void UpdateVisibilityOf_helper(std::set<uint64>& s64, GameObject* target, std::set<Unit*>& /*v*/)
 {
-    // Don't update only GAMEOBJECT_TYPE_TRANSPORT (or all transports and destructible buildings?)
-    if ((target->GetGOInfo()->type != GAMEOBJECT_TYPE_TRANSPORT))
+    // Limited updates done in UpdateVisibilityOf for GAMEOBJECT_TYPE_TRANSPORT - SOTA, Deeprun tram, tram in Ulduar.
+    if (target->GetGOInfo()->entry != 193182 && target->GetGOInfo()->entry != 193183 && target->GetGOInfo()->entry != 193184 && target->GetGOInfo()->entry != 193185 && target->GetGOInfo()->entry != 19080 && target->GetGOInfo()->entry != 194675)
         s64.insert(target->GetGUID());
 }
 
@@ -25453,15 +25453,18 @@ void Player::UpdateVisibilityOf(WorldObject* target)
     {
         if (!canSeeOrDetect(target, false, true))
         {
-            if (target->GetTypeId() == TYPEID_UNIT)
-                BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
+            if (!(target->GetTypeId() == TYPEID_GAMEOBJECT && ((GameObject*)target)->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT))
+            {
+                if (target->GetTypeId() == TYPEID_UNIT)
+                    BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
 
-            target->DestroyForPlayer(this);
-            m_clientGUIDs.erase(target->GetGUID());
+                target->DestroyForPlayer(this);
+                m_clientGUIDs.erase(target->GetGUID());
 
-            #ifdef TRINITY_DEBUG
-                sLog->outDebug(LOG_FILTER_MAPS, "Object %u (Type: %u) out of range for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
-            #endif
+                #ifdef TRINITY_DEBUG
+                    sLog->outDebug(LOG_FILTER_MAPS, "Object %u (Type: %u) out of range for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
+                #endif
+            }
         }
     }
     else
@@ -25472,16 +25475,20 @@ void Player::UpdateVisibilityOf(WorldObject* target)
             //    UpdateVisibilityOf(((Unit*)target)->m_Vehicle);
 
             target->SendUpdateToPlayer(this);
-            m_clientGUIDs.insert(target->GetGUID());
 
-            #ifdef TRINITY_DEBUG
-                sLog->outDebug(LOG_FILTER_MAPS, "Object %u (Type: %u) is visible now for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
-            #endif
+            if (!(target->GetTypeId() == TYPEID_GAMEOBJECT && ((GameObject*)target)->GetGOInfo()->type == GAMEOBJECT_TYPE_TRANSPORT))
+            {
+                m_clientGUIDs.insert(target->GetGUID());
 
-            // target aura duration for caster show only if target exist at caster client
-            // send data at target visibility change (adding to client)
-            if (target->isType(TYPEMASK_UNIT))
-                SendInitialVisiblePackets((Unit*)target);
+                #ifdef TRINITY_DEBUG
+                    sLog->outDebug(LOG_FILTER_MAPS, "Object %u (Type: %u) is visible now for player %u. Distance = %f", target->GetGUIDLow(), target->GetTypeId(), GetGUIDLow(), GetDistance(target));
+                #endif
+
+                // target aura duration for caster show only if target exist at caster client
+                // send data at target visibility change (adding to client)
+                if (target->isType(TYPEMASK_UNIT))
+                    SendInitialVisiblePackets((Unit*)target);
+            }
         }
     }
 }

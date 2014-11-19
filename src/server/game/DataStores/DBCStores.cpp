@@ -247,6 +247,11 @@ TaxiPathNodesByPath sTaxiPathNodesByPath;
 static DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
 
 DBCStorage <TotemCategoryEntry> sTotemCategoryStore(TotemCategoryEntryfmt);
+
+TransportAnimationsByEntry sTransportAnimationsByEntry;
+DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationfmt);
+
+DBCStorage <UnitPowerBarEntry> sUnitPowerBarStore(UnitPowerBarfmt);
 DBCStorage <VehicleEntry> sVehicleStore(VehicleEntryfmt);
 DBCStorage <VehicleSeatEntry> sVehicleSeatStore(VehicleSeatEntryfmt);
 DBCStorage <WMOAreaTableEntry> sWMOAreaTableStore(WMOAreaTableEntryfmt);
@@ -730,12 +735,22 @@ void LoadDBCStores(const std::string& dataPath)
     }
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sTotemCategoryStore,          dbcPath, "TotemCategory.dbc");                                                // 17399
+
+    // Load GameObject Transports
+    LoadDBC(availableDbcLocales, bad_dbc_files, sTransportAnimationStore,     dbcPath, "TransportAnimation.dbc");                                           // 17399
+    for (uint32 i = 0; i < sTransportAnimationStore.GetNumRows(); ++i)
+        if (TransportAnimationEntry const* anim = sTransportAnimationStore.LookupEntry(i))
+            sTransportAnimationsByEntry[anim->TransportEntry][anim->TimeSeg] = anim;
+
+    LoadDBC(availableDbcLocales, bad_dbc_files, sUnitPowerBarStore,           dbcPath, "UnitPowerBar.dbc");                                                 // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sVehicleStore,                dbcPath, "Vehicle.dbc");                                                      // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sVehicleSeatStore,            dbcPath, "VehicleSeat.dbc");                                                  // 17399
+
     LoadDBC(availableDbcLocales, bad_dbc_files, sWMOAreaTableStore,           dbcPath, "WMOAreaTable.dbc");                                                 // 17399
     for (uint32 i = 0; i < sWMOAreaTableStore.GetNumRows(); ++i)
         if (WMOAreaTableEntry const* entry = sWMOAreaTableStore.LookupEntry(i))
             sWMOAreaInfoByTripple.insert(WMOAreaInfoByTripple::value_type(WMOAreaTableTripple(entry->rootId, entry->adtId, entry->groupId), entry));
+
     LoadDBC(availableDbcLocales, bad_dbc_files, sWorldMapAreaStore,           dbcPath, "WorldMapArea.dbc");                                                 // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sWorldMapOverlayStore,        dbcPath, "WorldMapOverlay.dbc");                                              // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sWorldSafeLocsStore,          dbcPath, "WorldSafeLocs.dbc");                                                // 17399

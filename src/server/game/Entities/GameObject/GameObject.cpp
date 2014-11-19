@@ -194,10 +194,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         return false;
     }
 
-    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
-        Object::_Create(guidlow, 0, HIGHGUID_MO_TRANSPORT);
-    else
-        Object::_Create(guidlow, goinfo->entry, HIGHGUID_GAMEOBJECT);
+    Object::_Create(guidlow, goinfo->entry, IsTransport() ? HIGHGUID_MO_TRANSPORT : HIGHGUID_GAMEOBJECT);
 
     m_goInfo = goinfo;
 
@@ -207,8 +204,17 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         return false;
     }
 
-    SetFloatValue(GAMEOBJECT_PARENTROTATION+0, rotation0);
-    SetFloatValue(GAMEOBJECT_PARENTROTATION+1, rotation1);
+    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
+    {
+        if (sTransportAnimationsByEntry.find(goinfo->entry) == sTransportAnimationsByEntry.end())
+        {
+            sLog->outError(LOG_FILTER_SQL, "Gameobject Transport (GUID: %u Entry: %u) not created: non-existing frames in TransportAnimation.dbc. It will crash client if created.", guidlow, name_id);
+            return false;
+        }
+    }
+
+    SetFloatValue(GAMEOBJECT_PARENTROTATION + 0, rotation0);
+    SetFloatValue(GAMEOBJECT_PARENTROTATION + 1, rotation1);
 
     UpdateRotationFields(rotation2, rotation3);              // GAMEOBJECT_FACING, GAMEOBJECT_ROTATION, GAMEOBJECT_PARENTROTATION+2/3
 
@@ -236,12 +242,16 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
             m_goValue->Building.MaxHealth = m_goValue->Building.Health;
             SetGoAnimProgress(255);
             SetUInt32Value(GAMEOBJECT_PARENTROTATION, m_goInfo->building.destructibleData);
+            SetUInt32Value(GAMEOBJECT_DISPLAYID, m_goInfo->building.destructibleData);
             break;
         case GAMEOBJECT_TYPE_TRANSPORT:
-            SetUInt32Value(GAMEOBJECT_LEVEL, goinfo->transport.pause);
+            SetUInt32Value(GAMEOBJECT_LEVEL, getMSTime()); //SetUInt32Value(GAMEOBJECT_LEVEL, goinfo->transport.pause);
+            // BWD Nef platform / HOO elevator / Deathwhisper elevator manual settings.
+            if (goinfo->entry == 207834 || goinfo->entry == 207547 || goinfo->entry == 202220 || goinfo->entry == 193182 || goinfo->entry == 193183 || goinfo->entry == 193184 || goinfo->entry == 193185)
+                SetManualAnim(true); // Set manual commands
             if (goinfo->transport.startOpen)
                 SetGoState(GO_STATE_ACTIVE);
-            SetGoAnimProgress(animprogress);
+            // SetGoAnimProgress(animprogress);
             break;
         case GAMEOBJECT_TYPE_FISHINGNODE:
             SetGoAnimProgress(0);
@@ -871,7 +881,7 @@ bool GameObject::IsDynTransport() const
     if (!gInfo)
         return false;
 
-    return gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT || (gInfo->type == GAMEOBJECT_TYPE_TRANSPORT && !gInfo->transport.pause);
+    return gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT || (gInfo->type == GAMEOBJECT_TYPE_TRANSPORT && gInfo->transport.startFrame == 0);
 }
 
 bool GameObject::IsDestructibleBuilding() const
@@ -2000,7 +2010,8 @@ void GameObject::ModifyHealth(int32 change, Unit* attackerOrHealer /*= NULL*/, u
 void GameObject::SetDestructibleState(GameObjectDestructibleState state, Player* eventInvoker /*= NULL*/, bool setHealth /*= false*/)
 {
     // the user calling this must know he is already operating on destructible gameobject
-    ASSERT(GetGoType() == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING);
+    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
+        return;
 
     switch (state)
     {
@@ -2124,8 +2135,14 @@ void GameObject::SetLootState(LootState state, Unit* unit)
 
 void GameObject::SetGoState(GOState state)
 {
+    GOState oldState = GetGoState();
+
     SetByteValue(GAMEOBJECT_BYTES_1, 0, state);
     sScriptMgr->OnGameObjectStateChanged(this, state);
+
+    if (oldState != state && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
+        SetUInt32Value(GAMEOBJECT_LEVEL, getMSTime() + CalculateAnimDuration(oldState, state));
+
     if (m_model)
     {
         if (!IsInWorld())
@@ -2140,10 +2157,37 @@ void GameObject::SetGoState(GOState state)
     }
 }
 
+uint32 GameObject::CalculateAnimDuration(GOState oldState, GOState newState) const
+{
+    if (oldState == newState || oldState >= MAX_GO_STATE || newState >= MAX_GO_STATE)
+        return 0;
+
+    TransportAnimationsByEntry::const_iterator itr = sTransportAnimationsByEntry.find(GetEntry());
+    if (itr == sTransportAnimationsByEntry.end())
+        return 0;
+
+    uint32 frameByState[MAX_GO_STATE] = { 0, m_goInfo->transport.startFrame, m_goInfo->transport.nextFrame1 };
+    if (oldState == GO_STATE_ACTIVE)
+        return frameByState[newState];
+
+    if (newState == GO_STATE_ACTIVE)
+        return frameByState[oldState];
+
+    return uint32(std::abs(int32(frameByState[oldState]) - int32(frameByState[newState])));
+}
+
 void GameObject::SetDisplayId(uint32 displayid)
 {
     SetUInt32Value(GAMEOBJECT_DISPLAYID, displayid);
     UpdateModel();
+}
+
+void GameObject::SetManualAnim(bool apply)
+{
+    if (apply && m_goInfo->type == GAMEOBJECT_TYPE_TRANSPORT)
+        m_updateFlag |= UPDATEFLAG_TRANSPORT_ARR;
+    else
+        m_updateFlag &= ~UPDATEFLAG_TRANSPORT_ARR;
 }
 
 void GameObject::SetPhaseMask(uint32 newPhaseMask, bool update)
@@ -2292,6 +2336,13 @@ void GameObject::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* t
                 }
 
                 fieldBuffer << flags;
+            }
+            else if (index == GAMEOBJECT_BYTES_1)
+            {
+                if (GetGoType() == GAMEOBJECT_TYPE_TRANSPORT && !IsDynTransport() && (m_updateFlag & UPDATEFLAG_TRANSPORT_ARR))
+                    fieldBuffer << uint32(m_uint32Values[index] | GO_STATE_TRANSPORT_SPEC);
+                else
+                    fieldBuffer << uint32(m_uint32Values[index]);
             }
             else
                 fieldBuffer << m_uint32Values[index]; // other cases

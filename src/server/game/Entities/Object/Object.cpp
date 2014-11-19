@@ -326,7 +326,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     const Unit* unit = ToUnit();
     const GameObject* go = ToGameObject();
     const DynamicObject* dob = ToDynObject();
-    const AreaTrigger *atr = ToAreaTrigger();
+    const AreaTrigger* atr = ToAreaTrigger();
 
     const WorldObject* wo =
         player ? (const WorldObject*)player : (
@@ -334,37 +334,47 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         go ? (const WorldObject*)go : (
         dob ? (const WorldObject*)dob : atr ? (const WorldObject*)atr : (const WorldObject*)ToCorpse())));
 
-    bool isTransport = false;
-    if (go)
-    {
-        if (GameObjectTemplate const* goinfo = sObjectMgr->GetGameObjectTemplate(go->GetEntry()))
-            if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT && goinfo->transport.pause)
-                isTransport = false;
-    }
-
     uint32 bitCounter2 = 0;
     bool hasAreaTriggerData = isType(TYPEMASK_AREATRIGGER) && ((AreaTrigger*)this)->GetVisualRadius() != 0.0f;
     bool isSceneObject = false;
 
     data->WriteBit(false); // 676
-    data->WriteBit((flags & UPDATEFLAG_VEHICLE) && unit);       // hasVehicleData 488
+    data->WriteBit((flags & UPDATEFLAG_VEHICLE) && unit);                      // hasVehicleData 488
     data->WriteBit(false); // 1044
-    data->WriteBit((flags & UPDATEFLAG_ROTATION) && go);        // hasRotation 512
+    data->WriteBit((flags & UPDATEFLAG_ROTATION) && go);                       // hasRotation 512
     data->WriteBit(false); // 0
-    data->WriteBit((flags & UPDATEFLAG_LIVING) && unit);        // isAlive 368
+    data->WriteBit((flags & UPDATEFLAG_LIVING) && unit);                       // isAlive 368
     data->WriteBit(false); // 1032
     data->WriteBit(false); // 2
     data->WriteBit(hasAreaTriggerData); // 668
-    data->WriteBit(flags & UPDATEFLAG_SELF);                    // unk bit 680
+    data->WriteBit(flags & UPDATEFLAG_SELF);                                   // unk bit 680
     data->WriteBit(false); // 681
     data->WriteBit(false); // 1
-    data->WriteBit((flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo);   // hasGameObjectData 424
-    data->WriteBit(flags & UPDATEFLAG_TRANSPORT); // 476
-    data->WriteBit(flags & UPDATEFLAG_ANIMKITS);                // HasAnimKits 498
-    data->WriteBit((flags & UPDATEFLAG_STATIONARY_POSITION) && wo);     // hasStationaryPosition 448
+    data->WriteBit((flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo);          // hasGameObjectData 424
+    data->WriteBit(flags & (UPDATEFLAG_TRANSPORT | UPDATEFLAG_TRANSPORT_ARR)); // 476
+    data->WriteBit(flags & UPDATEFLAG_ANIMKITS);                               // HasAnimKits 498
+    data->WriteBit((flags & UPDATEFLAG_STATIONARY_POSITION) && wo);            // hasStationaryPosition 448
     data->WriteBit((flags & UPDATEFLAG_HAS_TARGET) && unit && unit->getVictim());  // hasTarget 464
     data->WriteBit(false); // 3
-    data->WriteBits(uint32(isTransport ? 1 : 0), 22); // 1068
+
+    std::vector<uint32> transportFrames;
+    if (flags & UPDATEFLAG_TRANSPORT_ARR)
+    {
+        const GameObjectTemplate* goInfo = ToGameObject()->GetGOInfo();
+        if (goInfo->type == GAMEOBJECT_TYPE_TRANSPORT)
+        {
+            if (goInfo->transport.startFrame)
+                transportFrames.push_back(goInfo->transport.startFrame);
+            if (goInfo->transport.nextFrame1)
+                transportFrames.push_back(goInfo->transport.nextFrame1);
+            //if (goInfo->transport.nextFrame2)
+            //    transportFrames.push_back(goInfo->transport.nextFrame2);
+            //if (goInfo->transport.nextFrame3)
+            //    transportFrames.push_back(goInfo->transport.nextFrame3);
+        }
+    }
+    data->WriteBits(transportFrames.size(), 22); // 1068
+
     data->WriteBit(false); // 810
     data->WriteBit(false); // 1064
 
@@ -501,10 +511,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     data->FlushBits();
 
-    if (isTransport)
-        if (GameObjectTemplate const* goinfo = sObjectMgr->GetGameObjectTemplate(go->GetEntry()))
-            if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
-                (*data) << (uint32)goinfo->transport.pause;
+    // Data
+    if (flags & UPDATEFLAG_TRANSPORT_ARR)
+        for (int i = 0; i < transportFrames.size(); ++i)
+            *data << uint32(transportFrames[i]);
 
     if (hasAreaTriggerData)
     {
@@ -649,7 +659,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     }
 
     if (flags & UPDATEFLAG_TRANSPORT)
-        *data << uint32(getMSTime());
+        *data << uint32(getMSTime());              // Transport path timer - getMSTime is wrong.
+    else if (flags & UPDATEFLAG_TRANSPORT_ARR)
+        *data << uint32(GetUInt32Value(GAMEOBJECT_LEVEL));
 
     if ((flags & UPDATEFLAG_ROTATION) && go)
         *data << uint64(go->GetRotation());
@@ -668,9 +680,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     }
 
     if ((flags & UPDATEFLAG_LIVING) && unit && unit->movespline->Initialized() && !unit->movespline->Finalized())
-    {
         Movement::PacketBuilder::WriteCreateGuid(*unit->movespline, *data);
-    }
 
     /*
     data->WriteBits(bitCounter2, 21);               //BitCounter2
@@ -1841,6 +1851,9 @@ void WorldObject::UpdateGroundPositionZ(float x, float y, float &z) const
 
 void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
 {
+    // Return this for now since MMAPS are not implemented and this prevents proper movement for creatures on Transports / Elevators.
+    return;
+
     switch (GetTypeId())
     {
         case TYPEID_UNIT:
@@ -2204,13 +2217,16 @@ void WorldObject::SendPlaySound(uint32 Sound, bool OnlySelf)
     
     uint8 bitsOrder[8] = { 1, 6, 7, 5, 4, 3, 0, 2 };
     data.WriteBitInOrder(guid, bitsOrder);
+
     data.FlushBits();
 
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[4]);
+
     data << uint32(Sound);
+
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[0]);
@@ -2543,6 +2559,7 @@ void WorldObject::SendObjectDeSpawnAnim(uint64 guid)
     data.WriteBit(objectGUID[5]);
     data.WriteBit(objectGUID[3]);
     data.WriteBit(objectGUID[7]);
+
     data.FlushBits();
 
     data.WriteByteSeq(objectGUID[0]);
@@ -3153,81 +3170,6 @@ void WorldObject::GetCreatureListWithEntryInGridAppend(std::list<Creature*>& cre
     creatureList.merge(tempList);
 }
 
-/*
-namespace JadeCore
-{
-    class NearUsedPosDo
-    {
-        public:
-            NearUsedPosDo(WorldObject const& obj, WorldObject const* searcher, float angle, ObjectPosSelector& selector)
-                : i_object(obj), i_searcher(searcher), i_angle(angle), i_selector(selector) {}
-
-            void operator()(Corpse*) const {}
-            void operator()(DynamicObject*) const {}
-
-            void operator()(Creature* c) const
-            {
-                // skip self or target
-                if (c == i_searcher || c == &i_object)
-                    return;
-
-                float x, y, z;
-
-                if (!c->isAlive() || c->HasUnitState(UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DISTRACTED) ||
-                    !c->GetMotionMaster()->GetDestination(x, y, z))
-                {
-                    x = c->GetPositionX();
-                    y = c->GetPositionY();
-                }
-
-                add(c, x, y);
-            }
-
-            template<class T>
-                void operator()(T* u) const
-            {
-                // skip self or target
-                if (u == i_searcher || u == &i_object)
-                    return;
-
-                float x, y;
-
-                x = u->GetPositionX();
-                y = u->GetPositionY();
-
-                add(u, x, y);
-            }
-
-            // we must add used pos that can fill places around center
-            void add(WorldObject* u, float x, float y) const
-            {
-                // u is too nearest/far away to i_object
-                if (!i_object.IsInRange2d(x, y, i_selector.m_dist - i_selector.m_size, i_selector.m_dist + i_selector.m_size))
-                    return;
-
-                float angle = i_object.GetAngle(u)-i_angle;
-
-                // move angle to range -pi ... +pi
-                while (angle > M_PI)
-                    angle -= 2.0f * M_PI;
-                while (angle < -M_PI)
-                    angle += 2.0f * M_PI;
-
-                // dist include size of u
-                float dist2d = i_object.GetDistance2d(x, y);
-                i_selector.AddUsedPos(u->GetObjectSize(), angle, dist2d + i_object.GetObjectSize());
-            }
-        private:
-            WorldObject const& i_object;
-            WorldObject const* i_searcher;
-            float              i_angle;
-            ObjectPosSelector& i_selector;
-    };
-}                                                           // namespace JadeCore
-*/
-
-//===================================================================================================
-
 void WorldObject::GetNearPoint2D(float &x, float &y, float distance2d, float absAngle) const
 {
     x = GetPositionX() + (GetObjectSize() + distance2d) * std::cos(absAngle);
@@ -3243,123 +3185,6 @@ void WorldObject::GetNearPoint(WorldObject const* searcher, float &x, float &y, 
     z = GetPositionZ();
     if (!searcher || !searcher->ToCreature() || !searcher->GetMap()->Instanceable())
         UpdateAllowedPositionZ(x, y, z);
-    /*
-    // if detection disabled, return first point
-    if (!sWorld->getIntConfig(CONFIG_DETECT_POS_COLLISION))
-    {
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-        return;
-    }
-
-    // or remember first point
-    float first_x = x;
-    float first_y = y;
-    bool first_los_conflict = false;                        // first point LOS problems
-
-    // prepare selector for work
-    ObjectPosSelector selector(GetPositionX(), GetPositionY(), GetObjectSize(), distance2d+searcher_size);
-
-    // adding used positions around object
-    {
-        CellCoord p(JadeCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
-        Cell cell(p);
-        cell.SetNoCreate();
-
-        JadeCore::NearUsedPosDo u_do(*this, searcher, absAngle, selector);
-        JadeCore::WorldObjectWorker<JadeCore::NearUsedPosDo> worker(this, u_do);
-
-        TypeContainerVisitor<JadeCore::WorldObjectWorker<JadeCore::NearUsedPosDo>, GridTypeMapContainer  > grid_obj_worker(worker);
-        TypeContainerVisitor<JadeCore::WorldObjectWorker<JadeCore::NearUsedPosDo>, WorldTypeMapContainer > world_obj_worker(worker);
-
-        CellLock<GridReadGuard> cell_lock(cell, p);
-        cell_lock->Visit(cell_lock, grid_obj_worker,  *GetMap(), *this, distance2d);
-        cell_lock->Visit(cell_lock, world_obj_worker, *GetMap(), *this, distance2d);
-    }
-
-    // maybe can just place in primary position
-    if (selector.CheckOriginal())
-    {
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-
-        if (IsWithinLOS(x, y, z))
-            return;
-
-        first_los_conflict = true;                          // first point have LOS problems
-    }
-
-    float angle;                                            // candidate of angle for free pos
-
-    // special case when one from list empty and then empty side preferred
-    if (selector.FirstAngle(angle))
-    {
-        GetNearPoint2D(x, y, distance2d, absAngle+angle);
-        z = GetPositionZ();
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-
-        if (IsWithinLOS(x, y, z))
-            return;
-    }
-
-    // set first used pos in lists
-    selector.InitializeAngle();
-
-    // select in positions after current nodes (selection one by one)
-    while (selector.NextAngle(angle))                        // angle for free pos
-    {
-        GetNearPoint2D(x, y, distance2d, absAngle+angle);
-        z = GetPositionZ();
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-
-        if (IsWithinLOS(x, y, z))
-            return;
-    }
-
-    // BAD NEWS: not free pos (or used or have LOS problems)
-    // Attempt find _used_ pos without LOS problem
-
-    if (!first_los_conflict)
-    {
-        x = first_x;
-        y = first_y;
-
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-        return;
-    }
-
-    // special case when one from list empty and then empty side preferred
-    if (selector.IsNonBalanced())
-    {
-        if (!selector.FirstAngle(angle))                     // _used_ pos
-        {
-            GetNearPoint2D(x, y, distance2d, absAngle+angle);
-            z = GetPositionZ();
-            UpdateGroundPositionZ(x, y, z);                   // update to LOS height if available
-
-            if (IsWithinLOS(x, y, z))
-                return;
-        }
-    }
-
-    // set first used pos in lists
-    selector.InitializeAngle();
-
-    // select in positions after current nodes (selection one by one)
-    while (selector.NextUsedAngle(angle))                    // angle for used pos but maybe without LOS problem
-    {
-        GetNearPoint2D(x, y, distance2d, absAngle+angle);
-        z = GetPositionZ();
-        UpdateGroundPositionZ(x, y, z);                       // update to LOS height if available
-
-        if (IsWithinLOS(x, y, z))
-            return;
-    }
-
-    // BAD BAD NEWS: all found pos (free and used) have LOS problem :(
-    x = first_x;
-    y = first_y;
-
-    UpdateGroundPositionZ(x, y, z);                           // update to LOS height if available
-    */
 }
 
 void WorldObject::MovePosition(Position &pos, float dist, float angle)
@@ -3577,6 +3402,8 @@ void WorldObject::PlayDistanceSound(uint32 sound_id, Player* target /*= NULL*/)
     data.WriteBit(guid[5]);
     data.WriteBit(guid[4]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[3]);
@@ -3596,6 +3423,7 @@ void WorldObject::PlayDistanceSound(uint32 sound_id, Player* target /*= NULL*/)
 
     data.WriteByteSeq(guid[7]);
     data.WriteByteSeq(guid[3]);
+
     if (target)
         target->SendDirectMessage(&data);
     else
@@ -3610,13 +3438,16 @@ void WorldObject::PlayDirectSound(uint32 sound_id, Player* target /*= NULL*/)
 
     uint8 bitsOrder[8] = { 1, 6, 7, 5, 4, 3, 0, 2 };
     data.WriteBitInOrder(guid, bitsOrder);
+
     data.FlushBits();
 
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[4]);
+
     data << uint32(sound_id);
+
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[0]);
