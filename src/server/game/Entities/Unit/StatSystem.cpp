@@ -850,7 +850,7 @@ void Player::UpdatePvPPowerPercentage()
         case SPEC_PRIEST_DISCIPLINE:
         case SPEC_PRIEST_HOLY:
         case SPEC_SHAMAN_RESTORATION:
-        case SPEC_DROOD_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
         case SPEC_MONK_MISTWEAVER:
             damage_value = 0.0f;
             break;

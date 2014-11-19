@@ -328,11 +328,11 @@ class mob_dread_kunchong : public CreatureScript
                     case SPEC_MAGE_FIRE:
                     case SPEC_MAGE_FROST:
                     case SPEC_PALADIN_HOLY:
-                    case SPEC_DROOD_BALANCE:
+                    case SPEC_DRUID_BALANCE:
                     case SPEC_PRIEST_DISCIPLINE:
                     case SPEC_PRIEST_HOLY:
                     case SPEC_PRIEST_SHADOW:
-                    case SPEC_DROOD_RESTORATION:
+                    case SPEC_DRUID_RESTORATION:
                     case SPEC_SHAMAN_ELEMENTAL:
                     case SPEC_SHAMAN_RESTORATION:
                     case SPEC_WARLOCK_AFFLICTION:
@@ -341,8 +341,8 @@ class mob_dread_kunchong : public CreatureScript
                     case SPEC_MONK_MISTWEAVER:
                         DoCast(me, SPELL_SEEK_AND_DESTROY_2, true);
                         break;
-                    case SPEC_DROOD_CAT:
-                    case SPEC_DROOD_BEAR:
+                    case SPEC_DRUID_CAT:
+                    case SPEC_DRUID_BEAR:
                     case SPEC_HUNTER_BEASTMASTER:
                     case SPEC_HUNTER_MARKSMAN:
                     case SPEC_HUNTER_SURVIVAL:
@@ -875,11 +875,11 @@ class mob_ik_thik_terrorclaw : public CreatureScript
                     case SPEC_MAGE_FIRE:
                     case SPEC_MAGE_FROST:
                     case SPEC_PALADIN_HOLY:
-                    case SPEC_DROOD_BALANCE:
+                    case SPEC_DRUID_BALANCE:
                     case SPEC_PRIEST_DISCIPLINE:
                     case SPEC_PRIEST_HOLY:
                     case SPEC_PRIEST_SHADOW:
-                    case SPEC_DROOD_RESTORATION:
+                    case SPEC_DRUID_RESTORATION:
                     case SPEC_SHAMAN_ELEMENTAL:
                     case SPEC_SHAMAN_RESTORATION:
                     case SPEC_WARLOCK_AFFLICTION:
@@ -888,8 +888,8 @@ class mob_ik_thik_terrorclaw : public CreatureScript
                     case SPEC_MONK_MISTWEAVER:
                         DoCast(me, SPELL_SEEK_AND_DESTROY_2, true);
                         break;
-                    case SPEC_DROOD_CAT:
-                    case SPEC_DROOD_BEAR:
+                    case SPEC_DRUID_CAT:
+                    case SPEC_DRUID_BEAR:
                     case SPEC_HUNTER_BEASTMASTER:
                     case SPEC_HUNTER_MARKSMAN:
                     case SPEC_HUNTER_SURVIVAL:
@@ -1364,11 +1364,11 @@ class mob_wake_of_horror : public CreatureScript
                     case SPEC_MAGE_FIRE:
                     case SPEC_MAGE_FROST:
                     case SPEC_PALADIN_HOLY:
-                    case SPEC_DROOD_BALANCE:
+                    case SPEC_DRUID_BALANCE:
                     case SPEC_PRIEST_DISCIPLINE:
                     case SPEC_PRIEST_HOLY:
                     case SPEC_PRIEST_SHADOW:
-                    case SPEC_DROOD_RESTORATION:
+                    case SPEC_DRUID_RESTORATION:
                     case SPEC_SHAMAN_ELEMENTAL:
                     case SPEC_SHAMAN_RESTORATION:
                     case SPEC_WARLOCK_AFFLICTION:
@@ -1377,8 +1377,8 @@ class mob_wake_of_horror : public CreatureScript
                     case SPEC_MONK_MISTWEAVER:
                         DoCast(me, SPELL_SEEK_AND_DESTROY_2, true);
                         break;
-                    case SPEC_DROOD_CAT:
-                    case SPEC_DROOD_BEAR:
+                    case SPEC_DRUID_CAT:
+                    case SPEC_DRUID_BEAR:
                     case SPEC_HUNTER_BEASTMASTER:
                     case SPEC_HUNTER_MARKSMAN:
                     case SPEC_HUNTER_SURVIVAL:
