@@ -568,7 +568,126 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
     float DoneActualBenefit = 0.0f;
 
-    // custom aura effects scripted
+    // Add MOP trinkets to this.
+    if (caster && caster->ToPlayer())
+    {
+        if (Item* castItem = caster->ToPlayer()->GetItemByGuid(GetBase()->GetCastItemGUID()))
+        {
+            switch (castItem->GetEntry())
+            {
+                // Fortitude of the Zandalari.
+                case 94516:
+                    amount = 57844;
+                    break;
+                case 96793:
+                    amount = 88149;
+                    break;
+                case 96421:
+                    amount = 83364;
+                    break;
+                case 96049:
+                    amount = 78106;
+                    break;
+                case 95677:
+                    amount = 61308;
+                    break;
+                // Vicious Talisman of the Shado-Pan Assault.
+                case 94511:
+                    amount = 8800;
+                    break;
+                // Renataki's Soul Charm.
+                case 96369:
+                    amount = 1505;
+                    break;
+                case 96741:
+                    amount = 1592;
+                    break;
+                case 95997:
+                    amount = 1410;
+                    break;
+                case 95625:
+                    amount = 1107;
+                    break;
+                // Spark of Zandalar.
+                case 95654:
+                    amount = 6089;
+                    break;
+                case 96398:
+                    amount = 82729;
+                    break;
+                case 94526:
+                    amount = 7333;
+                    break;
+                case 96770:
+                    amount = 8754;
+                    break;
+                case 96026:
+                    amount = 7757;
+                    break;
+                // Terror in the Mists.
+                case 86332:
+                    amount = 6908;
+                    break;
+                case 87167:
+                    amount = 7796;
+                    break;
+                case 86890:
+                    amount = 6121;
+                    break;
+                // Darkmist vortex.
+                case 87172:
+                    amount = 7796;
+                    break;
+                case 86336:
+                    amount = 6908;
+                    break;
+                case 86894:
+                    amount = 6121;
+                    break;
+                // Hawkmaster's Talon.
+                case 89082:
+                    amount = 3595;
+                    break;
+                // Grievous Gladiator's Insignia of Conquest.
+                case 103150:
+                case 102840:
+                case 100586:
+                case 100200:
+                    amount = 5179;
+                    break;
+                case 94508:
+                    amount = 8800;
+                    break;
+                // Wushoolay's Lightning.
+                case 94513:
+                    amount = 52;
+                    break;
+                case 96785:
+                    amount = 63;
+                    break;
+                case 96413:
+                    amount = 59;
+                    break;
+                case 96041:
+                    amount = 55;
+                    break;
+                case 95669:
+                    amount = 43;
+                    break;
+                // Spirits of the Sun.
+                case 86327:
+                    amount = 6908;
+                    break;
+                case 87163:
+                    amount = 7796;
+                    break;
+
+                default: break;
+            }
+        }
+    }
+
+    // Custom aura effects scripted
     switch (GetId())
     {
         case 20572: // Blood fury attack power

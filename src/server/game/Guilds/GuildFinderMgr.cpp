@@ -450,7 +450,7 @@ void GuildFinderMgr::SendMembershipRequestListUpdate(Player& player)
         data.append(bufferData);
     }
 	
-	data << uint32(10 - sGuildFinderMgr->CountRequestsFromPlayer(GetPlayer()->GetGUIDLow())); // Applications count left
+	data << uint32(10 - sGuildFinderMgr->CountRequestsFromPlayer(player.GetGUIDLow())); // Applications count left
 
     player.SendDirectMessage(&data);
 }
