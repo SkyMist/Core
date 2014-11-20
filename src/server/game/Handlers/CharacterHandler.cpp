@@ -1078,8 +1078,8 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     if (sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS))
     {
         data.Initialize(SMSG_SET_ARENA_SEASON, 8);
-        data << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID) - 1);
         data << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
+        data << uint32(sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID) - 1);
         SendPacket(&data);
     }
 
@@ -1239,9 +1239,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
         group->ResetMaxEnchantingLevel();
     }
 
-    // friend status
-    sSocialMgr->SendFriendStatus(pCurrChar, FRIEND_ONLINE, pCurrChar->GetGUIDLow(), true);
-
     // Place character in world (and load zone) before some object loading
     pCurrChar->LoadCorpse();
 
@@ -1310,6 +1307,12 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
         pCurrChar->SetStandState(UNIT_STAND_STATE_STAND);
 
     m_playerLoading = false;
+
+    // friend status
+    sSocialMgr->SendFriendStatus(pCurrChar, FRIEND_ONLINE, pCurrChar->GetGUIDLow(), true);
+    sSocialMgr->UpdateFriendList(pCurrChar);
+
+    pCurrChar->GetSocial()->SendSocialList(pCurrChar);
 
     // fix exploit with Aura Bind Sight
     pCurrChar->StopCastingBindSight();

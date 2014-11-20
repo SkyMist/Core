@@ -87,7 +87,7 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
     switch (spell->Id)
     {
         case 116011:// Rune of Power
-            SetVisualRadius(3.5f);
+            SetVisualRadius(5.0f);
             break;
         case 116235:// Amethyst Pool
             SetVisualRadius(3.5f);
