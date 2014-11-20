@@ -971,8 +971,8 @@ void Player::UpdateManaRegen()
     float BaseRegenFromAurPct = 0;
     float RegenFromModPowerRegen = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f;
 
-    float combat_regen = int32(CalculatePct(GetCreateMana(), 5)) / 5.0f;
-    float base_regen = CountPctFromMaxMana(5) / 5.0f;
+    float combat_regen = int32(CalculatePct(GetMaxPower(POWER_MANA), 0.4));
+    float base_regen =  int32(CalculatePct(GetMaxPower(POWER_MANA), 0.4));
 
     // Chaotic Energy : Haste also increase your mana regeneration
     // Nether Attunement - 117957 : Haste also increase your mana regeneration.
@@ -1004,8 +1004,8 @@ void Player::UpdateManaRegen()
 
     if ((HasAuraType(SPELL_AURA_MOD_POWER_REGEN_PERCENT) || HasAuraType(SPELL_AURA_379)) && PercentIncreaseManaRegen != 0)
     {
-        CombatRegenFromAurPct = combat_regen*(PercentIncreaseManaRegen / 100.0f);
-        BaseRegenFromAurPct = base_regen*(PercentIncreaseManaRegen / 100.0f); 
+        CombatRegenFromAurPct = combat_regen * (PercentIncreaseManaRegen / 100.0f);
+        BaseRegenFromAurPct = base_regen     * (PercentIncreaseManaRegen / 100.0f);
     }
 
     combat_regen += CombatRegenFromSpirit + CombatRegenFromAurPct + RegenFromModPowerRegen;
