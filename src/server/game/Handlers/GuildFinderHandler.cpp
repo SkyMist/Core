@@ -80,8 +80,6 @@ void WorldSession::HandleGuildFinderAddRecruit(WorldPacket& recvPacket)
 
 void WorldSession::HandleGuildFinderBrowse(WorldPacket& recvPacket)
 {
-    return;
-
     uint32 classRoles = 0;
     uint32 availability = 0;
     uint32 guildInterests = 0;

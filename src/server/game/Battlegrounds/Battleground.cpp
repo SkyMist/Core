@@ -894,7 +894,7 @@ void Battleground::EndBattleground(uint32 winner)
                 uint32 rating = player->GetArenaPersonalRating(slot);
                 player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, rating ? rating : 1);
                 player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_ARENA, GetMapId());
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD));
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD), true, true);
             }
             else
             {
@@ -917,7 +917,7 @@ void Battleground::EndBattleground(uint32 winner)
 
             if (player->GetBGTeam() == winner)
             {
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_RATED_BG_REWARD));
+                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, sWorld->getIntConfig(CONFIG_CURRENCY_CONQUEST_POINTS_RATED_BG_REWARD), true, true);
 
                 int32 MMRating_mod = Arena::GetMatchmakerRatingMod(winner_matchmaker_rating, loser_matchmaker_rating, true);
                 player->SetArenaMatchMakerRating(SLOT_RBG, player->GetArenaMatchMakerRating(SLOT_RBG) + MMRating_mod);
@@ -959,7 +959,7 @@ void Battleground::EndBattleground(uint32 winner)
 
                     // 150 cp awarded for the first Random / Call to Arms battleground won each day.
                     // 75 cp awarded for each subsequent Random / Call to Arms battleground won.
-                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, winnerConquestBonus);
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, winnerConquestBonus, true, true);
 
                     if (!wonRandomOrCallToArmsBG)
                     {
