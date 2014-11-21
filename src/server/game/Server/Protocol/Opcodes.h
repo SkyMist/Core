@@ -133,9 +133,8 @@ enum Opcodes
     CMSG_CHANNEL_LIST                                 = 0x1D08, // 5.4.7 18019
     CMSG_CHANNEL_MODERATOR                            = 0x0F03, // 5.4.7 18019
     CMSG_CHANNEL_MUTE                                 = 0x0E42, // 5.4.7 18019
-    CMSG_CHANNEL_OWNER                                = 0x1508, // 5.4.7 18019
     CMSG_CHANNEL_PASSWORD                             = 0x0F69, // 5.4.7 18019
-    CMSG_CHANNEL_SET_OWNER                            = 0x0000,
+    CMSG_CHANNEL_SET_OWNER                            = 0x1508, // 5.4.7 18019
     CMSG_CHANNEL_SILENCE_ALL                          = 0x0000,
     CMSG_CHANNEL_SILENCE_VOICE                        = 0x0000,
     CMSG_CHANNEL_UNBAN                                = 0x1F09, // 5.4.7 18019

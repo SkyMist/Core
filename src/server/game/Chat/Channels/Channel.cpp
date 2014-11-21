@@ -587,7 +587,7 @@ void Channel::List(Player* player)
     }
     else
     {
-        WorldPacket data(SMSG_CHANNEL_LIST, 1+(GetName().size()+1)+1+4+players.size()*(8+1));
+        WorldPacket data(SMSG_CHANNEL_LIST, 1+(GetName().size()+1)+1+4+players.size()*(8+4+1));
         data << uint8(1);                                   // channel type?
         data << GetName();                                  // channel name
         data << uint8(GetFlags());                          // channel flags?
@@ -608,6 +608,7 @@ void Channel::List(Player* player)
                 member->IsVisibleGloballyFor(player))
             {
                 data << uint64(i->first);
+                data << uint32(0);                          // unk so far..
                 data << uint8(i->second.flags);             // flags seems to be changed...
                 ++count;
             }
@@ -723,7 +724,7 @@ void Channel::Invite(uint64 p, const char *newname)
     if (newp->GetTeam() != player->GetTeam() && !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
     {
         WorldPacket data;
-        MakeInviteWrongFaction(&data);
+        MakeInviteWrongFaction(&data, newp->GetName(), newp->getFaction());
         SendToOne(&data, p);
         return;
     }
@@ -825,6 +826,7 @@ void Channel::MakeJoined(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_JOINED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x01
@@ -832,6 +834,7 @@ void Channel::MakeLeft(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_LEFT_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x02
@@ -874,6 +877,7 @@ void Channel::MakePasswordChanged(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_PASSWORD_CHANGED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x08
@@ -881,6 +885,7 @@ void Channel::MakeOwnerChanged(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_OWNER_CHANGED_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x09
@@ -888,6 +893,7 @@ void Channel::MakePlayerNotFound(WorldPacket* data, const std::string& name)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_NOT_FOUND_NOTICE);
     *data << name;
+    *data << uint32(time(NULL));
 }
 
 // done 0x0A
@@ -906,6 +912,7 @@ void Channel::MakeChannelOwner(WorldPacket* data)
 
     MakeNotifyPacket(data, CHAT_CHANNEL_OWNER_NOTICE);
     *data << ((IsConstant() || !m_ownerGUID) ? "Nobody" : name);
+    *data << uint32(time(NULL));
 }
 
 // done 0x0C
@@ -913,6 +920,7 @@ void Channel::MakeModeChange(WorldPacket* data, uint64 guid, uint8 oldflags)
 {
     MakeNotifyPacket(data, CHAT_MODE_CHANGE_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
     *data << uint8(oldflags);
     *data << uint8(GetPlayerFlags(guid));
 }
@@ -922,6 +930,7 @@ void Channel::MakeAnnouncementsOn(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_ANNOUNCEMENTS_ON_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x0E
@@ -929,6 +938,7 @@ void Channel::MakeAnnouncementsOff(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_ANNOUNCEMENTS_OFF_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x11
@@ -942,7 +952,9 @@ void Channel::MakePlayerKicked(WorldPacket* data, uint64 bad, uint64 good)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_KICKED_NOTICE);
     *data << uint64(bad);
+    *data << uint32(time(NULL));
     *data << uint64(good);
+    *data << uint32(time(NULL));
 }
 
 // done 0x13
@@ -956,7 +968,9 @@ void Channel::MakePlayerBanned(WorldPacket* data, uint64 bad, uint64 good)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_BANNED_NOTICE);
     *data << uint64(bad);
+    *data << uint32(time(NULL));
     *data << uint64(good);
+    *data << uint32(time(NULL));
 }
 
 // done 0x15
@@ -964,7 +978,9 @@ void Channel::MakePlayerUnbanned(WorldPacket* data, uint64 bad, uint64 good)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_UNBANNED_NOTICE);
     *data << uint64(bad);
+    *data << uint32(time(NULL));
     *data << uint64(good);
+    *data << uint32(time(NULL));
 }
 
 // done 0x16
@@ -972,6 +988,7 @@ void Channel::MakePlayerNotBanned(WorldPacket* data, const std::string &name)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_NOT_BANNED_NOTICE);
     *data << name;
+    *data << uint32(time(NULL));
 }
 
 // done 0x17
@@ -979,6 +996,7 @@ void Channel::MakePlayerAlreadyMember(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_ALREADY_MEMBER_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x18
@@ -986,12 +1004,14 @@ void Channel::MakeInvite(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_INVITE_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x19
-void Channel::MakeInviteWrongFaction(WorldPacket* data)
+void Channel::MakeInviteWrongFaction(WorldPacket* data, const std::string& name, uint32 faction)
 {
     MakeNotifyPacket(data, CHAT_INVITE_WRONG_FACTION_NOTICE);
+    *data << name << faction;
 }
 
 // done 0x1A
@@ -1017,6 +1037,7 @@ void Channel::MakePlayerInvited(WorldPacket* data, const std::string& name)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_INVITED_NOTICE);
     *data << name;
+    *data << uint32(time(NULL));
 }
 
 // done 0x1E
@@ -1024,6 +1045,7 @@ void Channel::MakePlayerInviteBanned(WorldPacket* data, const std::string& name)
 {
     MakeNotifyPacket(data, CHAT_PLAYER_INVITE_BANNED_NOTICE);
     *data << name;
+    *data << uint32(time(NULL));
 }
 
 // done 0x1F
@@ -1049,6 +1071,7 @@ void Channel::MakeVoiceOn(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_VOICE_ON_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 // done 0x23
@@ -1056,6 +1079,7 @@ void Channel::MakeVoiceOff(WorldPacket* data, uint64 guid)
 {
     MakeNotifyPacket(data, CHAT_VOICE_OFF_NOTICE);
     *data << uint64(guid);
+    *data << uint32(time(NULL));
 }
 
 void Channel::JoinNotify(uint64 guid)
