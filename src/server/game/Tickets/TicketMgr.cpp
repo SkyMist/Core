@@ -34,31 +34,23 @@ GmTicket::GmTicket() { }
 GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NULL)), _lastModifiedTime(time(NULL)), _closedBy(0), _assignedTo(0), _completed(false),
                                                             _escalatedStatus(TICKET_UNASSIGNED), _needResponse(false), _haveTicket(false), _viewed(false)
 {
+    uint8 UnkByte;
+    recvData >> _posX >> _posY >> _mapId >> _posZ >> UnkByte;
+
+    size_t BufferSize = recvData.read<size_t>();
+    ByteBuffer Buffer = ByteBuffer(BufferSize);
+    recvData.read(const_cast<uint8*>(Buffer.contents()), BufferSize);
+
+    _needResponse = recvData.ReadBit();
+    _haveTicket = recvData.ReadBit();
+
+    size_t DescriptionLenght = recvData.ReadBits(11);
+
+    std::string _message = recvData.ReadString(DescriptionLenght);
+
     _id = sTicketMgr->GenerateTicketId();
     _playerName = player->GetName();
     _playerGuid = player->GetGUID();
-
-    uint32 mapId, unkLen;
-    uint32 needResponse = 0;
-
-    recvData >> mapId; // Map is sent as UInt32!
-    _mapId = mapId;
-
-    recvData >> _posX;
-    recvData >> _posY;
-    recvData >> _posZ;
-    recvData >> _haveTicket; // Requests further GM interaction on a ticket to which a GM has already responded
-
-    recvData >> unkLen;
-    _needResponse = (needResponse == 17); // Requires GM response. 17 = true, 1 = false (17 is default)
-
-    _message = recvData.ReadString(unkLen);
-
-    bool unkBit = recvData.ReadBit();
-    uint32 length = (recvData.ReadBits(12) - 1) / 2;
-    bool unkBit2 = recvData.ReadBit();
-    recvData.FlushBits();
-    _message = recvData.ReadString(length);
 }
 
 GmTicket::~GmTicket() { }
@@ -124,27 +116,26 @@ void GmTicket::DeleteFromDB()
 
 void GmTicket::WritePacket(WorldPacket& data) const
 {
-    data << uint32(GetAge(_lastModifiedTime));
-
-    if (GetMessage().size())
-        data.append(GetMessage().c_str(), GetMessage().size());
-    
-    data << uint8(_haveTicket);
-
-    if (GetMessage().size())
-        data.append(GetMessage().c_str(), GetMessage().size());
-
-    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data
     if (GmTicket* ticket = sTicketMgr->GetOldestOpenTicket())
         data << uint32(GetAge(ticket->GetLastModifiedTime()));
     else
         data << uint32(float(0));
 
-    data << uint32(0); // waitTimeOverrideMinutes
-    // I am not sure how blizzlike this is, and we don't really have a way to find out
+    data << uint32(GetId());
     data << uint32(GetAge(sTicketMgr->GetLastChange()));
     data << uint8(_viewed ? GMTICKET_OPENEDBYGM_STATUS_OPENED : GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED); // whether or not it has been viewed
-    data << uint32(GetId());
+
+    if (GetMessage().size())
+        data.append(GetMessage().c_str(), GetMessage().size());
+
+    data << uint32(0); // waitTimeOverrideMinutes
+    data << uint8(_haveTicket);
+    data << uint32(GetAge(_lastModifiedTime));
+
+    if (GetMessage().size())
+        data.append(GetMessage().c_str(), GetMessage().size());
+
+    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data 
 }
 
 void GmTicket::SendResponse(WorldSession* session) const
@@ -389,6 +380,8 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
 
     WorldPacket data(SMSG_GM_TICKET_GET_TICKET_RESPONSE);
 
+    data << uint32(status);
+
     data.WriteBit(status == GMTICKET_STATUS_HASTEXT);
 
     if (status == GMTICKET_STATUS_HASTEXT)
@@ -396,12 +389,12 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
         data.WriteBits(message.size(), 10);
         data.WriteBits(message.size(), 11);
 
+        data.FlushBits();
+
         // we've got the easy stuff done by now.
         // Now we need to go through the client logic for displaying various levels of ticket load
         ticket->WritePacket(data);
     }
-
-    data << uint32(status);
 
     session->SendPacket(&data);
 }
