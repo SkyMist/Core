@@ -233,7 +233,7 @@ class Group
             uint8       roles;
         };
 
-        typedef ACE_Based::LockedVector<MemberSlot> MemberSlotList;
+        typedef std::list<MemberSlot> MemberSlotList;
         typedef MemberSlotList::const_iterator member_citerator;
 
         struct RaidMarker
@@ -301,8 +301,8 @@ class Group
         uint64 GetMemberGUID(const std::string& name);
         bool IsAssistant(uint64 guid) const;
 
-        Player* GetInvited(uint64 guid) const;
-        Player* GetInvited(const std::string& name) const;
+        Player* GetInvitedByGuid(uint64 guid) const;
+        Player* GetInvitedByName(const std::string& name) const;
 
         bool SameSubGroup(uint64 guid1, uint64 guid2) const;
         bool SameSubGroup(uint64 guid1, MemberSlot const* slot2) const;

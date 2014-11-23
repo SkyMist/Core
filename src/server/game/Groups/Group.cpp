@@ -321,8 +321,9 @@ void Group::ConvertToGroup()
 
 bool Group::AddInvite(Player* player)
 {
-    if (!player || player->GetGroupInvite())
+    if (!player)
         return false;
+
     Group* group = player->GetGroup();
     if (group && (group->isBGGroup() || group->isBFGroup()))
         group = player->GetOriginalGroup();
@@ -356,7 +357,7 @@ void Group::RemoveInvite(Player* player)
     // Check if the player exists and is invited and remove the invite.
     if (player)
     {
-        if (GetInvited(player->GetGUID()))
+        if (!m_invitees.empty() && GetInvitedByGuid(player->GetGUID()))
             m_invitees.erase(player);
         player->SetGroupInvite(NULL);
     }
@@ -364,29 +365,36 @@ void Group::RemoveInvite(Player* player)
 
 void Group::RemoveAllInvites()
 {
-    if (!m_invitees.empty())
-        for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-            if (*itr) (*itr)->SetGroupInvite(NULL);
+    if (m_invitees.empty())
+        return;
+
+    for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+        if (*itr)
+            (*itr)->SetGroupInvite(NULL);
 
     m_invitees.clear();
 }
 
-Player* Group::GetInvited(uint64 guid) const
+Player* Group::GetInvitedByGuid(uint64 guid) const
 {
-    if (!m_invitees.empty())
-        for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-            if ((*itr) && (*itr)->GetGUID() == guid)
-                return (*itr);
+    if (!guid || m_invitees.empty())
+        return NULL;
+
+    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+        if ((*itr) && (*itr)->GetGUID() == guid)
+            return (*itr);
 
     return NULL;
 }
 
-Player* Group::GetInvited(const std::string& name) const
+Player* Group::GetInvitedByName(const std::string& name) const
 {
-    if (!m_invitees.empty())
-        for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-            if ((*itr) && (*itr)->GetName() == name)
-                return (*itr);
+    if (m_invitees.empty())
+        return NULL;
+
+    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
+        if ((*itr) && (*itr)->GetName() == name)
+            return (*itr);
 
     return NULL;
 }

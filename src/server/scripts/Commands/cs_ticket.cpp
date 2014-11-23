@@ -164,7 +164,7 @@ public:
         {
             if (submitter->IsInWorld())
             {
-                WorldPacket data(SMSG_GM_RESPONSE_STATUS_UPDATE, 4);
+                WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
                 data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
                 submitter->GetSession()->SendPacket(&data);
             }
@@ -272,7 +272,7 @@ public:
             if (player->IsInWorld())
             {
                 // Force abandon ticket
-                WorldPacket data(SMSG_GM_RESPONSE_STATUS_UPDATE, 4);
+                WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
                 data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
                 player->GetSession()->SendPacket(&data);
             }
