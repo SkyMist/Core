@@ -683,6 +683,8 @@ CharacterCreating.Disabled = 0
 #                     128  - (Disabled, Troll)
 #                     512  - (Disabled, Blood Elf)
 #                     1024 - (Disabled, Draenei)
+#                  2097152 - (Disabled, Worgen)
+#                  8388608 - (Disabled, Pandaren)
 
 CharacterCreating.Disabled.RaceMask = 0
 
