@@ -257,7 +257,7 @@ enum Opcodes
     CMSG_GUILD_QUERY_RANKS                            = 0x1BBC, // 5.4.7 18019
     CMSG_GUILD_REMOVE                                 = 0x1D9F, // 5.4.7 18019
     CMSG_GUILD_REPLACE_GUILD_MASTER                   = 0x0000,
-    CMSG_GUILD_REQUEST_CHALLENGE_UPDATE               = 0x192E, // 5.4.7 18019
+    CMSG_GUILD_REQUEST_CHALLENGE_UPDATE               = 0x198C, // 5.4.7 18019
     CMSG_GUILD_REQUEST_PARTY_STATE                    = 0x14A8, // 5.4.7 18019
     CMSG_GUILD_ROSTER                                 = 0x19BC, // 5.4.7 18019
     CMSG_GUILD_SET_ACHIEVEMENT_TRACKING               = 0x1BA7, // 5.4.7 18019
