@@ -35,20 +35,26 @@ GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NUL
                                                             _escalatedStatus(TICKET_UNASSIGNED), _needResponse(false), _haveTicket(false), _viewed(false)
 {
     uint8 UnkByte;
+    uint32 fakeStringLength;
+
+    recvData >> _posY >> _posX >> _mapId >> _posZ >> UnkByte;
+
+    recvData >> fakeStringLength;
+    std::string fakeString = recvData.ReadString(fakeStringLength);
+
+    /* The fakeString data reading should actually be handled like below or skipped, but for some reason this doesn't work.
+    uint32 BufferSize;
     WorldPacket UnkBuffer;
-
-    recvData >> _posX >> _posY >> _mapId >> _posZ >> UnkByte;
-
-    size_t BufferSize = recvData.read<uint32>();
+    recvData >> BufferSize;
     UnkBuffer.resize(BufferSize);
-    recvData.read((uint8*)UnkBuffer.contents(), BufferSize);
+    recvData.read((uint8*)UnkBuffer.contents(), BufferSize);*/
 
     _needResponse = recvData.ReadBit();
     _haveTicket = recvData.ReadBit();
 
     size_t DescriptionLenght = recvData.ReadBits(11);
 
-    std::string _message = recvData.ReadString(DescriptionLenght);
+    _message = recvData.ReadString(DescriptionLenght);
 
     _id = sTicketMgr->GenerateTicketId();
     _playerName = player->GetName();
@@ -393,10 +399,16 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
 
         data.FlushBits();
 
-        // we've got the easy stuff done by now.
-        // Now we need to go through the client logic for displaying various levels of ticket load
+        // We've got the easy stuff done by now, now we need to go through the client logic for displaying various levels of ticket load.
         ticket->WritePacket(data);
     }
 
+    session->SendPacket(&data);
+}
+
+void TicketMgr::SendTicketStatusUpdate(WorldSession* session, uint8 response) const
+{
+    WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 1);
+    data << uint8(response);
     session->SendPacket(&data);
 }

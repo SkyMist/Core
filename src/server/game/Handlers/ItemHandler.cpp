@@ -32,7 +32,8 @@
 
 void WorldSession::HandleSplitItemOpcode(WorldPacket& recvData)
 {
-    //sLog->outDebug(LOG_FILTER_PACKETIO, "WORLD: CMSG_SPLIT_ITEM");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_SPLIT_ITEM");
+
     uint8 srcbag, srcslot, dstbag, dstslot;
     uint32 count;
 
@@ -120,6 +121,7 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recvData)
 {
     uint64 itemguid;
     uint8 dstslot;
+
     recvData >> itemguid >> dstslot;
 
     // cheating attempt, client should never send opcode in that case
@@ -137,7 +139,8 @@ void WorldSession::HandleAutoEquipItemSlotOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleSwapItem(WorldPacket& recvData)
 {
-    //sLog->outDebug(LOG_FILTER_PACKETIO, "WORLD: CMSG_SWAP_ITEM");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_SWAP_ITEM");
+
     bool hasSlot[2];
     uint8 dstBag, dstSlot, srcBag, srcSlot, srcSlotAlt, dstSlotAlt;
 
@@ -182,11 +185,12 @@ void WorldSession::HandleSwapItem(WorldPacket& recvData)
 
 void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
 {
-    //sLog->outDebug(LOG_FILTER_PACKETIO, "WORLD: CMSG_AUTOEQUIP_ITEM");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_AUTOEQUIP_ITEM");
+
     uint8 srcbag, srcslot;
 
     recvData >> srcslot >> srcbag;
-    //sLog->outDebug("STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
+    // sLog->outDebug("STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
     Item* pSrcItem  = _player->GetItemByPos(srcbag, srcslot);
     if (!pSrcItem)
@@ -276,9 +280,10 @@ void WorldSession::HandleAutoEquipItemOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleDestroyItemOpcode(WorldPacket & recvData)
 {
-    //sLog->outDebug(LOG_FILTER_PACKETIO, "WORLD: CMSG_DESTROY_ITEM");
-    int8 bag, slot;
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_DESTROY_ITEM");
+
     int32 count;
+    int8 bag, slot;
 
     recvData >> count >> slot >> bag;
     //sLog->outDebug("STORAGE: receive bag = %u, slot = %u, count = %u", bag, slot, count);
@@ -498,8 +503,7 @@ void WorldSession::HandleReadItem(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_READ_ITEM");
 
-    uint8 bag = 0;
-    uint8 slot = 0;
+    uint8 bag, slot;
 
     recvData >> bag >> slot;
 
@@ -520,7 +524,9 @@ void WorldSession::HandleReadItem(WorldPacket& recvData)
             sLog->outInfo(LOG_FILTER_NETWORKIO, "STORAGE: Unable to read item");
             _player->SendEquipError(msg, pItem, NULL);
         }
+
         data << pItem->GetGUID();
+
         SendPacket(&data);
     }
     else
@@ -530,7 +536,7 @@ void WorldSession::HandleReadItem(WorldPacket& recvData)
 void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
 {
     time_t now = time(NULL);
-    if (now - timeLastSellItemOpcode < 1)
+    if (now - timeLastSellItemOpcode < 0.1)
         return;
     else
        timeLastSellItemOpcode = now;
@@ -539,7 +545,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
 
     ObjectGuid vendorguid;
     ObjectGuid itemguid;
-    uint32 count = 0;
+    uint32 count;
 
     recvData >> count;
 
@@ -559,6 +565,8 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
     vendorguid[4] = recvData.ReadBit();
     itemguid[0] = recvData.ReadBit();
     itemguid[1] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     recvData.ReadByteSeq(vendorguid[6]);
     recvData.ReadByteSeq(vendorguid[2]);
@@ -674,10 +682,10 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
             }
             else
                 _player->SendSellError(SELL_ERR_CANT_SELL_ITEM, creature, itemguid);
-
             return;
         }
     }
+
     _player->SendSellError(SELL_ERR_CANT_FIND_ITEM, creature, itemguid);
     return;
 }
@@ -685,6 +693,7 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
 void WorldSession::HandleBuybackItem(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_BUYBACK_ITEM");
+
     ObjectGuid vendorguid;
     uint32 slot;
 
@@ -741,12 +750,13 @@ void WorldSession::HandleBuybackItem(WorldPacket& recvData)
 void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recvData)
 {
     time_t now = time(NULL);
-    if (now - timeLastBuyItemSlotOpcode < 1)
+    if (now - timeLastBuyItemSlotOpcode < 0.1)
         return;
     else
        timeLastBuyItemSlotOpcode = now;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_BUY_ITEM_IN_SLOT");
+
     uint64 vendorguid, bagguid;
     uint32 item, slot, count;
     uint8 bagslot;
@@ -780,12 +790,13 @@ void WorldSession::HandleBuyItemInSlotOpcode(WorldPacket& recvData)
 void WorldSession::HandleBuyItemOpcode(WorldPacket& recvData)
 {
     time_t now = time(NULL);
-    if (now - timeLastBuyItemOpcode < 1)
+    if (now - timeLastBuyItemOpcode < 0.1)
         return;
     else
        timeLastBuyItemOpcode = now;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_BUY_ITEM");
+
     ObjectGuid vendorguid, bagGuid;
     uint32 item, slot, count, bag;
     uint8 itemType; // 1 = item, 2 = currency
@@ -809,6 +820,7 @@ void WorldSession::HandleBuyItemOpcode(WorldPacket& recvData)
     bagGuid[1] = recvData.ReadBit();
     vendorguid[3] = recvData.ReadBit();
     vendorguid[6] = recvData.ReadBit();
+
     recvData.FlushBits();
 
     recvData.ReadByteSeq(bagGuid[1]);
@@ -1075,10 +1087,15 @@ void WorldSession::SendListInventory(uint64 vendorGuid)
     data.WriteByteSeq(guid[0]);
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[5]);
+
+    /* It doesn't matter what value is used here (PROBABLY it's full vendor size).
+     * What matters is that if count of items we can see is 0 and this field is 1 the client will open the vendor list, otherwise it won't.
+     */
     if (rawItemCount)
         data << uint8(rawItemCount);
     else
         data << uint8(vendor->isArmorer());
+
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[7]);
@@ -1170,7 +1187,7 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
     // next slot
     ++slot;
 
-    sLog->outInfo(LOG_FILTER_NETWORKIO, "PLAYER: Buy bank bag slot, slot number = %u", slot);
+    // sLog->outInfo(LOG_FILTER_NETWORKIO, "PLAYER: Buy bank bag slot, slot number = %u", slot);
 
     BankBagSlotPricesEntry const* slotEntry = sBankBagSlotPricesStore.LookupEntry(slot);
 
@@ -1204,10 +1221,11 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_AUTOBANK_ITEM");
+
     uint8 srcbag, srcslot;
 
     recvPacket >> srcslot >> srcbag;
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
+    // sLog->outDebug(LOG_FILTER_NETWORKIO, "STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
     Item* pItem = _player->GetItemByPos(srcbag, srcslot);
     if (!pItem)
@@ -1235,10 +1253,11 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
 void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_AUTOSTORE_BANK_ITEM");
+
     uint8 srcbag, srcslot;
 
     recvPacket >> srcbag >> srcslot;
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
+    // sLog->outDebug(LOG_FILTER_NETWORKIO, "STORAGE: receive srcbag = %u, srcslot = %u", srcbag, srcslot);
 
     Item* pItem = _player->GetItemByPos(srcbag, srcslot);
     if (!pItem)
@@ -1276,6 +1295,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
 void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemID, uint32 enchantID, uint8 slotID)
 {
     WorldPacket data(SMSG_ENCHANTMENT_LOG);
+
     ObjectGuid targetGuid = Target;
     ObjectGuid playerGuid = GetPlayer()->GetGUID(); // Sent twice
     ObjectGuid casterGuid = Caster;
@@ -1319,6 +1339,8 @@ void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemI
     data.WriteBit(playerGuid[2]);
     data.WriteBit(casterGuid[2]);
 
+    data.FlushBits();
+
     {
         data.WriteByteSeq(playerGuid[3]);
         data.WriteByteSeq(playerGuid[2]);
@@ -1341,7 +1363,9 @@ void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemI
     data.WriteByteSeq(casterGuid[2]);
     data.WriteByteSeq(targetGuid[5]);
     data.WriteByteSeq(targetGuid[4]);
+
     data << uint32(slotID);
+
     data.WriteByteSeq(targetGuid[2]);
     data.WriteByteSeq(playerGuid[2]);
     data.WriteByteSeq(targetGuid[1]);
@@ -1349,7 +1373,9 @@ void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemI
     data.WriteByteSeq(targetGuid[0]);
     data.WriteByteSeq(targetGuid[7]);
     data.WriteByteSeq(playerGuid[6]);
+
     data << uint32(ItemID);
+
     data.WriteByteSeq(targetGuid[3]);
     data.WriteByteSeq(playerGuid[7]);
     data.WriteByteSeq(playerGuid[1]);
@@ -1361,7 +1387,9 @@ void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemI
     data.WriteByteSeq(playerGuid[5]);
     data.WriteByteSeq(playerGuid[3]);
     data.WriteByteSeq(casterGuid[7]);
+
     data << uint32(enchantID);
+
     data.WriteByteSeq(targetGuid[6]);
     data.WriteByteSeq(casterGuid[3]);
 
@@ -1370,9 +1398,10 @@ void WorldSession::SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemI
 
 void WorldSession::SendItemEnchantTimeUpdate(uint64 Playerguid, uint64 Itemguid, uint32 slot, uint32 Duration)
 {
+    ObjectGuid itemGuid = Itemguid ? Itemguid : 0;
+    ObjectGuid playerGuid = Playerguid ? Playerguid : 0;
+
     WorldPacket data(SMSG_ITEM_ENCHANT_TIME_UPDATE);
-    ObjectGuid itemGuid = Itemguid;
-    ObjectGuid playerGuid = Playerguid;
 
     data << uint32(slot); 
     data << uint32(Duration);
@@ -1393,6 +1422,9 @@ void WorldSession::SendItemEnchantTimeUpdate(uint64 Playerguid, uint64 Itemguid,
     data.WriteBit(itemGuid[6]);
     data.WriteBit(playerGuid[2]);
     data.WriteBit(itemGuid[1]);
+
+    data.FlushBits();
+
     data.WriteByteSeq(itemGuid[1]);
     data.WriteByteSeq(playerGuid[3]);
     data.WriteByteSeq(itemGuid[0]);
@@ -1417,7 +1449,8 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Received opcode CMSG_WRAP_ITEM");
 
-    uint8 gift_bag = 0, gift_slot = 0, item_bag = 0, item_slot = 0;
+    uint8 gift_bag, gift_slot, item_bag, item_slot;
+
     bool bools1[2];
     bool bools2[2];
 
@@ -1443,7 +1476,7 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recvData)
     if (bools2[1])
         recvData >> item_slot;
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WRAP: receive gift_bag = %u, gift_slot = %u, item_bag = %u, item_slot = %u", gift_bag, gift_slot, item_bag, item_slot);
+    // sLog->outDebug(LOG_FILTER_NETWORKIO, "WRAP: receive gift_bag = %u, gift_slot = %u, item_bag = %u, item_slot = %u", gift_bag, gift_slot, item_bag, item_slot);
 
     Item* gift = _player->GetItemByPos(gift_bag, gift_slot);
     if (!gift)
@@ -1522,13 +1555,14 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recvData)
 
     switch (item->GetEntry())
     {
-        case 5042:  item->SetEntry(5043); break;
-        case 5048:  item->SetEntry(5044); break;
+        case 5042:  item->SetEntry(5043);  break;
+        case 5048:  item->SetEntry(5044);  break;
         case 17303: item->SetEntry(17302); break;
         case 17304: item->SetEntry(17305); break;
         case 17307: item->SetEntry(17308); break;
         case 21830: item->SetEntry(21831); break;
     }
+
     item->SetUInt64Value(ITEM_FIELD_GIFTCREATOR, _player->GetGUID());
     item->SetUInt32Value(ITEM_FIELD_FLAGS, ITEM_FLAG_WRAPPED);
     item->SetState(ITEM_CHANGED, _player);
@@ -1539,6 +1573,7 @@ void WorldSession::HandleWrapItemOpcode(WorldPacket& recvData)
         item->RemoveFromUpdateQueueOf(_player);
         item->SaveToDB(trans);                                   // item gave inventory record unchanged and can be save standalone
     }
+
     CharacterDatabase.CommitTransaction(trans);
 
     uint32 count = 1;
@@ -1797,8 +1832,7 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
     // Turn off all metagems (except for the target item)
     _player->ToggleMetaGemsActive(slot, false);
 
-    // If a meta gem is being equipped, all information has to be written to the item before testing if the conditions for the gem are met
-    // Remove ALL enchants
+    // If a meta gem is being equipped, all information has to be written to the item before testing if the conditions for the gem are met remove ALL enchants
     for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS; ++enchant_slot)
         _player->ApplyEnchantment(itemTarget, EnchantmentSlot(enchant_slot), false);
 
@@ -1806,14 +1840,16 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
     {
         if (GemEnchants[i])
         {
-            uint32 gemCount = 1;
-            itemTarget->SetEnchantment(EnchantmentSlot(SOCK_ENCHANTMENT_SLOT+i), GemEnchants[i], 0, 0);
+            itemTarget->SetEnchantment(EnchantmentSlot(SOCK_ENCHANTMENT_SLOT + i), GemEnchants[i], 0, 0);
             if (Item* guidItem = _player->GetItemByGuid(gem_guids[i]))
+            {
+                uint32 gemCount = 1;
                 _player->DestroyItemCount(guidItem, gemCount, true);
+            }
         }
     }
 
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
+    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS; ++enchant_slot)
         _player->ApplyEnchantment(itemTarget, EnchantmentSlot(enchant_slot), true);
 
     // Current socketbonus state
@@ -1833,13 +1869,14 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
 
     // Turn on all metagems (except for target item)
     _player->ToggleMetaGemsActive(slot, true);
-    _player->RemoveTradeableItem(itemTarget);
+
     // Clear tradeable flag
+    _player->RemoveTradeableItem(itemTarget);
     itemTarget->ClearSoulboundTradeable(_player);
 
     for (int i = 0; i < MAX_GEM_SOCKETS; ++i)
         if (GemEnchants[i])
-            _player->GetSession()->SendEnchantmentLog(itemTarget->GetGUID(), _player->GetGUID(), itemTarget->GetEntry(), GemEnchants[i], SOCK_ENCHANTMENT_SLOT+i);
+            _player->GetSession()->SendEnchantmentLog(itemTarget->GetGUID(), _player->GetGUID(), itemTarget->GetEntry(), GemEnchants[i], SOCK_ENCHANTMENT_SLOT + i);
 
     if (socketBonus)
         _player->GetSession()->SendEnchantmentLog(itemTarget->GetGUID(), _player->GetGUID(), itemTarget->GetEntry(), socketBonus, BONUS_ENCHANTMENT_SLOT);
@@ -1848,6 +1885,7 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
 
     uint8 bitsOrder[8] = { 1, 4, 2, 3, 0, 6, 5, 7 };
     data.WriteBitInOrder(item_guid, bitsOrder);
+
     data.FlushBits();
 
     data.WriteByteSeq(item_guid[4]);
@@ -1861,6 +1899,7 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recvData)
     }
 
     data << uint32(socketBonus);
+
     data.WriteByteSeq(item_guid[3]);
     data.WriteByteSeq(item_guid[2]);
     data.WriteByteSeq(item_guid[6]);
