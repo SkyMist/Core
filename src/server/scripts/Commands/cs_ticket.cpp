@@ -104,15 +104,14 @@ public:
             return true;
         }
 
-        // If already assigned, leave
+        // Ticket must not already be assigned to the same player.
         if (ticket->IsAssignedTo(targetGuid))
         {
             handler->PSendSysMessage(LANG_COMMAND_TICKETASSIGNERROR_B, ticket->GetId());
             return true;
         }
 
-        // If assigned to different player other than current, leave
-        //! Console can override though
+        // Ticket must not already be assigned to the another player. Console can override though.
         Player* player = handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL;
         if (player && ticket->IsAssignedNotTo(player->GetGUID()))
         {
@@ -120,14 +119,18 @@ public:
             return true;
         }
 
-        // Assign ticket
+        // Assign ticket and save it.
         SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetAssignedTo(targetGuid, AccountMgr::IsAdminAccount(targetGmLevel));
+        ticket->SetResponse("Your ticket has been assigned to a GM and is being serviced.");
         ticket->SaveToDB(trans);
+
+        // Update the last change time.
         sTicketMgr->UpdateLastChange();
 
         std::string msg = ticket->FormatMessageString(*handler, NULL, target.c_str(), NULL, NULL);
         handler->SendGlobalGMSysMessage(msg.c_str());
+
         return true;
     }
 
@@ -138,14 +141,15 @@ public:
 
         uint32 ticketId = atoi(args);
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
-        if (!ticket || ticket->IsClosed() || ticket->IsCompleted())
+
+        // Ticket must exist and not be closed.
+        if (!ticket || ticket->IsClosed())
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
 
-        // Ticket should be assigned to the player who tries to close it.
-        // Console can override though
+        // Ticket should be assigned to the player who tries to close it. Console can override though.
         Player* player = handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL;
         if (player && ticket->IsAssignedNotTo(player->GetGUID()))
         {
@@ -159,7 +163,7 @@ public:
         std::string msg = ticket->FormatMessageString(*handler, player ? player->GetName() : "Console", NULL, NULL, NULL);
         handler->SendGlobalGMSysMessage(msg.c_str());
 
-        // Inform player, who submitted this ticket, that it is closed
+        // Inform the player that the ticket is closed (remove it).
         if (Player* submitter = ticket->GetPlayer())
         {
             if (submitter->IsInWorld())
@@ -185,14 +189,15 @@ public:
             return false;
 
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
-        if (!ticket || ticket->IsClosed())
+
+        // Ticket must exist and not be closed / completed.
+        if (!ticket || ticket->IsClosed() || ticket->IsCompleted())
         {
             handler->PSendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
 
-        // Cannot comment ticket assigned to someone else
-        //! Console excluded
+        // Cannot comment ticket assigned to someone else. Console excluded.
         Player* player = handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL;
         if (player && ticket->IsAssignedNotTo(player->GetGUID()))
         {
@@ -200,9 +205,12 @@ public:
             return true;
         }
 
+        // Set and save the ticket comment.
         SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetComment(comment);
         ticket->SaveToDB(trans);
+
+        // Update the last change time.
         sTicketMgr->UpdateLastChange();
 
         std::string msg = ticket->FormatMessageString(*handler, NULL, ticket->GetAssignedToName().c_str(), NULL, NULL);
@@ -225,23 +233,25 @@ public:
 
         uint32 ticketId = atoi(args);
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
+
+        // Ticket must exist and not be closed / completed.
         if (!ticket || ticket->IsClosed() || ticket->IsCompleted())
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
 
+        // Set the ticket as completed and the text to reflect the change, and save it.
         ticket->SetCompleted(true);
+        ticket->SetResponse("Your ticket has been serviced and resolved.");
 
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
         ticket->SaveToDB(trans);
         CharacterDatabase.CommitTransaction(trans);
 
-        if (Player* player = ticket->GetPlayer())
-            if (player->IsInWorld())
-                ticket->SendResponse(player->GetSession());
-
+        // Update the last change time.
         sTicketMgr->UpdateLastChange();
+
         return true;
     }
 
@@ -252,12 +262,15 @@ public:
 
         uint32 ticketId = atoi(args);
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
+
+        // Ticket must exist.
         if (!ticket)
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
 
+        // Ticket must be closed.
         if (!ticket->IsClosed())
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETCLOSEFIRST);
@@ -267,9 +280,10 @@ public:
         std::string msg = ticket->FormatMessageString(*handler, NULL, NULL, NULL, handler->GetSession() ? handler->GetSession()->GetPlayer()->GetName() : "Console");
         handler->SendGlobalGMSysMessage(msg.c_str());
 
+        // Force the player to abandon the ticket.
         if (Player* player = ticket->GetPlayer())
         {
-            if (player->IsInWorld()) // Force abandon ticket
+            if (player->IsInWorld())
             {
                 sTicketMgr->SendTicketStatusUpdate(player->GetSession(), GMTICKET_RESPONSE_TICKET_DELETED);
                 sTicketMgr->SendTicket(player->GetSession(), NULL);
@@ -279,6 +293,7 @@ public:
         // Remove the ticket.
         sTicketMgr->RemoveTicket(ticket->GetId());
         sTicketMgr->UpdateLastChange();
+
         return true;
     }
 
@@ -289,19 +304,23 @@ public:
 
         uint32 ticketId = atoi(args);
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
+
+        // Ticket must exists and not be closed / completed / assigned.
         if (!ticket || ticket->IsClosed() || ticket->IsCompleted() || ticket->GetEscalatedStatus() != TICKET_UNASSIGNED)
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
 
+        // Set the ticket in the priority queue and the text and save it.
+        SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetEscalatedStatus(TICKET_IN_ESCALATION_QUEUE);
+        ticket->SetResponse("Your ticket is in the priority queue and will be serviced shortly.");
+        ticket->SaveToDB(trans);
 
-        if (Player* player = ticket->GetPlayer())
-            if (player->IsInWorld())
-                sTicketMgr->SendTicket(player->GetSession(), ticket);
-
+        // Update the last change time.
         sTicketMgr->UpdateLastChange();
+
         return true;
     }
 
@@ -343,6 +362,7 @@ public:
     {
         bool status = !sTicketMgr->GetStatus();
         sTicketMgr->SetStatus(status);
+
         handler->PSendSysMessage(status ? LANG_ALLOW_TICKETS : LANG_DISALLOW_TICKETS);
         return true;
     }
@@ -354,12 +374,15 @@ public:
 
         uint32 ticketId = atoi(args);
         GmTicket* ticket = sTicketMgr->GetTicket(ticketId);
+
+        // Ticket must exist and not be closed.
         if (!ticket || ticket->IsClosed())
         {
             handler->SendSysMessage(LANG_COMMAND_TICKETNOTEXIST);
             return true;
         }
-        // Ticket must be assigned
+
+        // Ticket must be assigned.
         if (!ticket->IsAssigned())
         {
             handler->PSendSysMessage(LANG_COMMAND_TICKETNOTASSIGNED, ticket->GetId());
@@ -369,6 +392,7 @@ public:
         // Get security level of player, whom this ticket is assigned to
         uint32 security = SEC_PLAYER;
         Player* assignedPlayer = ticket->GetAssignedPlayer();
+
         if (assignedPlayer && assignedPlayer->IsInWorld())
             security = assignedPlayer->GetSession()->GetSecurity();
         else
@@ -378,8 +402,7 @@ public:
             security = AccountMgr::GetSecurity(accountId, realmID);
         }
 
-        // Check security
-        //! If no m_session present it means we're issuing this command from the console
+        // Check security. If no m_session present it means we're issuing this command from the console.
         uint32 mySecurity = handler->GetSession() ? handler->GetSession()->GetSecurity() : SEC_CONSOLE;
         if (security > mySecurity)
         {
@@ -387,9 +410,13 @@ public:
             return true;
         }
 
+        // Set the ticket as unassigned and the text and save it.
         SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetUnassigned();
+        ticket->SetResponse("Your ticket will be serviced shortly.");
         ticket->SaveToDB(trans);
+
+        // Update the last change time.
         sTicketMgr->UpdateLastChange();
 
         std::string msg = ticket->FormatMessageString(*handler, NULL, ticket->GetAssignedToName().c_str(),
@@ -412,11 +439,17 @@ public:
             return true;
         }
 
+        // Set the ticket as viewed and save it.
         SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetViewed();
+        ticket->SetResponse("Your ticket was viewed and is being serviced.");
         ticket->SaveToDB(trans);
 
+        // Update the last change time.
+        sTicketMgr->UpdateLastChange();
+
         handler->SendSysMessage(ticket->FormatMessageString(*handler, true).c_str());
+
         return true;
     }
 
@@ -436,14 +469,14 @@ public:
         else
             guid = sObjectMgr->GetPlayerGUIDByName(name);
 
-        // Target must exist
+        // Target must exist.
         if (!guid)
         {
             handler->SendSysMessage(LANG_NO_PLAYERS_FOUND);
             return true;
         }
 
-        // Ticket must exist
+        // Ticket must exist.
         GmTicket* ticket = sTicketMgr->GetTicketByPlayer(guid);
         if (!ticket)
         {
@@ -451,11 +484,17 @@ public:
             return true;
         }
 
+        // Set the ticket as viewed and save it.
         SQLTransaction trans = SQLTransaction(NULL);
         ticket->SetViewed();
+        ticket->SetResponse("Your ticket was viewed and is being serviced.");
         ticket->SaveToDB(trans);
 
+        // Update the last change time.
+        sTicketMgr->UpdateLastChange();
+
         handler->SendSysMessage(ticket->FormatMessageString(*handler, true).c_str());
+
         return true;
     }
 
@@ -478,8 +517,7 @@ public:
             return true;
         }
 
-        // Cannot add response to ticket, assigned to someone else
-        //! Console excluded
+        // Cannot add response to ticket, assigned to someone else. Console excluded.
         Player* player = handler->GetSession() ? handler->GetSession()->GetPlayer() : NULL;
         if (player && ticket->IsAssignedNotTo(player->GetGUID()))
         {
@@ -487,11 +525,18 @@ public:
             return true;
         }
 
+        // Set the ticket text and save it.
         SQLTransaction trans = SQLTransaction(NULL);
-        ticket->AppendResponse(response);
+
         if (newLine)
-            ticket->AppendResponse("\n");
+            ticket->SetResponse(response);    // Makes a new response (form: new).
+        else
+            ticket->AppendResponse(response); // Puts the response over the old one (form: old + new).
+
         ticket->SaveToDB(trans);
+
+        // Update the last change time.
+        sTicketMgr->UpdateLastChange();
 
         return true;
     }

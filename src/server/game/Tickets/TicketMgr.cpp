@@ -125,54 +125,26 @@ void GmTicket::DeleteFromDB()
 void GmTicket::WritePacket(WorldPacket& data) const
 {
     if (GmTicket* ticket = sTicketMgr->GetOldestOpenTicket())
-        data << uint32(ticket->GetLastModifiedTime());
+        data << uint32(GetAge(ticket->GetLastModifiedTime()));
     else
         data << uint32(0);
 
     data << uint32(GetId());
-    data << uint32(sTicketMgr->GetLastChange());
-    data << uint8(_viewed ? GMTICKET_OPENEDBYGM_STATUS_OPENED : GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED); // whether or not it has been viewed
-
-    //waitTimeOverrideMessage
-    /*if (_message.size())
-        data.WriteString(_message);*/
-
-    data << uint32(0); // waitTimeOverrideMinutes
-    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data
-    data << uint32(_lastModifiedTime - _createTime);
+    data << uint32(GetAge(sTicketMgr->GetLastChange()));
+    data << uint8(_viewed ? GMTICKET_OPENEDBYGM_STATUS_OPENED : GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED); // Whether or not it has been viewed.
+    data << uint32(GetAge(_lastModifiedTime));
 
     if (_message.size())
         data.WriteString(_message);
- 
+
+    data << uint32(0); // Time since GM Response (waitTimeOverrideMinutes).
+    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE)); // Escalated data.
+
+    // GM Response (waitTimeOverrideMessage).
+    if (_response.size())
+        data.WriteString(_response);
+
     data << uint8(_haveTicket);
-}
-
-void GmTicket::SendResponse(WorldSession* session) const
-{
-    WorldPacket data(SMSG_GM_RESPONSE_RECEIVED);
-
-    uint32 msgLen = _message.size();
-    uint32 rspLen = _response.size();
-
-    data.WriteBit(msgLen ? 0 : 1);
-    if (msgLen)
-        data.WriteBits(msgLen, 11);
-    data.WriteBit(rspLen ? 0 : 1);
-    if (rspLen)
-        data.WriteBits(rspLen, 14);
-
-    data.FlushBits();
-
-    if (rspLen)
-        data.append(_response.c_str(), rspLen);
-
-    if (msgLen)
-        data.append(_message.c_str(), msgLen);
-
-    data << uint32(1);          // responseID
-    data << uint32(_id);        // ticketID
-
-    session->SendPacket(&data);
 }
 
 std::string GmTicket::FormatMessageString(ChatHandler& handler, bool detailed) const
@@ -256,7 +228,6 @@ void TicketMgr::ResetTickets()
     _lastTicketId = 0;
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GM_TICKETS);
-
     CharacterDatabase.Execute(stmt);
 }
 
@@ -380,10 +351,13 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
 {
     uint32 status = GMTICKET_STATUS_DEFAULT;
     std::string message;
+    std::string response;
 
     if (ticket)
     {
         message = ticket->GetMessage();
+        response = ticket->GetResponse();
+
         status = GMTICKET_STATUS_HASTEXT;
     }
 
@@ -395,8 +369,8 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
 
     if (status == GMTICKET_STATUS_HASTEXT)
     {
-        data.WriteBits(0, 10);              //waitTimeOverrideMessage size
-        data.WriteBits(message.size(), 11);
+        data.WriteBits(response.size() ? response.size() : 0, 10); // GM Response size (waitTimeOverrideMessage).
+        data.WriteBits(message.size()  ? message.size()  : 0, 11); // Ticket message size.
 
         data.FlushBits();
 

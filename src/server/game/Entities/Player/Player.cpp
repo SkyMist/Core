@@ -20407,7 +20407,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
 
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetGUID()))
         if (!ticket->IsClosed() && ticket->IsCompleted())
-            ticket->SendResponse(GetSession());
+            sTicketMgr->SendTicket(GetSession(), ticket);
 
     // Set realmID
     SetUInt32Value(PLAYER_FIELD_VIRTUAL_PLAYER_REALM, realmID);
