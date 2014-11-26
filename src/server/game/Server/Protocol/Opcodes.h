@@ -586,7 +586,7 @@ enum Opcodes
     SMSG_ACHIEVEMENT_EARNED                           = 0x1D49, // 5.4.7 18019
     SMSG_ACTIVATE_TAXI_REPLY                          = 0x1D72, // 5.4.7 18019
     SMSG_ADDON_INFO                                   = 0x10E2, // 5.4.7 18019
-    SMSG_ADD_RUNE_POWER                               = 0x0000,
+    SMSG_ADD_RUNE_POWER                               = 0x1528, // 5.4.7 18019
     SMSG_AI_REACTION                                  = 0x0721, // 5.4.7 18019
     SMSG_ALL_ACHIEVEMENT_DATA                         = 0x072B, // 5.4.7 18019
     SMSG_AREA_SPIRIT_HEALER_TIME                      = 0x0441, // 5.4.7 18019
