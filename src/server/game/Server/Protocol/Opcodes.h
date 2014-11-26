@@ -431,7 +431,7 @@ enum Opcodes
     CMSG_REQUEST_CEMETERY_LIST                        = 0x14A9, // 5.4.7 18019
     CMSG_REQUEST_FORCED_REACTIONS                     = 0x00EB, // 5.4.7 18019
     CMSG_REQUEST_HOTFIX                               = 0x16C2, // 5.4.7 18019
-    CMSG_REQUEST_INSPECT_RATED_BG_STATS               = 0x0000, // 0x1CB3 // 5.4.7 18019 - CHECK!
+    CMSG_REQUEST_INSPECT_RATED_BG_STATS               = 0x1CB3, // 5.4.7 18019
     CMSG_REQUEST_PARTY_MEMBER_STATS                   = 0x1333, // 5.4.7 18019
     CMSG_REQUEST_PET_INFO                             = 0x0000,
     CMSG_REQUEST_PVP_OPTIONS_ENABLED                  = 0x0000,
@@ -449,7 +449,7 @@ enum Opcodes
     CMSG_RESURRECT_RESPONSE                           = 0x00A0, // 5.4.7 18019
     CMSG_RETURN_TO_GRAVEYARD                          = 0x0257, // 5.4.7 18019
     CMSG_ROLE_POLL_BEGIN                              = 0x0D90, // 5.4.7 18019
-    CMSG_SAVE_CUF_PROFILES                            = 0x0C88, // Or 0x3208 // 5.4.7 18019 - CHECK!
+    CMSG_SAVE_CUF_PROFILES                            = 0x0C88, // 5.4.7 18019
     CMSG_SAVE_GUILD_EMBLEM                            = 0x0C81, // 5.4.7 18019
     CMSG_SELECT_FACTION                               = 0x1C7A, // 5.4.7 18019
     CMSG_SELF_RES                                     = 0x10F4, // 5.4.7 18019
@@ -876,7 +876,7 @@ enum Opcodes
     SMSG_INIT_CURRENCY                                = 0x1E3A, // 5.4.7 18019
     SMSG_INIT_WORLD_STATES                            = 0x0F03, // 5.4.7 18019
     SMSG_INSPECT_HONOR_STATS                          = 0x1429, // 5.4.7 18019
-    SMSG_INSPECT_RATED_BG_STATS                       = 0x0000, // 0x046B, // 5.4.7 18019 - CHECK!
+    SMSG_INSPECT_RATED_BG_STATS                       = 0x046B, // 5.4.7 18019
     SMSG_INSPECT_RESULTS_UPDATE                       = 0x0000,
     SMSG_INSPECT_TALENT                               = 0x1E49, // 5.4.7 18019
     SMSG_INSTANCE_LOCK_WARNING_QUERY                  = 0x0000,
