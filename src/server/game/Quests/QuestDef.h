@@ -93,7 +93,7 @@ enum QuestTradeSkill
     QUEST_TRSKILL_MINING         = 11,
     QUEST_TRSKILL_FISHING        = 12,
     QUEST_TRSKILL_SKINNING       = 13,
-    QUEST_TRSKILL_JEWELCRAFTING  = 14,
+    QUEST_TRSKILL_JEWELCRAFTING  = 14
 };
 
 enum QuestStatus
@@ -182,11 +182,11 @@ enum QuestSpecialFlags
 {
     QUEST_SPECIAL_FLAGS_NONE                 = 0x000,
     // Trinity flags for set SpecialFlags in DB if required but used only at server
-    QUEST_SPECIAL_FLAGS_REPEATABLE           = 0x001,   // Set by 1 in SpecialFlags from DB
-    QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT = 0x002,   // Set by 2 in SpecialFlags from DB (if required area explore, spell SPELL_EFFECT_QUEST_COMPLETE casting, table `FECT_QUEST_COMPLETE casting, table `*_script` command SCRIPT_COMMAND_QUEST_EXPLORED use, set from script)
-    QUEST_SPECIAL_FLAGS_AUTO_ACCEPT          = 0x004,   // Set by 4 in SpecialFlags in DB if the quest is to be auto-accepted.
-    QUEST_SPECIAL_FLAGS_DF_QUEST             = 0x008,   // Set by 8 in SpecialFlags in DB if the quest is used by Dungeon Finder.
-    QUEST_SPECIAL_FLAGS_MONTHLY              = 0x010,   // Set by 16 in SpecialFlags in DB if the quest is reset at the begining of the month.
+    QUEST_SPECIAL_FLAGS_REPEATABLE           = 0x001,   // Set by  1 in SpecialFlags from DB
+    QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT = 0x002,   // Set by  2 in SpecialFlags from DB if requires area explore, spell SPELL_EFFECT_QUEST_COMPLETE casting, table casting, table `*_script` command SCRIPT_COMMAND_QUEST_EXPLORED use, set from script.
+    QUEST_SPECIAL_FLAGS_AUTO_ACCEPT          = 0x004,   // Set by  4 in SpecialFlags from DB if the quest is to be auto-accepted.
+    QUEST_SPECIAL_FLAGS_DF_QUEST             = 0x008,   // Set by  8 in SpecialFlags from DB if the quest is used by Dungeon Finder.
+    QUEST_SPECIAL_FLAGS_MONTHLY              = 0x010,   // Set by 16 in SpecialFlags from DB if the quest is reset at the begining of the month.
 
     // room for more custom flags
 
@@ -196,7 +196,7 @@ enum QuestSpecialFlags
     QUEST_SPECIAL_FLAGS_SPEAKTO              = 0x100,   // Internal flag computed only
     QUEST_SPECIAL_FLAGS_KILL_OR_CAST         = 0x200,   // Internal flag computed only
     QUEST_SPECIAL_FLAGS_TIMED                = 0x400,   // Internal flag computed only
-    QUEST_SPECIAL_FLAGS_PLAYER_KILL          = 0x800,   // Internal flag computed only
+    QUEST_SPECIAL_FLAGS_PLAYER_KILL          = 0x800    // Internal flag computed only
 };
 
 enum QuestObjectiveType
@@ -252,6 +252,9 @@ class Quest
 
         bool HasFlag(uint32 flag) const { return (Flags & flag) != 0; }
         void SetFlag(uint32 flag) { Flags |= flag; }
+
+        bool HasFlag2(uint32 flag) const { return (Flags2 & flag) != 0; }
+        void SetFlag2(uint32 flag) { Flags2 |= flag; }
 
         bool HasSpecialFlag(uint32 flag) const { return (SpecialFlags & flag) != 0; }
         void SetSpecialFlag(uint32 flag) { SpecialFlags |= flag; }
@@ -325,6 +328,7 @@ class Quest
         bool   IsAutoAccept() const;
         bool   IsAutoComplete() const;
         uint32 GetFlags() const { return Flags; }
+        uint32 GetFlags2() const { return Flags2; }
         uint32 GetSpecialFlags() const { return SpecialFlags; }
         uint32 GetMinimapTargetMark() const { return MinimapTargetMark; }
         uint32 GetRewardSkillId() const { return RewardSkillId; }
@@ -332,6 +336,7 @@ class Quest
         uint32 GetRewardReputationMask() const { return RewardReputationMask; }
         uint32 GetQuestGiverPortrait() const { return QuestGiverPortrait; }
         uint32 GetQuestTurnInPortrait() const { return QuestTurnInPortrait; }
+        uint32 GetRewChoiceItemCount(uint32 itemId) const;
         bool   IsDaily() const { return Flags & QUEST_FLAGS_DAILY; }
         bool   IsWeekly() const { return Flags & QUEST_FLAGS_WEEKLY; }
         bool   IsMonthly() const { return Flags & QUEST_SPECIAL_FLAGS_MONTHLY; }
@@ -340,6 +345,7 @@ class Quest
         bool   IsRaidQuest(Difficulty difficulty) const;
         bool   IsAllowedInRaid(Difficulty difficulty) const;
         bool   IsDFQuest() const { return SpecialFlags & QUEST_SPECIAL_FLAGS_DF_QUEST; }
+        bool   IsRewChoiceItemValid(uint32 itemId) const;
         uint32 CalculateHonorGain(uint8 level) const;
 
         // multiple values
@@ -374,8 +380,8 @@ class Quest
         uint32 GetRewItemsCount() const { return m_rewItemsCount; }
         uint32 GetRewCurrencyCount() const { return m_rewCurrencyCount; }
         uint32 GetReqCurrencyCount() const { return m_reqCurrencyCount; }
-
-        void BuildExtraQuestInfo(WorldPacket& data, Player* player) const;
+        // 5.x
+        uint32 GetRewardPackageItemId() const { return RewardPackageItemId; }
 
         typedef std::vector<int32> PrevQuests;
         PrevQuests prevQuests;
@@ -465,6 +471,9 @@ class Quest
         std::string QuestTurnTargetName;
         uint32 SoundAccept;
         uint32 SoundTurnIn;
+        // new in 5.x
+        uint32 Flags2;
+        uint32 RewardPackageItemId;
 
         uint32 SpecialFlags; // custom flags, not sniffed/WDB
 };

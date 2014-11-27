@@ -17254,18 +17254,16 @@ void Player::PrepareQuestMenu(uint64 guid)
     }
     else
     {
-        //we should obtain map pointer from GetMap() in 99% of cases. Special case
-        //only for quests which cast teleport spells on player
+        // We should obtain map pointer from GetMap() in 99% of cases. Special case only for quests which cast teleport spells on player.
         Map* _map = IsInWorld() ? GetMap() : sMapMgr->FindMap(GetMapId(), GetInstanceId());
         ASSERT(_map);
-        GameObject* pGameObject = _map->GetGameObject(guid);
-        if (pGameObject)
-        {
-            objectQR  = sObjectMgr->GetGOQuestRelationBounds(pGameObject->GetEntry());
-            objectQIR = sObjectMgr->GetGOQuestInvolvedRelationBounds(pGameObject->GetEntry());
-        }
-        else
+
+        GameObject* gameObject = _map->GetGameObject(guid);
+        if (!gameObject)
             return;
+
+        objectQR  = sObjectMgr->GetGOQuestRelationBounds(gameObject->GetEntry());
+        objectQIR = sObjectMgr->GetGOQuestInvolvedRelationBounds(gameObject->GetEntry());
     }
 
     QuestMenu &qm = PlayerTalkClass->GetQuestMenu();
@@ -17293,7 +17291,9 @@ void Player::PrepareQuestMenu(uint64 guid)
         if (!CanTakeQuest(quest, false))
             continue;
 
-        if (GetQuestStatus(quest_id) == QUEST_STATUS_NONE)
+        if (quest->IsAutoComplete())
+            qm.AddMenuItem(quest_id, 4);
+        else if (GetQuestStatus(quest_id) == QUEST_STATUS_NONE)
             qm.AddMenuItem(quest_id, 2);
     }
 }
@@ -17392,25 +17392,40 @@ bool Player::IsActiveQuest(uint32 quest_id) const
 Quest const* Player::GetNextQuest(uint64 guid, Quest const* quest)
 {
     QuestRelationBounds objectQR;
+    uint32 nextQuestID = quest->GetNextQuestInChain();
 
-    Creature* creature = ObjectAccessor::GetCreatureOrPetOrVehicle(*this, guid);
-    if (creature)
-        objectQR  = sObjectMgr->GetCreatureQuestRelationBounds(creature->GetEntry());
-    else
+    switch (GUID_HIPART(guid))
     {
-        //we should obtain map pointer from GetMap() in 99% of cases. Special case
-        //only for quests which cast teleport spells on player
-        Map* _map = IsInWorld() ? GetMap() : sMapMgr->FindMap(GetMapId(), GetInstanceId());
-        ASSERT(_map);
-        GameObject* pGameObject = _map->GetGameObject(guid);
-        if (pGameObject)
-            objectQR  = sObjectMgr->GetGOQuestRelationBounds(pGameObject->GetEntry());
-        else
+        case HIGHGUID_PLAYER:
+            ASSERT(quest->HasFlag(QUEST_FLAGS_AUTO_SUBMIT));
+            return sObjectMgr->GetQuestTemplate(nextQuestID);
+        case HIGHGUID_UNIT:
+        case HIGHGUID_PET:
+        case HIGHGUID_VEHICLE:
+        {
+            if (Creature* creature = ObjectAccessor::GetCreatureOrPetOrVehicle(*this, guid))
+                objectQR  = sObjectMgr->GetCreatureQuestRelationBounds(creature->GetEntry());
+            else
+                return NULL;
+            break;
+        }
+        case HIGHGUID_GAMEOBJECT:
+        {
+            // We should obtain map pointer from GetMap() in 99% of cases. Special case only for quests which cast teleport spells on player.
+            Map* _map = IsInWorld() ? GetMap() : sMapMgr->FindMap(GetMapId(), GetInstanceId());
+            ASSERT(_map);
+            if (GameObject* gameObject = _map->GetGameObject(guid))
+                objectQR = sObjectMgr->GetGOQuestRelationBounds(gameObject->GetEntry());
+            else
+                return NULL;
+            break;
+        }
+        default:
             return NULL;
     }
 
-    uint32 nextQuestID = quest->GetNextQuestInChain();
-    for (QuestRelations::const_iterator itr = objectQR.first; itr != objectQR.second; ++itr)
+    // for unit and go state
+    for (QuestRelations::const_iterator itr = objectQR.first; itr != objectQR.second; itr++)
     {
         if (itr->second == nextQuestID)
             return sObjectMgr->GetQuestTemplate(nextQuestID);
@@ -17437,8 +17452,7 @@ bool Player::CanTakeQuest(Quest const* quest, bool msg)
 {
     return !DisableMgr::IsDisabledFor(DISABLE_TYPE_QUEST, quest->GetQuestId(), this) 
         && SatisfyQuestStatus(quest, msg) && SatisfyQuestExclusiveGroup(quest, msg)
-        && SatisfyQuestTeam(quest, msg)
-        && SatisfyQuestClass(quest, msg) && SatisfyQuestRace(quest, msg) && SatisfyQuestLevel(quest, msg)
+        && SatisfyQuestTeam(quest, msg) && SatisfyQuestClass(quest, msg) && SatisfyQuestRace(quest, msg) && SatisfyQuestLevel(quest, msg)
         && SatisfyQuestSkill(quest, msg) && SatisfyQuestReputation(quest, msg)
         && SatisfyQuestPreviousQuest(quest, msg) && SatisfyQuestTimed(quest, msg)
         && SatisfyQuestNextChain(quest, msg) && SatisfyQuestPrevChain(quest, msg)
@@ -17483,10 +17497,8 @@ bool Player::CanCompleteQuest(uint32 quest_id)
             return false;                                   // not allow re-complete quest
 
         // auto complete quest
-        if (qInfo->IsAutoComplete() && CanTakeQuest(qInfo, false))
-        {            
-           return true;
-        }
+        if ((qInfo->IsAutoComplete() || qInfo->GetFlags() & QUEST_FLAGS_AUTOCOMPLETE) && CanTakeQuest(qInfo, false))          
+            return true;
 
         QuestStatusMap::iterator itr = m_QuestStatus.find(quest_id);
         if (itr == m_QuestStatus.end())
@@ -17540,14 +17552,13 @@ bool Player::CanCompleteQuest(uint32 quest_id)
             return true;
         }
     }
+
     return false;
 }
 
 bool Player::CanCompleteRepeatableQuest(Quest const* quest)
 {
-    // Solve problem that player don't have the quest and try complete it.
-    // if repeatable she must be able to complete event if player don't have it.
-    // Seem that all repeatable quest are DELIVER Flag so, no need to add more.
+    // Seems that all repeatable quest have DELIVER Flag so, no need to add more.
     if (!CanTakeQuest(quest, false))
         return false;
 
@@ -17613,21 +17624,21 @@ bool Player::CanRewardQuest(Quest const* quest, uint32 reward, bool msg)
 
     if (quest->GetRewChoiceItemsCount() > 0)
     {
-        if (quest->RewardChoiceItemId[reward])
+        if (!quest->IsRewChoiceItemValid(reward))
+            return false;
+
+        ItemPosCountVec dest;
+        InventoryResult res = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, reward, quest->GetRewChoiceItemCount(reward));
+        if (res != EQUIP_ERR_OK)
         {
-            ItemPosCountVec dest;
-            InventoryResult res = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, quest->RewardChoiceItemId[reward], quest->RewardChoiceItemCount[reward]);
-            if (res != EQUIP_ERR_OK)
-            {
-                SendEquipError(res, NULL, NULL, quest->RewardChoiceItemId[reward]);
-                return false;
-            }
+            SendEquipError(res, NULL, NULL, reward);
+            return false;
         }
     }
 
     if (quest->GetRewItemsCount() > 0)
     {
-        for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
+        for (uint32 i = 0; i < quest->GetRewItemsCount(); i++)
         {
             if (quest->RewardItemId[i])
             {
@@ -17669,7 +17680,7 @@ void Player::AddQuestAndCheckCompletion(Quest const* quest, Object* questGiver)
 
             // destroy not required for quest finish quest starting item
             bool destroyItem = true;
-            for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
+            for (uint8 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; i++)
             {
                 if (quest->RequiredItemId[i] == item->GetEntry() && item->GetTemplate()->MaxCount > 0)
                 {
@@ -17761,11 +17772,9 @@ void Player::AddQuest(Quest const* quest, Object* questGiver)
 
     CheckSpellAreaOnQuestStatusChange(quest_id);
 
-    PhaseUpdateData phaseUdateData;
-    phaseUdateData.AddQuestUpdate(quest_id);
-
-    phaseMgr.NotifyConditionChanged(phaseUdateData);
-
+    PhaseUpdateData phaseUpdateData;
+    phaseUpdateData.AddQuestUpdate(quest_id);
+    phaseMgr.NotifyConditionChanged(phaseUpdateData);
 
     UpdateForQuestWorldObjects();
 }
@@ -17804,26 +17813,16 @@ void Player::IncompleteQuest(uint32 quest_id)
 
 void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, bool announce)
 {
-    //this THING should be here to protect code from quest, which cast on player far teleport as a reward
-    //should work fine, cause far teleport will be executed in Player::Update()
+    // This THING should be here to protect code from quests which get player far teleports as a reward. Should work fine, cause far teleport will be executed in Player::Update().
     SetCanDelayTeleport(true);
 
     uint32 quest_id = quest->GetQuestId();
 
-    for (uint8 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
+    for (uint8 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; i++)
         if (quest->RequiredItemId[i])
             DestroyItemCount(quest->RequiredItemId[i], quest->RequiredItemCount[i], true);
 
-    for (uint8 i = 0; i < QUEST_SOURCE_ITEM_IDS_COUNT; ++i)
-    {
-        if (quest->RequiredSourceItemId[i])
-        {
-            uint32 count = quest->RequiredSourceItemCount[i];
-            DestroyItemCount(quest->RequiredSourceItemId[i], count ? count : 9999, true);
-        }
-    }
-
-    for (uint8 i = 0; i < QUEST_REQUIRED_CURRENCY_COUNT; ++i)
+    for (uint8 i = 0; i < QUEST_REQUIRED_CURRENCY_COUNT; i++)
     {
         if (int32 reqCurrencyId = quest->RequiredCurrencyId[i])
         {
@@ -17836,24 +17835,31 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
             }
         }
     }
+
+    for (uint8 i = 0; i < QUEST_SOURCE_ITEM_IDS_COUNT; i++)
+    {
+        if (quest->RequiredSourceItemId[i])
+        {
+            uint32 count = quest->RequiredSourceItemCount[i];
+            DestroyItemCount(quest->RequiredSourceItemId[i], count ? count : 9999, true);
+        }
+    }
+
     RemoveTimedQuest(quest_id);
 
     if (quest->GetRewChoiceItemsCount() > 0)
     {
-        if (uint32 itemId = quest->RewardChoiceItemId[reward])
+        ItemPosCountVec dest;
+        if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, reward, quest->GetRewChoiceItemCount(reward)) == EQUIP_ERR_OK)
         {
-            ItemPosCountVec dest;
-            if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemId, quest->RewardChoiceItemCount[reward]) == EQUIP_ERR_OK)
-            {
-                Item* item = StoreNewItem(dest, itemId, true, Item::GenerateItemRandomPropertyId(itemId));
-                SendNewItem(item, quest->RewardChoiceItemCount[reward], true, false);
-            }
+            Item* item = StoreNewItem(dest, reward, true, Item::GenerateItemRandomPropertyId(reward));
+            SendNewItem(item, quest->GetRewChoiceItemCount(reward), true, false);
         }
     }
 
     if (quest->GetRewItemsCount() > 0)
     {
-        for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
+        for (uint32 i = 0; i < quest->GetRewItemsCount(); i++)
         {
             if (uint32 itemId = quest->RewardItemId[i])
             {
@@ -17869,7 +17875,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     if (quest->GetRewCurrencyCount() > 0)
     {
-        for (uint32 i = 0; i < quest->GetRewCurrencyCount(); ++i)
+        for (uint32 i = 0; i < quest->GetRewCurrencyCount(); i++)
         {
             if (uint32 currencyId = quest->RewardCurrencyId[i])
             {
@@ -17883,6 +17889,9 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
             }
         }
     }
+
+    // if (uint32 skill = quest->GetRewardSkillId())
+    //     UpdateSkillPro(skill, 1000, quest->GetRewardSkillPoints());
 
     RewardReputation(quest);
     RewardGuildReputation(quest);
@@ -17944,6 +17953,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
             SetTitle(titleEntry);
     }
 
+    // Update talent points.
     if (uint32 talents = quest->GetBonusTalents())
     {
         AddQuestRewardedTalentCount(talents);
@@ -17978,28 +17988,21 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     m_RewardedQuests.insert(quest_id);
     m_RewardedQuestsSave[quest_id] = true;
 
-    PhaseUpdateData phaseUdateData;
-    phaseUdateData.AddQuestUpdate(quest_id);
-    phaseMgr.NotifyConditionChanged(phaseUdateData);
-    
-    // Must come after the insert in m_RewardedQuests because of spell_area check
     RemoveActiveQuest(quest_id);
 
-    phaseUdateData.AddQuestUpdate(quest_id);
+    PhaseUpdateData phaseUpdateData;
+    phaseUpdateData.AddQuestUpdate(quest_id);
+    phaseMgr.NotifyConditionChanged(phaseUpdateData);
 
-    phaseMgr.NotifyConditionChanged(phaseUdateData);
-
-
-    // StoreNewItem, mail reward, etc. save data directly to the database
-    // to prevent exploitable data desynchronisation we save the quest status to the database too
-    // (to prevent rewarding this quest another time while rewards were already given out)
+    // StoreNewItem, mail reward, etc. save data directly to the database. To prevent exploitable data desynchronisation we save the quest status to the database too
+    // (to prevent rewarding this quest another time while rewards were already given out).
     SQLTransaction trans = SQLTransaction(NULL);
     _SaveQuestStatus(trans);
 
     if (announce)
         SendQuestReward(quest, XP, questGiver);
 
-    // cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
+    // Cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
     if (quest->GetRewSpellCast() > 0)
         CastSpell(this, quest->GetRewSpellCast(), true);
     else if (quest->GetRewSpell() > 0)
@@ -18010,7 +18013,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT);
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, quest->GetQuestId());
 
-    //lets remove flag for delayed teleports
+    // Let's remove flag for delayed teleports.
     SetCanDelayTeleport(false);
 }
 
@@ -18090,6 +18093,7 @@ bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg)
             SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ); // There doesn't seem to be a specific response for too high player level
         return false;
     }
+
     return true;
 }
 
@@ -18103,8 +18107,10 @@ bool Player::SatisfyQuestLog(bool msg)
     {
         WorldPacket data(SMSG_QUESTLOG_FULL, 0);
         GetSession()->SendPacket(&data);
+
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTLOG_FULL");
     }
+
     return false;
 }
 
@@ -18152,6 +18158,7 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg)
                         return false;
                     }
                 }
+
                 return true;
             }
 
@@ -18185,6 +18192,7 @@ bool Player::SatisfyQuestPreviousQuest(Quest const* qInfo, bool msg)
                         return false;
                     }
                 }
+
                 return true;
             }
         }
@@ -18210,8 +18218,7 @@ bool Player::SatisfyQuestTeam(Quest const* qInfo, bool msg)
 bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
 {
     int32 reqClass = qInfo->GetRequiredClasses();
-
-    if (!reqClass)
+    if (reqClass == 0)
         return true;
 
     if (reqClass > 0)
@@ -18221,7 +18228,6 @@ bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
         {
             if (msg)
                 SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
-
             return false;
         }
     }
@@ -18234,7 +18240,6 @@ bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
         {
             if (msg)
                 SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
-
             return false;
         }
     }
@@ -18245,7 +18250,7 @@ bool Player::SatisfyQuestClass(Quest const* qInfo, bool msg) const
 bool Player::SatisfyQuestRace(Quest const* qInfo, bool msg)
 {
     int32 reqraces = qInfo->GetRequiredRaces();
-    if (!reqraces)
+    if (reqraces == 0)
         return true;
 
     if (reqraces > 0)
@@ -18292,8 +18297,7 @@ bool Player::SatisfyQuestReputation(Quest const* qInfo, bool msg)
         return false;
     }
 
-    // ReputationObjective2 does not seem to be an objective requirement but a requirement
-    // to be able to accept the quest
+    // ReputationObjective2 does not seem to be an objective requirement but a requirement to be able to accept the quest.
     uint32 fIdObj = qInfo->GetRepObjectiveFaction2();
     if (fIdObj && GetReputationMgr().GetReputation(fIdObj) >= qInfo->GetRepObjectiveValue2())
     {
@@ -18386,23 +18390,22 @@ bool Player::SatisfyQuestNextChain(Quest const* qInfo, bool msg)
     if (!nextQuest)
         return true;
 
-    // next quest in chain already started or completed
-    if (GetQuestStatus(nextQuest) != QUEST_STATUS_NONE) // GetQuestStatus returns QUEST_STATUS_COMPLETED for rewarded quests
+    // Next quest in chain already started or completed.
+    if (GetQuestStatus(nextQuest) != QUEST_STATUS_NONE) // GetQuestStatus returns QUEST_STATUS_COMPLETED for rewarded quests.
     {
         if (msg)
             SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
         return false;
     }
 
-    // check for all quests further up the chain
-    // only necessary if there are quest chains with more than one quest that can be skipped
-    //return SatisfyQuestNextChain(qInfo->GetNextQuestInChain(), msg);
+    // Check for all quests further up the chain; only necessary if there are quest chains with more than one quest that can be skipped.
+    // return SatisfyQuestNextChain(qInfo->GetNextQuestInChain(), msg);
     return true;
 }
 
 bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg)
 {
-    // No previous quest in chain
+    // No previous quest in chain.
     if (qInfo->prevChainQuests.empty())
         return true;
 
@@ -18418,13 +18421,12 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg)
             return false;
         }
 
-        // check for all quests further down the chain
-        // only necessary if there are quest chains with more than one quest that can be skipped
-        //if (!SatisfyQuestPrevChain(prevId, msg))
-        //    return false;
+        // Check for all quests further down the chain; only necessary if there are quest chains with more than one quest that can be skipped
+        // if (!SatisfyQuestPrevChain(prevId, msg))
+        //     return false;
     }
 
-    // No previous quest in chain active
+    // No previous quest in chain active.
     return true;
 }
 
@@ -18433,12 +18435,17 @@ bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
 
-    for (auto id : m_dailyQuestStorage)
+    // Normal Daily Quests.
+    if (!m_dailyQuestStorage.empty())
     {
-        if (qInfo->GetQuestId() == id)
-            return false;
+        for (auto id : m_dailyQuestStorage)
+        {
+            if (qInfo->GetQuestId() == id)
+                return false;
+        }
     }
 
+    // Dungeon Finder Quest.
     if (qInfo->IsDFQuest())
     {
         if (!m_DFQuests.empty())
@@ -18481,7 +18488,6 @@ bool Player::SatisfyQuestMonth(Quest const* qInfo, bool /*msg*/)
     return m_monthlyquests.find(qInfo->GetQuestId()) == m_monthlyquests.end();
 }
 
-
 bool Player::GiveQuestSourceItem(Quest const* quest)
 {
     uint32 srcitem = quest->GetSrcItemId();
@@ -18517,7 +18523,6 @@ bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
     {
         uint32 srcItemId = quest->GetSrcItemId();
         ItemTemplate const* item = sObjectMgr->GetItemTemplate(srcItemId);
-        bool destroyItem = true;
 
         if (srcItemId > 0)
         {
@@ -18525,10 +18530,9 @@ bool Player::TakeQuestSourceItem(uint32 questId, bool msg)
             if (count <= 0)
                 count = 1;
 
-            // exist two cases when destroy source quest item not possible:
+            // Two cases exist when destroying source quest item is not possible:
             // a) non un-equippable item (equipped non-empty bag, for example)
-            // b) when quest is started from an item and item also is needed in
-            // the end as RequiredItemId
+            // b) when quest is started from an item and item also is needed in the end as RequiredItemId.
             InventoryResult res = CanUnequipItems(srcItemId, count);
             if (res != EQUIP_ERR_OK)
             {
@@ -18603,10 +18607,9 @@ void Player::SetQuestStatus(uint32 quest_id, QuestStatus status)
 
     CheckSpellAreaOnQuestStatusChange(quest_id);
 
-    PhaseUpdateData phaseUdateData;
-    phaseUdateData.AddQuestUpdate(quest_id);
-
-    phaseMgr.NotifyConditionChanged(phaseUdateData);
+    PhaseUpdateData phaseUpdateData;
+    phaseUpdateData.AddQuestUpdate(quest_id);
+    phaseMgr.NotifyConditionChanged(phaseUpdateData);
 
     UpdateForQuestWorldObjects();
 }
@@ -18621,10 +18624,9 @@ void Player::RemoveActiveQuest(uint32 quest_id)
 
         CheckSpellAreaOnQuestStatusChange(quest_id);
 
-        PhaseUpdateData phaseUdateData;
-        phaseUdateData.AddQuestUpdate(quest_id);
-
-        phaseMgr.NotifyConditionChanged(phaseUdateData);
+        PhaseUpdateData phaseUpdateData;
+        phaseUpdateData.AddQuestUpdate(quest_id);
+        phaseMgr.NotifyConditionChanged(phaseUpdateData);
         return;
     }
 }
@@ -18637,10 +18639,10 @@ void Player::RemoveRewardedQuest(uint32 quest_id)
         m_RewardedQuests.erase(rewItr);
         m_RewardedQuestsSave[quest_id] = false;
 
-        PhaseUpdateData phaseUdateData;
-        phaseUdateData.AddQuestUpdate(quest_id);
+        PhaseUpdateData phaseUpdateData;
+        phaseUpdateData.AddQuestUpdate(quest_id);
 
-        phaseMgr.NotifyConditionChanged(phaseUdateData);
+        phaseMgr.NotifyConditionChanged(phaseUpdateData);
     }
 }
 
@@ -18651,7 +18653,7 @@ uint16 Player::GetReqKillOrCastCurrentCount(uint32 quest_id, int32 entry)
     if (!qInfo)
         return 0;
 
-    for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+    for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
         if (qInfo->RequiredNpcOrGo[j] == entry)
             return m_QuestStatus[quest_id].CreatureOrGOCount[j];
 
@@ -18725,7 +18727,7 @@ void Player::GroupEventHappens(uint32 questId, WorldObject const* pEventObject)
 
 void Player::ItemAddedQuestCheck(uint32 entry, uint32 count)
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (questid == 0)
@@ -18763,16 +18765,18 @@ void Player::ItemAddedQuestCheck(uint32 entry, uint32 count)
             }
         }
     }
+
     UpdateForQuestWorldObjects();
 }
 
 void Player::ItemRemovedQuestCheck(uint32 entry, uint32 count)
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
             continue;
+
         Quest const* qInfo = sObjectMgr->GetQuestTemplate(questid);
         if (!qInfo)
             continue;
@@ -18788,10 +18792,12 @@ void Player::ItemRemovedQuestCheck(uint32 entry, uint32 count)
 
                 uint32 reqitemcount = qInfo->RequiredItemCount[j];
                 uint16 curitemcount;
+
                 if (q_status.Status != QUEST_STATUS_COMPLETE)
                     curitemcount = q_status.ItemCount[j];
                 else
                     curitemcount = GetItemCount(entry, true);
+
                 if (curitemcount < reqitemcount + count)
                 {
                     uint16 remitemcount = curitemcount <= reqitemcount ? count : count + reqitemcount - curitemcount;
@@ -18801,10 +18807,12 @@ void Player::ItemRemovedQuestCheck(uint32 entry, uint32 count)
 
                     IncompleteQuest(questid);
                 }
+
                 return;
             }
         }
     }
+
     UpdateForQuestWorldObjects();
 }
 
@@ -18822,17 +18830,18 @@ void Player::KilledMonsterCredit(uint32 entry, uint64 guid)
 {
     uint16 addkillcount = 1;
     uint32 real_entry = entry;
+    Creature* killed = NULL;
     if (guid)
     {
-        Creature* killed = GetMap()->GetCreature(guid);
+        killed = GetMap()->GetCreature(guid);
         if (killed && killed->GetEntry())
             real_entry = killed->GetEntry();
     }
 
     GetAchievementMgr().StartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_CREATURE, real_entry);   // MUST BE CALLED FIRST
-    UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, real_entry, addkillcount, 0, guid ? GetMap()->GetCreature(guid) : NULL);
+    UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, real_entry, addkillcount, 0, killed);
 
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -18847,7 +18856,7 @@ void Player::KilledMonsterCredit(uint32 entry, uint64 guid)
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST))
             {
-                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
                 {
                     // skip GO activate objective or none
                     if (qInfo->RequiredNpcOrGo[j] <= 0)
@@ -18887,7 +18896,7 @@ void Player::KilledPlayerCredit()
 {
     uint16 addkillcount = 1;
 
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -18928,7 +18937,7 @@ void Player::CastedCreatureOrGO(uint32 entry, uint64 guid, uint32 spell_id)
     bool isCreature = IS_CRE_OR_VEH_GUID(guid);
 
     uint16 addCastCount = 1;
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -18944,7 +18953,7 @@ void Player::CastedCreatureOrGO(uint32 entry, uint64 guid, uint32 spell_id)
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST))
             {
-                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
                 {
                     // skip kill creature objective (0) or wrong spell casts
                     if (qInfo->RequiredSpellCast[j] != spell_id)
@@ -19005,7 +19014,7 @@ void Player::CastedCreatureOrGO(uint32 entry, uint64 guid, uint32 spell_id)
 void Player::CastedCreatureOrGOForQuest(uint32 entry, bool isCreature, uint32 spell_id)
 {
     uint16 addCastCount = 1;
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -19021,7 +19030,7 @@ void Player::CastedCreatureOrGOForQuest(uint32 entry, bool isCreature, uint32 sp
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST))
             {
-                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
                 {
                     // skip kill creature objective (0) or wrong spell casts
                     if (qInfo->RequiredSpellCast[j] != spell_id)
@@ -19082,7 +19091,7 @@ void Player::CastedCreatureOrGOForQuest(uint32 entry, bool isCreature, uint32 sp
 void Player::TalkedToCreature(uint32 entry, uint64 guid)
 {
     uint16 addTalkCount = 1;
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -19098,9 +19107,9 @@ void Player::TalkedToCreature(uint32 entry, uint64 guid)
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST | QUEST_SPECIAL_FLAGS_SPEAKTO))
             {
-                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)
+                for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
                 {
-                                                            // skip spell casts and Gameobject objectives
+                    // Skip spell casts and Gameobject objectives.
                     if (qInfo->RequiredSpellCast[j] > 0 || qInfo->RequiredNpcOrGo[j] < 0)
                         continue;
 
@@ -19138,7 +19147,7 @@ void Player::TalkedToCreature(uint32 entry, uint64 guid)
 
 void Player::MoneyChanged(uint32 count)
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (!questid)
@@ -19168,7 +19177,7 @@ void Player::MoneyChanged(uint32 count)
 
 void Player::ReputationChanged(FactionEntry const* factionEntry)
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         if (uint32 questid = GetQuestSlotQuestId(i))
         {
@@ -19196,7 +19205,7 @@ void Player::ReputationChanged(FactionEntry const* factionEntry)
 
 void Player::ReputationChanged2(FactionEntry const* factionEntry)
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         if (uint32 questid = GetQuestSlotQuestId(i))
         {
@@ -19224,7 +19233,7 @@ void Player::ReputationChanged2(FactionEntry const* factionEntry)
 
 bool Player::HasQuestForItem(uint32 itemid) const
 {
-    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
+    for (uint8 i = 0; i < MAX_QUEST_LOG_SIZE; i++)
     {
         uint32 questid = GetQuestSlotQuestId(i);
         if (questid == 0)
@@ -19247,15 +19256,15 @@ bool Player::HasQuestForItem(uint32 itemid) const
                 if (!InBattleground()) //there are two ways.. we can make every bg-quest a raidquest, or add this code here.. i don't know if this can be exploited by other quests, but i think all other quests depend on a specific area.. but keep this in mind, if something strange happens later
                     continue;
 
-            // There should be no mixed ReqItem/ReqSource drop
-            // This part for ReqItem drop
-            for (uint8 j = 0; j < QUEST_ITEM_OBJECTIVES_COUNT; ++j)
+            // There should be no mixed ReqItem / ReqSource drop.
+            // This part for ReqItem drop.
+            for (uint8 j = 0; j < QUEST_ITEM_OBJECTIVES_COUNT; j++)
             {
                 if (itemid == qinfo->RequiredItemId[j] && q_status.ItemCount[j] < qinfo->RequiredItemCount[j])
                     return true;
             }
-            // This part - for ReqSource
-            for (uint8 j = 0; j < QUEST_SOURCE_ITEM_IDS_COUNT; ++j)
+            // This part for ReqSource drop.
+            for (uint8 j = 0; j < QUEST_SOURCE_ITEM_IDS_COUNT; j++)
             {
                 // examined item is a source item
                 if (qinfo->RequiredSourceItemId[j] == itemid)
@@ -19278,6 +19287,7 @@ bool Player::HasQuestForItem(uint32 itemid) const
             }
         }
     }
+
     return false;
 }
 
@@ -19313,19 +19323,21 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP, Object* questGiver)
         moneyReward = uint32(quest->GetRewOrReqMoney() + int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY)));
     }
 
-    WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, 4 + 4 + 4 + 4 + 4);
-
     bool hasMoreQuestsInChain = quest->GetNextQuestInChain() ? true : false;
 
-    data << uint32(quest->GetBonusTalents());
+    WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, 6 * 4 + 2);
+
+    data << uint32(quest->GetRewardSkillPoints());         // 4.x bonus skill points. May need swapped with talents.
     data << uint32(questId);
-    data << uint32(quest->GetRewardSkillPoints());
+    data << uint32(quest->GetBonusTalents());              // 3.x bonus talents (still sent to 5.4.7 client)
     data << uint32(quest->GetRewardSkillId());             
     data << uint32(moneyReward);             
     data << uint32(xp);        
 
     data.WriteBit(1);                  // HasNextQuestInChain, negated, false if there's another quest.
     data.WriteBit(1);                  // NextQuestOpenWindow, open the gossip windows for the next quest.
+
+    data.FlushBits();
 
     GetSession()->SendPacket(&data);
 
@@ -19338,8 +19350,10 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
     if (questId)
     {
         WorldPacket data(SMSG_QUESTGIVER_QUEST_FAILED, 4 + 4);
+
         data << uint32(questId);
         data << uint32(reason);                             // failed reason (valid reasons: 4, 16, 50, 17, 74, other values show default message)
+
         GetSession()->SendPacket(&data);
 
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
@@ -19351,7 +19365,9 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
     if (quest_id)
     {
         WorldPacket data(SMSG_QUESTUPDATE_FAILEDTIMER, 4);
+
         data << uint32(quest_id);
+
         GetSession()->SendPacket(&data);
 
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_FAILEDTIMER");
@@ -19361,7 +19377,9 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
 void Player::SendCanTakeQuestResponse(uint32 msg) const
 {
     WorldPacket data(SMSG_QUESTGIVER_QUEST_INVALID, 4);
-    data << uint32(msg);
+
+    data << uint32(msg); // See QuestFailedReason enum.
+
     GetSession()->SendPacket(&data);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTGIVER_QUEST_INVALID");
@@ -19371,47 +19389,50 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 {
     if (pReceiver)
     {
+        // Define data usage.
         std::string strTitle = quest->GetTitle();
+        bool hasQuestName = strTitle.size() ? true: false;
 
-        int loc_idx = pReceiver->GetSession()->GetSessionDbLocaleIndex();
+        int32 loc_idx = pReceiver->GetSession()->GetSessionDbLocaleIndex();
         if (loc_idx >= 0)
             if (const QuestLocale* pLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
                 ObjectMgr::GetLocaleString(pLocale->Title, loc_idx, strTitle);
 
-        ObjectGuid guid = GetGUID();
+        ObjectGuid PlayerGuid = GetGUID();
 
-        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT, 4 + strTitle.size() + 8);
+        // Send packet.
+        WorldPacket data(SMSG_QUEST_CONFIRM_ACCEPT, 4 + strTitle.size() + 1 + 8);
 
         data << uint32(quest->GetQuestId());
 
-        data.WriteBit(guid[3]);
-        data.WriteBit(guid[6]);
-        data.WriteBit(guid[5]);
-        data.WriteBit(guid[7]);
-        data.WriteBit(guid[0]);
+        data.WriteBit(PlayerGuid[3]);
+        data.WriteBit(PlayerGuid[6]);
+        data.WriteBit(PlayerGuid[5]);
+        data.WriteBit(PlayerGuid[7]);
+        data.WriteBit(PlayerGuid[0]);
 
         data.WriteBit(!strTitle.size());
         if (strTitle.size())
             data.WriteBits(strTitle.size(), 10);
 
-        data.WriteBit(guid[2]);
-        data.WriteBit(guid[4]);
-        data.WriteBit(guid[1]);
+        data.WriteBit(PlayerGuid[2]);
+        data.WriteBit(PlayerGuid[4]);
+        data.WriteBit(PlayerGuid[1]);
 
         data.FlushBits();
 
-        data.WriteByteSeq(guid[4]);
-        data.WriteByteSeq(guid[3]);
-        data.WriteByteSeq(guid[2]);
-        data.WriteByteSeq(guid[7]);
+        data.WriteByteSeq(PlayerGuid[4]);
+        data.WriteByteSeq(PlayerGuid[3]);
+        data.WriteByteSeq(PlayerGuid[2]);
+        data.WriteByteSeq(PlayerGuid[7]);
 
         if (strTitle.size())
             data.append(strTitle.c_str(), strTitle.size());
 
-        data.WriteByteSeq(guid[5]);
-        data.WriteByteSeq(guid[1]);
-        data.WriteByteSeq(guid[6]);
-        data.WriteByteSeq(guid[0]);
+        data.WriteByteSeq(PlayerGuid[5]);
+        data.WriteByteSeq(PlayerGuid[1]);
+        data.WriteByteSeq(PlayerGuid[6]);
+        data.WriteByteSeq(PlayerGuid[0]);
 
         pReceiver->GetSession()->SendPacket(&data);
 
@@ -19425,7 +19446,7 @@ void Player::SendPushToPartyResponse(Player* player, uint32 msg)
     {
         ObjectGuid guid = player->GetGUID();
 
-        WorldPacket data(SMSG_QUEST_PUSH_RESULT, 8 + 1);
+        WorldPacket data(SMSG_QUEST_PUSH_RESULT, 8 + 1 + 1);
 
         uint8 bitOrder[8] = { 2, 7, 3, 5, 4, 1, 6, 0 };
         data.WriteBitInOrder(guid, bitOrder);
@@ -19452,18 +19473,24 @@ void Player::SendPushToPartyResponse(Player* player, uint32 msg)
 
 void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, uint32 creatureOrGO_idx, uint16 old_count, uint16 add_count)
 {
+    // Check for client overflow.
     ASSERT(old_count + add_count < 65536 && "mob/GO count store in 16 bits 2^16 = 65536 (0..65536)");
 
+    // Define data usage.
     int32 entry = quest->RequiredNpcOrGo[creatureOrGO_idx];
-    if (entry < 0)
-        // client expected gameobject template id in form (id|0x80000000)
-        entry = (-entry) | 0x80000000;
+    uint32 killedCreaturesOrUsedGobs = old_count + add_count;
 
-    uint8 unk1 = 0;
+    bool hasObjective = (entry != 0) ? true : false;
+    bool isCreature = (hasObjective && entry > 0) ? true : false;
+    bool isGameObject = (hasObjective && entry < 0) ? true : false;
+
+    if (isGameObject)
+        entry = (-entry) | 0x80000000;        // client expected gameobject template id in form (id | 0x80000000)
+
     ObjectGuid guid = objGuid;
 
+    // Send packet.
     WorldPacket data(SMSG_QUESTUPDATE_ADD_KILL, 4 + 4 + 1 + 8);
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_KILL");
     
     uint8 bitOrder[8] = { 5, 3, 6, 7, 4, 1, 2, 0};
     data.WriteBitInOrder(guid, bitOrder);
@@ -19473,7 +19500,7 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, 
     data.WriteByteSeq(guid[4]);
 
     data << uint16(quest->RequiredNpcOrGoCount[creatureOrGO_idx]);
-    data << uint8(unk1);
+    data << uint8(isCreature ? QUEST_OBJECTIVE_TYPE_NPC : (isGameObject ? QUEST_OBJECTIVE_TYPE_GO : 0));  // Requirement Type
 
     data.WriteByteSeq(guid[6]);
 
@@ -19485,13 +19512,15 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, 
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[2]);
 
-    data << uint16(old_count + add_count);
+    data << uint16(killedCreaturesOrUsedGobs);
 
     data.WriteByteSeq(guid[7]);
 
     data << uint32(quest->GetQuestId());
     
     GetSession()->SendPacket(&data);
+
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_KILL");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -19500,14 +19529,22 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, 
 
 void Player::SendQuestUpdateAddPlayer(Quest const* quest, uint16 old_count, uint16 add_count)
 {
+    // Check for client overflow.
     ASSERT(old_count + add_count < 65536 && "player count store in 16 bits");
 
-    WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, (2*4) + 1);
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
-    data << uint8(old_count + add_count);
+    // Get killed players total count.
+    uint16 killedPlayersCount = old_count + add_count;
+
+    // Send packet.
+    WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, 4 + 4 + 1);
+
+    data << uint8(killedPlayersCount);
     data << uint32(quest->GetPlayersSlain());
     data << uint32(quest->GetQuestId());
+
     GetSession()->SendPacket(&data);
+
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)

@@ -639,6 +639,8 @@ class Battleground
 
         virtual uint64 GetFlagPickerGUID(int32 /*team*/ = -1) const { return 0; }
 
+        virtual void HandleQuestComplete(uint32 /*questid*/, Player* /*player*/) { }
+
         uint8 ClickFastStart(Player *player, GameObject *go);
         void DespawnCrystals();
 
