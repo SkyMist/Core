@@ -501,11 +501,11 @@ void BossAI::_EnterCombat()
     if (instance)
     {
         // bosses do not respawn, check only on enter combat
-        if (!instance->CheckRequiredBosses(_bossId))
-        {
-            EnterEvadeMode();
-            return;
-        }
+        // if (!instance->CheckRequiredBosses(_bossId))
+        // {
+        //     EnterEvadeMode();
+        //     return;
+        // }
         instance->SetBossState(_bossId, IN_PROGRESS);
     }
 }

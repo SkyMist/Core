@@ -2059,12 +2059,12 @@ void WorldSession::HandleResetChallengeModeOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket & recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "MSG_SET_DUNGEON_DIFFICULTY");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_SET_DUNGEON_DIFFICULTY");
 
     uint32 mode;
     recvData >> mode;
 
-    if (mode != CHALLENGE_MODE_DIFFICULTY && mode >= MAX_DUNGEON_DIFFICULTY)
+    if (mode >= MAX_DUNGEON_DIFFICULTY)
     {
         sLog->outError(LOG_FILTER_NETWORKIO, "WorldSession::HandleSetDungeonDifficultyOpcode: player %d sent an invalid instance mode %d!", _player->GetGUIDLow(), mode);
         return;
@@ -2105,20 +2105,19 @@ void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket & recvData)
             //_player->SendDungeonDifficulty(true);
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false, _player);
             group->SetDungeonDifficulty(Difficulty(mode));
-            _player->SendDungeonDifficulty(true);
         }
     }
     else
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false);
         _player->SetDungeonDifficulty(Difficulty(mode));
-        _player->SendDungeonDifficulty(false);
+        _player->SendDungeonDifficulty(mode);
     }
 }
 
 void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "MSG_SET_RAID_DIFFICULTY");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_SET_RAID_DIFFICULTY");
 
     uint32 mode;
     recvData >> mode;
@@ -2161,17 +2160,15 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
                 }
             }
             // the difficulty is set even if the instances can't be reset
-            //_player->SendDungeonDifficulty(true);
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true, _player);
             group->SetRaidDifficulty(Difficulty(mode));
-            _player->SendRaidDifficulty(true);
         }
     }
     else
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true);
         _player->SetRaidDifficulty(Difficulty(mode));
-        _player->SendRaidDifficulty(false);
+        _player->SendRaidDifficulty(mode);
     }
 }
 

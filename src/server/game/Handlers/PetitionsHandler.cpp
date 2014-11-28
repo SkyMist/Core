@@ -102,6 +102,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
     uint32 charterid = 0;
     uint32 cost = 0;
     uint32 type = 0;
+
     if (creature->isTabardDesigner())
     {
         // if tabard designer, then trying to buy a guild charter.
@@ -293,9 +294,11 @@ void WorldSession::HandlePetitionShowSignOpcode(WorldPacket& recvData)
     data.WriteBit(guid1[3]);
     data.WriteBit(guid2[1]);
     data.WriteBit(guid1[2]);
+
     data.FlushBits();
 
     data << uint32(petitionGuidLow);
+
     if (signsBuffer.size())
         data.append(signsBuffer);
 
@@ -387,6 +390,8 @@ void WorldSession::SendPetitionQueryOpcode(uint64 petitionguid)
         data.WriteBit(ownerGuid[7]);
         data.WriteBit(ownerGuid[4]);
 
+        data.FlushBits();
+
         data << uint32(0);
         data << uint32(0);
         data.WriteByteSeq(ownerGuid[3]);
@@ -405,7 +410,7 @@ void WorldSession::SendPetitionQueryOpcode(uint64 petitionguid)
         if (name.size())
             data.append(name.c_str(), name.size());
         data.WriteByteSeq(ownerGuid[6]);
-        
+
         data << uint32(4);
         data << uint16(0);
         data << uint32(GUID_LOPART(petitionguid));
@@ -489,6 +494,8 @@ void WorldSession::HandlePetitionRenameOpcode(WorldPacket& recvData)
     data.WriteBit(petitionGuid[6]);
     data.WriteBit(petitionGuid[4]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(petitionGuid[7]);
     data.WriteByteSeq(petitionGuid[2]);
     data.WriteByteSeq(petitionGuid[1]);
@@ -496,8 +503,10 @@ void WorldSession::HandlePetitionRenameOpcode(WorldPacket& recvData)
     data.WriteByteSeq(petitionGuid[0]);
     data.WriteByteSeq(petitionGuid[4]);
     data.WriteByteSeq(petitionGuid[5]);
+
     if (nameLen)
         data.append(newName.c_str(), nameLen);
+
     data.WriteByteSeq(petitionGuid[6]);
 
     SendPacket(&data);
@@ -765,6 +774,7 @@ void WorldSession::HandleOfferPetitionOpcode(WorldPacket& recvData)
     data.WriteBit(guid1[0]);
     data.WriteBit(guid2[2]);
     data.WriteBit(guid2[3]);
+
     data.WriteBits(loParts.size(), 21);
 
     for (auto lowGuid : loParts)
@@ -779,7 +789,9 @@ void WorldSession::HandleOfferPetitionOpcode(WorldPacket& recvData)
         signsBuffer.WriteByteSeq(signerGuid[5]);
         signsBuffer.WriteByteSeq(signerGuid[3]);
         signsBuffer.WriteByteSeq(signerGuid[2]);
+
         signsBuffer << uint32(0);
+
         signsBuffer.WriteByteSeq(signerGuid[6]);
         signsBuffer.WriteByteSeq(signerGuid[1]);
         signsBuffer.WriteByteSeq(signerGuid[0]);
@@ -791,9 +803,11 @@ void WorldSession::HandleOfferPetitionOpcode(WorldPacket& recvData)
     data.WriteBit(guid1[3]);
     data.WriteBit(guid2[1]);
     data.WriteBit(guid1[2]);
+
     data.FlushBits();
 
     data << uint32(petitionGuidLow);
+
     if (signsBuffer.size())
         data.append(signsBuffer);
 
@@ -968,7 +982,9 @@ void WorldSession::HandlePetitionShowListOpcode(WorldPacket& recvData)
     PetitionGuid[1] = recvData.ReadBit();
     PetitionGuid[0] = recvData.ReadBit();
     PetitionGuid[5] = recvData.ReadBit();
-    
+
+    recvData.FlushBits();
+
     recvData.ReadByteSeq(PetitionGuid[5]);
     recvData.ReadByteSeq(PetitionGuid[0]);
     recvData.ReadByteSeq(PetitionGuid[6]);
@@ -996,6 +1012,8 @@ void WorldSession::SendPetitionShowList(uint64 guid)
     uint8 bitsOrder[8] = { 3, 6, 2, 0, 1, 4, 7, 5 };
     data.WriteBitInOrder(npcGuid, bitsOrder);
 
+    data.FlushBits();
+
     data.WriteByteSeq(npcGuid[2]);
     data.WriteByteSeq(npcGuid[7]);
     data.WriteByteSeq(npcGuid[5]);
@@ -1003,7 +1021,9 @@ void WorldSession::SendPetitionShowList(uint64 guid)
     data.WriteByteSeq(npcGuid[1]);
     data.WriteByteSeq(npcGuid[0]);
     data.WriteByteSeq(npcGuid[3]);
+
     data << uint32(GUILD_CHARTER_COST);                 // charter cost
+
     data.WriteByteSeq(npcGuid[6]);
 
     SendPacket(&data);
@@ -1026,7 +1046,9 @@ void WorldSession::SendPetitionSignResult(ObjectGuid ownerGuid, ObjectGuid petit
     data.WriteBit(guid2[1]);
     data.WriteBit(guid1[7]);
     data.WriteBit(guid1[2]);
+
     data.WriteBits(PetitionSigns(result), 4);
+
     data.WriteBit(guid2[0]);
     data.WriteBit(guid2[7]);
     data.WriteBit(guid1[4]);
@@ -1035,6 +1057,8 @@ void WorldSession::SendPetitionSignResult(ObjectGuid ownerGuid, ObjectGuid petit
     data.WriteBit(guid1[1]);
     data.WriteBit(guid2[6]);
     data.WriteBit(guid1[5]);
+
+    data.FlushBits();
 
     data.WriteByteSeq(guid2[0]);
     data.WriteByteSeq(guid1[5]);
@@ -1062,6 +1086,8 @@ void WorldSession::SendAlreadySigned(ObjectGuid playerGuid)
 
     uint8 bitsOrder[8] = { 4, 2, 1, 5, 7, 6, 0, 3 };
     data.WriteBitInOrder(playerGuid, bitsOrder);
+
+    data.FlushBits();
 
     uint8 bytesOder[8] = { 6, 2, 7, 1, 3, 4, 0, 5 };
     data.WriteBytesSeq(playerGuid, bytesOder);

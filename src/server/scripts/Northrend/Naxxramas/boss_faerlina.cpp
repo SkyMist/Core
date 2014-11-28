@@ -196,7 +196,8 @@ class mob_faerlina_add : public CreatureScript
 
             void Reset()
             {
-                if (GetDifficulty() == MAN10_DIFFICULTY) {
+                if (GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL) 
+                {
                     me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_BIND, true);
                     me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_CHARM, true);
                 }
@@ -204,7 +205,7 @@ class mob_faerlina_add : public CreatureScript
 
             void JustDied(Unit* /*killer*/)
             {
-                if (_instance && GetDifficulty() == MAN10_DIFFICULTY)
+                if (_instance && GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
                     if (Creature* faerlina = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_FAERLINA)))
                         DoCast(faerlina, SPELL_WIDOWS_EMBRACE);
             }

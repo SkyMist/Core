@@ -58,7 +58,7 @@ Loot* Roll::getLoot()
 }
 
 Group::Group() : m_leaderGuid(0), m_leaderName(""), m_groupType(GROUPTYPE_NORMAL),
-    m_dungeonDifficulty(REGULAR_DIFFICULTY), m_raidDifficulty(MAN10_DIFFICULTY),
+    m_dungeonDifficulty(DUNGEON_DIFFICULTY_NORMAL), m_raidDifficulty(RAID_DIFFICULTY_10MAN_NORMAL),
     m_bgGroup(NULL), m_bfGroup(NULL), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_looterGuid(0),
     m_subGroupsCounts(NULL), m_guid(0), m_counter(0), m_maxEnchantingLevel(0), m_dbStoreId(0), m_readyCheckCount(0), m_readyCheck(false), m_membersInInstance(0)
 {
@@ -115,13 +115,13 @@ bool Group::Create(Player* leader)
     m_lootThreshold = ITEM_QUALITY_UNCOMMON;
     m_looterGuid = leaderGuid;
 
-    m_dungeonDifficulty = REGULAR_DIFFICULTY;
-    m_raidDifficulty = MAN10_DIFFICULTY;
+    m_dungeonDifficulty = DUNGEON_DIFFICULTY_NORMAL;
+    m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
 
     if (!isBGGroup() && !isBFGroup())
     {
         m_dungeonDifficulty = leader->GetDungeonDifficulty();
-        m_raidDifficulty = isLFGGroup() ? RAID_TOOL_DIFFICULTY : leader->GetRaidDifficulty();
+        m_raidDifficulty = isLFGGroup() ? RAID_DIFFICULTY_25MAN_LFR : leader->GetRaidDifficulty();
 
         m_dbStoreId = sGroupMgr->GenerateNewGroupDbStoreId();
 
@@ -185,13 +185,13 @@ void Group::LoadGroupFromDB(Field* fields)
 
     uint32 diff = fields[13].GetUInt8();
     if (diff >= MAX_DUNGEON_DIFFICULTY)
-        m_dungeonDifficulty = REGULAR_DIFFICULTY;
+        m_dungeonDifficulty = DUNGEON_DIFFICULTY_NORMAL;
     else
         m_dungeonDifficulty = Difficulty(diff);
 
     uint32 r_diff = fields[14].GetUInt8();
     if (r_diff >= MAX_RAID_DIFFICULTY)
-        m_raidDifficulty = MAN10_DIFFICULTY;
+        m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
     else
         m_raidDifficulty = Difficulty(r_diff);
 
@@ -463,18 +463,16 @@ bool Group::AddMember(Player* player)
             player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, false);
             player->ResetInstances(INSTANCE_RESET_GROUP_JOIN, true);
 
-            if (player->getLevel() >= LEVELREQUIREMENT_HEROIC)
+            if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
             {
-                if (player->GetDungeonDifficulty() != GetDungeonDifficulty())
-                {
-                    player->SetDungeonDifficulty(GetDungeonDifficulty());
-                    player->SendDungeonDifficulty(true);
-                }
-                if (player->GetRaidDifficulty() != GetRaidDifficulty())
-                {
-                    player->SetRaidDifficulty(GetRaidDifficulty());
-                    player->SendRaidDifficulty(true);
-                }
+                player->SetDungeonDifficulty(GetDungeonDifficulty());
+                player->SendDungeonDifficulty(GetDungeonDifficulty());
+            }
+
+            if (player->GetRaidDifficulty() != GetRaidDifficulty())
+            {
+                player->SetRaidDifficulty(GetRaidDifficulty());
+                player->SendRaidDifficulty(GetRaidDifficulty());
             }
         }
 
@@ -2629,7 +2627,7 @@ void Group::SetDungeonDifficulty(Difficulty difficulty)
             continue;
 
         player->SetDungeonDifficulty(difficulty);
-        player->SendDungeonDifficulty(true);
+        player->SendDungeonDifficulty(difficulty);
     }
 
     SendUpdate();
@@ -2655,7 +2653,7 @@ void Group::SetRaidDifficulty(Difficulty difficulty)
             continue;
 
         player->SetRaidDifficulty(difficulty);
-        player->SendRaidDifficulty(true);
+        player->SendRaidDifficulty(difficulty);
     }
 
     SendUpdate();
@@ -2697,7 +2695,7 @@ void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->map_type == MAP_RAID || diff == HEROIC_DIFFICULTY)
+            if (entry->map_type == MAP_RAID || diff > DUNGEON_DIFFICULTY_NORMAL && diff != DUNGEON_DIFFICULTY_CHALLENGE && diff != SCENARIO_DIFFICULTY_NORMAL)
             {
                 ++itr;
                 continue;
@@ -3023,13 +3021,18 @@ bool Group::HasFreeSlotSubGroup(uint8 subgroup) const
 
 void Group::SendRaidMarkersUpdate()
 {
-    return;
+    // return;
 
     uint32 mask = RAID_MARKER_NONE;
 
-    for (auto itr : GetRaidMarkers())
-        mask |= itr.mask;
+    if (!m_raidMarkers.empty())
+        for (auto itr : GetRaidMarkers())
+            mask |= itr.mask;
 
+    WorldPacket data(SMSG_RAID_MARKERS_CHANGED, 4);
+    data << uint32(mask);
+
+    /*
     WorldPacket data(SMSG_RAID_MARKERS_CHANGED, 10);
     ByteBuffer dataBuffer;
 
@@ -3061,8 +3064,10 @@ void Group::SendRaidMarkersUpdate()
     }
 
     data.FlushBits();
+
     if (dataBuffer.size())
         data.append(dataBuffer);
+    */
 
     BroadcastPacket(&data, true);
 }
@@ -3517,26 +3522,28 @@ bool Group::CanEnterInInstance()
     {
         switch (GetRaidDifficulty())
         {
-            case SCENARIO_DIFFICULTY:
-            case SCENARIO_HEROIC_DIFFICULTY:
+            case SCENARIO_DIFFICULTY_NORMAL:
+            case SCENARIO_DIFFICULTY_HEROIC:
                 maxplayers = 3;
                 break;
-            case HEROIC_DIFFICULTY:
-            case CHALLENGE_MODE_DIFFICULTY:
+            case DUNGEON_DIFFICULTY_HEROIC:
+            case DUNGEON_DIFFICULTY_CHALLENGE:
                 maxplayers = 5;
                 break;
-            case MAN10_DIFFICULTY:
-            case MAN10_HEROIC_DIFFICULTY:
+            case RAID_DIFFICULTY_10MAN_NORMAL:
+            case RAID_DIFFICULTY_10MAN_HEROIC:
                 maxplayers = 10;
                 break;
-            case MAN25_DIFFICULTY:
-            case MAN25_HEROIC_DIFFICULTY:
-            case DYNAMIC_DIFFICULTY:
+            case RAID_DIFFICULTY_25MAN_NORMAL:
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+            case RAID_DIFFICULTY_1025MAN_FLEX:
                 maxplayers = 25;
                 break;
-            case MAN40_DIFFICULTY:
+            case RAID_DIFFICULTY_40MAN:
                 maxplayers = 40;
                 break;
+
+			default: break;
         }
     }
 

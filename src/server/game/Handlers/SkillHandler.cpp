@@ -136,6 +136,7 @@ void WorldSession::HandleArcheologyRequestHistory(WorldPacket& recvPacket)
     data.WriteBits(count, 20);
 
     if (count > 0)
+    {
         for (std::set<uint32>::const_iterator itr = GetPlayer()->GetArchaeologyMgr().GetCompletedProjects().begin(); itr != GetPlayer()->GetArchaeologyMgr().GetCompletedProjects().end(); ++itr)
         {
             if (ResearchProjectEntry const* project = sResearchProjectStore.LookupEntry((*itr)))
@@ -145,6 +146,7 @@ void WorldSession::HandleArcheologyRequestHistory(WorldPacket& recvPacket)
                 data.append<uint32>(uint32(time(NULL))); // time
             }
         }
+    }
 
     SendPacket(&data);
 }

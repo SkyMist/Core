@@ -277,18 +277,20 @@ class npc_spine_of_deathwing_deathwing : public CreatureScript
                             {
                                 switch (GetDifficulty())
                                 {
-                                    case MAN10_DIFFICULTY:
+                                    case RAID_DIFFICULTY_10MAN_NORMAL:
                                         pInstance->DoRespawnGameObject(pInstance->GetData64(DATA_GREATER_CACHE_10N), DAY);
                                         break;
-                                    case MAN25_DIFFICULTY:
+                                    case RAID_DIFFICULTY_25MAN_NORMAL:
                                         pInstance->DoRespawnGameObject(pInstance->GetData64(DATA_GREATER_CACHE_25N), DAY);
                                         break;
-                                    case MAN10_HEROIC_DIFFICULTY:
+                                    case RAID_DIFFICULTY_10MAN_HEROIC:
                                         pInstance->DoRespawnGameObject(pInstance->GetData64(DATA_GREATER_CACHE_10H), DAY);
                                         break;
-                                    case MAN25_HEROIC_DIFFICULTY:
+                                    case RAID_DIFFICULTY_25MAN_HEROIC:
                                         pInstance->DoRespawnGameObject(pInstance->GetData64(DATA_GREATER_CACHE_25H), DAY);
                                         break;
+
+									default: break;
                                 }
                             }
                             break;
@@ -485,20 +487,20 @@ class npc_spine_of_deathwing_deathwing : public CreatureScript
                             uint32 spellId2 = SPELL_FIERY_GRIP;
                             switch (_obj->GetMap()->GetDifficulty())
                             {
-                                case MAN25_DIFFICULTY:
+                                case RAID_DIFFICULTY_25MAN_NORMAL:
                                     spellId1 = SPELL_GRASPING_TENDRILS_25;
                                     spellId2 = SPELL_FIERY_GRIP_25;
                                     break;
-                                case MAN10_HEROIC_DIFFICULTY:
+                                case RAID_DIFFICULTY_10MAN_HEROIC:
                                     spellId1 = SPELL_GRASPING_TENDRILS_10H;
                                     spellId2 = SPELL_FIERY_GRIP_10H;
                                     break;
-                                case MAN25_HEROIC_DIFFICULTY:
+                                case RAID_DIFFICULTY_25MAN_HEROIC:
                                     spellId1 = SPELL_GRASPING_TENDRILS_25H;
                                     spellId2 = SPELL_FIERY_GRIP_25H;
                                     break;
-                                default:
-                                    break;
+
+                                default: break;
                             }
                             if (u->HasAura(spellId1) || u->HasAura(spellId2))
                                 return false;

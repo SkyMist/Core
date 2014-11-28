@@ -2459,7 +2459,7 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
 
     switch (e.GetEventType())
     {
-        case SMART_EVENT_LINK://special handling
+        case SMART_EVENT_LINK: //special handling
             ProcessAction(e, unit, var0, var1, bvar, spell, gob);
             break;
         //called from Update tick
@@ -3066,7 +3066,7 @@ void SmartScript::FillScript(SmartAIEventList e, WorldObject* obj, AreaTriggerEn
         {
             if (obj && obj->GetMap()->IsDungeon())
             {
-                if ((1 << (obj->GetMap()->GetSpawnMode()+1)) & (*i).event.event_flags)
+                if ((1 << (obj->GetMap()->GetSpawnMode() + 1)) & (*i).event.event_flags)
                 {
                     mEvents.push_back((*i));
                 }

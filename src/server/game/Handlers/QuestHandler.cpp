@@ -597,7 +597,7 @@ void WorldSession::HandleQuestConfirmAccept(WorldPacket& recvData)
         if (!pOriginalPlayer)
             return;
 
-        if (quest->IsRaidQuest())
+        if (quest->IsRaidQuest(pOriginalPlayer->GetMap()->GetDifficulty()))
         {
             if (!_player->IsInSameRaidWith(pOriginalPlayer))
                 return;

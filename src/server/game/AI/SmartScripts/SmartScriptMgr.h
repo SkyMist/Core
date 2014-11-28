@@ -1224,18 +1224,18 @@ const uint32 SmartAIEventMask[SMART_EVENT_END][2] =
 
 enum SmartEventFlags
 {
-    SMART_EVENT_FLAG_NOT_REPEATABLE        = 0x001,                     //Event can not repeat
-    SMART_EVENT_FLAG_DIFFICULTY_0          = 0x002,                     //Event only occurs in instance difficulty 0
-    SMART_EVENT_FLAG_DIFFICULTY_1          = 0x004,                     //Event only occurs in instance difficulty 1
-    SMART_EVENT_FLAG_DIFFICULTY_2          = 0x008,                     //Event only occurs in instance difficulty 2
-    SMART_EVENT_FLAG_DIFFICULTY_3          = 0x010,                     //Event only occurs in instance difficulty 3
-    SMART_EVENT_FLAG_RESERVED_5            = 0x020,
-    SMART_EVENT_FLAG_RESERVED_6            = 0x040,
-    SMART_EVENT_FLAG_DEBUG_ONLY            = 0x080,                     //Event only occurs in debug build
-    SMART_EVENT_FLAG_DONT_RESET            = 0x100,                     //Event will not reset in SmartScript::OnReset()
+    SMART_EVENT_FLAG_NOT_REPEATABLE        = 0x001,                     // Event can not repeat
+    SMART_EVENT_FLAG_DIFFICULTY_0          = 0x002,                     // Event only occurs in normal dungeon
+    SMART_EVENT_FLAG_DIFFICULTY_1          = 0x004,                     // Event only occurs in heroic dungeon
+    SMART_EVENT_FLAG_DIFFICULTY_2          = 0x008,                     // Event only occurs in normal 10 raid
+    SMART_EVENT_FLAG_DIFFICULTY_3          = 0x010,                     // Event only occurs in normal 25 raid
+    SMART_EVENT_FLAG_DIFFICULTY_4          = 0x020,                     // Event only occurs in heroic 10 raid
+    SMART_EVENT_FLAG_DIFFICULTY_5          = 0x040,                     // Event only occurs in heroic 25 raid
+    SMART_EVENT_FLAG_DEBUG_ONLY            = 0x080,                     // Event only occurs in debug build
+    SMART_EVENT_FLAG_DONT_RESET            = 0x100,                     // Event will not reset in SmartScript::OnReset()
 
-    SMART_EVENT_FLAG_DIFFICULTY_ALL        = (SMART_EVENT_FLAG_DIFFICULTY_0|SMART_EVENT_FLAG_DIFFICULTY_1|SMART_EVENT_FLAG_DIFFICULTY_2|SMART_EVENT_FLAG_DIFFICULTY_3),
-    SMART_EVENT_FLAGS_ALL                  = (SMART_EVENT_FLAG_NOT_REPEATABLE|SMART_EVENT_FLAG_DIFFICULTY_ALL|SMART_EVENT_FLAG_RESERVED_5|SMART_EVENT_FLAG_RESERVED_6|SMART_EVENT_FLAG_DEBUG_ONLY|SMART_EVENT_FLAG_DONT_RESET)
+    SMART_EVENT_FLAG_DIFFICULTY_ALL        = (SMART_EVENT_FLAG_DIFFICULTY_0 | SMART_EVENT_FLAG_DIFFICULTY_1 | SMART_EVENT_FLAG_DIFFICULTY_2 | SMART_EVENT_FLAG_DIFFICULTY_3 | SMART_EVENT_FLAG_DIFFICULTY_4 | SMART_EVENT_FLAG_DIFFICULTY_5),
+    SMART_EVENT_FLAGS_ALL                  = (SMART_EVENT_FLAG_NOT_REPEATABLE | SMART_EVENT_FLAG_DIFFICULTY_ALL | SMART_EVENT_FLAG_DEBUG_ONLY | SMART_EVENT_FLAG_DONT_RESET)
 };
 
 enum SmartCastFlags

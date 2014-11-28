@@ -613,6 +613,12 @@ class boss_immerseus : public CreatureScript
                 if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
+                // if (instance && instance->IsWipe())
+                // {
+                //     EnterEvadeMode();
+                //     return;
+                // }
+
                 events.Update(diff);
 
                 // Handle Seeping Sha (Normally handled as an Areatrigger check, but can be just as good checked here for periodic damage aura addition).

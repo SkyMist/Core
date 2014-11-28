@@ -25,10 +25,11 @@
 #include "World.h"
 #include "Group.h"
 
-MapInstanced::MapInstanced(uint32 id, time_t expiry) : Map(id, expiry, 0, REGULAR_DIFFICULTY)
+MapInstanced::MapInstanced(uint32 id, time_t expiry) : Map(id, expiry, 0, DUNGEON_DIFFICULTY_NORMAL)
 {
     // initialize instanced maps list
     m_InstancedMaps.clear();
+
     // fill with zero
     memset(&GridMapReference, 0, MAX_NUMBER_OF_GRIDS*MAX_NUMBER_OF_GRIDS*sizeof(uint16));
 }
@@ -209,7 +210,7 @@ InstanceMap* MapInstanced::CreateInstance(uint32 InstanceId, InstanceSave* save,
     if (GetId() != 249)
     {
         if (entry->maxPlayers == 40)
-            difficulty = MAN40_DIFFICULTY;
+            difficulty = RAID_DIFFICULTY_40MAN;
     }
 
     sLog->outDebug(LOG_FILTER_MAPS, "MapInstanced::CreateInstance: %s map instance %d for %d created with difficulty %s", save?"":"new ", InstanceId, GetId(), difficulty?"heroic":"normal");

@@ -215,23 +215,57 @@ struct ScriptedAI : public CreatureAI
     // return the dungeon or raid difficulty
     Difficulty GetDifficulty() const { return _difficulty; }
 
-    // return true for 25 man or 25 man heroic mode
-    bool Is25ManRaid() const { return _difficulty & RAID_DIFFICULTY_MASK_25MAN; }
+    // return true for 25 man or 25 man heroic mode or LFR.
+    bool Is25ManRaid() const { return (_difficulty == RAID_DIFFICULTY_25MAN_NORMAL || _difficulty == RAID_DIFFICULTY_25MAN_HEROIC || _difficulty == RAID_DIFFICULTY_25MAN_LFR); }
 
     template<class T> inline
-    const T& DUNGEON_MODE(const T& normal5, const T& heroic10) const
+    const T& DUNGEON_MODE(const T& normal5, const T& heroic5) const
     {
         switch (_difficulty)
         {
-            case REGULAR_DIFFICULTY:
+            case DUNGEON_DIFFICULTY_NORMAL:
                 return normal5;
-            case HEROIC_DIFFICULTY:
-                return heroic10;
-            default:
-                break;
+            case DUNGEON_DIFFICULTY_HEROIC:
+                return heroic5;
+
+            default: break;
         }
 
-        return heroic10;
+        return normal5; // Return Normal Difficulty spell by default.
+    }
+
+    template<class T> inline
+    const T& DUNGEON_MODE(const T& normal5, const T& heroic5, const T& challenge5) const
+    {
+        switch (_difficulty)
+        {
+            case DUNGEON_DIFFICULTY_NORMAL:
+                return normal5;
+            case DUNGEON_DIFFICULTY_HEROIC:
+                return heroic5;
+            case DUNGEON_DIFFICULTY_CHALLENGE:
+                return challenge5;
+
+            default: break;
+        }
+
+        return normal5; // Return Normal Difficulty spell by default.
+    }
+
+    template<class T> inline
+    const T& SCENARIO_MODE(const T& normal5, const T& heroic5) const
+    {
+        switch (_difficulty)
+        {
+            case SCENARIO_DIFFICULTY_NORMAL:
+                return normal5;
+            case SCENARIO_DIFFICULTY_HEROIC:
+                return heroic5;
+
+            default: break;
+        }
+
+        return normal5; // Return Normal Difficulty spell by default.
     }
 
     template<class T> inline
@@ -239,35 +273,63 @@ struct ScriptedAI : public CreatureAI
     {
         switch (_difficulty)
         {
-            case MAN10_DIFFICULTY:
+            case RAID_DIFFICULTY_10MAN_NORMAL:
                 return normal10;
-            case MAN25_DIFFICULTY:
+            case RAID_DIFFICULTY_25MAN_NORMAL:
                 return normal25;
-            default:
-                break;
+
+            default: break;
         }
 
-        return normal25;
+        return normal10; // Return Normal Difficulty spell by default.
     }
 
-    template<class T> inline
-    const T& RAID_MODE(const T& normal10, const T& normal25, const T& heroic10, const T& heroic25) const
+    template<class T> inline // Also can use with 10 - 25n and 10-25hc (instead of flex and lfr).
+    const T& RAID_MODE(const T& normal10, const T& normal25, const T& flex, const T& lfr) const
     {
         switch (_difficulty)
         {
-            case MAN10_DIFFICULTY:
+            case RAID_DIFFICULTY_10MAN_NORMAL:
                 return normal10;
-            case MAN25_DIFFICULTY:
+            case RAID_DIFFICULTY_25MAN_NORMAL:
                 return normal25;
-            case MAN10_HEROIC_DIFFICULTY:
-                return heroic10;
-            case MAN25_HEROIC_DIFFICULTY:
-                return heroic25;
-            default:
-                break;
+            case RAID_DIFFICULTY_1025MAN_FLEX:
+                return flex;
+            case RAID_DIFFICULTY_25MAN_LFR:
+                return lfr;
+            case RAID_DIFFICULTY_10MAN_HEROIC:
+                return flex;
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                return lfr;
+
+            default: break;
         }
 
-        return heroic25;
+        return normal10; // Return Normal Difficulty spell by default.
+    }
+
+    template<class T> inline
+    const T& RAID_MODE(const T& normal10, const T& normal25, const T& heroic10, const T& heroic25, const T& flex, const T& lfr) const
+    {
+        switch (_difficulty)
+        {
+            case RAID_DIFFICULTY_10MAN_NORMAL:
+                return normal10;
+            case RAID_DIFFICULTY_25MAN_NORMAL:
+                return normal25;
+            case RAID_DIFFICULTY_10MAN_HEROIC:
+                return heroic10;
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+                return heroic25;
+            case RAID_DIFFICULTY_1025MAN_FLEX:
+                return flex;
+            case RAID_DIFFICULTY_25MAN_LFR:
+                return lfr;
+
+            default: break;
+        }
+
+        return normal10; // Return Normal Difficulty spell by default.
     }
 
     private:

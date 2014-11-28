@@ -1044,8 +1044,8 @@ enum TrinityStrings
     LANG_BATTLEGROUND                   = 5015,
     LANG_ARENA                          = 5016,
     LANG_RAID                           = 5017,
-    LANG_HEROIC                         = 5018,
-    LANG_MOUNTABLE                      = 5019,
+    LANG_SCENARIO                       = 5018,
+    LANG_MOUNTABLE                      = 5019, // Unused.
     LANG_NPCINFO_PHASEMASK              = 5020,
     LANG_NPCINFO_ARMOR                  = 5021,
     LANG_CHANNEL_ENABLE_OWNERSHIP       = 5022,
@@ -1063,7 +1063,7 @@ enum TrinityStrings
     LANG_COMMAND_NO_OUTDOOR_PVP_FORUND  = 5034,
     LANG_NPCINFO_MECHANIC_IMMUNE        = 5037,
     LANG_NPCINFO_UNIT_FIELD_FLAGS       = 5038,
-    LANG_SCENARIO                       = 5039,
+    // LANG_SCENARIO                       = 5039, - ToDo Delete this.
     // Room for more Trinity strings      5040-9999
 
     // Level requirement notifications

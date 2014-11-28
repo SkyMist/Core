@@ -887,8 +887,8 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
 
     m_HomebindTimer = 0;
     m_InstanceValid = true;
-    m_dungeonDifficulty = REGULAR_DIFFICULTY;
-    m_raidDifficulty = MAN10_DIFFICULTY;
+    m_dungeonDifficulty = DUNGEON_DIFFICULTY_NORMAL;
+    m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
 
     m_lastPotionId = 0;
     _talentMgr = new PlayerTalentInfo();
@@ -18372,7 +18372,7 @@ void Player::KilledMonsterCredit(uint32 entry, uint64 guid)
             continue;
         // just if !ingroup || !noraidgroup || raidgroup
         QuestStatusData& q_status = m_QuestStatus[questid];
-        if (q_status.Status == QUEST_STATUS_INCOMPLETE && (!GetGroup() || !GetGroup()->isRaidGroup() || qInfo->IsAllowedInRaid()))
+        if (q_status.Status == QUEST_STATUS_INCOMPLETE && (!GetGroup() || !GetGroup()->isRaidGroup() || qInfo->IsAllowedInRaid(GetMap()->GetDifficulty())))
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_KILL_OR_CAST))
             {
@@ -18427,7 +18427,7 @@ void Player::KilledPlayerCredit()
             continue;
         // just if !ingroup || !noraidgroup || raidgroup
         QuestStatusData& q_status = m_QuestStatus[questid];
-        if (q_status.Status == QUEST_STATUS_INCOMPLETE && (!GetGroup() || !GetGroup()->isRaidGroup() || qInfo->IsAllowedInRaid()))
+        if (q_status.Status == QUEST_STATUS_INCOMPLETE && (!GetGroup() || !GetGroup()->isRaidGroup() || qInfo->IsAllowedInRaid(GetMap()->GetDifficulty())))
         {
             if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_PLAYER_KILL))
             {
@@ -18772,7 +18772,7 @@ bool Player::HasQuestForItem(uint32 itemid) const
                 continue;
 
             // hide quest if player is in raid-group and quest is no raid quest
-            if (GetGroup() && GetGroup()->isRaidGroup() && !qinfo->IsAllowedInRaid())
+            if (GetGroup() && GetGroup()->isRaidGroup() && !qinfo->IsAllowedInRaid(GetMap()->GetDifficulty()))
                 if (!InBattleground()) //there are two ways.. we can make every bg-quest a raidquest, or add this code here.. i don't know if this can be exploited by other quests, but i think all other quests depend on a specific area.. but keep this in mind, if something strange happens later
                     continue;
 
@@ -19314,10 +19314,11 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
 
     uint32 dungeonDiff = fields[39].GetUInt8() & 0x0F;
     if (dungeonDiff >= MAX_DUNGEON_DIFFICULTY)
-        dungeonDiff = REGULAR_DIFFICULTY;
+        dungeonDiff = DUNGEON_DIFFICULTY_NORMAL;
     uint32 raidDiff = (fields[39].GetUInt8() >> 4) & 0x0F;
     if (raidDiff >= MAX_RAID_DIFFICULTY)
-        raidDiff = MAN10_DIFFICULTY;
+        raidDiff = RAID_DIFFICULTY_10MAN_NORMAL;
+
     SetDungeonDifficulty(Difficulty(dungeonDiff));          // may be changed in _LoadGroup
     SetRaidDifficulty(Difficulty(raidDiff));                // may be changed in _LoadGroup
 
@@ -20843,12 +20844,10 @@ void Player::_LoadGroup(PreparedQueryResult result)
 
             uint8 subgroup = group->GetMemberGroup(GetGUID());
             SetGroup(group, subgroup);
-            if (getLevel() >= LEVELREQUIREMENT_HEROIC)
-            {
-                // the group leader may change the instance difficulty while the player is offline
-                SetDungeonDifficulty(group->GetDungeonDifficulty());
-                SetRaidDifficulty(group->GetRaidDifficulty());
-            }
+
+            // the group leader may change the instance difficulty while the player is offline
+            SetDungeonDifficulty(group->GetDungeonDifficulty());
+            SetRaidDifficulty(group->GetRaidDifficulty());
         }
     }
 
@@ -21072,7 +21071,7 @@ void Player::SendRaidInfo()
                 ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
 
                 data.WriteBit(instanceGUID[1]);
-                data.WriteBit(1);
+                data.WriteBit(1);                            // Expired, negated.
                 data.WriteBit(instanceGUID[0]);
                 data.WriteBit(instanceGUID[4]);
                 data.WriteBit(instanceGUID[2]);
@@ -21080,7 +21079,7 @@ void Player::SendRaidInfo()
                 data.WriteBit(instanceGUID[5]);
                 data.WriteBit(instanceGUID[6]);
                 data.WriteBit(instanceGUID[7]);
-                data.WriteBit(0);
+                data.WriteBit(0);                            // Extended.
             }
         }
     }
@@ -21096,17 +21095,18 @@ void Player::SendRaidInfo()
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
+                bool isHeroic = save->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
 
-                data << uint32(save->GetResetTime() - now);  // reset time
+                data << uint32(save->GetResetTime() - now);  // Reset time.
                 data.WriteByteSeq(instanceGUID[0]);
                 data.WriteByteSeq(instanceGUID[3]);
-                data << uint32(save->GetMapId());           // map id
+                data << uint32(save->GetMapId());            // Map id.
                 data.WriteByteSeq(instanceGUID[2]);
                 data.WriteByteSeq(instanceGUID[4]);
-                data << uint32(save->GetDifficulty());      // difficulty
+                data << uint32(save->GetDifficulty());       // Difficulty.
                 data.WriteByteSeq(instanceGUID[7]);
-                data << uint32(save->GetEncounterMask()); // mask boss killed
+                data << uint32(save->GetEncounterMask());    // Completed encounters mask.
                 data.WriteByteSeq(instanceGUID[6]);
                 data.WriteByteSeq(instanceGUID[5]);
                 data.WriteByteSeq(instanceGUID[1]);                
@@ -22559,17 +22559,17 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendDungeonDifficulty(bool IsInGroup)
+void Player::SendDungeonDifficulty(uint32 difficulty)
 {
     WorldPacket data(SMSG_SET_DUNGEON_DIFFICULTY, 4);
-    data << uint32(GetDungeonDifficulty());
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendRaidDifficulty(bool IsInGroup, int32 forcedDifficulty)
+void Player::SendRaidDifficulty(uint32 difficulty)
 {
-    WorldPacket data(MSG_SET_RAID_DIFFICULTY, 4);
-    data << uint32(forcedDifficulty == -1 ? GetRaidDifficulty() : forcedDifficulty);
+    WorldPacket data(SMSG_SET_RAID_DIFFICULTY, 4);
+    data << uint32(difficulty);
     GetSession()->SendPacket(&data);
 }
 
@@ -22600,7 +22600,7 @@ void Player::ResetInstances(uint8 method, bool isRaid)
         if (method == INSTANCE_RESET_ALL)
         {
             // the "reset all instances" method can only reset normal maps
-            if (entry->map_type == MAP_RAID || diff == HEROIC_DIFFICULTY)
+            if (entry->map_type == MAP_RAID || diff > DUNGEON_DIFFICULTY_NORMAL && diff != DUNGEON_DIFFICULTY_CHALLENGE && diff != SCENARIO_DIFFICULTY_NORMAL)
             {
                 ++itr;
                 continue;
@@ -25889,17 +25889,22 @@ void Player::SendInitialPacketsAfterAddToMap()
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
-    // raid downscaling - send difficulty to player
+    // Send difficulties on login.
+
+    // Dungeons.
+    SendDungeonDifficulty(GetDungeonDifficulty() < DUNGEON_DIFFICULTY_NORMAL ? DUNGEON_DIFFICULTY_NORMAL : GetDungeonDifficulty());
+
+    // Raids + downscaling if needed.
     if (GetMap()->IsRaid())
     {
         if (GetMap()->GetDifficulty() != GetRaidDifficulty())
         {
             StoreRaidMapDifficulty();
-            SendRaidDifficulty(GetGroup() != NULL, GetStoredRaidDifficulty());
+            SendRaidDifficulty(GetStoredRaidDifficulty());
         }
     }
     else if (GetRaidDifficulty() != GetStoredRaidDifficulty())
-        SendRaidDifficulty(GetGroup() != NULL);
+        SendRaidDifficulty(GetRaidDifficulty() < RAID_DIFFICULTY_10MAN_NORMAL ? RAID_DIFFICULTY_10MAN_NORMAL : GetRaidDifficulty());
 
     if (GetSkillValue(SKILL_ARCHAEOLOGY))
     {
@@ -26502,7 +26507,7 @@ bool Player::HasQuestForGO(int32 GOId) const
             if (!qinfo)
                 continue;
 
-            if (GetGroup() && GetGroup()->isRaidGroup() && !qinfo->IsAllowedInRaid())
+            if (GetGroup() && GetGroup()->isRaidGroup() && !qinfo->IsAllowedInRaid(GetMap()->GetDifficulty()))
                 continue;
 
             for (uint8 j = 0; j < QUEST_OBJECTIVES_COUNT; ++j)

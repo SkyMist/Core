@@ -84,7 +84,7 @@ enum Opcodes
     CMSG_BATTLEFIELD_MGR_QUEUE_INVITE_RESPONSE        = 0x0000,
     CMSG_BATTLEFIELD_MGR_QUEUE_REQUEST                = 0x0000,
     CMSG_BATTLEFIELD_PORT                             = 0x0000, // 0x045F, // 5.4.7 18019 - CHECK!
-    CMSG_BATTLEFIELD_STATUS                           = 0x04A2, // client send 0x19B0 before status - CHECK!
+    CMSG_BATTLEFIELD_STATUS                           = 0x04A2, // client sends 0x19B0 before status - CHECK!
     CMSG_BLACK_MARKET_HELLO                           = 0x0374, // 5.4.7 18019
     CMSG_BLACK_MARKET_REQUEST_ITEMS                   = 0x06D4, // 5.4.7 18019
     CMSG_BLACK_MARKET_PLACE_BID                       = 0x03FE, // 5.4.7 18019
@@ -300,7 +300,7 @@ enum Opcodes
     CMSG_LF_GUILD_ADD_RECRUIT                         = 0x0000, // 5.4.7 18019
     CMSG_LF_GUILD_BROWSE                              = 0x0992, // 5.4.7 18019
     CMSG_LF_GUILD_DECLINE_RECRUIT                     = 0x0000,
-    CMSG_LF_GUILD_GET_APPLICATIONS                    = 0x0000, // Maybe 0x0198C // 5.4.7 18019 - CHECK!
+    CMSG_LF_GUILD_GET_APPLICATIONS                    = 0x0000, // 0x0198C // 5.4.7 18019 - CHECK!
     CMSG_LF_GUILD_GET_RECRUITS                        = 0x1B3E, // 5.4.7 18019
     CMSG_LF_GUILD_POST_REQUEST                        = 0x0000, // 5.4.7 18019
     CMSG_LF_GUILD_REMOVE_RECRUIT                      = 0x0000, // 5.4.7 18019
@@ -488,6 +488,7 @@ enum Opcodes
     CMSG_SET_PET_SLOT                                 = 0x12A2, // 5.4.7 18019
     CMSG_SET_PLAYER_DECLINED_NAMES                    = 0x1281, // 5.4.7 18019
     CMSG_SET_PREFERED_CEMETERY                        = 0x0000,
+    CMSG_SET_RAID_DIFFICULTY                          = 0x16A6, // 5.4.7 18019
     CMSG_SET_RELATIVE_POSITION                        = 0x0000,
     CMSG_SET_SAVED_INSTANCE_EXTEND                    = 0x1A98, // 5.4.7 18019
     CMSG_SET_SELECTION                                = 0x10D5, // 5.4.7 18019
@@ -591,7 +592,6 @@ enum Opcodes
     CMSG_MOVE_TOGGLE_COLLISION_CHEAT                  = 0x0000,
     CMSG_MOVE_WORLDPORT_ACK                           = 0x18BB, // 5.4.7 18019
     MSG_NOTIFY_PARTY_SQUELCH                          = 0x0000,
-    MSG_SET_RAID_DIFFICULTY                           = 0x16A6, // 5.4.7 18019
     MSG_VERIFY_CONNECTIVITY                           = 0x4F57, // 5.4.7 18019
     SMSG_ACCOUNT_CRITERIA_UPDATE                      = 0x12F9, // 5.4.7 18019
     SMSG_ACCOUNT_CRITERIA_UPDATE_ALL                  = 0x0000,
@@ -638,7 +638,7 @@ enum Opcodes
     SMSG_BATTLEFIELD_MGR_ENTRY_INVITE                 = 0x0000,
     SMSG_BATTLEFIELD_MGR_EXIT_REQUEST                 = 0x0000,
     SMSG_BATTLEFIELD_MGR_QUEUE_INVITE                 = 0x0000,
-    SMSG_BATTLEFIELD_MGR_QUEUE_REQUEST_RESPONSE       = 0x1E40, // 5.4.7 18019
+    SMSG_BATTLEFIELD_MGR_QUEUE_REQUEST_RESPONSE       = 0x1E72, // 5.4.7 18019
     SMSG_BATTLEFIELD_PORT_DENIED                      = 0x0000,
     SMSG_BATTLEFIELD_RATED_INFO                       = 0x088A, // 5.4.7 18019
     SMSG_BATTLEFIELD_STATUS                           = 0x15EB, // 5.4.7 18019
@@ -802,7 +802,7 @@ enum Opcodes
     SMSG_GAMEOBJECT_QUERY_RESPONSE                    = 0x066A, // 5.4.7 18019
     SMSG_GAMEOBJECT_RESET_STATE                       = 0x0000,
     SMSG_GAME_EVENT_DEBUG_LOG                         = 0x0000,
-    SMSG_GAME_SPEED_SET                               = 0x0000,
+    SMSG_GAME_SPEED_SET                               = 0x0000, // 0x1D73 // 5.4.7 18019 - CHECK!
     SMSG_GAME_TIME_SET                                = 0x037E, // 5.4.7 18019
     SMSG_GAME_TIME_UPDATE                             = 0x00A3, // 5.4.7 18019
     SMSG_GM_MESSAGECHAT                               = 0x0000,
@@ -1165,6 +1165,7 @@ enum Opcodes
     SMSG_SET_PROFICIENCY                              = 0x1E3B, // 5.4.7 18019
     // SMSG_SET_VIGNETTE                                 = 0x05A1, // 5.4.7 18019 - CHECK!
     SMSG_SET_PROJECTILE_POSITION                      = 0x0000,
+    SMSG_SET_RAID_DIFFICULTY                          = 0x16A6, // 5.4.7 18019
     SMSG_SHOP_CONTENT_RESPONSE                        = 0x1C29, // 5.4.7 18019
     SMSG_SHOW_BANK                                    = 0x060B, // 5.4.7 18019
     SMSG_SHOW_NEUTRAL_PLAYER_FACTION_SELECT_UI        = 0x0C98, // 5.4.7 18019
@@ -1347,7 +1348,6 @@ enum Opcodes
     MSG_GM_SUMMON = 0x0000,
     MSG_MOVE_FEATHER_FALL = 0x0000,
     MSG_MOVE_GRAVITY_CHNG = 0x0000,
-    MSG_MOVE_HOVER = 0x0000,
     MSG_MOVE_SET_ALL_SPEED_CHEAT = 0x0000,
     MSG_MOVE_SET_COLLISION_HEIGHT = 0x0000,
     MSG_MOVE_SET_FLIGHT_SPEED_CHEAT = 0x0000,

@@ -585,18 +585,20 @@ class boss_madness_of_deathwing : public CreatureScript
 
                     switch (GetDifficulty())
                     {
-                        case MAN10_DIFFICULTY:
+                        case RAID_DIFFICULTY_10MAN_NORMAL:
                             instance->DoRespawnGameObject(instance->GetData64(DATA_ELEMENTIUM_FRAGMENT_10N), DAY);
                             break;
-                        case MAN25_DIFFICULTY:
+                        case RAID_DIFFICULTY_25MAN_NORMAL:
                             instance->DoRespawnGameObject(instance->GetData64(DATA_ELEMENTIUM_FRAGMENT_25N), DAY);
                             break;
-                        case MAN10_HEROIC_DIFFICULTY:
+                        case RAID_DIFFICULTY_10MAN_HEROIC:
                             instance->DoRespawnGameObject(instance->GetData64(DATA_ELEMENTIUM_FRAGMENT_10H), DAY);
                             break;
-                        case MAN25_HEROIC_DIFFICULTY:
+                        case RAID_DIFFICULTY_25MAN_HEROIC:
                             instance->DoRespawnGameObject(instance->GetData64(DATA_ELEMENTIUM_FRAGMENT_25H), DAY);
                             break;
+
+						default: break;
                     }
 
                     me->DespawnOrUnsummon(5000);

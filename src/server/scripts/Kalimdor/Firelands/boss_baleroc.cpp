@@ -334,8 +334,8 @@ class spell_baleroc_shards_of_torment_aoe : public SpellScriptLoader
 
                 switch (GetCaster()->GetMap()->GetDifficulty())
                 {
-                    case MAN10_DIFFICULTY:
-                    case MAN10_HEROIC_DIFFICULTY:
+                    case RAID_DIFFICULTY_10MAN_NORMAL:
+                    case RAID_DIFFICULTY_10MAN_HEROIC:
                     {    
                         std::list<WorldObject*> meleetargets;
 
@@ -364,8 +364,8 @@ class spell_baleroc_shards_of_torment_aoe : public SpellScriptLoader
 
                         break;
                     }
-                    case MAN25_DIFFICULTY:
-                    case MAN25_HEROIC_DIFFICULTY:
+                    case RAID_DIFFICULTY_25MAN_NORMAL:
+                    case RAID_DIFFICULTY_25MAN_HEROIC:
                     {    
                         std::list<WorldObject*> meleetargets;
                         std::list<WorldObject*> rangetargets;

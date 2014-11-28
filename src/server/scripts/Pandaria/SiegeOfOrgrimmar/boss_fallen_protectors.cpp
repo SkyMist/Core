@@ -108,6 +108,8 @@ enum Spells
     */
     SPELL_BOND_OF_THE_GOLDEN_LOTUS = 143497,
 
+    SPELL_ROOT_GENERIC             = 42716,
+    SPELL_PROTECTORS_VISUAL        = 144942, // Not used - Black & White Dummy.
     SPELL_BERSERK                  = 144369,
 
     //============================================================================================================================================================================//
@@ -384,7 +386,6 @@ class boss_rook_stonetoe : public CreatureScript
             InstanceScript* instance;
             SummonList summons;
             EventMap events;
-            Unit* clashTarget;
             bool doneDesperateMeasuresPhase, doneDesperateMeasuresPhase2;
             bool lotusScheduled, eventComplete;
 
@@ -393,7 +394,6 @@ class boss_rook_stonetoe : public CreatureScript
                 events.Reset();
                 summons.DespawnAll();
 
-                clashTarget = NULL;
                 doneDesperateMeasuresPhase  = false;
                 doneDesperateMeasuresPhase2 = false;
 
@@ -433,8 +433,8 @@ class boss_rook_stonetoe : public CreatureScript
             {
                 if (uiDamage >= me->GetHealth())
                 {
-                    if (!lotusScheduled || lotusScheduled && !eventComplete)
-                        uiDamage = 0;
+                    if (!eventComplete)
+                        uiDamage = me->GetHealth() - 1;
 
                     if (!lotusScheduled)
                     {
@@ -456,6 +456,15 @@ class boss_rook_stonetoe : public CreatureScript
 					summon->SetInCombatWithZone();
             }
 
+            void DespawnSummon(uint32 entry)
+            {
+                std::list<Creature*> summonsList;
+                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
+                if (!summonsList.empty())
+                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
+                        (*summs)->DespawnOrUnsummon();
+            }
+
             void KilledUnit(Unit* victim)
             {
                 if (victim->GetTypeId() == TYPEID_PLAYER)
@@ -464,6 +473,9 @@ class boss_rook_stonetoe : public CreatureScript
 
 			void EnterEvadeMode()
             {
+                if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
@@ -489,7 +501,14 @@ class boss_rook_stonetoe : public CreatureScript
 
             void JustDied(Unit* killer)
             {
+                _JustDied();
+            }
+
+            // Used to signal event done.
+            void FinishEvent()
+            {
                 Talk(ROOK_SAY_EVENT_COMPLETE);
+
                 summons.DespawnAll();
 
                 me->RemoveAllAuras();
@@ -506,17 +525,6 @@ class boss_rook_stonetoe : public CreatureScript
 
                 if (instance)
                     instance->SetData(DATA_FALLEN_PROTECTORS_EVENT, DONE);
-
-                _JustDied();
-            }
-
-            void DespawnSummon(uint32 entry)
-            {
-                std::list<Creature*> summonsList;
-                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
-                if (!summonsList.empty())
-                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->DespawnOrUnsummon();
             }
 
             void UpdateAI(uint32 const diff)
@@ -561,20 +569,25 @@ class boss_rook_stonetoe : public CreatureScript
                 }
 
                 // Schedule Desperate Measures phase exit.
-                if ((doneDesperateMeasuresPhase || doneDesperateMeasuresPhase2) && 
-                !me->FindNearestCreature(NPC_EMBODIED_MISERY, 300.0f, true) && !me->FindNearestCreature(NPC_EMBODIED_SORROW, 300.0f, true) && !me->FindNearestCreature(NPC_EMBODIED_GLOOM, 300.0f, true))
+                if ((doneDesperateMeasuresPhase || doneDesperateMeasuresPhase2) && !me->FindNearestCreature(NPC_EMBODIED_MISERY, 300.0f, true) && !me->FindNearestCreature(NPC_EMBODIED_SORROW, 300.0f, true) && !me->FindNearestCreature(NPC_EMBODIED_GLOOM, 300.0f, true))
                 {
-                    me->RemoveAurasDueToSpell(SPELL_MISSERY_SORROW_GLOOM);
+                    if (me->HasAura(SPELL_MISSERY_SORROW_GLOOM))
+                    {
+                        if (!me->GetMap()->IsHeroic())
+                            me->RemoveAurasDueToSpell(SPELL_ROOT_GENERIC);
+                        me->RemoveAurasDueToSpell(SPELL_MISSERY_SORROW_GLOOM);
 
-                    // On Normal difficulty Clash needs reschedule.
-                    if (!me->GetMap()->IsHeroic())
-                        events.ScheduleEvent(EVENT_ROOK_CLASH, 15000);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                        // Reschedule the normal events.
+				        events.ScheduleEvent(EVENT_ROOK_VENGEFUL_STRIKES, 7000);
+				        events.ScheduleEvent(EVENT_ROOK_CORRUPTED_BREW, 18000);
+
+                        // On Normal difficulty Clash needs reschedule.
+                        if (!me->GetMap()->IsHeroic())
+                            events.ScheduleEvent(EVENT_ROOK_CLASH, 45000);
+                    }
                 }
-
-                // Schedule Corruption Kick.
-                if (clashTarget)
-                    if (me->GetDistance(clashTarget) <= 3.0f)
-                        events.ScheduleEvent(EVENT_ROOK_CORRUPTION_KICK, 1500);
 
                 events.Update(diff);
 
@@ -595,15 +608,15 @@ class boss_rook_stonetoe : public CreatureScript
                         case EVENT_ROOK_CLASH:
                             if (Unit* target = SelectTarget(SELECT_TARGET_FARTHEST, 0, 100.0f, true))
                             {
-                                clashTarget = target;
-                                DoCast(target, SPELL_CLASH);
+                                DoCast(target, SPELL_CLASH_ROOK);
+                                target->CastSpell(me, SPELL_CLASH_TARGET, true);
                             }
+                            events.ScheduleEvent(EVENT_ROOK_CORRUPTION_KICK, 2000);
 				            events.ScheduleEvent(EVENT_ROOK_CLASH, 46000);
                             break;
 
                         case EVENT_ROOK_CORRUPTION_KICK:
                             Talk(ROOK_SAY_CORRUPTION_KICK);
-                            clashTarget = NULL;
                             DoCast(me, SPELL_CORRUPTION_KICK);
                             break;
 
@@ -611,9 +624,19 @@ class boss_rook_stonetoe : public CreatureScript
                             Talk(ROOK_SAY_DESPERATE_MEASURES);
                             Talk(ROOK_ANNOUNCE_MEASURES);
 
-                            // On Normal difficulty Clash is not cast during this phase.
+                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                            // Cancel the normal events.
+				            events.CancelEvent(EVENT_ROOK_VENGEFUL_STRIKES);
+				            events.CancelEvent(EVENT_ROOK_CORRUPTED_BREW);
+				            events.CancelEvent(EVENT_ROOK_CORRUPTION_KICK);
+
+                            // On Normal difficulty Clash is not cast during this phase. Also the boss does not move.
                             if (!me->GetMap()->IsHeroic())
+                            {
                                 events.CancelEvent(EVENT_ROOK_CLASH);
+                                me->AddAura(SPELL_ROOT_GENERIC, me);
+                            }
 
                             DoCast(me, SPELL_MISSERY_SORROW_GLOOM);
 
@@ -645,7 +668,9 @@ class boss_rook_stonetoe : public CreatureScript
                     }
                 }
 
-                DoMeleeAttackIfReady();
+                // Rook does not melee in Desperate Measures phases.
+                if (!me->HasAura(SPELL_MISSERY_SORROW_GLOOM))
+                    DoMeleeAttackIfReady();
             }
         };
 
@@ -710,8 +735,8 @@ class boss_he_softfoot : public CreatureScript
             {
                 if (uiDamage >= me->GetHealth())
                 {
-                    if (!lotusScheduled || lotusScheduled && !eventComplete)
-                        uiDamage = 0;
+                    if (!eventComplete)
+                        uiDamage = me->GetHealth() - 1;
 
                     if (!lotusScheduled)
                     {
@@ -733,6 +758,15 @@ class boss_he_softfoot : public CreatureScript
 					summon->SetInCombatWithZone();
             }
 
+            void DespawnSummon(uint32 entry)
+            {
+                std::list<Creature*> summonsList;
+                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
+                if (!summonsList.empty())
+                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
+                        (*summs)->DespawnOrUnsummon();
+            }
+
             void DoAction(int32 const action)
             {
                 switch (action)
@@ -747,6 +781,9 @@ class boss_he_softfoot : public CreatureScript
 
 			void EnterEvadeMode()
             {
+                if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
@@ -756,6 +793,16 @@ class boss_he_softfoot : public CreatureScript
                 me->CombatStop(true);
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveTargetedHome();
+
+                if (instance)
+                {
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GARROTE);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GOUGE_DMG_STUN);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_MAIN);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_TRANSFER);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEBILITATION);
+                }
 
                 _EnterEvadeMode();
             }
@@ -768,6 +815,12 @@ class boss_he_softfoot : public CreatureScript
             }
 
             void JustDied(Unit* killer)
+            {
+                _JustDied();
+            }
+
+            // Used to signal event done.
+            void FinishEvent()
             {
                 summons.DespawnAll();
 
@@ -783,16 +836,15 @@ class boss_he_softfoot : public CreatureScript
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveTargetedHome();
 
-                _JustDied();
-            }
-
-            void DespawnSummon(uint32 entry)
-            {
-                std::list<Creature*> summonsList;
-                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
-                if (!summonsList.empty())
-                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->DespawnOrUnsummon();
+                if (instance)
+                {
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GARROTE);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GOUGE_DMG_STUN);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_MAIN);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_TRANSFER);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEBILITATION);
+                }
             }
 
             void UpdateAI(uint32 const diff)
@@ -819,11 +871,22 @@ class boss_he_softfoot : public CreatureScript
                 // Schedule Desperate Measures phase exit.
                 if ((doneDesperateMeasuresPhase || doneDesperateMeasuresPhase2) && !me->FindNearestCreature(NPC_EMBODIED_ANGUISH, 300.0f, true))
                 {
-                    me->RemoveAurasDueToSpell(SPELL_MARK_OF_ANGUISH_VISUAL);
+                    if (me->HasAura(SPELL_MARK_OF_ANGUISH_VISUAL))
+                    {
+                        if (!me->GetMap()->IsHeroic())
+                            me->RemoveAurasDueToSpell(SPELL_ROOT_GENERIC);
+                        me->RemoveAurasDueToSpell(SPELL_MARK_OF_ANGUISH_VISUAL);
 
-                    // On Normal difficulty needs reschedule.
-                    if (!me->GetMap()->IsHeroic())
-                        events.ScheduleEvent(EVENT_HE_POISON_DAGGERS, 15000);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                        // Reschedule the normal events.
+				        events.ScheduleEvent(EVENT_HE_GARROTE, 15000);
+				        events.ScheduleEvent(EVENT_HE_GOUGE, 23000);
+
+                        // On Normal difficulty needs reschedule.
+                        if (!me->GetMap()->IsHeroic())
+                            events.ScheduleEvent(EVENT_HE_POISON_DAGGERS, 45000);
+                    }
                 }
 
                 events.Update(diff);
@@ -883,9 +946,18 @@ class boss_he_softfoot : public CreatureScript
                             if (instance)
                                 instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GARROTE);
 
+                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                            // Cancel the normal events.
+				            events.CancelEvent(EVENT_HE_GARROTE);
+				            events.CancelEvent(EVENT_HE_GOUGE);
+
                             // On Normal difficulty Master Poisoner abilities are not cast during this phase.
                             if (!me->GetMap()->IsHeroic())
+                            {
                                 events.CancelEvent(EVENT_HE_POISON_DAGGERS);
+                                me->AddAura(SPELL_ROOT_GENERIC, me);
+                            }
 
                             me->AddAura(SPELL_MARK_OF_ANGUISH_VISUAL, me);
 
@@ -915,7 +987,9 @@ class boss_he_softfoot : public CreatureScript
                     }
                 }
 
-                DoMeleeAttackIfReady();
+                // He does not melee in Desperate Measures phases.
+                if (!me->HasAura(SPELL_MARK_OF_ANGUISH_VISUAL))
+                    DoMeleeAttackIfReady();
             }
         };
 
@@ -947,6 +1021,7 @@ class boss_sun_tenderheart : public CreatureScript
             void Reset()
             {
                 events.Reset();
+                summons.DespawnAll();
 
                 doneDesperateMeasuresPhase  = false;
                 doneDesperateMeasuresPhase2 = false;
@@ -980,7 +1055,7 @@ class boss_sun_tenderheart : public CreatureScript
                 if (uiDamage >= me->GetHealth())
                 {
                     if (!lotusScheduled || lotusScheduled && !eventComplete)
-                        uiDamage = 0;
+                        uiDamage = me->GetHealth() - 1;
 
                     if (!lotusScheduled)
                     {
@@ -1000,6 +1075,15 @@ class boss_sun_tenderheart : public CreatureScript
 
 				if (me->isInCombat())
 					summon->SetInCombatWithZone();
+            }
+
+            void DespawnSummon(uint32 entry)
+            {
+                std::list<Creature*> summonsList;
+                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
+                if (!summonsList.empty())
+                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
+                        (*summs)->DespawnOrUnsummon();
             }
 
             void KilledUnit(Unit* victim)
@@ -1022,6 +1106,12 @@ class boss_sun_tenderheart : public CreatureScript
 
 			void EnterEvadeMode()
             {
+                if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                DespawnSummon(NPC_DESPAIR_SPAWN);
+                DespawnSummon(NPC_DESPERATION_SPAWN);
+
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
@@ -1031,6 +1121,12 @@ class boss_sun_tenderheart : public CreatureScript
                 me->CombatStop(true);
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveTargetedHome();
+
+                if (instance)
+                {
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WORD_BANE_HIT);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WORD_BANE_JUMP);
+                }
 
                 _EnterEvadeMode();
             }
@@ -1044,7 +1140,17 @@ class boss_sun_tenderheart : public CreatureScript
 
             void JustDied(Unit* killer)
             {
+                _JustDied();
+            }
+
+            // Used to signal event done.
+            void FinishEvent()
+            {
                 Talk(SUN_SAY_EVENT_COMPLETE);
+
+                DespawnSummon(NPC_DESPAIR_SPAWN);
+                DespawnSummon(NPC_DESPERATION_SPAWN);
+
                 summons.DespawnAll();
 
                 me->RemoveAllAuras();
@@ -1059,16 +1165,11 @@ class boss_sun_tenderheart : public CreatureScript
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveTargetedHome();
 
-                _JustDied();
-            }
-
-            void DespawnSummon(uint32 entry)
-            {
-                std::list<Creature*> summonsList;
-                GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
-                if (!summonsList.empty())
-                    for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->DespawnOrUnsummon();
+                if (instance)
+                {
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WORD_BANE_HIT);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WORD_BANE_JUMP);
+                }
             }
 
             void UpdateAI(uint32 const diff)
@@ -1096,13 +1197,32 @@ class boss_sun_tenderheart : public CreatureScript
                 // Schedule Desperate Measures phase exit.
                 if ((doneDesperateMeasuresPhase || doneDesperateMeasuresPhase2) && !me->FindNearestCreature(NPC_EMBODIED_DESPAIR, 300.0f, true) && !me->FindNearestCreature(NPC_EMBODIED_DESPERATION, 300.0f, true))
                 {
-                    // On Normal difficulty Calamity needs reschedule.
-                    if (!me->GetMap()->IsHeroic())
-                        events.ScheduleEvent(EVENT_SUN_CALAMITY, 15000);
+                    if (me->HasAura(SPELL_DARK_MEDITATION_VISUAL))
+                    {
+                        if (!me->GetMap()->IsHeroic())
+                            me->RemoveAurasDueToSpell(SPELL_ROOT_GENERIC);
+                        me->RemoveAurasDueToSpell(SPELL_DARK_MEDITATION_VISUAL);
+                        me->RemoveAurasDueToSpell(SPELL_DARK_MEDITATION);
+                        me->RemoveAllAreasTrigger();
 
-                    // On Heroic Meditation Spike is canceled.
-                    if (me->GetMap()->IsHeroic())
-				        events.CancelEvent(EVENT_SUN_MEDITATION_SPIKE);
+                        // Remove Meditative Field effect from players.
+                        if (instance)
+                            instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DARK_MEDITATION_DMG_RED);
+
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                        // Reschedule the normal events.
+				        events.ScheduleEvent(EVENT_SUN_SHA_SHEAR, 2000);
+				        events.ScheduleEvent(EVENT_SUN_SHADOW_WORD_BANE, 15000);
+
+                        // On Normal difficulty Calamity needs reschedule.
+                        if (!me->GetMap()->IsHeroic())
+                            events.ScheduleEvent(EVENT_SUN_CALAMITY, 31000);
+
+                        // On Heroic Meditation Spike is canceled.
+                        if (me->GetMap()->IsHeroic())
+				            events.CancelEvent(EVENT_SUN_MEDITATION_SPIKE);
+                    }
                 }
 
                 events.Update(diff);
@@ -1119,7 +1239,7 @@ class boss_sun_tenderheart : public CreatureScript
 
                         case EVENT_SUN_SHADOW_WORD_BANE:
                             DoCast(me, SPELL_SHADOW_WORD_BANE);
-				            events.ScheduleEvent(EVENT_HE_GARROTE, me->GetMap()->IsHeroic() ? urand(13000, 20000) : urand(18000, 25000));
+				            events.ScheduleEvent(EVENT_SUN_SHADOW_WORD_BANE, me->GetMap()->IsHeroic() ? urand(13000, 20000) : urand(18000, 25000));
                             break;
 
                         case EVENT_SUN_CALAMITY:
@@ -1137,9 +1257,18 @@ class boss_sun_tenderheart : public CreatureScript
                         case EVENT_SUN_DESPERATE_MEASURES:
                             Talk(SUN_SAY_DESPERATE_MEASURES);
 
+                            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
+                            // Cancel the normal events.
+				            events.CancelEvent(EVENT_SUN_SHA_SHEAR);
+				            events.CancelEvent(EVENT_SUN_SHADOW_WORD_BANE);
+
                             // On Normal difficulty Calamity is not cast during this phase.
                             if (!me->GetMap()->IsHeroic())
+                            {
                                 events.CancelEvent(EVENT_SUN_CALAMITY);
+                                me->AddAura(SPELL_ROOT_GENERIC, me);
+                            }
 
                             // On Heroic Meditation Spike is scheduled.
                             if (me->GetMap()->IsHeroic())
@@ -1203,16 +1332,23 @@ class npc_embodied_misery : public CreatureScript
             void EnterCombat(Unit* who)
             {
                 events.Reset();
-                me->AddAura(SPELL_SHARED_TORMENT, me);
+
+                // On Heroic they share health.
+                if (me->GetMap()->IsHeroic())
+                    me->AddAura(SPELL_SHARED_TORMENT, me);
+
                 events.ScheduleEvent(EVENT_DEFILED_GROUND, 10500);
             }
 
             void DamageTaken(Unit* doneBy, uint32 &uiDamage)
             {
-                if (Creature* sorrow = me->FindNearestCreature(NPC_EMBODIED_SORROW, 200.0f, true))
-                    sorrow->SetHealth(me->GetHealth());
-                if (Creature* gloom = me->FindNearestCreature(NPC_EMBODIED_GLOOM, 200.0f, true))
-                    gloom->SetHealth(me->GetHealth());
+                if (me->GetMap()->IsHeroic())
+                {
+                    if (Creature* sorrow = me->FindNearestCreature(NPC_EMBODIED_SORROW, 200.0f, true))
+                        sorrow->SetHealth(me->GetHealth());
+                    if (Creature* gloom = me->FindNearestCreature(NPC_EMBODIED_GLOOM, 200.0f, true))
+                        gloom->SetHealth(me->GetHealth());
+                }
             }
 
             void UpdateAI(uint32 const diff)
@@ -1262,16 +1398,23 @@ class npc_embodied_sorrow : public CreatureScript
             void EnterCombat(Unit* who)
             {
                 events.Reset();
-                me->AddAura(SPELL_SHARED_TORMENT, me);
+
+                // On Heroic they share health.
+                if (me->GetMap()->IsHeroic())
+                    me->AddAura(SPELL_SHARED_TORMENT, me);
+
                 events.ScheduleEvent(EVENT_INFERNO_STRIKE, 9500);
             }
 
             void DamageTaken(Unit* doneBy, uint32 &uiDamage)
             {
-                if (Creature* misery = me->FindNearestCreature(NPC_EMBODIED_MISERY, 200.0f, true))
-                    misery->SetHealth(me->GetHealth());
-                if (Creature* gloom = me->FindNearestCreature(NPC_EMBODIED_GLOOM, 200.0f, true))
-                    gloom->SetHealth(me->GetHealth());
+                if (me->GetMap()->IsHeroic())
+                {
+                    if (Creature* misery = me->FindNearestCreature(NPC_EMBODIED_MISERY, 200.0f, true))
+                        misery->SetHealth(me->GetHealth());
+                    if (Creature* gloom = me->FindNearestCreature(NPC_EMBODIED_GLOOM, 200.0f, true))
+                        gloom->SetHealth(me->GetHealth());
+                }
             }
 
             void UpdateAI(uint32 const diff)
@@ -1322,16 +1465,23 @@ class npc_embodied_gloom : public CreatureScript
             void EnterCombat(Unit* who)
             {
                 events.Reset();
-                me->AddAura(SPELL_SHARED_TORMENT, me);
+
+                // On Heroic they share health.
+                if (me->GetMap()->IsHeroic())
+                    me->AddAura(SPELL_SHARED_TORMENT, me);
+
                 events.ScheduleEvent(EVENT_CORRUPTION_SHOCK_CHAIN, 15000);
             }
 
             void DamageTaken(Unit* doneBy, uint32 &uiDamage)
             {
-                if (Creature* misery = me->FindNearestCreature(NPC_EMBODIED_MISERY, 200.0f, true))
-                    misery->SetHealth(me->GetHealth());
-                if (Creature* sorrow = me->FindNearestCreature(NPC_EMBODIED_SORROW, 200.0f, true))
-                    sorrow->SetHealth(me->GetHealth());
+                if (me->GetMap()->IsHeroic())
+                {
+                    if (Creature* misery = me->FindNearestCreature(NPC_EMBODIED_MISERY, 200.0f, true))
+                        misery->SetHealth(me->GetHealth());
+                    if (Creature* sorrow = me->FindNearestCreature(NPC_EMBODIED_SORROW, 200.0f, true))
+                        sorrow->SetHealth(me->GetHealth());
+                }
             }
 
             void UpdateAI(uint32 const diff)
@@ -1394,6 +1544,13 @@ class npc_embodied_anguish : public CreatureScript
                     me->AddAura(SPELL_SHADOW_WEAKNESS, victim);
             }
 
+            void KilledUnit(Unit* victim)
+            {
+                // Embodied Anguish's gaze moves to a random target upon killing his current target. 
+                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                    me->AI()->AttackStart(target);
+            }
+
             void UpdateAI(uint32 const diff)
             {
                 if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
@@ -1425,7 +1582,7 @@ class npc_embodied_despair : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 events.Reset();
                 events.ScheduleEvent(EVENT_MANIFEST_DESPAIR, 3000);
             }
@@ -1477,7 +1634,7 @@ class npc_embodied_desperation : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 events.Reset();
                 events.ScheduleEvent(EVENT_MANIFEST_DESPERATION, 3000);
             }
@@ -1599,11 +1756,11 @@ class spell_rook_corrupted_brew : public SpellScriptLoader
 
                 uint32 count = 1; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
+                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
                     count = 2;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     count = 3;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
                     count = 6;
 
                 std::list<Unit*> targets;
@@ -1656,6 +1813,43 @@ class spell_rook_clash : public SpellScriptLoader
         SpellScript* GetSpellScript() const
         {
             return new spell_rook_clash_SpellScript();
+        }
+};
+
+// Gouge (Boss Cast) 143330.
+class spell_he_gouge : public SpellScriptLoader
+{
+    public:
+        spell_he_gouge() : SpellScriptLoader("spell_he_gouge") { }
+
+        class spell_he_gouge_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_he_gouge_SpellScript);
+
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                Unit* caster = GetCaster();
+                Unit* target = GetHitUnit();
+
+                if (!caster || !target)
+                    return;
+
+                 // If the tank is facing the boss, incapacitate him. Else, just knock him back a bit.
+                if (target->HasInArc(M_PI / 3, caster))
+                    caster->CastSpell(target, SPELL_HE_GOUGE_DMG_STUN, true);
+                else
+                    caster->CastSpell(target, SPELL_HE_GOUGE_KB, true);
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_he_gouge_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_he_gouge_SpellScript();
         }
 };
 
@@ -1823,6 +2017,9 @@ class spell_he_mark_of_anguish_transfer : public SpellScriptLoader
                     return;
 
                 caster->CastSpell(caster, SPELL_SHADOW_WEAKNESS_TRANSFER, true);
+                caster->AddAura(SPELL_MARK_OF_ANGUISH_MAIN, target);
+                caster->RemoveAurasDueToSpell(SPELL_MARK_OF_ANGUISH_MAIN);
+                caster->RemoveAurasDueToSpell(SPELL_DEBILITATION);
             }
 
             void Register()
@@ -1892,11 +2089,11 @@ class spell_sun_shadow_word_bane : public SpellScriptLoader
 
                 uint32 count = 2; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
+                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
                     count = 5;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     count = 4;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
                     count = 10;
 
                 std::list<Unit*> targets;
@@ -2075,11 +2272,11 @@ class spell_embodied_gloom_corruption_shock : public SpellScriptLoader
 
                 uint32 count = 2; // 10 Normal.
 
-                if (caster->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY)
+                if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC)
                     count = 5;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     count = 4;
-                else if (caster->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY)
+                else if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
                     count = 10;
 
                 std::list<Unit*> targets;
@@ -2183,6 +2380,7 @@ void AddSC_fallen_protectors()
     new npc_desperation_spawn();
     new spell_rook_corrupted_brew();
     new spell_rook_clash();
+    new spell_he_gouge();
     new spell_he_instant_poison();
     new spell_he_noxious_poison();
     new spell_he_mark_of_anguish();

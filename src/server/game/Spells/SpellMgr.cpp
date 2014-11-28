@@ -3202,7 +3202,7 @@ void SpellMgr::LoadSpellInfoStore()
         if (!talentInfo)
             continue;
 
-        SpellInfo * spellEntry = mSpellInfoMap[NONE_DIFFICULTY][talentInfo->spellId];
+        SpellInfo * spellEntry = mSpellInfoMap[REGULAR_DIFFICULTY][talentInfo->spellId];
         if (spellEntry)
             spellEntry->talentId = talentInfo->Id;
     }
@@ -8815,7 +8815,7 @@ const SpellInfo* SpellMgr::GetSpellInfo(uint32 spellId, Difficulty difficulty) c
         if (mSpellInfoMap[difficulty][spellId])
             return mSpellInfoMap[difficulty][spellId];
 
-        return mSpellInfoMap[NONE_DIFFICULTY][spellId];
+        return mSpellInfoMap[REGULAR_DIFFICULTY][spellId];
     }
 
     return NULL;

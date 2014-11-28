@@ -130,9 +130,11 @@ void WorldSession::HandleDuelResponseOpcode(WorldPacket& recvPacket)
     Player* plTarget;
 
     ObjectGuid guid;
-    uint8 byteOrder[8] = {0, 7, 6, 5, 3, 2, 4, 1};
+
     guid[7] = recvPacket.ReadBit();
+
     bool accept = recvPacket.ReadBit();
+
     guid[2] = recvPacket.ReadBit();
     guid[1] = recvPacket.ReadBit();
     guid[6] = recvPacket.ReadBit();
@@ -140,7 +142,10 @@ void WorldSession::HandleDuelResponseOpcode(WorldPacket& recvPacket)
     guid[3] = recvPacket.ReadBit();
     guid[0] = recvPacket.ReadBit();
     guid[4] = recvPacket.ReadBit();
+
     recvPacket.FlushBits();
+
+    uint8 byteOrder[8] = {0, 7, 6, 5, 3, 2, 4, 1};
     recvPacket.ReadBitInOrder(guid, byteOrder);
 
     if (!GetPlayer()->duel)                                  // ignore accept from duel-sender

@@ -2617,9 +2617,9 @@ uint32 InstanceMap::GetMaxPlayers() const
     {
         if (mapDiff->maxPlayers || IsRegularDifficulty())    // Normal case (expect that regular difficulty always have correct maxplayers)
             return mapDiff->maxPlayers;
-        else                                                // DBC have 0 maxplayers for heroic instances with expansion < 2
-        {                                                   // The heroic entry exists, so we don't have to check anything, simply return normal max players
-            MapDifficulty const* normalDiff = GetMapDifficultyData(GetId(), REGULAR_DIFFICULTY);
+        else                                                 // DBC have 0 maxplayers for heroic instances with expansion < 2
+        {                                                    // The heroic entry exists, so we don't have to check anything, simply return normal max players
+            MapDifficulty const* normalDiff = GetMapDifficultyData(GetId(), DUNGEON_DIFFICULTY_NORMAL);
             return normalDiff ? normalDiff->maxPlayers : 0;
         }
     }
@@ -2627,23 +2627,23 @@ uint32 InstanceMap::GetMaxPlayers() const
     {
         switch (GetDifficulty())
         {
-            case Difficulty::SCENARIO_DIFFICULTY:
-            case Difficulty::SCENARIO_HEROIC_DIFFICULTY:
+            case SCENARIO_DIFFICULTY_NORMAL:
+            case SCENARIO_DIFFICULTY_HEROIC:
                 return 3;
-            case Difficulty::HEROIC_DIFFICULTY:
-            case Difficulty::CHALLENGE_MODE_DIFFICULTY:
+            case DUNGEON_DIFFICULTY_HEROIC:
+            case DUNGEON_DIFFICULTY_CHALLENGE:
                 return 5;
-            case Difficulty::MAN10_DIFFICULTY:
-            case Difficulty::MAN10_HEROIC_DIFFICULTY:
+            case RAID_DIFFICULTY_10MAN_NORMAL:
+            case RAID_DIFFICULTY_10MAN_HEROIC:
                 return 10;
-            case Difficulty::MAN25_DIFFICULTY:
-            case Difficulty::MAN25_HEROIC_DIFFICULTY:
-            case Difficulty::DYNAMIC_DIFFICULTY:
+            case RAID_DIFFICULTY_25MAN_NORMAL:
+            case RAID_DIFFICULTY_25MAN_HEROIC:
+            case RAID_DIFFICULTY_1025MAN_FLEX:
                 return 25;
-            case Difficulty::MAN40_DIFFICULTY:
+            case RAID_DIFFICULTY_40MAN:
                 return 40;
-            default:
-                break;
+
+            default: break;
         }
         return 0;
     }

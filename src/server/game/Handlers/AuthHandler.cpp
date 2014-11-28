@@ -21,7 +21,7 @@
 
 void WorldSession::SendAuthResponse(uint8 code, bool queued, uint32 queuePos)
 {
-    const static uint8 ClassExpensions[MAX_CLASSES] = 
+    const static uint8 ClassExpansions[MAX_CLASSES] = 
     {
         0, // CLASS_NONE
         0, // CLASS_WARRIOR
@@ -70,7 +70,7 @@ void WorldSession::SendAuthResponse(uint8 code, bool queued, uint32 queuePos)
     {
         for (uint32 i = 1; i < MAX_CLASSES; ++i)
         {
-            packet << uint8(ClassExpensions[i]); // expension
+            packet << uint8(ClassExpansions[i]); // expansion
             packet << uint8(i);                  // class
         }
 

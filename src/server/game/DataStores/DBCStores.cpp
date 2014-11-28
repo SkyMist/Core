@@ -821,7 +821,7 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, uint32 effect, uint3
     if (itr->second.effects[difficulty][effect])
         return itr->second.effects[difficulty][effect];
 
-    return itr->second.effects[NONE_DIFFICULTY][effect];
+    return itr->second.effects[REGULAR_DIFFICULTY][effect];
 }
 
 SpellEffectScalingEntry const* GetSpellEffectScalingEntry(uint32 effectId)
@@ -1039,32 +1039,27 @@ MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty)
     return itr != sMapDifficultyMap.end() ? &itr->second : NULL;
 }
 
-// @todo: add support for the new difficulty SCENARIO_HEROIC_DIFFICULTY, SCENARIO_DIFFICULTY, and DYNAMIC_DIFFICULTY
 MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, Difficulty &difficulty)
 {
-    uint32 tmpDiff = difficulty;
+    uint32 tmpDiff = uint32(difficulty);
     MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
     if (!mapDiff)
     {
-        if (tmpDiff == MAN25_HEROIC_DIFFICULTY)
-            tmpDiff = MAN25_DIFFICULTY;
-        else if (tmpDiff == MAN10_HEROIC_DIFFICULTY)
-            tmpDiff = MAN10_DIFFICULTY;
-        else
-        {
-            tmpDiff = REGULAR_DIFFICULTY;
-        }
+        if (Difficulty(tmpDiff) == DUNGEON_DIFFICULTY_HEROIC || Difficulty(tmpDiff) == DUNGEON_DIFFICULTY_CHALLENGE)
+            tmpDiff = DUNGEON_DIFFICULTY_NORMAL;
+        else if (Difficulty(tmpDiff) == RAID_DIFFICULTY_10MAN_HEROIC || Difficulty(tmpDiff) == RAID_DIFFICULTY_40MAN)
+            tmpDiff = RAID_DIFFICULTY_10MAN_NORMAL;
+        else if (Difficulty(tmpDiff) == RAID_DIFFICULTY_25MAN_HEROIC || Difficulty(tmpDiff) == RAID_DIFFICULTY_25MAN_LFR || Difficulty(tmpDiff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            tmpDiff = RAID_DIFFICULTY_25MAN_NORMAL;
+        else if (Difficulty(tmpDiff) == SCENARIO_DIFFICULTY_HEROIC)
+            tmpDiff = SCENARIO_DIFFICULTY_NORMAL;
 
-        // Pull new data
-        mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));     // We are 10 normal or 25 normal
-        if (!mapDiff)
-        {
-            tmpDiff = MAN10_DIFFICULTY;
-            mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff)); // 10 normal
-        }
+        // pull new data
+        mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
     }
 
     difficulty = Difficulty(tmpDiff);
+
     return mapDiff;
 }
 

@@ -790,10 +790,12 @@ class spell_yorsahj_the_unsleeping_deep_corruption : public SpellScriptLoader
                         uint32 spellId = SPELL_DEEP_CORRUPTION_DMG;
                         switch (GetCaster()->GetMap()->GetDifficulty())
                         {
-                            case MAN10_DIFFICULTY: spellId = SPELL_DEEP_CORRUPTION_DMG; break;
-                            case MAN25_DIFFICULTY: spellId = SPELL_DEEP_CORRUPTION_DMG_25; break;
-                            case MAN10_HEROIC_DIFFICULTY: spellId = SPELL_DEEP_CORRUPTION_DMG_10H; break;
-                            case MAN25_HEROIC_DIFFICULTY: spellId = SPELL_DEEP_CORRUPTION_DMG_25H; break;
+                            case RAID_DIFFICULTY_10MAN_NORMAL: spellId = SPELL_DEEP_CORRUPTION_DMG;     break;
+                            case RAID_DIFFICULTY_25MAN_NORMAL: spellId = SPELL_DEEP_CORRUPTION_DMG_25;  break;
+                            case RAID_DIFFICULTY_10MAN_HEROIC: spellId = SPELL_DEEP_CORRUPTION_DMG_10H; break;
+                            case RAID_DIFFICULTY_25MAN_HEROIC: spellId = SPELL_DEEP_CORRUPTION_DMG_25H; break;
+
+							default:                           spellId = SPELL_DEEP_CORRUPTION_DMG;     break;
                         }
 
                         GetUnitOwner()->CastSpell(GetUnitOwner(), spellId, true);

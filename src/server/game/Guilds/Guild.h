@@ -145,34 +145,34 @@ enum GuildCommandError
     ERR_GUILD_REP_TOO_LOW                = 39  // "Your guild reputation isn't high enough to do that."
 
     // ToDo: Find and update with these.
-    // ERR_GUILD_CREATE_S           = "%s created.";
-    // ERR_GUILD_DECLINE_S          = "%s declines your guild invitation.";
-    // ERR_GUILD_DEMOTE_SS          = "%s  has been demoted to %s.";
-    // ERR_GUILD_DEMOTE_SSS         = "%s has demoted %s to %s.";
-    // ERR_GUILD_DISBANDED          = "Guild has been disbanded.";
-    // ERR_GUILD_DISBAND_S          = "%s has disbanded the guild.";
-    // ERR_GUILD_DISBAND_SELF       = "You have disbanded the guild.";
-    // ERR_GUILD_FOUNDER_S          = "Congratulations, you are a founding member of %s!";
-    // ERR_GUILD_ACCEPT             = "You have joined the guild.";
-    // ERR_GUILD_INVITE_S           = "You have invited %s to join your guild.";
-    // ERR_GUILD_INVITE_SELF        = "You can't invite yourself to a guild.";
-    // ERR_GUILD_JOIN_S             = "%s has joined the guild.";
-    // ERR_GUILD_LEADER_CHANGED_SS  = "%s has made %s the new Guild Master.";
-    // ERR_GUILD_LEADER_IS_S        = "%s is the leader of your guild.";
-    // ERR_GUILD_LEADER_REPLACED    = "Because the previous guild master %s has not logged in for an extended time, %s has become the new Guild Master.";
-    // ERR_GUILD_LEADER_S           = "%s has been promoted to Guild Master.";
-    // ERR_GUILD_LEADER_SELF        = "You are now the Guild Master.";
-    // ERR_GUILD_LEAVE_RESULT       = "You have left the guild.";
-    // ERR_GUILD_LEAVE_S            = "%s has left the guild.";
-    // ERR_GUILD_PROMOTE_SSS        = "%s has promoted %s to %s.";
-    // ERR_GUILD_QUIT_S             = "You are no longer a member of %s.";
-    // ERR_GUILD_REMOVE_SELF        = "You have been kicked out of the guild.";
-    // ERR_GUILD_REMOVE_SS          = "%s has been kicked out of the guild by %s.";
-    // ERR_GUILD_BANK_BOUND_ITEM    = "You cannot store soulbound items in the guild bank";
-    // ERR_GUILD_BANK_CONJURED_ITEM = "You cannot store conjured items in the guild bank";
-    // ERR_GUILD_BANK_EQUIPPED_ITEM = "You must unequip that item first";
-    // ERR_GUILD_BANK_QUEST_ITEM    = "You cannot store quest items in the guild bank";
-    // ERR_GUILD_BANK_WRAPPED_ITEM  = "You cannot store wrapped items in the guild bank";
+    // ERR_GUILD_CREATE_S           // "%s created.";
+    // ERR_GUILD_DECLINE_S          // "%s declines your guild invitation.";
+    // ERR_GUILD_DEMOTE_SS          // "%s  has been demoted to %s.";
+    // ERR_GUILD_DEMOTE_SSS         // "%s has demoted %s to %s.";
+    // ERR_GUILD_DISBANDED          // "Guild has been disbanded.";
+    // ERR_GUILD_DISBAND_S          // "%s has disbanded the guild.";
+    // ERR_GUILD_DISBAND_SELF       // "You have disbanded the guild.";
+    // ERR_GUILD_FOUNDER_S          // "Congratulations, you are a founding member of %s!";
+    // ERR_GUILD_ACCEPT             // "You have joined the guild.";
+    // ERR_GUILD_INVITE_S           // "You have invited %s to join your guild.";
+    // ERR_GUILD_INVITE_SELF        // "You can't invite yourself to a guild.";
+    // ERR_GUILD_JOIN_S             // "%s has joined the guild.";
+    // ERR_GUILD_LEADER_CHANGED_SS  // "%s has made %s the new Guild Master.";
+    // ERR_GUILD_LEADER_IS_S        // "%s is the leader of your guild.";
+    // ERR_GUILD_LEADER_REPLACED    // "Because the previous guild master %s has not logged in for an extended time, %s has become the new Guild Master.";
+    // ERR_GUILD_LEADER_S           // "%s has been promoted to Guild Master.";
+    // ERR_GUILD_LEADER_SELF        // "You are now the Guild Master.";
+    // ERR_GUILD_LEAVE_RESULT       // "You have left the guild.";
+    // ERR_GUILD_LEAVE_S            // "%s has left the guild.";
+    // ERR_GUILD_PROMOTE_SSS        // "%s has promoted %s to %s.";
+    // ERR_GUILD_QUIT_S             // "You are no longer a member of %s.";
+    // ERR_GUILD_REMOVE_SELF        // "You have been kicked out of the guild.";
+    // ERR_GUILD_REMOVE_SS          // "%s has been kicked out of the guild by %s.";
+    // ERR_GUILD_BANK_BOUND_ITEM    // "You cannot store soulbound items in the guild bank";
+    // ERR_GUILD_BANK_CONJURED_ITEM // "You cannot store conjured items in the guild bank";
+    // ERR_GUILD_BANK_EQUIPPED_ITEM // "You must unequip that item first";
+    // ERR_GUILD_BANK_QUEST_ITEM    // "You cannot store quest items in the guild bank";
+    // ERR_GUILD_BANK_WRAPPED_ITEM  // "You cannot store wrapped items in the guild bank";
 };
 
 enum GuildEvents // API Lua Bank events.
@@ -215,24 +215,29 @@ enum GuildEvents // API Lua Bank events.
 
 enum PetitionTurns
 {
-    PETITION_TURN_OK                    = 0,
-    PETITION_TURN_ALREADY_IN_GUILD      = 2,
-    PETITION_TURN_GUILD_PERMISSIONS     = 12,
-    PETITION_TURN_GUILD_NAME_INVALID    = 13,
-    PETITION_TURN_NEED_MORE_SIGNATURES  = 15
+    PETITION_TURN_OK                    = 0,  // "Charter turned in."
+    PETITION_TURN_ALREADY_IN_GUILD      = 2,  // "You are already in a guild."
+    PETITION_TURN_GUILD_PERMISSIONS     = 12, // "You don't have permission to do that."
+    PETITION_TURN_GUILD_NAME_INVALID    = 13, // "That name contains invalid characters.  Enter a new name."
+    PETITION_TURN_NEED_MORE_SIGNATURES  = 15  // "You need more signatures."
 };
 
 enum PetitionSigns
 {
-    PETITION_SIGN_DECLINED              = 0,
-    PETITION_SIGN_NOT_SERVER            = 1,
-    PETITION_SIGN_ALREADY_IN_GUILD      = 2,
-    PETITION_SIGN_ALREADY_SIGNED        = 3,
-    PETITION_SIGN_OK                    = 4,
-    PETITION_SIGN_CANT_SIGN_OWN         = 6,
-    PETITION_SIGN_FULL                  = 9,
-    PETITION_SIGN_ALREADY_SIGNED_OTHER  = 10,
-    PETITION_SIGN_RESTRICTED_ACCOUNT    = 12
+    PETITION_SIGN_DECLINED              = 0,  // "%s has declined to sign your petition."
+    PETITION_SIGN_NOT_SERVER            = 1,  // "That player is not from your server"
+    PETITION_SIGN_ALREADY_IN_GUILD      = 2,  // "You are already in a guild."
+    PETITION_SIGN_ALREADY_SIGNED        = 3,  // "You have already signed that charter."
+    PETITION_SIGN_OK                    = 4,  // "Charter signed."
+    PETITION_SIGN_CANT_SIGN_OWN         = 6,  // "You can't sign your own charter."
+    PETITION_SIGN_FULL                  = 9,  // "That petition is full"
+    PETITION_SIGN_ALREADY_SIGNED_OTHER  = 10, // "You've already signed another guild charter"
+    PETITION_SIGN_RESTRICTED_ACCOUNT    = 12  // "Starter Edition accounts may not sign guild charters. \124cffffd000\124HurlIndex:2\124h[Click To Upgrade]\124h\124r"
+
+    // ToDo: Find and update with these.
+    // PETITION_ALREADY_SIGNED_BY_S   // "%s has already signed your charter."
+    // PETITION_OFFERED_S             // "You have requested %s's signature."
+    // PETITION_SIGNED_S              // "%s has signed your charter."
 };
 
 enum GuildBankRights
@@ -279,8 +284,8 @@ enum GuildEmblemError
     ERR_GUILDEMBLEM_INVALIDVENDOR         = 5  // "That's not an emblem vendor!"
 
     // ToDo: Find and update with these.
-    // ERR_GUILDEMBLEM_COLORSPRESENT      = "Your guild already has an emblem!"
-    // ERR_GUILDEMBLEM_SAME               = "Not saved, your tabard is already like that."
+    // ERR_GUILDEMBLEM_COLORSPRESENT      // "Your guild already has an emblem!"
+    // ERR_GUILDEMBLEM_SAME               // "Not saved, your tabard is already like that."
 };
 
 enum GuildMemberFlags

@@ -657,7 +657,7 @@ class boss_spirit_of_gara_jal_council : public CreatureScript
                             {
                                 // Handle Soul Fragment.
                                 possessedCount++;
-                                if (me->GetMap()->GetDifficulty() == MAN25_HEROIC_DIFFICULTY || me->GetMap()->GetDifficulty() == MAN10_HEROIC_DIFFICULTY && possessedCount % 2 == 0)
+                                if (me->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC || me->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC && possessedCount % 2 == 0)
                                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
                                         me->AddAura(SPELL_SOUL_FRAGMENT, target);
 

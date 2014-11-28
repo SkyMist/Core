@@ -33,6 +33,8 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recvData)
     uint8 bitsOrder[8] = { 1, 5, 7, 0, 4, 6, 3, 2 };
     recvData.ReadBitInOrder(guid, bitsOrder);
 
+    recvData.FlushBits();
+
     uint8 bytesOrder[8] = { 1, 2, 5, 7, 0, 3, 6, 4 };
     recvData.ReadBytesSeq(guid, bytesOrder);
 
@@ -122,6 +124,8 @@ void WorldSession::SendAttackStop(Unit const* enemy)
     data.WriteBit(attackerGUID[2]);
     data.WriteBit(attackerGUID[5]);
 
+    data.FlushBits();
+
     data.WriteByteSeq(attackerGUID[2]);
     data.WriteByteSeq(attackerGUID[7]);
     data.WriteByteSeq(victimGUID[0]);
@@ -138,5 +142,6 @@ void WorldSession::SendAttackStop(Unit const* enemy)
     data.WriteByteSeq(attackerGUID[6]);
     data.WriteByteSeq(victimGUID[2]);
     data.WriteByteSeq(attackerGUID[4]);
+
     SendPacket(&data);
 }

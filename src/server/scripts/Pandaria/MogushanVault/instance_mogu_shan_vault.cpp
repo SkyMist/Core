@@ -196,7 +196,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         guardianAliveCount++;
 
                         uint32 difficulty = instance->GetSpawnMode();
-                        bool turnOver = (difficulty == MAN10_DIFFICULTY || difficulty == MAN10_HEROIC_DIFFICULTY || difficulty == RAID_TOOL_DIFFICULTY);
+                        bool turnOver = (difficulty == RAID_DIFFICULTY_10MAN_NORMAL || difficulty == RAID_DIFFICULTY_10MAN_HEROIC || difficulty == RAID_DIFFICULTY_25MAN_LFR);
 
                         // if (guardianAliveCount >= 4 && GetBossState(DATA_STONE_GUARD) != DONE && instance->GetSpawnMode() <= MAN10_DIFFICULTY)
                         if (guardianAliveCount >= 4 && GetBossState(DATA_STONE_GUARD) != DONE && instance->GetSpawnMode() && turnOver)

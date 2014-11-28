@@ -214,11 +214,6 @@ struct InstanceTemplate
     bool AllowMount;
 };
 
-enum LevelRequirementVsMode
-{
-    LEVELREQUIREMENT_HEROIC = 70
-};
-
 #if defined(__GNUC__)
 #pragma pack()
 #else
@@ -354,6 +349,7 @@ class Map : public GridRefManager<NGridType>
 
         uint32 GetInstanceId() const { return i_InstanceId; }
         uint8 GetSpawnMode() const { return (i_spawnMode); }
+        void SetSpawnMode(uint8 mode) { i_spawnMode = mode; }
         virtual bool CanEnter(Player* /*player*/) { return true; }
         const char* GetMapName() const;
 
@@ -365,10 +361,16 @@ class Map : public GridRefManager<NGridType>
         bool Instanceable() const { return i_mapEntry && i_mapEntry->Instanceable(); }
         bool IsDungeon() const { return i_mapEntry && i_mapEntry->IsDungeon(); }
         bool IsNonRaidDungeon() const { return i_mapEntry && i_mapEntry->IsNonRaidDungeon(); }
+        bool IsChallengeDungeon() const { return i_spawnMode == DUNGEON_DIFFICULTY_CHALLENGE; }
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
-        bool IsRaidOrHeroicDungeon() const { return IsRaid() || (i_spawnMode == MAN25_DIFFICULTY || i_spawnMode == MAN25_HEROIC_DIFFICULTY || i_spawnMode == MAN10_DIFFICULTY || i_spawnMode == MAN10_HEROIC_DIFFICULTY || i_spawnMode == MAN40_DIFFICULTY || i_spawnMode == HEROIC_DIFFICULTY); }
-        bool IsHeroic() const {return ( i_spawnMode == MAN25_HEROIC_DIFFICULTY || i_spawnMode == MAN10_HEROIC_DIFFICULTY || i_spawnMode == HEROIC_DIFFICULTY); }
-        bool Is25ManRaid() const { return IsRaid() && (i_spawnMode == MAN25_DIFFICULTY || i_spawnMode == MAN25_HEROIC_DIFFICULTY); }   // since 25man difficulties are 1 and 3, we can check them like that
+        bool IsRaidOrHeroicDungeon() const { return IsRaid() || IsNonRaidDungeon() && i_spawnMode == DUNGEON_DIFFICULTY_HEROIC; }
+        bool IsHeroic() const { return (IsRaid() && (i_spawnMode == RAID_DIFFICULTY_10MAN_HEROIC || i_spawnMode == RAID_DIFFICULTY_25MAN_HEROIC) ||
+            IsNonRaidDungeon() && i_spawnMode == DUNGEON_DIFFICULTY_HEROIC || IsScenario() && i_spawnMode == SCENARIO_DIFFICULTY_HEROIC); } // Heroic Raids, Dungeons, Scenarios.
+        bool Is25ManRaid() const { return IsRaid() && (i_spawnMode == RAID_DIFFICULTY_25MAN_NORMAL || i_spawnMode == RAID_DIFFICULTY_25MAN_HEROIC || 
+            i_spawnMode == RAID_DIFFICULTY_25MAN_LFR); }   // Raids 25 man Normal, Heroic and LFR.
+        bool Is40ManRaid() const { return IsRaid() && i_spawnMode == RAID_DIFFICULTY_40MAN; } // 40 man Raid.
+        bool IsScenario() const { return i_mapEntry && i_mapEntry->IsScenario(); } // For future usage.
+
         bool IsBattleground() const { return i_mapEntry && i_mapEntry->IsBattleground(); }
         bool IsBattleArena() const { return i_mapEntry && i_mapEntry->IsBattleArena(); }
         bool IsBattlegroundOrArena() const { return i_mapEntry && i_mapEntry->IsBattlegroundOrArena(); }

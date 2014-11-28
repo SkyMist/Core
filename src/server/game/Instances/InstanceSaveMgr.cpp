@@ -85,7 +85,7 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
         return NULL;
     }
 
-    if (difficulty >= (entry->IsRaid() ? MAX_RAID_DIFFICULTY : MAX_DUNGEON_DIFFICULTY))
+    if (difficulty >= (entry->IsRaid() ? MAX_RAID_DIFFICULTY : (entry->IsScenario() ? MAX_SCENARIO_DIFFICULTY : MAX_DUNGEON_DIFFICULTY)))
     {
         sLog->outError(LOG_FILTER_GENERAL, "InstanceSaveManager::AddInstanceSave: mapid = %d, instanceid = %d, wrong difficulty %u!", mapId, instanceId, difficulty);
         return NULL;
@@ -95,7 +95,7 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
     {
         // initialize reset time
         // for normal instances if no creatures are killed the instance will reset in two hours
-        if (entry->map_type == MAP_RAID || difficulty > REGULAR_DIFFICULTY)
+        if (entry->IsRaid() || difficulty > DUNGEON_DIFFICULTY_NORMAL && difficulty != DUNGEON_DIFFICULTY_CHALLENGE && difficulty != SCENARIO_DIFFICULTY_NORMAL)
             resetTime = GetResetTimeFor(mapId, difficulty);
         else
         {
@@ -205,7 +205,7 @@ time_t InstanceSave::GetResetTimeForDB()
 {
     // only save the reset time for normal instances
     const MapEntry* entry = sMapStore.LookupEntry(GetMapId());
-    if (!entry || entry->map_type == MAP_RAID || GetDifficulty() == HEROIC_DIFFICULTY)
+    if (!entry || entry->IsRaid() || GetDifficulty() > DUNGEON_DIFFICULTY_NORMAL && GetDifficulty() != DUNGEON_DIFFICULTY_CHALLENGE && GetDifficulty() != SCENARIO_DIFFICULTY_NORMAL)
         return 0;
     else
         return GetResetTime();

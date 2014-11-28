@@ -565,7 +565,7 @@ void LFGMgr::InitializeLockedDungeons(Player* player)
             lockData.lockstatus = LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
         else if (DisableMgr::IsDisabledFor(DISABLE_TYPE_MAP, dungeon->map, player))
             lockData.lockstatus = LFG_LOCKSTATUS_RAID_LOCKED;
-        else if (dungeon->difficulty > REGULAR_DIFFICULTY && player->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty)))
+        else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && player->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty)))
         {
             //if (!player->GetGroup() || !player->GetGroup()->isLFGGroup() || GetDungeon(player->GetGroup()->GetGUID(), true) != dungeon->ID || GetState(player->GetGroup()->GetGUID()) != LFG_STATE_DUNGEON)
             lockData.lockstatus = LFG_LOCKSTATUS_RAID_LOCKED;
@@ -1740,7 +1740,7 @@ void LFGMgr::UpdateProposal(uint32 proposalId, uint64 guid, bool accept)
                 grp = new Group();
                 grp->Create(player);
 
-                if (dungeon->difficulty == RAID_TOOL_DIFFICULTY)
+                if (dungeon->difficulty == RAID_DIFFICULTY_25MAN_LFR)
                     grp->ConvertToRaid();
 
                 grp->ConvertToLFG();
@@ -1791,7 +1791,7 @@ void LFGMgr::UpdateProposal(uint32 proposalId, uint64 guid, bool accept)
                 player->CastSpell(player, LFG_SPELL_DUNGEON_COOLDOWN, false);
         }
 
-        if (dungeon->difficulty == RAID_TOOL_DIFFICULTY)
+        if (dungeon->difficulty == RAID_DIFFICULTY_25MAN_LFR)
             grp->SetRaidDifficulty(Difficulty(dungeon->difficulty));
         grp->SetDungeonDifficulty(Difficulty(dungeon->difficulty));
 
@@ -2316,7 +2316,7 @@ void LFGMgr::RewardDungeonDoneFor(const uint32 dungeonId, Player* player)
     }
 
     // Update achievements
-    if (dungeon->difficulty == HEROIC_DIFFICULTY)
+    if (dungeon->difficulty == DUNGEON_DIFFICULTY_HEROIC)
         player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_USE_LFD_TO_GROUP_WITH_PLAYERS, 1);
 
     LfgReward const* reward = GetRandomDungeonReward(rDungeonId, player->getLevel());

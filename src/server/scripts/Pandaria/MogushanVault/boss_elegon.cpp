@@ -1850,7 +1850,7 @@ class spell_total_annihilation : public SpellScriptLoader
 
                     uint8 diffic = caster->GetMap()->GetDifficulty();
 
-                    if ((!targetCount &&  diffic == MAN10_DIFFICULTY) || (targetCount < 3 && diffic == MAN25_DIFFICULTY))
+                    if ((!targetCount &&  diffic == RAID_DIFFICULTY_10MAN_NORMAL) || (targetCount < 3 && diffic == RAID_DIFFICULTY_25MAN_NORMAL))
                         caster->CastSpell(caster, SPELL_CATASTROPHIC_ANOMALY, false);
                 }
             }

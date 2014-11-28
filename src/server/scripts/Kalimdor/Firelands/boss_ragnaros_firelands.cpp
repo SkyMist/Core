@@ -1062,9 +1062,9 @@ class boss_ragnaros_firelands : public CreatureScript
                 instance->UpdateEncounterState(ENCOUNTER_CREDIT_CAST_SPELL, SPELL_ENCOUNTER_COMPLETE, me); 
                 instance->SetBossState(DATA_RAGNAROS, DONE);
 
-                if (GetDifficulty() == MAN10_DIFFICULTY)
+                if (GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
                     instance->DoRespawnGameObject(instance->GetData64(DATA_RAGNAROS_CACHE_10), DAY);
-                else if (GetDifficulty() == MAN25_DIFFICULTY)
+                else if (GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     instance->DoRespawnGameObject(instance->GetData64(DATA_RAGNAROS_CACHE_25), DAY);
 
                 events.ScheduleEvent(EVENT_DESPAWN, 3000);
@@ -2506,10 +2506,12 @@ class spell_ragnaros_firelands_blazing_speed : public SpellScriptLoader
                 uint32 spell_id = 0;
                 switch (GetCaster()->GetMap()->GetDifficulty())
                 {
-                    case MAN10_DIFFICULTY: spell_id = SPELL_BLAZING_SPEED; break;
-                    case MAN25_DIFFICULTY: spell_id = SPELL_BLAZING_SPEED_25; break;
-                    case MAN10_HEROIC_DIFFICULTY: spell_id = SPELL_BLAZING_SPEED_10H; break;
-                    case MAN25_HEROIC_DIFFICULTY: spell_id = SPELL_BLAZING_SPEED_25H; break;
+                    case RAID_DIFFICULTY_10MAN_NORMAL: spell_id = SPELL_BLAZING_SPEED; break;
+                    case RAID_DIFFICULTY_25MAN_NORMAL: spell_id = SPELL_BLAZING_SPEED_25; break;
+                    case RAID_DIFFICULTY_10MAN_HEROIC: spell_id = SPELL_BLAZING_SPEED_10H; break;
+                    case RAID_DIFFICULTY_25MAN_HEROIC: spell_id = SPELL_BLAZING_SPEED_25H; break;
+
+					default:                           spell_id = SPELL_BLAZING_SPEED; break;
                 }
 
                 if (!spell_id)

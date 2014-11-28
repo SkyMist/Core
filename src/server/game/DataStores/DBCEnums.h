@@ -347,50 +347,60 @@ enum AreaFlags
 
 enum Difficulty
 {
-    NONE_DIFFICULTY              = 0,                       // entry
-    REGULAR_DIFFICULTY           = 1,                       // difficulty_entry_1
-    HEROIC_DIFFICULTY            = 2,                       // difficulty_entry_2
-    MAN10_DIFFICULTY             = 3,                       // difficulty_entry_3
-    MAN25_DIFFICULTY             = 4,                       // difficulty_entry_4
-    MAN10_HEROIC_DIFFICULTY      = 5,                       // difficulty_entry_5
-    MAN25_HEROIC_DIFFICULTY      = 6,                       // difficulty_entry_6
-    RAID_TOOL_DIFFICULTY         = 7,                       // difficulty_entry_7
-    CHALLENGE_MODE_DIFFICULTY    = 8,                       // difficulty_entry_8
-    MAN40_DIFFICULTY             = 9,                       // difficulty_entry_9
-                                                            // difficulty_entry_10
-    SCENARIO_HEROIC_DIFFICULTY   = 11,                      // difficulty_entry_11
-    SCENARIO_DIFFICULTY          = 12,                      // difficulty_entry_12
-                                                            // difficulty_entry_13
-    DYNAMIC_DIFFICULTY           = 14                       // difficulty_entry_14
+    REGULAR_DIFFICULTY           = 0,
+
+    DUNGEON_DIFFICULTY_NORMAL    = 1,
+    DUNGEON_DIFFICULTY_HEROIC    = 2,
+    DUNGEON_DIFFICULTY_CHALLENGE = 8,
+
+    RAID_DIFFICULTY_10MAN_NORMAL = 3,
+    RAID_DIFFICULTY_25MAN_NORMAL = 4,
+    RAID_DIFFICULTY_10MAN_HEROIC = 5,
+    RAID_DIFFICULTY_25MAN_HEROIC = 6,
+    RAID_DIFFICULTY_25MAN_LFR    = 7,
+    RAID_DIFFICULTY_1025MAN_FLEX = 14, // This is from the new Raid Flex system. Only Siege of Ogrimmar (Map 1136) has it.
+
+    RAID_DIFFICULTY_40MAN        = 9,  // Seems used for: 1) Guild group checking - 10 / 40 (ex. : Guild achievs in BG's); 2) Raids - maps 169, 409, 469, 531.
+
+    SCENARIO_DIFFICULTY_NORMAL   = 12, // MOP new, 1-3 players. Depends on scenario, many solo.
+    SCENARIO_DIFFICULTY_HEROIC   = 11  // MOP 5.3, 3 players to start, minimum iLvl 480.
 };
 
-#define RAID_DIFFICULTY_MASK_25MAN 1                        // since 25man difficulties are 1 and 3, we can check them like that
+#define MAX_DUNGEON_DIFFICULTY     DUNGEON_DIFFICULTY_CHALLENGE + 1
+#define MAX_RAID_DIFFICULTY        RAID_DIFFICULTY_1025MAN_FLEX + 1
+#define MAX_SCENARIO_DIFFICULTY    SCENARIO_DIFFICULTY_NORMAL + 1
+#define MAX_DIFFICULTY             RAID_DIFFICULTY_1025MAN_FLEX + 1
 
-#define MAX_DUNGEON_DIFFICULTY     HEROIC_DIFFICULTY+1
-#define MAX_RAID_DIFFICULTY        MAN40_DIFFICULTY+1
-#define MAX_DIFFICULTY             DYNAMIC_DIFFICULTY+1     // difficulty_entry_15
+// Used for DB creature_template selections and other stuff.
+// Creatures for Dungeons are template selected entry(5N), difficulty_entry_1(5H), difficulty_entry_2(5C).
+// Creatures for Raids are template selected entry (10N), difficulty_entry_1(25N), difficulty_entry_2(10H), difficulty_entry_3(25H), difficulty_entry_4 (LFR), difficulty_entry_5 (Flex).
+// Creatures for Scenarios are template selected entry(3N), difficulty_entry_1(3H).
+#define MAX_TEMPLATE_DIFFICULTY    RAID_DIFFICULTY_25MAN_HEROIC // Actually it's 6, because we have 6 raid types.
 
 enum SpawnMask
 {
-    SPAWNMASK_CONTINENT         = (1 << NONE_DIFFICULTY),   // any maps without spawn modes
+    SPAWNMASK_CONTINENT             = (1 << REGULAR_DIFFICULTY), // any maps without spawn modes
 
-    SPAWNMASK_DUNGEON_NORMAL    = (1 << REGULAR_DIFFICULTY),
-    SPAWNMASK_DUNGEON_HEROIC    = (1 << HEROIC_DIFFICULTY),
-    SPAWNMASK_DUNGEON_CHALLENGE = (1 << CHALLENGE_MODE_DIFFICULTY),
-    SPAWNMASK_DUNGEON_ALL       = (SPAWNMASK_DUNGEON_NORMAL | SPAWNMASK_DUNGEON_HEROIC | SPAWNMASK_DUNGEON_CHALLENGE),
+    SPAWNMASK_DUNGEON_NORMAL        = (1 << DUNGEON_DIFFICULTY_NORMAL),
+    SPAWNMASK_DUNGEON_HEROIC        = (1 << DUNGEON_DIFFICULTY_HEROIC),
+    SPAWNMASK_DUNGEON_CHALLENGE     = (1 << DUNGEON_DIFFICULTY_CHALLENGE),
+    SPAWNMASK_DUNGEON_ALL           = (SPAWNMASK_DUNGEON_NORMAL | SPAWNMASK_DUNGEON_HEROIC | SPAWNMASK_DUNGEON_CHALLENGE),
 
-    SPAWNMASK_RAID_10MAN_NORMAL = (1 << MAN10_DIFFICULTY ),
-    SPAWNMASK_RAID_25MAN_NORMAL = (1 << MAN25_DIFFICULTY),
-    SPAWNMASK_RAID_40MAN_NORMAL = (1 << MAN40_DIFFICULTY),
-    SPAWNMASK_RAID_NORMAL_ALL   = (SPAWNMASK_RAID_10MAN_NORMAL | SPAWNMASK_RAID_25MAN_NORMAL | SPAWNMASK_RAID_40MAN_NORMAL),
+    SPAWNMASK_RAID_10MAN_NORMAL     = (1 << RAID_DIFFICULTY_10MAN_NORMAL),
+    SPAWNMASK_RAID_25MAN_NORMAL     = (1 << RAID_DIFFICULTY_25MAN_NORMAL),
+    SPAWNMASK_RAID_10MAN_FLEX       = (1 << RAID_DIFFICULTY_1025MAN_FLEX),
+    SPAWNMASK_RAID_25MAN_LFR        = (1 << RAID_DIFFICULTY_25MAN_LFR),
+    SPAWNMASK_RAID_NORMAL_ALL       = (SPAWNMASK_RAID_10MAN_NORMAL | SPAWNMASK_RAID_25MAN_NORMAL | SPAWNMASK_RAID_10MAN_FLEX | SPAWNMASK_RAID_25MAN_LFR),
 
-    SPAWNMASK_RAID_10MAN_HEROIC = (1 << MAN10_HEROIC_DIFFICULTY),
-    SPAWNMASK_RAID_25MAN_HEROIC = (1 << MAN25_HEROIC_DIFFICULTY),
-    SPAWNMASK_RAID_HEROIC_ALL   = (SPAWNMASK_RAID_10MAN_HEROIC | SPAWNMASK_RAID_25MAN_HEROIC),
+    SPAWNMASK_RAID_10MAN_HEROIC     = (1 << RAID_DIFFICULTY_10MAN_HEROIC),
+    SPAWNMASK_RAID_25MAN_HEROIC     = (1 << RAID_DIFFICULTY_25MAN_HEROIC),
+    SPAWNMASK_RAID_HEROIC_ALL       = (SPAWNMASK_RAID_10MAN_HEROIC | SPAWNMASK_RAID_25MAN_HEROIC),
 
-    SPAWNMASK_RAID_RAID_TOOL    = (1 << RAID_TOOL_DIFFICULTY),
-
-    SPAWNMASK_RAID_ALL          = (SPAWNMASK_RAID_NORMAL_ALL | SPAWNMASK_RAID_HEROIC_ALL | SPAWNMASK_RAID_RAID_TOOL)
+    SPAWNMASK_RAID_ALL              = (SPAWNMASK_RAID_NORMAL_ALL | SPAWNMASK_RAID_HEROIC_ALL),
+    
+    SPAWNMASK_SCENARIO_NORMAL       = (1 << SCENARIO_DIFFICULTY_NORMAL),
+    SPAWNMASK_SCENARIO_HEROIC       = (1 << SCENARIO_DIFFICULTY_HEROIC),
+    SPAWNMASK_SCENARIO_ALL          = (SCENARIO_DIFFICULTY_NORMAL | SCENARIO_DIFFICULTY_HEROIC)
 };
 
 enum FactionTemplateFlags

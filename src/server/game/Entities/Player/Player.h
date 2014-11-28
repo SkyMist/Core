@@ -915,17 +915,6 @@ struct InstancePlayerBind
     InstancePlayerBind() : save(NULL), perm(false) {}
 };
 
-enum DungeonStatusFlag
-{
-    DUNGEON_STATUSFLAG_NORMAL = 0x01,
-    DUNGEON_STATUSFLAG_HEROIC = 0x02,
-
-    RAID_STATUSFLAG_10MAN_NORMAL = 0x01,
-    RAID_STATUSFLAG_25MAN_NORMAL = 0x02,
-    RAID_STATUSFLAG_10MAN_HEROIC = 0x04,
-    RAID_STATUSFLAG_25MAN_HEROIC = 0x08
-};
-
 struct AccessRequirement
 {
     uint8  levelMin;
@@ -2290,8 +2279,8 @@ class Player : public Unit, public GridObject<Player>
         void SendAutoRepeatCancel(Unit* target);
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
-        void SendDungeonDifficulty(bool IsInGroup);
-        void SendRaidDifficulty(bool IsInGroup, int32 forcedDifficulty = -1);
+        void SendDungeonDifficulty(uint32 difficulty);
+        void SendRaidDifficulty(uint32 difficulty);
         void ResetInstances(uint8 method, bool isRaid);
         void SendResetInstanceSuccess(uint32 MapId);
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);

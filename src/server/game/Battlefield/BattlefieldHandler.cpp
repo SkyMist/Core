@@ -32,24 +32,29 @@
 //Param3:(time) Time in second that the player have for accept
 void WorldSession::SendBfInvitePlayerToWar(uint64 guid, uint32 zoneId, uint32 pTime)
 {
-    //Send packet
     ObjectGuid guidBytes = guid;
     WorldPacket data(SMSG_BATTLEFIELD_MGR_ENTRY_INVITE);
 
     uint8 bitOrder[8] = {6, 5, 2, 4, 3, 0, 7, 1};
     data.WriteBitInOrder(guidBytes, bitOrder);
 
+    data.FlushBits();
+
     data.WriteByteSeq(guidBytes[0]);
     data.WriteByteSeq(guidBytes[7]);
+
     data << uint32(time(NULL) + pTime); // Invite lasts until
+
     data.WriteByteSeq(guidBytes[6]);
     data.WriteByteSeq(guidBytes[5]);
     data.WriteByteSeq(guidBytes[3]);
-    data << uint32(zoneId);         // Zone Id
+
+    data << uint32(zoneId);             // Zone Id
+
     data.WriteByteSeq(guidBytes[1]);
     data.WriteByteSeq(guidBytes[4]);   
     data.WriteByteSeq(guidBytes[2]);
-    //Sending the packet to player
+
     SendPacket(&data);
 }
 
@@ -122,51 +127,49 @@ void WorldSession::SendBfInvitePlayerToQueue(uint64 guid)
 //Param4:(Full) on log in is full
 void WorldSession::SendBfQueueInviteResponse(uint64 guid,uint32 ZoneId, bool CanQueue, bool Full)
 {
-    bool hasSecondGuid = false;
+    const bool hasSecondGuid = false;
+    const bool warmup = true;
     ObjectGuid bgGuid = guid;
-    WorldPacket data(SMSG_BATTLEFIELD_MGR_QUEUE_REQUEST_RESPONSE);
-    data.WriteBit(bgGuid[4]);
-    data.WriteBit(bgGuid[2]);
+
+    WorldPacket data(SMSG_BATTLEFIELD_MGR_QUEUE_REQUEST_RESPONSE, 16);
+
     data.WriteBit(bgGuid[5]);
-    data.WriteBit(bgGuid[6]);
+    data.WriteBit(bgGuid[2]);
+    data.WriteBit(bgGuid[7]);
+
+    data.WriteBit(Full);         // Logging In: 0 wg full - 1 queue for upcoming - May be inversed - CHECK!
+
     data.WriteBit(bgGuid[3]);
-    data.WriteBit(!hasSecondGuid); // Has Second guid
     data.WriteBit(bgGuid[1]);
     data.WriteBit(bgGuid[0]);
 
-    data.WriteBit(0); // guid2[0]
-    data.WriteBit(0); // guid2[1]
-    data.WriteBit(0); // guid2[6]
-    data.WriteBit(0); // guid2[5]
-    data.WriteBit(0); // guid2[2]
-    data.WriteBit(0); // guid2[4]
-    data.WriteBit(0); // guid2[7]
-    data.WriteBit(0); // guid2[3]
+    data.WriteBit(!hasSecondGuid);
 
-    data.WriteBit((Full ? 0 : 1)); // //Logging In        //0 wg full                 //1 queue for upcoming (we may need to swap it)
-    data.WriteBit(bgGuid[7]);
+    // if (hasSecondGuid) 7 3 0 4 2 6 1 5
+
+    data.WriteBit(bgGuid[4]);
+    data.WriteBit(bgGuid[6]);
+
     data.FlushBits();
 
-    //if(guid2[1])
-    //if(guid2[7])
-    //if(guid2[4])
-    //if(guid2[3])
-    //if(guid2[6])
-    //if(guid2[0])
-    //if(guid2[2])
-    //if(guid2[5])
+    data << uint8(CanQueue);  // Accepted
 
-    data.WriteByteSeq(bgGuid[6]);
-    data.WriteByteSeq(bgGuid[5]);
-    data.WriteByteSeq(bgGuid[4]);
-    data.WriteByteSeq(bgGuid[0]);
-    data << uint32(ZoneId);
+    // if (hasSecondGuid) 7 1 2 6 5 3 4 0
+
     data.WriteByteSeq(bgGuid[1]);
-    data << uint8(1); // Warmup
-    data.WriteByteSeq(bgGuid[2]);
+    data.WriteByteSeq(bgGuid[6]);
+    data.WriteByteSeq(bgGuid[0]);
+    data.WriteByteSeq(bgGuid[5]);
     data.WriteByteSeq(bgGuid[3]);
-    data << uint8((CanQueue ? 1 : 0));  //Accepted          //0 you cannot queue wg     //1 you are queued
+
+    data << uint8(warmup);
+
     data.WriteByteSeq(bgGuid[7]);
+    data.WriteByteSeq(bgGuid[4]);
+
+    data << uint32(ZoneId);
+
+    data.WriteByteSeq(bgGuid[5]);
 
     SendPacket(&data);
 }
@@ -177,19 +180,25 @@ void WorldSession::SendBfEntered(uint64 guid)
 {
     ObjectGuid bgGuid = guid;
 //    m_PlayerInWar[player->GetTeamId()].insert(player->GetGUID());
+
     WorldPacket data(SMSG_BATTLEFIELD_MGR_ENTERING);
+
     data.WriteBit(bgGuid[7]);
     data.WriteBit(bgGuid[3]);
     data.WriteBit(bgGuid[2]);
+
     data.WriteBit(1); // unk
     data.WriteBit(_player->isAFK() ? 1 : 0); //Clear AFK
+
     data.WriteBit(bgGuid[6]);
     data.WriteBit(bgGuid[0]);
     data.WriteBit(bgGuid[5]);
 
     data.WriteBit(bgGuid[1]);
     data.WriteBit(bgGuid[4]);
+
     data.WriteBit(1); // unk
+
     data.FlushBits();
     
     uint8 byteOrder[8] = {1, 7, 3, 4, 2, 5, 6, 0};
@@ -201,17 +210,22 @@ void WorldSession::SendBfEntered(uint64 guid)
 void WorldSession::SendBfLeaveMessage(uint64 guid, BFLeaveReason reason)
 {
     ObjectGuid bgGuid = guid;
+
     WorldPacket data(SMSG_BATTLEFIELD_MGR_EJECTED);
+
     data.WriteBit(bgGuid[1]);
     data.WriteBit(bgGuid[6]);
     data.WriteBit(bgGuid[5]);
     data.WriteBit(bgGuid[2]);
     data.WriteBit(bgGuid[0]);
     data.WriteBit(bgGuid[4]);
+
     data.WriteBit(0); // relocated
+
     data.WriteBit(bgGuid[7]);
     data.WriteBit(bgGuid[3]);
 
+    data.FlushBits();
 
     data << uint8(2); // byte BattleStatus
 
@@ -270,7 +284,9 @@ void WorldSession::HandleBfEntryInviteResponse(WorldPacket & recvData)
     guid[6] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
+
     accepted = recvData.ReadBit();
+
     guid[5] = recvData.ReadBit();
     guid[0] = recvData.ReadBit();
 
@@ -298,6 +314,8 @@ void WorldSession::HandleBfQueueRequest(WorldPacket& recvData)
 
     uint8 bitOrder[8] = {3, 5, 7, 0, 6, 2, 1, 4};
     recvData.ReadBitInOrder(guid, bitOrder);
+
+    recvData.FlushBits();
 
     uint8 byteOrder[8] = {1, 0, 3, 2, 4, 7, 5, 6};
     recvData.ReadBytesSeq(guid, byteOrder);
@@ -340,9 +358,10 @@ void WorldSession::HandleBfExitQueueRequest(WorldPacket & recvData)
 void WorldSession::HandleBfExitRequest(WorldPacket& recv_data)
 {
     sLog->outError(LOG_FILTER_GENERAL, "HandleBfExitRequest");
+
     Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(_player->GetZoneId());
     if (bf)
-         bf->KickPlayerFromBattlefield(_player->GetGUID());
+        bf->KickPlayerFromBattlefield(_player->GetGUID());
 }
 
 void WorldSession::HandleReportPvPAFK(WorldPacket& recvData)
@@ -391,12 +410,15 @@ void WorldSession::HandleRequestPvpOptions(WorldPacket& recvData)
 
     /// @Todo: perfome research in this case
     WorldPacket data(SMSG_PVP_OPTIONS_ENABLED, 1);
+
     data.WriteBit(1);
     data.WriteBit(1);
     data.WriteBit(1);
     data.WriteBit(1);
     data.WriteBit(1);
+
     data.FlushBits();
+
     SendPacket(&data);
 }
 

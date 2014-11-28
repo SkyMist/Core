@@ -269,38 +269,55 @@ bool Creature::InitEntry(uint32 Entry, uint32 /*team*/, const CreatureData* data
         return false;
     }
 
-    // get difficulty 1 mode entry
-    // Si l'entry heroic du mode de joueur est introuvable, on utilise l'entry du mode normal correpondant au nombre de joueurs du mode
+    // Get difficulty 1 mode entry.
     CreatureTemplate const* cinfo = normalInfo;
-    uint8 diff = uint8(GetMap()->GetSpawnMode());
-    if (diff)
+
+    uint32 difficultyNumber = 0; // Number it uses in difficulty entries.
+
+    for (uint8 diff = uint8(GetMap()->GetSpawnMode()); diff > 0;)
     {
-        if (normalInfo->DifficultyEntry[diff - 1])
-        {
-            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[diff - 1]);
+        // Adjust template selection based on difficulty type.
 
-            // check and reported at startup, so just ignore (restore normalInfo)
-            if (!cinfo)
+        //if (diff == DUNGEON_DIFFICULTY_HEROIC || diff == RAID_DIFFICULTY_25MAN_NORMAL || diff == SCENARIO_DIFFICULTY_HEROIC) - Not needed, already 0.
+        //    difficultyNumber = 0;
+
+        if (Difficulty(diff) == DUNGEON_DIFFICULTY_CHALLENGE || Difficulty(diff) == RAID_DIFFICULTY_10MAN_HEROIC)
+            difficultyNumber = 1;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_HEROIC)
+            difficultyNumber = 2;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_LFR)
+            difficultyNumber = 3;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            difficultyNumber = 4;
+
+        // we already have valid Map pointer for current creature!
+        if (Difficulty(diff) != DUNGEON_DIFFICULTY_NORMAL && Difficulty(diff) != RAID_DIFFICULTY_10MAN_NORMAL && Difficulty(diff) != RAID_DIFFICULTY_40MAN && Difficulty(diff) != SCENARIO_DIFFICULTY_NORMAL)
+        {
+            if (normalInfo->DifficultyEntry[difficultyNumber])
+            {
+                cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[difficultyNumber]);
+                if (cinfo)
+                    break;                                      // template found
+
+                // check and reported at startup, so just ignore (restore normalInfo)
                 cinfo = normalInfo;
+            }
         }
 
-        if (cinfo == normalInfo && (diff == MAN25_HEROIC_DIFFICULTY || diff == RAID_TOOL_DIFFICULTY) && normalInfo->DifficultyEntry[MAN25_DIFFICULTY - 1])
-        {
-            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[MAN25_DIFFICULTY - 1]);
-
-            // check and reported at startup, so just ignore (restore normalInfo)
-            if (!cinfo)
-                cinfo = normalInfo;
-        }
-
-        if (cinfo == normalInfo &&  diff == MAN10_HEROIC_DIFFICULTY && normalInfo->DifficultyEntry[MAN10_DIFFICULTY - 1])
-        {
-            cinfo = sObjectMgr->GetCreatureTemplate(normalInfo->DifficultyEntry[MAN10_DIFFICULTY - 1]);
-
-            // check and reported at startup, so just ignore (restore normalInfo)
-            if (!cinfo)
-                cinfo = normalInfo;
-        }
+        // Remove difficulty numbers to lower to normal entries.
+        if (Difficulty(diff) == DUNGEON_DIFFICULTY_HEROIC || Difficulty(diff) == RAID_DIFFICULTY_25MAN_NORMAL)
+            diff -= 1;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_10MAN_HEROIC || Difficulty(diff) == RAID_DIFFICULTY_25MAN_HEROIC)
+            diff -= 2;
+        else if (Difficulty(diff) == DUNGEON_DIFFICULTY_CHALLENGE || Difficulty(diff) == RAID_DIFFICULTY_40MAN)
+            diff -= 6;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_25MAN_LFR)
+            diff -= 3;
+        else if (Difficulty(diff) == RAID_DIFFICULTY_1025MAN_FLEX)
+            diff -= 10; // Go to 25 normal for now.
+        else if (Difficulty(diff) == SCENARIO_DIFFICULTY_HEROIC)
+            diff += 1;
+        else diff = 0; // break the loop.
     }
 
     SetEntry(Entry);                                        // normal entry always

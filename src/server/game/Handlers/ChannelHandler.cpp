@@ -30,10 +30,14 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
     std::string channelName, pass;
 
     recvPacket >> channelId;
+
     passLength = recvPacket.ReadBits(7);
     uint8 unknown1 = recvPacket.ReadBit();                  // unknown bit
     channelLength = recvPacket.ReadBits(7);
     uint8 unknown2 = recvPacket.ReadBit();                  // unknown bit
+
+    recvPacket.FlushBits();
+
     pass = recvPacket.ReadString(passLength);
     channelName = recvPacket.ReadString(channelLength);
 
@@ -72,8 +76,11 @@ void WorldSession::HandleLeaveChannel(WorldPacket& recvPacket)
     uint32 unk;
     std::string channelname;
     recvPacket >> unk;                                      // channel id?
+
     uint32 length = recvPacket.ReadBits(7);
+
     recvPacket.FlushBits();
+
     channelname = recvPacket.ReadString(length);
 
     if (channelname.empty())
@@ -92,7 +99,9 @@ void WorldSession::HandleChannelList(WorldPacket& recvPacket)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
 
     uint32 length = recvPacket.ReadBits(7);
+
     recvPacket.FlushBits();
+
     std::string channelname = recvPacket.ReadString(length);
 
     if (!ChatHandler(this).isValidChatMessage(channelname.c_str()))
@@ -112,6 +121,7 @@ void WorldSession::HandleChannelPassword(WorldPacket& recvPacket)
         timeLastChannelPassCommand = now;
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
+
     uint32 passLength = recvPacket.ReadBits(6);
     uint32 nameLength = recvPacket.ReadBits(7);
 
@@ -394,7 +404,9 @@ void WorldSession::HandleChannelAnnouncements(WorldPacket& recvPacket)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
 
     uint32 length = recvPacket.ReadBits(7);
+
     recvPacket.FlushBits();
+
     std::string channelname = recvPacket.ReadString(length);
 
     if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
@@ -404,23 +416,28 @@ void WorldSession::HandleChannelAnnouncements(WorldPacket& recvPacket)
 
 void WorldSession::HandleChannelDisplayListQuery(WorldPacket &recvPacket)
 {
-    // this should be OK because the 2 function _were_ the same
+    // this should be OK because the 2 functions _were_ the same
     HandleChannelList(recvPacket);
 }
 
 void WorldSession::HandleGetChannelMemberCount(WorldPacket &recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
+
     std::string channelname;
+
     recvPacket >> channelname;
+
     if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
     {
         if (Channel* chn = cMgr->GetChannel(channelname, _player))
         {
             WorldPacket data(SMSG_CHANNEL_MEMBER_COUNT, chn->GetName().size()+1+1+4);
+
             data << chn->GetName();
             data << uint8(chn->GetFlags());
             data << uint32(chn->GetNumPlayers());
+
             SendPacket(&data);
         }
     }
@@ -429,8 +446,11 @@ void WorldSession::HandleGetChannelMemberCount(WorldPacket &recvPacket)
 void WorldSession::HandleSetChannelWatch(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
+
     std::string channelname;
+
     recvPacket >> channelname;
+
     /*if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
         if (Channel* chn = cMgr->GetChannel(channelName, _player))
             chn->JoinNotify(_player->GetGUID());*/

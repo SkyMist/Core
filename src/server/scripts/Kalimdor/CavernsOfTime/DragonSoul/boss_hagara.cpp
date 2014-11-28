@@ -788,19 +788,19 @@ class boss_hagara_the_stormbinder: public CreatureScript
                             Talk(SAY_LIGHTNING);
                             switch (GetDifficulty())
                             {
-                                case MAN10_DIFFICULTY:
+                                case RAID_DIFFICULTY_10MAN_NORMAL:
                                     for (uint8 i = 0; i < 4; ++i)
                                         if (Creature* pCronductor = me->SummonCreature(NPC_CRYSTAL_CONDUCTOR, crystalconductorPos[i + 4]))
                                             pCronductor->CastSpell(me, SPELL_CRYSTALLINE_TETHER_2);
                                     break;
-                                case MAN10_HEROIC_DIFFICULTY:
+                                case RAID_DIFFICULTY_10MAN_HEROIC:
                                     crystalCount += 4;
                                     for (uint8 i = 0; i < 4; ++i)
                                         if (Creature* pCronductor = me->SummonCreature(NPC_CRYSTAL_CONDUCTOR, crystalconductorPos[i + 4]))
                                             pCronductor->CastSpell(me, SPELL_CRYSTALLINE_TETHER_2);
                                 // no break
-                                case MAN25_DIFFICULTY:
-                                case MAN25_HEROIC_DIFFICULTY:
+                                case RAID_DIFFICULTY_25MAN_NORMAL:
+                                case RAID_DIFFICULTY_25MAN_HEROIC:
                                     for (uint8 i = 0; i < 4; ++i)
                                         if (Creature* pCronductor = me->SummonCreature(NPC_CRYSTAL_CONDUCTOR, crystalconductorPos[i]))
                                             pCronductor->CastSpell(me, SPELL_CRYSTALLINE_TETHER_2);
@@ -2067,10 +2067,12 @@ class spell_hagara_the_stormbinder_lightning_conduit : public SpellScriptLoader
                     uint32 spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG;
                     switch (GetCaster()->GetMap()->GetDifficulty())
                     {
-                        case MAN10_DIFFICULTY: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG; break;
-                        case MAN25_DIFFICULTY: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_25; break;
-                        case MAN10_HEROIC_DIFFICULTY: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_10H; break;
-                        case MAN25_HEROIC_DIFFICULTY: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_25H; break;
+                        case RAID_DIFFICULTY_10MAN_NORMAL: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG;     break;
+                        case RAID_DIFFICULTY_25MAN_NORMAL: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_25;  break;
+                        case RAID_DIFFICULTY_10MAN_HEROIC: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_10H; break;
+                        case RAID_DIFFICULTY_25MAN_HEROIC: spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG_25H; break;
+
+						default:                           spell_dmg = SPELL_LIGHTNING_CONDUIT_DMG;     break;
                     }
                     for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
                     {

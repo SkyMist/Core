@@ -289,18 +289,20 @@ class boss_ultraxion: public CreatureScript
 
                 switch (GetDifficulty())
                 {
-                    case MAN10_DIFFICULTY:
+                    case RAID_DIFFICULTY_10MAN_NORMAL:
                         instance->DoRespawnGameObject(instance->GetData64(DATA_LESSER_CACHE_10N), DAY);
                         break;
-                    case MAN25_DIFFICULTY:
+                    case RAID_DIFFICULTY_25MAN_NORMAL:
                         instance->DoRespawnGameObject(instance->GetData64(DATA_LESSER_CACHE_25N), DAY);
                         break;
-                    case MAN10_HEROIC_DIFFICULTY:
+                    case RAID_DIFFICULTY_10MAN_HEROIC:
                         instance->DoRespawnGameObject(instance->GetData64(DATA_LESSER_CACHE_10H), DAY);
                         break;
-                    case MAN25_HEROIC_DIFFICULTY:
+                    case RAID_DIFFICULTY_25MAN_HEROIC:
                         instance->DoRespawnGameObject(instance->GetData64(DATA_LESSER_CACHE_25H), DAY);
                         break;
+
+					default: break;
                 }
 
                 me->DespawnOrUnsummon(3000);
@@ -577,10 +579,11 @@ class spell_ultraxion_hour_of_twilight_dmg : public SpellScriptLoader
 
                 switch (GetCaster()->GetMap()->GetDifficulty())
                 {
-                    case MAN10_HEROIC_DIFFICULTY: min_players = 2; break;
-                    case MAN25_DIFFICULTY: min_players = 3; break;
-                    case MAN25_HEROIC_DIFFICULTY: min_players = 5; break;
-                    default: min_players = 1; break;
+                    case RAID_DIFFICULTY_10MAN_HEROIC: min_players = 2; break;
+                    case RAID_DIFFICULTY_25MAN_NORMAL: min_players = 3; break;
+                    case RAID_DIFFICULTY_25MAN_HEROIC: min_players = 5; break;
+
+                    default:                           min_players = 1; break;
                 }
 
                 if (targets.size() < min_players)
@@ -703,12 +706,13 @@ class spell_ultraxion_fading_light : public SpellScriptLoader
                 uint32 min_players = 1;
                 switch (GetCaster()->GetMap()->GetDifficulty())
                 {
-                    case MAN10_HEROIC_DIFFICULTY: min_players = 2; break;
-                    case MAN25_DIFFICULTY: min_players = 3; break;
-                    case MAN25_HEROIC_DIFFICULTY: min_players = 6; break;
-                    default: min_players = 1; break;
+                    case RAID_DIFFICULTY_10MAN_HEROIC: min_players = 2; break;
+                    case RAID_DIFFICULTY_25MAN_NORMAL: min_players = 3; break;
+                    case RAID_DIFFICULTY_25MAN_HEROIC: min_players = 6; break;
+
+                    default:                           min_players = 1; break;
                 }
-                    
+
                 if (targets.size() > min_players)
                     JadeCore::Containers::RandomResizeList(targets, min_players);
             }

@@ -826,7 +826,7 @@ class achievement_once_bitten_twice_shy_n : public AchievementCriteriaScript
                 return false;
 
             if (LanaThelAI* lanaThelAI = CAST_AI(LanaThelAI, target->GetAI()))
-                if (lanaThelAI->GetDifficulty() == MAN10_DIFFICULTY)
+                if (lanaThelAI->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
                     return !lanaThelAI->WasVampire(source->GetGUID());
 
             return false;
@@ -844,7 +844,7 @@ class achievement_once_bitten_twice_shy_v : public AchievementCriteriaScript
                 return false;
 
             if (LanaThelAI* lanaThelAI = CAST_AI(LanaThelAI, target->GetAI()))
-                if (lanaThelAI->GetDifficulty() == MAN10_DIFFICULTY)
+                if (lanaThelAI->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
                     return lanaThelAI->WasVampire(source->GetGUID());
 
             return false;
@@ -862,7 +862,7 @@ class achievement_once_bitten_twice_shy_n25 : public AchievementCriteriaScript
                 return false;
 
             if (LanaThelAI* lanaThelAI = CAST_AI(LanaThelAI, target->GetAI()))
-                if (lanaThelAI->GetDifficulty() == MAN25_DIFFICULTY)
+                if (lanaThelAI->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     return !lanaThelAI->WasVampire(source->GetGUID());
 
             return false;
@@ -880,7 +880,7 @@ class achievement_once_bitten_twice_shy_v25 : public AchievementCriteriaScript
                 return false;
 
             if (LanaThelAI* lanaThelAI = CAST_AI(LanaThelAI, target->GetAI()))
-                if (lanaThelAI->GetDifficulty() == MAN25_DIFFICULTY)
+                if (lanaThelAI->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)
                     return lanaThelAI->WasVampire(source->GetGUID());
 
              return false;

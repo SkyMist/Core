@@ -33,6 +33,7 @@ void WorldSession::HandleGrantLevel(WorldPacket& recvData)
     // check cheating
     uint8 levels = _player->GetGrantableLevels();
     uint8 error = 0;
+
     if (!target)
         error = ERR_REFER_A_FRIEND_NO_TARGET;
     else if (levels == 0)
@@ -48,7 +49,8 @@ void WorldSession::HandleGrantLevel(WorldPacket& recvData)
     else if (target->GetGroup() != _player->GetGroup())
         error = ERR_REFER_A_FRIEND_NOT_IN_GROUP;
 
-    if (error) {
+    if (error)
+    {
         WorldPacket data(SMSG_REFER_A_FRIEND_FAILURE, 24);
         data << uint32(error);
         if (error == ERR_REFER_A_FRIEND_NOT_IN_GROUP)

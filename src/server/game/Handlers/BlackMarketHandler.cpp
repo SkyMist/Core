@@ -71,6 +71,8 @@ void WorldSession::SendBlackMarketHello(uint64 npcGuid)
     data.WriteBit(1);                // unk
     data.WriteBit(guid[6]);
 
+    data.FlushBits();
+
     uint8 bytes[8] = { 7, 1, 4, 3, 2, 6, 0, 5 };
     data.WriteBytesSeq(guid, bytes);
 
