@@ -32,6 +32,7 @@ extern DB2Storage <BattlePetSpeciesEntry> sBattlePetSpeciesStore;
 extern DB2Storage <SpellReagentsEntry> sSpellReagentsStore;
 extern DB2Storage <ItemUpgradeEntry> sItemUpgradeStore;
 extern DB2Storage <RulesetItemUpgradeEntry> sRulesetItemUpgradeStore;
+extern DB2Storage <QuestPackageItemEntry> sQuestPackageItemStore;
 
 void LoadDB2Stores(const std::string& dataPath);
 

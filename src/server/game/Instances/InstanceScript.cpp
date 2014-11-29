@@ -43,6 +43,7 @@ void InstanceScript::HandleGameObject(uint64 GUID, bool open, GameObject* go)
 {
     if (!go)
         go = instance->GetGameObject(GUID);
+
     if (go)
         go->SetGoState(open ? GO_STATE_ACTIVE : GO_STATE_READY);
     else
@@ -51,6 +52,9 @@ void InstanceScript::HandleGameObject(uint64 GUID, bool open, GameObject* go)
 
 bool InstanceScript::IsEncounterInProgress() const
 {
+    if (bosses.empty())
+        return false;
+
     for (std::vector<BossInfo>::const_iterator itr = bosses.begin(); itr != bosses.end(); ++itr)
         if (itr->state == IN_PROGRESS)
             return true;
@@ -60,6 +64,9 @@ bool InstanceScript::IsEncounterInProgress() const
 
 void InstanceScript::LoadMinionData(const MinionData* data)
 {
+    if (bosses.empty())
+        return;
+
     while (data->entry)
     {
         if (data->bossId < bosses.size())
@@ -72,6 +79,9 @@ void InstanceScript::LoadMinionData(const MinionData* data)
 
 void InstanceScript::LoadDoorData(const DoorData* data)
 {
+    if (bosses.empty())
+        return;
+
     while (data->entry)
     {
         if (data->bossId < bosses.size())
@@ -98,8 +108,8 @@ void InstanceScript::UpdateMinionState(Creature* minion, EncounterState state)
             else if (!minion->getVictim())
                 minion->AI()->DoZoneInCombat();
             break;
-        default:
-            break;
+
+        default: break;
     }
 }
 
@@ -111,6 +121,7 @@ void InstanceScript::UpdateDoorState(GameObject* door)
         return;
 
     bool open = true;
+
     for (DoorInfoMap::iterator itr = lower; itr != upper && open; ++itr)
     {
         switch (itr->second.type)
@@ -169,8 +180,7 @@ void InstanceScript::AddDoor(GameObject* door, bool add)
                     break;
             }
         }
-        else
-            data.bossInfo->door[data.type].erase(door);
+        else data.bossInfo->door[data.type].erase(door);
     }
 
     if (add)
@@ -191,9 +201,15 @@ void InstanceScript::AddMinion(Creature* minion, bool add)
 
 bool InstanceScript::SetBossState(uint32 id, EncounterState state)
 {
+    if (bosses.empty())
+        return false;
+
     if (id < bosses.size())
     {
         BossInfo* bossInfo = &bosses[id];
+        if (!bossInfo)
+            return false;
+
         if (bossInfo->state == TO_BE_DECIDED) // loading
         {
             bossInfo->state = state;
@@ -206,47 +222,59 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
                 return false;
 
             if (state == DONE)
-                for (MinionSet::iterator i = bossInfo->minion.begin(); i != bossInfo->minion.end(); ++i)
-                    if ((*i)->isWorldBoss() && (*i)->isAlive())
-                        return false;
+                if (!bossInfo->minion.empty())
+                    for (MinionSet::iterator i = bossInfo->minion.begin(); i != bossInfo->minion.end(); ++i)
+                        if ((*i)->isWorldBoss() && (*i)->isAlive())
+                            return false;
 
             bossInfo->state = state;
             SaveToDB();
         }
 
         for (uint32 type = 0; type < MAX_DOOR_TYPES; ++type)
-            for (DoorSet::iterator i = bossInfo->door[type].begin(); i != bossInfo->door[type].end(); ++i)
-                UpdateDoorState(*i);
+            if (!bossInfo->door[type].empty())
+                for (DoorSet::iterator i = bossInfo->door[type].begin(); i != bossInfo->door[type].end(); ++i)
+                    UpdateDoorState(*i);
 
-        for (MinionSet::iterator i = bossInfo->minion.begin(); i != bossInfo->minion.end(); ++i)
-            UpdateMinionState(*i, state);
+        if (!bossInfo->minion.empty())
+            for (MinionSet::iterator i = bossInfo->minion.begin(); i != bossInfo->minion.end(); ++i)
+                UpdateMinionState(*i, state);
 
         return true;
     }
+
     return false;
 }
 
 std::string InstanceScript::LoadBossState(const char * data)
 {
-    if (!data)
+    if (!data || bosses.empty())
         return NULL;
+
     std::istringstream loadStream(data);
     uint32 buff;
     uint32 bossId = 0;
+
     for (std::vector<BossInfo>::iterator i = bosses.begin(); i != bosses.end(); ++i, ++bossId)
     {
         loadStream >> buff;
         if (buff < TO_BE_DECIDED)
             SetBossState(bossId, (EncounterState)buff);
     }
+
     return loadStream.str();
 }
 
 std::string InstanceScript::GetBossSaveData()
 {
+    if (bosses.empty())
+        return NULL;
+
     std::ostringstream saveStream;
+
     for (std::vector<BossInfo>::iterator i = bosses.begin(); i != bosses.end(); ++i)
         saveStream << (uint32)i->state << ' ';
+
     return saveStream.str();
 }
 
@@ -266,8 +294,7 @@ void InstanceScript::DoUseDoorOrButton(uint64 uiGuid, uint32 uiWithRestoreTime, 
             else if (go->getLootState() == GO_ACTIVATED)
                 go->ResetDoorOrButton();
         }
-        else
-            sLog->outError(LOG_FILTER_GENERAL, "SD2: Script call DoUseDoorOrButton, but gameobject entry %u is type %u.", go->GetEntry(), go->GetGoType());
+        else sLog->outError(LOG_FILTER_GENERAL, "SD2: Script call DoUseDoorOrButton, but gameobject entry %u is type %u.", go->GetEntry(), go->GetGoType());
     }
 }
 
@@ -298,8 +325,7 @@ void InstanceScript::DoUpdateWorldState(uint32 uiStateId, uint32 uiStateData)
             if (Player* player = itr->getSource())
                 player->SendUpdateWorldState(uiStateId, uiStateData);
     }
-    else
-        sLog->outDebug(LOG_FILTER_TSCR, "DoUpdateWorldState attempt send data but no players in map.");
+    else sLog->outDebug(LOG_FILTER_TSCR, "DoUpdateWorldState attempt send data but no players in map.");
 }
 
 // Send Notify to all players in instance
@@ -586,11 +612,11 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
 
 void InstanceScript::UpdatePhasing()
 {
-    PhaseUpdateData phaseUdateData;
-    phaseUdateData.AddConditionType(CONDITION_INSTANCE_DATA);
+    PhaseUpdateData phaseUpdateData;
+    phaseUpdateData.AddConditionType(CONDITION_INSTANCE_DATA);
 
     Map::PlayerList const& players = instance->GetPlayers();
     for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
         if (Player* player = itr->getSource())
-            player->GetPhaseMgr().NotifyConditionChanged(phaseUdateData);
+            player->GetPhaseMgr().NotifyConditionChanged(phaseUpdateData);
 }

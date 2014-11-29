@@ -150,9 +150,9 @@ enum QuestFlags
     QUEST_FLAGS_AUTOCOMPLETE         = 0x00010000,                // auto complete
     QUEST_FLAGS_SPECIAL_ITEM         = 0x00020000,                // Displays usable item in quest tracker
     QUEST_FLAGS_OBJ_TEXT             = 0x00040000,                // use Objective text as Complete text
-    QUEST_FLAGS_AUTO_ACCEPT          = 0x00080000,                // The client recognizes this flag as auto-accept. However, NONE of the current quests (3.3.5a) have this flag. Maybe blizz used to use it, or will use it in the future.
-    QUEST_FLAGS_AUTO_SUBMIT          = 0x00100000,                // Quests with this flag player submit automatically by special button in player gui
-    QUEST_FLAGS_AUTO_TAKE            = 0x00200000,                // Automatically suggestion of accepting quest. Not from npc.
+    QUEST_FLAGS_AUTO_ACCEPT          = 0x00080000,                // The client recognizes this flag as auto-accept.
+    QUEST_FLAGS_AUTO_SUBMIT          = 0x00100000,                // Quests with this flag the player completes automatically by special button in player gui.
+    QUEST_FLAGS_AUTO_TAKE            = 0x00200000,                // Automatically suggestion of accepting quest. Not from questgiver.
     //QUEST_FLAGS_UNK2                 = 0x00400000,
     //QUEST_FLAGS_UNK3                 = 0x00800000,                // Found in quest 14069
     //QUEST_FLAGS_UNK4                 = 0x01000000,
@@ -342,6 +342,7 @@ class Quest
         bool   IsMonthly() const { return Flags & QUEST_SPECIAL_FLAGS_MONTHLY; }
         bool   IsSeasonal() const { return (ZoneOrSort == -QUEST_SORT_SEASONAL || ZoneOrSort == -QUEST_SORT_SPECIAL || ZoneOrSort == -QUEST_SORT_LUNAR_FESTIVAL || ZoneOrSort == -QUEST_SORT_MIDSUMMER || ZoneOrSort == -QUEST_SORT_BREWFEST || ZoneOrSort == -QUEST_SORT_LOVE_IS_IN_THE_AIR || ZoneOrSort == -QUEST_SORT_NOBLEGARDEN) && !IsRepeatable(); }
         bool   IsDailyOrWeekly() const { return Flags & (QUEST_FLAGS_DAILY | QUEST_FLAGS_WEEKLY); }
+        bool   CanBeRepeated() const { return (IsDailyOrWeekly() || IsMonthly() || IsRepeatable()) ? true : false; }
         bool   IsRaidQuest(Difficulty difficulty) const;
         bool   IsAllowedInRaid(Difficulty difficulty) const;
         bool   IsDFQuest() const { return SpecialFlags & QUEST_SPECIAL_FLAGS_DF_QUEST; }

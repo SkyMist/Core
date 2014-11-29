@@ -152,14 +152,13 @@ void WorldSession::SendTaxiMenu(Creature* unit)
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_TAXINODE_STATUS_QUERY %u ", curloc);
 
-    ByteBuffer dataBuffer;
     ObjectGuid taxiGuid = unit->GetGUID();
+    ByteBuffer dataBuffer;
+    bool hasData = true;
     
     WorldPacket data(SMSG_SHOW_TAXI_NODES, (4 + 8 + 4 + 8 * 4));
 
     GetPlayer()->m_taxi.AppendTaximaskTo(data, dataBuffer, GetPlayer()->isTaxiCheater());
-
-    bool hasData = true;
 
     data.WriteBit(hasData);
 
@@ -212,7 +211,7 @@ bool WorldSession::SendLearnNewTaxiNode(Creature* unit)
     // find current node
     uint32 curloc = sObjectMgr->GetNearestTaxiNode(unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ(), unit->GetMapId(), GetPlayer()->GetTeam());
     if (curloc == 0)
-        return true; // `true` send to avoid WorldSession::SendTaxiMenu call with one more curlock seartch with same false result.
+        return true; // `true` send to avoid WorldSession::SendTaxiMenu call with one more curlock search with same false result.
 
     if (GetPlayer()->m_taxi.SetTaximaskNode(curloc))
     {

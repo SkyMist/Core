@@ -3599,9 +3599,10 @@ bool Player::CanInteractWithQuestGiver(Object* questGiver)
             return isAlive() && questGiver->ToPlayer()->isAlive();
         case TYPEID_ITEM:
             return isAlive();
-        default:
-            break;
+
+        default: break;
     }
+
     return false;
 }
 
