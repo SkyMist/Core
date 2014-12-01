@@ -251,23 +251,30 @@ void PhaseData::SendPhaseshiftToPlayer()
     std::set<uint32> phaseIds;
     std::set<uint32> terrainswaps;
 
-    for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
+    // Phases from Auras.
+    if (!spellPhaseInfo.empty())
     {
-        if (itr->second.terrainswapmap)
-            terrainswaps.insert(itr->second.terrainswapmap);
+        for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
+        {
+            if (itr->second.terrainswapmap)
+                terrainswaps.insert(itr->second.terrainswapmap);
 
-        if (itr->second.phaseId)
-            phaseIds.insert(itr->second.phaseId);
+            if (itr->second.phaseId)
+                phaseIds.insert(itr->second.phaseId);
+        }
     }
 
-    // Phase Definitions
-    for (std::list<PhaseDefinition const*>::const_iterator itr = activePhaseDefinitions.begin(); itr != activePhaseDefinitions.end(); ++itr)
+    // Phase definitions from DB.
+    if (!activePhaseDefinitions.empty())
     {
-        if ((*itr)->phaseId)
-            phaseIds.insert((*itr)->phaseId);
+        for (std::list<PhaseDefinition const*>::const_iterator itr = activePhaseDefinitions.begin(); itr != activePhaseDefinitions.end(); ++itr)
+        {
+            if ((*itr)->phaseId)
+                phaseIds.insert((*itr)->phaseId);
 
-        if ((*itr)->terrainswapmap)
-            terrainswaps.insert((*itr)->terrainswapmap);
+            if ((*itr)->terrainswapmap)
+                terrainswaps.insert((*itr)->terrainswapmap);
+        }
     }
 
     player->GetSession()->SendSetPhaseShift(phaseIds, terrainswaps);
@@ -275,14 +282,17 @@ void PhaseData::SendPhaseshiftToPlayer()
 
 void PhaseData::GetActivePhases(std::set<uint32>& phases) const
 {
-    for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
-        if (itr->second.phaseId)
-            phases.insert(itr->second.phaseId);
+    // Phases from Auras.
+    if (!spellPhaseInfo.empty())
+        for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
+            if (itr->second.phaseId)
+                phases.insert(itr->second.phaseId);
 
-    // Phase Definitions
-    for (std::list<PhaseDefinition const*>::const_iterator itr = activePhaseDefinitions.begin(); itr != activePhaseDefinitions.end(); ++itr)
-        if ((*itr)->phaseId)
-            phases.insert((*itr)->phaseId);
+    // Phase definitions from DB.
+    if (!activePhaseDefinitions.empty())
+        for (std::list<PhaseDefinition const*>::const_iterator itr = activePhaseDefinitions.begin(); itr != activePhaseDefinitions.end(); ++itr)
+            if ((*itr)->phaseId)
+                phases.insert((*itr)->phaseId);
 }
 
 void PhaseData::AddPhaseDefinition(PhaseDefinition const* phaseDefinition)
@@ -313,6 +323,9 @@ void PhaseData::AddAuraInfo(uint32 const spellId, PhaseInfo phaseInfo)
 
 uint32 PhaseData::RemoveAuraInfo(uint32 const spellId)
 {
+    if (spellPhaseInfo.empty())
+        return 0;
+
     PhaseInfoContainer::const_iterator rAura = spellPhaseInfo.find(spellId);
     if (rAura != spellPhaseInfo.end())
     {

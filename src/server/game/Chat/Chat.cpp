@@ -65,7 +65,7 @@ ChatCommand* ChatHandler::getCommandTable()
     // cache for commands, needed because some commands are loaded dynamically through ScriptMgr
     // cache is never freed and will show as a memory leak in diagnostic tools
     // can't use vector as vector storage is implementation-dependent, eg, there can be alignment gaps between elements
-    static ChatCommand* commandTableCache = 0;
+    static ChatCommand* commandTableCache = NULL;
 
     if (LoadCommandTable())
     {
@@ -98,7 +98,6 @@ ChatCommand* ChatHandler::getCommandTable()
                 std::string name = fields[0].GetString();
 
                 SetDataForCommandInTable(commandTableCache, name.c_str(), fields[1].GetUInt8(), fields[2].GetString(), name);
-
             }
             while (result->NextRow());
         }
@@ -188,7 +187,7 @@ bool ChatHandler::hasStringAbbr(const char* name, const char* part)
         if (!*part)
             return false;
 
-        for (;;)
+        while (true)
         {
             if (!*part)
                 return true;
@@ -325,7 +324,7 @@ bool ChatHandler::ExecuteCommandInTable(ChatCommand* table, const char* text, co
         {
             if (!ExecuteCommandInTable(table[i].ChildCommands, text, fullcmd))
             {
-                if (text [0] != '\0')
+                if (text[0] != '\0')
                     SendSysMessage(LANG_NO_SUBCMD);
                 else
                     SendSysMessage(LANG_CMD_SYNTAX);
@@ -635,48 +634,34 @@ bool ChatHandler::ShowHelpForCommand(ChatCommand* table, const char* cmd)
     return ShowHelpForSubCommands(table, "", cmd);
 }
 
-//Note: target_guid used only in CHAT_MSG_WHISPER_INFORM mode (in this case channelName ignored)
-void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char *channelName, uint64 target_guid, const char *message, Unit* speaker, const char* addonPrefix /*= NULL*/, uint32 achievementId /*= 0*/)
+// Contains: Packet data, Player session, Message type, Message language, Channel name, Receiver GUID, Message text, Creature speaker, Addon prefix, Chat tag, Achievement id, Creature localized name.
+void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint8 type, uint32 language, const char* channelName, uint64 target_guid, const char* message, Unit* speaker, const char* addonPrefix /*= NULL*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/, const char* localizedName /*= NULL*/)
 {
+    /*** Some assignments and checks used as safety. ***/
+
+    // Set message length.
     uint32 messageLength = message ? strlen(message) : 0;
 
-    uint32 speakerNameLength = 0;
-    if (speaker)
-        speakerNameLength = strlen(speaker->GetName());
-    else if (session)
-        speakerNameLength = strlen(session->GetPlayer()->GetName());
+    // Set channel name length.
+    uint32 channelNameLength = channelName ? strlen(channelName) : 0;
 
-    uint32 prefixeLength = addonPrefix ? strlen(addonPrefix) : 0;
+    // Set addon prefix length.
+    uint32 addonPrefixLength = addonPrefix ? strlen(addonPrefix) : 0;
 
-    uint32 targetLength = 0;
-    std::string targetName;
-    if (target_guid)
-    {
-        if (Unit* unit = ObjectAccessor::FindUnit(target_guid))
-        {
-            targetLength = strlen(unit->GetName());
-            targetName = unit->GetName();
-        }
-    }
+    // Set language used.
+    language = ((type != CHAT_MSG_CHANNEL && type != CHAT_MSG_WHISPER) || language == LANG_ADDON) ? language : LANG_UNIVERSAL;
 
-    uint32 channelLength = 0;
-
+    // Build correct target GUID.
     Player* speakerPlayer = NULL;
     if (speaker && speaker->GetTypeId() == TYPEID_PLAYER)
         speakerPlayer = speaker->ToPlayer();
-    else if (session)
-        speakerPlayer = session->GetPlayer();
+    else
+    {
+        if (session)
+            speakerPlayer = session->GetPlayer();
+    }
 
-    ObjectGuid speakerGuid = 0;
-    if (speaker)
-        speakerGuid = speaker->GetGUID();
-    else if (session)
-        speakerGuid = session->GetPlayer()->GetGUID();
-
-    ObjectGuid groupGuid = 0;
-    if (speakerPlayer && speakerPlayer->GetGroup())
-        groupGuid = speakerPlayer->GetGroup()->GetGUID();
-
+    // Build proper data depending on message type.
     switch (type)
     {
         case CHAT_MSG_SAY:
@@ -695,126 +680,207 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_BG_SYSTEM_HORDE:
         case CHAT_MSG_INSTANCE_CHAT:
         case CHAT_MSG_INSTANCE_CHAT_LEADER:
-            target_guid = speakerPlayer ? speakerPlayer->GetGUID() : 0;
+            // target_guid controls chat bubbles and receiver message building.
+            if (!target_guid) target_guid = speakerPlayer ? speakerPlayer->GetGUID() : 0; // Original target_guid preserved for certain message types (ex. CHAT_MSG_WHISPER_INFORM).
             break;
-        default:
+        case CHAT_MSG_MONSTER_SAY:
+        case CHAT_MSG_MONSTER_YELL:
+        case CHAT_MSG_MONSTER_PARTY:
+        case CHAT_MSG_MONSTER_EMOTE:
+            // // target_guid controls chat bubbles and receiver message building. - No need for enforcing this here anymore, handling is done by specific function argumentation.
+            // if (!target_guid) target_guid = speaker ? speaker->GetGUID() : 0; // Original target_guid still preserved for certain message types (see below).
+            // break;
+        case CHAT_MSG_MONSTER_WHISPER:   // Should already have a target guid / target guid not needed for entire raid sending.
+        case CHAT_MSG_RAID_BOSS_WHISPER: // Should already have a target guid / target guid not needed for entire raid sending.
+        case CHAT_MSG_RAID_BOSS_EMOTE:   // Should already have a target guid / target guid not needed for entire raid sending.
             break;
+
+        default: break;
     }
 
+    // Set speaker name length and get the speaker name.
+    uint32 speakerNameLength = 0;
+    if (speaker)
+        speakerNameLength = localizedName ? strlen(localizedName) : strlen(speaker->GetName());
+    else
+    {
+        if (session)
+            speakerNameLength = strlen(session->GetPlayer()->GetName());
+    }
+
+    std::string speakerName;
+    if (speaker)
+        speakerName = localizedName ? localizedName : speaker->GetName();
+    else
+    {
+        if (session)
+            speakerName = session->GetPlayer()->GetName();
+    }
+
+    // Set Chat tags.
+    if (speaker)
+    {
+        if (speaker->GetTypeId() == TYPEID_UNIT)
+            chatTag = 32;                                // Seems like all creature chats have this tag (Taken from sniffs).
+        else if (speaker->GetTypeId() == TYPEID_PLAYER)
+            chatTag = speaker->ToPlayer()->GetChatTag(); // Player chat tag.
+    }
+    else
+    {
+        if (session)
+            chatTag = session->GetPlayer()->GetChatTag();
+    }
+
+    // Set target name length and get the target name.
+    uint32 targetNameLength = 0;
+    std::string targetName;
+    if (target_guid)
+    {
+        if (Unit* unit = ObjectAccessor::FindUnit(target_guid))
+        {
+            targetNameLength = strlen(unit->GetName());
+            targetName = unit->GetName();
+        }
+    }
+
+    /*** Packet building. ***/
+
+    // First establish what GUIDs to use.
+    ObjectGuid sourceGuid = speaker ? speaker->GetGUID() : (session ? session->GetPlayer()->GetGUID() : 0);
     ObjectGuid targetGuid = target_guid;
+
+    ObjectGuid groupGuid = 0;
+    if (type == CHAT_MSG_PARTY   || type == CHAT_MSG_PARTY_LEADER
+        || type == CHAT_MSG_RAID || type == CHAT_MSG_RAID_LEADER || type == CHAT_MSG_RAID_WARNING
+        || type == CHAT_MSG_INSTANCE_CHAT || type == CHAT_MSG_INSTANCE_CHAT_LEADER)
+        groupGuid = (speakerPlayer && speakerPlayer->GetGroup()) ? speakerPlayer->GetGroup()->GetGUID() : 0;
+
     ObjectGuid guildGuid = 0;
-    if (speakerPlayer && speakerPlayer->GetGuild())
-        guildGuid = speakerPlayer->GetGuild()->GetGUID();
+    if (type == CHAT_MSG_GUILD || type == CHAT_MSG_OFFICER)
+        guildGuid = (speakerPlayer && speakerPlayer->GetGuild()) ? speakerPlayer->GetGuild()->GetGUID() : 0;
 
-    bool bit5264 = false;
-    bool sendRealmId = true;
+    // Then establish the variables needed.
+    bool HasGuildGUID = guildGuid ? true : false;
+    bool HasGroupGUID = groupGuid ? true : false;
+    bool HasSpeakerGUID = sourceGuid ? true : false;
+    bool HasReceiverGUID = targetGuid ? true : false;
+    bool HasSpeaker = (sourceGuid && speakerNameLength > 0) ? true : false;
+    bool HasReceiver = (targetGuid && targetNameLength > 0) ? true : false;
+    bool HasMessage = (messageLength > 0) ? true : false;
+    bool HasLanguage = (language > LANG_UNIVERSAL) ? true : false;
+    bool HasChannel = (type == CHAT_MSG_CHANNEL && channelNameLength > 0) ? true : false;
+    bool HasAddonPrefix = (addonPrefixLength > 0) ? true : false;
+    bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0) ? true : false;
+    bool HasChatTag = (chatTag > CHAT_TAG_NONE) ? true : false;
+    bool HasConstantTime = true;       // This represents the current time (or the time at which the text is sent).
+    bool ShowInChatBubble = true;      // Toggle show in chat window - show in chat bubble.
+    bool HasSecondTime = true;         // This is in relation to HasConstantTime. Represents text duration and is sent as HasConstantTime + text duration. !ToDo: Implement.
+    bool HasLimitedFloatRange = false; // This represents the distance at which the chat can be "heard / read", and is already limited sv-side throughout the core. !ToDo: Implement.
 
-    data->Initialize(SMSG_MESSAGE_CHAT, 100);                   // guess size
+    // Now build the actual packet.
+    data->Initialize(SMSG_MESSAGE_CHAT);
 
-    data->WriteBit(guildGuid);                                  // has guild GUID - FAKE GUID
-    data->WriteBit(speakerPlayer != NULL);                      // has sender GUID - FAKE GUID
+    data->WriteBit(!HasGuildGUID);                              // Inversed - Has guild Guid - FAKE GUID.
+    data->WriteBit(!HasSpeakerGUID);                            // Inversed - Has speaker Guid (No speaker Guid in stuff like BG announcements) - FAKE GUID.
 
-    uint8 bitsOrder4[8] = { 4, 5, 1, 0, 2, 6, 7, 3 };
-    data->WriteBitInOrder(guildGuid, bitsOrder4);
-    
-    bool hasChatTag = false;
-    if (speakerPlayer)
-        hasChatTag = speakerPlayer->GetChatTag();
+    uint8 bitsOrderGuild[8] = { 4, 5, 1, 0, 2, 6, 7, 3 };
+    data->WriteBitInOrder(guildGuid, bitsOrderGuild);
 
-    data->WriteBit(!hasChatTag);                                // (inversed) has chat tag
-    data->WriteBit(!language);                                  // has lang
+    data->WriteBit(!HasChatTag);                                // Inversed - Has chat tag.
+    data->WriteBit(!HasLanguage);                               // Inversed - Has language.
     
-    uint8 bitsOrder[8] = { 2, 7, 0, 3, 4, 6, 1, 5 };
-    data->WriteBitInOrder(speakerGuid, bitsOrder);
-    
-    data->WriteBit(false);                                      // Unk bit 5268
-    data->WriteBit(!achievementId);                             // Has achievement
-    data->WriteBit(!targetGuid);                                // has receiver
-    data->WriteBit(speakerPlayer == NULL);                      // has sender
-    data->WriteBit(message ? 0 : 1);                            // hasText
-    data->WriteBit(targetGuid);                                 // has receiver GUID - FAKE GUID
-    
-    uint8 bitsOrder3[8] = { 5, 7, 6, 4, 3, 2, 1, 0 };
-    data->WriteBitInOrder(targetGuid, bitsOrder3);
-    
-    data->WriteBit(!sendRealmId);                               // sendRealmId
-    if (targetGuid)
-        data->WriteBits(targetLength, 11);
-    if (speakerPlayer != NULL)
+    uint8 bitsOrderSource[8] = { 2, 7, 0, 3, 4, 6, 1, 5 };
+    data->WriteBitInOrder(sourceGuid, bitsOrderSource);
+
+    data->WriteBit(!ShowInChatBubble);                          // Inversed - Show just in text box / Also in bubble.
+    data->WriteBit(!HasAchievement);                            // Inversed - Has achievement.
+    data->WriteBit(!HasReceiver);                               // Inversed - Has target receiver.
+    data->WriteBit(!HasSpeaker);                                // Inversed - Has sender.
+    data->WriteBit(!HasMessage);                                // Inversed - Has text.
+
+    data->WriteBit(!HasReceiverGUID);                           // Inversed - Has target receiver GUID - FAKE GUID.
+
+    uint8 bitsOrderTarget[8] = { 5, 7, 6, 4, 3, 2, 1, 0 };
+    data->WriteBitInOrder(targetGuid, bitsOrderTarget);
+
+    data->WriteBit(!HasSecondTime);                             // Inversed - Has second text time.
+
+    if (HasReceiver)
+        data->WriteBits(targetNameLength, 11);
+
+    if (HasSpeaker)
         data->WriteBits(speakerNameLength, 11);
 
-    data->WriteBit(groupGuid != NULL);                          // has group GUID - FAKE GUID
+    data->WriteBit(!HasGroupGUID);                              // Inversed - Has group Guid - FAKE GUID.
 
-    uint8 bitsOrder2[8] = { 5, 2, 6, 1, 7, 3, 0, 4 };
-    data->WriteBitInOrder(groupGuid, bitsOrder2);
-    
-    data->WriteBit(!bit5264);                                   // (inversed) unk bit 5264
-    // Must be inversed
-    if (hasChatTag)
-        data->WriteBits(session->GetPlayer()->GetChatTag(), 9);
-    if (messageLength)
+    uint8 bitsOrderGroup[8] = { 5, 2, 6, 1, 7, 3, 0, 4 };
+    data->WriteBitInOrder(groupGuid, bitsOrderGroup);
+
+    data->WriteBit(!HasLimitedFloatRange);                      // Inversed - Has limited range.
+
+    if (HasChatTag)
+        data->WriteBits(chatTag, 9);
+
+    if (HasMessage)
         data->WriteBits(messageLength, 12);
-    
-    data->WriteBit(false);                                      // Unk bit
-    data->WriteBit(addonPrefix ? 0 : 1);                        // has prefix
-    bool hasChannel = type == CHAT_MSG_CHANNEL;
-    data->WriteBit(!hasChannel);                                // has channel
-    if (prefixeLength)
-        data->WriteBits(prefixeLength, 5);
 
-    if (hasChannel)
-        data->WriteBits(channelLength, 7);
+    data->WriteBit(0);                                          // Unknown byte1499. Seems related to B-Net Chat. Always false.
+    data->WriteBit(!HasAddonPrefix);                            // Inversed - Has addon prefix.
+    data->WriteBit(!HasChannel);                                // Inversed - Has chat channel.
 
-    data->WriteBit(true);                                       // unk uint block
+    if (HasAddonPrefix)
+        data->WriteBits(addonPrefixLength, 5);
 
-    uint8 byteOrder3[8] = { 7, 2, 1, 4, 6, 5, 3, 0 };
-    data->WriteBytesSeq(guildGuid, byteOrder3);
+    if (HasChannel)
+        data->WriteBits(channelNameLength, 7);
 
-    uint8 byteOrder[8] = { 5, 3, 2, 4, 1, 0, 7, 6 };
-    data->WriteBytesSeq(groupGuid, byteOrder);
+    data->WriteBit(!HasConstantTime);                           // Inversed - Has first, constant text time.
+
+    data->FlushBits();
+
+    uint8 byteOrderGuild[8] = { 7, 2, 1, 4, 6, 5, 3, 0 };
+    data->WriteBytesSeq(guildGuid, byteOrderGuild);
+
+    uint8 byteOrderGroup[8] = { 5, 3, 2, 4, 1, 0, 7, 6 };
+    data->WriteBytesSeq(groupGuid, byteOrderGroup);
 
     *data << uint8(type);
 
-    if (sendRealmId)
-        *data << uint32(realmID);                               // realmd id / flags
+    if (HasSecondTime)
+        *data << uint32(time(NULL));  // Add text duration here for creatures (HasConstantTime + duration; check CreatureTextMgr packet building).
 
-    if (prefixeLength)
-        data->append(addonPrefix, prefixeLength);
+    if (HasAddonPrefix)
+        data->append(addonPrefix, addonPrefixLength);
 
-    uint8 byteOrder1[8] = { 4, 2, 3, 0, 6, 7, 5, 1 };
-    data->WriteBytesSeq(targetGuid, byteOrder1);
+    if (HasLimitedFloatRange)
+        *data << float(sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY)); // Add max text range here (see building of each chat type - new Cata fields for ex. RAID_BOSS_EMOTE). 
 
-    uint8 byteOrder2[8] = { 6, 1, 0, 2, 4, 5, 7, 3 };
-    data->WriteBytesSeq(speakerGuid, byteOrder2);
+    uint8 byteOrderTarget[8] = { 4, 2, 3, 0, 6, 7, 5, 1 };
+    data->WriteBytesSeq(targetGuid, byteOrderTarget);
 
-    if (achievementId)
+    uint8 byteOrderSource[8] = { 6, 1, 0, 2, 4, 5, 7, 3 };
+    data->WriteBytesSeq(sourceGuid, byteOrderSource);
+
+    if (HasAchievement)
         *data << uint32(achievementId);
 
-    if (targetLength)
-        data->append(targetName.c_str(), targetLength);
+    if (HasReceiver)
+        data->append(targetName.c_str(), targetNameLength);
 
-    if (messageLength)
+    if (HasMessage)
         data->append(message, messageLength);
 
-    if (speakerNameLength && speakerPlayer)
-    {
-        data->FlushBits();
-        data->append(speakerPlayer->GetName(), speakerNameLength);
-    }
+    if (HasSpeaker)
+        data->append(speakerName.c_str(), speakerNameLength);
 
-    if (language)
-    {
-        if ((type != CHAT_MSG_CHANNEL && type != CHAT_MSG_WHISPER) || language == LANG_ADDON)
-            *data << uint8(language);
-        else
-            *data << uint8(LANG_UNIVERSAL);
-    }
+    if (HasLanguage)
+        *data << uint8(language);
 
-    if (channelLength && hasChannel)
-    {
-        data->FlushBits();
-        data->append(channelName, channelLength);
-    }
+    if (HasChannel)
+        data->append(channelName, channelNameLength);
+
+    if (HasConstantTime)
+        *data << uint32(time(NULL));                                     // The time at which the creature text is called.
 }
 
 Player* ChatHandler::getSelectedPlayer()

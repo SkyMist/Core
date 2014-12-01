@@ -473,8 +473,13 @@ void Battlefield::BroadcastPacketToWar(WorldPacket& data) const
 
 WorldPacket Battlefield::BuildWarningAnnPacket(std::string msg)
 {
+    /*** Init data. ***/
     WorldPacket data;
+
+    /*** Build Packet. ***/
     ChatHandler::FillMessageData(&data, NULL, CHAT_MSG_RAID_BOSS_EMOTE, LANG_UNIVERSAL, NULL, 0, msg.c_str(), NULL);
+
+    /*** Packet built. ***/
     return data;
 }
 
@@ -482,23 +487,8 @@ void Battlefield::SendWarningToAllInZone(uint32 entry)
 {
     if (Unit* unit = sObjectAccessor->FindUnit(StalkerGuid))
         if (Creature* stalker = unit->ToCreature())
-            // FIXME: replaced CHAT_TYPE_END with CHAT_MSG_BG_SYSTEM_NEUTRAL to fix compile, it's a guessed change :/
             sCreatureTextMgr->SendChat(stalker, (uint8) entry, 0, CHAT_MSG_BG_SYSTEM_NEUTRAL, LANG_ADDON, TEXT_RANGE_ZONE);
 }
-
-/*void Battlefield::SendWarningToAllInWar(int32 entry,...)
-{
-    const char *format = sObjectMgr->GetTrinityStringForDBCLocale(entry);
-    va_list ap;
-    char str [1024];
-    va_start(ap, entry);
-    vsnprintf(str,1024,format, ap);
-    va_end(ap);
-    std::string msg = (std::string)str;
-
-    WorldPacket data = BuildWarningAnnPacket(msg);
-    BroadcastPacketWar(data);
-}*/
 
 void Battlefield::SendWarningToPlayer(Player* player, uint32 entry)
 {

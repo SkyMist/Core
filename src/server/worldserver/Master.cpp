@@ -107,7 +107,7 @@ public:
             else if (getMSTimeDiff(w_lastchange, curtime) > _delaytime)
             {
                 sLog->outError(LOG_FILTER_WORLDSERVER, "World Thread hangs, kicking out server!");
-                ASSERT(false);
+                // ASSERT(false);
                 exit(0);
             }
         }

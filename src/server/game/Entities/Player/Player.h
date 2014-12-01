@@ -1376,7 +1376,7 @@ class Player : public Unit, public GridObject<Player>
         void TextEmote(const std::string& text);
         void Whisper(const std::string& text, const uint32 language, uint64 receiver);
         void WhisperAddon(const std::string& text, const std::string& prefix, Player* receiver);
-        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix = NULL, const std::string& channel = "") const;
+        void BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix = NULL, const std::string& channel = "", uint64 receiverGUID = 0, uint8 chatTag = CHAT_TAG_NONE, uint32 achievementId = 0);
 
         ArchaeologyMgr& GetArchaeologyMgr() { return m_archaeologyMgr; }
 

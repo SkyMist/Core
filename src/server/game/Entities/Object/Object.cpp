@@ -52,6 +52,7 @@
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "MoveSpline.h"
+#include "Chat.h"
 
 uint32 GuidHigh2TypeId(uint32 guid_hi)
 {
@@ -2253,8 +2254,8 @@ namespace JadeCore
     class MonsterChatBuilder
     {
         public:
-            MonsterChatBuilder(WorldObject const& obj, ChatMsg msgtype, int32 textId, uint32 language, uint64 targetGUID)
-                : i_object(obj), i_msgtype(msgtype), i_textId(textId), i_language(language), i_targetGUID(targetGUID) {}
+            MonsterChatBuilder(WorldObject& obj, ChatMsg msgtype, int32 textId, uint32 language, uint64 targetGUID)
+                : i_object(obj), i_msgtype(msgtype), i_textId(textId), i_language(language), i_targetGUID(targetGUID) { }
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
                 char const* text = sObjectMgr->GetTrinityString(i_textId, loc_idx);
@@ -2264,7 +2265,7 @@ namespace JadeCore
             }
 
         private:
-            WorldObject const& i_object;
+            WorldObject& i_object;
             ChatMsg i_msgtype;
             int32 i_textId;
             uint32 i_language;
@@ -2274,8 +2275,8 @@ namespace JadeCore
     class MonsterCustomChatBuilder
     {
         public:
-            MonsterCustomChatBuilder(WorldObject const& obj, ChatMsg msgtype, const char* text, uint32 language, uint64 targetGUID)
-                : i_object(obj), i_msgtype(msgtype), i_text(text), i_language(language), i_targetGUID(targetGUID) {}
+            MonsterCustomChatBuilder(WorldObject& obj, ChatMsg msgtype, const char* text, uint32 language, uint64 targetGUID)
+                : i_object(obj), i_msgtype(msgtype), i_text(text), i_language(language), i_targetGUID(targetGUID) { }
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
                 // TODO: i_object.GetName() also must be localized?
@@ -2283,7 +2284,7 @@ namespace JadeCore
             }
 
         private:
-            WorldObject const& i_object;
+            WorldObject& i_object;
             ChatMsg i_msgtype;
             const char* i_text;
             uint32 i_language;
@@ -2410,115 +2411,10 @@ void WorldObject::MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisp
     player->GetSession()->SendPacket(&data);
 }
 
-void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, char const* name, uint64 targetGuid) const
+void WorldObject::BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, char const* name, uint64 targetGuid)
 {
-    uint32 messageLength = text ? strlen(text) : 0;
-    uint32 speakerNameLength = name ? strlen(name) + 1 : 0;
-    uint32 prefixeLength = 0;
-    Unit* target = ObjectAccessor::FindUnit(targetGuid);
-    uint32 receiverLength = target ? strlen(target->GetName()) : 0;
-    uint32 channelLength = 0;
-    std::string channel = ""; // no channel
-
-    ObjectGuid senderGuid = GetGUID();
-    ObjectGuid groupGuid = 0;
-    ObjectGuid receiverGuid = targetGuid;
-    ObjectGuid guildGuid = 0;
-
-    uint32 achievementId = 0;
-    uint32 sendRealmId = 0;
-
-    bool unkBit = false;
-    bool bit5256 = false;
-    bool bit5264 = false;
-
-    data->Initialize(SMSG_MESSAGE_CHAT, 200);
-    
-    data->WriteBit(0);                                          // has guild GUID
-    data->WriteBit(1);                                          // has sender GUID
-
-    uint8 bitsOrder4[8] = { 4, 5, 1, 0, 2, 6, 7, 3 };
-    data->WriteBitInOrder(guildGuid, bitsOrder4);
-
-    data->WriteBit(0);                                          // !has chat tag
-    data->WriteBit(0);                                          // !hasLanguage
-
-    uint8 bitsOrder[8] = { 2, 7, 0, 3, 4, 6, 1, 5 };
-    data->WriteBitInOrder(senderGuid, bitsOrder);
-
-    data->WriteBit(false);                                      // Unk bit 5268
-    data->WriteBit(!achievementId);                             // Has achievement
-    data->WriteBit(receiverGuid ? 0 : 1);                       // !has receiver
-    data->WriteBit(0);                                          // !has sender
-    data->WriteBit(messageLength ? 0 : 1);
-    data->WriteBit(receiverGuid ? 1 : 0);                       // has receiver GUID
-
-    uint8 bitsOrder3[8] = { 5, 7, 6, 4, 3, 2, 1, 0 };
-    data->WriteBitInOrder(targetGuid, bitsOrder3);
-
-    data->WriteBit(!sendRealmId);                               // sendRealmId
-    if (receiverLength)
-        data->WriteBits(receiverLength, 11);
-    data->WriteBits(speakerNameLength, 11);
-
-    data->WriteBit(0);                                          // has group GUID
-
-    uint8 bitsOrder2[8] = { 5, 2, 6, 1, 7, 3, 0, 4 };
-    data->WriteBitInOrder(groupGuid, bitsOrder2);
-
-    data->WriteBit(!bit5264);                                   // (inversed) unk bit 5264
-    // Must be inversed
-    data->WriteBits(0, 9);                                      // chat Tag, empty for creatures
-    if (messageLength)
-        data->WriteBits(messageLength, 12);
-
-    data->WriteBit(false);                                      // Unk bit
-    data->WriteBit(1);                                          // !has prefix
-    data->WriteBit(1);                                          // !has channel
-    if (prefixeLength)
-        data->WriteBits(prefixeLength, 5);
-
-    data->WriteBits(channelLength, 7);
-
-    data->WriteBit(true);                                       // unk uint block
-
-    uint8 byteOrder3[8] = { 7, 2, 1, 4, 6, 5, 3, 0 };
-    data->WriteBytesSeq(guildGuid, byteOrder3);
-
-    uint8 byteOrder[8] = { 5, 3, 2, 4, 1, 0, 7, 6 };
-    data->WriteBytesSeq(groupGuid, byteOrder);
-
-    *data << uint8(msgtype);
-
-    if (sendRealmId)
-        *data << uint32(realmID);                               // realmd id / flags
-
-    if (prefixeLength)
-        data->WriteString("");
-
-    uint8 byteOrder1[8] = { 4, 2, 3, 0, 6, 7, 5, 1 };
-    data->WriteBytesSeq(targetGuid, byteOrder1);
-
-    uint8 byteOrder2[8] = { 6, 1, 0, 2, 4, 5, 7, 3 };
-    data->WriteBytesSeq(senderGuid, byteOrder2);
-
-    if (achievementId)
-        *data << uint32(achievementId);
-
-    if (receiverLength)
-        data->WriteString("");
-
-    if (messageLength)
-        data->WriteString(text);
-
-    if (speakerNameLength)
-        data->WriteString(name);
-
-    *data << uint8(language);
-
-    if (channelLength)
-        data->WriteString(channel);
-    return;
+    /*** Build packet using ChatHandler. ***/
+    ChatHandler::FillMessageData(data, NULL, msgtype, language, NULL, targetGuid, text, ToUnit(), NULL, CHAT_TAG_NONE, 0, name);
 }
 
 void Unit::BuildHeartBeatMsg(WorldPacket* data) const

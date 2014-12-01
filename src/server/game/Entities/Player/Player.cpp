@@ -22842,169 +22842,10 @@ void Player::StopCastingCharm()
     }
 }
 
-inline void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/) const
+void Player::BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language, const char* addonPrefix /*= NULL*/, const std::string& channel /*= ""*/, uint64 receiverGUID /* = 0*/, uint8 chatTag /*= CHAT_TAG_NONE*/, uint32 achievementId /*= 0*/)
 {
-    uint32 messageLength = text.length();
-    uint32 achievementId = 0;
-
-    uint32 speakerNameLength = strlen(GetName());
-
-    uint32 prefixeLength = addonPrefix ? strlen(addonPrefix) : 0;
-
-    ObjectGuid target_guid = 0;
-    uint32 targetLength = 0;
-    std::string targetName;
-    if (target_guid)
-    {
-        if (Unit* unit = ObjectAccessor::FindUnit(target_guid))
-        {
-            targetLength = strlen(unit->GetName());
-            targetName = unit->GetName();
-        }
-    }
-
-    uint32 channelLength = channel.length();
-
-    ObjectGuid speakerGuid = GetGUID();
-
-    ObjectGuid groupGuid = GetGroup() ? GetGroup()->GetGUID() : uint64(ObjectGuid(0));
-
-    switch (msgtype)
-    {
-        case CHAT_MSG_SAY:
-        case CHAT_MSG_PARTY:
-        case CHAT_MSG_PARTY_LEADER:
-        case CHAT_MSG_RAID:
-        case CHAT_MSG_GUILD:
-        case CHAT_MSG_OFFICER:
-        case CHAT_MSG_YELL:
-        case CHAT_MSG_WHISPER:
-        case CHAT_MSG_CHANNEL:
-        case CHAT_MSG_RAID_LEADER:
-        case CHAT_MSG_RAID_WARNING:
-        case CHAT_MSG_BG_SYSTEM_NEUTRAL:
-        case CHAT_MSG_BG_SYSTEM_ALLIANCE:
-        case CHAT_MSG_BG_SYSTEM_HORDE:
-        case CHAT_MSG_INSTANCE_CHAT:
-        case CHAT_MSG_INSTANCE_CHAT_LEADER:
-            target_guid = GetGUID();
-            break;
-        default:
-            break;
-    }
-
-    ObjectGuid targetGuid = target_guid;
-    ObjectGuid guildGuid = GetGuild() ? GetGuild()->GetGUID() : uint64(ObjectGuid(0));
-
-    bool bit5264 = false;
-    bool sendRealmId = true;
-
-    data->Initialize(SMSG_MESSAGE_CHAT, 100);                   // guess size
-
-    data->WriteBit(guildGuid);                                  // has guild GUID - FAKE GUID
-    data->WriteBit(this != NULL);                               // has sender GUID - FAKE GUID
-
-    uint8 bitsOrder4[8] = { 4, 5, 1, 0, 2, 6, 7, 3 };
-    data->WriteBitInOrder(guildGuid, bitsOrder4);
-    
-    bool hasChatTag = GetChatTag();
-
-    data->WriteBit(!hasChatTag);                                // (inversed) has chat tag
-    data->WriteBit(!language);                                  // has lang
-    
-    uint8 bitsOrder[8] = { 2, 7, 0, 3, 4, 6, 1, 5 };
-    data->WriteBitInOrder(speakerGuid, bitsOrder);
-    
-    data->WriteBit(false);                                      // Unk bit 5268
-    data->WriteBit(!achievementId);                             // Has achievement
-    data->WriteBit(!targetGuid);                                // has receiver
-    data->WriteBit(this == NULL);                               // has sender
-    data->WriteBit(messageLength ? 0 : 1);                      // hasText
-    data->WriteBit(targetGuid);                                 // has receiver GUID - FAKE GUID
-    
-    uint8 bitsOrder3[8] = { 5, 7, 6, 4, 3, 2, 1, 0 };
-    data->WriteBitInOrder(targetGuid, bitsOrder3);
-    
-    data->WriteBit(!sendRealmId);                               // sendRealmId
-    if (targetGuid)
-        data->WriteBits(targetLength, 11);
-    if (this != NULL)
-        data->WriteBits(speakerNameLength, 11);
-
-    data->WriteBit(groupGuid != NULL);                          // has group GUID - FAKE GUID
-
-    uint8 bitsOrder2[8] = { 5, 2, 6, 1, 7, 3, 0, 4 };
-    data->WriteBitInOrder(groupGuid, bitsOrder2);
-    
-    data->WriteBit(!bit5264);                                   // (inversed) unk bit 5264
-    // Must be inversed
-    if (hasChatTag)
-        data->WriteBits(GetChatTag(), 9);
-    if (messageLength)
-        data->WriteBits(messageLength, 12);
-    
-    data->WriteBit(false);                                      // Unk bit
-    data->WriteBit(addonPrefix ? 0 : 1);                        // has prefix
-    bool hasChannel = msgtype == CHAT_MSG_CHANNEL;
-    data->WriteBit(!hasChannel);                                // has channel
-    if (prefixeLength)
-        data->WriteBits(prefixeLength, 5);
-
-    if (hasChannel)
-        data->WriteBits(channelLength, 7);
-
-    data->WriteBit(true);                                       // unk uint block
-
-    data->FlushBits();
-
-    uint8 byteOrder3[8] = { 7, 2, 1, 4, 6, 5, 3, 0 };
-    data->WriteBytesSeq(guildGuid, byteOrder3);
-
-    uint8 byteOrder[8] = { 5, 3, 2, 4, 1, 0, 7, 6 };
-    data->WriteBytesSeq(groupGuid, byteOrder);
-
-    *data << uint8(msgtype);
-
-    if (sendRealmId)
-        *data << uint32(realmID);                               // realmd id / flags
-
-    if (prefixeLength)
-        data->append(addonPrefix, prefixeLength);
-
-    uint8 byteOrder1[8] = { 4, 2, 3, 0, 6, 7, 5, 1 };
-    data->WriteBytesSeq(targetGuid, byteOrder1);
-
-    uint8 byteOrder2[8] = { 6, 1, 0, 2, 4, 5, 7, 3 };
-    data->WriteBytesSeq(speakerGuid, byteOrder2);
-
-    if (achievementId)
-        *data << uint32(achievementId);
-
-    if (targetLength)
-        data->append(targetName.c_str(), targetLength);
-
-    if (messageLength)
-        data->append(text.c_str(), messageLength);
-
-    if (speakerNameLength)
-    {
-        data->FlushBits();
-        data->append(GetName(), speakerNameLength);
-    }
-
-    if (language)
-    {
-        if ((msgtype != CHAT_MSG_CHANNEL && msgtype != CHAT_MSG_WHISPER) || language == LANG_ADDON)
-            *data << uint8(language);
-        else
-            *data << uint8(LANG_UNIVERSAL);
-    }
-
-    if (channelLength && hasChannel)
-    {
-        data->FlushBits();
-        data->append(channel.c_str(), channelLength);
-    }
+    /*** Build packet using ChatHandler. ***/
+    ChatHandler::FillMessageData(data, GetSession(), msgtype, language, channel.c_str(), receiverGUID, text.c_str(), NULL, addonPrefix, chatTag, achievementId);
 }
 
 void Player::Say(const std::string& text, const uint32 language)
@@ -23012,7 +22853,7 @@ void Player::Say(const std::string& text, const uint32 language)
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_SAY, language, _text);
 
-    WorldPacket data;;
+    WorldPacket data;
     BuildPlayerChat(&data, CHAT_MSG_SAY, _text, language);
     SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), true);
 }
@@ -23052,13 +22893,18 @@ void Player::WhisperAddon(const std::string& text, const std::string& prefix, Pl
 
 void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
 {
+    bool isAddonMessage = (language == LANG_ADDON);
+
+    if (!isAddonMessage) // If it's not addon data, whispers should always be readable.
+        language = LANG_UNIVERSAL;
+
     Player* rPlayer = ObjectAccessor::FindPlayer(receiver);
 
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
 
-    // when player you are whispering to is dnd, he cannot receive your message, unless you are in gm mode
-    if (!rPlayer->isDND() || isGameMaster())
+    // When the player you are whispering to is DND / AFK, he cannot receive your message, unless you are in GM mode.
+    if (!rPlayer->isDND() && !rPlayer->isAFK() || isGameMaster())
     {
         WorldPacket data;
         BuildPlayerChat(&data, CHAT_MSG_WHISPER, _text, language);
@@ -23067,22 +22913,30 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
         rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, _text, language);
         GetSession()->SendPacket(&data);
     }
-    else // announce to player that player he is whispering to is dnd and cannot receive his message
-        ChatHandler(this).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName(), rPlayer->dndMsg.c_str());
+    else
+    {
+        // Announce AFK or DND message, or, if you're a player trying to whisper a GM, get a "Player not found" error.
+        if (rPlayer->isAFK())
+            ChatHandler(this).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName(), rPlayer->afkMsg.c_str());
+        else if (rPlayer->isDND())
+            ChatHandler(this).PSendSysMessage(LANG_PLAYER_DND, rPlayer->GetName(), rPlayer->dndMsg.c_str());
+        else if (!isGameMaster() && rPlayer->isGameMaster())
+            ChatHandler(this).PSendSysMessage(LANG_PLAYER_NOT_FOUND, rPlayer->GetName());
+    }
 
+    // Set Accepting Whispers to true if you whisper to someone while your / his GM mode is off.
     if (!isAcceptWhispers() && !isGameMaster() && !rPlayer->isGameMaster())
     {
         SetAcceptWhispers(true);
         ChatHandler(this).SendSysMessage(LANG_COMMAND_WHISPERON);
     }
 
-    // announce to player that player he is whispering to is afk
-    if (rPlayer->isAFK())
-        ChatHandler(this).PSendSysMessage(LANG_PLAYER_AFK, rPlayer->GetName(), rPlayer->afkMsg.c_str());
-
-    // if player whisper someone, auto turn of dnd to be able to receive an answer
-    if (isDND() && !rPlayer->isGameMaster())
-        ToggleDND();
+    // If you whisper someone who doesn't have GM mode on, while you are in DND / AFK mode, turn it off to be able to receive an answer or let him know you're there.
+    if (!rPlayer->isGameMaster())
+    {
+             if (isDND()) ToggleDND();
+        else if (isAFK()) ToggleAFK();
+    }
 }
 
 void Player::PetSpellInitialize()

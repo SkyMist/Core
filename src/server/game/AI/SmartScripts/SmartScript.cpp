@@ -39,9 +39,7 @@ class TrinityStringTextBuilder
 {
     public:
         TrinityStringTextBuilder(WorldObject* obj, ChatMsg msgtype, int32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
         void operator()(WorldPacket* data, LocaleConstant locale, uint64 tguid) const
         {
@@ -3161,51 +3159,6 @@ void SmartScript::OnMoveInLineOfSight(Unit* who)
     ProcessEventsFor(SMART_EVENT_IC_LOS, who);
 
 }
-
-/*
-void SmartScript::UpdateAIWhileCharmed(const uint32 diff)
-{
-}
-
-void SmartScript::DoAction(const int32 param)
-{
-}
-
-uint32 SmartScript::GetData(uint32 id)
-{
-    return 0;
-}
-
-void SmartScript::SetData(uint32 id, uint32 value)
-{
-}
-
-void SmartScript::SetGUID(uint64 guid, int32 id)
-{
-}
-
-uint64 SmartScript::GetGUID(int32 id)
-{
-    return 0;
-}
-
-void SmartScript::MovepointStart(uint32 id)
-{
-}
-
-void SmartScript::SetRun(bool run)
-{
-}
-
-void SmartScript::SetMovePathEndAction(SMART_ACTION action)
-{
-}
-
-uint32 SmartScript::DoChat(int8 id, uint64 whisperGuid)
-{
-    return 0;
-}*/
-// SmartScript end
 
 Unit* SmartScript::DoSelectLowestHpFriendly(float range, uint32 MinHPDiff)
 {

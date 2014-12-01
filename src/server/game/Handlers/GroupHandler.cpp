@@ -1295,7 +1295,8 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
         return;
 
     std::set<uint32> phases;
-    player->GetPhaseMgr().GetActivePhases(phases);
+    if (player)
+        player->GetPhaseMgr().GetActivePhases(phases);
 
     ByteBuffer dataBuffer;
 

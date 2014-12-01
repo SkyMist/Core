@@ -67,7 +67,7 @@ namespace JadeCore
         private:
             void do_helper(WorldPacket& data, char const* text)
             {
-                ChatHandler::FillMessageData(&data, _source ? _source->GetSession() : NULL, _msgtype, LANG_UNIVERSAL, NULL, _source ? _source->GetGUID() : 0, text, NULL, NULL);
+                ChatHandler::FillMessageData(&data, _source ? _source->GetSession() : NULL, _msgtype, LANG_UNIVERSAL, NULL, _source ? _source->GetGUID() : 0, text, NULL, NULL, _source ? _source->GetChatTag() : CHAT_TAG_NONE);
             }
 
             ChatMsg _msgtype;
@@ -80,7 +80,7 @@ namespace JadeCore
     {
         public:
             Battleground2ChatBuilder(ChatMsg msgtype, int32 textId, Player const* source, int32 arg1, int32 arg2)
-                : _msgtype(msgtype), _textId(textId), _source(source), _arg1(arg1), _arg2(arg2) {}
+                : _msgtype(msgtype), _textId(textId), _source(source), _arg1(arg1), _arg2(arg2) { }
 
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
@@ -91,7 +91,7 @@ namespace JadeCore
                 char str[2048];
                 snprintf(str, 2048, text, arg1str, arg2str);
 
-                ChatHandler::FillMessageData(&data, _source ? _source->GetSession() : NULL, _msgtype, LANG_UNIVERSAL, NULL, _source ? _source->GetGUID() : 0, str, NULL, NULL);
+                ChatHandler::FillMessageData(&data, _source ? _source->GetSession() : NULL, _msgtype, LANG_UNIVERSAL, NULL, _source ? _source->GetGUID() : 0, str, NULL, NULL, _source ? _source->GetChatTag() : CHAT_TAG_NONE);
             }
 
         private:
@@ -1932,8 +1932,13 @@ void Battleground::SendWarningToAll(int32 entry, ...)
     va_end(ap);
     std::string msg(str);
 
+    /*** Init data. ***/
     WorldPacket data;
+
+    /*** Build Packet. ***/
     ChatHandler::FillMessageData(&data, NULL, CHAT_MSG_RAID_BOSS_EMOTE, LANG_UNIVERSAL, NULL, 0, msg.c_str(), NULL);
+
+    /*** Packet built. ***/
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         if (Player* player = ObjectAccessor::FindPlayer(MAKE_NEW_GUID(itr->first, 0, HIGHGUID_PLAYER)))
             if (player->GetSession())

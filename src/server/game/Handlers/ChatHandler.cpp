@@ -165,7 +165,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             if (sWorld->getBoolConfig(CONFIG_CHATLOG_ADDON))
             {
                 std::string msg = "";
-                uint32 length = recvData.ReadBits(8);
                 recvData >> msg;
 
                 if (msg.empty())
@@ -346,7 +345,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             Player* receiver = sObjectAccessor->FindPlayerByName(to.c_str());
             bool senderIsPlayer = AccountMgr::IsPlayerAccount(GetSecurity());
             bool receiverIsPlayer = AccountMgr::IsPlayerAccount(receiver ? receiver->GetSession()->GetSecurity() : SEC_PLAYER);
-            if (!receiver || (senderIsPlayer && !receiverIsPlayer && !receiver->isAcceptWhispers() && !receiver->IsInWhisperWhiteList(sender->GetGUID())))
+            if (!receiver || (lang != LANG_ADDON && senderIsPlayer && !receiverIsPlayer && !receiver->isAcceptWhispers() && !receiver->IsInWhisperWhiteList(sender->GetGUID())))
             {
                 SendPlayerNotFoundNotice(to);
                 return;
@@ -598,44 +597,32 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
         {
             uint32 msgLen = recvData.ReadBits(9);
             uint32 prefixLen = recvData.ReadBits(5);
-            uint32 targetLen = recvData.ReadBits(8);
+            uint32 targetLen = recvData.ReadBits(10);
+
             recvData.FlushBits();
+
             targetName = recvData.ReadString(targetLen);
-            message = recvData.ReadString(msgLen);
             prefix = recvData.ReadString(prefixLen);
+            message = recvData.ReadString(msgLen);
             break;
         }
         case CHAT_MSG_PARTY:
-        {
-            uint32 prefixLen = recvData.ReadBits(5);
-            uint32 msgLen = recvData.ReadBits(8);
-            recvData.FlushBits();
-            prefix = recvData.ReadString(prefixLen);
-            message = recvData.ReadString(msgLen);
-            break;
-        }
         case CHAT_MSG_RAID:
-        {
-            uint32 msgLen = recvData.ReadBits(8);
-            uint32 prefixLen = recvData.ReadBits(5);
-            recvData.FlushBits();
-            prefix = recvData.ReadString(prefixLen);
-            message = recvData.ReadString(msgLen);
-            break;
-        }
         case CHAT_MSG_OFFICER:
         case CHAT_MSG_GUILD:
         case CHAT_MSG_INSTANCE_CHAT:
         {
-            uint32 msgLen = recvData.ReadBits(8);
+            uint32 msgLen = recvData.ReadBits(9);
             uint32 prefixLen = recvData.ReadBits(5);
+
             recvData.FlushBits();
+
             prefix = recvData.ReadString(prefixLen);
             message = recvData.ReadString(msgLen);
             break;
         }
-        default:
-            break;
+
+        default: break;
     }
 
     // Logging enabled?
@@ -741,7 +728,7 @@ namespace JadeCore
                 ObjectGuid playerGuid = i_player.GetGUID();
                 ObjectGuid targetGuid = i_target ? i_target->GetGUID() : NULL;
 
-                data.Initialize(SMSG_TEXT_EMOTE, 24);
+                data.Initialize(SMSG_TEXT_EMOTE, 4 + 4 + 9 + 9);
                 
                 data.WriteBit(targetGuid[2]);
                 data.WriteBit(targetGuid[0]);

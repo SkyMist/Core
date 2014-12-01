@@ -28,9 +28,7 @@ class CreatureTextBuilder
 {
     public:
         CreatureTextBuilder(WorldObject* obj, ChatMsg msgtype, uint8 textGroup, uint32 id, uint32 language, uint64 targetGUID)
-            : _source(obj), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID)
-        {
-        }
+            : _source(obj), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID) { }
 
         void operator()(WorldPacket* data, LocaleConstant locale, uint64 tguid) const
         {
@@ -41,6 +39,29 @@ class CreatureTextBuilder
         }
 
         WorldObject* _source;
+        ChatMsg _msgType;
+        uint8 _textGroup;
+        uint32 _textId;
+        uint32 _language;
+        uint64 _targetGUID;
+};
+
+class PlayerTextBuilder
+{
+    public:
+        PlayerTextBuilder(WorldObject* obj, WorldObject* speaker, ChatMsg msgtype, uint8 textGroup, uint32 id, uint32 language, uint64 targetGUID)
+            : _source(obj), _talker(speaker), _msgType(msgtype), _textGroup(textGroup), _textId(id), _language(language), _targetGUID(targetGUID) { }
+
+        void operator()(WorldPacket* data, LocaleConstant locale, uint64 tguid) const
+        {
+            std::string text = sCreatureTextMgr->GetLocalizedChatString(_source->GetEntry(), _textGroup, _textId, locale);
+
+            if (_talker->ToPlayer()) // Just safety check, all should be fine.
+                _talker->ToPlayer()->BuildPlayerChat(data, _msgType, text, _language);
+        }
+
+        WorldObject* _source;
+        WorldObject* _talker;
         ChatMsg _msgType;
         uint8 _textGroup;
         uint32 _textId;
@@ -241,8 +262,17 @@ uint32 CreatureTextMgr::SendChat(Creature* source, uint8 textGroup, uint64 whisp
     if (iter->emote)
         SendEmote(finalSource, iter->emote);
 
-    CreatureTextBuilder builder(finalSource, finalType, iter->group, iter->id, finalLang, whisperGuid);
-    SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+    if (srcPlr)
+	{
+        PlayerTextBuilder builder(source, finalSource, finalType, iter->group, iter->id, finalLang, whisperGuid);
+        SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+	}
+    else
+	{
+        CreatureTextBuilder builder(finalSource, finalType, iter->group, iter->id, finalLang, whisperGuid);
+        SendChatPacket(finalSource, builder, finalType, whisperGuid, range, team, gmOnly);
+	}
+
     if (isEqualChanced || (!isEqualChanced && totalChance == 100.0f))
         SetRepeatId(source, textGroup, iter->id);
 
@@ -275,17 +305,20 @@ void CreatureTextMgr::SendSound(Creature* source, uint32 sound, ChatMsg msgType,
 
     ObjectGuid guid = source->GetGUID();
 
-    WorldPacket data(SMSG_PLAY_SOUND, 12);
+    WorldPacket data(SMSG_PLAY_SOUND, 4 + 9);
 
     uint8 bitsOrder[8] = { 1, 6, 7, 5, 4, 3, 0, 2 };
     data.WriteBitInOrder(guid, bitsOrder);
+
     data.FlushBits();
 
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[5]);
     data.WriteByteSeq(guid[4]);
+
     data << uint32(sound);
+
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[0]);

@@ -48,12 +48,13 @@ namespace JadeCore
     {
         public:
             AchievementChatBuilder(Player const& player, ChatMsg msgtype, int32 textId, uint32 ach_id)
-                : i_player(player), i_msgtype(msgtype), i_textId(textId), i_achievementId(ach_id) {}
+                : i_player(player), i_msgtype(msgtype), i_textId(textId), i_achievementId(ach_id) { }
+
             void operator()(WorldPacket& data, LocaleConstant loc_idx)
             {
                 char const* text = sObjectMgr->GetTrinityString(i_textId, loc_idx);
 
-                ChatHandler::FillMessageData(&data, i_player.GetSession(), i_msgtype, LANG_UNIVERSAL, NULL, i_player.GetGUID(), text, NULL, NULL, i_achievementId);
+                ChatHandler::FillMessageData(&data, i_player.GetSession(), i_msgtype, LANG_UNIVERSAL, NULL, i_player.GetGUID(), text, NULL, NULL, CHAT_TAG_NONE, i_achievementId);
             }
 
         private:

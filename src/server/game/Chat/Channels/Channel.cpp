@@ -653,16 +653,21 @@ void Channel::Announce(uint64 p)
     }
 }
 
-void Channel::Say(uint64 p, const char *what, uint32 lang)
+void Channel::Say(uint64 p, const char* what, uint32 lang)
 {
     if (!what)
         return;
+
     if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
         lang = LANG_UNIVERSAL;
+
+    uint8 chatTag = CHAT_TAG_NONE;
 
     Player* player = ObjectAccessor::FindPlayer(p);
     if (!player)
         return;
+
+    chatTag = player->GetChatTag();
 
     if (!IsOn(p))
     {
@@ -678,10 +683,8 @@ void Channel::Say(uint64 p, const char *what, uint32 lang)
     }
     else
     {
-        uint32 messageLength = strlen(what) + 1;
-
         WorldPacket data;
-        player->BuildPlayerChat(&data, CHAT_MSG_CHANNEL, what, lang, NULL, m_name);
+        ChatHandler::FillMessageData(&data, player->GetSession(), CHAT_MSG_CHANNEL, lang, m_name.c_str(), player->GetGUID(), what, NULL, NULL, chatTag);
         SendToAll(&data, !players[p].IsModerator() ? p : false);
     }
 }

@@ -573,14 +573,14 @@ template<class Builder>
 void JadeCore::LocalizedPacketDo<Builder>::operator()(Player* p)
 {
     LocaleConstant loc_idx = p->GetSession()->GetSessionDbLocaleIndex();
-    uint32 cache_idx = loc_idx+1;
+    uint32 cache_idx = loc_idx + 1;
     WorldPacket* data;
 
     // create if not cached yet
-    if (i_data_cache.size() < cache_idx+1 || !i_data_cache[cache_idx])
+    if (i_data_cache.size() < cache_idx + 1 || !i_data_cache[cache_idx])
     {
-        if (i_data_cache.size() < cache_idx+1)
-            i_data_cache.resize(cache_idx+1);
+        if (i_data_cache.size() < cache_idx + 1)
+            i_data_cache.resize(cache_idx + 1);
 
         data = new WorldPacket(SMSG_MESSAGE_CHAT, 200);
 
@@ -598,14 +598,14 @@ template<class Builder>
 void JadeCore::LocalizedPacketListDo<Builder>::operator()(Player* p)
 {
     LocaleConstant loc_idx = p->GetSession()->GetSessionDbLocaleIndex();
-    uint32 cache_idx = loc_idx+1;
+    uint32 cache_idx = loc_idx + 1;
     WorldPacketList* data_list;
 
     // create if not cached yet
-    if (i_data_cache.size() < cache_idx+1 || i_data_cache[cache_idx].empty())
+    if (i_data_cache.size() < cache_idx + 1 || i_data_cache[cache_idx].empty())
     {
-        if (i_data_cache.size() < cache_idx+1)
-            i_data_cache.resize(cache_idx+1);
+        if (i_data_cache.size() < cache_idx + 1)
+            i_data_cache.resize(cache_idx + 1);
 
         data_list = &i_data_cache[cache_idx];
 

@@ -321,7 +321,6 @@ class Battlefield : public ZoneScript
 
         WorldPacket BuildWarningAnnPacket(std::string msg);
         void SendWarningToAllInZone(uint32 entry);
-        //void SendWarningToAllInWar(int32 entry, ...); -- UNUSED
         void SendWarningToPlayer(Player* player, uint32 entry);
 
         void PlayerAcceptInviteToQueue(Player* player);
