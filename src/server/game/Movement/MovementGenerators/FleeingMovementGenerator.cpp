@@ -81,7 +81,7 @@ bool FleeingMovementGenerator<T>::_getPoint(T &owner, float &x, float &y, float 
         if (i_only_forward && i > 2)
             break;
 
-        float distance = 2.0f;
+        float distance = 5.0f;
 
         switch (i)
         {

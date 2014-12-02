@@ -539,7 +539,7 @@ class npc_fizzy_bubble_yanzhu : public CreatureScript
 class npc_yeasty_brew_elemental_yanzhu : public CreatureScript
 {
     public :
-        npc_yeasty_brew_elemental_yanzhu() : CreatureScript("mob_yeast_brew_elemental") { }
+        npc_yeasty_brew_elemental_yanzhu() : CreatureScript("npc_yeasty_brew_elemental_yanzhu") { }
 
         struct npc_yeasty_brew_elemental_yanzhu_AI : public ScriptedAI
         {
@@ -702,6 +702,7 @@ class spell_yeasty_alemental_ferment : public SpellScriptLoader
         }
 };
 
+// Blackout Brew 106851.
 class spell_yanzhu_blackout_brew : public SpellScriptLoader
 {
     public :

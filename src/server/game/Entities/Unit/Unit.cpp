@@ -445,28 +445,25 @@ void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed)
     init.Launch();
 }
 
-uint32 const positionUpdateDelay = 400;
-
 void Unit::UpdateSplineMovement(uint32 t_diff)
 {
     if (movespline->Finalized() || !movespline->Initialized())
         return;
 
     movespline->updateState(t_diff);
-    bool arrived = movespline->Finalized();
-
-    if (arrived)
-        DisableSpline();
 
     m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed() || arrived)
+    if (m_movesplineTimer.Passed())
         UpdateSplinePosition();
 }
 
 void Unit::UpdateSplinePosition()
 {
+    uint32 const positionUpdateDelay = 400;
+
     m_movesplineTimer.Reset(positionUpdateDelay);
     Movement::Location loc = movespline->ComputePosition();
+
     if (GetTransGUID())
     {
         Position& pos = m_movementInfo.t_pos;
@@ -21895,7 +21892,12 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
     bool interPolatedTurning = m_movementInfo.flags2 & MOVEMENTFLAG2_INTERPOLATED_TURNING;
     bool jumping = GetUnitMovementFlags() & MOVEMENTFLAG_FALLING;
     bool splineElevation = m_movementInfo.HaveSplineElevation;
-    bool splineData = false;
+    bool hasSpline = false; // IsSplineEnabled();
+
+    // Fix player movement visibility during being CC-ed.
+    bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;
+    if (isInCC && !hasSpline)
+        hasSpline = true;
 
     data->WriteBits(GetUnitMovementFlags(), 30);
     data->WriteBits(m_movementInfo.flags2, 12);
@@ -21912,7 +21914,7 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
         data->WriteBit(jumping);
 
     data->WriteBit(splineElevation);
-    data->WriteBit(splineData);
+    data->WriteBit(hasSpline);
 
     data->FlushBits(); // reset bit stream
 
@@ -22780,7 +22782,7 @@ void Unit::SendCanTurnWhileFalling(bool apply)
 
 bool Unit::IsSplineEnabled() const
 {
-    return movespline->Initialized();
+    return movespline->Initialized(); // && !movespline->Finalized();
 }
 
 /* In the next functions, we keep 1 minute of last damage */
@@ -23089,6 +23091,12 @@ void Unit::WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extr
     bool hasMovementFlags = mi->GetMovementFlags() != 0;
     bool hasMovementFlags2 = mi->GetExtraMovementFlags() != 0;
     bool hasTransportData = mi->t_guid != 0LL;
+    bool hasSpline = false; // IsSplineEnabled();
+
+    // Fix player movement visibility during being CC-ed.
+    bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;
+    if (isInCC && !hasSpline)
+        hasSpline = true;
 
     ObjectGuid guid = mi->guid;
     ObjectGuid tguid = mi->t_guid;
@@ -23184,7 +23192,7 @@ void Unit::WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extr
                 data.WriteBit(!mi->HaveSplineElevation);
                 break;
             case MSEHasSpline:
-                data.WriteBit(false);
+                data.WriteBit(hasSpline);
                 break;
             case MSEMovementFlags:
                 if (hasMovementFlags)

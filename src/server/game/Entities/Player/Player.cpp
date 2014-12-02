@@ -19335,8 +19335,8 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP, Object* questGiver)
     data << uint32(moneyReward);             
     data << uint32(xp);        
 
-    data.WriteBit(1);                  // HasNextQuestInChain, negated, false if there's another quest.
-    data.WriteBit(1);                  // NextQuestOpenWindow, open the gossip windows for the next quest.
+    data.WriteBit(hasMoreQuestsInChain);                  // HasNextQuestInChain, true if there's another quest in the chain. Was 1.
+    data.WriteBit(hasMoreQuestsInChain);                  // NextQuestOpenWindow, open the gossip windows for the next quest. Was 1.
 
     data.FlushBits();
 

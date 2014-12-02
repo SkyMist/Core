@@ -33,7 +33,8 @@ template<class T>
 void ConfusedMovementGenerator<T>::Initialize(T &unit)
 {
     unit.StopMoving();
-    float const wander_distance = 2;
+    float min_wander_distance = 2.0f;
+    float max_wander_distance = 4.0f;
     float x = unit.GetPositionX();
     float y = unit.GetPositionY();
     float z = unit.GetPositionZ();
@@ -47,8 +48,8 @@ void ConfusedMovementGenerator<T>::Initialize(T &unit)
 
     for (uint8 idx = 0; idx < MAX_CONF_WAYPOINTS + 1; ++idx)
     {
-        float wanderX = x + (wander_distance * (float)rand_norm() - wander_distance/2);
-        float wanderY = y + (wander_distance * (float)rand_norm() - wander_distance/2);
+        float wanderX = x + frand(min_wander_distance, max_wander_distance);
+        float wanderY = y + frand(min_wander_distance, max_wander_distance);
 
         // prevent invalid coordinates generation
         JadeCore::NormalizeMapCoord(wanderX);
@@ -61,15 +62,15 @@ void ConfusedMovementGenerator<T>::Initialize(T &unit)
             if ((is_water && !is_water_ok) || (!is_water && !is_land_ok))
             {
                 //! Cannot use coordinates outside our InhabitType. Use the current or previous position.
-                wanderX = idx > 0 ? i_waypoints[idx-1][0] : x;
-                wanderY = idx > 0 ? i_waypoints[idx-1][1] : y;
+                wanderX = idx > 0 ? i_waypoints[idx - 1][0] : x;
+                wanderY = idx > 0 ? i_waypoints[idx - 1][1] : y;
             }
         }
         else
         {
             //! Trying to access path outside line of sight. Skip this by using the current or previous position.
-            wanderX = idx > 0 ? i_waypoints[idx-1][0] : x;
-            wanderY = idx > 0 ? i_waypoints[idx-1][1] : y;
+            wanderX = idx > 0 ? i_waypoints[idx - 1][0] : x;
+            wanderY = idx > 0 ? i_waypoints[idx - 1][1] : y;
         }
 
         unit.UpdateAllowedPositionZ(wanderX, wanderY, z);

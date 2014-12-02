@@ -826,7 +826,7 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     if (questLevelInTitle)
         AddQuestLevelToTitle(questTitle, quest->GetQuestLevel());
 
-    bool HasData = !quest->IsAutoComplete() ? true : false;                         // Quest is not AutoComplete.
+    bool HasData = !quest->HasFlag(QUEST_FLAGS_AUTO_SUBMIT) ? true : false;         // Quest is not AutoComplete.
     bool hiddenReward = quest->HasFlag(QUEST_FLAGS_HIDDEN_REWARDS) ? true : false;  // Quest has hidden (non - displayed) rewards.
 
     // !! TODO: Zero values need more research.
