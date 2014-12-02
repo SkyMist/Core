@@ -65,8 +65,8 @@ enum HunterSpells
     HUNTER_SPELL_BINDING_SHOT_LINK                  = 117405,
     HUNTER_SPELL_BINDING_SHOT_STUN                  = 117526,
     HUNTER_SPELL_BINDING_SHOT_IMMUNE                = 117553,
-    HUNTER_SPELL_PIERCIG_SHOTS                      = 53238,
-    HUNTER_SPELL_PIERCIG_SHOTS_EFFECT               = 63468,
+    HUNTER_SPELL_PIERCING_SHOTS                     = 53238,
+    HUNTER_SPELL_PIERCING_SHOTS_EFFECT              = 63468,
     HUNTER_SPELL_MASTERS_CALL                       = 62305,
     HUNTER_SPELL_MASTERS_CALL_TRIGGERED             = 54216,
     HUNTER_SPELL_COBRA_STRIKES_AURA                 = 53260,
@@ -1600,8 +1600,7 @@ class spell_hun_cobra_shot : public SpellScriptLoader
             void HandleAfterCast()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                    if (Unit* target = GetHitUnit())
-                        _player->CastSpell(_player, HUNTER_SPELL_COBRA_SHOT_ENERGIZE, true);
+                    _player->CastSpell(_player, HUNTER_SPELL_COBRA_SHOT_ENERGIZE, true);
             }
 
             void Register()
@@ -1632,14 +1631,13 @@ class spell_hun_steady_shot : public SpellScriptLoader
                 if (Player* _player = GetCaster()->ToPlayer())
                     if (Unit* target = GetHitUnit())
                         if (GetSpell()->IsCritForTarget(target))
-                            _player->CastSpell(target, HUNTER_SPELL_PIERCIG_SHOTS_EFFECT, true);
+                            _player->CastSpell(target, HUNTER_SPELL_PIERCING_SHOTS_EFFECT, true);
             }
 
             void HandleAfterCast()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                    if (Unit* target = GetHitUnit())
-                        _player->CastSpell(_player, HUNTER_SPELL_STEADY_SHOT_ENERGIZE, true);
+                    _player->CastSpell(_player, HUNTER_SPELL_STEADY_SHOT_ENERGIZE, true);
             }
 
             void Register()

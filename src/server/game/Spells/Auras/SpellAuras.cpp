@@ -515,13 +515,12 @@ AuraPtr Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* o
                 aura = AuraPtr(new DynObjAura(spellproto, effMask, owner, caster, spellPowerData, baseAmount, castItem, casterGUID));
 
                 auto dynowner_temp = aura->GetDynobjOwner();
-                auto caster_temp = aura->GetCaster();
 
                 ASSERT(dynowner_temp);
                 ASSERT(dynowner_temp->IsInWorld());
-                ASSERT(caster_temp);
-                ASSERT(caster_temp->IsInWorld());
-                ASSERT(dynowner_temp->GetMap() == caster_temp->GetMap());
+                ASSERT(caster);
+                ASSERT(caster->IsInWorld());
+                ASSERT(dynowner_temp->GetMap() == caster->GetMap());
 
                 aura->GetDynobjOwner()->SetAura(aura);
                 aura->_InitEffects(effMask, caster, baseAmount);
@@ -1445,6 +1444,31 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                     if (triggeredAura != NULLAURA)
                         triggeredAura->ModStackAmount(GetStackAmount() - triggeredAura->GetStackAmount());
                 }
+        }
+    }
+
+    // Glyph of Rejuvenation
+    if (GetId() == 774)
+    {
+        if (apply && caster->HasAura(17076))
+        {
+            UnitList targets;
+            JadeCore::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
+            JadeCore::UnitListSearcher<JadeCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
+            caster->VisitNearbyObject(150.0f, searcher);
+
+            if (targets.size() >= 3)
+                caster->AddAura(96206,caster);
+        }
+        else if (!apply)
+        {
+            UnitList targets;
+            JadeCore::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
+            JadeCore::UnitListSearcher<JadeCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
+            caster->VisitNearbyObject(150.0f, searcher);
+
+            if (targets.size() < 3)
+                caster->RemoveAurasDueToSpell(96206);
         }
     }
 

@@ -3547,19 +3547,34 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(AchievementCriteriaEntry
                 if (!referencePlayer)
                     return false;
 
-                if (Map* pMap = referencePlayer->GetMap())
-                {
-                    if (pMap->IsNonRaidDungeon()
-                        || pMap->IsRaid())
-                    {
-                        if (pMap->GetDifficulty() < Difficulty(reqValue))
-                            return false;
-                    }
-                    else
-                        return false;
-                }
-                else
+                Map* pMap = referencePlayer->GetMap();
+                if (!pMap)
                     return false;
+
+                if (pMap->IsNonRaidDungeon())
+                {
+                    switch (reqValue)
+                    {
+                        case 0: if (pMap->GetDifficulty() == DUNGEON_DIFFICULTY_NORMAL) return true; break;
+                        case 1: if (pMap->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC) return true; break;
+
+                        default: break;
+                    }
+                }
+                else if (pMap->IsRaid())
+                {
+                    switch (reqValue)
+                    {
+                        case 0: if (pMap->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL) return true; break;
+                        case 1: if (pMap->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL) return true; break;
+                        case 2: if (pMap->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC) return true; break;
+                        case 3: if (pMap->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC) return true; break;
+
+                        default: break;
+                    }
+                }
+
+                return false;
                 break;
             }
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_SOURCE_RACE: // 25

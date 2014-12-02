@@ -2039,17 +2039,17 @@ struct SpellProcsPerMinuteEntry
 // @author Selenium: 5.4 valid
 struct SpellAuraRestrictionsEntry
 {
-    //uint32    Id;                                         // 0       m_ID
-    uint32    CasterAuraState;                              // 1       m_casterAuraState
-    uint32    TargetAuraState;                              // 2       m_targetAuraState
-    uint32    CasterAuraStateNot;                           // 3       m_excludeCasterAuraState
-    uint32    TargetAuraStateNot;                           // 4       m_excludeTargetAuraState
-    uint32    casterAuraSpell;                              // 5       m_casterAuraSpell
-    uint32    targetAuraSpell;                              // 6       m_targetAuraSpell
-    uint32    excludeCasterAuraSpell;                       // 7       m_excludeCasterAuraSpell
-    uint32    excludeTargetAuraSpell;                       // 8       m_excludeTargetAuraSpell
-    //uint32    unk_flag_1                                  // 9       Flag
-    //uint32    unk_flag_2                                  // 10      Flag
+    //uint32  Id;                                           // 0       m_ID
+    //uint32  spellId;                                      // 1       m_SpellId
+    //uint32  unk;                                          // 2   
+    uint32    CasterAuraState;                              // 3       m_casterAuraState
+    uint32    TargetAuraState;                              // 4       m_targetAuraState
+    uint32    CasterAuraStateNot;                           // 5       m_excludeCasterAuraState
+    uint32    TargetAuraStateNot;                           // 6       m_excludeTargetAuraState
+    uint32    casterAuraSpell;                              // 7       m_casterAuraSpell
+    uint32    targetAuraSpell;                              // 8       m_targetAuraSpell
+    uint32    excludeCasterAuraSpell;                       // 9       m_excludeCasterAuraSpell
+    uint32    excludeTargetAuraSpell;                       // 10      m_excludeTargetAuraSpell
 };
 
 // SpellCastingRequirements.dbc

@@ -248,10 +248,7 @@ class spell_sha_water_ascendant : public SpellScriptLoader
                 if (!eventInfo.GetDamageInfo()->GetSpellInfo())
                     return;
 
-                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_RESTORATIVE_MISTS)
-                    return;
-
-                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_ANCESTRAL_GUIDANCE)
+                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_RESTORATIVE_MISTS || eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_ANCESTRAL_GUIDANCE)
                     return;
 
                 if (!(eventInfo.GetHealInfo()->GetHeal()))
@@ -553,10 +550,7 @@ class spell_sha_ancestral_guidance : public SpellScriptLoader
                 if (!eventInfo.GetDamageInfo()->GetSpellInfo())
                     return;
 
-                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_ANCESTRAL_GUIDANCE)
-                    return;
-
-                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_RESTORATIVE_MISTS)
+                if (eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_ANCESTRAL_GUIDANCE || eventInfo.GetDamageInfo()->GetSpellInfo()->Id == SPELL_SHA_RESTORATIVE_MISTS)
                     return;
 
                 if (!(eventInfo.GetDamageInfo()->GetDamage()) && !(eventInfo.GetHealInfo()->GetHeal()))
@@ -567,11 +561,9 @@ class spell_sha_ancestral_guidance : public SpellScriptLoader
 
                 if (Unit* target = eventInfo.GetActionTarget())
                 {
-                    int32 bp = eventInfo.GetDamageInfo()->GetDamage() > eventInfo.GetHealInfo()->GetHeal() ? eventInfo.GetDamageInfo()->GetDamage() : eventInfo.GetHealInfo()->GetHeal();
+                    int32 bp = eventInfo.GetDamageInfo()->GetDamage() > eventInfo.GetHealInfo()->GetHeal() ? (eventInfo.GetDamageInfo()->GetDamage() * 0.6f) : (eventInfo.GetHealInfo()->GetHeal() * 0.4f);
                     if (!bp)
                         return;
-
-                    bp = int32(bp * 0.40f);
 
                     _player->CastCustomSpell(target, SPELL_SHA_ANCESTRAL_GUIDANCE, &bp, NULL, NULL, true);
                 }
@@ -587,6 +579,47 @@ class spell_sha_ancestral_guidance : public SpellScriptLoader
         {
             return new spell_sha_ancestral_guidance_AuraScript();
         }
+};
+
+// Ancestral Guidance - Targetting - 114911
+class spell_sha_ancestral_guidance_targetting : public SpellScriptLoader
+{
+public:
+	spell_sha_ancestral_guidance_targetting() : SpellScriptLoader("spell_sha_ancestral_guidance_targetting") { }
+
+	class spell_sha_ancestral_guidance_targetting_SpellScript : public SpellScript
+	{
+		PrepareSpellScript(spell_sha_ancestral_guidance_targetting_SpellScript);
+
+        void TargetCorrect(std::list<WorldObject*>& targets)
+        {
+            if (!GetCaster())
+                return;
+
+            targets.clear();
+            std::list<Unit*> GetTargets;
+
+            JadeCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+            JadeCore::UnitListSearcher<JadeCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+            GetCaster()->VisitNearbyObject(40.0f, searcher);
+
+            GetTargets.sort(JadeCore::HealthPctOrderPred());
+            GetTargets.resize(3);
+
+            for (auto itr : GetTargets)
+                targets.push_back(itr);
+        }
+
+		void Register()
+		{
+			OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_ancestral_guidance_targetting_SpellScript::TargetCorrect, EFFECT_0, TARGET_UNIT_DEST_AREA_ALLY);
+		}
+	};
+
+	SpellScript* GetSpellScript() const
+	{
+		return new spell_sha_ancestral_guidance_targetting_SpellScript();
+	}
 };
 
 // Echo of the Elements - 108283
@@ -2104,6 +2137,7 @@ void AddSC_shaman_spell_scripts()
     new spell_sha_call_of_the_elements();
     new spell_sha_conductivity();
     new spell_sha_ancestral_guidance();
+    new spell_sha_ancestral_guidance_targetting();
     new spell_sha_echo_of_the_elements();
     new spell_sha_earthgrab();
     new spell_sha_stone_bulwark();

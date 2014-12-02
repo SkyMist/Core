@@ -155,14 +155,10 @@ class spell_mastery_ignite : public SpellScriptLoader
                             {
                                 float value = caster->GetFloatValue(PLAYER_MASTERY) * 1.5f / 100.0f;
 
-                                int32 bp = GetHitDamage();
-                                bp = int32(bp * value / 2);
+                                int32 bp = int32(GetHitDamage() * value / 2);
 
                                 if (target->HasAura(MASTERY_SPELL_IGNITE, caster->GetGUID()))
-                                {
                                     bp += target->GetRemainingPeriodicAmount(caster->GetGUID(), MASTERY_SPELL_IGNITE, SPELL_AURA_PERIODIC_DAMAGE);
-                                    bp = int32(bp * 0.66f);
-                                }
 
                                 caster->CastCustomSpell(target, MASTERY_SPELL_IGNITE, &bp, NULL, NULL, true);
                             }
@@ -205,18 +201,14 @@ class spell_mastery_hand_of_light : public SpellScriptLoader
                             uint32 procSpellId = GetSpellInfo()->Id ? GetSpellInfo()->Id : 0;
                             if (procSpellId != MASTERY_SPELL_HAND_OF_LIGHT)
                             {
-                                float value = caster->GetFloatValue(PLAYER_MASTERY) * 1.85f;
+                                float value = caster->GetFloatValue(PLAYER_MASTERY) * 2.10f / 100.0f;
 
-                                int32 bp = int32(GetHitDamage() * value / 100);
-
-                                // [Inquisition - 84963] does increase the holy damage done by Mastery : Hand of Light - 76672
-                                if (caster->HasAura(84963))
-                                    bp *= 1.3f;
+                                int32 bp = int32(GetHitDamage() * value);
 
                                 // Need to recalculate if damage is absorbed
                                 if (bp == 0)
                                 {
-                                    int32 absorbedDamage = int32(GetAbsorbedDamage() * value / 100);
+                                    int32 absorbedDamage = int32(GetAbsorbedDamage() * value);
                                     // If spell didn't hit, absorbedDamage will be random negative value, because of it players receive 1kk+ heal/damage from it.
                                     // 100000 - just in case, to prevent bug with high damage, because it's unreal to deal ~666k damage (666k*0.15%=100k).
                                     if (absorbedDamage > 0 && absorbedDamage < 100000)
@@ -518,7 +510,7 @@ class spell_mastery_echo_of_light : public SpellScriptLoader
                 if (!unitTarget || !plr)
                     return;
 
-                float Mastery = plr->GetFloatValue(PLAYER_MASTERY) * 1.25f / 100.0f;
+                float Mastery = plr->GetFloatValue(PLAYER_MASTERY) * 1.30f / 100.0f;
                 int32 bp = (Mastery * eventInfo.GetHealInfo()->GetHeal()) / 6;
 
                 bp += unitTarget->GetRemainingPeriodicAmount(plr->GetGUID(), SPELL_PRIEST_ECHO_OF_LIGHT, SPELL_AURA_PERIODIC_HEAL);

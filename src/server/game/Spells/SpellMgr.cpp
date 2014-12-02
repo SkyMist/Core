@@ -3478,6 +3478,9 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 15286: // Vampiric Embrace
                     spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
                     break;
+                case 78832: // Arcane Blast
+                    spellInfo->CasterAuraSpell = 0;
+                    break;
                 case 52752: // Ancestral Awakening
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
                     break;
@@ -4527,6 +4530,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[1].TargetB = 0;
                     spellInfo->Effects[2].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     spellInfo->Effects[2].TargetB = 0;
+                    spellInfo->ProcCharges = 1;
                     break;
                 case 125972:// Felin Grace
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_SAFE_FALL;
@@ -4942,6 +4946,17 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 36554: // Shadowstep
                 case 36563: // Shadowstep (trigger)
                     spellInfo->AttributesEx |= SPELL_ATTR1_NOT_BREAK_STEALTH;
+                    break;
+                case 140376: // Ring of frost (presence of mind)
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_SUMMON;
+                    spellInfo->Effects[1].TargetA = TARGET_DEST_DEST;
+                    spellInfo->Effects[1].MiscValue = 44199;
+                    spellInfo->Effects[1].MiscValueB = 3018;
+                    spellInfo->Effects[2].Effect = SPELL_EFFECT_TRIGGER_SPELL;
+                    spellInfo->Effects[2].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[2].BasePoints = 10;
+                    spellInfo->Effects[2].TriggerSpell = 136511;
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(1); // 10s
                     break;
                 case 115192:// Subterfuge
                     spellInfo->Attributes |= SPELL_ATTR0_DONT_AFFECT_SHEATH_STATE;
@@ -5533,6 +5548,10 @@ void SpellMgr::LoadSpellCustomAttr()
             // Cauterizing Flame
             case 99152:
                 spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            // Glyph of Rejuvernation
+            case 131618:
+                spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_ADD_FLAT_MODIFIER;
                 break;
             // Moonwell Chalice
             case 100403:

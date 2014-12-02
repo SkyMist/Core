@@ -1252,18 +1252,18 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                 }
                 case ENTRY_EARTH_ELEMENTAL: // Earth Elemental Totem - 2062.
                 {
-                    SetCreateHealth(m_owner->GetMaxHealth());
-                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 40));
-                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 40));
+                    SetCreateHealth(uint32(m_owner->GetMaxHealth() * 0.75f));
+                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 2.5f - (petlevel / 2) + m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.7));
+                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 2.5f - (petlevel / 2) + m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.7));
                     break;
                 }
                 case ENTRY_FIRE_ELEMENTAL: // Fire Elemental Totem - 2894.
                 {
                     SetCreateHealth(uint32(m_owner->GetMaxHealth() * 0.75f));
                     SetCreateMana(28 + 100 * petlevel);
-                    SetBonusDamage(int32(m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.4f));
-                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 30));
-                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 30));
+                    SetBonusDamage(int32(m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.55f));
+                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 2.5f - (petlevel / 2) + m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.55));
+                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 2.5f - (petlevel / 2) + m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL) * 0.55));
                     break;
                 }
                 case ENTRY_EARTH_ELEM_TOTEM: // Earth Elemental Totem - 2062.
@@ -1429,11 +1429,6 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - 30 - (petlevel / 4)));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel - 30 + (petlevel / 4)));
 
-                    break;
-                }
-                case ENTRY_HEALING_T_TOTEM: // Healing Tide Totem.
-                {
-                    SetCreateHealth(m_owner->CountPctFromMaxHealth(10));
                     break;
                 }
                 case ENTRY_GUARDIAN_KINGS_D: // Guardian of Ancient Kings.
