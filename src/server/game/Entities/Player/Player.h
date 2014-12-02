@@ -400,6 +400,55 @@ struct Runes
     }
 };
 
+enum PlayerPowerSpells
+{
+    // Warlock
+    SPELL_METAMORPHOSIS         = 103958, // Metamorphosis form removed when Demonic Fury below 40.
+    SPELL_METAMORPHOSIS2        = 54879,
+    SPELL_DEMONIC_FURY_MAXIMUM  = 131755, // When Demonic Fury is at 1000.
+    SPELL_DEMONIC_FURY_HALF     = 122738, // Gives Horns visual when Demonic Fury is at 500.
+
+    SPELL_GLYPH_VERDANT_SPHERES = 56241,  // Makes Warlock display Soul Shards / Burning Embers as Verdant Spheres.
+    SPELL_VERDANT_SPHERE_DESTRO = 123728, // Burning Embers sphere visual.
+    SPELL_VERDANT_SPHERE_AFFL   = 123730, // Soul Shards spheres visual.
+    SPELL_VERDANT_SPHERE_AFFL_2 = 123731, // Soul Shards spheres visual 2 (??).
+
+    SPELL_BURNING_EMBERS_10     = 116854,
+    SPELL_BURNING_EMBERS_20     = 116855,
+    SPELL_BURNING_EMBERS_30     = 116920,
+
+    // Glyphs / Talents
+    SPELL_VANISHING_POWDER      = 89964,
+    SPELL_DUST_OF_DISAPPEARENCE = 90647,
+    SPELL_TOME_OF_CLEAR_MIND    = 111621,
+
+    SPELL_REM_TALENT_VANISHING  = 127650,
+    SPELL_REM_TALENT_DUST       = 127649,
+    SPELL_REM_TALENT_TOME       = 113873
+};
+
+enum WarlockPets
+{
+    PET_IMP                     = 416,
+    PET_FELHUNTER               = 417,
+    PET_VOIDWALKER              = 1860,
+    PET_SUCCUBUS                = 1863,
+    PET_FELGUARD                = 17252,
+    PET_INFERNAL                = 89,
+    PET_DOOMGUARD               = 11859,
+
+    PET_WILD_IMP                = 55659, // Wild Imps talent.
+
+    // Grimoire of Supremacy talent changes.
+    PET_FEL_IMP                 = 58959, // Replaces the Imp.
+    PET_WRATHGUARD              = 58965, // Replaces the Felguard.
+    PET_VOIDLORD                = 58960, // Replaces the VoidWalker.
+    PET_SHIVARRA                = 58963, // Replaces the Succubus.
+    PET_OBSERVER                = 58964, // Replaces the Felhound.
+    PET_ABYSSAL                 = 58997, // Replaces the Infernal.
+    PET_TERRORGUARD             = 59000  // Replaces the Doomguard.
+};
+
 struct EnchantDuration
 {
     EnchantDuration() : item(NULL), slot(MAX_ENCHANTMENT_SLOT), leftduration(0) {};

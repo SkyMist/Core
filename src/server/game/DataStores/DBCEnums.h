@@ -597,36 +597,43 @@ enum VehicleSeatFlagsB
 // CurrencyTypes.dbc
 enum CurrencyTypes
 {
-    CURRENCY_TYPE_DALARAN_JEWEL             = 61,  // Jewelcrafting token WoTLK
-    CURRENCY_TYPE_EPICUREAN                 = 81,  // Cook token WoTLK
-    CURRENCY_TYPE_CHAMPION_SEAL             = 241, // Argent tournament token
-    CURRENCY_TYPE_ILLUSTROUS_JEWEL          = 361, // Jewelcrafting token Cataclysm
-    CURRENCY_TYPE_ARCHAEOLOGY_DWARF         = 384, // ARCHAEOLOGY Cataclysm
-    CURRENCY_TYPE_ARCHAEOLOGY_TROLL         = 385, // ARCHAEOLOGY Cataclysm
+    // Instances and PVP.
     CURRENCY_TYPE_CONQUEST_POINTS           = 390, // PvP
-    CURRENCY_TYPE_TOL_BARAD                 = 391, // Battleground Cataclysm
     CURRENCY_TYPE_HONOR_POINTS              = 392, // PvP
-    CURRENCY_TYPE_ARCHAEOLOGY_FOSSIL        = 393, // ARCHAEOLOGY Cataclysm
-    CURRENCY_TYPE_ARCHAEOLOGY_NIGHT_ELF     = 394, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_JUSTICE_POINTS            = 395, // PvE
     CURRENCY_TYPE_VALOR_POINTS              = 396, // PvE
+    CURRENCY_TYPE_CONQUEST_META_ARENA       = 483, // PvP
+    CURRENCY_TYPE_CONQUEST_META_RBG         = 484, // PvP
+    CURRENCY_TYPE_CONQUEST_META_RANDOM_BG   = 692, // PvP
+
+    // Professions.
+    CURRENCY_TYPE_DALARAN_JEWEL             = 61,  // Jewelcrafting token WoTLK
+    CURRENCY_TYPE_ILLUSTROUS_JEWEL          = 361, // Jewelcrafting token Cataclysm
+    CURRENCY_TYPE_ZEN_JEWEL                 = 698, // Jewelcrafting token MoP NYI
+    CURRENCY_TYPE_EPICUREAN                 = 81,  // Cooking token WoTLK
+    CURRENCY_TYPE_IRONPAW                   = 402, // Cooking token MoP
+    CURRENCY_TYPE_CHAMPION_SEAL             = 241, // Argent tournament token
+    CURRENCY_TYPE_TOL_BARAD                 = 391, // Battleground Cataclysm
+
+    // Archaeology.
+    CURRENCY_TYPE_ARCHAEOLOGY_DWARF         = 384, // ARCHAEOLOGY Cataclysm
+    CURRENCY_TYPE_ARCHAEOLOGY_TROLL         = 385, // ARCHAEOLOGY Cataclysm
+    CURRENCY_TYPE_ARCHAEOLOGY_FOSSIL        = 393, // ARCHAEOLOGY Cataclysm
+    CURRENCY_TYPE_ARCHAEOLOGY_NIGHT_ELF     = 394, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_ARCHAEOLOGY_ORC           = 397, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_ARCHAEOLOGY_DRAENEI       = 398, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_ARCHAEOLOGY_VRYKUL        = 399, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_ARCHAEOLOGY_NERUBIAN      = 400, // ARCHAEOLOGY Cataclysm
     CURRENCY_TYPE_ARCHAEOLOGY_TOLVIR        = 401, // ARCHAEOLOGY Cataclysm
-    CURRENCY_TYPE_IRONPAW                   = 402, // Cook token MoP
+    CURRENCY_TYPE_ARCHAEOLOGY_PANDAREN      = 676, // ARCHAEOLOGY MoP
+    CURRENCY_TYPE_ARCHAEOLOGY_MOGU          = 677, // ARCHAEOLOGY MoP
+
+    // Misc (Bosses, Tokens and Quests).
     CURRENCY_TYPE_WORLD_TREE                = 416, // 4.2 token Molten front
-    CURRENCY_TYPE_CONQUEST_META_ARENA       = 483, // PvP
-    CURRENCY_TYPE_CONQUEST_META_RBG         = 484, // PvP
     CURRENCY_TYPE_DARKMOON_TICKET           = 515, // Darkmoon fair
     CURRENCY_TYPE_MOTE_OF_DARKNESS          = 614, // 4.3.4 token Dragon soul
     CURRENCY_TYPE_CORRUPTED_ESSENCE         = 615, // 4.3.4 Deathwing token
-    CURRENCY_TYPE_ARCHAEOLOGY_PANDAREN      = 676, // ARCHAEOLOGY MoP
-    CURRENCY_TYPE_ARCHAEOLOGY_MOGU          = 677, // ARCHAEOLOGY MoP
     CURRENCY_TYPE_ELDER_CHARM_GOOD_FORTUNE  = 697, // LFR roll chance MoP
-    CURRENCY_TYPE_CONQUEST_META_RANDOM_BG   = 692,
-    CURRENCY_TYPE_ZEN_JEWEL                 = 698, // Jewelcrafting token MoP NYI
     CURRENCY_TYPE_LESSER_CHARM_GOOD_FORTUNE = 738, // LFR roll chance MoP
     CURRENCY_TYPE_MOGU_RUNE_FATE            = 752, // roll chance token for T15 boss
     CURRENCY_TYPE_ARCHAEOLOGY_MANTID        = 754, // ARCHAEOLOGY MoP

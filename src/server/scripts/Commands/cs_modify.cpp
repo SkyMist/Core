@@ -1416,7 +1416,7 @@ public:
 
         return true;
     }
-//demorph player or unit
+
     static bool HandleDeMorphCommand(ChatHandler* handler, const char* /*args*/)
     {
         Unit* target = handler->getSelectedUnit();
@@ -1450,11 +1450,13 @@ public:
         if (!currencyType)
             return false;
 
+        int32 precision = currencyType->Flags & CURRENCY_FLAG_HIGH_PRECISION ? CURRENCY_PRECISION : 1;
+
         uint32 amount = atoi(strtok(NULL, " "));
         if (!amount)
             return false;
 
-        target->ModifyCurrency(currencyId, amount, true, true);
+        target->ModifyCurrency(currencyId, amount * precision, true, true);
 
         return true;
     }

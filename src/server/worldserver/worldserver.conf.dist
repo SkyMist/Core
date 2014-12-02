@@ -792,7 +792,7 @@ StartPlayerMoney = 0
 #        Description: Maximum honor points a character can have.
 #        Default:     4000 (currency x100)
 
-MaxHonorPoints = 400000
+MaxHonorPoints = 4000
 
 #
 #    StartHonorPoints
@@ -806,7 +806,7 @@ StartHonorPoints = 0
 # Description: Maximum justice points a character can have.
 # Default: 4000 (Currency x100)
 
-MaxJusticePoints = 400000
+MaxJusticePoints = 4000
 
 #
 # StartJusticePoints
@@ -814,21 +814,6 @@ MaxJusticePoints = 400000
 # Default: 0
 
 StartJusticePoints = 0
-
-
-#
-#    MaxArenaPoints
-#        Description: Maximum arena points a character can have.
-#        Default:     10000
-
-MaxArenaPoints = 10000
-
-#
-#    StartArenaPoints
-#        Description: Amount of arena points that characters has after creation.
-#        Default:     0
-
-StartArenaPoints = 0
 
 #
 #    RecruitAFriend.MaxLevel
@@ -3040,10 +3025,10 @@ Currency.StartConquestPoints = 0
 #
 #    Currency.ConquestPointsDefaultWeekCap
 #        Amount of conquest points that player can earn per week
-#        Default: 1800
+#        Default: 1350
 #
 
-Currency.ConquestPointsDefaultWeekCap = 1800
+Currency.ConquestPointsDefaultWeekCap = 1350
 
 #
 #    Currency.ConquestPointsArenaReward

@@ -293,11 +293,11 @@ void WorldSession::HandleCharEnum(PreparedQueryResult result)
 void WorldSession::HandleCharEnumOpcode(WorldPacket& /*recvData*/)
 {
     time_t now = time(NULL);
-    if (now - timeCharEnumOpcode < 5)
+    if (now - timeCharEnumOpcode < 1)
         return;
     else
         timeCharEnumOpcode = now;
-    
+
     // remove expired bans
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_EXPIRED_BANS);
     CharacterDatabase.Execute(stmt);
@@ -1291,10 +1291,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     pCurrChar->SendCUFProfiles();
 
     uint32 time8 = getMSTime() - time7;
-
-    // Hackfix Remove Talent spell - Remove Glyph spell
-    pCurrChar->learnSpell(111621, false); // Reset Glyph
-    pCurrChar->learnSpell(113873, false); // Reset Talent
 
     // Druids eclipse power must be == 0 on login, so we need to remove last eclipse power
     if (pCurrChar->getClass() == CLASS_DRUID && pCurrChar->getLevel() > 20 && pCurrChar->GetSpecializationId(pCurrChar->GetActiveSpec()) == SPEC_DROOD_BALANCE)

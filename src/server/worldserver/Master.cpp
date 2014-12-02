@@ -132,12 +132,13 @@ int Master::Run()
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon)", _FULLVERSION);
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "<Ctrl-C> to stop.\n");
 
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "       __          __     ______              ");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "      / /___ _____/ /__  / ____/___  ________ ");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, " __  / / __ `/ __  / _ \\/ /   / __ \\/ ___/ _ \\");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "/ /_/ / /_/ / /_/ /  __/ /___/ /_/ / /  /  __/");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "\\____/\\__,_/\\__,_/\\___/\\____/\\____/_/   \\___/");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "http://www.pandashan.com\n");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " ############  ##   ##  ##  ##  ###    ###  ##    ###########  ###############");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " ###           ##  ##    #  #   ## #  # ##        ###              ######");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " #########     ###        ##    ##  ##  ##  ##    ##########         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "       ###     ##  ##     ##    ##  ##  ##  ##           ###         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "##########     ##   ##    ##    ##  ##  ##  ##    ##########         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "     v. 5.4.7                         C O R E ");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "  Project SkyMist 2014(c) Game Emulation <http://www.sky-mist.net/> \n");
 
     /// worldserver PID file creation
     std::string pidfile = ConfigMgr::GetStringDefault("PidFile", "");

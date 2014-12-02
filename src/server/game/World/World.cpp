@@ -815,13 +815,13 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_CURRENCY_RESET_HOUR] = ConfigMgr::GetIntDefault("Currency.ResetHour", 3);
     if (m_int_configs[CONFIG_CURRENCY_RESET_HOUR] > 23)
     {
-        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ResetHour (%i) can't be load. Set to 6.", m_int_configs[CONFIG_CURRENCY_RESET_HOUR]);
+        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ResetHour (%i) can't be loaded. Set to 6.", m_int_configs[CONFIG_CURRENCY_RESET_HOUR]);
         m_int_configs[CONFIG_CURRENCY_RESET_HOUR] = 3;
     }
     m_int_configs[CONFIG_CURRENCY_RESET_DAY] = ConfigMgr::GetIntDefault("Currency.ResetDay", 3);
     if (m_int_configs[CONFIG_CURRENCY_RESET_DAY] > 6)
     {
-        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ResetDay (%i) can't be load. Set to 3.", m_int_configs[CONFIG_CURRENCY_RESET_DAY]);
+        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ResetDay (%i) can't be loaded. Set to 3.", m_int_configs[CONFIG_CURRENCY_RESET_DAY]);
         m_int_configs[CONFIG_CURRENCY_RESET_DAY] = 3;
     }
     m_int_configs[CONFIG_CURRENCY_RESET_INTERVAL] = ConfigMgr::GetIntDefault("Currency.ResetInterval", 7);
@@ -865,11 +865,11 @@ void World::LoadConfigSettings(bool reload)
         sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.StartConquestPoints (%i) must be >= 0, set to default 0.", m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS]);
         m_int_configs[CONFIG_CURRENCY_START_CONQUEST_POINTS] = 0;
     }
-    m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = ConfigMgr::GetIntDefault("Currency.ConquestPointsWeekCap", 1800);
+    m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = ConfigMgr::GetIntDefault("Currency.ConquestPointsDefaultWeekCap", 1650);
     if (int32(m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]) <= 0)
     {
-        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ConquestPointsWeekCap (%i) must be > 0, set to default 1650.", m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]);
-        m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = 1800;
+        sLog->outError(LOG_FILTER_SERVER_LOADING, "Currency.ConquestPointsDefaultWeekCap (%i) must be > 0, set to default 1650.", m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP]);
+        m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] = 1650;
     }
     m_int_configs[CONFIG_CURRENCY_CONQUEST_POINTS_WEEK_CAP] *= 100;     //precision mod
 
@@ -1414,6 +1414,7 @@ void World::SetInitialWorldSettings()
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Trinity strings...");
     if (!sObjectMgr->LoadTrinityStrings())
         exit(1);                                            // Error message displayed in function already
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Update the realm entry in the database with the realm type from the config file
     //No SQL injection as values are treated as integers
@@ -1434,40 +1435,52 @@ void World::SetInitialWorldSettings()
     LoadDBCStores(m_dataPath);
     LoadDB2Stores(m_dataPath);
     DetectDBCLang();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SpellInfo store...");
     sSpellMgr->LoadSpellInfoStore();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading TalentSpellInfo store....");
     sSpellMgr->LoadTalentSpellInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SpellPowerInfo store....");
     sSpellMgr->LoadSpellPowerInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SkillLineAbilityMultiMap Data...");
     sSpellMgr->LoadSkillLineAbilityMap();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading spell custom attributes...");
     sSpellMgr->LoadSpellCustomAttr();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Research Site Zones...");
     sObjectMgr->LoadResearchSiteZones();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Research Site Loot...");
     sObjectMgr->LoadResearchSiteLoot();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading GameObject models...");
     LoadGameObjectModelList();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Script Names...");
     sObjectMgr->LoadScriptNames();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Instance Template...");
     sObjectMgr->LoadInstanceTemplate();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     // Must be called before `creature_respawn`/`gameobject_respawn` tables
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading instances...");
     sInstanceSaveMgr->LoadInstances();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Localization strings...");
     uint32 oldMSTime = getMSTime();
@@ -1482,383 +1495,515 @@ void World::SetInitialWorldSettings()
 
     sObjectMgr->SetDBCLocaleIndex(GetDefaultDbcLocale());        // Get once for all the locale index of DBC language (console/broadcasts)
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Localization strings loaded in %u ms", GetMSTimeDiffToNow(oldMSTime));
-
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Page Texts...");
     sObjectMgr->LoadPageTexts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Game Object Templates...");         // must be after LoadPageTexts
     sObjectMgr->LoadGameObjectTemplate();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Rank Data...");
     sSpellMgr->LoadSpellRanks();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Required Data...");
     sSpellMgr->LoadSpellRequired();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Group types...");
     sSpellMgr->LoadSpellGroups();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Learn Skills...");
     sSpellMgr->LoadSpellLearnSkills();                           // must be after LoadSpellRanks
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Learn Spells...");
     sSpellMgr->LoadSpellLearnSpells();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Proc Event conditions...");
     sSpellMgr->LoadSpellProcEvents();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Proc conditions and data...");
     sSpellMgr->LoadSpellProcs();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Bonus Data...");
     sSpellMgr->LoadSpellBonusess();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Aggro Spells Definitions...");
     sSpellMgr->LoadSpellThreats();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Group Stack Rules...");
     sSpellMgr->LoadSpellGroupStackRules();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading forbidden spells...");
     sSpellMgr->LoadForbiddenSpells();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Phase Dbc Info...");
     sObjectMgr->LoadSpellPhaseInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading NPC Texts...");
     sObjectMgr->LoadGossipText();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Enchant Spells Proc datas...");
     sSpellMgr->LoadSpellEnchantProcData();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Item Random Enchantments Table...");
     LoadRandomEnchantmentsTable();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Disables");
     DisableMgr::LoadDisables();                                 // must be before loading quests and items
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Items...");                         // must be after LoadRandomEnchantmentsTable and LoadPageTexts
     sObjectMgr->LoadItemTemplates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Item set names...");                // must be after LoadItemPrototypes
     sObjectMgr->LoadItemTemplateAddon();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_GENERAL, "Loading Item Scripts...");                 // must be after LoadItemPrototypes
     sObjectMgr->LoadItemScriptNames();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Model Based Info Data...");
     sObjectMgr->LoadCreatureModelInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Equipment templates...");
     sObjectMgr->LoadEquipmentTemplates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature templates...");
     sObjectMgr->LoadCreatureTemplates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature template addons...");
     sObjectMgr->LoadCreatureTemplateAddons();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Reputation Reward Rates...");
     sObjectMgr->LoadReputationRewardRate();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Currency Loot Templates...");
     sObjectMgr->LoadCurrencyOnKill();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Reputation OnKill Data...");
     sObjectMgr->LoadReputationOnKill();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Reputation Spillover Data...");
     sObjectMgr->LoadReputationSpilloverTemplate();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Points Of Interest Data...");
     sObjectMgr->LoadPointsOfInterest();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Base Stats...");
     sObjectMgr->LoadCreatureClassLevelStats();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Restructuring Creatures GUIDs...");
     sObjectMgr->RestructCreatureGUID(10000);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Data...");
     sObjectMgr->LoadCreatures();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Temporary Summon Data...");
     sObjectMgr->LoadTempSummons();                               // must be after LoadCreatureTemplates() and LoadGameObjectTemplates()
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading pet levelup spells...");
     sSpellMgr->LoadPetLevelupSpellMap();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading pet default spells additional to levelup spells...");
     sSpellMgr->LoadPetDefaultSpells();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Addon Data...");
     sObjectMgr->LoadCreatureAddons();                            // must be after LoadCreatureTemplates() and LoadCreatures()
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Restructuring Gameobjects GUIDs...");
     sObjectMgr->RestructGameObjectGUID(10000);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Gameobject Data...");
     sObjectMgr->LoadGameobjects();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Linked Respawn...");
     sObjectMgr->LoadLinkedRespawn();                             // must be after LoadCreatures(), LoadGameObjects()
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Weather Data...");
     WeatherMgr::LoadWeatherData();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Quests...");
     sObjectMgr->LoadQuests();                                    // must be loaded after DBCs, creature_template, item_template, gameobject tables
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Checking Quest Disables");
     DisableMgr::CheckQuestDisables();                           // must be after loading quests
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Quest POI");
     sObjectMgr->LoadQuestPOI();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Quests Relations...");
     sObjectMgr->LoadQuestRelations();                            // must be after quest load
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Objects Pooling Data...");
     sPoolMgr->LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Game Event Data...");               // must be after loading pools fully
     sGameEventMgr->LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading UNIT_NPC_FLAG_SPELLCLICK Data..."); // must be after LoadQuests
     sObjectMgr->LoadNPCSpellClickSpells();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Vehicle Template Accessories...");
     sObjectMgr->LoadVehicleTemplateAccessories();                // must be after LoadCreatureTemplates() and LoadNPCSpellClickSpells()
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Vehicle Accessories...");
     sObjectMgr->LoadVehicleAccessories();                       // must be after LoadCreatureTemplates() and LoadNPCSpellClickSpells()
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Dungeon boss data...");
     sObjectMgr->LoadInstanceEncounters();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading LFG rewards...");
     sLFGMgr->LoadRewards();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading LFG entrance positions...");
     sLFGMgr->LoadEntrancePositions();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SpellArea Data...");                // must be after quest load
     sSpellMgr->LoadSpellAreas();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell Classes Info...");
     sSpellMgr->LoadSpellClassInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading AreaTrigger definitions...");
     sObjectMgr->LoadAreaTriggerTeleports();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Access Requirements...");
     sObjectMgr->LoadAccessRequirements();                        // must be after item template load
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Quest Area Triggers...");
     sObjectMgr->LoadQuestAreaTriggers();                         // must be after LoadQuests
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Tavern Area Triggers...");
     sObjectMgr->LoadTavernAreaTriggers();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading AreaTrigger script names...");
     sObjectMgr->LoadAreaTriggerScripts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Graveyard-zone links...");
     sObjectMgr->LoadGraveyardZones();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading spell pet auras...");
     sSpellMgr->LoadSpellPetAuras();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Spell target coordinates...");
     sSpellMgr->LoadSpellTargetPositions();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading enchant custom attributes...");
     sSpellMgr->LoadEnchantCustomAttr();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading linked spells...");
     sSpellMgr->LoadSpellLinked();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Player Create Data...");
     sObjectMgr->LoadPlayerInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Exploration BaseXP Data...");
     sObjectMgr->LoadExplorationBaseXP();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Pet Name Parts...");
     sObjectMgr->LoadPetNames();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     CharacterDatabaseCleaner::CleanDatabase();
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading the max pet number...");
     sObjectMgr->LoadPetNumber();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading pet level stats...");
     sObjectMgr->LoadPetLevelInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Player Corpses...");
     sObjectMgr->LoadCorpses();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Player level dependent mail rewards...");
     sObjectMgr->LoadMailLevelRewards();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     // Loot tables
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading loot tables...");
     LoadLootTables();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Skill Discovery Table...");
     LoadSkillDiscoveryTable();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Skill Extra Item Table...");
     LoadSkillExtraItemTable();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Skill Fishing base level requirements...");
     sObjectMgr->LoadFishingBaseSkillLevel();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Achievements...");
     sAchievementMgr->LoadAchievementReferenceList();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Achievement Criteria Lists...");
     sAchievementMgr->LoadAchievementCriteriaList();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Achievement Criteria Data...");
     sAchievementMgr->LoadAchievementCriteriaData();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Achievement Rewards...");
     sAchievementMgr->LoadRewards();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Achievement Reward Locales...");
     sAchievementMgr->LoadRewardLocales();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Completed Achievements...");
     sAchievementMgr->LoadCompletedAchievements();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     // Delete expired auctions before loading
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Deleting expired auctions...");
     sAuctionMgr->DeleteExpiredAuctionsAtStartup();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Load dynamic data tables from the database
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Item Auctions...");
     sAuctionMgr->LoadAuctionItems();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Auctions...");
     sAuctionMgr->LoadAuctions();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Guild XP for level...");
     sGuildMgr->LoadGuildXpForLevel();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Guild rewards...");
     sGuildMgr->LoadGuildRewards();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Guilds...");
     sGuildMgr->LoadGuilds();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Guild Finder...");
     sGuildFinderMgr->LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Groups...");
     sGroupMgr->LoadGroups();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading ReservedNames...");
     sObjectMgr->LoadReservedPlayersNames();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading GameObjects for quests...");
     sObjectMgr->LoadGameObjectForQuests();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading BattleMasters...");
     sBattlegroundMgr->LoadBattleMastersEntry();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading GameTeleports...");
     sObjectMgr->LoadGameTele();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Gossip menu...");
     sObjectMgr->LoadGossipMenu();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Gossip menu options...");
     sObjectMgr->LoadGossipMenuItems();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Vendors...");
     sObjectMgr->LoadVendors();                                   // must be after load CreatureTemplate and ItemTemplate
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Trainers...");
     sObjectMgr->LoadTrainerSpell();                              // must be after load CreatureTemplate
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Waypoints...");
     sWaypointMgr->Load();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SmartAI Waypoints...");
     sSmartWaypointMgr->LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Formations...");
     sFormationMgr->LoadCreatureFormations();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading World States...");              // must be loaded before battleground, outdoor PvP and conditions
     LoadWorldStates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Phase definitions...");
     sObjectMgr->LoadPhaseDefinitions();
-
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Conditions...");
     sConditionMgr->LoadConditions();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading faction change achievement pairs...");
     sObjectMgr->LoadFactionChangeAchievements();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading faction change spell pairs...");
     sObjectMgr->LoadFactionChangeSpells();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading faction change item pairs...");
     sObjectMgr->LoadFactionChangeItems();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading faction change reputation pairs...");
     sObjectMgr->LoadFactionChangeReputations();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading faction change title pairs...");
     sObjectMgr->LoadFactionChangeTitles();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading GM tickets...");
     sTicketMgr->LoadTickets();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading GM surveys...");
     sTicketMgr->LoadSurveys();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading client addons...");
     AddonMgr::LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Handle outdated emails (delete/return)
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Returning old mails...");
     sObjectMgr->ReturnOrDeleteOldMails(false);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Autobroadcasts...");
     LoadAutobroadcasts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Load and initialize scripts
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Quest / Spell / GO / Event / Waypoint Scripts...");
     sObjectMgr->LoadQuestStartScripts();                         // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
     sObjectMgr->LoadQuestEndScripts();                           // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
     sObjectMgr->LoadSpellScripts();                              // must be after load Creature/Gameobject(Template/Data)
     sObjectMgr->LoadGameObjectScripts();                         // must be after load Creature/Gameobject(Template/Data)
     sObjectMgr->LoadEventScripts();                              // must be after load Creature/Gameobject(Template/Data)
     sObjectMgr->LoadWaypointScripts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Scripts text locales...");      // must be after Load*Scripts calls
     sObjectMgr->LoadDbScriptStrings();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading spell script names...");
     sObjectMgr->LoadSpellScriptNames();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Texts...");
     sCreatureTextMgr->LoadCreatureTexts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Creature Text Locales...");
     sCreatureTextMgr->LoadCreatureTextLocales();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Initializing Scripts...");
     sScriptMgr->Initialize();
     sScriptMgr->OnConfigLoad(false);                                // must be done after the ScriptMgr has been properly initialized
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Validating spell scripts...");
     sObjectMgr->ValidateSpellScripts();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading SmartAI scripts...");
     sSmartScriptMgr->LoadSmartAIFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Calendar data...");
     sCalendarMgr->LoadFromDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Initialize game time and timers
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Initialize game time and timers");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Initializing game time and timers...");
     m_gameTime = time(NULL);
     m_startTime = m_gameTime;
 
@@ -1892,91 +2037,129 @@ void World::SetInitialWorldSettings()
                                                             //1440
     mail_timer_expires = ((DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Mail timer set to: " UI64FMTD ", mail return is called every " UI64FMTD " minutes", uint64(mail_timer), uint64(mail_timer_expires));
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    ///- Initilize static helper structures
+    ///- Initialize static helper structures
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting AIRegistry...");
     AIRegistry::Initialize();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Initialize MapManager
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Map System");
     sMapMgr->Initialize();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Game Event system...");
     uint32 nextGameEvent = sGameEventMgr->StartSystem();
     m_timers[WUPDATE_EVENTS].SetInterval(nextGameEvent);    //depend on next event
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     // Delete all characters which have been deleted X days before
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Deleting obsolete deleted Characters...");
     Player::DeleteOldCharacters();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     // Delete all custom channels which haven't been used for PreserveCustomChannelDuration days.
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Cleaning up old Channels...");
     Channel::CleanOldChannelsInDB();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Arena Season...");
     sGameEventMgr->StartArenaSeason();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Ticket system...");
     sTicketMgr->Initialize();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Initialize Battlegrounds
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Battleground System");
     sBattlegroundMgr->CreateInitialBattlegrounds();
     //sBattlegroundMgr->InitAutomaticArenaPointDistribution();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    ///- Initialize outdoor pvp
+    ///- Initialize Outdoor PvP
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Outdoor PvP System");
     sOutdoorPvPMgr->InitOutdoorPvP();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    ///- Initialize Battlefield
+    ///- Initialize Battlefields
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Starting Battlefield System");
     sBattlefieldMgr->InitBattlefield();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    //sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Transports...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Transports...");
     sMapMgr->LoadTransports();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    //sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Transport NPCs...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Transport NPCs...");
     sMapMgr->LoadTransportNPCs();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     ///- Initialize Warden
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Warden Checks...");
     sWardenCheckMgr->LoadWardenChecks();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Warden Action Overrides...");
     sWardenCheckMgr->LoadWardenOverrides();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Deleting expired bans...");
     LoginDatabase.Execute("DELETE FROM ip_banned WHERE unbandate <= UNIX_TIMESTAMP() AND unbandate<>bandate");      // One-time query
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculate next daily quest reset time...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating next daily quest reset time...");
     InitDailyQuestResetTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculate next weekly quest reset time...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating next weekly quest reset time...");
     InitWeeklyQuestResetTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculate next monthly quest reset time...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating next monthly quest reset time...");
     InitMonthlyQuestResetTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculate random battleground reset time...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating random battleground reset time...");
     InitRandomBGResetTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating next currency reset time...");
+    InitCurrencyResetTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Calculating next Auto Restart time...");
     InitServerAutoRestartTime();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Character names...");
     LoadCharacterNameData();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_GENERAL, "Initializing Opcodes...");
     InitOpcodes();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_GENERAL, "Loading hotfix info...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Loading Hotfix info...");
     sObjectMgr->LoadHotfixData();
-    
-    sLog->outInfo(LOG_FILTER_GENERAL, "Loading item extended cost...");
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
+    sLog->outInfo(LOG_FILTER_GENERAL, "Loading Item extended costs...");
     sObjectMgr->LoadItemExtendedCost();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_GENERAL, "Loading guild challenge rewards...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Loading Guild Challenge rewards...");
     sObjectMgr->LoadGuildChallengeRewardInfo();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_GENERAL, "Loading black market templates...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Loading Black Market templates...");
     sBlackMarketMgr->LoadTemplates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_GENERAL, "Loading black market auctions...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Loading Black Market auctions...");
     sBlackMarketMgr->LoadAuctions();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_GENERAL, "Loading realm name...");
 
@@ -1984,12 +2167,15 @@ void World::SetInitialWorldSettings()
     QueryResult realmResult = LoginDatabase.PQuery("SELECT name FROM realmlist WHERE id = %u", realmID);
     if (realmResult)
         m_realmName = (*realmResult)[0].GetString();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     sLog->outInfo(LOG_FILTER_GENERAL, "Loading area skip update...");
     sObjectMgr->LoadSkipUpdateZone();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    sLog->outInfo(LOG_FILTER_GENERAL, "Initializing item upgrade datas...");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Initializing Item Upgrades data...");
     sSpellMgr->InitializeItemUpgradeDatas();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
@@ -2150,9 +2336,15 @@ void World::Update(uint32 diff)
     if (m_gameTime > m_NextMonthlyQuestReset)
         ResetMonthlyQuests();
 
+    /// Handle Random BG reset.
     if (m_gameTime > m_NextRandomBGReset)
         ResetRandomBG();
 
+    /// Handle Currency caps reset.
+    if (m_gameTime > m_NextCurrencyReset)
+        ResetCurrencyWeekCap();
+
+    /// Handle Server Auto-restarts.
     if (m_gameTime > m_NextServerRestart)
         AutoRestartServer();
 
@@ -3068,6 +3260,32 @@ void World::InitRandomBGResetTime()
 
 void World::InitCurrencyResetTime()
 {
+    time_t currencyResetTime = uint64(sWorld->getWorldState(WS_CURRENCY_RESET_TIME));
+    if (!currencyResetTime)
+        m_NextCurrencyReset = time_t(time(NULL));         // game time not yet init
+
+    // generate time by config
+    time_t curTime = time(NULL);
+    tm localTm;
+    ACE_OS::localtime_r(&curTime, &localTm);
+
+    localTm.tm_wday = getIntConfig(CONFIG_CURRENCY_RESET_DAY);
+    localTm.tm_hour = getIntConfig(CONFIG_CURRENCY_RESET_HOUR);
+    localTm.tm_min = 0;
+    localTm.tm_sec = 0;
+
+    // current week reset time
+    time_t nextWeekResetTime = mktime(&localTm);
+
+    // next reset time before current moment
+    if (curTime >= nextWeekResetTime)
+        nextWeekResetTime += getIntConfig(CONFIG_CURRENCY_RESET_INTERVAL) * DAY;
+
+    // normalize reset time
+    m_NextCurrencyReset = currencyResetTime < curTime ? nextWeekResetTime - (getIntConfig(CONFIG_CURRENCY_RESET_INTERVAL) * DAY) : nextWeekResetTime;
+
+    if (!currencyResetTime)
+        sWorld->setWorldState(WS_CURRENCY_RESET_TIME, uint64(m_NextCurrencyReset));
 }
 
 void World::InitServerAutoRestartTime()
@@ -3094,11 +3312,11 @@ void World::InitServerAutoRestartTime()
     // normalize reset time
     m_NextServerRestart = serverRestartTime < curTime ? nextDayRestartTime - DAY : nextDayRestartTime;
 
+    if (sWorld->getBoolConfig(CONFIG_DISABLE_RESTART))
+        m_NextServerRestart = time_t(m_NextServerRestart + DAY);
+
     if (!serverRestartTime)
         sWorld->setWorldState(WS_AUTO_SERVER_RESTART_TIME, uint64(m_NextServerRestart));
-
-    if (m_bool_configs[CONFIG_DISABLE_RESTART])
-        m_NextServerRestart += DAY*1;
 }
 
 void World::ResetDailyQuests()
@@ -3247,6 +3465,13 @@ void World::ResetRandomBG()
 
 void World::AutoRestartServer()
 {
+    // Do not restart the server if the restarts are disabled.
+    if (sWorld->getBoolConfig(CONFIG_DISABLE_RESTART))
+    {
+        m_NextServerRestart = time_t(m_NextServerRestart + DAY);
+        return;
+    }
+
     sLog->outInfo(LOG_FILTER_GENERAL, "Automatic server restart.");
 
     sWorld->ShutdownServ(120, SHUTDOWN_MASK_RESTART, RESTART_EXIT_CODE);
