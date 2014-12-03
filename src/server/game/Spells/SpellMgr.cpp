@@ -4232,6 +4232,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[1].Effect = 0;
                     break;
                 case 124271:// Sanguinary Vein
+				    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_OBS_MOD_HEALTH;
                     spellInfo->Effects[0].BasePoints = 35;
                     break;
                 case 84601: // Assassin's Resolve

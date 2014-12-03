@@ -3279,7 +3279,7 @@ void AddSC_priest_spell_scripts()
     new spell_pri_divine_insight_discipline();
     new spell_pri_holy_word_sanctuary();
     new spell_pri_chakra_chastise();
-    //new spell_pri_lightwell_renew();
+    new spell_pri_lightwell_renew();
     new spell_pri_strength_of_soul();
     new spell_pri_grace();
     new spell_pri_train_of_thought();
@@ -3318,7 +3318,7 @@ void AddSC_priest_spell_scripts()
     new spell_pri_glyph_of_shadow_word_death();
     new spell_pri_of_shadow_word_death_spell_glyph();
     new spell_pri_mind_blast();
-    //new spell_pri_glyph_of_player_of_mending();
+    new spell_pri_glyph_of_player_of_mending();
     new spell_binding_heal();
     new spell_pri_spectral_guise();
     new spell_priest_divine_star();
