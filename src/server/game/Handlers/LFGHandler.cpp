@@ -255,7 +255,7 @@ void WorldSession::HandleLfgLockInfoRequestOpcode(WorldPacket& recvData)
         LfgReward const* reward = sLFGMgr->GetRandomDungeonReward(*it, level);
         Quest const* qRew = NULL;
 
-        bool done = 0;
+        bool done = false;
         if (reward)
         {
             qRew = sObjectMgr->GetQuestTemplate(reward->reward[0].questId);
@@ -327,7 +327,6 @@ void WorldSession::HandleLfgLockInfoRequestOpcode(WorldPacket& recvData)
                         continue;
 
                     data << uint32(qRew->RewardCurrencyId[i]);
-                    data << uint32(0);
                     data << uint32(qRew->RewardCurrencyCount[i]);
                 }
             }
@@ -550,7 +549,7 @@ void WorldSession::HandleLfrLeaveOpcode(WorldPacket& recvData)
 }
 void WorldSession::HandleLfgGetStatus(WorldPacket& /*recvData*/)
 {
-    sLog->outDebug(LOG_FILTER_LFG, "CMSG_LFG_GET_STATUS %s", GetPlayer()->GetGUID());
+    sLog->outDebug(LOG_FILTER_LFG, "CMSG_LFG_GET_STATUS [" UI64FMTD "]", GetPlayer()->GetGUID());
 
     uint64 guid = GetPlayer()->GetGUID();
     LfgUpdateData updateData = sLFGMgr->GetLfgStatus(guid);

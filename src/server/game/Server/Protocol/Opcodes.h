@@ -320,7 +320,7 @@ enum Opcodes
     CMSG_MESSAGECHAT_ADDON_OFFICER                    = 0x0000,
     CMSG_MESSAGECHAT_ADDON_PARTY                      = 0x0C40, // 5.4.7 18019
     CMSG_MESSAGECHAT_ADDON_RAID                       = 0x1740, // 5.4.7 18019
-    CMSG_MESSAGECHAT_ADDON_WHISPER                    = 0x0D09, // 5.4.7 18019 - CHECK!
+    CMSG_MESSAGECHAT_ADDON_WHISPER                    = 0x0D09, // 5.4.7 18019 Not implemented - CHECK!
     CMSG_MESSAGECHAT_AFK                              = 0x0422, // 5.4.7 18019
     CMSG_MESSAGECHAT_BATTLEGROUND                     = 0x0F02, // 5.4.7 18019
     CMSG_MESSAGECHAT_CHANNEL                          = 0x0904, // 5.4.7 18019
