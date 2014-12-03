@@ -1588,8 +1588,8 @@ class spell_pri_devouring_plague : public SpellScriptLoader
                 if (!GetCaster())
                     return;
 
-                powerUsed = GetCaster()->GetPower(POWER_SHADOW_ORB) + 1;
-                GetCaster()->SetPower(POWER_SHADOW_ORB, 0);
+                powerUsed = GetCaster()->GetPower(POWER_SHADOW_ORBS) + 1;
+                GetCaster()->SetPower(POWER_SHADOW_ORBS, 0);
 
                 // Calculate SpellPower from Intellect.
                 int32 spellPower = GetCaster()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY);
@@ -2322,8 +2322,8 @@ class spell_pri_psychic_horror : public SpellScriptLoader
                     {
                         if (caster->ToPlayer() && caster->ToPlayer()->GetSpecializationId(caster->ToPlayer()->GetActiveSpec()) == SPEC_PRIEST_SHADOW)
                         {
-                            int32 currentPower = caster->GetPower(POWER_SHADOW_ORB);
-                            caster->ModifyPower(POWER_SHADOW_ORB, -currentPower);
+                            int32 currentPower = caster->GetPower(POWER_SHADOW_ORBS);
+                            caster->ModifyPower(POWER_SHADOW_ORBS, -currentPower);
 
                             // +1s per Shadow Orb consumed
                             if (AuraPtr psychicHorror = target->GetAura(64044))

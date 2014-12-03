@@ -2162,7 +2162,7 @@ class Player : public Unit, public GridObject<Player>
             }
         }
         
-        // Arena
+        // Arenas / PvP other stuff (based on input slot). General PvP slots access functions.
         uint32 GetArenaPersonalRating(uint8 slot) const { ASSERT(slot < MAX_PVP_SLOT); return m_ArenaPersonalRating[slot]; }
         uint32 GetBestRatingOfWeek(uint8 slot) const { ASSERT(slot < MAX_PVP_SLOT); return m_BestRatingOfWeek[slot]; }
         uint32 GetBestRatingOfSeason(uint8 slot) const { ASSERT(slot < MAX_PVP_SLOT); return m_BestRatingOfSeason[slot]; }
@@ -2186,6 +2186,17 @@ class Player : public Unit, public GridObject<Player>
                 if (max_value < GetArenaPersonalRating(i))
                     max_value = GetArenaPersonalRating(i);
             }
+
+            return max_value;
+        }
+
+        uint32 GetMaxArenaRating() const
+        {
+            uint32 max_value = 0;
+
+            for (uint8 i = 0; i < MAX_ARENA_SLOT; i++)
+                if (max_value < GetArenaPersonalRating(i))
+                    max_value = GetArenaPersonalRating(i);
 
             return max_value;
         }
@@ -2219,6 +2230,15 @@ class Player : public Unit, public GridObject<Player>
 
             m_ArenaMatchMakerRating[slot] = value;
         }
+
+        // Rated BG's.
+        uint32 GetRatedBGRating() { return GetArenaPersonalRating(SLOT_RBG); }
+        void SetRatedBGRating(uint32 count) { SetArenaPersonalRating(SLOT_RBG, count); }
+
+        uint32 GetRatedBGMMRRating() { return GetArenaMatchMakerRating(SLOT_RBG); }
+        void SetRatedBGMMRRating(uint32 count) { SetArenaMatchMakerRating(SLOT_RBG, count); }
+
+        // Week / Season PvP stuff.
         void IncrementWeekGames(uint8 slot) { ASSERT(slot < MAX_PVP_SLOT); ++m_WeekGames[slot]; }
         void IncrementWeekWins(uint8 slot) { ASSERT(slot < MAX_PVP_SLOT); ++m_WeekWins[slot]; }
         void IncrementSeasonGames(uint8 slot) { ASSERT(slot < MAX_PVP_SLOT); ++m_SeasonGames[slot]; }

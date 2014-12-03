@@ -15438,9 +15438,9 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
         gain = maxPower - curPower;
     }
 
-    if (power == POWER_SHADOW_ORB)
+    if (power == POWER_SHADOW_ORBS)
     {
-        if (GetPower(POWER_SHADOW_ORB) > 0)
+        if (GetPower(POWER_SHADOW_ORBS) > 0)
         {
             // Shadow Orb visual
             if (!HasAura(77487) && !HasAura(57985))
@@ -16400,7 +16400,7 @@ bool Unit::CanIgnoreMinRange(Unit const* target, SpellInfo const* spellInfo) con
     switch (target->GetEntry())
     {   
         case 55294:  // Ultraxion
-        case 56188: // Blistering Tentacle
+        case 56188:  // Blistering Tentacle
             return true;
     }
     return false;
@@ -16453,12 +16453,13 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case TOTAL_VALUE:
             m_auraModifiersGroup[unitMod][modifierType] += apply ? amount : -amount;
             break;
+
         case BASE_PCT:
         case TOTAL_PCT:
             ApplyPercentModFloatVar(m_auraModifiersGroup[unitMod][modifierType], amount, apply);
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     if (!CanModifyStats())
@@ -16470,53 +16471,47 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_STAT_AGILITY:
         case UNIT_MOD_STAT_STAMINA:
         case UNIT_MOD_STAT_INTELLECT:
-        case UNIT_MOD_STAT_SPIRIT:
-            UpdateStats(GetStatByAuraGroup(unitMod));
-            break;
-        case UNIT_MOD_ARMOR:
-            UpdateArmor();
-            break;
-        case UNIT_MOD_HEALTH:
-            UpdateMaxHealth();
-            break;
+        case UNIT_MOD_STAT_SPIRIT:         UpdateStats(GetStatByAuraGroup(unitMod));         break;
+
+        case UNIT_MOD_ARMOR:               UpdateArmor();                                    break;
+        case UNIT_MOD_HEALTH:              UpdateMaxHealth();                                break;
+
         case UNIT_MOD_MANA:
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_RUNE:
+        case UNIT_MOD_LIGHT_FORCE:
+        case UNIT_MOD_RUNES:
         case UNIT_MOD_RUNIC_POWER:
-        case UNIT_MOD_CHI:
-        case UNIT_MOD_BURNING_EMBERS:
         case UNIT_MOD_SOUL_SHARDS:
+        case UNIT_MOD_ECLIPSE:
+        case UNIT_MOD_HOLY_POWER:
+        case UNIT_MOD_ALTERNATIVE:
+        case UNIT_MOD_DARK_FORCE:
+        case UNIT_MOD_CHI:
+        case UNIT_MOD_SHADOW_ORBS:
+        case UNIT_MOD_BURNING_EMBERS:
         case UNIT_MOD_DEMONIC_FURY:
-        case UNIT_MOD_SHADOW_ORB:
-            UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod));
-            break;
+        case UNIT_MOD_ARCANE_CHARGES:      UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
+
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
         case UNIT_MOD_RESISTANCE_NATURE:
         case UNIT_MOD_RESISTANCE_FROST:
         case UNIT_MOD_RESISTANCE_SHADOW:
-        case UNIT_MOD_RESISTANCE_ARCANE:
-            UpdateResistances(GetSpellSchoolByAuraGroup(unitMod));
-            break;
-        case UNIT_MOD_ATTACK_POWER:
-            UpdateAttackPowerAndDamage();
-            break;
-        case UNIT_MOD_ATTACK_POWER_RANGED:
-            UpdateAttackPowerAndDamage(true);
-            break;
-        case UNIT_MOD_DAMAGE_MAINHAND:
-            UpdateDamagePhysical(BASE_ATTACK);
-            break;
-        case UNIT_MOD_DAMAGE_OFFHAND:
-            UpdateDamagePhysical(OFF_ATTACK);
-            break;
-        case UNIT_MOD_DAMAGE_RANGED:
-            UpdateDamagePhysical(RANGED_ATTACK);
-            break;
-        default:
-            break;
+        case UNIT_MOD_RESISTANCE_ARCANE:   UpdateResistances(GetSpellSchoolByAuraGroup(unitMod)); break;
+
+        case UNIT_MOD_ATTACK_POWER:        UpdateAttackPowerAndDamage();         break;
+
+        case UNIT_MOD_ATTACK_POWER_RANGED: UpdateAttackPowerAndDamage(true);     break;
+
+        case UNIT_MOD_DAMAGE_MAINHAND:     UpdateDamagePhysical(BASE_ATTACK);    break;
+
+        case UNIT_MOD_DAMAGE_OFFHAND:      UpdateDamagePhysical(OFF_ATTACK);     break;
+
+        case UNIT_MOD_DAMAGE_RANGED:       UpdateDamagePhysical(RANGED_ATTACK);  break;
+
+        default: break;
     }
 
     return true;
@@ -16608,31 +16603,25 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
 {
     switch (unitMod)
     {
-        case UNIT_MOD_RAGE:
-            return POWER_RAGE;
-        case UNIT_MOD_FOCUS:
-            return POWER_FOCUS;
-        case UNIT_MOD_ENERGY:
-            return POWER_ENERGY;
-        case UNIT_MOD_RUNE:
-            return POWER_RUNES;
-        case UNIT_MOD_RUNIC_POWER:
-            return POWER_RUNIC_POWER;
-        case UNIT_MOD_CHI:
-            return POWER_CHI;
-        case UNIT_MOD_HOLY_POWER:
-            return POWER_HOLY_POWER;
-        case UNIT_MOD_SHADOW_ORB:
-            return POWER_SHADOW_ORB;
-        case UNIT_MOD_BURNING_EMBERS:
-            return POWER_BURNING_EMBERS;
-        case UNIT_MOD_DEMONIC_FURY:
-            return POWER_DEMONIC_FURY;
-        case UNIT_MOD_SOUL_SHARDS:
-            return POWER_SOUL_SHARDS;
+        case UNIT_MOD_RAGE:           return POWER_RAGE;
+        case UNIT_MOD_FOCUS:          return POWER_FOCUS;
+        case UNIT_MOD_ENERGY:         return POWER_ENERGY;
+        case UNIT_MOD_LIGHT_FORCE:    return POWER_LIGHT_FORCE;
+        case UNIT_MOD_RUNES:          return POWER_RUNES;
+        case UNIT_MOD_RUNIC_POWER:    return POWER_RUNIC_POWER;
+        case UNIT_MOD_SOUL_SHARDS:    return POWER_SOUL_SHARDS;
+        case UNIT_MOD_ECLIPSE:        return POWER_ECLIPSE;
+        case UNIT_MOD_HOLY_POWER:     return POWER_HOLY_POWER;
+        case UNIT_MOD_ALTERNATIVE:    return POWER_ALTERNATE_POWER;
+        case UNIT_MOD_DARK_FORCE:     return POWER_DARK_FORCE;
+        case UNIT_MOD_CHI:            return POWER_CHI;
+        case UNIT_MOD_SHADOW_ORBS:    return POWER_SHADOW_ORBS;
+        case UNIT_MOD_BURNING_EMBERS: return POWER_BURNING_EMBERS;
+        case UNIT_MOD_DEMONIC_FURY:   return POWER_DEMONIC_FURY;
+        case UNIT_MOD_ARCANE_CHARGES: return POWER_ARCANE_CHARGES;
+
         case UNIT_MOD_MANA:
-        default:
-            return POWER_MANA;
+        default:                      return POWER_MANA;
     }
 }
 
@@ -16762,8 +16751,8 @@ uint32 Unit::GetPowerIndexByClass(uint32 powerId, uint32 classId) const
                 return 0;
         }
     }
-        
-    return sChrClassXPowerTypesStore[classId][powerId];
+
+    return GetPowerByClass(powerId, classId);
 };
 
 int32 Unit::GetPower(Powers power) const
@@ -16821,26 +16810,31 @@ void Unit::SetPower(Powers power, int32 val, bool regen)
         data.WriteBit(guid[3]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[4]);
+
         int powerCounter = 1;
         data.WriteBits(powerCounter, 21);
+
         data.WriteBit(guid[2]);
         data.WriteBit(guid[1]);
         data.WriteBit(guid[7]);
         data.WriteBit(guid[5]);
         data.WriteBit(guid[0]);
 
+        data.FlushBits();
+
         data.WriteByteSeq(guid[3]);
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[1]);
+
         data << uint8(power);
         data << int32(val);
+
         data.WriteByteSeq(guid[0]);
         data.WriteByteSeq(guid[4]);
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[2]);
 
-        //ToPlayer()->GetSession()->SendPacket(&data);
         SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER);
     }
 
@@ -16934,7 +16928,7 @@ int32 Unit::GetCreatePowers(Powers power) const
             return 1000;
         case POWER_RUNES:
             return 0;
-        case POWER_SHADOW_ORB:
+        case POWER_SHADOW_ORBS:
             return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_PRIEST_SHADOW) ? 3 : 0);
         case POWER_BURNING_EMBERS:
             return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION) ? 40 : 0);

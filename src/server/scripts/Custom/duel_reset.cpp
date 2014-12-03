@@ -88,8 +88,8 @@ class duel_reset : public PlayerScript
                                 case POWER_BURNING_EMBERS:
                                     player1->SetPower(POWER_BURNING_EMBERS, 0);
                                     break;
-                                case POWER_SHADOW_ORB:
-                                    player1->SetPower(POWER_SHADOW_ORB, 0);
+                                case POWER_SHADOW_ORBS:
+                                    player1->SetPower(POWER_SHADOW_ORBS, 0);
                                     break;
                                 case POWER_SOUL_SHARDS:
                                     player1->SetPower(POWER_SOUL_SHARDS, 0);
@@ -136,8 +136,8 @@ class duel_reset : public PlayerScript
                                 case POWER_BURNING_EMBERS:
                                     player1->SetPower(POWER_BURNING_EMBERS, player1->GetMaxPower(POWER_BURNING_EMBERS));
                                     break;
-                                case POWER_SHADOW_ORB:
-                                    player1->SetPower(POWER_SHADOW_ORB, player1->GetMaxPower(POWER_SHADOW_ORB));
+                                case POWER_SHADOW_ORBS:
+                                    player1->SetPower(POWER_SHADOW_ORBS, player1->GetMaxPower(POWER_SHADOW_ORBS));
                                     break;
                                 case POWER_FOCUS:
                                     player1->SetPower(POWER_FOCUS, player1->GetMaxPower(POWER_FOCUS));
@@ -175,8 +175,8 @@ class duel_reset : public PlayerScript
                                 case POWER_BURNING_EMBERS:
                                     player2->SetPower(POWER_BURNING_EMBERS, player2->GetMaxPower(POWER_BURNING_EMBERS));
                                     break;
-                                case POWER_SHADOW_ORB:
-                                    player2->SetPower(POWER_SHADOW_ORB, player2->GetMaxPower(POWER_SHADOW_ORB));
+                                case POWER_SHADOW_ORBS:
+                                    player2->SetPower(POWER_SHADOW_ORBS, player2->GetMaxPower(POWER_SHADOW_ORBS));
                                     break;
                                 case POWER_FOCUS:
                                     player2->SetPower(POWER_FOCUS, player2->GetMaxPower(POWER_FOCUS));
@@ -225,8 +225,8 @@ class duel_reset : public PlayerScript
                             case POWER_BURNING_EMBERS:
                                 player1->SetPower(POWER_BURNING_EMBERS, player1->GetMaxPower(POWER_BURNING_EMBERS));
                                 break;
-                            case POWER_SHADOW_ORB:
-                                player1->SetPower(POWER_SHADOW_ORB, player1->GetMaxPower(POWER_SHADOW_ORB));
+                            case POWER_SHADOW_ORBS:
+                                player1->SetPower(POWER_SHADOW_ORBS, player1->GetMaxPower(POWER_SHADOW_ORBS));
                                 break;
                             case POWER_FOCUS:
                                 player1->SetPower(POWER_FOCUS, player1->GetMaxPower(POWER_FOCUS));
@@ -264,8 +264,8 @@ class duel_reset : public PlayerScript
                             case POWER_BURNING_EMBERS:
                                 player2->SetPower(POWER_BURNING_EMBERS, player2->GetMaxPower(POWER_BURNING_EMBERS));
                                 break;
-                            case POWER_SHADOW_ORB:
-                                player2->SetPower(POWER_SHADOW_ORB, player2->GetMaxPower(POWER_SHADOW_ORB));
+                            case POWER_SHADOW_ORBS:
+                                player2->SetPower(POWER_SHADOW_ORBS, player2->GetMaxPower(POWER_SHADOW_ORBS));
                                 break;
                             case POWER_FOCUS:
                                 player2->SetPower(POWER_FOCUS, player2->GetMaxPower(POWER_FOCUS));

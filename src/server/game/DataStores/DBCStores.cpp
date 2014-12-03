@@ -73,7 +73,7 @@ DBCStorage <ChrClassesEntry>              sChrClassesStore(ChrClassesEntryfmt);
 DBCStorage <ChrRacesEntry>                sChrRacesStore(ChrRacesEntryfmt);
 DBCStorage <ChrPowerTypesEntry>           sChrPowerTypesStore(ChrClassesXPowerTypesfmt);
 
-uint32 sChrClassXPowerTypesStore[MAX_CLASSES][MAX_POWERS];
+uint32 PowersByClass[MAX_CLASSES][MAX_POWERS];
 
 DBCStorage <ChrSpecializationsEntry>      sChrSpecializationsStore(ChrSpecializationsfmt);
 
@@ -358,32 +358,25 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrClassesStore,             dbcPath, "ChrClasses.dbc");                                                   // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrRacesStore,               dbcPath, "ChrRaces.dbc");                                                     // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrPowerTypesStore,          dbcPath, "ChrClassesXPowerTypes.dbc");                                        // 17399
+
     for (uint32 i = 0; i < MAX_CLASSES; ++i)
-    {
         for (uint32 j = 0; j < MAX_POWERS; ++j)
-            sChrClassXPowerTypesStore[i][j] = INVALID_POWER_INDEX;
-    }
+            PowersByClass[i][j] = INVALID_POWER_INDEX;
+
     for (uint32 i = 0; i < sChrPowerTypesStore.GetNumRows(); ++i)
     {
-        ChrPowerTypesEntry const* entry = sChrPowerTypesStore.LookupEntry(i);
-        if (!entry)
-            continue;
-
-        ASSERT(entry->classId < MAX_CLASSES && "MAX_CLASSES not updated");
-        ASSERT(entry->power < MAX_POWERS && "MAX_POWERS not updated");
-
-        uint32 index = 0;
-
-        for (uint32 j = 0; j < MAX_POWERS; ++j)
+        if (ChrPowerTypesEntry const* power = sChrPowerTypesStore.LookupEntry(i))
         {
-            if (sChrClassXPowerTypesStore[entry->classId][j] != INVALID_POWER_INDEX)
-                ++index;
+            uint32 index = 0;
+
+            for (uint32 j = 0; j < MAX_POWERS; ++j)
+                if (PowersByClass[power->classId][j] != INVALID_POWER_INDEX)
+                    ++index;
+
+            PowersByClass[power->classId][power->power] = index;
         }
-
-        ASSERT(index < MAX_POWERS_PER_CLASS && "MAX_POWERS_PER_CLASS not updated");
-
-        sChrClassXPowerTypesStore[entry->classId][entry->power] = index;
     }
+
     LoadDBC(availableDbcLocales, bad_dbc_files, sChrSpecializationsStore,     dbcPath, "ChrSpecialization.dbc");                                            // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sCinematicSequencesStore,     dbcPath, "CinematicSequences.dbc");                                           // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sCreatureDisplayInfoStore,    dbcPath, "CreatureDisplayInfo.dbc");                                          // 17399
@@ -399,7 +392,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sEmotesStore,                 dbcPath, "Emotes.dbc");                                                       // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sEmotesTextStore,             dbcPath, "EmotesText.dbc");                                                   // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sFactionStore,                dbcPath, "Faction.dbc");                                                      // 17399
-    for (uint32 i=0; i<sFactionStore.GetNumRows(); ++i)
+    for (uint32 i=0; i < sFactionStore.GetNumRows(); ++i)
     {
         FactionEntry const* faction = sFactionStore.LookupEntry(i);
         if (faction && faction->team)
@@ -479,8 +472,9 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sMailTemplateStore,           dbcPath, "MailTemplate.dbc");                                                 // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sMapStore,                    dbcPath, "Map.dbc");                                                          // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sMapDifficultyStore,          dbcPath, "MapDifficulty.dbc");                                                // 17399
-    // Fill data
-    sMapDifficultyMap[MAKE_PAIR32(0, 0)] = MapDifficulty(0, 0, false);                                                                                      //Map 0 is missingg from MapDifficulty.dbc use this till its ported to sql
+
+    // Fill Map Difficulty data.
+    sMapDifficultyMap[MAKE_PAIR32(0, 0)] = MapDifficulty(0, 0, false);                                                                                      // Map 0 is missingg from MapDifficulty.dbc use this till its ported to sql
     for (uint32 i = 0; i < sMapDifficultyStore.GetNumRows(); ++i)
         if (MapDifficultyEntry const* entry = sMapDifficultyStore.LookupEntry(i))
             sMapDifficultyMap[MAKE_PAIR32(entry->MapId, entry->Difficulty)] = MapDifficulty(entry->resetTime, entry->maxPlayers, entry->areaTriggerText[0] > 0);
@@ -511,8 +505,9 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sRandomPropertiesPointsStore, dbcPath, "RandPropPoints.dbc");                                               // 17399
 
-    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchBranchStore,      dbcPath, "ResearchBranch.dbc");
-    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchProjectStore,     dbcPath, "ResearchProject.dbc");
+    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchBranchStore,         dbcPath, "ResearchBranch.dbc");                                               // 17399
+    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchProjectStore,        dbcPath, "ResearchProject.dbc");                                              // 17399
+
     for (uint32 i =0; i < sResearchProjectStore.GetNumRows(); ++i)
     {
         ResearchProjectEntry const* rp = sResearchProjectStore.LookupEntry(i);
@@ -523,12 +518,15 @@ void LoadDBCStores(const std::string& dataPath)
         sResearchProjectSet.insert(rp);
     }
     //sResearchProjectStore.Clear();
-    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchSiteStore,        dbcPath, "ResearchSite.dbc");
-    for (uint32 i =0; i < sResearchSiteStore.GetNumRows(); ++i)
+
+    LoadDBC(availableDbcLocales, bad_dbc_files, sResearchSiteStore,        dbcPath, "ResearchSite.dbc");                                                    // 17399
+
+    for (uint32 i = 0; i < sResearchSiteStore.GetNumRows(); ++i)
     {
         ResearchSiteEntry const* rs = sResearchSiteStore.LookupEntry(i);
         if (!rs)
             continue;
+
         if (rs->ID == 140           // template
             || rs->ID == 142        // template
             || rs->ID == 161        // template
@@ -536,6 +534,7 @@ void LoadDBCStores(const std::string& dataPath)
             || rs->ID == 473        // vashj'ir
             || rs->ID == 475)       // vashj'ir
             continue;
+
         sResearchSiteSet.insert(rs);
     }
     //sResearchSiteStore.Clear();
@@ -636,7 +635,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellShapeshiftFormStore,    dbcPath, "SpellShapeshiftForm.dbc");                                          // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sSummonPropertiesStore,       dbcPath, "SummonProperties.dbc");                                             // 17399
 
-    // Since mop, we count 7 entries with slot = -1, we must set them at 0, if not, crash !
+    // Since MOP, we count 7 entries with slot = -1, we must set them at 0, if not, crash !
     for (uint32 i = 0; i < sSummonPropertiesStore.GetNumRows(); ++i)
     {
         if (SummonPropertiesEntry const* prop = sSummonPropertiesStore.LookupEntry(i))
@@ -661,15 +660,14 @@ void LoadDBCStores(const std::string& dataPath)
     pathLength.resize(pathCount);                           // 0 and some other indexes not used
     for (uint32 i = 1; i < sTaxiPathNodeStore.GetNumRows(); ++i)
         if (TaxiPathNodeEntry const* entry = sTaxiPathNodeStore.LookupEntry(i))
-        {
             if (pathLength[entry->path] < entry->index + 1)
                 pathLength[entry->path] = entry->index + 1;
-        }
+
     // Set path length
     sTaxiPathNodesByPath.resize(pathCount);                 // 0 and some other indexes not used
     for (uint32 i = 1; i < sTaxiPathNodesByPath.size(); ++i)
         sTaxiPathNodesByPath[i].resize(pathLength[i]);
-    // fill data
+    // Fill data
     for (uint32 i = 1; i < sTaxiPathNodeStore.GetNumRows(); ++i)
         if (TaxiPathNodeEntry const* entry = sTaxiPathNodeStore.LookupEntry(i))
             sTaxiPathNodesByPath[entry->path].set(entry->index, entry);
@@ -1113,6 +1111,11 @@ uint32 GetLiquidFlags(uint32 liquidType)
         return 1 << liq->Type;
 
     return 0;
+}
+
+uint32 GetPowerByClass(uint32 powerType, uint32 classId)
+{
+    return PowersByClass[classId][powerType];
 }
 
 uint32 ScalingStatValuesEntry::GetStatMultiplier(uint32 inventoryType) const

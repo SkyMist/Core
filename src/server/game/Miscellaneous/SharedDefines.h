@@ -291,7 +291,7 @@ enum Powers
     POWER_ALTERNATE_POWER               = 10,           // Used in some quests
     POWER_DARK_FORCE                    = 11,
     POWER_CHI                           = 12,
-    POWER_SHADOW_ORB                    = 13,
+    POWER_SHADOW_ORBS                   = 13,
     POWER_BURNING_EMBERS                = 14,
     POWER_DEMONIC_FURY                  = 15,
     POWER_ARCANE_CHARGES                = 16,

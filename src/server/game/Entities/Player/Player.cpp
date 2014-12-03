@@ -3052,24 +3052,35 @@ void Player::RegenerateAll()
 {
     m_regenTimerCount += m_regenTimer;
 
+    if (getClass() == CLASS_HUNTER)
+        m_focusRegenTimerCount += m_regenTimer;
+
     if (getClass() == CLASS_PALADIN)
         m_holyPowerRegenTimerCount += m_regenTimer;
 
     if (getClass() == CLASS_MONK)
         m_chiPowerRegenTimerCount += m_regenTimer;
 
-    if (getClass() == CLASS_HUNTER)
-        m_focusRegenTimerCount += m_regenTimer;
+    if (getClass() == CLASS_WARLOCK)
+    {
+        switch (GetSpecializationId(GetActiveSpec()))
+        {
+            case SPEC_WARLOCK_DEMONOLOGY:
+                m_demonicFuryPowerRegenTimerCount += m_regenTimer;
+                break;
+            case SPEC_WARLOCK_DESTRUCTION:
+                m_burningEmbersRegenTimerCount += m_regenTimer;
+                break;
+            case SPEC_WARLOCK_AFFLICTION:
+                m_soulShardsRegenTimerCount += m_regenTimer;
+                break;
 
-    if (getClass() == CLASS_WARLOCK && GetSpecializationId(GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
-        m_demonicFuryPowerRegenTimerCount += m_regenTimer;
-    else if (getClass() == CLASS_WARLOCK && GetSpecializationId(GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
-        m_burningEmbersRegenTimerCount += m_regenTimer;
-    else if (getClass() == CLASS_WARLOCK && GetSpecializationId(GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION)
-        m_soulShardsRegenTimerCount += m_regenTimer;
+            default: break;
+        }
+    }
 
-    Regenerate(POWER_MANA);
     Regenerate(POWER_ENERGY);
+    Regenerate(POWER_MANA);
 
     // Runes act as cooldowns, and they don't need to send any data
     if (getClass() == CLASS_DEATH_KNIGHT)
@@ -3099,25 +3110,15 @@ void Player::RegenerateAll()
 
     if (m_regenTimerCount >= 2000)
     {
-        // Not in combat or they have regeneration
-        if (!isInCombat() || IsPolymorphed() || m_baseHealthRegen ||
-            HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT) ||
-            HasAuraType(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT))
-        {
+        // Not in combat or player has regen aura.
+        if (!isInCombat() || IsPolymorphed() || m_baseHealthRegen || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT) || HasAuraType(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT))
             RegenerateHealth();
-        }
 
         Regenerate(POWER_RAGE);
         if (getClass() == CLASS_DEATH_KNIGHT)
             Regenerate(POWER_RUNIC_POWER);
 
         m_regenTimerCount -= 2000;
-    }
-
-    if (m_burningEmbersRegenTimerCount >= 2000 && getClass() == CLASS_WARLOCK && GetSpecializationId(GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
-    {
-        Regenerate(POWER_BURNING_EMBERS);
-        m_burningEmbersRegenTimerCount -= 2000;
     }
 
     if (m_holyPowerRegenTimerCount >= 10000 && getClass() == CLASS_PALADIN)
@@ -3132,16 +3133,34 @@ void Player::RegenerateAll()
         m_chiPowerRegenTimerCount -= 10000;
     }
 
-    if (m_demonicFuryPowerRegenTimerCount >= 100 && getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY))
+    if (getClass() == CLASS_WARLOCK)
     {
-        Regenerate(POWER_DEMONIC_FURY);
-        m_demonicFuryPowerRegenTimerCount -= 100;
-    }
+        switch (GetSpecializationId(GetActiveSpec()))
+        {
+            case SPEC_WARLOCK_DEMONOLOGY:
+                if (m_demonicFuryPowerRegenTimerCount >= 100)
+                {
+                    Regenerate(POWER_DEMONIC_FURY);
+                    m_demonicFuryPowerRegenTimerCount -= 100;
+                }
+                break;
+            case SPEC_WARLOCK_DESTRUCTION:
+                if (m_burningEmbersRegenTimerCount >= 15000)
+                {
+                    Regenerate(POWER_BURNING_EMBERS);
+                    m_burningEmbersRegenTimerCount -= 15000;
+                }
+                break;
+            case SPEC_WARLOCK_AFFLICTION:
+                if (m_soulShardsRegenTimerCount >= 20000)
+                {
+                    Regenerate(POWER_SOUL_SHARDS);
+                    m_soulShardsRegenTimerCount -= 20000;
+                }
+                break;
 
-    if (m_soulShardsRegenTimerCount >= 20000 && getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION))
-    {
-        Regenerate(POWER_SOUL_SHARDS);
-        m_soulShardsRegenTimerCount -= 20000;
+            default: break;
+        }
     }
 
     m_regenTimer = 0;
@@ -3155,7 +3174,6 @@ void Player::Regenerate(Powers power)
 
     uint32 curValue = GetPower(power);
 
-    // TODO: possible use of miscvalueb instead of amount
     if (HasAuraTypeWithValue(SPELL_AURA_PREVENT_REGENERATE_POWER, power))
         return;
 
@@ -3170,190 +3188,190 @@ void Player::Regenerate(Powers power)
     float rangedHaste = GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE);
     float meleeHaste = GetFloatValue(UNIT_MOD_HASTE);
     float spellHaste = GetFloatValue(UNIT_MOD_CAST_SPEED);
-    float HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
+
+    // float HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
 
     switch (power)
     {
-        // Regenerate Mana
-        case POWER_MANA:
+        case POWER_MANA:                                                // Regenerate Mana.
         {
             float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
-
-            if (isInCombat()) // Trinity Updates Mana in intervals of 2s, which is correct
+            if (isInCombat())
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
             else
                 addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
             break;
         }
-        // Regenerate Rage
-        case POWER_RAGE:
+        case POWER_RAGE:                                                // Regenerate Rage.
         {
+            float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
             if (!isInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
+                addvalue += -25 * RageDecreaseRate / meleeHaste;                // Remove 2.5 rage by tick (= 2 seconds => 1.25 rage/sec)
+            break;
+        }
+        case POWER_FOCUS:                                               // Regenerate Focus.
+        {
+            float FocusRegenRate = sWorld->getRate(RATE_POWER_FOCUS);
+            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * FocusRegenRate;
+
+            break;
+        }
+        case POWER_ENERGY:                                              // Regenerate Energy (Rogue, Feral Druid, Monk).
+        {
+            float EnergyRegenRate = sWorld->getRate(RATE_POWER_ENERGY);
+            addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste)) * EnergyRegenRate; // Was just * HastePct
+            break;
+        }
+        case POWER_RUNIC_POWER:                                         // Regenerate Runic Power.
+        {
+            float RunicPowerDecreaseRate = sWorld->getRate(RATE_POWER_RUNICPOWER_LOSS);
+            if (!isInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
+                addvalue += -30 * RunicPowerDecreaseRate;                       // Remove 3 RunicPower by tick. Haste affects just Rune regen.
+            break;
+        }
+        case POWER_SOUL_SHARDS:                                         // Regenerate Soul Shards.
+        {
+            if (!isInCombat()) // If not in combat, gain 1 shard every 20s.
+                addvalue += 100.0f;
+
+            // Handle Verdant Spheres Glyph.
+            if (HasAura(SPELL_GLYPH_VERDANT_SPHERES))
             {
-                float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
-                addvalue += -25 * RageDecreaseRate / meleeHaste;                // 2.5 rage by tick (= 2 seconds => 1.25 rage/sec)
+                if (GetPower(POWER_SOUL_SHARDS) < 100 && HasAura(SPELL_VERDANT_SPHERE_AFFL))
+                    RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_AFFL);
+
+                if (GetPower(POWER_SOUL_SHARDS) >= 100 && !HasAura(SPELL_VERDANT_SPHERE_AFFL))
+                    CastSpell(this, SPELL_VERDANT_SPHERE_AFFL, true);
+
+                if (GetPower(POWER_SOUL_SHARDS) < 300 && GetPower(POWER_SOUL_SHARDS) >= 200)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 2);
+                else if (GetPower(POWER_SOUL_SHARDS) < 400 && GetPower(POWER_SOUL_SHARDS) >= 300)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 3);
+                else if (GetPower(POWER_SOUL_SHARDS) == 400)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_AFFL, this, 4);
             }
 
             break;
         }
-        // Regenerate Focus
-        case POWER_FOCUS:
-            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * sWorld->getRate(RATE_POWER_FOCUS);
-            break;
-        // Regenerate Energy
-        case POWER_ENERGY:
-            addvalue += ((0.01f * m_regenTimer) * sWorld->getRate(RATE_POWER_ENERGY) * HastePct);
-            break;
-        // Regenerate Runic Power
-        case POWER_RUNIC_POWER:
+        // POWER_ECLIPSE, POWER_ALTERNATE_POWER - No need.
+        // POWER_DARK_FORCE - No need, deprecated.
+        case POWER_HOLY_POWER:                                          // Regenerate Holy Power
+        case POWER_CHI:                                                 // Regenerate Chi
         {
-            if (!isInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
-            {
-                float RunicPowerDecreaseRate = sWorld->getRate(RATE_POWER_RUNICPOWER_LOSS);
-                addvalue += -30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
-            }
-
+            if (!isInCombat())
+                addvalue += -1.0f;                                              // Remove 1 each 10 secs.
             break;
         }
-        // Regenerate Holy Power
-        case POWER_HOLY_POWER:
-            if (!isInCombat())
-                addvalue += -1.0f; // remove 1 each 10 sec
-            break;
-        case POWER_RUNES:
-        case POWER_HEALTH:
-            break;
-        // Regenerate Chi
-        case POWER_CHI:
-            if (!isInCombat())
-                addvalue += -1.0f; // remove 1 each 10 sec
-            break;
-        // Regenerate Demonic Fury
-        case POWER_DEMONIC_FURY:
+        // POWER_SHADOW_ORBS - No need.
+        case POWER_BURNING_EMBERS:                                      // Regenerate Burning Embers
         {
-            if (!isInCombat() && GetPower(POWER_DEMONIC_FURY) >= 300 && GetShapeshiftForm() != FORM_METAMORPHOSIS)
-                addvalue += -1.0f;    // remove 1 each 100ms
-            else if (!isInCombat() && GetPower(POWER_DEMONIC_FURY) < 200 && GetShapeshiftForm() != FORM_METAMORPHOSIS)
-                addvalue += 1.0f;     // give 1 each 100ms while player has less than 200 demonic fury
-
-            if (!HasAura(114168))
+            // After 15 seconds return to one Embers if none / less or return to one by removing one at a time if more.
+            if (!isInCombat())
             {
-                if (GetPower(POWER_DEMONIC_FURY) <= 40)
+                if (GetPower(POWER_BURNING_EMBERS) < 10)
+                    addvalue += float(10 - GetPower(POWER_BURNING_EMBERS));
+                else if (GetPower(POWER_BURNING_EMBERS) > 10)
+                    addvalue += (GetPower(POWER_BURNING_EMBERS) < 20) ? float(10 - GetPower(POWER_BURNING_EMBERS)) : -10.0f;
+            }
+
+            // Handle Verdant Spheres Glyph.
+            if (HasAura(SPELL_GLYPH_VERDANT_SPHERES))
+            {
+                if (GetPower(POWER_BURNING_EMBERS) < 10 && HasAura(SPELL_VERDANT_SPHERE_DESTRO))
+                    RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_DESTRO);
+
+                if (GetPower(POWER_BURNING_EMBERS) >= 10 && !HasAura(SPELL_VERDANT_SPHERE_DESTRO))
+                    CastSpell(this, SPELL_VERDANT_SPHERE_DESTRO, true);
+
+
+                if (GetPower(POWER_BURNING_EMBERS) < 30 && GetPower(POWER_BURNING_EMBERS) >= 20)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 2);
+                else if (GetPower(POWER_BURNING_EMBERS) < 40 && GetPower(POWER_BURNING_EMBERS) >= 30)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 3);
+                else if (GetPower(POWER_BURNING_EMBERS) == 40)
+                    SetAuraStack(SPELL_VERDANT_SPHERE_DESTRO, this, 4);
+            }
+            else
+            {
+                if (GetPower(POWER_BURNING_EMBERS) < 10)
                 {
-                    if (HasAura(103958))
-                        RemoveAura(103958);
-
-                    if (HasAura(54879))
-                        RemoveAura(54879);
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
                 }
+                if (GetPower(POWER_BURNING_EMBERS) >= 10 && GetPower(POWER_BURNING_EMBERS) < 20)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_10))
+                        CastSpell(this, SPELL_BURNING_EMBERS_10, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
+                }
+                else if (GetPower(POWER_BURNING_EMBERS) >= 20 && GetPower(POWER_BURNING_EMBERS) < 30)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_20))
+                        CastSpell(this, SPELL_BURNING_EMBERS_20, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_30)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_30);
+                }
+                else if (GetPower(POWER_BURNING_EMBERS) >= 30)
+                {
+                    if (!HasAura(SPELL_BURNING_EMBERS_30))
+                        CastSpell(this, SPELL_BURNING_EMBERS_30, true);
+
+                    if (HasAura(SPELL_BURNING_EMBERS_10)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_10);
+                    if (HasAura(SPELL_BURNING_EMBERS_20)) RemoveAurasDueToSpell(SPELL_BURNING_EMBERS_20);
+                }
+            }
+
+            break;
+        }
+        case POWER_DEMONIC_FURY:                                            // Regenerate Demonic Fury - Note: Cannot go under 200.
+        {
+            if (!isInCombat() && GetShapeshiftForm() != FORM_METAMORPHOSIS)
+            {
+                if (GetPower(POWER_DEMONIC_FURY) > 200)
+                    addvalue += -1.0f;    // Remove 1 each 100ms
+                else if (GetPower(POWER_DEMONIC_FURY) < 200)
+                    addvalue += 1.0f;     // Give 1 each 100ms while player has less than 200.
+            }
+
+            if (GetPower(POWER_DEMONIC_FURY) <= 50) // 6 drained per sec, means can stay in Meta form for 25 seconds after getting below 200.
+            {
+                if (HasAura(SPELL_METAMORPHOSIS))  RemoveAurasDueToSpell(SPELL_METAMORPHOSIS);
+                if (HasAura(SPELL_METAMORPHOSIS2)) RemoveAurasDueToSpell(SPELL_METAMORPHOSIS2);
             }
 
             // Demonic Fury visuals
             if (GetPower(POWER_DEMONIC_FURY) == 1000)
-                CastSpell(this, 131755, true);
-            else if (GetPower(POWER_DEMONIC_FURY) >= 500)
             {
-                CastSpell(this, 122738, true);
-
-                if (HasAura(131755))
-                    RemoveAura(131755);
+                if (!HasAura(SPELL_DEMONIC_FURY_MAXIMUM))
+                    CastSpell(this, SPELL_DEMONIC_FURY_MAXIMUM, true);
+            }
+            else if (GetPower(POWER_DEMONIC_FURY) >= 500 && GetPower(POWER_DEMONIC_FURY) < 1000)
+            {
+                if (!HasAura(SPELL_DEMONIC_FURY_HALF))
+                    CastSpell(this, SPELL_DEMONIC_FURY_HALF, true);
+                if (HasAura(SPELL_DEMONIC_FURY_MAXIMUM)) RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_MAXIMUM);
             }
             else
             {
-                if (HasAura(122738))
-                    RemoveAura(122738);
-                if (HasAura(131755))
-                    RemoveAura(131755);
+                if (HasAura(SPELL_DEMONIC_FURY_HALF))    RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_HALF);
+                if (HasAura(SPELL_DEMONIC_FURY_MAXIMUM)) RemoveAurasDueToSpell(SPELL_DEMONIC_FURY_MAXIMUM);
             }
 
             break;
         }
-        // Regenerate Burning Embers
-        case POWER_BURNING_EMBERS:
-        {
-            // After 15s return to one embers if no one
-            // or return to one if more than one
-            if (!isInCombat() && GetPower(POWER_BURNING_EMBERS) < 10)
-                SetPower(POWER_BURNING_EMBERS, GetPower(POWER_BURNING_EMBERS) + 1);
-            else if (!isInCombat() && GetPower(POWER_BURNING_EMBERS) > 10)
-                SetPower(POWER_BURNING_EMBERS, GetPower(POWER_BURNING_EMBERS) - 1);
 
-            if (HasAura(56241))
-            {
-                if (GetPower(POWER_BURNING_EMBERS) < 20)
-                {
-                    RemoveAura(123730); // 2
-                    RemoveAura(123728); // 1
-                    RemoveAura(123731); // 3
-                }
-                else if (GetPower(POWER_BURNING_EMBERS) < 30)
-                {
-                    RemoveAura(123730); // 2 shards visual
-                    CastSpell(this, 123728, true); // 1 shard visual
-                }
-                else if (GetPower(POWER_BURNING_EMBERS) < 40)
-                {
-                    CastSpell(this, 123728, true); // 1 shard visual
-                    CastSpell(this, 123730, true); // 2 shards visual
-                    RemoveAura(123731); // 3 shards visual
-                }
-                else if (GetPower(POWER_BURNING_EMBERS) < 50)
-                {
-                    CastSpell(this, 123728, true); // 1 shard visual
-                    CastSpell(this, 123730, true); // 2 shards visual
-                    CastSpell(this, 123731, true); // 3 shards visual
-                }
-            }
-            else
-            {
-                if (GetPower(POWER_BURNING_EMBERS) < 20)
-                {
-                    RemoveAura(116855); // First visual
-                    RemoveAura(116920); // Second visual
-                }
-                if (GetPower(POWER_BURNING_EMBERS) < 30)
-                {
-                    CastSpell(this, 116855, true);  // First visual
-                    RemoveAura(116920);             // Second visual
-                }
-                else
-                    CastSpell(this, 116920, true);  // Second visual
-            }
+        // POWER_ARCANE_CHARGES - Not needed.
+        case POWER_HEALTH:
+            return;
 
-            break;
-        }
-        // Regenerate Soul Shards
-        case POWER_SOUL_SHARDS:
-            // If isn't in combat, gain 1 shard every 20s
-            if (!isInCombat())
-                SetPower(POWER_SOUL_SHARDS, GetPower(POWER_SOUL_SHARDS) + 100);
-
-            if (HasAura(56241))
-            {
-                if (GetPower(POWER_SOUL_SHARDS) < 200 && GetPower(POWER_SOUL_SHARDS) >= 100)
-                {
-                    RemoveAura(123730); // 2 shards visual
-                    CastSpell(this, 123728, true); // 1 shard visual
-                }
-                else if (GetPower(POWER_SOUL_SHARDS) < 300)
-                {
-                    CastSpell(this, 123728, true); // 1 shard visual
-                    CastSpell(this, 123730, true); // 2 shards visual
-                    RemoveAura(123731); // 3 shards visual
-                }
-                else if (GetPower(POWER_SOUL_SHARDS) < 400)
-                {
-                    CastSpell(this, 123728, true); // 1 shard visual
-                    CastSpell(this, 123730, true); // 2 shards visual
-                    CastSpell(this, 123731, true); // 3 shards visual
-                }
-            }
-            break;
-        default:
-            break;
+        default: break;
     }
 
-    // Mana regen calculated in Player::UpdateManaRegen()
+    // Mana regen calculated in Player::UpdateManaRegen(). Exists only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras.
     if (power != POWER_MANA && power != POWER_CHI && power != POWER_HOLY_POWER && power != POWER_SOUL_SHARDS && power != POWER_BURNING_EMBERS && power != POWER_DEMONIC_FURY)
     {
         AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
@@ -3465,7 +3483,7 @@ void Player::ResetAllPowers()
 
     // for shadow priest
     if (getClass() == CLASS_PRIEST && GetSpecializationId(GetActiveSpec()) == SPEC_PRIEST_SHADOW)
-        SetPower(POWER_SHADOW_ORB, 0);
+        SetPower(POWER_SHADOW_ORBS, 0);
 
     // for warlocks
     if (getClass() == CLASS_WARLOCK)
@@ -4463,7 +4481,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetPower(POWER_SOUL_SHARDS, 100);
     SetPower(POWER_DEMONIC_FURY, 200);
     SetPower(POWER_BURNING_EMBERS, 10);
-    SetPower(POWER_SHADOW_ORB, 0);
+    SetPower(POWER_SHADOW_ORBS, 0);
     SetPower(POWER_ECLIPSE, 0);
 
     // update level to hunter/summon pet
@@ -6410,7 +6428,7 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
         SetPower(POWER_BURNING_EMBERS, 10);
         SetPower(POWER_SOUL_SHARDS, 100);
         SetPower(POWER_CHI, 0);
-        SetPower(POWER_SHADOW_ORB, 0);
+        SetPower(POWER_SHADOW_ORBS, 0);
     }
 
     // trigger update zone for alive state zone updates
@@ -9085,17 +9103,16 @@ uint32 Player::CalculateCurrencyWeekCap(uint32 id)
         switch (entry->ID)
         {
             case CURRENCY_TYPE_CONQUEST_META_ARENA:
-                if (uint32 maxArenaRating = (GetArenaPersonalRating(SLOT_ARENA_2V2) > GetArenaPersonalRating(SLOT_ARENA_3V3)) ? GetArenaPersonalRating(SLOT_ARENA_2V2) : GetArenaPersonalRating(SLOT_ARENA_3V3))
-                    cap = JadeCore::Currency::ConquestRatingCalculator(maxArenaRating) * CURRENCY_PRECISION;
+                cap = JadeCore::Currency::ConquestRatingCalculator(GetMaxArenaRating()) * CURRENCY_PRECISION;
                 break;
             case CURRENCY_TYPE_CONQUEST_META_RBG:
-                cap = JadeCore::Currency::BgConquestRatingCalculator(GetArenaPersonalRating(SLOT_RBG)) * CURRENCY_PRECISION;
+                cap = JadeCore::Currency::BgConquestRatingCalculator(GetRatedBGRating()) * CURRENCY_PRECISION;
                 break;
 
             default: break;
         }
     }
-    
+
     return cap;
 }
 
@@ -26881,7 +26898,7 @@ void Player::ResurectUsingRequestData()
     SetPower(POWER_BURNING_EMBERS, 10);
     SetPower(POWER_SOUL_SHARDS, 100);
     SetPower(POWER_DEMONIC_FURY, 200);
-    SetPower(POWER_SHADOW_ORB, 0);
+    SetPower(POWER_SHADOW_ORBS, 0);
     SetPower(POWER_CHI, 0);
 
     if (uint32 aura = _resurrectionData->Aura)

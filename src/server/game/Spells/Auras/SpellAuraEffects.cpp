@@ -6735,6 +6735,10 @@ void AuraEffect::HandleAuraOverrideSpells(AuraApplication const* aurApp, uint8 m
                 if (uint32 spellId = overrideSpells->spellId[i])
                     target->RemoveTemporarySpell(spellId);
     }
+
+    // Examples :
+    // Heroic Will Ultraxion - Puts you in shadow realm 5 sec.
+    // Enter the Dream - Ysera - 106464 - Decreases damage by 50%.
 }
 
 void AuraEffect::HandleAuraSetVehicle(AuraApplication const* aurApp, uint8 mode, bool apply) const
@@ -8532,205 +8536,38 @@ void AuraEffect::HandleProgressBar(AuraApplication const* aurApp, uint8 mode, bo
     if (!(mode & AURA_EFFECT_HANDLE_REAL))
         return;
 
-    Player* target = aurApp->GetTarget()->ToPlayer();
-
+    Unit* target = aurApp->GetTarget();
     if (!target)
         return;
 
-    if (!apply)
-    {
-        target->SetMaxPower(POWER_ALTERNATE_POWER, 0);
-        target->SetPower(POWER_ALTERNATE_POWER, 0);
+    uint32 altPowerId = GetMiscValue();
+
+    UnitPowerBarEntry const* powerEntry = sUnitPowerBarStore.LookupEntry(altPowerId);
+    if (!powerEntry)
         return;
-    }
 
     if (apply)
     {
-        switch (GetSpellInfo()->Id)
-        {
-            case 88824: // Sound Bar Atramedes (HandlePeriodicDummyAuraTick for movement add?).
-            case 93103: //Cho'gall Corruption
-            case 78949: // Onyxia Discharge - target is same as caster.
-            case 98229: // Majordomo Heroic Concentration
-                target->SetPower(POWER_ALTERNATE_POWER, 0);
-                target->SetMaxPower(POWER_ALTERNATE_POWER, 100);
-                break;
-            case 98226: // Rhyolith Balance - Orientation: - power goes to left, + power goes to right.
-                target->SetPower(POWER_ALTERNATE_POWER, 25);
-                target->SetMaxPower(POWER_ALTERNATE_POWER, 50);
-                break;
-            case 101410: // Molten Feather Bar - Alysrazor - 98734 is spell to give 1 power, 97128 needs script and triggers it. 99464 (Molting) is Alys aura.
-                target->SetPower(POWER_ALTERNATE_POWER, 0);
-                target->SetMaxPower(POWER_ALTERNATE_POWER, 3);
-                break;
-            case 102668: // Sands of the Hourglass, Murozond, End Time
-                target->SetPower(POWER_ALTERNATE_POWER, 5);
-                target->SetMaxPower(POWER_ALTERNATE_POWER, 5);
-                break;
-            default:
-                target->SetPower(POWER_ALTERNATE_POWER, 0);
-                target->SetMaxPower(POWER_ALTERNATE_POWER, 100);
-                break;
-
-            //Deathwing Corrupted Blood meter 106843 - 100 power
-            //Hideous Amalgamation Absorb Blood bar - 109329. starts 25 - max 50 power.
-            //Thrall Bar - 100439, Elemental Bonds - Destroy totems to free Thrall. 100 power...Firelands.
-            //Thrall Bar - 99961, Elemental Bonds - Destroy Forces.100 power...Deepholm.
-            //Thrall Bar - 99642, Elemental Bonds - Destroy Elementals.100 power...Vasjh'ir.
-            //Thrall Bar - 99358, Elemental Bonds - Destroy Elementals.100 power...Uldum.
-            //Warden Stillwater - 35000 power, 92598.
-            //Waves like map treasure, 7 power - 92597.
-            //Waves like map treasure, 5 power - 91651.
-            //Heroic Will Ultraxion - Needs no stuff. No power, puts you in shadow realm 5 sec.
-            //Enter the Dream - Ysera - 106464 - Needs no stuff. No power, decreases damage by 50%.
-            //DeathWingBack? (Roll Control?)
-        }
+        target->SetMaxPower(POWER_ALTERNATE_POWER, powerEntry->MaxPower);
+        target->SetPower(POWER_ALTERNATE_POWER, powerEntry->StartPower);
     }
-
-    uint32 startPower = 0;
-    uint32 maxPower = 0;
-
-    // Unknow max misc : 116
-
-    switch (GetMiscValue())
+    else
     {
-        case 80:
-            maxPower = 3;
-            break;
-        case 32:
-        case 89:
-            maxPower = 4;
-            break;
-        case 30:
-        case 34:
-        case 90:
-            maxPower = 5;
-            break;
-        case 33:
-        case 35:
-            maxPower = 7;
-            break;
-        case 88:
-            maxPower = 10;
-            break;
-        case 117:
-            maxPower = 25;
-            break;
-        case 129:
-        case 133:
-            maxPower = 30;
-            break;
-        case 29:
-            maxPower = 34;
-            break;
-        case 114:
-        case 203:
-            maxPower = 40;
-            break;
-        case 64:
-            maxPower = 50;
-            break;
-        case 84:
-            maxPower = 60;
-            break;
-        case 137:
-        case 149:
-        case 195:
-            maxPower = 90;
-            break;
-        case 23:
-        case 37:
-        case 39:
-        case 61:
-        case 65:
-        case 68:
-        case 69:
-        case 72:
-        case 78:
-        case 91:
-        case 93:
-        case 94:
-        case 103:
-        case 107:
-        case 110:
-        case 113:
-        case 134:
-        case 148:
-        case 151:
-        case 165:
-        case 176:
-        case 178:
-        case 179:
-        case 183:
-        case 199:
-        case 204:
-        case 205:
-        case 206:
-        case 207:
-        default:
-            maxPower = 100;
-            break;
-        case 63:
-            maxPower = 105;
-            break;
-        case 87:
-            maxPower = 120;
-            break;
-        case 66:
-        case 67:
-            maxPower = 180;
-            break;
-        case 24:
-            maxPower = 250;
-            break;
-        case 26:
-            maxPower = 300;
-            break;
-        case 158:
-            maxPower = 700;
-            break;
-        case 36:
-            maxPower = 35000;
-            break;
+        target->SetPower(POWER_ALTERNATE_POWER, 0);
+        target->SetMaxPower(POWER_ALTERNATE_POWER, 0);
     }
 
-    switch (GetMiscValue())
-    {
-        case 89:
-            startPower = 4;
-            break;
-        case 34:
-        case 90:
-        case 204:
-        case 205:
-        //case 206:
-        case 207:
-            startPower = 5;
-            break;
-        case 103:
-            startPower = 10;
-            break;
-        case 64:
-            startPower = 25;
-            break;
-        case 87:
-        case 93:
-        case 148:
-        case 151:
-        case 176:
-        case 183:
-            startPower = 50;
-            break;
-        case 178:
-            startPower = 100;
-            break;
-        default:
-            startPower = 0;
-            break;
-    }
-
-    target->SetMaxPower(POWER_ALTERNATE_POWER, maxPower);
-    target->SetPower(POWER_ALTERNATE_POWER, startPower);
+    // Examples :
+    // Deathwing Corrupted Blood meter 106843 - 100 power
+    // Hideous Amalgamation Absorb Blood bar - 109329. starts 25 - max 50 power.
+    // Thrall Bar - 100439, Elemental Bonds - Destroy totems to free Thrall. 100 power...Firelands.
+    // Thrall Bar - 99961, Elemental Bonds - Destroy Forces.100 power...Deepholm.
+    // Thrall Bar - 99642, Elemental Bonds - Destroy Elementals.100 power...Vasjh'ir.
+    // Thrall Bar - 99358, Elemental Bonds - Destroy Elementals.100 power...Uldum.
+    // Warden Stillwater - 35000 power, 92598.
+    // Waves like map treasure, 7 power - 92597.
+    // Waves like map treasure, 5 power - 91651.
+    // DeathWingBack? (Roll Control?)
 }
 
 void AuraEffect::HandleAuraStrangulate(AuraApplication const* aurApp, uint8 mode, bool apply) const
