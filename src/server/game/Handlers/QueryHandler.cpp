@@ -670,87 +670,93 @@ void WorldSession::HandleQuestPOIQuery(WorldPacket& recvData)
     // The SMSG responds with the same count, and the data for each quest watched, using the questId retrieved from the player slot stored.
 
     uint32 WatchedQuests = 0;
-
     std::list<uint16> WatchedQuestsSlotList;
 
     // Get the query data and store what is needed (CMSG sends 50 entries, but they are not valid, weird shit. Store the player slots for the valid tracked quests to use in SMSG).
     for (uint8 count = 0; count < MAX_QUEST_LOG_SIZE; count++)
         if (uint32 questId = recvData.read<uint32>())
             if (uint16 questSlot = _player->FindQuestSlot(questId))
-                if (questId && questSlot && questSlot != MAX_QUEST_LOG_SIZE)
+                if (questId && questSlot && questSlot < MAX_QUEST_LOG_SIZE)
                     WatchedQuestsSlotList.push_back(questSlot);
 
     recvData >> WatchedQuests;
 
-    WatchedQuestsSlotList.resize(WatchedQuests);
+    // Resize to max. MAX_QUEST_LOG_SIZE (50 quests) if over - should never happen as player can't have so many quests.
+    if (WatchedQuests > MAX_QUEST_LOG_SIZE)
+        WatchedQuests = MAX_QUEST_LOG_SIZE;
 
-    if (WatchedQuests >= MAX_QUEST_LOG_SIZE || WatchedQuestsSlotList.empty())
-        return;
+    WatchedQuestsSlotList.resize(WatchedQuests);
 
     // Send the response.
     WorldPacket data(SMSG_QUEST_POI_QUERY_RESPONSE);
 
     data.WriteBits(WatchedQuests, 20);
 
-    for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
+    if (!WatchedQuestsSlotList.empty())
     {
-        uint16 watchedQuestSlot = (*itr);
-        uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
-
-        QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
-
-        if (POI)
+        for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
         {
-            data.WriteBits(POI->size(), 18);             // POI size
+            uint16 watchedQuestSlot = (*itr);
+            uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
 
-            for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
-                data.WriteBits(itr->points.size(), 21);  // POI points size
+            QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
+
+            if (POI)
+            {
+                data.WriteBits(POI->size(), 18);             // POI size
+        
+                for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
+                    data.WriteBits(itr->points.size(), 21);  // POI points size
+            }
+            else
+                data.WriteBits(0, 18);
         }
-        else
-            data.WriteBits(0, 18);
     }
 
     data.FlushBits();
 
-    for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
+    if (!WatchedQuestsSlotList.empty())
     {
-        uint16 watchedQuestSlot = (*itr);
-        uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
-
-        QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
-
-        if (POI)
+        for (std::list<uint16>::iterator itr = WatchedQuestsSlotList.begin(); itr != WatchedQuestsSlotList.end(); itr++)
         {
-            for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
+            uint16 watchedQuestSlot = (*itr);
+            uint32 questID = _player->GetQuestSlotQuestId(watchedQuestSlot);
+
+            QuestPOIVector const* POI = sObjectMgr->GetQuestPOIVector(questID);
+
+            if (POI)
             {
-                data << uint32(itr->Unk4);              // Unk 4 (Ok).
-                data << uint32(0);                      // another unk
-                data << uint32(0);                      // another unk
-                data << uint32(0);                      // another unk - high numbers, 269151 ex., somehow ordered. Could be blobId, some repeat.
-
-                for (std::vector<QuestPOIPoint>::const_iterator itr2 = itr->points.begin(); itr2 != itr->points.end(); itr2++)
+                for (QuestPOIVector::const_iterator itr = POI->begin(); itr != POI->end(); itr++)
                 {
-                    data << int32(itr2->x);             // POI point x
-                    data << int32(itr2->y);             // POI point y
+                    data << uint32(itr->Unk4);              // Unk 4 (Ok).
+                    data << uint32(0);                      // another unk
+                    data << uint32(0);                      // another unk
+                    data << uint32(0);                      // another unk - high numbers, 269151 ex., somehow ordered. Could be blobId, some repeat.
+        
+                    for (std::vector<QuestPOIPoint>::const_iterator itr2 = itr->points.begin(); itr2 != itr->points.end(); itr2++)
+                    {
+                        data << int32(itr2->x);             // POI point x
+                        data << int32(itr2->y);             // POI point y
+                    }
+
+                    data << uint32(itr->MapId);             // MapId
+                    data << uint32(itr->FloorId);           // FloorId
+                    data << uint32(itr->Unk3);              // Unk 3 (Ok).
+
+                    data << uint32(itr->points.size());     // POI points count
+                    data << uint32(itr->AreaId);            // AreaId
+                    data << uint32(itr->Id);                // POI index
+                    data << int32(itr->ObjectiveIndex);     // objective index
                 }
-
-                data << uint32(itr->MapId);             // MapId
-                data << uint32(itr->FloorId);           // FloorId
-                data << uint32(itr->Unk3);              // Unk 3 (Ok).
-
-                data << uint32(itr->points.size());     // POI points count
-                data << uint32(itr->AreaId);            // AreaId
-                data << uint32(itr->Id);                // POI index
-                data << int32(itr->ObjectiveIndex);     // objective index
+        
+                data << uint32(POI->size());                // POI count
+                data << uint32(questID);                    // quest ID
             }
-
-            data << uint32(POI->size());                // POI count
-            data << uint32(questID);                    // quest ID
-        }
-        else
-        {
-            data << uint32(0); // POI count
-            data << uint32(questID); // quest ID
+            else
+            {
+                data << uint32(0); // POI count
+                data << uint32(questID); // quest ID
+            }
         }
     }
 

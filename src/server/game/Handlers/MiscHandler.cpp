@@ -2270,29 +2270,29 @@ void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<
     // Phase flags - Flags 0x8 and 0x10 are related to areatriggers, if we send flags 0x00 areatriggers don't work in some cases.
     data << uint32(hasPhases ? 0 : 8);     // Flags, 0x18 mostly on retail sniffs.
 
-    // Inactive terrain swaps, may switch with active terrain.
-    data << uint32(inactiveSwapsCount);
-    // if (inactiveSwapsCount > 0)
-        // for (uint8 i = 0; i < inactiveSwapsCount; ++i)
-            // data << uint16(0);
-
-    // Active terrain swaps, may switch with inactive terrain.
-    data << uint32(activeSwapsCount * 2);
-    if (activeSwapsCount > 0)
-        for (std::set<uint32>::const_iterator itr = terrainswaps.begin(); itr != terrainswaps.end(); ++itr)
-            data << uint16(*itr);
-
     // Phases the player is in - Phase.dbc IDs.
     data << uint32(phasesCount * 2);
     if (hasPhases)    
         for (std::set<uint32>::const_iterator itr = phaseIds.begin(); itr != phaseIds.end(); ++itr)
             data << uint16(*itr); // Most of the phase IDs on retail sniffs have 0x8000 mask.
 
+    // Inactive terrain swaps.
+    data << uint32(inactiveSwapsCount);
+    // if (inactiveSwapsCount > 0)
+        // for (uint8 i = 0; i < inactiveSwapsCount; ++i)
+            // data << uint16(0);
+
     // Map (M) display control - WorldMapArea.dbc IDs.
     data << uint32(worldMapAreas);
     // if (worldMapAreas > 0)
         //for (uint32 i = 0; i < worldMapAreas; i++)
             //data << uint16(0);
+
+    // Active terrain swaps.
+    data << uint32(activeSwapsCount * 2);
+    if (activeSwapsCount > 0)
+        for (std::set<uint32>::const_iterator itr = terrainswaps.begin(); itr != terrainswaps.end(); ++itr)
+            data << uint16(*itr);
 
     uint8 bitOrder[8] = { 4, 6, 1, 7, 2, 0, 5, 3 };
     data.WriteBitInOrder(guid, bitOrder);

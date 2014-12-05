@@ -1531,8 +1531,11 @@ void WorldSession::HandleSpellClick(WorldPacket& recvData)
 {
     // Read guid
     ObjectGuid guid;
+
     guid[5] = recvData.ReadBit();
-    bool unk = recvData.ReadBit();
+
+    bool CanAutoDismount = recvData.ReadBit();
+
     guid[0] = recvData.ReadBit();
     guid[7] = recvData.ReadBit();
     guid[2] = recvData.ReadBit();
@@ -1540,6 +1543,8 @@ void WorldSession::HandleSpellClick(WorldPacket& recvData)
     guid[1] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
+
+    recvData.FlushBits();
 
     uint8 byteOrder[8] = {6, 4, 5, 1, 3, 0, 7, 2};
     recvData.ReadBytesSeq(guid, byteOrder);
@@ -1565,6 +1570,8 @@ void WorldSession::HandleMirrorImageDataRequest(WorldPacket& recvData)
 
     uint8 bits[8] = { 2, 1, 3, 7, 4, 6, 0, 5 };
     recvData.ReadBitInOrder(guid, bits);
+
+    recvData.FlushBits();
 
     uint8 bytes[8] = { 6, 1, 2, 3, 4, 5, 7, 0 };
     recvData.ReadBytesSeq(guid, bytes);
@@ -1614,6 +1621,7 @@ void WorldSession::HandleMirrorImageDataRequest(WorldPacket& recvData)
         data.WriteBit(guid[2]);
         data.WriteBit(guid[1]);
         data.WriteBit(guildGuid[3]);
+
         data.FlushBits();
 
         data.WriteByteSeq(guid[2]);

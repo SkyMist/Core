@@ -673,12 +673,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << float(unit->GetOrientation());
     }
 
-    if (flags & UPDATEFLAG_ANIMKITS)
-    {
-        *data << uint16(1);                                                      // Missing AnimKit1
-        *data << uint16(1);                                                      // Missing AnimKit2
-        *data << uint16(1);                                                      // Missing AnimKit3
-    }
+    // if (flags & UPDATEFLAG_ANIMKITS)
+    // {
+    //     *data << uint16(1);                                                      // Missing AnimKit1
+    //     *data << uint16(1);                                                      // Missing AnimKit2
+    //     *data << uint16(1);                                                      // Missing AnimKit3
+    // }
 
     if ((flags & UPDATEFLAG_LIVING) && unit && unit->movespline->Initialized() && !unit->movespline->Finalized())
         Movement::PacketBuilder::WriteCreateGuid(*unit->movespline, *data);
@@ -780,62 +780,59 @@ void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* targe
 
 void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
 {
-    if (_dynamicTabCount == 0)
-    {
-        *data << uint8(0);
-        return;
-    }
-
-    // Crashfix, prevent use of bag with dynamic field
+    // Crashfix, prevent use of bags with dynamic fields or return if no updated fields.
     Item* temp = ((Item*)this);
-    if (GetTypeId() == TYPEID_ITEM && temp && temp->ToBag())
+    if (GetTypeId() == TYPEID_ITEM && temp && temp->ToBag() || _dynamicTabCount == 0)
     {
         *data << uint8(0);
         return;
     }
 
-    uint32 dynamicTabMask = 0;
-    std::vector<uint32> dynamicFieldsMask;
+    uint32 dynamicTabMask = 0;                      // Mask for changed fields.
+    std::vector<uint32> dynamicFieldsMask;          // Mask for changed offsets.
+
     dynamicFieldsMask.resize(_dynamicTabCount);
 
-    for (uint32 i = 0; i < _dynamicTabCount; ++i)
+    for (uint32 i = 0; i < _dynamicTabCount; ++i) // For all fields.
     {
         uint32 fieldMask = 0;
         DynamicFields const& fields = _dynamicFields[i];
-        for (int index = 0; index < DynamicFields::Count; ++index)
+
+        for (int index = 0; index < DynamicFields::Count; ++index) // For all offsets.
         {
-            if (!fields.IsChanged(index))
+            if (!fields.IsChanged(index)) // Continue if offset didn't change.
                 continue;
 
             fieldMask |= 1 << index;
         }
         
         if (fieldMask > 0)
-            dynamicTabMask |= 1 << i;
+            dynamicTabMask |= 1 << i; // Set fields updated.
 
-        dynamicFieldsMask[i] = fieldMask;
+        dynamicFieldsMask[i] = fieldMask; // Set offsets updated.
     }
 
-    *data << uint8(dynamicTabMask > 0 ? 1 : 0);
-    if (dynamicTabMask > 0)
-    {
-        *data << uint32(dynamicTabMask);
+    bool fieldChanged = dynamicTabMask > 0 ? true : false; // Check if the field changed.
 
-        for (uint32 i = 0; i < _dynamicTabCount; ++i)
+    *data << uint8(fieldChanged); // Signal an update needed for the changed field count (GetBlockCount()).
+
+    if (fieldChanged) // If at least one field changed.
+    {
+        *data << uint32(dynamicTabMask); // Send the field index (SetBit(index)).
+
+        for (uint32 i = 0; i < _dynamicTabCount; ++i) // For all fields.
         {
-            if (dynamicTabMask & (1 << i)) //if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )
+            if (dynamicTabMask & (1 << i)) // If the field changed (if ( (1 << (v16 & 31)) & *(&dest + (v16 >> 5)) )).
             {
                 DynamicFields const& fields = _dynamicFields[i];
                 uint32 fieldMask = dynamicFieldsMask[i];
 
-                *data << uint8(1); // Count of fieldMask
-                *data << uint32(fieldMask);
+                *data << uint8(1);  // Send the changed offsets count.
+                *data << uint32(fieldMask); // Send the field offset index.
 
-                for (int index = 0; index < 32; index++)
-                {
-                    if (fieldMask & (1 << index))
-                        *data << uint32(fields.GetValue(index));
-                }
+                for (int index = 0; index < DynamicFields::Count; index++) // For all offsets.
+                    if (fieldMask & (1 << index)) // If the offset changed.
+                        *data << uint32(fields.GetValue(index)); // Send the field offset value.
             }
         }
     }
@@ -843,20 +840,17 @@ void Object::BuildDynamicValuesUpdate(ByteBuffer* data) const
 
 void Object::ClearUpdateMask(bool remove)
 {
-    memset(_changedFields, 0, m_valuesCount*sizeof(bool));
+    memset(_changedFields, 0, m_valuesCount * sizeof(bool));
     
     if (m_objectUpdated)
     {
         if (_dynamicTabCount > 0)
-        {
             for (uint32 i = 0; i < _dynamicTabCount; ++i)
-            {
                 _dynamicFields[i].ClearMask();
-            }
-        }
 
         if (remove)
             sObjectAccessor->RemoveUpdateObject(this);
+
         m_objectUpdated = false;
     }
 }

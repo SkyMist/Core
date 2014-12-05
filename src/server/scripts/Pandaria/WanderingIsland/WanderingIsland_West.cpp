@@ -755,10 +755,10 @@ public:
 
         void HandleScriptEffect(SpellEffIndex effIndex)
         {
-            PreventHitAura();
+            // PreventDefaultAction();
 
             if (Unit* caster = GetCaster())
-                if (Creature* balloon = caster->SummonCreature(55649, 915.55f, 4563.66f, 230.68f, 2.298090f, TEMPSUMMON_MANUAL_DESPAWN, 0, caster->GetGUID()))
+                if (Creature* balloon = caster->SummonCreature(55649, 915.55f, 4563.66f, 230.68f, 2.298090f, TEMPSUMMON_MANUAL_DESPAWN, 0))
                     caster->EnterVehicle(balloon, 0);
         }
 

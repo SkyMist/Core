@@ -876,7 +876,7 @@ enum Opcodes
     SMSG_INITIAL_SPELLS                               = 0x1B05, // 5.4.7 18019
     SMSG_INIT_CURRENCY                                = 0x1E3A, // 5.4.7 18019
     SMSG_INIT_WORLD_STATES                            = 0x0F03, // 5.4.7 18019
-    SMSG_INSPECT_HONOR_STATS                          = 0x0000, // 0x1429, // 5.4.7 18019 - CHECK!
+    SMSG_INSPECT_HONOR_STATS                          = 0x1429, // 5.4.7 18019
     SMSG_INSPECT_RATED_BG_STATS                       = 0x0000, // 0x046B, // 5.4.7 18019 - CHECK!
     SMSG_INSPECT_RESULTS_UPDATE                       = 0x0000,
     SMSG_INSPECT_TALENT                               = 0x1E49, // 5.4.7 18019
@@ -1060,7 +1060,7 @@ enum Opcodes
     SMSG_PLAY_MUSIC                                   = 0x0000,
     SMSG_PLAY_OBJECT_SOUND                            = 0x0C43, // 5.4.7 18019
     SMSG_PLAY_ONE_SHOT_ANIM_KIT                       = 0x0000,
-    //    SMSG_PLAY_SCENE                                = 0x1748, // 5.4.7 18019 - CHECK!
+    // SMSG_PLAY_SCENE                                   = 0x1748, // 5.4.7 18019 - CHECK!
     SMSG_PLAY_SOUND                                   = 0x0E22, // 5.4.7 18019
     SMSG_PLAY_SPELL_VISUAL                            = 0x0000, // 0x1F3B, // 5.4.7 18019 - CHECK!
     SMSG_PLAY_SPELL_VISUAL_KIT                        = 0x0500, // 5.4.7 18019

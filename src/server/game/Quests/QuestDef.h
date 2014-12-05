@@ -31,7 +31,7 @@ class Player;
 
 class ObjectMgr;
 
-#define MAX_QUEST_LOG_SIZE 25
+#define MAX_QUEST_LOG_SIZE 50
 
 #define QUEST_OBJECTIVES_COUNT 4
 #define QUEST_ITEM_OBJECTIVES_COUNT 6
@@ -77,7 +77,7 @@ enum QuestShareMessages
     QUEST_PARTY_MSG_NOT_IN_PARTY            = 10
 };
 
-enum __QuestTradeSkill
+enum QuestTradeSkill
 {
     QUEST_TRSKILL_NONE           = 0,
     QUEST_TRSKILL_ALCHEMY        = 1,
@@ -108,7 +108,7 @@ enum QuestStatus
     MAX_QUEST_STATUS
 };
 
-enum __QuestGiverStatus
+enum QuestGiverStatus
 {
     DIALOG_STATUS_NONE                     = 0x000,
     DIALOG_STATUS_UNK                      = 0x001,
@@ -127,7 +127,7 @@ enum __QuestGiverStatus
     DIALOG_STATUS_SCRIPTED_NO_STATUS       = 0x64           // 100
 };
 
-enum __QuestFlags
+enum QuestFlags
 {
     // Flags used at server and sent to client
     QUEST_FLAGS_NONE                 = 0x00000000,
@@ -178,7 +178,7 @@ enum QuestFlags2
     QUEST_FLAGS2_RECAST_ACCEPT_SPELL_ON_LOGIN         = 0x1000
 };
 
-enum __QuestSpecialFlags
+enum QuestSpecialFlags
 {
     QUEST_SPECIAL_FLAGS_NONE                 = 0x000,
     // Trinity flags for set SpecialFlags in DB if required but used only at server
