@@ -490,6 +490,8 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
 
         bool Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data = NULL);
         bool LoadCreaturesAddon(bool reload = false);
+        bool HasCreatureAddonEmote();
+
         void SelectLevel(const CreatureTemplate* cinfo);
         void LoadEquipment(uint32 equip_entry, bool force=false);
 

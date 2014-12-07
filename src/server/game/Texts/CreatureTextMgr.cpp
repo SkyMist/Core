@@ -400,7 +400,7 @@ void CreatureTextMgr::SendEmote(Unit* source, uint32 emote)
     if (!source)
         return;
 
-    source->HandleEmoteCommand(emote);
+    source->HandleEmote(emote);
 }
 
 void CreatureTextMgr::SetRepeatId(Creature* source, uint8 textGroup, uint8 id)

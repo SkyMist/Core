@@ -1335,7 +1335,7 @@ public:
             m_uiTimer = 0;
             m_uiPhase = 0;
             me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_COWER);
+            me->HandleEmote(EMOTE_STATE_COWER);
             m_heading = me->GetOrientation();
         }
 
@@ -1350,7 +1350,7 @@ public:
                         case 1:
                             // say random text
                             me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                            me->HandleEmote(EMOTE_ONESHOT_NONE);
                             DoScriptText(RAND(SAY_RECRUIT_1, SAY_RECRUIT_2, SAY_RECRUIT_3), me);
                             m_uiTimer = 3000;
                             m_uiPhase = 2;

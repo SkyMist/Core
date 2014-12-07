@@ -115,7 +115,7 @@ class boss_tsulong : public CreatureScript
                         phase = PHASE_NIGHT;
                         me->SetDisplayId(DISPLAY_TSULON_NIGHT);
                         me->setFaction(14);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                        me->HandleEmote(0);
                         me->SetHomePosition(-1017.841f, -3049.621f, 12.823f, 4.72f);
                         me->GetMotionMaster()->MoveTargetedHome();
                     }
@@ -124,7 +124,7 @@ class boss_tsulong : public CreatureScript
                         phase = PHASE_DAY;
                         me->SetDisplayId(DISPLAY_TSULON_DAY);
                         me->setFaction(35);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 35);
+                        me->HandleEmote(35);
                     }
                 }
             }
@@ -221,7 +221,7 @@ class boss_tsulong : public CreatureScript
                                 me->setFaction(14);
                                 me->SetReactState(REACT_PASSIVE);
                                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                                me->HandleEmote(0);
                                 me->SetDisplayId(DISPLAY_TSULON_NIGHT);
                                 me->GetMotionMaster()->MovePoint(WAYPOINT_FIRST, -1018.10f, -2947.431f, 50.12f);
                                 inFly = true;

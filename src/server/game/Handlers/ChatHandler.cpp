@@ -693,7 +693,7 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
     }
 }
 
-void WorldSession::HandleEmoteOpcode(WorldPacket & recvData)
+void WorldSession::HandleEmoteOpcode(WorldPacket& recvData)
 {
     if (!GetPlayer()->isAlive() || GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         return;
@@ -712,7 +712,7 @@ void WorldSession::HandleEmoteOpcode(WorldPacket & recvData)
     recvData >> emote;
 
     sScriptMgr->OnPlayerEmote(GetPlayer(), emote);
-    GetPlayer()->HandleEmoteCommand(emote);
+    GetPlayer()->HandleEmote(emote);
 }
 
 namespace JadeCore
@@ -811,25 +811,34 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket & recvData)
 
     sScriptMgr->OnPlayerTextEmote(GetPlayer(), text_emote, emoteNum, guid);
 
-    EmotesTextEntry const* em = sEmotesTextStore.LookupEntry(text_emote);
-    if (!em)
+    EmotesTextEntry const* textEmote = sEmotesTextStore.LookupEntry(text_emote);
+    if (!textEmote)
         return;
 
-    uint32 emote_anim = em->textid;
+    uint32 emote_anim = textEmote->textid;
 
-    switch (emote_anim)
+    EmotesEntry const* emote = sEmotesStore.LookupEntry(textEmote->textid);
+    if (emote)
     {
-        case EMOTE_STATE_SLEEP:
-        case EMOTE_STATE_SIT:
-        case EMOTE_STATE_KNEEL:
-        case EMOTE_ONESHOT_NONE:
-            break;
-        default:
-            // Only allow text-emotes for "dead" entities (feign death included)
-            if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
-                break;
-             GetPlayer()->HandleEmoteCommand(emote_anim);
-             break;
+        if (!emote->UnitStandState) // Stand State emotes are handled implicitly by the client by triggering the needed opcode so no action is needed.
+        {
+            if (!GetPlayer()->HasUnitState(UNIT_STATE_DIED)) // "Dead" entities (feign death included) can only do text-emotes, no visual changes.
+                GetPlayer()->HandleEmote(emote->Id);
+        }
+        else
+        {
+            // When a player types in the same Stand State emote again, like /sleep, he cancels it, and no text is shown. Acts like a toggle.
+            if (GetPlayer()->GetStoredEmoteState() == emote->Id)
+            {
+                GetPlayer()->HandleEmote(EMOTE_ONESHOT_NONE);
+                if (emote->Id == EMOTE_STATE_SLEEP || emote->Id == EMOTE_STATE_KNEEL)
+                    GetPlayer()->SetStandState(UNIT_STAND_STATE_STAND);
+                GetPlayer()->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                return;
+            }
+            else
+                GetPlayer()->SetStoredEmoteState(emote->Id);
+        }
     }
 
     Unit* unit = ObjectAccessor::GetUnit(*_player, guid);

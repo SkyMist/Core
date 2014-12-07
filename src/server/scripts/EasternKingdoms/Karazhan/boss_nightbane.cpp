@@ -193,7 +193,7 @@ public:
 
                 DoResetThreat();
                 me->SetDisableGravity(false);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                me->HandleEmote(EMOTE_ONESHOT_LAND);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_UNK_6);
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->SetInCombatWithZone();
@@ -216,7 +216,7 @@ public:
             me->MonsterYell(YELL_FLY_PHASE, LANG_UNIVERSAL, 0);
             me->SetReactState(REACT_PASSIVE);
             me->InterruptSpell(CURRENT_GENERIC_SPELL);
-            me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+            me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
             me->SetDisableGravity(true);
             me->GetMotionMaster()->Clear(false);
             me->GetMotionMaster()->MovePoint(8, IntroWay[2][0], IntroWay[2][1], IntroWay[2][2]);

@@ -337,7 +337,7 @@ class boss_jin_qin_xi : public CreatureScript
                 if (id == 2)
                 {
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                    me->HandleEmote(EMOTE_ONESHOT_BOW);
                     events.ScheduleEvent(EVENT_BOSS_EMOTE, 2000);
                 }
             }
@@ -601,7 +601,7 @@ class boss_jin_qin_xi : public CreatureScript
                         if (!(devastatingComboPhase % 2))
                         {
                             // Cancel previous emote in order to properly play a new one
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_NONE);
+                            me->HandleEmote(EMOTE_ONESHOT_NONE);
                             // Pick a random new orientation
                             float angle = me->GetOrientation() + frand(-0.75f, 0.75f);
                             // angle corrections
@@ -610,7 +610,7 @@ class boss_jin_qin_xi : public CreatureScript
                             if (comboArc = urand(0, 1))
                             {
                                 // Emote for arc attack
-                                me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK2HLOOSE);
+                                me->HandleEmote(EMOTE_ONESHOT_ATTACK2HLOOSE);
                                 // Set new orientation (after emote)
                                 me->SetFacingTo(angle);
                                 // Wait a bit the anim starts to play before freezing it
@@ -619,7 +619,7 @@ class boss_jin_qin_xi : public CreatureScript
                             else
                             {
                                 // Emote for stomp
-                                me->HandleEmoteCommand(EMOTE_ONESHOT_STOMP);
+                                me->HandleEmote(EMOTE_ONESHOT_STOMP);
                                 // Set orientation (after emote)
                                 me->SetFacingTo(angle);
                                 // Freezing right now
@@ -802,13 +802,13 @@ class mob_woe_add_generic : public CreatureScript
                         case NPC_EMPEROR_RAGE:
                         {
                             me->AddAura(SPELL_WITHOUT_ARMOR, me);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
+                            me->HandleEmote(EMOTE_ONESHOT_POINT);
                             events.ScheduleEvent(EVENT_RAGE_FIRST_ATTACK, 2000);
                             break;
                         }
                         case NPC_EMPEROR_COURAGE:
                         {
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                            me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                             me->AddAura(SPELL_HALF_PLATE, me);
 
                             events.ScheduleEvent(EVENT_IMPEDING_THRUST, 5000);

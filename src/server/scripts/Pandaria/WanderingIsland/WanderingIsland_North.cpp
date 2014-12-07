@@ -207,7 +207,7 @@ class mob_tushui_trainee : public CreatureScript
                     damage = 0;
                     me->CombatStop();
                     isInCombat = false;
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                    me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                     Talk(urand(0, 7));
                     me->GetMotionMaster()->MovePoint(0, 1446.322876f, 3389.027588f, 173.782471f);
                 }
@@ -234,7 +234,7 @@ class mob_tushui_trainee : public CreatureScript
                 {
                     if (punch1 <= diff)
                     {
-                        me->HandleEmoteCommand(35);
+                        me->HandleEmote(35);
                         punch1 = 7500;
                     }
                     else
@@ -242,7 +242,7 @@ class mob_tushui_trainee : public CreatureScript
 
                     if (punch2 <= diff)
                     {
-                        me->HandleEmoteCommand(36);
+                        me->HandleEmote(36);
                         punch2 = 7500;
                     }
                     else
@@ -250,7 +250,7 @@ class mob_tushui_trainee : public CreatureScript
 
                     if (punch3 <= diff)
                     {
-                        me->HandleEmoteCommand(37);
+                        me->HandleEmote(37);
                         punch3 = 7500;
                     }
                     else
@@ -336,7 +336,7 @@ public:
                 me->CombatStop();
                 me->setFaction(35);
                 me->SetFullHealth();
-                me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                 events.Reset();
                 events.ScheduleEvent(EVENT_RESET, 5000);
                 damage = 0;
@@ -440,7 +440,7 @@ public:
                 guidMob[i] = 0;
 
             ResetMobs();
-            me->HandleEmoteCommand(EMOTE_STATE_READY2H);
+            me->HandleEmote(EMOTE_STATE_READY2H);
         }
         
         void DamageTaken(Unit* pDoneBy, uint32 &uiDamage)
@@ -473,7 +473,7 @@ public:
         void ResetMobs()
         {
             events.ScheduleEvent(EVENT_CHECK_MOBS, 1000);
-            me->HandleEmoteCommand(EMOTE_STATE_READY2H);
+            me->HandleEmote(EMOTE_STATE_READY2H);
 
             for(int i = 0; i < 4; i++)
             {
@@ -488,7 +488,7 @@ public:
                 {
                     guidMob[i] = temp->GetGUID();
                     temp->SetFacingToObject(me);
-                    temp->HandleEmoteCommand(EMOTE_STATE_READY2H);
+                    temp->HandleEmote(EMOTE_STATE_READY2H);
                     temp->GetMotionMaster()->Clear(false);
                     temp->GetMotionMaster()->MoveChase(me);
                     temp->Attack(me, true);
@@ -522,7 +522,7 @@ public:
                     {
                         if(VerifyMobs()) // No more mobs, objective completed
                         {
-                    	    me->HandleEmoteCommand(EMOTE_STATE_STAND);
+                    	    me->HandleEmote(EMOTE_STATE_STAND);
                     	    me->MonsterYell("Thank you!", LANG_UNIVERSAL, 0);
                         
                             std::list<Player*> PlayerList;
@@ -1029,7 +1029,7 @@ public:
                 me->RemoveAura(AURA_BLESSING_OF_THE_BLUE_FLAME);
                 me->RemoveAura(AURA_BLESSING_OF_THE_RED_FLAME);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                 me->DespawnOrUnsummon(2000);
 
                 if (attacker->GetTypeId() == TYPEID_PLAYER)
@@ -1300,7 +1300,7 @@ public:
         {
             if (punch1 <= diff)
             {
-                me->HandleEmoteCommand(35);
+                me->HandleEmote(35);
                 punch1 = 7500;
             }
             else
@@ -1308,7 +1308,7 @@ public:
 
             if (punch2 <= diff)
             {
-                me->HandleEmoteCommand(36);
+                me->HandleEmote(36);
                 punch2 = 7500;
             }
             else
@@ -1316,7 +1316,7 @@ public:
 
             if (punch3 <= diff)
             {
-                me->HandleEmoteCommand(37);
+                me->HandleEmote(37);
                 punch3 = 7500;
             }
             else
@@ -1356,7 +1356,7 @@ public:
         {
             if (punch1 <= diff)
             {
-                me->HandleEmoteCommand(35);
+                me->HandleEmote(35);
                 punch1 = 7500;
             }
             else
@@ -1364,7 +1364,7 @@ public:
 
             if (punch2 <= diff)
             {
-                me->HandleEmoteCommand(36);
+                me->HandleEmote(36);
                 punch2 = 7500;
             }
             else
@@ -1372,7 +1372,7 @@ public:
 
             if (punch3 <= diff)
             {
-                me->HandleEmoteCommand(37);
+                me->HandleEmote(37);
                 punch3 = 7500;
             }
             else
@@ -1419,7 +1419,7 @@ class mob_huojin_trainee : public CreatureScript
                     me->CombatStop();
                     me->setFaction(35);
                     isInCombat = false;
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                    me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                     Talk(urand(0, 7));
                     me->GetMotionMaster()->MovePoint(0, 1446.322876f, 3389.027588f, 173.782471f);
                 }
@@ -1447,7 +1447,7 @@ class mob_huojin_trainee : public CreatureScript
                 {
                     if (punch <= diff)
                     {
-                        me->HandleEmoteCommand(35);
+                        me->HandleEmote(35);
                         punch = urand(500, 3000);
                     }
                     else

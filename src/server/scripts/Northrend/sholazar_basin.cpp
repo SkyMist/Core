@@ -376,7 +376,7 @@ public:
                     DoScriptText(SAY_WP_3, me);
                     me->CastSpell(5918.33f, 5372.91f, -98.770f, SPELL_EXPLODE_CRYSTAL, true);
                     me->SummonGameObject(184743, 5918.33f, 5372.91f, -98.770f, 0, 0, 0, 0, 0, TEMPSUMMON_MANUAL_DESPAWN);     //approx 3 to 4 seconds
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                    me->HandleEmote(EMOTE_ONESHOT_LAUGH);
                     break;
                 case 2:
                     DoScriptText(SAY_WP_4, me);
@@ -387,7 +387,7 @@ public:
                 case 8:
                     me->CastSpell(5887.37f, 5379.39f, -91.289f, SPELL_EXPLODE_CRYSTAL, true);
                     me->SummonGameObject(184743, 5887.37f, 5379.39f, -91.289f, 0, 0, 0, 0, 0, TEMPSUMMON_MANUAL_DESPAWN);      //approx 3 to 4 seconds
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                    me->HandleEmote(EMOTE_ONESHOT_LAUGH);
                     break;
                 case 9:
                     DoScriptText(SAY_WP_6, me);

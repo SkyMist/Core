@@ -2817,7 +2817,7 @@ public:
 
             if (Miss && tAnimate <= diff)
             {
-                //me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACKUNARMED);
+                //me->HandleEmote(EMOTE_ONESHOT_ATTACKUNARMED);
                 me->PlayDistanceSound(SOUND_WORGEN_ATTACK);
                 tAnimate = DELAY_ANIMATE;
             }
@@ -2888,7 +2888,7 @@ public:
             {
                 if (!Move)
                 {
-                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE , EMOTE_ONESHOT_NONE); // Change our emote state to allow flight
+                    me->HandleEmote(EMOTE_ONESHOT_NONE); // Change our emote state to allow flight
                     me->SetDisableGravity(true);
                     Move = true;
                 }

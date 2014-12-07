@@ -192,7 +192,7 @@ public:
                     if (!Submerged && WaitTimer2 <= diff) // wait 500ms before emerge anim
                     {
                         me->RemoveAllAuras();
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                        me->HandleEmote(0);
                         DoCast(me, SPELL_EMERGE, false);
                         WaitTimer2 = 60000; // never reached
                         WaitTimer = 3000;
@@ -326,7 +326,7 @@ public:
                     me->InterruptNonMeleeSpells(false); // shouldn't be any
                     me->RemoveAllAuras();
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                    me->RemoveFlag(UNIT_NPC_EMOTESTATE, EMOTE_STATE_SUBMERGED);
+                    me->HandleEmote(EMOTE_STATE_NONE);
                     DoCast(me, SPELL_EMERGE, true);
                     Spawned = false;
                     SpoutTimer = 3000; // directly cast Spout after emerging!

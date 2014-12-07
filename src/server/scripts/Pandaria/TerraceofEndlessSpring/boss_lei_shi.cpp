@@ -170,7 +170,7 @@ class boss_lei_shi : public CreatureScript
                         pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SPRAY);
  
                         me->setFaction(14);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                        me->HandleEmote(0);
 
                         if (pInstance->GetData(SPELL_RITUAL_OF_PURIFICATION))
                             me->AddAura(SPELL_RITUAL_OF_PURIFICATION, me);
@@ -190,7 +190,7 @@ class boss_lei_shi : public CreatureScript
                     else
                     {
                         me->setFaction(35);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 35);
+                        me->HandleEmote(35);
                     }
                 }
 
@@ -475,7 +475,7 @@ class boss_lei_shi : public CreatureScript
                     case EVENT_SPRAY:
                     {
                         me->setFaction(14);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                        me->HandleEmote(0);
 
                         if (getAwayPhase || me->HasUnitState(UNIT_STATE_CASTING))
                         {

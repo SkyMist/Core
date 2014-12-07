@@ -121,7 +121,7 @@ public:
             {
                 bIsEating = true;
                 EatTimer = 7000;
-                me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_UNARMED);
+                me->HandleEmote(EMOTE_ONESHOT_ATTACK_UNARMED);
             }
         }
 
@@ -379,7 +379,7 @@ public:
 
             if (id)
             {
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_EAT);
+                me->HandleEmote(EMOTE_ONESHOT_EAT);
                 PoisonTimer = 15000;
             }
         }
@@ -860,7 +860,7 @@ public:
                     return 5000;
                     break;
                 case 20:
-                    Illi->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                    Illi->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                     Illi->SetDisableGravity(true);
                     return 500;
                     break;
@@ -1297,7 +1297,7 @@ public:
                 {
                     me->SetTarget(AggroTarget->GetGUID());
                     me->AddThreat(AggroTarget, 1);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
+                    me->HandleEmote(EMOTE_ONESHOT_POINT);
                 }
                 break;
             case 6:

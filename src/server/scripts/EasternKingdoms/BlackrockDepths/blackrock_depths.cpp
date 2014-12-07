@@ -755,7 +755,7 @@ public:
                     me->Say(SAY_WINDSOR_1, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 7:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     me->Say(SAY_WINDSOR_4_1, LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold = true;
                     break;
@@ -767,7 +767,7 @@ public:
                     instance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_IN_PROGRESS);
                     break;
                 case 13:
-                    me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
+                    me->HandleEmote(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
                     break;
                 case 14:
                     instance->SetData(DATA_GATE_SR, 0);
@@ -777,7 +777,7 @@ public:
                     me->Say(SAY_WINDSOR_9, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 17:
-                    me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
+                    me->HandleEmote(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
                     break;
                 case 18:
                     instance->SetData(DATA_GATE_SC, 0);
@@ -939,7 +939,7 @@ public:
                     me->Say(SAY_REGINALD_WINDSOR_0_2, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 7:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     me->Say(SAY_REGINALD_WINDSOR_5_1, LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
@@ -947,7 +947,7 @@ public:
                     me->Say(SAY_REGINALD_WINDSOR_5_2, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 11:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     me->Say(SAY_REGINALD_WINDSOR_7_1, LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
@@ -958,7 +958,7 @@ public:
                     me->Say(SAY_REGINALD_WINDSOR_7_3, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 20:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     me->Say(SAY_REGINALD_WINDSOR_13_1, LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
@@ -966,7 +966,7 @@ public:
                     me->Say(SAY_REGINALD_WINDSOR_13_3, LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 23:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     me->Say(SAY_REGINALD_WINDSOR_14_1, LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
@@ -1274,19 +1274,19 @@ public:
             switch (waypointId)
             {
                 case 1:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_KICK);
+                    me->HandleEmote(EMOTE_ONESHOT_KICK);
                     break;
                 case 2:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_UNARMED);
+                    me->HandleEmote(EMOTE_ONESHOT_ATTACK_UNARMED);
                     break;
                 case 3:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK_UNARMED);
+                    me->HandleEmote(EMOTE_ONESHOT_ATTACK_UNARMED);
                     break;
                 case 4:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_KICK);
+                    me->HandleEmote(EMOTE_ONESHOT_KICK);
                     break;
                 case 5:
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_KICK);
+                    me->HandleEmote(EMOTE_ONESHOT_KICK);
                     BreakKeg_Timer = 2000;
                     break;
             }

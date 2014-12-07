@@ -295,7 +295,7 @@ class boss_mimiron : public CreatureScript
             {
                 _Reset();
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_ATTACKABLE_1);
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_USE_STANDING);
+                me->HandleEmote(EMOTE_STATE_USE_STANDING);
                 me->SetVisible(true);
                 me->ExitVehicle();
                 me->GetMotionMaster()->MoveTargetedHome();
@@ -465,7 +465,7 @@ class boss_mimiron : public CreatureScript
                                     break;
                                 case PHASE_AERIAL_ACTIVATION:
                                     me->ChangeSeat(4);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                    me->HandleEmote(EMOTE_STATE_STAND);
                                     events.ScheduleEvent(EVENT_STEP_2, 2.5*IN_MILLISECONDS, 0, PHASE_AERIAL_ACTIVATION);
                                     break;
                                 case PHASE_V0L7R0N_ACTIVATION:
@@ -477,7 +477,7 @@ class boss_mimiron : public CreatureScript
                                         if (Creature* VX_001 = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_VX_001)))
                                         {
                                             me->EnterVehicle(VX_001, 1);
-                                            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                            me->HandleEmote(EMOTE_STATE_STAND);
                                             Talk(SAY_AERIAL_DEATH);
                                         }
                                     }
@@ -504,7 +504,7 @@ class boss_mimiron : public CreatureScript
                                     break;
                                 case PHASE_AERIAL_ACTIVATION:
                                     Talk(SAY_VX001_DEATH);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_TALK);
+                                    me->HandleEmote(EMOTE_STATE_TALK);
                                     events.ScheduleEvent(EVENT_STEP_3, 5*IN_MILLISECONDS, 0, PHASE_AERIAL_ACTIVATION);
                                     break;
                                 case PHASE_V0L7R0N_ACTIVATION:
@@ -513,7 +513,7 @@ class boss_mimiron : public CreatureScript
                                             if (Creature* Leviathan = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_LEVIATHAN_MK_II)))
                                             {
                                                 VX_001->SetStandState(UNIT_STAND_STATE_STAND);
-                                                VX_001->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_CUSTOM_SPELL_01);
+                                                VX_001->HandleEmote(EMOTE_STATE_CUSTOM_SPELL_01);
                                                 VX_001->EnterVehicle(Leviathan, 7);
                                             }
                                     events.ScheduleEvent(EVENT_STEP_3, 2*IN_MILLISECONDS, 0, PHASE_V0L7R0N_ACTIVATION);
@@ -535,7 +535,7 @@ class boss_mimiron : public CreatureScript
                                     events.ScheduleEvent(EVENT_STEP_4, 15*IN_MILLISECONDS, 0, PHASE_VX001_ACTIVATION);
                                     break;
                                 case PHASE_AERIAL_ACTIVATION:
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                    me->HandleEmote(EMOTE_STATE_STAND);
                                     if (instance)
                                     {
                                         if (Creature* AerialUnit = me->SummonCreature(NPC_AERIAL_COMMAND_UNIT, 2744.65f, 2569.46f, 380.0f, 3.14159f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10*IN_MILLISECONDS))
@@ -566,7 +566,7 @@ class boss_mimiron : public CreatureScript
                             {
                                 case PHASE_INTRO:
                                     me->ChangeSeat(5);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                    me->HandleEmote(EMOTE_STATE_STAND);
                                     events.ScheduleEvent(EVENT_STEP_5, 2.5*IN_MILLISECONDS, 0, PHASE_INTRO);
                                     break;
                                 case PHASE_VX001_ACTIVATION:
@@ -621,7 +621,7 @@ class boss_mimiron : public CreatureScript
                             {
                                 case PHASE_INTRO:
                                     Talk(SAY_MKII_ACTIVATE);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_TALK);
+                                    me->HandleEmote(EMOTE_STATE_TALK);
                                     events.ScheduleEvent(EVENT_STEP_6, 6*IN_MILLISECONDS, 0, PHASE_INTRO);
                                     break;
                                 case PHASE_VX001_ACTIVATION:
@@ -631,7 +631,7 @@ class boss_mimiron : public CreatureScript
                                     events.ScheduleEvent(EVENT_STEP_6, 3.5*IN_MILLISECONDS, 0, PHASE_VX001_ACTIVATION);
                                     break;
                                 case PHASE_AERIAL_ACTIVATION:
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_TALK);
+                                    me->HandleEmote(EMOTE_STATE_TALK);
                                     Talk(SAY_AERIAL_ACTIVATE);
                                     events.ScheduleEvent(EVENT_STEP_6, 8*IN_MILLISECONDS, 0, PHASE_AERIAL_ACTIVATION);
                                     break;
@@ -647,12 +647,12 @@ class boss_mimiron : public CreatureScript
                                     events.ScheduleEvent(EVENT_STEP_7, 2*IN_MILLISECONDS, 0, PHASE_INTRO);
                                     break;
                                 case PHASE_VX001_ACTIVATION:
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_TALK);
+                                    me->HandleEmote(EMOTE_STATE_TALK);
                                     Talk(SAY_VX001_ACTIVATE);
                                     events.ScheduleEvent(EVENT_STEP_7, 10*IN_MILLISECONDS, 0, PHASE_VX001_ACTIVATION);
                                     break;
                                 case PHASE_AERIAL_ACTIVATION:
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                    me->HandleEmote(EMOTE_STATE_STAND);
                                     //me->SetVisible(false);
                                     if (instance)
                                     {
@@ -677,7 +677,7 @@ class boss_mimiron : public CreatureScript
                                     {
                                         if (Creature* Leviathan = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_LEVIATHAN_MK_II)))
                                         {
-                                            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_STAND);
+                                            me->HandleEmote(EMOTE_STATE_STAND);
                                             Leviathan->AI()->DoAction(DO_START_ENCOUNTER);
                                             _phase = PHASE_COMBAT;
                                             events.SetPhase(_phase);
@@ -686,7 +686,7 @@ class boss_mimiron : public CreatureScript
                                     break;
                                 case PHASE_VX001_ACTIVATION:
                                     me->ChangeSeat(1);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_SIT);
+                                    me->HandleEmote(EMOTE_STATE_SIT);
                                     events.ScheduleEvent(EVENT_STEP_8, 2*IN_MILLISECONDS, 0, PHASE_VX001_ACTIVATION);
                                     break;
                                 default:
@@ -700,7 +700,7 @@ class boss_mimiron : public CreatureScript
                                     if (instance)
                                     {
                                         if (Creature* VX_001 = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_VX_001)))
-                                            VX_001->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                                            VX_001->HandleEmote(EMOTE_ONESHOT_EMERGE);
                                     }
                                     events.ScheduleEvent(EVENT_STEP_9, 3.5*IN_MILLISECONDS, 0, PHASE_VX001_ACTIVATION);
                                     break;

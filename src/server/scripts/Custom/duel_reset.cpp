@@ -29,7 +29,7 @@ class duel_reset : public PlayerScript
                                 looser->SetPower(POWER_MANA, looser->GetMaxPower(POWER_MANA));
                         }
 						
-                        winner->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
+                        winner->HandleEmote(EMOTE_ONESHOT_CHEER);
                     }
                 }
                 else
@@ -48,7 +48,7 @@ class duel_reset : public PlayerScript
                             looser->SetPower(POWER_MANA, looser->GetMaxPower(POWER_MANA));
                     }
 
-                    winner->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
+                    winner->HandleEmote(EMOTE_ONESHOT_CHEER);
                 }
             }
         }

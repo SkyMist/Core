@@ -5369,7 +5369,7 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
                         return;
-                    unitTarget->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                    unitTarget->HandleEmote(EMOTE_STATE_DANCE);
                     return;
                 }
                 case 28374: // Decimate

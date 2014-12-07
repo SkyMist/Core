@@ -603,23 +603,28 @@ bool PetAI::CanAttack(Unit* target)
 void PetAI::ReceiveEmote(Player* player, uint32 emote)
 {
     if (me->GetOwnerGUID() && me->GetOwnerGUID() == player->GetGUID())
+    {
         switch (emote)
         {
+            // Performing a /cower emote will cause the ghoul to roar at you.
             case TEXT_EMOTE_COWER:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_OMNICAST_GHOUL);
+                    me->HandleEmote(EMOTE_ONESHOT_ROAR);
                 break;
+            // Performing a /angry emote will cause the ghoul to cower. 
             case TEXT_EMOTE_ANGRY:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_STATE_STUN);
+                    me->HandleEmote(EMOTE_ONESHOT_COWER);
                 break;
+            // Using the /glare emote on the ghoul will cause it to stay in the cower position. 
             case TEXT_EMOTE_GLARE:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_STATE_STUN);
+                    me->HandleEmote(EMOTE_STATE_COWER);
                 break;
             case TEXT_EMOTE_SOOTHE:
                 if (me->isPet() && me->ToPet()->IsPetGhoul())
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_OMNICAST_GHOUL);
+                    me->HandleEmote(EMOTE_ONESHOT_OMNICAST_GHOUL);
                 break;
         }
+    }
 }

@@ -124,7 +124,7 @@ public:
                         break;
                 }
             }
-            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+            me->HandleEmote(EMOTE_ONESHOT_NONE);
         }
 
         uint8 GetForgeMasterType()

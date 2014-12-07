@@ -832,19 +832,19 @@ class npc_highlord_tirion_fordring_lh : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_TIRION_INTRO_2:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             break;
                         case EVENT_TIRION_INTRO_3:
                             Talk(SAY_TIRION_INTRO_2);
                             break;
                         case EVENT_TIRION_INTRO_4:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             break;
                         case EVENT_TIRION_INTRO_5:
                             Talk(SAY_TIRION_INTRO_3);
                             break;
                         case EVENT_LK_INTRO_1:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_POINT_NO_SHEATHE);
+                            me->HandleEmote(EMOTE_ONESHOT_POINT_NO_SHEATHE);
                             if (Creature* theLichKing = ObjectAccessor::GetCreature(*me, _theLichKing))
                                 theLichKing->AI()->Talk(SAY_LK_INTRO_1);
                             break;
@@ -909,11 +909,11 @@ class npc_highlord_tirion_fordring_lh : public CreatureScript
                             break;
                         case EVENT_MURADIN_INTRO_2:
                             if (Creature* muradin = ObjectAccessor::GetCreature(*me, _factionNPC))
-                                muradin->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                                muradin->HandleEmote(EMOTE_ONESHOT_TALK);
                             break;
                         case EVENT_MURADIN_INTRO_3:
                             if (Creature* muradin = ObjectAccessor::GetCreature(*me, _factionNPC))
-                                muradin->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                                muradin->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             break;
                         case EVENT_TIRION_INTRO_A_7:
                             Talk(SAY_TIRION_INTRO_A_5);
@@ -2080,7 +2080,7 @@ class spell_icc_stoneform : public SpellScriptLoader
                 {
                     target->SetReactState(REACT_PASSIVE);
                     target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
-                    target->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_CUSTOM_SPELL_02);
+                    target->HandleEmote(EMOTE_STATE_CUSTOM_SPELL_02);
                 }
             }
 
@@ -2090,7 +2090,7 @@ class spell_icc_stoneform : public SpellScriptLoader
                 {
                     target->SetReactState(REACT_AGGRESSIVE);
                     target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
-                    target->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                    target->HandleEmote(0);
                 }
             }
 

@@ -3562,6 +3562,10 @@ void Spell::prepare(SpellCastTargets const* targets, constAuraEffectPtr triggere
             m_caster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_CAST);
             for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
+                // Clear unit emote state.
+                if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    m_caster->HandleEmote(EMOTE_ONESHOT_NONE);
+
                 if (m_spellInfo->Effects[i].GetUsedTargetObjectType() == TARGET_OBJECT_TYPE_UNIT)
                 {
                     m_caster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_SPELL_ATTACK);

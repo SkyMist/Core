@@ -980,7 +980,7 @@ public:
                     if (GetClosestGameObjectWithEntry(me, GO_DRAENEI_MACHINE, INTERACTION_DISTANCE))
                     {
                         // take the GO -> animation
-                        me->HandleEmoteCommand(EMOTE_STATE_LOOT);
+                        me->HandleEmote(EMOTE_STATE_LOOT);
                         SetEscortPaused(true);
                         bTake=true;
                     }
@@ -1005,7 +1005,7 @@ public:
             {
                 if (uiTakeTimer < uiDiff)
                 {
-                    me->HandleEmoteCommand(EMOTE_STATE_NONE);
+                    me->HandleEmote(EMOTE_STATE_NONE);
                     if (GameObject* go = GetClosestGameObjectWithEntry(me, GO_DRAENEI_MACHINE, INTERACTION_DISTANCE))
                     {
                         SetEscortPaused(false);

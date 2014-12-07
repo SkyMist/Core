@@ -119,7 +119,7 @@ class boss_wing_leader_neronok : public CreatureScript
             void SetFlight()
             {
                 me->SetReactState(REACT_PASSIVE);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                 me->SetDisableGravity(true);
                 me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
                 me->AddUnitMovementFlag(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_FLYING);
@@ -127,7 +127,7 @@ class boss_wing_leader_neronok : public CreatureScript
 
             void SetLand()
             {
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                me->HandleEmote(EMOTE_ONESHOT_LAND);
                 me->SetDisableGravity(false);
                 me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
                 me->RemoveUnitMovementFlag(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_FLYING);

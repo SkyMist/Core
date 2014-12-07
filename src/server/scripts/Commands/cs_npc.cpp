@@ -882,7 +882,7 @@ public:
             WorldDatabase.Execute(stmt);
         }
 
-        target->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote);
+        target->HandleEmote(emote);
 
         return true;
     }
@@ -1195,9 +1195,9 @@ public:
         char lastchar = args[strlen(args) - 1];
         switch (lastchar)
         {
-        case '?':   creature->HandleEmoteCommand(EMOTE_ONESHOT_QUESTION);      break;
-        case '!':   creature->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);   break;
-        default:    creature->HandleEmoteCommand(EMOTE_ONESHOT_TALK);          break;
+        case '?':   creature->HandleEmote(EMOTE_ONESHOT_QUESTION);      break;
+        case '!':   creature->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);   break;
+        default:    creature->HandleEmote(EMOTE_ONESHOT_TALK);          break;
         }
 
         return true;
@@ -1269,22 +1269,17 @@ public:
         char* receiver_str = strtok((char*)args, " ");
         char* text = strtok(NULL, "");
 
-        uint64 guid = handler->GetSession()->GetPlayer()->GetSelection();
-        Creature* creature = handler->GetSession()->GetPlayer()->GetMap()->GetCreature(guid);
-
+        Creature* creature = handler->getSelectedCreature();
         if (!creature || !receiver_str || !text)
-        {
             return false;
-        }
 
-        uint64 receiver_guid= atol(receiver_str);
+        uint64 receiver_guid = atol(receiver_str);
 
         // check online security
         if (handler->HasLowerSecurity(ObjectAccessor::FindPlayer(receiver_guid), 0))
             return false;
 
         creature->MonsterWhisper(text, receiver_guid);
-
         return true;
     }
 
@@ -1304,7 +1299,7 @@ public:
         creature->MonsterYell(args, LANG_UNIVERSAL, 0);
 
         // make an emote
-        creature->HandleEmoteCommand(EMOTE_ONESHOT_SHOUT);
+        creature->HandleEmote(EMOTE_ONESHOT_SHOUT);
 
         return true;
     }

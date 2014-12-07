@@ -449,12 +449,7 @@ void Map::ScriptsProcess()
             case SCRIPT_COMMAND_EMOTE:
                 // Source or target must be Creature.
                 if (Creature* cSource = _GetScriptCreatureSourceOrTarget(source, target, step.script))
-                {
-                    if (step.script->Emote.Flags & SF_EMOTE_USE_STATE)
-                        cSource->SetUInt32Value(UNIT_NPC_EMOTESTATE, step.script->Emote.EmoteID);
-                    else
-                        cSource->HandleEmoteCommand(step.script->Emote.EmoteID);
-                }
+                    cSource->HandleEmote(step.script->Emote.EmoteID);
                 break;
 
             case SCRIPT_COMMAND_FIELD_SET:

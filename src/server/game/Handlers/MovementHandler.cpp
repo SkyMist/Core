@@ -391,19 +391,11 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvPacket)
 
     // fall damage generation (ignore in flight case that can be triggered also at lags in moment teleportation to another map).
     if (opcode == CMSG_MOVE_FALL_LAND && plrMover && !plrMover->isInFlight())
-    {
         plrMover->HandleFall(movementInfo);
-    }
 
+    // now client does not include swimming flag in case of jumping under water.
     if (plrMover && ((movementInfo.flags & MOVEMENTFLAG_SWIMMING) != 0) != plrMover->IsInWater())
-    {
-        // now client not include swimming flag in case jumping under water
         plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.pos.GetPositionX(), movementInfo.pos.GetPositionY(), movementInfo.pos.GetPositionZ()));
-    }
-
-    // Hack Fix, clean emotes when moving
-    if (plrMover && plrMover->GetLastPlayedEmote())
-        plrMover->HandleEmoteCommand(0);
 
     //if (plrMover)
     //    sAnticheatMgr->StartHackDetection(plrMover, movementInfo, opcode);
@@ -433,6 +425,10 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvPacket)
     
     if (plrMover)                                            // nothing is charmed, or player charmed
     {
+        // Clear unit emote state.
+        plrMover->HandleEmote(EMOTE_ONESHOT_NONE);
+        plrMover->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+
         plrMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 
         AreaTableEntry const* zone = GetAreaEntryByAreaID(plrMover->GetAreaId());

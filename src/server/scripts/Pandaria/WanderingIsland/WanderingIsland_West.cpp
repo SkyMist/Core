@@ -2,6 +2,7 @@
 #include "ScriptedCreature.h"
 #include "ScriptedEscortAI.h"
 #include "SpellScript.h"
+#include "SpellAuraEffects.h"
 #include "Vehicle.h"
 
 #define GOSSIP_WIND     "I would like to go back on the top of the temple"
@@ -755,7 +756,7 @@ public:
 
         void HandleScriptEffect(SpellEffIndex effIndex)
         {
-            // PreventDefaultAction();
+            PreventHitDefaultEffect(effIndex);
 
             if (Unit* caster = GetCaster())
                 if (Creature* balloon = caster->SummonCreature(55649, 915.55f, 4563.66f, 230.68f, 2.298090f, TEMPSUMMON_MANUAL_DESPAWN, 0))

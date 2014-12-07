@@ -98,6 +98,14 @@ enum BuyBankSlotResult
     ERR_BANKSLOT_OK                 = 3
 };
 
+enum AttackSwingResult
+{
+    ATTACKSWING_NOT_IN_RANGE  = 0,
+    ATTACKSWING_BAD_FACING    = 1,
+    ATTACKSWING_DEAD_TARGET   = 2,
+    ATTACKSWING_CANNOT_ATTACK = 3
+};
+
 enum PlayerSpellState
 {
     PLAYERSPELL_UNCHANGED = 0,
@@ -2340,11 +2348,8 @@ class Player : public Unit, public GridObject<Player>
         void SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool recruitAFriend = false, float group_rate=1.0f);
 
         // notifiers
-        void SendAttackSwingCantAttack();
+        void SendAttackSwingResult(AttackSwingResult result) const;
         void SendAttackSwingCancelAttack();
-        void SendAttackSwingDeadTarget();
-        void SendAttackSwingNotInRange();
-        void SendAttackSwingBadFacingAttack();
         void SendAutoRepeatCancel(Unit* target);
         void SendExplorationExperience(uint32 Area, uint32 Experience);
 
@@ -2519,9 +2524,6 @@ class Player : public Unit, public GridObject<Player>
         void SendEquipmentSetList();
         void SetEquipmentSet(uint32 index, EquipmentSet eqset);
         void DeleteEquipmentSet(uint64 setGuid);
-
-        void SetEmoteState(uint32 anim_id);
-        uint32 GetEmoteState() { return m_emote; }
 
         void SendInitWorldStates(uint32 zone, uint32 area);
         void SendUpdateWorldState(uint32 Field, uint32 Value);
@@ -3043,9 +3045,6 @@ class Player : public Unit, public GridObject<Player>
         void SetKnockBackTime(uint32 timer) { m_knockBackTimer = timer; }
         uint32 GetKnockBackTime() const { return m_knockBackTimer; }
 
-        void SetLastPlayedEmote(uint32 id) { m_lastPlayedEmote = id; }
-        uint32 GetLastPlayedEmote() { return m_lastPlayedEmote; }
-
         void SetIgnoreMovementCount(uint8 count) { m_ignoreMovementCount = count; }
         uint8 GetIgnoreMovementCount() const { return m_ignoreMovementCount; }
 
@@ -3445,10 +3444,6 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_storeCallbackCounter;
 
         bool m_initializeCallback;
-
-        uint32 m_emote;
-
-        uint32 m_lastPlayedEmote;
 
         ArchaeologyMgr m_archaeologyMgr;
 

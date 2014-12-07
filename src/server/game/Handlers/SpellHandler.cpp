@@ -677,6 +677,10 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         return;
     }
 
+    // Clear emotes.
+    GetPlayer()->HandleEmote(EMOTE_ONESHOT_NONE);
+    GetPlayer()->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+
     uint8 castCount = 0;
     uint8 castFlags = 0;
     uint32 spellId = 0;
@@ -709,7 +713,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     bool hasUnkMovementField = false;
     uint32 unkMovementLoopCounter = 0;
     Unit* caster = mover;
-
 
     bool hasCastCount = !recvPacket.ReadBit();
     bool hasSrcLocation = recvPacket.ReadBit();

@@ -158,7 +158,7 @@ class npc_train_wrecker : public CreatureScript
                                 me->DespawnOrUnsummon(3000);
                             break;
                         case EVENT_DANCE:
-                            me->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                            me->HandleEmote(EMOTE_STATE_DANCE);
                             me->DespawnOrUnsummon(10000);
                             break;
                     }
@@ -192,7 +192,7 @@ class npc_mini_tyrael : public CreatureScript
                 switch (emote)
                 {
                     case TEXT_EMOTE_DANCE:
-                        me->HandleEmoteCommand(EMOTE_STATE_DANCE);
+                        me->HandleEmote(EMOTE_STATE_DANCE);
                         break;
                     default:
                         break;

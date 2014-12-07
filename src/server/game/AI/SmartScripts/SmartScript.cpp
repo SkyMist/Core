@@ -215,7 +215,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 {
                     if (IsUnit(*itr))
                     {
-                        (*itr)->ToUnit()->HandleEmoteCommand(e.action.emote.emote);
+                        (*itr)->ToUnit()->HandleEmote(e.action.emote.emote);
                         sLog->outDebug(LOG_FILTER_DATABASE_AI, "SmartScript::ProcessAction:: SMART_ACTION_PLAY_EMOTE: target: %s (GuidLow: %u), emote: %u",
                             (*itr)->GetName(), (*itr)->GetGUIDLow(), e.action.emote.emote);
                     }
@@ -407,7 +407,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 if (IsUnit(*itr))
                 {
                     uint32 emote = temp[urand(0, count - 1)];
-                    (*itr)->ToUnit()->HandleEmoteCommand(emote);
+                    (*itr)->ToUnit()->HandleEmote(emote);
                     sLog->outDebug(LOG_FILTER_DATABASE_AI, "SmartScript::ProcessAction:: SMART_ACTION_RANDOM_EMOTE: Creature guidLow %u handle random emote %u",
                         (*itr)->GetGUIDLow(), emote);
                 }
@@ -630,7 +630,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
             {
                 if (IsUnit(*itr))
                 {
-                    (*itr)->ToUnit()->SetUInt32Value(UNIT_NPC_EMOTESTATE, e.action.emote.emote);
+                    (*itr)->ToUnit()->HandleEmote(e.action.emote.emote);
                     sLog->outDebug(LOG_FILTER_DATABASE_AI, "SmartScript::ProcessAction:: SMART_ACTION_SET_EMOTE_STATE. Unit %u set emotestate to %u",
                         (*itr)->GetGUIDLow(), e.action.emote.emote);
                 }

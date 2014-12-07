@@ -459,7 +459,7 @@ public:
                             NextStep(0, false, 0);
                             break;
                         case 8:
-                            me->HandleEmoteCommand(EMOTE_STATE_WORK);
+                            me->HandleEmote(EMOTE_STATE_WORK);
                             NextStep(25000, true);
                             break;
                         case 9:

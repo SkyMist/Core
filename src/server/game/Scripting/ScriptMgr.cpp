@@ -207,7 +207,7 @@ void DoScriptText(int32 iTextEntry, WorldObject* pSource, Unit* target)
     if (pData->uiEmote)
     {
         if (pSource->GetTypeId() == TYPEID_UNIT || pSource->GetTypeId() == TYPEID_PLAYER)
-            ((Unit*)pSource)->HandleEmoteCommand(pData->uiEmote);
+            ((Unit*)pSource)->HandleEmote(pData->uiEmote);
         else
             sLog->outError(LOG_FILTER_TSCR, "DoScriptText entry %i tried to process emote for invalid TypeId (%u).", iTextEntry, pSource->GetTypeId());
     }

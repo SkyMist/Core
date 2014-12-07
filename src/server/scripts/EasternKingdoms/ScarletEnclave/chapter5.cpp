@@ -582,7 +582,7 @@ public:
                     if (Creature* temp = Unit::GetCreature(*me, uiKorfaxGUID))
                     {
                         temp->SetWalk(true);
-                        temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_READY2H);
+                        temp->HandleEmote(EMOTE_STATE_READY2H);
                         temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[10].x, LightofDawnLoc[10].y, LightofDawnLoc[10].z);
                     }
                     if (Creature* temp = Unit::GetCreature(*me, uiMaxwellGUID))
@@ -614,7 +614,7 @@ public:
                     break;
                 case 6:
                     SetHoldState(true);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_SPECIALATTACK1H);
+                    me->HandleEmote(EMOTE_ONESHOT_SPECIALATTACK1H);
                     JumpToNextStep(1000);
                     break;
                 case 7:
@@ -967,7 +967,7 @@ public:
                         case 35: // Lich king counterattacks
                             if (Creature* temp = Unit::GetCreature(*me, uiLichKingGUID))
                             {
-                                temp->HandleEmoteCommand(EMOTE_ONESHOT_KICK);
+                                temp->HandleEmote(EMOTE_ONESHOT_KICK);
                                 DoScriptText(SAY_LIGHT_OF_DAWN46, temp);
                             }
                             me->SetSpeed(MOVE_RUN, 6.0f);
@@ -1030,7 +1030,7 @@ public:
                                 if (fLichPositionX && fLichPositionY)
                                 {
                                     Unit* temp = me->SummonCreature(NPC_DEFENDER_OF_THE_LIGHT, LightofDawnLoc[0].x+rand()%10, LightofDawnLoc[0].y+rand()%10, LightofDawnLoc[0].z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 10000);
-                                    temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->SetWalk(false);
                                     temp->SetSpeed(MOVE_RUN, 2.0f);
                                     temp->setFaction(me->getFaction());
@@ -1038,7 +1038,7 @@ public:
                                     uiDefenderGUID[0] = temp->GetGUID();
 
                                     temp = me->SummonCreature(NPC_RIMBLAT_EARTHSHATTER, LightofDawnLoc[0].x+rand()%10, LightofDawnLoc[0].y+rand()%10, LightofDawnLoc[0].z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 10000);
-                                    temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->SetWalk(false);
                                     temp->SetSpeed(MOVE_RUN, 2.0f);
                                     temp->setFaction(me->getFaction());
@@ -1047,7 +1047,7 @@ public:
                                 }
                                 if (Creature* temp = Unit::GetCreature(*me, uiMaxwellGUID))
                                 {
-                                    temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->SetWalk(false);
                                     temp->SetSpeed(MOVE_RUN, 2.0f);
                                     temp->GetMotionMaster()->MovePoint(0, fLichPositionX, fLichPositionY, fLichPositionZ);
@@ -1055,15 +1055,15 @@ public:
                                 }
                                 if (Creature* temp = Unit::GetCreature(*me, uiKorfaxGUID))
                                 {
-                                    temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->SetWalk(false);
                                     temp->SetSpeed(MOVE_RUN, 2.0f);
-                                    temp->HandleEmoteCommand(EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->GetMotionMaster()->MovePoint(0, fLichPositionX, fLichPositionY, fLichPositionZ);
                                 }
                                 if (Creature* temp = Unit::GetCreature(*me, uiEligorGUID))
                                 {
-                                    temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_ATTACK_UNARMED);
+                                    temp->HandleEmote(EMOTE_STATE_ATTACK_UNARMED);
                                     temp->SetWalk(false);
                                     temp->SetSpeed(MOVE_RUN, 2.0f);
                                     temp->GetMotionMaster()->MovePoint(0, fLichPositionX, fLichPositionY, fLichPositionZ);
@@ -1078,21 +1078,21 @@ public:
 
                             if (Creature* temp = Unit::GetCreature(*me, uiMaxwellGUID))
                             {
-                                temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[14].x, LightofDawnLoc[14].y, LightofDawnLoc[14].z);
                             }
                             if (Creature* temp = Unit::GetCreature(*me, uiKorfaxGUID))
                             {
-                                temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[11].x, LightofDawnLoc[11].y, LightofDawnLoc[11].z);
                             }
                             if (Creature* temp = Unit::GetCreature(*me, uiEligorGUID))
                             {
-                                temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[17].x, LightofDawnLoc[17].y, LightofDawnLoc[17].z);
@@ -1157,7 +1157,7 @@ public:
                                 if (temp->HasAura(SPELL_REBIRTH_OF_THE_ASHBRINGER, 0))
                                     temp->RemoveAurasDueToSpell(SPELL_REBIRTH_OF_THE_ASHBRINGER);
                                 temp->CastSpell(temp, 41542, false); // workarounds, light expoded, makes it cool
-                                temp->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
+                                temp->HandleEmote(EMOTE_ONESHOT_ROAR);
                             }
                             if (Creature* temp = Unit::GetCreature(*me, uiLichKingGUID))
                                 temp->InterruptNonMeleeSpells(false);
@@ -1187,7 +1187,7 @@ public:
                             {
                                 DoScriptText(EMOTE_LIGHT_OF_DAWN16, temp);
                                 temp->CastSpell(temp, SPELL_TIRION_CHARGE, false); // jumping charge
-                                temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_READY2H);
+                                temp->HandleEmote(EMOTE_STATE_READY2H);
                                 temp->SetSpeed(MOVE_RUN, 3.0f); // workarounds, make Tirion still running
                                 temp->SetWalk(false);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[2].x, LightofDawnLoc[2].y, LightofDawnLoc[2].z);
@@ -1242,7 +1242,7 @@ public:
                                 temp->CastSpell(temp, SPELL_TELEPORT_VISUAL, false);
                             if (Creature* temp = Unit::GetCreature(*me, uiTirionGUID)) // Tirion runs to Darion
                             {
-                                temp->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
+                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
                                 temp->SetSpeed(MOVE_RUN, 1.0f);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[6].x, LightofDawnLoc[6].y, LightofDawnLoc[6].z);
                             }

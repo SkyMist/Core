@@ -206,7 +206,7 @@ public:
                                 break;
                             case 2:
                                 me->SetUInt64Value(UNIT_FIELD_TARGET, instance ? instance->GetData64(DATA_ARTHAS) : 0);
-                                me->HandleEmoteCommand(29);
+                                me->HandleEmote(29);
                                 DoScriptText(SAY_ESCAPE_SPEECH_2, me);
                                 ++uiOutroStep;
                                 uiOutroTimer = 9000;
@@ -217,7 +217,7 @@ public:
                                 uiOutroTimer = 16000;
                                 break;
                             case 4:
-                                me->HandleEmoteCommand(33);
+                                me->HandleEmote(33);
                                 ++uiOutroStep;
                                 uiOutroTimer = 500;
                                 break;

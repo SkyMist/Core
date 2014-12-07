@@ -1107,8 +1107,8 @@ void GameObject::Use(Unit* user)
 
     if (Player* playerUser = user->ToPlayer())
     {
-        if (playerUser->GetEmoteState())
-            playerUser->SetEmoteState(0);
+        // clear unit emote state
+        user->HandleEmote(EMOTE_ONESHOT_NONE);
 
         if (sScriptMgr->OnGossipHello(playerUser, this))
             return;

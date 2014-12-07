@@ -107,9 +107,6 @@ enum eScriptFlags
     // Talk Flags
     SF_TALK_USE_PLAYER          = 0x1,
 
-    // Emote flags
-    SF_EMOTE_USE_STATE          = 0x1,
-
     // TeleportTo flags
     SF_TELEPORT_USE_CREATURE    = 0x1,
 

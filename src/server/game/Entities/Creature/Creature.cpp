@@ -2342,10 +2342,11 @@ bool Creature::LoadCreaturesAddon(bool reload)
         SetByteValue(UNIT_FIELD_BYTES_2, 3, 0);
     }
 
-    if (cainfo->emote != 0)
-        SetUInt32Value(UNIT_NPC_EMOTESTATE, cainfo->emote);
+    // Load Emotes.
+    if (cainfo->emote != EMOTE_ONESHOT_NONE)
+        HandleEmote(cainfo->emote);
 
-    //Load Path
+    // Load Path
     if (cainfo->path_id != 0)
         m_path_id = cainfo->path_id;
 
@@ -2365,6 +2366,19 @@ bool Creature::LoadCreaturesAddon(bool reload)
             sLog->outDebug(LOG_FILTER_UNITS, "Spell: %u added to creature (GUID: %u Entry: %u)", *itr, GetGUIDLow(), GetEntry());
         }
     }
+
+    return true;
+}
+
+// Used for checking if the creature has a DB emote.
+bool Creature::HasCreatureAddonEmote()
+{
+    CreatureAddon const* cainfo = GetCreatureAddon();
+    if (!cainfo)
+        return false;
+
+    if (cainfo->emote == EMOTE_ONESHOT_NONE)
+        return false;
 
     return true;
 }

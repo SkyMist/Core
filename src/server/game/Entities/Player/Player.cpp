@@ -738,8 +738,6 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
 
     m_bgRoles = 0;
 
-    m_lastPlayedEmote = 0;
-
     m_pmChatTime = 0;
     m_pmChatCount = 0;
 
@@ -965,8 +963,6 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     m_ignoreMovementCount = 0;
 
     m_groupUpdateDelay = 5000;
-
-    m_emote = 0;
 
     memset(_voidStorageItems, 0, VOID_STORAGE_MAX_SLOT * sizeof(VoidStorageItem*));
 
@@ -2018,27 +2014,25 @@ void Player::Update(uint32 p_time)
     {
         if (Unit* victim = getVictim())
         {
-            // default combat reach 10
-            // TODO add weapon, skill check
-
+            // Default player combat reach is 10 yds.
             if (isAttackReady(BASE_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim) && !HasAura(114051))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 1)               // send single time (client auto repeat)
                     {
-                        SendAttackSwingNotInRange();
+                        SendAttackSwingResult(ATTACKSWING_NOT_IN_RANGE);
                         m_swingErrorMsg = 1;
                     }
                 }
-                //120 degrees of radiant range
-                else if (!HasInArc(2*M_PI/3, victim))
+                // Default side reach is 120 degrees of radiant range.
+                else if (!HasInArc(2 * M_PI / 3, victim))
                 {
                     setAttackTimer(BASE_ATTACK, 100);
                     if (m_swingErrorMsg != 2)               // send single time (client auto repeat)
                     {
-                        SendAttackSwingBadFacingAttack();
+                        SendAttackSwingResult(ATTACKSWING_BAD_FACING);
                         m_swingErrorMsg = 2;
                     }
                 }
@@ -2046,24 +2040,24 @@ void Player::Update(uint32 p_time)
                 {
                     m_swingErrorMsg = 0;                    // reset swing error state
 
-                    // prevent base and off attack in same time, delay attack at 0.2 sec
+                    // Prevent base and off attack in same time, delay attack at 0.2 sec.
                     if (haveOffhandWeapon())
                         if (getAttackTimer(OFF_ATTACK) < ATTACK_DISPLAY_DELAY)
                             setAttackTimer(OFF_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    // Custom MoP Script - Do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues.
                     if (!HasAura(114051) && !HasAura(121471))
                     {
                         AttackerStateUpdate(victim, BASE_ATTACK);
                         resetAttackTimer(BASE_ATTACK);
                     }
-                    // Custom MoP Script - Wind Lash
+                    // Custom MoP Script - Wind Lash - Main Hand
                     else if (HasAura(114051))
                     {
                         CastSpell(victim, 114089, true);
                         resetAttackTimer(BASE_ATTACK);
                     }
-                    // Shadow Blade - Main Hand
+                    // Custom MoP Script - Shadow Blade - Main Hand
                     else if (HasAura(121471))
                     {
                         CastSpell(victim, 121473, true);
@@ -2074,17 +2068,17 @@ void Player::Update(uint32 p_time)
 
             if (haveOffhandWeapon() && isAttackReady(OFF_ATTACK))
             {
-                if (!IsWithinMeleeRange(victim) && !HasAura(114051))
+                if (!IsWithinMeleeRange(victim) && !HasAura(114051)) // Custom MOP script.
                     setAttackTimer(OFF_ATTACK, 100);
-                else if (!HasInArc(2*M_PI/3, victim))
+                else if (!HasInArc(2 * M_PI / 3, victim))
                     setAttackTimer(OFF_ATTACK, 100);
                 else
                 {
-                    // prevent base and off attack in same time, delay attack at 0.2 sec
+                    // Prevent base and off attack in same time, delay attack at 0.2 sec.
                     if (getAttackTimer(BASE_ATTACK) < ATTACK_DISPLAY_DELAY)
                         setAttackTimer(BASE_ATTACK, ATTACK_DISPLAY_DELAY);
 
-                    // do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues
+                    // Custom MoP Script - Do attack if player doesn't have Ascendance for Enhanced Shamans or Shadow Blades for rogues.
                     if (!HasAura(114051) && !HasAura(121471))
                     {
                         AttackerStateUpdate(victim, OFF_ATTACK);
@@ -2690,6 +2684,9 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     // reset movement flags at teleport, because player will continue move with these flags after teleport
     SetUnitMovementFlags(0);
     DisableSpline();
+
+    // clear unit emote state
+    HandleEmote(EMOTE_ONESHOT_NONE);
 
     if (m_transport)
     {
@@ -22537,12 +22534,6 @@ bool Player::CanSpeak() const
 /***              LOW LEVEL FUNCTIONS:Notifiers        ***/
 /*********************************************************/
 
-void Player::SendAttackSwingNotInRange()
-{
-    WorldPacket data(SMSG_ATTACK_SWING_NOT_IN_RANGE, 0);
-    GetSession()->SendPacket(&data);
-}
-
 void Player::SavePositionInDB(uint32 mapid, float x, float y, float z, float o, uint32 zone, uint64 guid)
 {
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_POSITION);
@@ -22594,27 +22585,18 @@ void Player::Customize(uint64 guid, uint8 gender, uint8 skin, uint8 face, uint8 
     CharacterDatabase.Execute(stmt);
 }
 
-void Player::SendAttackSwingDeadTarget()
+void Player::SendAttackSwingResult(AttackSwingResult result) const
 {
-    WorldPacket data(SMSG_ATTACK_SWING_DEAD_TARGET, 0);
-    GetSession()->SendPacket(&data);
-}
+    WorldPacket data(SMSG_ATTACK_SWING_RESULT);
+    data.WriteBits(result, 2);
+    data.FlushBits();
 
-void Player::SendAttackSwingCantAttack()
-{
-    WorldPacket data(SMSG_ATTACK_SWING_CANT_ATTACK, 0);
     GetSession()->SendPacket(&data);
 }
 
 void Player::SendAttackSwingCancelAttack()
 {
     WorldPacket data(SMSG_CANCEL_COMBAT, 0);
-    GetSession()->SendPacket(&data);
-}
-
-void Player::SendAttackSwingBadFacingAttack()
-{
-    WorldPacket data(SMSG_ATTACK_SWING_BAD_FACING, 0);
     GetSession()->SendPacket(&data);
 }
 
@@ -22625,6 +22607,8 @@ void Player::SendAutoRepeatCancel(Unit* target)
 
     uint8 bitsOrder[8] = { 6, 3, 0, 1, 4, 2, 7, 5 };
     data.WriteBitInOrder(targetGuid, bitsOrder);
+
+    data.FlushBits();
 
     uint8 bytesOrder[8] = { 4, 6, 3, 1, 2, 0, 7, 5 };
     data.WriteBytesSeq(targetGuid, bytesOrder);
@@ -30295,12 +30279,6 @@ void Player::FinishWeek()
         m_WeekGames[slot] = 0;
         m_WeekWins[slot] = 0;
     }
-}
-
-void Player::SetEmoteState(uint32 anim_id)
-{
-    HandleEmoteCommand(anim_id);
-    m_emote = anim_id;
 }
 
 void Player::SendApplyMovementForce(bool apply, Position source, float force /*= 0.0f*/)

@@ -849,13 +849,13 @@ class npc_lei_shen_tortos : public CreatureScript
 
                         case EVENT_LEI_SHEN_I_1:
                             Talk(SAY_LEI_SHEN_INTRO_1);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_LEI_SHEN_I_2, 8000); // at 14 seconds.
                             break;
 
                         case EVENT_LEI_SHEN_I_2:
                             Talk(SAY_LEI_SHEN_INTRO_2);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_EXCLAMATION);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             events.ScheduleEvent(EVENT_LEI_SHEN_VISUAL_CAST, 6000); // at 20 seconds.
                             break;
 

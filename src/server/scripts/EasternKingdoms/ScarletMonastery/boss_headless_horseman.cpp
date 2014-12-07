@@ -656,7 +656,7 @@ public:
                                     if (player)
                                     {
                                         player->Say(Text[count], 0);
-                                        player->HandleEmoteCommand(ANIM_EMOTE_SHOUT);
+                                        player->HandleEmote(ANIM_EMOTE_SHOUT);
                                     }
                                     wp_reached = true;
                                     IsFlying = true;

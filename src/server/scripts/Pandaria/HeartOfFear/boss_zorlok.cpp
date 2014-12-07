@@ -217,7 +217,7 @@ class boss_zorlok : public CreatureScript
                 me->getThreatManager().clearReferences();
                 me->SetCanFly(true);
                 me->SetReactState(REACT_PASSIVE);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                 me->SetDisableGravity(true);
                 me->SendMovementFlagUpdate();
                 me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
@@ -694,7 +694,7 @@ class boss_zorlok : public CreatureScript
                      (me->GetPositionZ() < 407.0f && phase == PHASE_ZORLOK2)))
                 {
                     isFlying = false;
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                    me->HandleEmote(EMOTE_ONESHOT_LAND);
                     me->SetReactState(REACT_DEFENSIVE);
                 }
 

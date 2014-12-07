@@ -673,7 +673,7 @@ public:
                 uiIntroPhase = 0;
                 Intro = true;
                 DoScriptText(AUGH_EMOTE_KILL_CROCK, me);
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                me->HandleEmote(0);
                 me->SetVisible(true);
                 me->SetHomePosition(AughPos);
                 me->GetMotionMaster()->MoveTargetedHome();

@@ -94,7 +94,7 @@ class boss_ragnaros : public CreatureScript
                 _hasYelledMagmaBurst = false;
                 _hasSubmergedOnce = false;
                 _isBanished = false;
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                me->HandleEmote(0);
             }
 
             void EnterCombat(Unit* victim)
@@ -121,7 +121,7 @@ class boss_ragnaros : public CreatureScript
                 {
                     if (!_introState)
                     {
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                        me->HandleEmote(EMOTE_ONESHOT_EMERGE);
                         events.ScheduleEvent(EVENT_INTRO_1, 4000);
                         events.ScheduleEvent(EVENT_INTRO_2, 23000);
                         events.ScheduleEvent(EVENT_INTRO_3, 42000);
@@ -143,7 +143,7 @@ class boss_ragnaros : public CreatureScript
                             DoScriptText(SAY_ARRIVAL3_RAG, me);
                             break;
                         case EVENT_INTRO_3:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                            me->HandleEmote(EMOTE_ONESHOT_ATTACK1H);
                             break;
                         case EVENT_INTRO_4:
                             DoScriptText(SAY_ARRIVAL5_RAG, me);
@@ -171,8 +171,8 @@ class boss_ragnaros : public CreatureScript
                             me->SetReactState(REACT_AGGRESSIVE);
                             me->setFaction(14);
                             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                            me->HandleEmote(0);
+                            me->HandleEmote(EMOTE_ONESHOT_EMERGE);
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                                 AttackStart(target);
                             instance->SetData(DATA_RAGNAROS_ADDS, 0);
@@ -250,8 +250,8 @@ class boss_ragnaros : public CreatureScript
                                     //DoCast(me, 23973);
                                     me->setFaction(35);
                                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                                    me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_SUBMERGED);
-                                    me->HandleEmoteCommand(EMOTE_ONESHOT_SUBMERGE);
+                                    me->HandleEmote(EMOTE_STATE_SUBMERGED);
+                                    me->HandleEmote(EMOTE_ONESHOT_SUBMERGE);
                                     instance->SetData(DATA_RAGNAROS_ADDS, 0);
 
                                     if (!_hasSubmergedOnce)

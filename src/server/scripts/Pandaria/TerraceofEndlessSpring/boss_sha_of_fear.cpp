@@ -146,7 +146,7 @@ class boss_sha_of_fear : public CreatureScript
                     if (pInstance->GetBossState(DATA_PROTECTORS) == DONE)
                     {
                         me->setFaction(14);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 0);
+                        me->HandleEmote(0);
                         pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
  
                         if (pInstance->GetData(SPELL_RITUAL_OF_PURIFICATION))
@@ -155,7 +155,7 @@ class boss_sha_of_fear : public CreatureScript
                     else
                     {
                         me->setFaction(35);
-                        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, 35);
+                        me->HandleEmote(35);
                     }
                 }
             }

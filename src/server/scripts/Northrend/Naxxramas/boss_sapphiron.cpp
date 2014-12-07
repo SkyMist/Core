@@ -296,7 +296,7 @@ public:
                     switch (eventId)
                     {
                         case EVENT_LIFTOFF:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                            me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                             me->SetDisableGravity(true);
                             events.ScheduleEvent(EVENT_ICEBOLT, 1500);
                             iceboltCount = RAID_MODE(2, 3);
@@ -339,7 +339,7 @@ public:
                             events.ScheduleEvent(EVENT_LAND, 3000);
                             return;
                         case EVENT_LAND:
-                            me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                            me->HandleEmote(EMOTE_ONESHOT_LAND);
                             me->SetDisableGravity(false);
                             events.ScheduleEvent(EVENT_GROUND, 1500);
                             return;

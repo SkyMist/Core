@@ -808,7 +808,7 @@ public:
                             break;
                         //After waypoint 10
                         case 30:
-                            me->HandleEmoteCommand(37);
+                            me->HandleEmote(37);
                             JumpToNextStep(1000);
                             break;
                         case 31:
@@ -826,7 +826,7 @@ public:
                             break;
                         //After waypoint 11
                         case 32:
-                            me->HandleEmoteCommand(37);
+                            me->HandleEmote(37);
                             JumpToNextStep(1000);
                             break;
                         case 33:
@@ -1023,12 +1023,12 @@ public:
                             break;
                         //After waypoint 23
                         case 64:
-                            me->HandleEmoteCommand(54);
+                            me->HandleEmote(54);
                             JumpToNextStep(1000);
                             break;
                         case 65:
                             if (Creature* pDisguised0 = Unit::GetCreature(*me, uiInfiniteDraconianGUID[0]))
-                                pDisguised0->HandleEmoteCommand(11);
+                                pDisguised0->HandleEmote(11);
                             JumpToNextStep(1000);
                             break;
                         case 66:

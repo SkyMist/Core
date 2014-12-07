@@ -297,6 +297,8 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
 
     for (int i = 0; i < MAX_POWERS; ++i)
         m_powers[i] = 0;
+
+    m_oldEmoteState = 0;
 }
 
 ////////////////////////////////////////////////////////////
@@ -323,12 +325,14 @@ Unit::~Unit()
 {
     // set current spells as deletable
     for (uint8 i = 0; i < CURRENT_MAX_SPELL; ++i)
+    {
         if (m_currentSpells[i])
         {
             m_currentSpells[i]->SetReferencedFromCurrent(false);
             m_currentSpells[i]->SetExecutedCurrently(false);
             m_currentSpells[i] = NULL;
         }
+    }
 
     _DeleteRemovedAuras();
 
@@ -337,18 +341,17 @@ Unit::~Unit()
     delete m_charmInfo;
     delete movespline;
 
-    // TODO : Find Why it crashes
-    //ASSERT(!m_duringRemoveFromWorld);
-    //ASSERT(!m_attacking);
-    //ASSERT(m_attackers.empty());
-    //ASSERT(m_sharedVision.empty());
-    //ASSERT(m_Controlled.empty());
-    //ASSERT(m_appliedAuras.empty());
-    //ASSERT(m_ownedAuras.empty());
-    //ASSERT(m_removedAuras.empty());
-    //ASSERT(m_gameObj.empty());
-    //ASSERT(m_dynObj.empty());
-    //ASSERT(m_AreaTrigger.empty());
+    ASSERT(!m_duringRemoveFromWorld);
+    ASSERT(!m_attacking);
+    ASSERT(m_attackers.empty());
+    ASSERT(m_sharedVision.empty());
+    ASSERT(m_Controlled.empty());
+    ASSERT(m_appliedAuras.empty());
+    ASSERT(m_ownedAuras.empty());
+    ASSERT(m_removedAuras.empty());
+    ASSERT(m_gameObj.empty());
+    ASSERT(m_dynObj.empty());
+    ASSERT(m_AreaTrigger.empty());
 }
 
 void Unit::Update(uint32 p_time)
@@ -1721,11 +1724,11 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     if (!victim->isAlive() || victim->HasUnitState(UNIT_STATE_IN_FLIGHT) || (victim->GetTypeId() == TYPEID_UNIT && victim->ToCreature()->IsInEvadeMode()))
         return;
 
-    // Hmmmm dont like this emotes client must by self do all animations
+    // Client should do these by itself.
     if (damageInfo->HitInfo & HITINFO_CRITICALHIT)
-        victim->HandleEmoteCommand(EMOTE_ONESHOT_WOUND_CRITICAL);
+        victim->HandleEmote(EMOTE_ONESHOT_WOUND_CRITICAL);
     if (damageInfo->blocked_amount && damageInfo->TargetState != VICTIMSTATE_BLOCKS)
-        victim->HandleEmoteCommand(EMOTE_ONESHOT_PARRY_SHIELD);
+        victim->HandleEmote(EMOTE_ONESHOT_PARRY_SHIELD);
 
     if (damageInfo->TargetState == VICTIMSTATE_PARRY)
     {
@@ -1842,28 +1845,53 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     }
 }
 
+// This does the trick in correctly selecting what to use :D.
+void Unit::HandleEmote(uint32 emote_id)
+{
+    if (!emote_id)
+        HandleEmoteState(EMOTE_ONESHOT_NONE);
+    else if (EmotesEntry const* emoteEntry = sEmotesStore.LookupEntry(emote_id))
+    {
+        if (emoteEntry->EmoteType) // 1, 2 Emote States, 0 ONESHOT animations play.
+        {
+            // If the creature already has this state return.
+            if (GetEmoteState() == emote_id && GetTypeId() == TYPEID_UNIT)
+                return;
+
+            if (GetTypeId() == TYPEID_PLAYER)
+            {
+                // When a player types in the same /read emote again, he cancels it. Acts like a toggle.
+                if (GetStoredEmoteState() && emote_id == EMOTE_STATE_READ && GetStoredEmoteState() == emote_id)
+                {
+                    HandleEmoteState(EMOTE_ONESHOT_NONE);
+                    SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                }
+                else
+                {
+                    HandleEmoteState(emote_id);
+                    SetStoredEmoteState(emote_id);
+                }
+            }
+            else
+                HandleEmoteState(emote_id);
+        }
+        else
+            HandleEmoteCommand(emote_id);
+    }
+}
+
+// The UNIT_NPC_EMOTESTATE field is used for Emote States now.
+void Unit::HandleEmoteState(uint32 emote_id)
+{
+    SetUInt32Value(UNIT_NPC_EMOTESTATE, emote_id);
+}
+
+// The emote opcode is used only for ONESHOT Animations now.
 void Unit::HandleEmoteCommand(uint32 anim_id)
 {
-    if (GetUInt32Value(UNIT_NPC_EMOTESTATE) == 483)
-    {
-        SetUInt32Value(UNIT_NPC_EMOTESTATE, 0x0);
-        return;
-    }
-    else if (anim_id == 483)
-    {
-        SetUInt32Value(UNIT_NPC_EMOTESTATE, anim_id);
-        return;
-    }
-
-    // Hack fix for clear emote at moving
-    if (Player* plr = ToPlayer())
-        plr->SetLastPlayedEmote(anim_id);
-
-    WorldPacket data(SMSG_EMOTE, 12);
-
+    WorldPacket data(SMSG_EMOTE, 4 + 8);
     data << uint32(anim_id);
     data << uint64(GetGUID());
-
     SendMessageToSet(&data, true);
 }
 
@@ -11579,10 +11607,6 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
         ToCreature()->CallAssistance();
     }
 
-    if (GetTypeId() == TYPEID_PLAYER)
-        if (ToPlayer()->GetEmoteState())
-            ToPlayer()->SetEmoteState(0);
-
     // delay offhand weapon attack to next attack time
     if (haveOffhandWeapon())
         resetAttackTimer(OFF_ATTACK);
@@ -11634,9 +11658,22 @@ bool Unit::AttackStop()
 
     SendMeleeAttackStop(victim);
 
+    // Clear Emote states on Combat exit for Players.
     if (GetTypeId() == TYPEID_PLAYER)
-        if (ToPlayer()->GetEmoteState())
-            ToPlayer()->SetEmoteState(0);
+    {
+        HandleEmote(EMOTE_ONESHOT_NONE);
+        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+    }
+
+    // Restore the old Emote state for Creatures (but not for pets / those having a creature addon emote restored by HomeGenerator arrival).
+    if (GetTypeId() == TYPEID_UNIT && GetStoredEmoteState())
+    {
+        if (!ToCreature()->isPet() && !ToCreature()->HasCreatureAddonEmote() && GetEmoteState() != GetStoredEmoteState())
+        {
+            HandleEmote(GetStoredEmoteState());
+            SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+        }
+    }
 
     return true;
 }
@@ -14756,8 +14793,8 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
 
     if (Player* player = ToPlayer())
     {
-        if (player->GetEmoteState())
-            player->SetEmoteState(0);
+        HandleEmote(EMOTE_ONESHOT_NONE);
+        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
 
         player->SetFallInformation(0, GetPositionZ());
 
@@ -14806,9 +14843,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
         player->SendMovementSetCollisionHeight(player->GetCollisionHeight(true));
 
         if (player->HasAura(57958)) // TODO: we need to create a new trigger flag - on mount, to handle it properly
-        {
             player->AddAura(20217, player);
-        }
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
@@ -15024,6 +15059,29 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, bool isControlled)
     if (isControlled)
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
 
+    // Clear Emote states on Combat entrance for Players.
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        HandleEmote(EMOTE_ONESHOT_NONE);
+        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+    }
+    if (enemy && enemy->GetTypeId() == TYPEID_PLAYER)
+    {
+        enemy->HandleEmote(EMOTE_ONESHOT_NONE);
+        enemy->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+    }
+
+    // Store and clear Emote states on Combat entrance for Creatures.
+    if (GetTypeId() == TYPEID_UNIT && GetEmoteState())
+    {
+        // Pet Emote State is not saved / restored.
+        // Also creatures having a creature addon emote are not stored, as their emote state gets restored by HomeGenerator arrival.
+        if (!ToCreature()->isPet() && !ToCreature()->HasCreatureAddonEmote())
+            SetStoredEmoteState(GetEmoteState());
+
+        HandleEmote(EMOTE_ONESHOT_NONE);
+    }
+
     RemoveAura(121308); // Glyph of Disguise, only out of combat
 
     if (Creature* creature = ToCreature())
@@ -15131,14 +15189,21 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
         return true;
 
     // can't attack unattackable units or GMs
-    if (target->HasUnitState(UNIT_STATE_UNATTACKABLE)
-        || (target->GetTypeId() == TYPEID_PLAYER && target->ToPlayer()->isGameMaster()))
+    if (target->HasUnitState(UNIT_STATE_UNATTACKABLE) || (target->GetTypeId() == TYPEID_PLAYER && target->ToPlayer()->isGameMaster()))
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
         return false;
+    }
 
     // can't attack own vehicle or passenger
     if (m_vehicle)
-        if (IsOnVehicle(target) || (m_vehicle->GetBase() && m_vehicle->GetBase()->IsOnVehicle(target)))
+    {
+        if (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))
+        {
+            if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
             return false;
+        }
+    }
 
     // can't attack invisible (ignore stealth for aoe spells) also if the area being looked at is from a spell use the dynamic object created instead of the casting unit.
     if ((!bySpell || !(bySpell->AttributesEx6 & SPELL_ATTR6_CAN_TARGET_INVISIBLE)) && (obj ? !obj->canSeeOrDetect(target, areaSpell) : !canSeeOrDetect(target, areaSpell)))
@@ -15146,7 +15211,10 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
 
     // can't attack dead
     if ((!bySpell || !bySpell->IsAllowingDeadTarget()) && !target->isAlive())
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_DEAD_TARGET);
        return false;
+    }
 
     // can't attack untargetable
     if ((!bySpell || !(bySpell->AttributesEx6 & SPELL_ATTR6_CAN_TARGET_UNTARGETABLE))
@@ -15216,8 +15284,11 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
     // PvP case - can't attack when attacker or target are in sanctuary
     // however, 13850 client doesn't allow to attack when one of the unit's has sanctuary flag and is pvp
     if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE) && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE)
-        && ((target->GetByteValue(UNIT_FIELD_BYTES_2, 1) & UNIT_BYTE2_FLAG_SANCTUARY) || (GetByteValue(UNIT_FIELD_BYTES_2, 1) & UNIT_BYTE2_FLAG_SANCTUARY)))
+    && ((target->GetByteValue(UNIT_FIELD_BYTES_2, 1) & UNIT_BYTE2_FLAG_SANCTUARY) || (GetByteValue(UNIT_FIELD_BYTES_2, 1) & UNIT_BYTE2_FLAG_SANCTUARY)))
+    {
+        if (ToPlayer() && !bySpell) ToPlayer()->SendAttackSwingResult(ATTACKSWING_CANNOT_ATTACK);
         return false;
+    }
 
     // additional checks - only PvP case
     if (playerAffectingAttacker && playerAffectingTarget)
@@ -18334,7 +18405,7 @@ void Unit::SetStandState(uint8 state)
     if (GetTypeId() == TYPEID_PLAYER)
     {
         WorldPacket data(SMSG_STANDSTATE_UPDATE, 1);
-        data << (uint8)state;
+        data << uint8(state);
         ToPlayer()->GetSession()->SendPacket(&data);
     }
 }

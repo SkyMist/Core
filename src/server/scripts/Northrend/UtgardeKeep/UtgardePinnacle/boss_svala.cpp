@@ -262,7 +262,7 @@ public:
                 me->SetHealth(1);
 
                 SetCombatMovement(false);
-                me->HandleEmoteCommand(EMOTE_ONESHOT_FLYDEATH);
+                me->HandleEmote(EMOTE_ONESHOT_FLYDEATH);
                 me->GetMotionMaster()->MoveFall(POINT_FALL_GROUND);
             }
         }

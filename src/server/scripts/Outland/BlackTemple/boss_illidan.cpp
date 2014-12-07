@@ -638,7 +638,7 @@ public:
             if (creature)
             {
                 if (Conversation[count].emote)
-                    creature->HandleEmoteCommand(Conversation[count].emote); // Make the Creature do some animation!
+                    creature->HandleEmote(Conversation[count].emote); // Make the Creature do some animation!
                 if (Conversation[count].text.size())
                     creature->MonsterYell(Conversation[count].text.c_str(), LANG_UNIVERSAL, 0); // Have the Creature yell out some text
                 if (Conversation[count].sound)
@@ -818,7 +818,7 @@ public:
             switch (FlightCount)
             {
             case 1: // lift off
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LIFTOFF);
+                me->HandleEmote(EMOTE_ONESHOT_LIFTOFF);
                 me->SetUnitMovementFlags(MOVEMENTFLAG_DISABLE_GRAVITY);
                 me->StopMoving();
                 me->MonsterYell(SAY_TAKEOFF, LANG_UNIVERSAL, 0);
@@ -890,7 +890,7 @@ public:
             case 9: // land
                 me->SetDisableGravity(false);
                 me->StopMoving();
-                me->HandleEmoteCommand(EMOTE_ONESHOT_LAND);
+                me->HandleEmote(EMOTE_ONESHOT_LAND);
                 for (uint8 i = 0; i < 2; ++i)
                 {
                     if (GlaiveGUID[i])
@@ -1682,7 +1682,7 @@ public:
                 Timer = 2000;
                 break;
             case 4:
-                me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
+                me->HandleEmote(EMOTE_ONESHOT_SALUTE);
                 Timer = 2000;
                 break;
             case 5:

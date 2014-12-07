@@ -128,7 +128,7 @@ public:
                     break;
                 case 20:
                     if (Creature* RWORG = Unit::GetCreature(*me, RWORGGUID))
-                        RWORG->HandleEmoteCommand(34);
+                        RWORG->HandleEmote(34);
                     break;
                 case 21:
                     if (Creature* Mrfloppy = Unit::GetCreature(*me, MrfloppyGUID))
@@ -418,7 +418,7 @@ public:
             // call this each update tick?
             if (me->FindNearestCreature(TALLHORN_STAG, 0.2f))
             {
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_USE_STANDING);
+                me->HandleEmote(EMOTE_STATE_USE_STANDING);
             }
             else
                 if (m_uiPhase)
@@ -428,12 +428,12 @@ public:
                         switch (m_uiPhase)
                         {
                             case 1:
-                                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_LOOT);
+                                me->HandleEmote(EMOTE_STATE_LOOT);
                                 m_uiTimer = 3000;
                                 m_uiPhase = 2;
                                 break;
                             case 2:
-                                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_ATTACK1H);
+                                me->HandleEmote(EMOTE_ONESHOT_ATTACK1H);
                                 m_uiTimer = 4000;
                                 m_uiPhase = 1;
                                 break;

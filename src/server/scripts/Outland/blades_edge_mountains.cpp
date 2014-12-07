@@ -527,7 +527,7 @@ public:
                 GameObject* Keg = me->FindNearestGameObject(GO_KEG, 20);
                 if (Keg)
                     Keg->Delete();
-                me->HandleEmoteCommand(7);
+                me->HandleEmote(7);
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->GetMotionMaster()->MoveTargetedHome();
                 Creature* Credit = me->FindNearestCreature(NPC_QUEST_CREDIT, 50, true);

@@ -82,7 +82,7 @@ public:
             switch (waypointId)
             {
                 case 3:
-                    me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                    me->HandleEmote(EMOTE_STATE_POINT);
                     DoScriptText(SAY_POINT, me, player);
                     break;
                 case 4:
