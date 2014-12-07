@@ -639,7 +639,7 @@ public:
                         Phase = 5;
                         break;
                     case 5:
-                        me->HandleEmote(EMOTE_ONESHOT_NONE);
+                        me->ClearEmotes();
                         uiPhaseTimer = 500;
                         Phase = 6;
                         break;

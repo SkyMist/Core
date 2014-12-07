@@ -1078,21 +1078,21 @@ public:
 
                             if (Creature* temp = Unit::GetCreature(*me, uiMaxwellGUID))
                             {
-                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
+                                temp->ClearEmotes();
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[14].x, LightofDawnLoc[14].y, LightofDawnLoc[14].z);
                             }
                             if (Creature* temp = Unit::GetCreature(*me, uiKorfaxGUID))
                             {
-                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
+                                temp->ClearEmotes();
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[11].x, LightofDawnLoc[11].y, LightofDawnLoc[11].z);
                             }
                             if (Creature* temp = Unit::GetCreature(*me, uiEligorGUID))
                             {
-                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
+                                temp->ClearEmotes();
                                 temp->SetSpeed(MOVE_RUN, 6.0f);
                                 temp->SetStandState(UNIT_STAND_STATE_DEAD);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[17].x, LightofDawnLoc[17].y, LightofDawnLoc[17].z);
@@ -1242,7 +1242,7 @@ public:
                                 temp->CastSpell(temp, SPELL_TELEPORT_VISUAL, false);
                             if (Creature* temp = Unit::GetCreature(*me, uiTirionGUID)) // Tirion runs to Darion
                             {
-                                temp->HandleEmote(EMOTE_ONESHOT_NONE);
+                                temp->ClearEmotes();
                                 temp->SetSpeed(MOVE_RUN, 1.0f);
                                 temp->GetMotionMaster()->MovePoint(0, LightofDawnLoc[6].x, LightofDawnLoc[6].y, LightofDawnLoc[6].z);
                             }

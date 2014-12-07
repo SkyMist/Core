@@ -596,7 +596,7 @@ public:
                         case 3:
                             if (Creature* wugou = GetClosestCreatureWithEntry(me, 60916, 20.0f))
                                 wugou->CastSpell(wugou, 118027, false);
-                            me->HandleEmote(EMOTE_ONESHOT_NONE);
+                            me->ClearEmotes();
                             eventTimer = 3000;
                             ++eventProgress;
                             break;

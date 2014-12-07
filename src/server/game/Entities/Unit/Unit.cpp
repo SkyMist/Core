@@ -1850,33 +1850,37 @@ void Unit::HandleEmote(uint32 emote_id)
 {
     if (!emote_id)
         HandleEmoteState(EMOTE_ONESHOT_NONE);
-    else if (EmotesEntry const* emoteEntry = sEmotesStore.LookupEntry(emote_id))
+    else
     {
-        if (emoteEntry->EmoteType) // 1, 2 Emote States, 0 ONESHOT animations play.
+        if (EmotesEntry const* emoteEntry = sEmotesStore.LookupEntry(emote_id))
         {
-            // If the creature already has this state return.
-            if (GetEmoteState() == emote_id && GetTypeId() == TYPEID_UNIT)
-                return;
-
-            if (GetTypeId() == TYPEID_PLAYER)
+            if (emoteEntry->EmoteType) // 1, 2 Emote States, 0 ONESHOT animations play.
             {
-                // When a player types in the same /read emote again, he cancels it. Acts like a toggle.
-                if (GetStoredEmoteState() && emote_id == EMOTE_STATE_READ && GetStoredEmoteState() == emote_id)
+                // If the creature already has this state return.
+                if (GetEmoteState() == emote_id && GetTypeId() == TYPEID_UNIT)
+                    return;
+
+                if (GetTypeId() == TYPEID_PLAYER)
                 {
-                    HandleEmoteState(EMOTE_ONESHOT_NONE);
-                    SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                    // When a player types in the same /read emote again, he cancels it. Acts like a toggle.
+                    if (GetStoredEmoteState() && GetStoredEmoteState() == emote_id && emote_id == EMOTE_STATE_READ)
+                    {
+                        HandleEmoteState(EMOTE_ONESHOT_NONE);
+                        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                    }
+                    else
+                    {
+                        HandleEmoteState(emote_id);
+                        if (emote_id == EMOTE_STATE_READ || emote_id == EMOTE_STATE_DANCE)
+                            SetStoredEmoteState(emote_id);
+                    }
                 }
                 else
-                {
                     HandleEmoteState(emote_id);
-                    SetStoredEmoteState(emote_id);
-                }
             }
             else
-                HandleEmoteState(emote_id);
+                HandleEmoteCommand(emote_id);
         }
-        else
-            HandleEmoteCommand(emote_id);
     }
 }
 
@@ -1893,6 +1897,33 @@ void Unit::HandleEmoteCommand(uint32 anim_id)
     data << uint32(anim_id);
     data << uint64(GetGUID());
     SendMessageToSet(&data, true);
+}
+
+void Unit::ClearEmotes()
+{
+    // Note: ONESHOT emotes are not cleared from Players, just continuous Emote States.
+    if (GetTypeId() == TYPEID_UNIT)
+        HandleEmote(EMOTE_ONESHOT_NONE);
+    else
+    {
+        if (uint32 emoteState = GetStoredEmoteState())
+        {
+            switch (emoteState)
+            {
+                case EMOTE_STATE_SLEEP:
+                case EMOTE_STATE_KNEEL:
+                case EMOTE_STATE_SIT:
+                    SetStandState(UNIT_STAND_STATE_STAND);
+                case EMOTE_STATE_DANCE:
+                case EMOTE_STATE_READ:
+                    HandleEmote(EMOTE_ONESHOT_NONE);
+                    SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                    break;
+
+                default: break;
+            }
+        }
+    }
 }
 
 bool Unit::IsDamageReducedByArmor(SpellSchoolMask schoolMask, SpellInfo const* spellInfo, uint8 effIndex)
@@ -11660,10 +11691,7 @@ bool Unit::AttackStop()
 
     // Clear Emote states on Combat exit for Players.
     if (GetTypeId() == TYPEID_PLAYER)
-    {
-        HandleEmote(EMOTE_ONESHOT_NONE);
-        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
-    }
+        ClearEmotes();
 
     // Restore the old Emote state for Creatures (but not for pets / those having a creature addon emote restored by HomeGenerator arrival).
     if (GetTypeId() == TYPEID_UNIT && GetStoredEmoteState())
@@ -14793,8 +14821,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
 
     if (Player* player = ToPlayer())
     {
-        HandleEmote(EMOTE_ONESHOT_NONE);
-        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+        ClearEmotes();
 
         player->SetFallInformation(0, GetPositionZ());
 
@@ -15061,15 +15088,10 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, bool isControlled)
 
     // Clear Emote states on Combat entrance for Players.
     if (GetTypeId() == TYPEID_PLAYER)
-    {
-        HandleEmote(EMOTE_ONESHOT_NONE);
-        SetStoredEmoteState(EMOTE_ONESHOT_NONE);
-    }
+        ClearEmotes();
+
     if (enemy && enemy->GetTypeId() == TYPEID_PLAYER)
-    {
-        enemy->HandleEmote(EMOTE_ONESHOT_NONE);
-        enemy->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
-    }
+        enemy->ClearEmotes();
 
     // Store and clear Emote states on Combat entrance for Creatures.
     if (GetTypeId() == TYPEID_UNIT && GetEmoteState())
@@ -15079,7 +15101,7 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, bool isControlled)
         if (!ToCreature()->isPet() && !ToCreature()->HasCreatureAddonEmote())
             SetStoredEmoteState(GetEmoteState());
 
-        HandleEmote(EMOTE_ONESHOT_NONE);
+        ClearEmotes();
     }
 
     RemoveAura(121308); // Glyph of Disguise, only out of combat

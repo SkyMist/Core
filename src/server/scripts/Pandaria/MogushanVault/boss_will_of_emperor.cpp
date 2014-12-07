@@ -601,7 +601,7 @@ class boss_jin_qin_xi : public CreatureScript
                         if (!(devastatingComboPhase % 2))
                         {
                             // Cancel previous emote in order to properly play a new one
-                            me->HandleEmote(EMOTE_ONESHOT_NONE);
+                            me->ClearEmotes();
                             // Pick a random new orientation
                             float angle = me->GetOrientation() + frand(-0.75f, 0.75f);
                             // angle corrections

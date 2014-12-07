@@ -1350,7 +1350,7 @@ public:
                         case 1:
                             // say random text
                             me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                            me->HandleEmote(EMOTE_ONESHOT_NONE);
+                            me->ClearEmotes();
                             DoScriptText(RAND(SAY_RECRUIT_1, SAY_RECRUIT_2, SAY_RECRUIT_3), me);
                             m_uiTimer = 3000;
                             m_uiPhase = 2;

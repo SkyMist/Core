@@ -177,7 +177,7 @@ public:
             Phase = 0;
 
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-            me->HandleEmote(EMOTE_ONESHOT_NONE);
+            me->ClearEmotes();
             me->RemoveAurasDueToSpell(SPELL_SUBMERGE);
         }
 

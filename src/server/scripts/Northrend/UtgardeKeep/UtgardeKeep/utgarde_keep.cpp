@@ -124,7 +124,7 @@ public:
                         break;
                 }
             }
-            me->HandleEmote(EMOTE_ONESHOT_NONE);
+            me->ClearEmotes();
         }
 
         uint8 GetForgeMasterType()

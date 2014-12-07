@@ -292,7 +292,7 @@ class boss_lich_king_toc : public CreatureScript
                             _instance->SetData(TYPE_EVENT, 5040);
                             break;
                         case 5040:
-                            me->HandleEmote(EMOTE_ONESHOT_NONE);
+                            me->ClearEmotes();
                             me->GetMotionMaster()->MovePoint(1, LichKingLoc[1]);
                             _updateTimer = 1*IN_MILLISECONDS;
                             _instance->SetData(TYPE_EVENT, 0);

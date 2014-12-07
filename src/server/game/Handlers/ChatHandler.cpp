@@ -830,14 +830,15 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket & recvData)
             // When a player types in the same Stand State emote again, like /sleep, he cancels it, and no text is shown. Acts like a toggle.
             if (GetPlayer()->GetStoredEmoteState() == emote->Id)
             {
-                GetPlayer()->HandleEmote(EMOTE_ONESHOT_NONE);
                 if (emote->Id == EMOTE_STATE_SLEEP || emote->Id == EMOTE_STATE_KNEEL)
-                    GetPlayer()->SetStandState(UNIT_STAND_STATE_STAND);
-                GetPlayer()->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+                    GetPlayer()->ClearEmotes();
                 return;
             }
             else
-                GetPlayer()->SetStoredEmoteState(emote->Id);
+            {
+                if (emote->Id == EMOTE_STATE_SLEEP || emote->Id == EMOTE_STATE_KNEEL || emote->Id == EMOTE_STATE_SIT)
+                    GetPlayer()->SetStoredEmoteState(emote->Id);
+            }
         }
     }
 

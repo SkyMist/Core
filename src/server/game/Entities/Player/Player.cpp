@@ -2686,7 +2686,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     DisableSpline();
 
     // clear unit emote state
-    HandleEmote(EMOTE_ONESHOT_NONE);
+    ClearEmotes();
 
     if (m_transport)
     {

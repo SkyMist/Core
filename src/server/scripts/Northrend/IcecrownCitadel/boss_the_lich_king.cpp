@@ -1341,7 +1341,7 @@ class npc_tirion_fordring_tft : public CreatureScript
 
             void JustReachedHome()
             {
-                me->HandleEmote(EMOTE_ONESHOT_NONE);
+                me->ClearEmotes();
 
                 if (_instance->GetBossState(DATA_THE_LICH_KING) == DONE)
                     return;

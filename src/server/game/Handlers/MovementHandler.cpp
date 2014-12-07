@@ -426,8 +426,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvPacket)
     if (plrMover)                                            // nothing is charmed, or player charmed
     {
         // Clear unit emote state.
-        plrMover->HandleEmote(EMOTE_ONESHOT_NONE);
-        plrMover->SetStoredEmoteState(EMOTE_ONESHOT_NONE);
+        plrMover->ClearEmotes();
 
         plrMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 

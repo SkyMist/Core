@@ -2888,7 +2888,7 @@ public:
             {
                 if (!Move)
                 {
-                    me->HandleEmote(EMOTE_ONESHOT_NONE); // Change our emote state to allow flight
+                    me->ClearEmotes(); // Change our emote state to allow flight
                     me->SetDisableGravity(true);
                     Move = true;
                 }
