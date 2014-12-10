@@ -768,38 +768,6 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
     }
 }
 
-void WorldSession::HandleQuestPushResult(WorldPacket& recvPacket)
-{
-    uint64 guid;
-    uint8 msg;
-    recvPacket >> guid >> msg;
-
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received SMSG_QUEST_PUSH_RESULT");
-
-    if (_player->GetDivider() != 0)
-    {
-        Player* player = ObjectAccessor::FindPlayer(_player->GetDivider());
-        if (player)
-        {
-            WorldPacket data(SMSG_QUEST_PUSH_RESULT, 8 + 1 + 1);
-            ObjectGuid guidObj = player->GetGUID();
-
-            uint8 bitOrder[8] = {1, 0, 6, 5, 7, 4, 3, 2};
-            data.WriteBitInOrder(guidObj, bitOrder);
-
-            data.FlushBits();
-
-            uint8 byteOrder[8] = {7, 5, 1, 6, 3, 2, 4, 0};
-            data.WriteBytesSeq(guidObj, byteOrder);
-
-            data << uint8(msg); 
-
-            player->GetSession()->SendPacket(&data);
-            _player->SetDivider(0);
-        }
-    }
-}
-
 uint32 WorldSession::getDialogStatus(Player* player, Object* questgiver)
 {
     uint32 result = DIALOG_STATUS_NONE;

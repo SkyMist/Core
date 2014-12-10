@@ -8582,30 +8582,36 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
         honor_f *= sWorld->getRate(RATE_HONOR_PREMIUM);
 
     // Back to int now
-    honor = std::max(int32(honor_f), 1);
+    honor = int32(honor_f) >= 1 ? int32(honor_f) : 1;
+
     // honor - for show honor points in log
     // victim_guid - for show victim name in log
     // victim_rank [1..4]  HK: <dishonored rank>
     // victim_rank [5..19] HK: <alliance\horde rank>
     // victim_rank [0, 20+] HK: <>
+    ObjectGuid victimGuid = victim_guid;
+
     WorldPacket data(SMSG_PVP_CREDIT, 4+8+4);
-    ObjectGuid guid = victim_guid;
 
     uint8 bits[8] = { 7, 0, 1, 3, 5, 4, 2, 6 };
-    data.WriteBitInOrder(guid, bits);
+    data.WriteBitInOrder(victimGuid, bits);
 
     data.FlushBits();
 
-    data.WriteByteSeq(guid[1]);
-    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(victimGuid[1]);
+    data.WriteByteSeq(victimGuid[0]);
+
     data << uint32(victim_rank);
-    data.WriteByteSeq(guid[3]);
+
+    data.WriteByteSeq(victimGuid[3]);
+
     data << uint32(honor);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[2]);
+
+    data.WriteByteSeq(victimGuid[5]);
+    data.WriteByteSeq(victimGuid[7]);
+    data.WriteByteSeq(victimGuid[6]);
+    data.WriteByteSeq(victimGuid[4]);
+    data.WriteByteSeq(victimGuid[2]);
 
     GetSession()->SendPacket(&data);
 
@@ -8613,12 +8619,8 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
     ModifyCurrency(CURRENCY_TYPE_HONOR_POINTS, int32(honor));
 
     if (InBattleground() && honor > 0)
-    {
         if (Battleground* bg = GetBattleground())
-        {
-            bg->UpdatePlayerScore(this, NULL, SCORE_BONUS_HONOR, honor, false); //false: prevent looping
-        }
-    }
+            bg->UpdatePlayerScore(this, NULL, SCORE_BONUS_HONOR, honor, false); // false: prevent looping
 
     if (sWorld->getBoolConfig(CONFIG_PVP_TOKEN_ENABLE) && pvptoken)
     {

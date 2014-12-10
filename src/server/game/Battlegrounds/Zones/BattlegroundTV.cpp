@@ -99,9 +99,9 @@ void BattlegroundTV::HandleAreaTrigger(Player* Source, uint32 Trigger)
     }
 }
 
-void BattlegroundTV::FillInitialWorldStates(WorldPacket &data)
+void BattlegroundTV::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(0xE1A), uint32(1));
+    Player::BuildWorldState(data, uint32(0xE1A), uint32(1));
     UpdateArenaWorldState();
 }
 

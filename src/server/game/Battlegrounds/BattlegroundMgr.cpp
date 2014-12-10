@@ -250,9 +250,9 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
                 *data << uint8(0);                      // Team Size
 
             *data << uint32(Time1);                     // Join Time
-            *data << uint8(minlevel);                   // Min Level
+            *data << uint8(minLevel);                   // Min Level
             *data << uint32(QueueSlot);                 // Queue Slot
-            *data << uint8(bg->GetMaxLevel());          // Max level
+            *data << uint8(maxLevel);                   // Max level
 
             data->WriteBit(battlegroundGuid[1]);
 
@@ -353,14 +353,14 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[7]);
 
             *data << uint32(QueueSlot);        // Queue Slot
-            *data << uint8(bg->GetMaxLevel()); // Max Level
+            *data << uint8(maxLevel);          // Max Level
 
             data->WriteByteSeq(playerGuid[6]);
 
             *data << uint32(Time1);            // Join Time
 
             if (HasRoles)
-                *data << uint8((role == ROLE_TANK) ? 0 : 1); // Client uses sent value like this: Role = 1 << (val + 1).
+                *data << uint8((player->GetBattleGroundRoles() == ROLE_TANK) ? 0 : 1); // Client uses sent value like this: Role = 1 << (val + 1).
 
             data->WriteByteSeq(playerGuid[1]);
 
@@ -378,7 +378,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(playerGuid[3]);
 
-            *data << uint8(minlevel);                   // Min Level
+            *data << uint8(minLevel);                   // Min Level
             break;
         }
         case STATUS_ERROR:
@@ -419,12 +419,12 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(battlegroundGuid[7]);
 
-            *data << uint8(minlevel);           // Min Level
+            *data << uint8(minLevel);        // Min Level
 
             data->WriteByteSeq(playerGuid[6]);
 
             *data << uint32(bg->GetStatus() == STATUS_WAIT_LEAVE ? bg->GetRemainingTime() : (bg->GetPrematureCountDown() ? bg->GetPrematureCountDownTimer() : 0));  //  Time to Close
-            *data << uint8(bg->GetMaxLevel());          // Max Level
+            *data << uint8(maxLevel);        // Max Level
 
             data->WriteByteSeq(battlegroundGuid[2]);
             data->WriteByteSeq(battlegroundGuid[1]);
@@ -870,7 +870,7 @@ void BattlegroundMgr::BuildPlayerLeftBattlegroundPacket(WorldPacket* data, uint6
     uint8 bitOrder[8] = { 4, 6, 3, 0, 7, 5, 1, 2 };
     data->WriteBitInOrder(playerGuid, bitOrder);
 
-    data.FlushBits();
+    data->FlushBits();
 
     uint8 byteOrder[8] = { 4, 7, 0, 6, 5, 2, 1, 3 };
     data->WriteBytesSeq(playerGuid, byteOrder);
@@ -885,7 +885,7 @@ void BattlegroundMgr::BuildPlayerJoinedBattlegroundPacket(WorldPacket* data, uin
     uint8 bits[8] = { 1, 3, 0, 5, 7, 4, 6, 2 };
     data->WriteBitInOrder(playerGuid, bits);
 
-    data.FlushBits();
+    data->FlushBits();
 
     uint8 bytes[8] = { 4, 1, 7, 3, 0, 2, 5, 6 };
     data->WriteBytesSeq(playerGuid, bytes);
@@ -1498,8 +1498,6 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
             return BATTLEGROUND_QUEUE_RB;
         case BATTLEGROUND_KT:
             return BATTLEGROUND_QUEUE_KT;
-        case BATTLEGROUND_CTF3:
-            return BATTLEGROUND_QUEUE_CTF3;
         case BATTLEGROUND_SSM:
             return BATTLEGROUND_QUEUE_SSM;
         case BATTLEGROUND_DG:
@@ -1525,10 +1523,6 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
             }
         case BATTLEGROUND_RATED_10_VS_10:
             return BATTLEGROUND_QUEUE_RATED_10_VS_10;
-        case BATTLEGROUND_RATED_15_VS_15:
-            return BATTLEGROUND_QUEUE_RATED_15_VS_15;
-        case BATTLEGROUND_RATED_25_VS_25:
-            return BATTLEGROUND_QUEUE_RATED_25_VS_25;
         default:
             return BATTLEGROUND_QUEUE_NONE;
     }
@@ -1558,8 +1552,6 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
             return BATTLEGROUND_RB;
         case BATTLEGROUND_QUEUE_KT:
             return BATTLEGROUND_KT;
-        case BATTLEGROUND_QUEUE_CTF3:
-            return BATTLEGROUND_CTF3;
         case BATTLEGROUND_QUEUE_SSM:
             return BATTLEGROUND_SSM;
         case BATTLEGROUND_QUEUE_DG:
@@ -1567,10 +1559,6 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
 
         case BATTLEGROUND_QUEUE_RATED_10_VS_10:
             return BATTLEGROUND_RATED_10_VS_10;
-        case BATTLEGROUND_QUEUE_RATED_15_VS_15:
-            return BATTLEGROUND_RATED_15_VS_15;
-        case BATTLEGROUND_QUEUE_RATED_25_VS_25:
-            return BATTLEGROUND_RATED_25_VS_25;
 
         case BATTLEGROUND_QUEUE_2v2:
         case BATTLEGROUND_QUEUE_3v3:
@@ -1722,7 +1710,7 @@ HolidayIds BattlegroundMgr::BGTypeToWeekendHolidayId(BattlegroundTypeId bgTypeId
         case BATTLEGROUND_IC:  return HOLIDAY_CALL_TO_ARMS_IC;
         case BATTLEGROUND_TP:  return HOLIDAY_CALL_TO_ARMS_TP;
         case BATTLEGROUND_BFG: return HOLIDAY_CALL_TO_ARMS_BFG;
-        case BATTLEGROUND_TOK: return HOLIDAY_CALL_TO_ARMS_TEMPLE_OF_K;
+        case BATTLEGROUND_KT:  return HOLIDAY_CALL_TO_ARMS_TEMPLE_OF_K;
         case BATTLEGROUND_SSM: return HOLIDAY_CALL_TO_ARMS_SILVERSHARD;
         case BATTLEGROUND_DG:  return HOLIDAY_CALL_TO_ARMS_DEEPWIND_G;
 
@@ -1742,7 +1730,7 @@ BattlegroundTypeId BattlegroundMgr::WeekendHolidayIdToBGType(HolidayIds holiday)
         case HOLIDAY_CALL_TO_ARMS_IC:          return BATTLEGROUND_IC;
         case HOLIDAY_CALL_TO_ARMS_TP:          return BATTLEGROUND_TP;
         case HOLIDAY_CALL_TO_ARMS_BFG:         return BATTLEGROUND_BFG;
-        case HOLIDAY_CALL_TO_ARMS_TEMPLE_OF_K: return BATTLEGROUND_TOK;
+        case HOLIDAY_CALL_TO_ARMS_TEMPLE_OF_K: return BATTLEGROUND_KT;
         case HOLIDAY_CALL_TO_ARMS_SILVERSHARD: return BATTLEGROUND_SSM;
         case HOLIDAY_CALL_TO_ARMS_DEEPWIND_G:  return BATTLEGROUND_DG;
 

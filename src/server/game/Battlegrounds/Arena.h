@@ -81,9 +81,9 @@ namespace Arena
     {
         switch (type)
         {
-            case ARENA_TEAM_2v2: return SLOT_ARENA_2V2;
-            case ARENA_TEAM_3v3: return SLOT_ARENA_3V3;
-            case ARENA_TEAM_5v5: return SLOT_ARENA_5V5;
+            case ARENA_TYPE_2v2: return SLOT_ARENA_2V2;
+            case ARENA_TYPE_3v3: return SLOT_ARENA_3V3;
+            case ARENA_TYPE_5v5: return SLOT_ARENA_5V5;
 
             default:             break;
         }

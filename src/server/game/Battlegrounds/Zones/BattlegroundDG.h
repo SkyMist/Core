@@ -207,7 +207,7 @@ class BattlegroundDG : public Battleground
         virtual void EventPlayerDroppedFlag(Player* Source);
         virtual void EventPlayerClickedOnFlag(Player* Source, GameObject* target_obj);
         virtual void EventPlayerCapturedFlag(Player* Source);
-        virtual void FillInitialWorldStates(WorldPacket& data);
+        virtual void FillInitialWorldStates(ByteBuffer &data);
 
         void HandleKillPlayer(Player* player, Player* killer);
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);

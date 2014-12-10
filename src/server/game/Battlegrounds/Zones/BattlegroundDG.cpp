@@ -1106,10 +1106,10 @@ int32 BattlegroundDG::_GetNodeNameId(uint8 node)
     return 0;
 }
 
-void BattlegroundDG::FillInitialWorldStates(WorldPacket& data)
+void BattlegroundDG::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(BG_DG_OP_FLAG_A), uint32((GetFlagState(ALLIANCE) == BG_DG_FLAG_STATE_ON_PLAYER || GetFlagState(ALLIANCE) == BG_DG_FLAG_STATE_ON_GROUND) ? 2 : 1));
-    Player::AppendWorldState(data, uint32(BG_DG_OP_FLAG_H), uint32((GetFlagState(HORDE) == BG_DG_FLAG_STATE_ON_PLAYER || GetFlagState(HORDE) == BG_DG_FLAG_STATE_ON_GROUND) ? 2 : 1));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_FLAG_A), uint32((GetFlagState(ALLIANCE) == BG_DG_FLAG_STATE_ON_PLAYER || GetFlagState(ALLIANCE) == BG_DG_FLAG_STATE_ON_GROUND) ? 2 : 1));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_FLAG_H), uint32((GetFlagState(HORDE) == BG_DG_FLAG_STATE_ON_PLAYER || GetFlagState(HORDE) == BG_DG_FLAG_STATE_ON_GROUND) ? 2 : 1));
     
     // How many bases each team owns
     uint8 ally = 0, horde = 0;
@@ -1118,24 +1118,24 @@ void BattlegroundDG::FillInitialWorldStates(WorldPacket& data)
     {
         if (m_Nodes[node] == BG_DG_NODE_STATUS_ALLY_OCCUPIED)
         {
-            Player::AppendWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(2));
+            Player::BuildWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(2));
             ++ally;
         }
         else if (m_Nodes[node] == BG_DG_NODE_STATUS_HORDE_OCCUPIED)
         {
-            Player::AppendWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(1));
+            Player::BuildWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(1));
             ++horde;
         }
         else
-            Player::AppendWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(1));
+            Player::BuildWorldState(data, uint32(BG_DG_OP_NODEICONS[node][m_Nodes[node]]), uint32(1));
     }
 
-    Player::AppendWorldState(data, uint32(BG_DG_OP_OCCUPIED_BASES_ALLY), uint32(ally));
-    Player::AppendWorldState(data, uint32(BG_DG_OP_OCCUPIED_BASES_HORDE), uint32(horde));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_OCCUPIED_BASES_ALLY), uint32(ally));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_OCCUPIED_BASES_HORDE), uint32(horde));
 
     // Team scores
-    Player::AppendWorldState(data, uint32(BG_DG_OP_RESOURCES_ALLY), uint32(m_TeamScores[BG_TEAM_ALLIANCE]));
-    Player::AppendWorldState(data, uint32(BG_DG_OP_RESOURCES_HORDE), uint32(m_TeamScores[BG_TEAM_HORDE]));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_RESOURCES_ALLY), uint32(m_TeamScores[BG_TEAM_ALLIANCE]));
+    Player::BuildWorldState(data, uint32(BG_DG_OP_RESOURCES_HORDE), uint32(m_TeamScores[BG_TEAM_HORDE]));
 }
 
 bool BattlegroundDG::IsAllNodesControlledByTeam(uint32 team) const

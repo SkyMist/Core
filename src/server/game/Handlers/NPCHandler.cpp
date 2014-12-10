@@ -70,7 +70,7 @@ void WorldSession::HandleTabardVendorActivateOpcode(WorldPacket& recvData)
 void WorldSession::SendTabardVendorActivate(uint64 guid)
 {
     ObjectGuid playerGuid = guid;
-    WorldPacket data(SMSG_PLAYER_TABAR_VENDOR_SHOW, 1 + 8);
+    WorldPacket data(SMSG_PLAYER_TABARD_VENDOR_SHOW, 1 + 8);
 
     uint8 bitsOrder[8] = { 6, 3, 0, 1, 4, 2, 5, 7 };
     data.WriteBitInOrder(playerGuid, bitsOrder);

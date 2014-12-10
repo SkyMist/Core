@@ -413,21 +413,21 @@ void BattlegroundIC::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
     }
 }
 
-void BattlegroundIC::FillInitialWorldStates(WorldPacket& data)
+void BattlegroundIC::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(BG_IC_ALLIANCE_RENFORT_SET), uint32(1));
-    Player::AppendWorldState(data, uint32(BG_IC_HORDE_RENFORT_SET), uint32(1));
-    Player::AppendWorldState(data, uint32(BG_IC_ALLIANCE_RENFORT), uint32(factionReinforcements[TEAM_ALLIANCE]));
-    Player::AppendWorldState(data, uint32(BG_IC_HORDE_RENFORT), uint32(factionReinforcements[TEAM_HORDE]));
+    Player::BuildWorldState(data, uint32(BG_IC_ALLIANCE_RENFORT_SET), uint32(1));
+    Player::BuildWorldState(data, uint32(BG_IC_HORDE_RENFORT_SET), uint32(1));
+    Player::BuildWorldState(data, uint32(BG_IC_ALLIANCE_RENFORT), uint32(factionReinforcements[TEAM_ALLIANCE]));
+    Player::BuildWorldState(data, uint32(BG_IC_HORDE_RENFORT), uint32(factionReinforcements[TEAM_HORDE]));
 
     for (uint8 i = 0; i < MAX_FORTRESS_GATES_SPAWNS; i++)
     {
         uint32 uws = GetWorldStateFromGateEntry(BG_IC_ObjSpawnlocs[i].entry, (GateStatus[GetGateIDFromEntry(BG_IC_ObjSpawnlocs[i].entry)] == BG_IC_GATE_DESTROYED ? true : false));
-        Player::AppendWorldState(data, uint32(uws), uint32(1));
+        Player::BuildWorldState(data, uint32(uws), uint32(1));
     }
 
     for (uint8 i = 0; i < MAX_NODE_TYPES; i++)
-        Player::AppendWorldState(data, uint32(nodePoint[i].worldStates[nodePoint[i].nodeState]), uint32(1));
+        Player::BuildWorldState(data, uint32(nodePoint[i].worldStates[nodePoint[i].nodeState]), uint32(1));
 }
 
 bool BattlegroundIC::SetupBattleground()

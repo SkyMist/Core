@@ -129,9 +129,9 @@ void BattlegroundBE::HandleAreaTrigger(Player* Source, uint32 Trigger)
     //    HandleTriggerBuff(buff_guid, Source);
 }
 
-void BattlegroundBE::FillInitialWorldStates(WorldPacket &data)
+void BattlegroundBE::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(0x9f3), uint32(1));           // 9
+    Player::BuildWorldState(data, uint32(0x9f3), uint32(1));           // 9
     UpdateArenaWorldState();
 }
 

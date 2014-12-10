@@ -414,37 +414,37 @@ void BattlegroundKT::AccumulateScore(uint32 team, BG_KT_ZONE zone)
         EndBattleground(HORDE);
 }
 
-void BattlegroundKT::FillInitialWorldStates(WorldPacket& data)
+void BattlegroundKT::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(BG_KT_ORB_POINTS_A), GetTeamScore(ALLIANCE));
-    Player::AppendWorldState(data, uint32(BG_KT_ORB_POINTS_H), GetTeamScore(HORDE));
+    Player::BuildWorldState(data, uint32(BG_KT_ORB_POINTS_A), GetTeamScore(ALLIANCE));
+    Player::BuildWorldState(data, uint32(BG_KT_ORB_POINTS_H), GetTeamScore(HORDE));
 
     /*if (m_OrbState[BG_TEAM_ALLIANCE] == BG_KT_ORB_STATE_ON_GROUND)
-        Player::AppendWorldState(data, BG_KT_ICON_A, -1);
+        Player::BuildWorldState(data, BG_KT_ICON_A, -1);
     else if (m_OrbState[BG_TEAM_ALLIANCE] == BG_KT_ORB_STATE_ON_PLAYER)
-        Player::AppendWorldState(data, BG_KT_ICON_A, 1);
+        Player::BuildWorldState(data, BG_KT_ICON_A, 1);
     else
-        Player::AppendWorldState(data, BG_KT_ICON_A, 0);
+        Player::BuildWorldState(data, BG_KT_ICON_A, 0);
 
     if (m_OrbState[BG_TEAM_HORDE] == BG_KT_ORB_STATE_ON_GROUND)
-        Player::AppendWorldState(data, BG_KT_ICON_H, -1);
+        Player::BuildWorldState(data, BG_KT_ICON_H, -1);
     else if (m_OrbState[BG_TEAM_HORDE] == BG_KT_ORB_STATE_ON_PLAYER)
-        Player::AppendWorldState(data, BG_KT_ICON_H, 1);
+        Player::BuildWorldState(data, BG_KT_ICON_H, 1);
     else
-        Player::AppendWorldState(data, BG_KT_ICON_H, 0);*/
+        Player::BuildWorldState(data, BG_KT_ICON_H, 0);*/
 
-    Player::AppendWorldState(data, BG_KT_ORB_POINTS_MAX, BG_KT_MAX_TEAM_SCORE);
+    Player::BuildWorldState(data, BG_KT_ORB_POINTS_MAX, BG_KT_MAX_TEAM_SCORE);
 
     /*if (m_OrbState[BG_TEAM_HORDE] == BG_KT_ORB_STATE_ON_PLAYER)
-        Player::AppendWorldState(data, BG_KT_ORB_STATE, 2);
+        Player::BuildWorldState(data, BG_KT_ORB_STATE, 2);
     else
-        Player::AppendWorldState(data, BG_KT_ORB_STATE, 1);
+        Player::BuildWorldState(data, BG_KT_ORB_STATE, 1);
 
     if (m_OrbState[BG_TEAM_ALLIANCE] == BG_KT_ORB_STATE_ON_PLAYER)
-        Player::AppendWorldState(data, BG_KT_ORB_STATE, 2);
+        Player::BuildWorldState(data, BG_KT_ORB_STATE, 2);
     else
-        Player::AppendWorldState(data, BG_KT_ORB_STATE, 1);*/
+        Player::BuildWorldState(data, BG_KT_ORB_STATE, 1);*/
 
-    Player::AppendWorldState(data, BG_KT_TIME_ENABLED, 1);
-    Player::AppendWorldState(data, BG_KT_TIME_REMAINING, GetRemainingTimeInMinutes());
+    Player::BuildWorldState(data, BG_KT_TIME_ENABLED, 1);
+    Player::BuildWorldState(data, BG_KT_TIME_REMAINING, GetRemainingTimeInMinutes());
 }

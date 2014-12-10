@@ -99,9 +99,9 @@ void BattlegroundTTP::HandleAreaTrigger(Player* Source, uint32 Trigger)
     }
 }
 
-void BattlegroundTTP::FillInitialWorldStates(WorldPacket &data)
+void BattlegroundTTP::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::AppendWorldState(data, uint32(0xE1A), uint32(1));
+    Player::BuildWorldState(data, uint32(0xE1A), uint32(1));
     UpdateArenaWorldState();
 }
 
