@@ -41,7 +41,6 @@ enum Opcodes
     NULL_OPCODE                                       = 0,
     COMPRESSED_OPCODE_MASK                            = 0x8000,
 
-    SMSG_COMPRESSED_DATA                              = 0x0062, // 5.4.7 18019 good, from 5.4.0 17399
 
     CMSG_ACCEPT_LEVEL_GRANT                           = 0x0000,
     CMSG_ACCEPT_TRADE                                 = 0x1E73, // 5.4.7 18019
@@ -718,6 +717,7 @@ enum Opcodes
     SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT2           = 0x0000,
     SMSG_COMMENTATOR_STATE_CHANGED                    = 0x0000,
     SMSG_COMPLAIN_RESULT                              = 0x0D62, // 5.4.7 18019
+    SMSG_COMPRESSED_DATA                              = 0x0062, // 5.4.7 18019
     SMSG_COMSAT_CONNECT_FAIL                          = 0x0000,
     SMSG_COMSAT_DISCONNECT                            = 0x0000,
     SMSG_COMSAT_RECONNECT_TRY                         = 0x0000,
