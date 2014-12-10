@@ -2525,15 +2525,12 @@ class Player : public Unit, public GridObject<Player>
         void SetEquipmentSet(uint32 index, EquipmentSet eqset);
         void DeleteEquipmentSet(uint64 setGuid);
 
+        void BuildWorldState(ByteBuffer& data, uint32 field, uint32 value);
         void SendInitWorldStates(uint32 zone, uint32 area);
         void SendUpdateWorldState(uint32 Field, uint32 Value);
         void SendDirectMessage(WorldPacket* data);
         void SendBGWeekendWorldStates();
-        static void AppendWorldState(WorldPacket& data, uint32 field, uint32 value)
-        {
-            data << uint32(value);
-            data << uint32(field);
-        }
+        void SendBattlefieldWorldStates();
 
         void SendAurasForTarget(Unit* target);
         void SendCooldownAtLogin();
@@ -2655,8 +2652,8 @@ class Player : public Unit, public GridObject<Player>
         WorldLocation const& GetBattlegroundEntryPoint() const { return m_bgData.joinPos; }
         void SetBattlegroundEntryPoint();
 
-        void SetBGTeam(uint32 team) { m_bgData.bgTeam = team; }
-        uint32 GetBGTeam() const { return m_bgData.bgTeam ? m_bgData.bgTeam : GetTeam(); }
+        void SetBGTeam(uint32 team);
+        uint32 GetBGTeam() const;
 
         void LeaveBattleground(bool teleportToEntryPoint = true);
         bool CanJoinToBattleground() const;

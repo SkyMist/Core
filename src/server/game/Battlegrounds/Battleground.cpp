@@ -476,9 +476,8 @@ inline void Battleground::_ProcessJoin(uint32 diff)
     ModifyStartDelayTime(diff);
     ModifyCountdownTimer(diff);
 
-    // I know it's a too big but it's the value sent in packet, I get it from retail sniff.
-    // I think it's link to the countdown when bgs start
-    SetRemainingTime(300000);
+    if (!isArena())
+        SetRemainingTime(300000);
 
     if (m_ResetStatTimer > 5000)
     {
@@ -681,19 +680,15 @@ void Battleground::SendPacketToTeam(uint32 TeamID, WorldPacket* packet, Player* 
 void Battleground::PlaySoundToAll(uint32 SoundID)
 {
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-    {
         if (Player* player = _GetPlayer(itr, "SendPacketToAll"))
             player->SendPlaySound(SoundID, true);
-    }
 }
 
 void Battleground::PlaySoundToTeam(uint32 SoundID, uint32 TeamID)
 {
     for (BattlegroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         if (Player* player = _GetPlayerForTeam(TeamID, itr, "PlaySoundToTeam"))
-        {
             player->SendPlaySound(SoundID, true);
-        }
 }
 
 void Battleground::CastSpellOnTeam(uint32 SpellID, uint32 TeamID)
@@ -746,11 +741,11 @@ void Battleground::UpdateWorldState(uint32 Field, uint32 Value)
     SendPacketToAll(&data);
 }
 
-void Battleground::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player* Source)
+void Battleground::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player* player)
 {
     WorldPacket data;
     sBattlegroundMgr->BuildUpdateWorldStatePacket(&data, Field, Value);
-    Source->GetSession()->SendPacket(&data);
+    player->GetSession()->SendPacket(&data);
 }
 
 void Battleground::EndBattleground(uint32 winner)
@@ -888,13 +883,11 @@ void Battleground::EndBattleground(uint32 winner)
             player->getHostileRefManager().deleteReferences();
         }
 
-        //this line is obsolete - team is set ALWAYS
-        //if (!team) team = player->GetTeam();
-
         // per player calculation
         if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
         {
             uint8 slot = Arena::GetSlotByType(GetArenaType());
+
             if (team == winner)
             {
                 // update achievement BEFORE personal rating update
@@ -905,19 +898,7 @@ void Battleground::EndBattleground(uint32 winner)
             }
             else
             {
-                // Member lost
-                // Update personal rating
-                /*int32 mod = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), winner_matchmaker_rating, false);
-                player->SetArenaPersonalRating(player->GetArenaPersonalRating(slot) + mod, slot);
-
-                // Update matchmaker rating
-                player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + loser_matchmaker_change);
-
-                // Update personal played stats
-                player->IncrementWeekGames(slot);
-                player->IncrementSeasonGames(slot);*/
-
-                // Arena lost => reset the win_rated_arena having the "no_lose" condition
+                // Member lost => reset the win_rated_arena having the "no_lose" condition
                 player->GetAchievementMgr().ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, ACHIEVEMENT_CRITERIA_CONDITION_NO_LOSE);
             }
         }
@@ -1027,13 +1008,13 @@ void Battleground::EndBattleground(uint32 winner)
 uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const
 {
     //variable kills means how many honorable kills you scored (so we need kills * honor_for_one_kill)
-    uint32 maxLevel = std::min(GetMaxLevel(), 90U);
+    uint32 maxLevel = GetMaxLevel() < 90 ? GetMaxLevel() : 90;
     return JadeCore::Honor::hk_honor_at_level(maxLevel, float(kills));
 }
 
 void Battleground::BlockMovement(Player* player)
 {
-    player->SetClientControl(player, 0);                          // movement disabled NOTE: the effect will be automatically removed by client when the player is teleported from the battleground, so no need to send with uint8(1) in RemovePlayerAtLeave()
+    player->SetClientControl(player, 0); // Movement disabled. NOTE: Automatically removed by client when the player is teleported out.
 }
 
 void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPacket)
@@ -1092,7 +1073,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
             // if arena, remove the specific arena auras
             if (isArena())
             {
-                bgTypeId=BATTLEGROUND_AA;                   // set the bg type to all arenas (it will be used for queue refreshing)
+                bgTypeId = BATTLEGROUND_AA;                   // set the bg type to all arenas (it will be used for queue refreshing)
 
                 // unsummon current and summon old pet if there was one and there isn't a current pet
                 if (Pet* pet = player->GetPet())
@@ -1125,6 +1106,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
                     }
                 }
             }
+
             if (SendPacket)
             {
                 WorldPacket data;
@@ -1150,12 +1132,9 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
 
         // remove from raid group if player is member
         if (Group* group = GetBgRaid(team))
-        {
             if (!group->RemoveMember(guid))                // group was disbanded
-            {
                 SetBgRaid(team, NULL);
-            }
-        }
+
         DecreaseInvitedCount(team);
         //we should update battleground queue, but only if bg isn't ending
         if (isBattleground() && GetStatus() < STATUS_WAIT_LEAVE)
@@ -1164,6 +1143,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
             AddToBGFreeSlotQueue();
             sBattlegroundMgr->ScheduleQueueUpdate(0, 0, bgQueueTypeId, bgTypeId, GetBracketId());
         }
+
         // Let others know
         WorldPacket data;
         sBattlegroundMgr->BuildPlayerLeftBattlegroundPacket(&data, guid);
@@ -1176,11 +1156,13 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         player->SetBattlegroundId(0, BATTLEGROUND_TYPE_NONE);  // We're not in BG.
         // reset destination bg team
         player->SetBGTeam(0);
+
         if (IsRatedBG())
         {
             player->RemoveAura(81748);
             player->RemoveAura(81744);
         }
+
         player->SetByteValue(PLAYER_BYTES_3, 3, 0);
         player->RemoveBattlegroundQueueJoinTime(bgTypeId);
 
@@ -1234,7 +1216,8 @@ void Battleground::StartBattleground()
     // This must be done here, because we need to have already invited some players when first BG::Update() method is executed
     // and it doesn't matter if we call StartBattleground() more times, because m_Battlegrounds is a map and instance id never changes
     sBattlegroundMgr->AddBattleground(GetInstanceID(), GetTypeID(), this);
-    if (m_IsRated)
+
+    if (m_IsRated && isArena())
         sLog->outArena("Arena match type: %u for Team1Id: %u - Team2Id: %u started.", m_ArenaType, m_ArenaTeamIds[BG_TEAM_ALLIANCE], m_ArenaTeamIds[BG_TEAM_HORDE]);
 }
 
@@ -1263,7 +1246,9 @@ void Battleground::BuildArenaOpponentSpecializations(WorldPacket* data, uint32 t
             dataBuffer.WriteByteSeq(guid[5]);
             dataBuffer.WriteByteSeq(guid[1]);
             dataBuffer.WriteByteSeq(guid[7]);
+
             dataBuffer << int32(pl->GetSpecializationId(pl->GetActiveSpec()));
+
             dataBuffer.WriteByteSeq(guid[6]);
             dataBuffer.WriteByteSeq(guid[3]);
             dataBuffer.WriteByteSeq(guid[0]);
@@ -1273,6 +1258,7 @@ void Battleground::BuildArenaOpponentSpecializations(WorldPacket* data, uint32 t
     }
 
     data->FlushBits();
+
     if (dataBuffer.size())
         data->append(dataBuffer);
 }
@@ -1801,8 +1787,6 @@ Creature* Battleground::AddCreature(uint32 entry, uint32 type, uint32 teamval, f
     }
 
     creature->SetBattleground(this);
-    BgCreatures[type] = creature->GetGUID();
-
     creature->SetHomePosition(x, y, z, o);
 
     CreatureTemplate const* cinfo = sObjectMgr->GetCreatureTemplate(entry);
@@ -1823,6 +1807,8 @@ Creature* Battleground::AddCreature(uint32 entry, uint32 type, uint32 teamval, f
         delete creature;
         return NULL;
     }
+
+    BgCreatures[type] = creature->GetGUID();
 
     if (respawntime)
         creature->SetRespawnDelay(respawntime);
@@ -1868,9 +1854,7 @@ bool Battleground::DelObject(uint32 type)
 
 bool Battleground::AddSpiritGuide(uint32 type, float x, float y, float z, float o, uint32 team)
 {
-    uint32 entry = (team == ALLIANCE) ?
-        BG_CREATURE_ENTRY_A_SPIRITGUIDE :
-        BG_CREATURE_ENTRY_H_SPIRITGUIDE;
+    uint32 entry = (team == ALLIANCE) ? BG_CREATURE_ENTRY_A_SPIRITGUIDE : BG_CREATURE_ENTRY_H_SPIRITGUIDE;
 
     if (Creature* creature = AddCreature(entry, type, team, x, y, z, o))
     {
@@ -2044,7 +2028,7 @@ void Battleground::HandleKillPlayer(Player* victim, Player* killer)
     if (!isArena())
     {
         // To be able to remove insignia -- ONLY IN Battlegrounds
-        victim->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+        // victim->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
         RewardXPAtKill(killer, victim);
     }
 }
@@ -2119,9 +2103,7 @@ int32 Battleground::GetObjectType(uint64 guid)
     return -1;
 }
 
-void Battleground::HandleKillUnit(Creature* /*creature*/, Player* /*killer*/)
-{
-}
+void Battleground::HandleKillUnit(Creature* /*creature*/, Player* /*killer*/) { }
 
 void Battleground::CheckArenaAfterTimerConditions()
 {
@@ -2219,20 +2201,28 @@ void Battleground::SendFlagsPositions()
         data.WriteBitInOrder(guid, bits);
 
         dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 1 : 2);
+
         dataBuffer.WriteByteSeq(guid[6]);
+
         dataBuffer << float(itr->GetPositionX());
+
         dataBuffer.WriteByteSeq(guid[7]);
+
         dataBuffer << float(itr->GetPositionY());
+
         dataBuffer.WriteByteSeq(guid[0]);
         dataBuffer.WriteByteSeq(guid[3]);
         dataBuffer.WriteByteSeq(guid[2]);
+
         dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 3 : 2); // 244 and 83 ?
+
         dataBuffer.WriteByteSeq(guid[4]);
         dataBuffer.WriteByteSeq(guid[1]);
         dataBuffer.WriteByteSeq(guid[5]);   
     }
 
     data.FlushBits();
+
     if (dataBuffer.size())
         data.append(dataBuffer);
 
@@ -2258,6 +2248,7 @@ void Battleground::RelocateDeadPlayers(uint64 queueIndex)
             if (closestGrave)
                 player->TeleportTo(GetMapId(), closestGrave->x, closestGrave->y, closestGrave->z, player->GetOrientation());
         }
+
         ghostList.clear();
     }
 }

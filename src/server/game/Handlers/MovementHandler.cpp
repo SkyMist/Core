@@ -113,13 +113,13 @@ void WorldSession::HandleMoveWorldportAckOpcode()
             _player->SetBattlegroundId(0, BATTLEGROUND_TYPE_NONE);
             // reset destination bg team
             _player->SetBGTeam(0);
+            _player->SetByteValue(PLAYER_BYTES_3, 3, 0);
         }
+
         // join to bg case
         else if (Battleground* bg = _player->GetBattleground())
-        {
             if (_player->IsInvitedForBattlegroundInstance(_player->GetBattlegroundId()))
                 bg->AddPlayer(_player);
-        }
     }
 
     GetPlayer()->SendInitialPacketsAfterAddToMap();

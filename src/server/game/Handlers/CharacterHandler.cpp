@@ -1346,13 +1346,6 @@ void WorldSession::HandleUnSetFactionAtWar(WorldPacket& recvData)
     GetPlayer()->GetReputationMgr().SetAtWar(repListID, false);
 }
 
-//I think this function is never used :/ I dunno, but i guess this opcode not exists
-void WorldSession::HandleSetFactionCheat(WorldPacket& /*recvData*/)
-{
-    sLog->outError(LOG_FILTER_NETWORKIO, "WORLD SESSION: HandleSetFactionCheat, not expected call, please report.");
-    GetPlayer()->GetReputationMgr().SendStates();
-}
-
 void WorldSession::HandleTutorialFlag(WorldPacket& recvData)
 {
     uint32 data;

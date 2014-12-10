@@ -23,9 +23,8 @@ class Battleground;
 class BattlegroundAAScore : public BattlegroundScore
 {
     public:
-        BattlegroundAAScore() {};
-        virtual ~BattlegroundAAScore() {};
-        //TODO fix me
+        BattlegroundAAScore() { };
+        virtual ~BattlegroundAAScore() { };
 };
 
 class BattlegroundAA : public Battleground
@@ -43,5 +42,8 @@ class BattlegroundAA : public Battleground
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         bool SetupBattleground();
         void HandleKillPlayer(Player* player, Player* killer);
+
+    private:
 };
+
 #endif

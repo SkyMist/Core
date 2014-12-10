@@ -245,7 +245,7 @@ void WorldSession::SendBfLeaveMessage(uint64 guid, BFLeaveReason reason)
 }
 
 //Send by client when he click on accept for queue
-void WorldSession::HandleBfQueueInviteResponse(WorldPacket & recvData)
+void WorldSession::HandleBfQueueInviteResponse(WorldPacket& recvData)
 {
     uint8 accepted;
     ObjectGuid guid;
@@ -273,7 +273,7 @@ void WorldSession::HandleBfQueueInviteResponse(WorldPacket & recvData)
 }
 
 //Send by client on clicking in accept or refuse of invitation windows for join game
-void WorldSession::HandleBfEntryInviteResponse(WorldPacket & recvData)
+void WorldSession::HandleBfEntryInviteResponse(WorldPacket& recvData)
 {
     uint8 accepted;
     ObjectGuid guid;
@@ -335,7 +335,12 @@ void WorldSession::HandleBfQueueRequest(WorldPacket& recvData)
     }
 }
 
-void WorldSession::HandleBfExitQueueRequest(WorldPacket & recvData)
+void WorldSession::HandleBfPortOpcode(WorldPacket& recvData)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Recvd CMSG_BATTLEFIELD_PORT Message");
+}
+
+void WorldSession::HandleBfExitQueueRequest(WorldPacket& recvData)
 {
     ObjectGuid guid;
 
@@ -355,97 +360,11 @@ void WorldSession::HandleBfExitQueueRequest(WorldPacket & recvData)
         bf->AskToLeaveQueue(_player);
 }
 
-void WorldSession::HandleBfExitRequest(WorldPacket& recv_data)
+void WorldSession::HandleBfExitRequest(WorldPacket& recvData)
 {
     sLog->outError(LOG_FILTER_GENERAL, "HandleBfExitRequest");
 
     Battlefield* bf = sBattlefieldMgr->GetBattlefieldToZoneId(_player->GetZoneId());
     if (bf)
         bf->KickPlayerFromBattlefield(_player->GetGUID());
-}
-
-void WorldSession::HandleReportPvPAFK(WorldPacket& recvData)
-{
-    ObjectGuid playerGuid;
-
-    uint8 bits[8] = { 4, 0, 1, 2, 7, 6, 3, 5 };
-    recvData.ReadBitInOrder(playerGuid, bits);
-
-    recvData.FlushBits();
-
-    uint8 bytes[8] = { 4, 3, 2, 7, 1, 6, 5, 0 };
-    recvData.ReadBytesSeq(playerGuid, bytes);
-
-    Player* reportedPlayer = ObjectAccessor::FindPlayer(playerGuid);
-    if (!reportedPlayer)
-    {
-        sLog->outDebug(LOG_FILTER_BATTLEGROUND, "WorldSession::HandleReportPvPAFK: player not found");
-        return;
-    }
-
-    sLog->outDebug(LOG_FILTER_BATTLEGROUND, "WorldSession::HandleReportPvPAFK: %s reported %s", _player->GetName(), reportedPlayer->GetName());
-
-    reportedPlayer->ReportedAfkBy(_player);
-}
-
-void WorldSession::HandleRequestRatedBgInfo(WorldPacket & recvData)
-{
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_REQUEST_RATED_BG_INFO");
-
-    //uint8 unk;
-    //recvData >> unk;
-
-    //sLog->outDebug(LOG_FILTER_BATTLEGROUND, "WorldSession::HandleRequestRatedBgInfo: get unk = %u", unk);
-
-    /// @Todo: perfome research in this case
-    WorldPacket data(SMSG_RATED_BG_STATS, 72);
-    for (int32 i = 0; i < 18; ++i)
-        data << uint32(0);
-    SendPacket(&data);
-}
-
-void WorldSession::HandleRequestPvpOptions(WorldPacket& recvData)
-{
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_REQUEST_PVP_OPTIONS_ENABLED");
-
-    /// @Todo: perfome research in this case
-    WorldPacket data(SMSG_PVP_OPTIONS_ENABLED, 1);
-
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.WriteBit(1);
-    data.WriteBit(1);
-
-    data.FlushBits();
-
-    SendPacket(&data);
-}
-
-void WorldSession::HandleRequestPvpReward(WorldPacket& recvData)
-{
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_REQUEST_PVP_REWARDS");
-
-    _player->SendPvpRewards();
-}
-
-void WorldSession::HandleRequestRatedBgStats(WorldPacket& recvData)
-{
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: CMSG_REQUEST_RATED_BG_STATS");
-
-    WorldPacket data(SMSG_BATTLEFIELD_RATED_INFO, 29);
-
-    for (int i = 0; i < MAX_PVP_SLOT; i++)
-    {
-        data << uint32(_player->GetWeekGames(i)); // games of week
-        data << uint32(_player->GetSeasonGames(i)); // games of season
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(_player->GetArenaPersonalRating(i)); // current rating
-        data << uint32(_player->GetBestRatingOfSeason(i)); // best rating of season
-        data << uint32(_player->GetBestRatingOfWeek(i)); // best rating of week
-        data << uint32(_player->GetPrevWeekWins(i)); // wins of prev week
-    }
-
-    SendPacket(&data);
 }
