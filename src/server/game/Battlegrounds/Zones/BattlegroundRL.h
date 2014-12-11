@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+ 
 #ifndef __BATTLEGROUNDRL_H
 #define __BATTLEGROUNDRL_H
 
@@ -40,9 +41,8 @@ enum BattlegroundRLObjects
 class BattlegroundRLScore : public BattlegroundScore
 {
     public:
-        BattlegroundRLScore() {};
-        virtual ~BattlegroundRLScore() {};
-        //TODO fix me
+        BattlegroundRLScore() { };
+        virtual ~BattlegroundRLScore() { };
 };
 
 class BattlegroundRL : public Battleground
@@ -53,15 +53,18 @@ class BattlegroundRL : public Battleground
 
         /* inherited from BattlegroundClass */
         virtual void AddPlayer(Player* player);
-        virtual void Reset();
-        virtual void FillInitialWorldStates(ByteBuffer &data);
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
-        void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        bool SetupBattleground();
-        void HandleKillPlayer(Player* player, Player* killer);
+        virtual bool SetupBattleground();
+        virtual void Reset();
+        virtual void FillInitialWorldStates(ByteBuffer &data);
+
+        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        virtual void HandleKillPlayer(Player* player, Player* killer);
+
         bool HandlePlayerUnderMap(Player* player);
 };
+
 #endif

@@ -782,7 +782,7 @@ void Battleground::EndBattleground(uint32 winner)
         SetWinner(WINNER_HORDE);
     }
     else
-        SetWinner(3);
+        SetWinner(WINNER_UNDECIDED);
 
     SetStatus(STATUS_WAIT_LEAVE);
     //we must set it this way, because end time is sent in packet!
@@ -793,7 +793,7 @@ void Battleground::EndBattleground(uint32 winner)
 
     if (IsRatedBG())
     {
-        if (winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
+        if (winner_team && loser_team && winner_team != loser_team && GetWinner() != WINNER_UNDECIDED)
         {
             loser_matchmaker_rating = GetArenaMatchmakerRating(GetOtherTeam(winner), SLOT_RBG);
             winner_matchmaker_rating = GetArenaMatchmakerRating(winner, SLOT_RBG);
@@ -805,7 +805,7 @@ void Battleground::EndBattleground(uint32 winner)
     {
         uint8 slot = Arena::GetSlotByType(GetArenaType());
 
-        if (winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
+        if (winner_team && loser_team && winner_team != loser_team && GetWinner() != WINNER_UNDECIDED)
         {
             winner_matchmaker_rating = GetArenaMatchmakerRating(winner, slot);
             loser_team_rating = loser_team->GetRating(slot);
@@ -829,7 +829,7 @@ void Battleground::EndBattleground(uint32 winner)
                         sLog->outArena("Statistics match Type: %u for %s (GUID: " UI64FMTD ", IP: %s): %u damage, %u healing, %u killing blows", m_ArenaType, player->GetName(), itr->first, player->GetSession()->GetRemoteAddress().c_str(), itr->second->DamageDone, itr->second->HealingDone, itr->second->KillingBlows);
         }
         // Deduct 12 points from each teams arena-rating if there are no winners after 45+2 minutes
-        else if (GetWinner() == 3)
+        else if (GetWinner() == WINNER_UNDECIDED)
         {
             SetArenaTeamRatingChangeForTeam(ALLIANCE, ARENA_TIMELIMIT_POINTS_LOSS);
             SetArenaTeamRatingChangeForTeam(HORDE, ARENA_TIMELIMIT_POINTS_LOSS);
@@ -849,7 +849,7 @@ void Battleground::EndBattleground(uint32 winner)
         if (itr->second.OfflineRemoveTime)
         {
             //if rated arena match - make member lost!
-            if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
+            if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team && GetWinner() != WINNER_UNDECIDED)
             {
                 if (team == winner)
                     winner_team->OfflineMemberLost(itr->first, loser_matchmaker_rating, Arena::GetSlotByType(GetArenaType()), winner_matchmaker_change);
@@ -884,7 +884,7 @@ void Battleground::EndBattleground(uint32 winner)
         }
 
         // per player calculation
-        if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
+        if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team && GetWinner() != WINNER_UNDECIDED)
         {
             uint8 slot = Arena::GetSlotByType(GetArenaType());
 
@@ -903,7 +903,7 @@ void Battleground::EndBattleground(uint32 winner)
             }
         }
 
-        if (IsRatedBG() && winner_team && loser_team && winner_team != loser_team && GetWinner() != 3)
+        if (IsRatedBG() && winner_team && loser_team && winner_team != loser_team && GetWinner() != WINNER_UNDECIDED)
         {
             if (player->GetArenaPersonalRating(SLOT_RBG) < player->GetArenaMatchMakerRating(SLOT_RBG))
             {
@@ -2123,8 +2123,8 @@ void Battleground::CheckArenaWinConditions()
 
 void Battleground::UpdateArenaWorldState()
 {
-    UpdateWorldState(0xe10, GetAlivePlayersCountByTeam(HORDE));
-    UpdateWorldState(0xe11, GetAlivePlayersCountByTeam(ALLIANCE));
+    UpdateWorldState(0xE10, GetAlivePlayersCountByTeam(HORDE));
+    UpdateWorldState(0xE11, GetAlivePlayersCountByTeam(ALLIANCE));
 }
 
 void Battleground::SetBgRaid(uint32 TeamID, Group* bg_raid)

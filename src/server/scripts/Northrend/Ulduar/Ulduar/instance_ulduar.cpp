@@ -230,10 +230,10 @@ class instance_ulduar : public InstanceMapScript
                 memset(KeeperGUIDs, 0, sizeof(KeeperGUIDs));
             }
 
-            void FillInitialWorldStates(WorldPacket& packet)
+            void FillInitialWorldStates(ByteBuffer& data)
             {
-                packet << uint32(WORLD_STATE_ALGALON_TIMER_ENABLED) << uint32(_algalonTimer && _algalonTimer <= 60);
-                packet << uint32(WORLD_STATE_ALGALON_DESPAWN_TIMER) << uint32(std::min<uint32>(_algalonTimer, 60));
+                data << uint32(_algalonTimer && _algalonTimer <= 60) << uint32(WORLD_STATE_ALGALON_TIMER_ENABLED);
+                data << uint32(std::min<uint32>(_algalonTimer, 60))  << uint32(WORLD_STATE_ALGALON_DESPAWN_TIMER);
             }
 
             void BeforePlayerEnter(Player* player)

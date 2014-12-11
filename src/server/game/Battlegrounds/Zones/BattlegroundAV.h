@@ -25,8 +25,8 @@
 #define LANG_BG_AV_H_CAPTAIN_BUFF       "Now is the time to attack! For the Horde!"
 #define LANG_BG_AV_S_MINE_BOSS_CLAIMS   "Snivvle is here! Snivvle claims the Coldtooth Mine!"
 
-#define BG_AV_CAPTIME                    240000  //4:00
-#define BG_AV_SNOWFALL_FIRSTCAP          300000  //5:00 but i also have seen 4:05
+#define BG_AV_CAPTIME                    240000  // 4:00.
+#define BG_AV_SNOWFALL_FIRSTCAP          300000  // 5:00 but i also have seen 4:05.
 
 #define BG_AV_SCORE_INITIAL_POINTS       600
 #define SEND_MSG_NEAR_LOSE               120
@@ -42,7 +42,7 @@
 #define BG_AV_REP_TOWER                 12
 #define BG_AV_RES_TOWER                 75
 
-#define BG_AV_GET_COMMANDER            1 //for a safely returned wingcommander
+#define BG_AV_GET_COMMANDER            1         // For a safely returned wingcommander.
 //bonushonor at the end
 #define BG_AV_KILL_SURVIVING_TOWER      2
 #define BG_AV_REP_SURVIVING_TOWER       12
@@ -50,10 +50,11 @@
 #define BG_AV_KILL_SURVIVING_CAPTAIN    2
 #define BG_AV_REP_SURVIVING_CAPTAIN     125
 
-#define AV_EVENT_START_BATTLE           9166 // Achievement: The Alterac Blitz
+#define AV_EVENT_START_BATTLE           9166     // Achievement: The Alterac Blitz
 
+// TODO: get out if there comes a sound when neutral team captures mine.
 enum BG_AV_Sounds
-{ //TODO: get out if there comes a sound when neutral team captures mine
+{
 
 /*
 8212:
@@ -86,15 +87,15 @@ horde:
     horde wins
     */
 
-    AV_SOUND_NEAR_VICTORY                   = 8456, //not confirmed yet
+    AV_SOUND_NEAR_VICTORY                   = 8456, // Not confirmed yet.
 
-    AV_SOUND_ALLIANCE_ASSAULTS              = 8212, //tower, grave + enemy boss if someone tries to attack him
+    AV_SOUND_ALLIANCE_ASSAULTS              = 8212, // Tower, grave + enemy boss if someone tries to attack him.
     AV_SOUND_HORDE_ASSAULTS                 = 8174,
-    AV_SOUND_ALLIANCE_GOOD                  = 8173, //if something good happens for the team:  wins(maybe only through killing the boss), captures mine or grave, destroys tower and defends grave
+    AV_SOUND_ALLIANCE_GOOD                  = 8173, // If something good happens for the team:  wins(maybe only through killing the boss), captures mine or grave, destroys tower and defends grave.
     AV_SOUND_HORDE_GOOD                     = 8213,
     AV_SOUND_BOTH_TOWER_DEFEND              = 8192,
 
-    AV_SOUND_ALLIANCE_CAPTAIN               = 8232, //gets called when someone attacks them and at the beginning after 3min+rand(x)*10sec (maybe buff)
+    AV_SOUND_ALLIANCE_CAPTAIN               = 8232, // Gets called when someone attacks them and at the beginning after 3min + rand(x) * 10sec (maybe buff).
     AV_SOUND_HORDE_CAPTAIN                  = 8333,
 
 };
@@ -105,18 +106,20 @@ enum BG_AV_OTHER_VALUES
     AV_NORTH_MINE              = 0,
     AV_SOUTH_MINE              = 1,
     AV_MINE_TICK_TIMER         = 45000,
-    AV_MINE_RECLAIM_TIMER      = 1200000, //TODO: get the right value.. this is currently 20 minutes
-    AV_NEUTRAL_TEAM            = 0 //this is the neutral owner of snowfall
+    AV_MINE_RECLAIM_TIMER      = 1200000, // TODO: get the right value.. this is currently 20 minutes.
+    AV_NEUTRAL_TEAM            = 0        // This is the neutral owner of snowfall
 };
+
 enum BG_AV_ObjectIds
 {
-    //cause the mangos-system is a bit different, we don't use the right go-ids for every node.. if we want to be 100% like another big server, we must take one object for every node
-    //snowfall 4flags as eyecandy 179424 (alliance neutral)
-    //Banners - stolen from battleground_AB.h ;-)
-    BG_AV_OBJECTID_BANNER_A             = 178925, // can only be used by horde
-    BG_AV_OBJECTID_BANNER_H             = 178943, // can only be used by alliance
-    BG_AV_OBJECTID_BANNER_CONT_A        = 178940, // can only be used by horde
-    BG_AV_OBJECTID_BANNER_CONT_H        = 179435, // can only be used by alliance
+    // Cause the mangos-system is a bit different, we don't use the right go-ids for every node.. if we want to be 100% like another big server, we must take one object for every node
+    // Snowfall 4flags as eyecandy 179424 (alliance neutral).
+    // Banners - stolen from battleground_AB.h ;-).
+
+    BG_AV_OBJECTID_BANNER_A             = 178925, // Can only be used by horde
+    BG_AV_OBJECTID_BANNER_H             = 178943, // Can only be used by alliance
+    BG_AV_OBJECTID_BANNER_CONT_A        = 178940, // Can only be used by horde
+    BG_AV_OBJECTID_BANNER_CONT_H        = 179435, // Can only be used by alliance
 
     BG_AV_OBJECTID_BANNER_A_B           = 178365,
     BG_AV_OBJECTID_BANNER_H_B           = 178364,
@@ -131,10 +134,10 @@ enum BG_AV_ObjectIds
     BG_AV_OBJECTID_SNOWFALL_CANDY_PH    = 179425,
 
     //banners on top of towers:
-    BG_AV_OBJECTID_TOWER_BANNER_A  = 178927, //[PH] Alliance A1 Tower Banner BIG
-    BG_AV_OBJECTID_TOWER_BANNER_H  = 178955, //[PH] Horde H1 Tower Banner BIG
-    BG_AV_OBJECTID_TOWER_BANNER_PA = 179446, //[PH] Alliance H1 Tower Pre-Banner BIG
-    BG_AV_OBJECTID_TOWER_BANNER_PH = 179436, //[PH] Horde A1 Tower Pre-Banner BIG
+    BG_AV_OBJECTID_TOWER_BANNER_A       = 178927, // [PH] Alliance A1 Tower Banner BIG
+    BG_AV_OBJECTID_TOWER_BANNER_H       = 178955, // [PH] Horde H1 Tower Banner BIG
+    BG_AV_OBJECTID_TOWER_BANNER_PA      = 179446, // [PH] Alliance H1 Tower Pre-Banner BIG
+    BG_AV_OBJECTID_TOWER_BANNER_PH      = 179436, // [PH] Horde A1 Tower Pre-Banner BIG
 
     //Auras
     BG_AV_OBJECTID_AURA_A               = 180421,
@@ -148,11 +151,11 @@ enum BG_AV_ObjectIds
     BG_AV_OBJECTID_GATE_H               = 180424,
 
     //mine supplies
-    BG_AV_OBJECTID_MINE_N        = 178785,
-    BG_AV_OBJECTID_MINE_S       = 178784,
+    BG_AV_OBJECTID_MINE_N               = 178785,
+    BG_AV_OBJECTID_MINE_S               = 178784,
 
     BG_AV_OBJECTID_FIRE                 = 179065,
-    BG_AV_OBJECTID_SMOKE                 = 179066
+    BG_AV_OBJECTID_SMOKE                = 179066
 };
 
 enum BG_AV_Nodes
@@ -178,17 +181,17 @@ enum BG_AV_Nodes
 
 enum BG_AV_ObjectTypes
 {
-    BG_AV_OBJECT_FLAG_A_FIRSTAID_STATION    = 0,
-    BG_AV_OBJECT_FLAG_A_STORMPIKE_GRAVE     = 1,
-    BG_AV_OBJECT_FLAG_A_STONEHEART_GRAVE    = 2,
-    BG_AV_OBJECT_FLAG_A_SNOWFALL_GRAVE      = 3,
-    BG_AV_OBJECT_FLAG_A_ICEBLOOD_GRAVE      = 4,
-    BG_AV_OBJECT_FLAG_A_FROSTWOLF_GRAVE     = 5,
-    BG_AV_OBJECT_FLAG_A_FROSTWOLF_HUT       = 6,
-    BG_AV_OBJECT_FLAG_A_DUNBALDAR_SOUTH     = 7,
-    BG_AV_OBJECT_FLAG_A_DUNBALDAR_NORTH     = 8,
-    BG_AV_OBJECT_FLAG_A_ICEWING_BUNKER      = 9,
-    BG_AV_OBJECT_FLAG_A_STONEHEART_BUNKER   = 10,
+    BG_AV_OBJECT_FLAG_A_FIRSTAID_STATION      = 0,
+    BG_AV_OBJECT_FLAG_A_STORMPIKE_GRAVE       = 1,
+    BG_AV_OBJECT_FLAG_A_STONEHEART_GRAVE      = 2,
+    BG_AV_OBJECT_FLAG_A_SNOWFALL_GRAVE        = 3,
+    BG_AV_OBJECT_FLAG_A_ICEBLOOD_GRAVE        = 4,
+    BG_AV_OBJECT_FLAG_A_FROSTWOLF_GRAVE       = 5,
+    BG_AV_OBJECT_FLAG_A_FROSTWOLF_HUT         = 6,
+    BG_AV_OBJECT_FLAG_A_DUNBALDAR_SOUTH       = 7,
+    BG_AV_OBJECT_FLAG_A_DUNBALDAR_NORTH       = 8,
+    BG_AV_OBJECT_FLAG_A_ICEWING_BUNKER        = 9,
+    BG_AV_OBJECT_FLAG_A_STONEHEART_BUNKER     = 10,
 
     BG_AV_OBJECT_FLAG_C_A_FIRSTAID_STATION    = 11,
     BG_AV_OBJECT_FLAG_C_A_STORMPIKE_GRAVE     = 12,
@@ -214,147 +217,147 @@ enum BG_AV_ObjectTypes
     BG_AV_OBJECT_FLAG_C_H_ICEWING_BUNKER      = 31,
     BG_AV_OBJECT_FLAG_C_H_STONEHEART_BUNKER   = 32,
 
-    BG_AV_OBJECT_FLAG_H_FIRSTAID_STATION    = 33,
-    BG_AV_OBJECT_FLAG_H_STORMPIKE_GRAVE     = 34,
-    BG_AV_OBJECT_FLAG_H_STONEHEART_GRAVE    = 35,
-    BG_AV_OBJECT_FLAG_H_SNOWFALL_GRAVE      = 36,
-    BG_AV_OBJECT_FLAG_H_ICEBLOOD_GRAVE      = 37,
-    BG_AV_OBJECT_FLAG_H_FROSTWOLF_GRAVE     = 38,
-    BG_AV_OBJECT_FLAG_H_FROSTWOLF_HUT       = 39,
-    BG_AV_OBJECT_FLAG_H_ICEBLOOD_TOWER      = 40,
-    BG_AV_OBJECT_FLAG_H_TOWER_POINT         = 41,
-    BG_AV_OBJECT_FLAG_H_FROSTWOLF_ETOWER    = 42,
-    BG_AV_OBJECT_FLAG_H_FROSTWOLF_WTOWER    = 43,
+    BG_AV_OBJECT_FLAG_H_FIRSTAID_STATION      = 33,
+    BG_AV_OBJECT_FLAG_H_STORMPIKE_GRAVE       = 34,
+    BG_AV_OBJECT_FLAG_H_STONEHEART_GRAVE      = 35,
+    BG_AV_OBJECT_FLAG_H_SNOWFALL_GRAVE        = 36,
+    BG_AV_OBJECT_FLAG_H_ICEBLOOD_GRAVE        = 37,
+    BG_AV_OBJECT_FLAG_H_FROSTWOLF_GRAVE       = 38,
+    BG_AV_OBJECT_FLAG_H_FROSTWOLF_HUT         = 39,
+    BG_AV_OBJECT_FLAG_H_ICEBLOOD_TOWER        = 40,
+    BG_AV_OBJECT_FLAG_H_TOWER_POINT           = 41,
+    BG_AV_OBJECT_FLAG_H_FROSTWOLF_ETOWER      = 42,
+    BG_AV_OBJECT_FLAG_H_FROSTWOLF_WTOWER      = 43,
 
-    BG_AV_OBJECT_FLAG_N_SNOWFALL_GRAVE      = 44,
+    BG_AV_OBJECT_FLAG_N_SNOWFALL_GRAVE        = 44,
 
-    BG_AV_OBJECT_DOOR_H                     = 45,
-    BG_AV_OBJECT_DOOR_A                     = 46,
+    BG_AV_OBJECT_DOOR_H                       = 45,
+    BG_AV_OBJECT_DOOR_A                       = 46,
 //auras for graveyards (3auras per graveyard neutral, alliance, horde)
-    BG_AV_OBJECT_AURA_N_FIRSTAID_STATION    = 47,
-    BG_AV_OBJECT_AURA_A_FIRSTAID_STATION    = 48,
-    BG_AV_OBJECT_AURA_H_FIRSTAID_STATION    = 49,
-    BG_AV_OBJECT_AURA_N_STORMPIKE_GRAVE     = 50,
-    BG_AV_OBJECT_AURA_A_STORMPIKE_GRAVE     = 51,
-    BG_AV_OBJECT_AURA_H_STORMPIKE_GRAVE     = 52,
-    BG_AV_OBJECT_AURA_N_STONEHEART_GRAVE    = 53,
-    BG_AV_OBJECT_AURA_A_STONEHEART_GRAVE    = 54,
-    BG_AV_OBJECT_AURA_H_STONEHEART_GRAVE    = 55,
-    BG_AV_OBJECT_AURA_N_SNOWFALL_GRAVE      = 56,
-    BG_AV_OBJECT_AURA_A_SNOWFALL_GRAVE      = 57,
-    BG_AV_OBJECT_AURA_H_SNOWFALL_GRAVE      = 58,
-    BG_AV_OBJECT_AURA_N_ICEBLOOD_GRAVE      = 59,
-    BG_AV_OBJECT_AURA_A_ICEBLOOD_GRAVE      = 60,
-    BG_AV_OBJECT_AURA_H_ICEBLOOD_GRAVE      = 61,
-    BG_AV_OBJECT_AURA_N_FROSTWOLF_GRAVE     = 62,
-    BG_AV_OBJECT_AURA_A_FROSTWOLF_GRAVE     = 63,
-    BG_AV_OBJECT_AURA_H_FROSTWOLF_GRAVE     = 64,
-    BG_AV_OBJECT_AURA_N_FROSTWOLF_HUT       = 65,
-    BG_AV_OBJECT_AURA_A_FROSTWOLF_HUT       = 66,
-    BG_AV_OBJECT_AURA_H_FROSTWOLF_HUT       = 67,
+    BG_AV_OBJECT_AURA_N_FIRSTAID_STATION      = 47,
+    BG_AV_OBJECT_AURA_A_FIRSTAID_STATION      = 48,
+    BG_AV_OBJECT_AURA_H_FIRSTAID_STATION      = 49,
+    BG_AV_OBJECT_AURA_N_STORMPIKE_GRAVE       = 50,
+    BG_AV_OBJECT_AURA_A_STORMPIKE_GRAVE       = 51,
+    BG_AV_OBJECT_AURA_H_STORMPIKE_GRAVE       = 52,
+    BG_AV_OBJECT_AURA_N_STONEHEART_GRAVE      = 53,
+    BG_AV_OBJECT_AURA_A_STONEHEART_GRAVE      = 54,
+    BG_AV_OBJECT_AURA_H_STONEHEART_GRAVE      = 55,
+    BG_AV_OBJECT_AURA_N_SNOWFALL_GRAVE        = 56,
+    BG_AV_OBJECT_AURA_A_SNOWFALL_GRAVE        = 57,
+    BG_AV_OBJECT_AURA_H_SNOWFALL_GRAVE        = 58,
+    BG_AV_OBJECT_AURA_N_ICEBLOOD_GRAVE        = 59,
+    BG_AV_OBJECT_AURA_A_ICEBLOOD_GRAVE        = 60,
+    BG_AV_OBJECT_AURA_H_ICEBLOOD_GRAVE        = 61,
+    BG_AV_OBJECT_AURA_N_FROSTWOLF_GRAVE       = 62,
+    BG_AV_OBJECT_AURA_A_FROSTWOLF_GRAVE       = 63,
+    BG_AV_OBJECT_AURA_H_FROSTWOLF_GRAVE       = 64,
+    BG_AV_OBJECT_AURA_N_FROSTWOLF_HUT         = 65,
+    BG_AV_OBJECT_AURA_A_FROSTWOLF_HUT         = 66,
+    BG_AV_OBJECT_AURA_H_FROSTWOLF_HUT         = 67,
 
     //big flags on top of towers 2 flags on each (contested, (alliance | horde)) + 2 auras
-    BG_AV_OBJECT_TFLAG_A_DUNBALDAR_SOUTH     = 67,
-    BG_AV_OBJECT_TFLAG_H_DUNBALDAR_SOUTH     = 68,
-    BG_AV_OBJECT_TFLAG_A_DUNBALDAR_NORTH     = 69,
-    BG_AV_OBJECT_TFLAG_H_DUNBALDAR_NORTH     = 70,
-    BG_AV_OBJECT_TFLAG_A_ICEWING_BUNKER      = 71,
-    BG_AV_OBJECT_TFLAG_H_ICEWING_BUNKER      = 72,
-    BG_AV_OBJECT_TFLAG_A_STONEHEART_BUNKER   = 73,
-    BG_AV_OBJECT_TFLAG_H_STONEHEART_BUNKER   = 74,
-    BG_AV_OBJECT_TFLAG_A_ICEBLOOD_TOWER      = 75,
-    BG_AV_OBJECT_TFLAG_H_ICEBLOOD_TOWER      = 76,
-    BG_AV_OBJECT_TFLAG_A_TOWER_POINT         = 77,
-    BG_AV_OBJECT_TFLAG_H_TOWER_POINT         = 78,
-    BG_AV_OBJECT_TFLAG_A_FROSTWOLF_ETOWER    = 79,
-    BG_AV_OBJECT_TFLAG_H_FROSTWOLF_ETOWER    = 80,
-    BG_AV_OBJECT_TFLAG_A_FROSTWOLF_WTOWER    = 81,
-    BG_AV_OBJECT_TFLAG_H_FROSTWOLF_WTOWER    = 82,
-    BG_AV_OBJECT_TAURA_A_DUNBALDAR_SOUTH     = 83,
-    BG_AV_OBJECT_TAURA_H_DUNBALDAR_SOUTH     = 84,
-    BG_AV_OBJECT_TAURA_A_DUNBALDAR_NORTH     = 85,
-    BG_AV_OBJECT_TAURA_H_DUNBALDAR_NORTH     = 86,
-    BG_AV_OBJECT_TAURA_A_ICEWING_BUNKER      = 87,
-    BG_AV_OBJECT_TAURA_H_ICEWING_BUNKER      = 88,
-    BG_AV_OBJECT_TAURA_A_STONEHEART_BUNKER   = 89,
-    BG_AV_OBJECT_TAURA_H_STONEHEART_BUNKER   = 90,
-    BG_AV_OBJECT_TAURA_A_ICEBLOOD_TOWER      = 91,
-    BG_AV_OBJECT_TAURA_H_ICEBLOOD_TOWER      = 92,
-    BG_AV_OBJECT_TAURA_A_TOWER_POINT         = 93,
-    BG_AV_OBJECT_TAURA_H_TOWER_POINT         = 94,
-    BG_AV_OBJECT_TAURA_A_FROSTWOLF_ETOWER    = 95,
-    BG_AV_OBJECT_TAURA_H_FROSTWOLF_ETOWER    = 96,
-    BG_AV_OBJECT_TAURA_A_FROSTWOLF_WTOWER    = 97,
-    BG_AV_OBJECT_TAURA_H_FROSTWOLF_WTOWER    = 98,
+    BG_AV_OBJECT_TFLAG_A_DUNBALDAR_SOUTH      = 67,
+    BG_AV_OBJECT_TFLAG_H_DUNBALDAR_SOUTH      = 68,
+    BG_AV_OBJECT_TFLAG_A_DUNBALDAR_NORTH      = 69,
+    BG_AV_OBJECT_TFLAG_H_DUNBALDAR_NORTH      = 70,
+    BG_AV_OBJECT_TFLAG_A_ICEWING_BUNKER       = 71,
+    BG_AV_OBJECT_TFLAG_H_ICEWING_BUNKER       = 72,
+    BG_AV_OBJECT_TFLAG_A_STONEHEART_BUNKER    = 73,
+    BG_AV_OBJECT_TFLAG_H_STONEHEART_BUNKER    = 74,
+    BG_AV_OBJECT_TFLAG_A_ICEBLOOD_TOWER       = 75,
+    BG_AV_OBJECT_TFLAG_H_ICEBLOOD_TOWER       = 76,
+    BG_AV_OBJECT_TFLAG_A_TOWER_POINT          = 77,
+    BG_AV_OBJECT_TFLAG_H_TOWER_POINT          = 78,
+    BG_AV_OBJECT_TFLAG_A_FROSTWOLF_ETOWER     = 79,
+    BG_AV_OBJECT_TFLAG_H_FROSTWOLF_ETOWER     = 80,
+    BG_AV_OBJECT_TFLAG_A_FROSTWOLF_WTOWER     = 81,
+    BG_AV_OBJECT_TFLAG_H_FROSTWOLF_WTOWER     = 82,
+    BG_AV_OBJECT_TAURA_A_DUNBALDAR_SOUTH      = 83,
+    BG_AV_OBJECT_TAURA_H_DUNBALDAR_SOUTH      = 84,
+    BG_AV_OBJECT_TAURA_A_DUNBALDAR_NORTH      = 85,
+    BG_AV_OBJECT_TAURA_H_DUNBALDAR_NORTH      = 86,
+    BG_AV_OBJECT_TAURA_A_ICEWING_BUNKER       = 87,
+    BG_AV_OBJECT_TAURA_H_ICEWING_BUNKER       = 88,
+    BG_AV_OBJECT_TAURA_A_STONEHEART_BUNKER    = 89,
+    BG_AV_OBJECT_TAURA_H_STONEHEART_BUNKER    = 90,
+    BG_AV_OBJECT_TAURA_A_ICEBLOOD_TOWER       = 91,
+    BG_AV_OBJECT_TAURA_H_ICEBLOOD_TOWER       = 92,
+    BG_AV_OBJECT_TAURA_A_TOWER_POINT          = 93,
+    BG_AV_OBJECT_TAURA_H_TOWER_POINT          = 94,
+    BG_AV_OBJECT_TAURA_A_FROSTWOLF_ETOWER     = 95,
+    BG_AV_OBJECT_TAURA_H_FROSTWOLF_ETOWER     = 96,
+    BG_AV_OBJECT_TAURA_A_FROSTWOLF_WTOWER     = 97,
+    BG_AV_OBJECT_TAURA_H_FROSTWOLF_WTOWER     = 98,
 
-    BG_AV_OBJECT_BURN_DUNBALDAR_SOUTH        = 99,
-    BG_AV_OBJECT_BURN_DUNBALDAR_NORTH        = 109,
-    BG_AV_OBJECT_BURN_ICEWING_BUNKER         = 119,
-    BG_AV_OBJECT_BURN_STONEHEART_BUNKER      = 129,
-    BG_AV_OBJECT_BURN_ICEBLOOD_TOWER         = 139,
-    BG_AV_OBJECT_BURN_TOWER_POINT            = 149,
-    BG_AV_OBJECT_BURN_FROSTWOLF_ETWOER       = 159,
-    BG_AV_OBJECT_BURN_FROSTWOLF_WTOWER       = 169,
-    BG_AV_OBJECT_BURN_BUILDING_ALLIANCE      = 179,
-    BG_AV_OBJECT_BURN_BUILDING_HORDE         = 189,
-    BG_AV_OBJECT_SNOW_EYECANDY_A             = 199,
-    BG_AV_OBJECT_SNOW_EYECANDY_PA            = 203,
-    BG_AV_OBJECT_SNOW_EYECANDY_H             = 207,
-    BG_AV_OBJECT_SNOW_EYECANDY_PH            = 211,
-    BG_AV_OBJECT_MINE_SUPPLY_N_MIN           = 215,
-    BG_AV_OBJECT_MINE_SUPPLY_N_MAX           = 224,
-    BG_AV_OBJECT_MINE_SUPPLY_S_MIN           = 225,
-    BG_AV_OBJECT_MINE_SUPPLY_S_MAX           = 236,
+    BG_AV_OBJECT_BURN_DUNBALDAR_SOUTH         = 99,
+    BG_AV_OBJECT_BURN_DUNBALDAR_NORTH         = 109,
+    BG_AV_OBJECT_BURN_ICEWING_BUNKER          = 119,
+    BG_AV_OBJECT_BURN_STONEHEART_BUNKER       = 129,
+    BG_AV_OBJECT_BURN_ICEBLOOD_TOWER          = 139,
+    BG_AV_OBJECT_BURN_TOWER_POINT             = 149,
+    BG_AV_OBJECT_BURN_FROSTWOLF_ETWOER        = 159,
+    BG_AV_OBJECT_BURN_FROSTWOLF_WTOWER        = 169,
+    BG_AV_OBJECT_BURN_BUILDING_ALLIANCE       = 179,
+    BG_AV_OBJECT_BURN_BUILDING_HORDE          = 189,
+    BG_AV_OBJECT_SNOW_EYECANDY_A              = 199,
+    BG_AV_OBJECT_SNOW_EYECANDY_PA             = 203,
+    BG_AV_OBJECT_SNOW_EYECANDY_H              = 207,
+    BG_AV_OBJECT_SNOW_EYECANDY_PH             = 211,
+    BG_AV_OBJECT_MINE_SUPPLY_N_MIN            = 215,
+    BG_AV_OBJECT_MINE_SUPPLY_N_MAX            = 224,
+    BG_AV_OBJECT_MINE_SUPPLY_S_MIN            = 225,
+    BG_AV_OBJECT_MINE_SUPPLY_S_MAX            = 236,
 
     BG_AV_OBJECT_MAX                          = 237
 };
 
 enum BG_AV_OBJECTS
 {
-    AV_OPLACE_FIRSTAID_STATION          = 0,
-    AV_OPLACE_STORMPIKE_GRAVE         = 1,
-    AV_OPLACE_STONEHEART_GRAVE        = 2,
-    AV_OPLACE_SNOWFALL_GRAVE          = 3,
-    AV_OPLACE_ICEBLOOD_GRAVE          = 4,
-    AV_OPLACE_FROSTWOLF_GRAVE         = 5,
-    AV_OPLACE_FROSTWOLF_HUT           = 6,
-    AV_OPLACE_DUNBALDAR_SOUTH         = 7,
-    AV_OPLACE_DUNBALDAR_NORTH         = 8,
-    AV_OPLACE_ICEWING_BUNKER          = 9,
-    AV_OPLACE_STONEHEART_BUNKER       = 10,
-    AV_OPLACE_ICEBLOOD_TOWER          = 11,
-    AV_OPLACE_TOWER_POINT             = 12,
-    AV_OPLACE_FROSTWOLF_ETOWER        = 13,
-    AV_OPLACE_FROSTWOLF_WTOWER        = 14,
-    AV_OPLACE_BIGBANNER_DUNBALDAR_SOUTH         = 15,
-    AV_OPLACE_BIGBANNER_DUNBALDAR_NORTH         = 16,
-    AV_OPLACE_BIGBANNER_ICEWING_BUNKER          = 17,
-    AV_OPLACE_BIGBANNER_STONEHEART_BUNKER       = 18,
-    AV_OPLACE_BIGBANNER_ICEBLOOD_TOWER          = 19,
-    AV_OPLACE_BIGBANNER_TOWER_POINT             = 20,
-    AV_OPLACE_BIGBANNER_FROSTWOLF_ETOWER        = 21,
-    AV_OPLACE_BIGBANNER_FROSTWOLF_WTOWER        = 22,
+    AV_OPLACE_FIRSTAID_STATION                = 0,
+    AV_OPLACE_STORMPIKE_GRAVE                 = 1,
+    AV_OPLACE_STONEHEART_GRAVE                = 2,
+    AV_OPLACE_SNOWFALL_GRAVE                  = 3,
+    AV_OPLACE_ICEBLOOD_GRAVE                  = 4,
+    AV_OPLACE_FROSTWOLF_GRAVE                 = 5,
+    AV_OPLACE_FROSTWOLF_HUT                   = 6,
+    AV_OPLACE_DUNBALDAR_SOUTH                 = 7,
+    AV_OPLACE_DUNBALDAR_NORTH                 = 8,
+    AV_OPLACE_ICEWING_BUNKER                  = 9,
+    AV_OPLACE_STONEHEART_BUNKER               = 10,
+    AV_OPLACE_ICEBLOOD_TOWER                  = 11,
+    AV_OPLACE_TOWER_POINT                     = 12,
+    AV_OPLACE_FROSTWOLF_ETOWER                = 13,
+    AV_OPLACE_FROSTWOLF_WTOWER                = 14,
+    AV_OPLACE_BIGBANNER_DUNBALDAR_SOUTH       = 15,
+    AV_OPLACE_BIGBANNER_DUNBALDAR_NORTH       = 16,
+    AV_OPLACE_BIGBANNER_ICEWING_BUNKER        = 17,
+    AV_OPLACE_BIGBANNER_STONEHEART_BUNKER     = 18,
+    AV_OPLACE_BIGBANNER_ICEBLOOD_TOWER        = 19,
+    AV_OPLACE_BIGBANNER_TOWER_POINT           = 20,
+    AV_OPLACE_BIGBANNER_FROSTWOLF_ETOWER      = 21,
+    AV_OPLACE_BIGBANNER_FROSTWOLF_WTOWER      = 22,
 
-    AV_OPLACE_BURN_DUNBALDAR_SOUTH         = 23,
-    AV_OPLACE_BURN_DUNBALDAR_NORTH         = 33,
-    AV_OPLACE_BURN_ICEWING_BUNKER          = 43,
-    AV_OPLACE_BURN_STONEHEART_BUNKER       = 53,
-    AV_OPLACE_BURN_ICEBLOOD_TOWER          = 63,
-    AV_OPLACE_BURN_TOWER_POINT             = 73,
-    AV_OPLACE_BURN_FROSTWOLF_ETOWER        = 83,
-    AV_OPLACE_BURN_FROSTWOLF_WTOWER        = 93,
-    AV_OPLACE_BURN_BUILDING_A        = 103,
-    AV_OPLACE_BURN_BUILDING_H        = 113,
-    AV_OPLACE_SNOW_1                      = 123,
-    AV_OPLACE_SNOW_2                      = 124,
-    AV_OPLACE_SNOW_3                      = 125,
-    AV_OPLACE_SNOW_4                      = 126,
-    AV_OPLACE_MINE_SUPPLY_N_MIN           = 127,
-    AV_OPLACE_MINE_SUPPLY_N_MAX           = 136,
-    AV_OPLACE_MINE_SUPPLY_S_MIN           = 137,
-    AV_OPLACE_MINE_SUPPLY_S_MAX           = 148,
+    AV_OPLACE_BURN_DUNBALDAR_SOUTH            = 23,
+    AV_OPLACE_BURN_DUNBALDAR_NORTH            = 33,
+    AV_OPLACE_BURN_ICEWING_BUNKER             = 43,
+    AV_OPLACE_BURN_STONEHEART_BUNKER          = 53,
+    AV_OPLACE_BURN_ICEBLOOD_TOWER             = 63,
+    AV_OPLACE_BURN_TOWER_POINT                = 73,
+    AV_OPLACE_BURN_FROSTWOLF_ETOWER           = 83,
+    AV_OPLACE_BURN_FROSTWOLF_WTOWER           = 93,
+    AV_OPLACE_BURN_BUILDING_A                 = 103,
+    AV_OPLACE_BURN_BUILDING_H                 = 113,
+    AV_OPLACE_SNOW_1                          = 123,
+    AV_OPLACE_SNOW_2                          = 124,
+    AV_OPLACE_SNOW_3                          = 125,
+    AV_OPLACE_SNOW_4                          = 126,
+    AV_OPLACE_MINE_SUPPLY_N_MIN               = 127,
+    AV_OPLACE_MINE_SUPPLY_N_MAX               = 136,
+    AV_OPLACE_MINE_SUPPLY_S_MIN               = 137,
+    AV_OPLACE_MINE_SUPPLY_S_MAX               = 148,
 
-    AV_OPLACE_MAX                         = 149
+    AV_OPLACE_MAX                             = 149
 };
 
 const float BG_AV_ObjectPos[AV_OPLACE_MAX][4] =
@@ -531,24 +534,23 @@ const float BG_AV_ObjectPos[AV_OPLACE_MAX][4] =
 
 const float BG_AV_DoorPositons[2][4] =
 {
-    {780.487f, -493.024f, 99.9553f, 3.0976f},   //alliance
-    {-1375.193f, -538.981f, 55.2824f, 0.72178f} //horde
+    {   780.487f, -493.024f, 99.9553f, 3.0976f  }, // Alliance.
+    { -1375.193f, -538.981f, 55.2824f, 0.72178f }  // Horde.
 };
 
-//creaturestuff starts here
-//is related to BG_AV_CreaturePos
+// Creature stuff starts here. It's related to BG_AV_CreaturePos.
 enum BG_AV_CreaturePlace
 {
-    AV_CPLACE_SPIRIT_STORM_AID      = 0,
-    AV_CPLACE_SPIRIT_STORM_GRAVE    = 1,
-    AV_CPLACE_SPIRIT_STONE_GRAVE    = 2,
-    AV_CPLACE_SPIRIT_SNOWFALL       = 3,
-    AV_CPLACE_SPIRIT_ICE_GRAVE      = 4,
-    AV_CPLACE_SPIRIT_FROSTWOLF      = 5,
-    AV_CPLACE_SPIRIT_FROST_HUT      = 6,
-    AV_CPLACE_SPIRIT_MAIN_ALLIANCE  = 7,
-    AV_CPLACE_SPIRIT_MAIN_HORDE     = 8,
-//i don't will add for all 4 positions a variable.. i think one is enough to compute the rest
+    AV_CPLACE_SPIRIT_STORM_AID       = 0,
+    AV_CPLACE_SPIRIT_STORM_GRAVE     = 1,
+    AV_CPLACE_SPIRIT_STONE_GRAVE     = 2,
+    AV_CPLACE_SPIRIT_SNOWFALL        = 3,
+    AV_CPLACE_SPIRIT_ICE_GRAVE       = 4,
+    AV_CPLACE_SPIRIT_FROSTWOLF       = 5,
+    AV_CPLACE_SPIRIT_FROST_HUT       = 6,
+    AV_CPLACE_SPIRIT_MAIN_ALLIANCE   = 7,
+    AV_CPLACE_SPIRIT_MAIN_HORDE      = 8,
+
     AV_CPLACE_DEFENSE_STORM_AID      = 9,
     AV_CPLACE_DEFEMSE_STORM_GRAVE    = 13,
     AV_CPLACE_DEFENSE_STONE_GRAVE    = 17,
@@ -566,63 +568,67 @@ enum BG_AV_CreaturePlace
     AV_CPLACE_DEFENSE_FROST_E        = 61,
     AV_CPLACE_DEFENSE_FROST_t        = 65,
 
-    AV_CPLACE_A_MARSHAL_SOUTH       = 69,
-    AV_CPLACE_A_MARSHAL_NORTH       = 70,
-    AV_CPLACE_A_MARSHAL_ICE         = 71,
-    AV_CPLACE_A_MARSHAL_STONE       = 72,
-    AV_CPLACE_H_MARSHAL_ICE         = 73,
-    AV_CPLACE_H_MARSHAL_TOWER       = 74,
-    AV_CPLACE_H_MARSHAL_ETOWER      = 75,
-    AV_CPLACE_H_MARSHAL_WTOWER      = 76,
-    //irondeep
-    //miner:
-    AV_CPLACE_MINE_N_1_MIN      = 77,
-    AV_CPLACE_MINE_N_1_MAX      = 136,
-    //special types
-    AV_CPLACE_MINE_N_2_MIN      = 137,
-    AV_CPLACE_MINE_N_2_MAX      = 192,
-    //boss
-    AV_CPLACE_MINE_N_3          = 193,
-    //coldtooth
-    //miner:
-    AV_CPLACE_MINE_S_1_MIN      = 194,
-    AV_CPLACE_MINE_S_1_MAX      = 250,
-    //special types
-    AV_CPLACE_MINE_S_2_MIN      = 251,
-    AV_CPLACE_MINE_S_2_MAX      = 289,
-    //vermin
-    AV_CPLACE_MINE_S_S_MIN      = 290,
-    AV_CPLACE_MINE_S_S_MAX      = 299,
-    //boss
-    AV_CPLACE_MINE_S_3          = 300,
+    AV_CPLACE_A_MARSHAL_SOUTH        = 69,
+    AV_CPLACE_A_MARSHAL_NORTH        = 70,
+    AV_CPLACE_A_MARSHAL_ICE          = 71,
+    AV_CPLACE_A_MARSHAL_STONE        = 72,
+    AV_CPLACE_H_MARSHAL_ICE          = 73,
+    AV_CPLACE_H_MARSHAL_TOWER        = 74,
+    AV_CPLACE_H_MARSHAL_ETOWER       = 75,
+    AV_CPLACE_H_MARSHAL_WTOWER       = 76,
 
-    //herald
-    AV_CPLACE_HERALD          = 301,
+    // Irondeep
 
-    //node aura triggers
-    AV_CPLACE_TRIGGER01       = 302,
-    AV_CPLACE_TRIGGER02       = 303,
-    AV_CPLACE_TRIGGER03       = 304,
-    AV_CPLACE_TRIGGER04       = 305,
-    AV_CPLACE_TRIGGER05       = 306,
-    AV_CPLACE_TRIGGER06       = 307,
-    AV_CPLACE_TRIGGER07       = 308,
-    AV_CPLACE_TRIGGER08       = 309,
-    AV_CPLACE_TRIGGER09       = 310,
-    AV_CPLACE_TRIGGER10       = 311,
-    AV_CPLACE_TRIGGER11       = 312,
-    AV_CPLACE_TRIGGER12       = 313,
-    AV_CPLACE_TRIGGER13       = 314,
-    AV_CPLACE_TRIGGER14       = 315,
-    AV_CPLACE_TRIGGER15       = 316,
+    // miner:
+    AV_CPLACE_MINE_N_1_MIN           = 77,
+    AV_CPLACE_MINE_N_1_MAX           = 136,
+    // special types
+    AV_CPLACE_MINE_N_2_MIN           = 137,
+    AV_CPLACE_MINE_N_2_MAX           = 192,
+    // boss
+    AV_CPLACE_MINE_N_3               = 193,
 
-    //boss, captain triggers
-    AV_CPLACE_TRIGGER16       = 317,
-    AV_CPLACE_TRIGGER17       = 318,
-    AV_CPLACE_TRIGGER18       = 319,
-    AV_CPLACE_TRIGGER19       = 320,
+    // Coldtooth
 
-    AV_CPLACE_MAX = 321
+    // miner:
+    AV_CPLACE_MINE_S_1_MIN           = 194,
+    AV_CPLACE_MINE_S_1_MAX           = 250,
+    // special types
+    AV_CPLACE_MINE_S_2_MIN           = 251,
+    AV_CPLACE_MINE_S_2_MAX           = 289,
+    // vermin
+    AV_CPLACE_MINE_S_S_MIN           = 290,
+    AV_CPLACE_MINE_S_S_MAX           = 299,
+    // boss
+    AV_CPLACE_MINE_S_3               = 300,
+
+    // Herald
+    AV_CPLACE_HERALD                 = 301,
+
+    // Node aura triggers
+    AV_CPLACE_TRIGGER01              = 302,
+    AV_CPLACE_TRIGGER02              = 303,
+    AV_CPLACE_TRIGGER03              = 304,
+    AV_CPLACE_TRIGGER04              = 305,
+    AV_CPLACE_TRIGGER05              = 306,
+    AV_CPLACE_TRIGGER06              = 307,
+    AV_CPLACE_TRIGGER07              = 308,
+    AV_CPLACE_TRIGGER08              = 309,
+    AV_CPLACE_TRIGGER09              = 310,
+    AV_CPLACE_TRIGGER10              = 311,
+    AV_CPLACE_TRIGGER11              = 312,
+    AV_CPLACE_TRIGGER12              = 313,
+    AV_CPLACE_TRIGGER13              = 314,
+    AV_CPLACE_TRIGGER14              = 315,
+    AV_CPLACE_TRIGGER15              = 316,
+
+    // Boss, Captain triggers.
+    AV_CPLACE_TRIGGER16              = 317,
+    AV_CPLACE_TRIGGER17              = 318,
+    AV_CPLACE_TRIGGER18              = 319,
+    AV_CPLACE_TRIGGER19              = 320,
+
+    AV_CPLACE_MAX                    = 321
 };
 
 //x, y, z, o
@@ -1328,10 +1334,10 @@ enum BG_AV_States
 
 enum BG_AV_WorldStates
 {
-    AV_Alliance_Score               = 3127,
-    AV_Horde_Score                  = 3128,
-    AV_SHOW_H_SCORE                 = 3133,
-    AV_SHOW_A_SCORE                 = 3134,
+    AV_Alliance_Score          = 3127,
+    AV_Horde_Score             = 3128,
+    AV_SHOW_H_SCORE            = 3133,
+    AV_SHOW_A_SCORE            = 3134,
 
 /*
     //the comments behind the state shows which icon overlaps the other.. but is, until now, unused and maybe not a good solution (but give few performance (:)
@@ -1484,28 +1490,28 @@ const uint32 BG_AV_NodeWorldStates[16][4] =
 
 enum BG_AV_QuestIds
 {
-    AV_QUEST_A_SCRAPS1      = 7223,
-    AV_QUEST_A_SCRAPS2      = 6781,
-    AV_QUEST_H_SCRAPS1      = 7224,
-    AV_QUEST_H_SCRAPS2      = 6741,
-    AV_QUEST_A_COMMANDER1   = 6942, //soldier
-    AV_QUEST_H_COMMANDER1   = 6825,
-    AV_QUEST_A_COMMANDER2   = 6941, //leutnant
-    AV_QUEST_H_COMMANDER2   = 6826,
-    AV_QUEST_A_COMMANDER3   = 6943, //commander
-    AV_QUEST_H_COMMANDER3   = 6827,
-    AV_QUEST_A_BOSS1        = 7386, // 5 cristal/blood
-    AV_QUEST_H_BOSS1        = 7385,
-    AV_QUEST_A_BOSS2        = 6881, // 1
-    AV_QUEST_H_BOSS2        = 6801,
-    AV_QUEST_A_NEAR_MINE    = 5892, //the mine near start location of team
-    AV_QUEST_H_NEAR_MINE    = 5893,
-    AV_QUEST_A_OTHER_MINE   = 6982, //the other mine ;)
-    AV_QUEST_H_OTHER_MINE   = 6985,
-    AV_QUEST_A_RIDER_HIDE   = 7026,
-    AV_QUEST_H_RIDER_HIDE   = 7002,
-    AV_QUEST_A_RIDER_TAME   = 7027,
-    AV_QUEST_H_RIDER_TAME   = 7001
+    AV_QUEST_A_SCRAPS1              = 7223,
+    AV_QUEST_A_SCRAPS2              = 6781,
+    AV_QUEST_H_SCRAPS1              = 7224,
+    AV_QUEST_H_SCRAPS2              = 6741,
+    AV_QUEST_A_COMMANDER1           = 6942, //soldier
+    AV_QUEST_H_COMMANDER1           = 6825,
+    AV_QUEST_A_COMMANDER2           = 6941, //leutnant
+    AV_QUEST_H_COMMANDER2           = 6826,
+    AV_QUEST_A_COMMANDER3           = 6943, //commander
+    AV_QUEST_H_COMMANDER3           = 6827,
+    AV_QUEST_A_BOSS1                = 7386, // 5 cristal/blood
+    AV_QUEST_H_BOSS1                = 7385,
+    AV_QUEST_A_BOSS2                = 6881, // 1
+    AV_QUEST_H_BOSS2                = 6801,
+    AV_QUEST_A_NEAR_MINE            = 5892, //the mine near start location of team
+    AV_QUEST_H_NEAR_MINE            = 5893,
+    AV_QUEST_A_OTHER_MINE           = 6982, //the other mine ;)
+    AV_QUEST_H_OTHER_MINE           = 6985,
+    AV_QUEST_A_RIDER_HIDE           = 7026,
+    AV_QUEST_H_RIDER_HIDE           = 7002,
+    AV_QUEST_A_RIDER_TAME           = 7027,
+    AV_QUEST_H_RIDER_TAME           = 7001
 };
 
 enum BG_AV_Objectives
@@ -1532,8 +1538,10 @@ inline BG_AV_Nodes &operator++(BG_AV_Nodes &i){ return i = BG_AV_Nodes(i + 1); }
 class BattlegroundAVScore : public BattlegroundScore
 {
     public:
-        BattlegroundAVScore() : GraveyardsAssaulted(0), GraveyardsDefended(0), TowersAssaulted(0), TowersDefended(0), MinesCaptured(0), LeadersKilled(0), SecondaryObjectives(0) {};
-        virtual ~BattlegroundAVScore() {};
+        BattlegroundAVScore() : GraveyardsAssaulted(0), GraveyardsDefended(0), TowersAssaulted(0), TowersDefended(0), MinesCaptured(0), LeadersKilled(0), SecondaryObjectives(0) { };
+
+        virtual ~BattlegroundAVScore() { };
+
         uint32 GraveyardsAssaulted;
         uint32 GraveyardsDefended;
         uint32 TowersAssaulted;
@@ -1554,14 +1562,15 @@ class BattlegroundAV : public Battleground
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
+        virtual bool SetupBattleground();
+        virtual void ResetBGSubclass();
+
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        bool SetupBattleground();
-        virtual void ResetBGSubclass();
 
         /*general stuff*/
         void UpdateScore(uint16 team, int16 points);
-       void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
+        virtual void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
 
         /*handlestuff*/ //these are functions which get called from extern
         virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
@@ -1603,7 +1612,7 @@ class BattlegroundAV : public Battleground
         void ChangeMineOwner(uint8 mine, uint32 team, bool initial=false);
 
         /*worldstates*/
-        void FillInitialWorldStates(ByteBuffer &data);
+        virtual void FillInitialWorldStates(ByteBuffer &data);
         uint8 GetWorldStateType(uint8 state, uint16 team);
         void SendMineWorldStates(uint32 mine);
         void UpdateNodeWorldState(BG_AV_Nodes node);

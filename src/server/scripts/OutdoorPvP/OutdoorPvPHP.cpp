@@ -148,19 +148,18 @@ void OutdoorPvPHP::SendRemoveWorldStates(Player* player)
     }
 }
 
-void OutdoorPvPHP::FillInitialWorldStates(WorldPacket &data)
+void OutdoorPvPHP::FillInitialWorldStates(ByteBuffer& data)
 {
-    data << uint32(HP_UI_TOWER_DISPLAY_A) << uint32(1);
-    data << uint32(HP_UI_TOWER_DISPLAY_H) << uint32(1);
-    data << uint32(HP_UI_TOWER_COUNT_A) << uint32(m_AllianceTowersControlled);
-    data << uint32(HP_UI_TOWER_COUNT_H) << uint32(m_HordeTowersControlled);
-    data << uint32(HP_UI_TOWER_SLIDER_DISPLAY) << uint32(0);
-    data << uint32(HP_UI_TOWER_SLIDER_POS) << uint32(50);
-    data << uint32(HP_UI_TOWER_SLIDER_N) << uint32(100);
+    data << uint32(1)   << uint32(HP_UI_TOWER_DISPLAY_A);
+    data << uint32(1)   << uint32(HP_UI_TOWER_DISPLAY_H);
+    data << uint32(m_AllianceTowersControlled) << uint32(HP_UI_TOWER_COUNT_A);
+    data << uint32(m_HordeTowersControlled)    << uint32(HP_UI_TOWER_COUNT_H);
+    data << uint32(0)   << uint32(HP_UI_TOWER_SLIDER_DISPLAY);
+    data << uint32(50)  << uint32(HP_UI_TOWER_SLIDER_POS);
+    data << uint32(100) << uint32(HP_UI_TOWER_SLIDER_N);
+
     for (OPvPCapturePointMap::iterator itr = m_capturePoints.begin(); itr != m_capturePoints.end(); ++itr)
-    {
         itr->second->FillInitialWorldStates(data);
-    }
 }
 
 void OPvPCapturePointHP::ChangeState()
@@ -280,29 +279,29 @@ void OPvPCapturePointHP::SendChangePhase()
     SendUpdateWorldState(HP_UI_TOWER_SLIDER_DISPLAY, 1);
 }
 
-void OPvPCapturePointHP::FillInitialWorldStates(WorldPacket &data)
+void OPvPCapturePointHP::FillInitialWorldStates(ByteBuffer& data)
 {
     switch (m_State)
     {
         case OBJECTIVESTATE_ALLIANCE:
         case OBJECTIVESTATE_ALLIANCE_HORDE_CHALLENGE:
-            data << uint32(HP_MAP_N[m_TowerType]) << uint32(0);
-            data << uint32(HP_MAP_A[m_TowerType]) << uint32(1);
-            data << uint32(HP_MAP_H[m_TowerType]) << uint32(0);
+            data << uint32(0) << uint32(HP_MAP_N[m_TowerType]);
+            data << uint32(1) << uint32(HP_MAP_A[m_TowerType]);
+            data << uint32(0) << uint32(HP_MAP_H[m_TowerType]);
             break;
         case OBJECTIVESTATE_HORDE:
         case OBJECTIVESTATE_HORDE_ALLIANCE_CHALLENGE:
-            data << uint32(HP_MAP_N[m_TowerType]) << uint32(0);
-            data << uint32(HP_MAP_A[m_TowerType]) << uint32(0);
-            data << uint32(HP_MAP_H[m_TowerType]) << uint32(1);
+            data << uint32(0) << uint32(HP_MAP_N[m_TowerType]);
+            data << uint32(0) << uint32(HP_MAP_A[m_TowerType]);
+            data << uint32(1) << uint32(HP_MAP_H[m_TowerType]);
             break;
         case OBJECTIVESTATE_NEUTRAL:
         case OBJECTIVESTATE_NEUTRAL_ALLIANCE_CHALLENGE:
         case OBJECTIVESTATE_NEUTRAL_HORDE_CHALLENGE:
         default:
-            data << uint32(HP_MAP_N[m_TowerType]) << uint32(1);
-            data << uint32(HP_MAP_A[m_TowerType]) << uint32(0);
-            data << uint32(HP_MAP_H[m_TowerType]) << uint32(0);
+            data << uint32(1) << uint32(HP_MAP_N[m_TowerType]);
+            data << uint32(0) << uint32(HP_MAP_A[m_TowerType]);
+            data << uint32(0) << uint32(HP_MAP_H[m_TowerType]);
             break;
     }
 }

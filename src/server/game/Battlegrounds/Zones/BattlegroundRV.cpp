@@ -17,12 +17,13 @@
  */
 
 #include "Battleground.h"
-#include "BattlegroundRV.h"
 #include "ObjectAccessor.h"
 #include "Language.h"
 #include "Player.h"
 #include "WorldPacket.h"
 #include "GameObject.h"
+
+#include "BattlegroundRV.h"
 
 BattlegroundRV::BattlegroundRV()
 {
@@ -32,20 +33,17 @@ BattlegroundRV::BattlegroundRV()
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    // we must set messageIds
+
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_ARENA_HAS_BEGUN;
 
-    // helper for check player height
+    // Helper for checking player height.
     fencesOpened = false;
 }
 
-BattlegroundRV::~BattlegroundRV()
-{
-
-}
+BattlegroundRV::~BattlegroundRV() { }
 
 void BattlegroundRV::PostUpdateImpl(uint32 diff)
 {
@@ -58,12 +56,13 @@ void BattlegroundRV::PostUpdateImpl(uint32 diff)
             if (Player* player = ObjectAccessor::FindPlayer(MAKE_NEW_GUID(itr->first, 0, HIGHGUID_PLAYER)))
                 if (player && player->GetPositionZ() < 27.0f)
                     player->TeleportTo(618, 763.5f, -284.0f, 29.0f, player->GetOrientation(), TELE_TO_NOT_LEAVE_COMBAT);
+
         teleportTimer = 3000;
     }
     else
         teleportTimer -= diff;
 
-    // enable fences check
+    // Enable fences check
     if (!fencesOpened)
     {
         if (fencesTimer < diff)
@@ -96,11 +95,11 @@ void BattlegroundRV::PostUpdateImpl(uint32 diff)
             case BG_RV_STATE_SWITCH_PILLARS:
                 for (uint8 i = BG_RV_OBJECT_PILAR_1; i <= BG_RV_OBJECT_PULLEY_2; ++i)
                 {
-                     if (GameObject* gob = GetBgMap()->GetGameObject(BgObjects[i]))
-                     {
-                         gob->SetLootState(GO_READY);
-                         gob->UseDoorOrButton(RESPAWN_ONE_DAY);
-                     }
+                    if (GameObject* gob = GetBgMap()->GetGameObject(BgObjects[i]))
+                    {
+                        gob->SetLootState(GO_READY);
+                        gob->UseDoorOrButton(RESPAWN_ONE_DAY);
+                    }
                 }
                 TogglePillarCollision();
                 setTimer(BG_RV_PILLAR_SWITCH_TIMER);
@@ -111,9 +110,7 @@ void BattlegroundRV::PostUpdateImpl(uint32 diff)
         setTimer(getTimer() - diff);
 }
 
-void BattlegroundRV::StartingEventCloseDoors()
-{
-}
+void BattlegroundRV::StartingEventCloseDoors() { }
 
 void BattlegroundRV::StartingEventOpenDoors()
 {
@@ -138,13 +135,11 @@ void BattlegroundRV::StartingEventOpenDoors()
 void BattlegroundRV::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    //create score and add it to map, default values are set in constructor
-    BattlegroundRVScore* sc = new BattlegroundRVScore;
 
+    BattlegroundRVScore* sc = new BattlegroundRVScore; // Create score and add it to map, default values are set in constructor.
     PlayerScores[player->GetGUID()] = sc;
 
-    UpdateWorldState(BG_RV_WORLD_STATE_A, GetAlivePlayersCountByTeam(ALLIANCE));
-    UpdateWorldState(BG_RV_WORLD_STATE_H, GetAlivePlayersCountByTeam(HORDE));
+    UpdateArenaWorldState();
 }
 
 void BattlegroundRV::RemovePlayer(Player* /*player*/, uint64 /*guid*/, uint32 /*team*/)
@@ -152,9 +147,7 @@ void BattlegroundRV::RemovePlayer(Player* /*player*/, uint64 /*guid*/, uint32 /*
     if (GetStatus() == STATUS_WAIT_LEAVE)
         return;
 
-    UpdateWorldState(BG_RV_WORLD_STATE_A, GetAlivePlayersCountByTeam(ALLIANCE));
-    UpdateWorldState(BG_RV_WORLD_STATE_H, GetAlivePlayersCountByTeam(HORDE));
-
+    UpdateArenaWorldState();
     CheckArenaWinConditions();
 }
 
@@ -165,14 +158,13 @@ void BattlegroundRV::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
+        sLog->outError(LOG_FILTER_BATTLEGROUND, "Killer player not found");
         return;
     }
 
     Battleground::HandleKillPlayer(player, killer);
 
-    UpdateWorldState(BG_RV_WORLD_STATE_A, GetAlivePlayersCountByTeam(ALLIANCE));
-    UpdateWorldState(BG_RV_WORLD_STATE_H, GetAlivePlayersCountByTeam(HORDE));
-
+    UpdateArenaWorldState();
     CheckArenaWinConditions();
 }
 
@@ -195,59 +187,59 @@ void BattlegroundRV::HandleAreaTrigger(Player* Source, uint32 Trigger)
         case 5473:
         case 5474:
             break;
-        default:
-            break;
+
+        default: break;
     }
 }
 
 void BattlegroundRV::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(BG_RV_WORLD_STATE_A), uint32(GetAlivePlayersCountByTeam(ALLIANCE)));
-    Player::BuildWorldState(data, uint32(BG_RV_WORLD_STATE_H), uint32(GetAlivePlayersCountByTeam(HORDE)));
-    Player::BuildWorldState(data, uint32(BG_RV_WORLD_STATE), uint32(1));
+    data << uint32(1) << uint32(0xE1A);
+
+    UpdateArenaWorldState();
 }
 
 void BattlegroundRV::Reset()
 {
-    //call parent's class reset
+    // Call parent's class reset.
     Battleground::Reset();
 }
 
 bool BattlegroundRV::SetupBattleground()
 {
-    // elevators
+    // Elevators.
     if (!AddObject(BG_RV_OBJECT_ELEVATOR_1, BG_RV_OBJECT_TYPE_ELEVATOR_1, 763.536377f, -294.535767f, 0.505383f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_ELEVATOR_2, BG_RV_OBJECT_TYPE_ELEVATOR_2, 763.506348f, -273.873352f, 0.505383f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-    // buffs
+    // Buffs.
         || !AddObject(BG_RV_OBJECT_BUFF_1, BG_RV_OBJECT_TYPE_BUFF_1, 735.551819f, -284.794678f, 28.276682f, 0.034906f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_BUFF_2, BG_RV_OBJECT_TYPE_BUFF_2, 791.224487f, -284.794464f, 28.276682f, 2.600535f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-    // fire
+    // Fire.
         || !AddObject(BG_RV_OBJECT_FIRE_1, BG_RV_OBJECT_TYPE_FIRE_1, 743.543457f, -283.799469f, 28.286655f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_FIRE_2, BG_RV_OBJECT_TYPE_FIRE_2, 782.971802f, -283.799469f, 28.286655f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_FIREDOOR_1, BG_RV_OBJECT_TYPE_FIREDOOR_1, 743.711060f, -284.099609f, 27.542587f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_FIREDOOR_2, BG_RV_OBJECT_TYPE_FIREDOOR_2, 783.221252f, -284.133362f, 27.535686f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-    // Gear
+    // Gear.
         || !AddObject(BG_RV_OBJECT_GEAR_1, BG_RV_OBJECT_TYPE_GEAR_1, 763.664551f, -261.872986f, 26.686588f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_GEAR_2, BG_RV_OBJECT_TYPE_GEAR_2, 763.578979f, -306.146149f, 26.665222f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-    // Pulley
+    // Pulley.
         || !AddObject(BG_RV_OBJECT_PULLEY_1, BG_RV_OBJECT_TYPE_PULLEY_1, 700.722290f, -283.990662f, 39.517582f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PULLEY_2, BG_RV_OBJECT_TYPE_PULLEY_2, 826.303833f, -283.996429f, 39.517582f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-    // Pilars
+    // Pilars.
         || !AddObject(BG_RV_OBJECT_PILAR_1, BG_RV_OBJECT_TYPE_PILAR_1, 763.632385f, -306.162384f, 25.909504f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PILAR_2, BG_RV_OBJECT_TYPE_PILAR_2, 723.644287f, -284.493256f, 24.648525f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PILAR_3, BG_RV_OBJECT_TYPE_PILAR_3, 763.611145f, -261.856750f, 25.909504f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PILAR_4, BG_RV_OBJECT_TYPE_PILAR_4, 802.211609f, -284.493256f, 24.648525f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
 
-    // Pilars Collision
+    // Pilars Collision.
         || !AddObject(BG_RV_OBJECT_PILAR_COLLISION_1, BG_RV_OBJECT_TYPE_PILAR_COLLISION_1, 763.632385f, -306.162384f, 30.639660f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PILAR_COLLISION_2, BG_RV_OBJECT_TYPE_PILAR_COLLISION_2, 723.644287f, -284.493256f, 32.382710f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
         || !AddObject(BG_RV_OBJECT_PILAR_COLLISION_3, BG_RV_OBJECT_TYPE_PILAR_COLLISION_3, 763.611145f, -261.856750f, 30.639660f, 0.000000f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_RV_OBJECT_PILAR_COLLISION_4, BG_RV_OBJECT_TYPE_PILAR_COLLISION_4, 802.211609f, -284.493256f, 32.382710f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY)
-
-)
+        || !AddObject(BG_RV_OBJECT_PILAR_COLLISION_4, BG_RV_OBJECT_TYPE_PILAR_COLLISION_4, 802.211609f, -284.493256f, 32.382710f, 3.141593f, 0, 0, 0, RESPAWN_IMMEDIATELY))
     {
+        sLog->outError(LOG_FILTER_SQL, "BattlegroundRV: Failed to spawn some object!");
         return false;
     }
+
     return true;
 }
 

@@ -17,12 +17,13 @@
  */
 
 #include "Battleground.h"
-#include "BattlegroundDS.h"
 #include "Language.h"
 #include "Player.h"
 #include "Object.h"
 #include "ObjectMgr.h"
 #include "WorldPacket.h"
+
+#include "BattlegroundDS.h"
 
 BattlegroundDS::BattlegroundDS()
 {
@@ -33,17 +34,14 @@ BattlegroundDS::BattlegroundDS()
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    //we must set messageIds
+
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_ARENA_HAS_BEGUN;
 }
 
-BattlegroundDS::~BattlegroundDS()
-{
-
-}
+BattlegroundDS::~BattlegroundDS() { }
 
 void BattlegroundDS::PostUpdateImpl(uint32 diff)
 {
@@ -95,9 +93,9 @@ void BattlegroundDS::PostUpdateImpl(uint32 diff)
             setWaterFallStatus(BG_DS_WATERFALL_STATUS_ON);
             setWaterFallKnockbackTimer(BG_DS_WATERFALL_KNOCKBACK_TIMER);
         }
-        else //if (getWaterFallStatus() == BG_DS_WATERFALL_STATUS_ON) // Remove collision and water
+        else // if (getWaterFallStatus() == BG_DS_WATERFALL_STATUS_ON) // Remove collision and water.
         {
-            // turn off collision
+            // Turn off collision.
             if (GameObject* gob = GetBgMap()->GetGameObject(BgObjects[BG_DS_OBJECT_WATER_1]))
                 gob->SetGoState(GO_STATE_ACTIVE);
 
@@ -147,9 +145,8 @@ void BattlegroundDS::StartingEventOpenDoors()
 void BattlegroundDS::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    //create score and add it to map, default values are set in constructor
-    BattlegroundDSScore* score = new BattlegroundDSScore;
 
+    BattlegroundDSScore* score = new BattlegroundDSScore; // Create score and add it to map, default values are set in constructor.
     PlayerScores[player->GetGUID()] = score;
 
     UpdateArenaWorldState();
@@ -171,6 +168,7 @@ void BattlegroundDS::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
+        sLog->outError(LOG_FILTER_BATTLEGROUND, "BattlegroundNA: Killer player not found");
         return;
     }
 
@@ -198,8 +196,8 @@ void BattlegroundDS::HandleAreaTrigger(Player* Source, uint32 Trigger)
             if (getPipeKnockBackCount() >= BG_DS_PIPE_KNOCKBACK_TOTAL_COUNT)
                 setPipeKnockBackCount(0);
             break;
-        default:
-            break;
+
+        default: break;
     }
 }
 
@@ -211,32 +209,34 @@ bool BattlegroundDS::HandlePlayerUnderMap(Player* player)
 
 void BattlegroundDS::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(3610), uint32(1));                                              // 9 show
+    data << uint32(0xE1A) << uint32(1);           // 9
+
     UpdateArenaWorldState();
 }
 
 void BattlegroundDS::Reset()
 {
-    //call parent's class reset
+    // Call parent's class reset.
     Battleground::Reset();
 }
 
 bool BattlegroundDS::SetupBattleground()
 {
-    // gates
+    // Gates.
     if (!AddObject(BG_DS_OBJECT_DOOR_1, BG_DS_OBJECT_TYPE_DOOR_1, 1350.95f, 817.2f, 20.8096f, 3.15f, 0, 0, 0.99627f, 0.0862864f, RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_DS_OBJECT_DOOR_2, BG_DS_OBJECT_TYPE_DOOR_2, 1232.65f, 764.913f, 20.0729f, 6.3f, 0, 0, 0.0310211f, -0.999519f, RESPAWN_IMMEDIATELY)
-    // water
-        || !AddObject(BG_DS_OBJECT_WATER_1, BG_DS_OBJECT_TYPE_WATER_1, 1291.56f, 790.837f, 7.1f, 3.14238f, 0, 0, 0.694215f, -0.719768f, 120)
-        || !AddObject(BG_DS_OBJECT_WATER_2, BG_DS_OBJECT_TYPE_WATER_2, 1291.56f, 790.837f, 7.1f, 3.14238f, 0, 0, 0.694215f, -0.719768f, 120)
-    // buffs
-        || !AddObject(BG_DS_OBJECT_BUFF_1, BG_DS_OBJECT_TYPE_BUFF_1, 1291.7f, 813.424f, 7.11472f, 4.64562f, 0, 0, 0.730314f, -0.683111f, 120)
-        || !AddObject(BG_DS_OBJECT_BUFF_2, BG_DS_OBJECT_TYPE_BUFF_2, 1291.7f, 768.911f, 7.11472f, 1.55194f, 0, 0, 0.700409f, 0.713742f, 120)
-    // knockback creatures
-        || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_WATERFALL_KNOCKBACK, 0, 1292.587f, 790.2205f, 7.19796f, 3.054326f, RESPAWN_IMMEDIATELY)
-        || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_1, 0, 1369.977f, 817.2882f, 16.08718f, 3.106686f, RESPAWN_IMMEDIATELY)
-        || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_2, 0, 1212.833f, 765.3871f, 16.09484f, 0.0f, RESPAWN_IMMEDIATELY))
+     || !AddObject(BG_DS_OBJECT_DOOR_2, BG_DS_OBJECT_TYPE_DOOR_2, 1232.65f, 764.913f, 20.0729f, 6.3f, 0, 0, 0.0310211f, -0.999519f, RESPAWN_IMMEDIATELY)
+    // Water.
+     || !AddObject(BG_DS_OBJECT_WATER_1, BG_DS_OBJECT_TYPE_WATER_1, 1291.56f, 790.837f, 7.1f, 3.14238f, 0, 0, 0.694215f, -0.719768f, 120)
+     || !AddObject(BG_DS_OBJECT_WATER_2, BG_DS_OBJECT_TYPE_WATER_2, 1291.56f, 790.837f, 7.1f, 3.14238f, 0, 0, 0.694215f, -0.719768f, 120)
+    // Buffs.
+     || !AddObject(BG_DS_OBJECT_BUFF_1, BG_DS_OBJECT_TYPE_BUFF_1, 1291.7f, 813.424f, 7.11472f, 4.64562f, 0, 0, 0.730314f, -0.683111f, 120)
+     || !AddObject(BG_DS_OBJECT_BUFF_2, BG_DS_OBJECT_TYPE_BUFF_2, 1291.7f, 768.911f, 7.11472f, 1.55194f, 0, 0, 0.700409f, 0.713742f, 120)
+    // Knockback creatures.
+     || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_WATERFALL_KNOCKBACK, 0, 1292.587f, 790.2205f, 7.19796f, 3.054326f, RESPAWN_IMMEDIATELY)
+     || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_1, 0, 1369.977f, 817.2882f, 16.08718f, 3.106686f, RESPAWN_IMMEDIATELY)
+     || !AddCreature(BG_DS_NPC_TYPE_WATER_SPOUT, BG_DS_NPC_PIPE_KNOCKBACK_2, 0, 1212.833f, 765.3871f, 16.09484f, 0.0f, RESPAWN_IMMEDIATELY))
     {
+        sLog->outError(LOG_FILTER_SQL, "BatteGroundDS: Failed to spawn some object!");
         return false;
     }
 

@@ -6,8 +6,8 @@ class Battleground;
 class BattlegroundRBGScore : public BattlegroundScore
 {
     public:
-        BattlegroundRBGScore() {};
-        virtual ~BattlegroundRBGScore() {};
+        BattlegroundRBGScore() { };
+        virtual ~BattlegroundRBGScore() { };
 };
 
 class BattlegroundRBG : public Battleground
@@ -20,12 +20,11 @@ class BattlegroundRBG : public Battleground
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
-        void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
 
         /* Scorekeeping */
-        void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
-
-    private:
+        virtual void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
 };
+
 #endif

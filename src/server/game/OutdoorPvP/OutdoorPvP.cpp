@@ -416,9 +416,7 @@ void OPvPCapturePoint::SendUpdateWorldState(uint32 field, uint32 value)
     {
         // send to all players present in the area
         for (PlayerSet::iterator itr = m_activePlayers[team].begin(); itr != m_activePlayers[team].end(); ++itr)
-        {
             (*itr)->SendUpdateWorldState(field, value);
-        }
     }
 }
 

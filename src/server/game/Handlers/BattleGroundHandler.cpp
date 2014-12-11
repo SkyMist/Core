@@ -263,7 +263,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recvData)
         _player->SetBattleGroundRoles(role);
 
         // If we're here, then the conditions to join a BG are met. We can proceed with joining.
-        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue[bgQueueTypeId];
+        BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
         GroupQueueInfo* ginfo = NULL;
         uint32 avgTime = 0;
 

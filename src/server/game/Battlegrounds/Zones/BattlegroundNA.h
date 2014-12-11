@@ -26,8 +26,10 @@ enum BattlegroundNAObjectTypes
     BG_NA_OBJECT_DOOR_2         = 1,
     BG_NA_OBJECT_DOOR_3         = 2,
     BG_NA_OBJECT_DOOR_4         = 3,
+
     BG_NA_OBJECT_BUFF_1         = 4,
     BG_NA_OBJECT_BUFF_2         = 5,
+
     BG_NA_OBJECT_MAX            = 6
 };
 
@@ -37,6 +39,7 @@ enum BattlegroundNAObjects
     BG_NA_OBJECT_TYPE_DOOR_2    = 183980,
     BG_NA_OBJECT_TYPE_DOOR_3    = 183977,
     BG_NA_OBJECT_TYPE_DOOR_4    = 183979,
+
     BG_NA_OBJECT_TYPE_BUFF_1    = 184663,
     BG_NA_OBJECT_TYPE_BUFF_2    = 184664
 };
@@ -44,9 +47,8 @@ enum BattlegroundNAObjects
 class BattlegroundNAScore : public BattlegroundScore
 {
     public:
-        BattlegroundNAScore() {};
-        virtual ~BattlegroundNAScore() {};
-        //TODO fix me
+        BattlegroundNAScore() { };
+        virtual ~BattlegroundNAScore() { };
 };
 
 class BattlegroundNA : public Battleground
@@ -60,12 +62,15 @@ class BattlegroundNA : public Battleground
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
-        void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        bool SetupBattleground();
+        virtual bool SetupBattleground();
         virtual void Reset();
         virtual void FillInitialWorldStates(ByteBuffer &data);
-        void HandleKillPlayer(Player* player, Player* killer);
+
+        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        virtual void HandleKillPlayer(Player* player, Player* killer);
+
         bool HandlePlayerUnderMap(Player* player);
 };
+
 #endif

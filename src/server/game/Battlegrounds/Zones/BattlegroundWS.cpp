@@ -828,42 +828,41 @@ WorldSafeLocsEntry const* BattlegroundWS::GetClosestGraveYard(Player* player)
 
 void BattlegroundWS::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(BG_WS_FLAG_CAPTURES_ALLIANCE), uint32(GetTeamScore(ALLIANCE)));
-    Player::BuildWorldState(data, uint32(BG_WS_FLAG_CAPTURES_HORDE), uint32(GetTeamScore(HORDE)));
+    data << uint32(GetTeamScore(BG_TEAM_ALLIANCE)) << uint32(BG_WS_FLAG_CAPTURES_ALLIANCE);
+    data << uint32(GetTeamScore(BG_TEAM_HORDE))    << uint32(BG_WS_FLAG_CAPTURES_HORDE);
 
     if (_flagState[BG_TEAM_ALLIANCE] == BG_WS_FLAG_STATE_ON_GROUND)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_ALLIANCE), uint32(-1));
+        data << uint32(-1) << uint32(BG_WS_FLAG_UNK_ALLIANCE);
     else if (_flagState[BG_TEAM_ALLIANCE] == BG_WS_FLAG_STATE_ON_PLAYER)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_ALLIANCE), uint32(1));
+        data << uint32(1) << uint32(BG_WS_FLAG_UNK_ALLIANCE);
     else
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_ALLIANCE), uint32(0));
+        data << uint32(0) << uint32(BG_WS_FLAG_UNK_ALLIANCE);
 
     if (_flagState[BG_TEAM_HORDE] == BG_WS_FLAG_STATE_ON_GROUND)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_HORDE), uint32(-1));
+        data << uint32(-1) << uint32(BG_WS_FLAG_UNK_HORDE);
     else if (_flagState[BG_TEAM_HORDE] == BG_WS_FLAG_STATE_ON_PLAYER)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_HORDE), uint32(1));
+        data << uint32(1) << uint32(BG_WS_FLAG_UNK_HORDE);
     else
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_UNK_HORDE), uint32(0));
+        data << uint32(0) << uint32(BG_WS_FLAG_UNK_HORDE);
 
-    Player::BuildWorldState(data, uint32(BG_WS_FLAG_CAPTURES_MAX), uint32(BG_WS_MAX_TEAM_SCORE));
+    data << uint32(BG_WS_MAX_TEAM_SCORE) << uint32(BG_WS_FLAG_CAPTURES_MAX);
 
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
-        Player::BuildWorldState(data, uint32(BG_WS_STATE_TIMER_ACTIVE), uint32(1));
-        Player::BuildWorldState(data, uint32(BG_WS_STATE_TIMER), uint32(25 - _minutesElapsed));
+        data << uint32(1) << uint32(BG_WS_STATE_TIMER_ACTIVE);
+        data << uint32(25 - _minutesElapsed) << uint32(BG_WS_STATE_TIMER);
     }
     else
-        Player::BuildWorldState(data, uint32(BG_WS_STATE_TIMER_ACTIVE), uint32(0));
+        data << uint32(0) << uint32(BG_WS_STATE_TIMER_ACTIVE);
 
     if (_flagState[BG_TEAM_HORDE] == BG_WS_FLAG_STATE_ON_PLAYER)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_STATE_ALLIANCE), uint32(2));
+        data << uint32(2) << uint32(BG_WS_FLAG_STATE_HORDE);
     else
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_STATE_ALLIANCE), uint32(1));
+        data << uint32(1) << uint32(BG_WS_FLAG_STATE_HORDE);
 
     if (_flagState[BG_TEAM_ALLIANCE] == BG_WS_FLAG_STATE_ON_PLAYER)
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_STATE_HORDE), uint32(2));
+        data << uint32(2) << uint32(BG_WS_FLAG_STATE_ALLIANCE);
     else
-        Player::BuildWorldState(data, uint32(BG_WS_FLAG_STATE_HORDE), uint32(1));
-
+        data << uint32(1) << uint32(BG_WS_FLAG_STATE_ALLIANCE);
 }
 

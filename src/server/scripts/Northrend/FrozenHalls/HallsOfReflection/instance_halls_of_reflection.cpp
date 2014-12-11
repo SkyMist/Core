@@ -268,10 +268,10 @@ public:
             }
         }
 
-        void FillInitialWorldStates(WorldPacket& data)
+        void FillInitialWorldStates(ByteBuffer& data)
         {
-            data << uint32(WORLD_STATE_HOR_WAVES_ENABLED) << uint32(0);
-            data << uint32(WORLD_STATE_HOR_WAVE_COUNT) << uint32(0);
+            data << uint32(0) << uint32(WORLD_STATE_HOR_WAVES_ENABLED) ;
+            data << uint32(0) << uint32(WORLD_STATE_HOR_WAVE_COUNT);
         }
 
         void OpenDoor(uint64 guid)

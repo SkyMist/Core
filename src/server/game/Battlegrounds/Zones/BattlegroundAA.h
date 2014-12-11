@@ -38,12 +38,11 @@ class BattlegroundAA : public Battleground
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
-        void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        bool SetupBattleground();
-        void HandleKillPlayer(Player* player, Player* killer);
+        virtual bool SetupBattleground();
 
-    private:
+        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        virtual void HandleKillPlayer(Player* player, Player* killer);
 };
 
 #endif

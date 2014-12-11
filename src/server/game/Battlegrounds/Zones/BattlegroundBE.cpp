@@ -17,12 +17,13 @@
  */
 
 #include "Battleground.h"
-#include "BattlegroundBE.h"
 #include "Language.h"
 #include "Object.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "WorldPacket.h"
+
+#include "BattlegroundBE.h"
 
 BattlegroundBE::BattlegroundBE()
 {
@@ -32,17 +33,14 @@ BattlegroundBE::BattlegroundBE()
     StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    //we must set messageIds
+
     StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_ARENA_HAS_BEGUN;
 }
 
-BattlegroundBE::~BattlegroundBE()
-{
-
-}
+BattlegroundBE::~BattlegroundBE() { }
 
 void BattlegroundBE::StartingEventCloseDoors()
 {
@@ -65,9 +63,8 @@ void BattlegroundBE::StartingEventOpenDoors()
 void BattlegroundBE::AddPlayer(Player* player)
 {
     Battleground::AddPlayer(player);
-    //create score and add it to map, default values are set in constructor
-    BattlegroundBEScore* sc = new BattlegroundBEScore;
 
+    BattlegroundBEScore* sc = new BattlegroundBEScore; // Create score and add it to map, default values are set in constructor.
     PlayerScores[player->GetGUID()] = sc;
 
     UpdateArenaWorldState();
@@ -107,50 +104,48 @@ bool BattlegroundBE::HandlePlayerUnderMap(Player* player)
 
 void BattlegroundBE::HandleAreaTrigger(Player* Source, uint32 Trigger)
 {
-    // this is wrong way to implement these things. On official it done by gameobject spell cast.
+    // This is a wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    //uint32 SpellId = 0;
-    //uint64 buff_guid = 0;
     switch (Trigger)
     {
         case 4538:                                          // buff trigger?
-            //buff_guid = BgObjects[BG_BE_OBJECT_BUFF_1];
+            // buff_guid = BgObjects[BG_BE_OBJECT_BUFF_1];
             break;
         case 4539:                                          // buff trigger?
-            //buff_guid = BgObjects[BG_BE_OBJECT_BUFF_2];
+            // buff_guid = BgObjects[BG_BE_OBJECT_BUFF_2];
             break;
-        default:
-            break;
+
+        default: break;
     }
 
-    //if (buff_guid)
-    //    HandleTriggerBuff(buff_guid, Source);
+    // if (buff_guid)
+    //     HandleTriggerBuff(buff_guid, Source);
 }
 
 void BattlegroundBE::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(0x9f3), uint32(1));           // 9
+    data << uint32(0x9F3) << uint32(1);           // 9
     UpdateArenaWorldState();
 }
 
 void BattlegroundBE::Reset()
 {
-    //call parent's class reset
+    // Call parent's class reset.
     Battleground::Reset();
 }
 
 bool BattlegroundBE::SetupBattleground()
 {
-    // gates
+    // Gates.
     if (!AddObject(BG_BE_OBJECT_DOOR_1, BG_BE_OBJECT_TYPE_DOOR_1, 6287.277f, 282.1877f, 3.810925f, -2.260201f, 0, 0, 0.9044551f, -0.4265689f, RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_BE_OBJECT_DOOR_2, BG_BE_OBJECT_TYPE_DOOR_2, 6189.546f, 241.7099f, 3.101481f, 0.8813917f, 0, 0, 0.4265689f, 0.9044551f, RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_BE_OBJECT_DOOR_3, BG_BE_OBJECT_TYPE_DOOR_3, 6299.116f, 296.5494f, 3.308032f, 0.8813917f, 0, 0, 0.4265689f, 0.9044551f, RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_BE_OBJECT_DOOR_4, BG_BE_OBJECT_TYPE_DOOR_4, 6177.708f, 227.3481f, 3.604374f, -2.260201f, 0, 0, 0.9044551f, -0.4265689f, RESPAWN_IMMEDIATELY)
-        // buffs
-        || !AddObject(BG_BE_OBJECT_BUFF_1, BG_BE_OBJECT_TYPE_BUFF_1, 6249.042f, 275.3239f, 11.22033f, -1.448624f, 0, 0, 0.6626201f, -0.7489557f, 120)
-        || !AddObject(BG_BE_OBJECT_BUFF_2, BG_BE_OBJECT_TYPE_BUFF_2, 6228.26f, 249.566f, 11.21812f, -0.06981307f, 0, 0, 0.03489945f, -0.9993908f, 120))
+     || !AddObject(BG_BE_OBJECT_DOOR_2, BG_BE_OBJECT_TYPE_DOOR_2, 6189.546f, 241.7099f, 3.101481f, 0.8813917f, 0, 0, 0.4265689f,  0.9044551f, RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_BE_OBJECT_DOOR_3, BG_BE_OBJECT_TYPE_DOOR_3, 6299.116f, 296.5494f, 3.308032f, 0.8813917f, 0, 0, 0.4265689f,  0.9044551f, RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_BE_OBJECT_DOOR_4, BG_BE_OBJECT_TYPE_DOOR_4, 6177.708f, 227.3481f, 3.604374f, -2.260201f, 0, 0, 0.9044551f, -0.4265689f, RESPAWN_IMMEDIATELY)
+     // Buffs.
+     || !AddObject(BG_BE_OBJECT_BUFF_1, BG_BE_OBJECT_TYPE_BUFF_1, 6249.042f, 275.3239f, 11.22033f, -1.448624f, 0, 0, 0.6626201f,  -0.7489557f, 120)
+     || !AddObject(BG_BE_OBJECT_BUFF_2, BG_BE_OBJECT_TYPE_BUFF_2, 6228.26f, 249.566f, 11.21812f, -0.06981307f, 0, 0, 0.03489945f, -0.9993908f, 120))
     {
         sLog->outError(LOG_FILTER_SQL, "BatteGroundBE: Failed to spawn some object!");
         return false;
@@ -163,12 +158,11 @@ void BattlegroundBE::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
 {
 
     BattlegroundScoreMap::iterator itr = PlayerScores.find(Source->GetGUID());
-    if (itr == PlayerScores.end())                         // player not found...
+    if (itr == PlayerScores.end()) // Player not found.
         return;
 
-    //there is nothing special in this score
+    // There is nothing special in this score.
     Battleground::UpdatePlayerScore(Source, NULL, type, value, doAddHonor);
-
 }
 
 /*

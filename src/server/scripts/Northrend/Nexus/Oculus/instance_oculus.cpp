@@ -165,17 +165,17 @@ class instance_oculus : public InstanceMapScript
                 }
             }
 
-            void FillInitialWorldStates(WorldPacket& data) 
+            void FillInitialWorldStates(ByteBuffer& data) 
             {
                 if (GetBossState(DATA_DRAKOS) == DONE && GetBossState(DATA_VAROS) != DONE)
                 {
-                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW) << uint32(1);
-                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT) << uint32(CentrifugueConstructCounter);
+                    data << uint32(1)                           << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW);
+                    data << uint32(CentrifugueConstructCounter) << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT);
                 }
                 else
                 {
-                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW) << uint32(0);
-                    data << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT) << uint32(0);
+                    data << uint32(0) << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_SHOW);
+                    data << uint32(0) << uint32(WORLD_STATE_CENTRIFUGE_CONSTRUCT_AMOUNT);
                 }
             }
 

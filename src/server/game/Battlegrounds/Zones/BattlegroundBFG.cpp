@@ -293,12 +293,12 @@ void BattlegroundBFG::FillInitialWorldStates(ByteBuffer &data)
 
     // Node icons
     for (uint8 node = 0; node < GILNEAS_BG_DYNAMIC_NODES_COUNT; ++node)
-        Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_NODEICONS[node]), uint32((m_Nodes[node] == 0) ? 1 : 0));
+        data << uint32((m_Nodes[node] == 0) ? 1 : 0) << uint32(GILNEAS_BG_OP_NODEICONS[node]);
 
     // Node occupied states
     for (uint8 node = 0; node < GILNEAS_BG_DYNAMIC_NODES_COUNT; ++node)
         for (uint8 i = 1; i < GILNEAS_BG_DYNAMIC_NODES_COUNT; ++i)
-            Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_NODESTATES[node] + plusArray[i]), uint32((m_Nodes[node] == i) ? 1 : 0));
+            data << uint32((m_Nodes[node] == i) ? 1 : 0) << uint32(GILNEAS_BG_OP_NODESTATES[node] + plusArray[i]);
 
     // How many bases each team owns
     uint8 ally = 0, horde = 0;
@@ -308,14 +308,14 @@ void BattlegroundBFG::FillInitialWorldStates(ByteBuffer &data)
         else if (m_Nodes[node] == GILNEAS_BG_NODE_STATUS_HORDE_OCCUPIED)
             ++horde;
 
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_OCCUPIED_BASES_ALLY), uint32(ally));
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_OCCUPIED_BASES_HORDE), uint32(horde));
+    data  << uint32(ally)  << uint32(GILNEAS_BG_OP_OCCUPIED_BASES_ALLY);
+    data  << uint32(horde) << uint32(GILNEAS_BG_OP_OCCUPIED_BASES_HORDE);
 
     // Team scores
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_RESOURCES_MAX), uint32(GILNEAS_BG_MAX_TEAM_SCORE));
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_RESOURCES_WARNING), uint32(GILNEAS_BG_WARNING_NEAR_VICTORY_SCORE));
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_RESOURCES_ALLY), uint32(m_TeamScores[BG_TEAM_ALLIANCE]));
-    Player::BuildWorldState(data, uint32(GILNEAS_BG_OP_RESOURCES_HORDE), uint32(m_TeamScores[BG_TEAM_HORDE]));
+    data << uint32(GILNEAS_BG_MAX_TEAM_SCORE)             << uint32(GILNEAS_BG_OP_RESOURCES_MAX);
+    data << uint32(GILNEAS_BG_WARNING_NEAR_VICTORY_SCORE) << uint32(GILNEAS_BG_OP_RESOURCES_WARNING);
+    data << uint32(m_TeamScores[BG_TEAM_ALLIANCE])   << uint32(GILNEAS_BG_OP_RESOURCES_ALLY);
+    data << uint32(m_TeamScores[BG_TEAM_HORDE])      << uint32(GILNEAS_BG_OP_RESOURCES_HORDE);
 
     // other unknown
     //Player::BuildWorldState(data, uint32(0x745), uint32(0x2));           // 37 1861 unk

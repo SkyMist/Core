@@ -854,40 +854,52 @@ void BattlegroundEY::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
 
 void BattlegroundEY::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(EY_HORDE_BASE), uint32(m_TeamPointsCount[BG_TEAM_HORDE]));
-    Player::BuildWorldState(data, uint32(EY_ALLIANCE_BASE), uint32(m_TeamPointsCount[BG_TEAM_ALLIANCE]));
-    Player::BuildWorldState(data, uint32(0xab6), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab5), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab4), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab3), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab2), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab1), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xab0), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xaaf), uint32(0x0));
+    data << uint32(m_TeamPointsCount[BG_TEAM_HORDE]) << uint32(EY_HORDE_BASE);
+    data << uint32(m_TeamPointsCount[BG_TEAM_ALLIANCE]) << uint32(EY_ALLIANCE_BASE);
+    data << uint32(0x0) << uint32(0xab6);
+    data << uint32(0x0) << uint32(0xab5);
+    data << uint32(0x0) << uint32(0xab4);
+    data << uint32(0x0) << uint32(0xab3);
+    data << uint32(0x0) << uint32(0xab2);
+    data << uint32(0x0) << uint32(0xab1);
+    data << uint32(0x0) << uint32(0xab0);
+    data << uint32(0x0) << uint32(0xaaf);
 
-    Player::BuildWorldState(data, uint32(DRAENEI_RUINS_HORDE_CONTROL), uint32(m_PointOwnedByTeam[DRAENEI_RUINS] == HORDE && m_PointState[DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(DRAENEI_RUINS_ALLIANCE_CONTROL), uint32(m_PointOwnedByTeam[DRAENEI_RUINS] == ALLIANCE && m_PointState[DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(DRAENEI_RUINS_UNCONTROL), uint32(m_PointState[DRAENEI_RUINS] != EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(MAGE_TOWER_ALLIANCE_CONTROL), uint32(m_PointOwnedByTeam[MAGE_TOWER] == ALLIANCE && m_PointState[MAGE_TOWER] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(MAGE_TOWER_HORDE_CONTROL), uint32(m_PointOwnedByTeam[MAGE_TOWER] == HORDE && m_PointState[MAGE_TOWER] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(MAGE_TOWER_UNCONTROL), uint32(m_PointState[MAGE_TOWER] != EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(FEL_REAVER_HORDE_CONTROL), uint32(m_PointOwnedByTeam[FEL_REAVER] == HORDE && m_PointState[FEL_REAVER] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(FEL_REAVER_ALLIANCE_CONTROL), uint32(m_PointOwnedByTeam[FEL_REAVER] == ALLIANCE && m_PointState[FEL_REAVER] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(FEL_REAVER_UNCONTROL), uint32(m_PointState[FEL_REAVER] != EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(BLOOD_ELF_HORDE_CONTROL), uint32(m_PointOwnedByTeam[BLOOD_ELF] == HORDE && m_PointState[BLOOD_ELF] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(BLOOD_ELF_ALLIANCE_CONTROL), uint32(m_PointOwnedByTeam[BLOOD_ELF] == ALLIANCE && m_PointState[BLOOD_ELF] == EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(BLOOD_ELF_UNCONTROL), uint32(m_PointState[BLOOD_ELF] != EY_POINT_UNDER_CONTROL));
-    Player::BuildWorldState(data, uint32(NETHERSTORM_FLAG), uint32(m_FlagState == BG_EY_FLAG_STATE_ON_BASE));
+    data << uint32(m_PointOwnedByTeam[DRAENEI_RUINS] == HORDE && m_PointState[DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL)    << uint32(DRAENEI_RUINS_HORDE_CONTROL);
 
-    Player::BuildWorldState(data, uint32(0xad2), uint32(0x1));
-    Player::BuildWorldState(data, uint32(0xad1), uint32(0x1));
-    Player::BuildWorldState(data, uint32(0xabe), uint32(GetTeamScore(HORDE)));
-    Player::BuildWorldState(data, uint32(0xabd), uint32(GetTeamScore(ALLIANCE)));
-    Player::BuildWorldState(data, uint32(0xa05), uint32(0x8e));
-    Player::BuildWorldState(data, uint32(0xaa0), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xa9f), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xa9e), uint32(0x0));
-    Player::BuildWorldState(data, uint32(0xc0d), uint32(0x17b));
+    data << uint32(m_PointOwnedByTeam[DRAENEI_RUINS] == ALLIANCE && m_PointState[DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL) << uint32(DRAENEI_RUINS_ALLIANCE_CONTROL);
+
+    data << uint32(m_PointState[DRAENEI_RUINS] != EY_POINT_UNDER_CONTROL)                                                  << uint32(DRAENEI_RUINS_UNCONTROL);
+
+    data << uint32(m_PointOwnedByTeam[MAGE_TOWER] == ALLIANCE && m_PointState[MAGE_TOWER] == EY_POINT_UNDER_CONTROL)       << uint32(MAGE_TOWER_ALLIANCE_CONTROL);
+
+    data << uint32(m_PointOwnedByTeam[MAGE_TOWER] == HORDE && m_PointState[MAGE_TOWER] == EY_POINT_UNDER_CONTROL)          << uint32(MAGE_TOWER_HORDE_CONTROL);
+
+    data << uint32(m_PointState[MAGE_TOWER] != EY_POINT_UNDER_CONTROL)                                                     << uint32(MAGE_TOWER_UNCONTROL);
+
+    data << uint32(m_PointOwnedByTeam[FEL_REAVER] == HORDE && m_PointState[FEL_REAVER] == EY_POINT_UNDER_CONTROL)          << uint32(FEL_REAVER_HORDE_CONTROL);
+
+    data << uint32(m_PointOwnedByTeam[FEL_REAVER] == ALLIANCE && m_PointState[FEL_REAVER] == EY_POINT_UNDER_CONTROL)       << uint32(FEL_REAVER_ALLIANCE_CONTROL);
+
+    data << uint32(m_PointState[FEL_REAVER] != EY_POINT_UNDER_CONTROL)                                                     << uint32(FEL_REAVER_UNCONTROL);
+
+    data << uint32(m_PointOwnedByTeam[BLOOD_ELF] == HORDE && m_PointState[BLOOD_ELF] == EY_POINT_UNDER_CONTROL)            << uint32(BLOOD_ELF_HORDE_CONTROL);
+
+    data << uint32(m_PointOwnedByTeam[BLOOD_ELF] == ALLIANCE && m_PointState[BLOOD_ELF] == EY_POINT_UNDER_CONTROL)         << uint32(BLOOD_ELF_ALLIANCE_CONTROL);
+
+    data << uint32(m_PointState[BLOOD_ELF] != EY_POINT_UNDER_CONTROL)                                                      << uint32(BLOOD_ELF_UNCONTROL);
+
+    data << uint32(m_FlagState == BG_EY_FLAG_STATE_ON_BASE)                                                                << uint32(NETHERSTORM_FLAG);
+
+    data << uint32(0x1) << uint32(0xad2);
+    data << uint32(0x1) << uint32(0xad1);
+    data << uint32(GetTeamScore(BG_TEAM_HORDE))    << uint32(0xabe);
+    data << uint32(GetTeamScore(BG_TEAM_ALLIANCE)) << uint32(0xabd);
+    data << uint32(0x8e) << uint32(0xa05);
+    data << uint32(0x0)  << uint32(0xaa0);
+    data << uint32(0x0)  << uint32(0xa9f);
+    data << uint32(0x0)  << uint32(0xa9e);
+    data << uint32(0x17b) << uint32(0xc0d);
 }
 
 WorldSafeLocsEntry const* BattlegroundEY::GetClosestGraveYard(Player* player)

@@ -416,8 +416,12 @@ void BattlegroundKT::AccumulateScore(uint32 team, BG_KT_ZONE zone)
 
 void BattlegroundKT::FillInitialWorldStates(ByteBuffer &data)
 {
-    Player::BuildWorldState(data, uint32(BG_KT_ORB_POINTS_A), GetTeamScore(ALLIANCE));
-    Player::BuildWorldState(data, uint32(BG_KT_ORB_POINTS_H), GetTeamScore(HORDE));
+    data << uint32(GetTeamScore(ALLIANCE))      << uint32(BG_KT_ORB_POINTS_A);
+    data << uint32(GetTeamScore(HORDE))         << uint32(BG_KT_ORB_POINTS_H);
+    data << uint32(BG_KT_MAX_TEAM_SCORE)        << uint32(BG_KT_ORB_POINTS_MAX);
+
+    data << uint32(0x1)                         << uint32(BG_KT_TIME_ENABLED);
+    data << uint32(GetRemainingTimeInMinutes()) << uint32(BG_KT_TIME_REMAINING);
 
     /*if (m_OrbState[BG_TEAM_ALLIANCE] == BG_KT_ORB_STATE_ON_GROUND)
         Player::BuildWorldState(data, BG_KT_ICON_A, -1);
@@ -433,8 +437,6 @@ void BattlegroundKT::FillInitialWorldStates(ByteBuffer &data)
     else
         Player::BuildWorldState(data, BG_KT_ICON_H, 0);*/
 
-    Player::BuildWorldState(data, BG_KT_ORB_POINTS_MAX, BG_KT_MAX_TEAM_SCORE);
-
     /*if (m_OrbState[BG_TEAM_HORDE] == BG_KT_ORB_STATE_ON_PLAYER)
         Player::BuildWorldState(data, BG_KT_ORB_STATE, 2);
     else
@@ -444,7 +446,4 @@ void BattlegroundKT::FillInitialWorldStates(ByteBuffer &data)
         Player::BuildWorldState(data, BG_KT_ORB_STATE, 2);
     else
         Player::BuildWorldState(data, BG_KT_ORB_STATE, 1);*/
-
-    Player::BuildWorldState(data, BG_KT_TIME_ENABLED, 1);
-    Player::BuildWorldState(data, BG_KT_TIME_REMAINING, GetRemainingTimeInMinutes());
 }
