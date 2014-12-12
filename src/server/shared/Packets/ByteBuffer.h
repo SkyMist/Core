@@ -578,14 +578,15 @@ class ByteBuffer
 
         std::string ReadString(uint32 length)
         {
+            if (_rpos + length > size())
+                throw ByteBufferPositionException(false, _rpos, length, size());
+
             if (!length)
                 return std::string();
-            char* buffer = new char[length + 1];
-            memset(buffer, 0, length + 1);
-            read((uint8*)buffer, length);
-            std::string retval = buffer;
-            delete[] buffer;
-            return retval;
+
+            std::string str((char const*)&_storage[_rpos], length);
+            _rpos += length;
+            return str;
         }
 
         //! Method for writing strings that have their length sent separately in packet

@@ -5081,6 +5081,8 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
                     interrupt.WriteBit(casterGUID[5]);
                     interrupt.WriteBit(targetGUID[0]);
 
+                    interrupt.FlushBits();
+
                     interrupt.WriteByteSeq(targetGUID[2]);
                     interrupt.WriteByteSeq(targetGUID[1]);
                     interrupt.WriteByteSeq(targetGUID[0]);
@@ -5093,11 +5095,15 @@ void Spell::EffectInterruptCast(SpellEffIndex effIndex)
                     interrupt.WriteByteSeq(casterGUID[1]);
                     interrupt.WriteByteSeq(targetGUID[3]);
                     interrupt.WriteByteSeq(targetGUID[4]);
-                    interrupt.WriteByteSeq(casterGUID[4]);
+                    interrupt.WriteByteSeq(casterGUID[6]);
+
                     interrupt << uint32(m_spellInfo->Id);
+
                     interrupt.WriteByteSeq(casterGUID[0]);
                     interrupt.WriteByteSeq(targetGUID[5]);
+
                     interrupt << uint32(curSpellInfo->Id);
+
                     interrupt.WriteByteSeq(casterGUID[4]);
 
                     m_originalCaster->SendMessageToSet(&interrupt, true);

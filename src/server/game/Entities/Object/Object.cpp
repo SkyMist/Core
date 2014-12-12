@@ -419,12 +419,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     {
         ObjectGuid guid = GetGUID();
 
-        uint32 movementFlags = unit->m_movementInfo.GetMovementFlags();
-        uint16 movementFlagsExtra = unit->m_movementInfo.GetExtraMovementFlags();
-
-        //if (GetTypeId() == TYPEID_UNIT)
-            //movementFlags &= MOVEMENTFLAG_MASK_CREATURE_ALLOWED;
-
         bool isSplineEnabled = unit->movespline->Initialized() && !unit->movespline->Finalized();
 
         data->WriteBit(unit->m_movementInfo.t_guid != 0LL);         // Has transport data
@@ -451,7 +445,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(false);
         data->WriteBit(!unit->m_movementInfo.HaveSplineElevation);
         if (unit->m_movementInfo.flags2)
-            data->WriteBits(unit->m_movementInfo.flags2, 13);
+            data->WriteBits(uint16(unit->m_movementInfo.flags2), 13);
 
         data->WriteBit(!unit->HaveOrientation()); // Has Orientation bit
         data->WriteBit(!unit->m_movementInfo.time);
@@ -464,7 +458,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(guid[4]);
         data->WriteBit(guid[0]);
         if (unit->m_movementInfo.flags)
-            data->WriteBits(unit->m_movementInfo.flags, 30);
+            data->WriteBits(uint32(unit->m_movementInfo.flags), 30);
 
         data->WriteBit(false);
         if (unit->m_movementInfo.hasFallData)
@@ -542,7 +536,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         }
 
         if (unit->movespline->Initialized() && !unit->movespline->Finalized())
-            Movement::PacketBuilder::WriteCreateData(*unit->movespline, *data, (Unit*)unit);
+            Movement::PacketBuilder::WriteCreateData(*unit->movespline, *data);
 
         *data << float(unit->GetPositionZMinusOffset());
         *data << float(unit->GetPositionY());
@@ -888,7 +882,7 @@ void Object::_LoadIntoDataField(char const* data, uint32 startOffset, uint32 cou
 
 uint32 Object::GetUpdateFieldData(Player const* target, uint32*& flags) const
 {
-    uint32 visibleFlag = UF_FLAG_PUBLIC;
+    uint32 visibleFlag = UF_FLAG_PUBLIC | UF_FLAG_DYNAMIC;
     if (target == this)
         visibleFlag |= UF_FLAG_PRIVATE;
 

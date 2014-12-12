@@ -2185,46 +2185,75 @@ void Battleground::SendFlagsPositions()
         ++count;
     }
 
-    if (!count)
-        return;
-
     WorldPacket data(SMSG_BATTLEGROUND_PLAYER_POSITIONS);
     ByteBuffer dataBuffer;
 
     data.WriteBits(count, 20);
 
-    for (auto itr : players)
+    if (!players.empty())
     {
-        ObjectGuid guid = itr->GetGUID();
+        for (auto itr : players)
+        {
+            ObjectGuid guid = itr->GetGUID();
+
+            uint8 bits[8] = { 3, 5, 2, 0, 4, 6, 1, 7};
+            data.WriteBitInOrder(guid, bits);
+
+            dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 1 : 2);
+
+            dataBuffer.WriteByteSeq(guid[6]);
+
+            dataBuffer << float(itr->GetPositionX());
+
+            dataBuffer.WriteByteSeq(guid[7]);
+
+            dataBuffer << float(itr->GetPositionY());
+
+            dataBuffer.WriteByteSeq(guid[0]);
+            dataBuffer.WriteByteSeq(guid[3]);
+            dataBuffer.WriteByteSeq(guid[2]);
+
+            dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 3 : 2); // 244 and 83 ?
+
+            dataBuffer.WriteByteSeq(guid[4]);
+            dataBuffer.WriteByteSeq(guid[1]);
+            dataBuffer.WriteByteSeq(guid[5]);
+        }
+
+        data.FlushBits();
+
+        if (dataBuffer.size())
+            data.append(dataBuffer);
+    }
+    else
+    {
+        ObjectGuid guid = 0;
 
         uint8 bits[8] = { 3, 5, 2, 0, 4, 6, 1, 7};
         data.WriteBitInOrder(guid, bits);
 
-        dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 1 : 2);
+        data.FlushBits();
 
-        dataBuffer.WriteByteSeq(guid[6]);
+        data << uint8(0);
 
-        dataBuffer << float(itr->GetPositionX());
+        data.WriteByteSeq(guid[6]);
 
-        dataBuffer.WriteByteSeq(guid[7]);
+        data << float(0.0f);
 
-        dataBuffer << float(itr->GetPositionY());
+        data.WriteByteSeq(guid[7]);
 
-        dataBuffer.WriteByteSeq(guid[0]);
-        dataBuffer.WriteByteSeq(guid[3]);
-        dataBuffer.WriteByteSeq(guid[2]);
+        data << float(0.0f);
 
-        dataBuffer << uint8(itr->GetTeamId() == TEAM_ALLIANCE ? 3 : 2); // 244 and 83 ?
+        data.WriteByteSeq(guid[0]);
+        data.WriteByteSeq(guid[3]);
+        data.WriteByteSeq(guid[2]);
 
-        dataBuffer.WriteByteSeq(guid[4]);
-        dataBuffer.WriteByteSeq(guid[1]);
-        dataBuffer.WriteByteSeq(guid[5]);   
+        data << uint8(0);
+
+        data.WriteByteSeq(guid[4]);
+        data.WriteByteSeq(guid[1]);
+        data.WriteByteSeq(guid[5]);
     }
-
-    data.FlushBits();
-
-    if (dataBuffer.size())
-        data.append(dataBuffer);
 
     SendPacketToAll(&data);
 }

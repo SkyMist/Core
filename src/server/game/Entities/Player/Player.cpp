@@ -8118,6 +8118,32 @@ void Player::SendMovieStart(uint32 MovieId)
     SendDirectMessage(&data);
 }
 
+void Player::SendPlayerVehicleData(uint32 vehicleId)
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, 1 + 8 + 4);
+
+    uint8 bitOrder[8] = { 0, 1, 6, 3, 7, 4, 2, 5 };
+    data.WriteBitInOrder(guid, bitOrder);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[0]);
+
+    data << uint32(vehicleId);
+
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[6]);
+
+    SendMessageToSet(&data, true);
+}
+
 void Player::CheckAreaExploreAndOutdoor()
 {
     if (!isAlive())
@@ -11792,7 +11818,7 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     InitStates << uint32(mapid);                                  // mapid
     InitStates << uint32(areaid);                                 // area id, new 2.1.0
     InitStates << uint32(zoneid);                                 // zone id
-    
+
     InitStates.WriteBits(StatesCount, 21);
     InitStates.FlushBits();
 

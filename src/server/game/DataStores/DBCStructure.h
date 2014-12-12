@@ -696,7 +696,7 @@ struct AreaPOIEntry
     float y;                //13
     uint32 mapId;           //14
     //uint32 val1;          //15
-    uint32 zoneId;          //16
+    int32 zoneId;           //16
     //char* name;           //17 - name
     //char* name2;          //18 - name2
     uint32 worldState;      //19

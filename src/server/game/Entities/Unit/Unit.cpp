@@ -5879,9 +5879,7 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
     ObjectGuid guid = GetGUID();
     uint32 count = 1;
     uint32 counter = 0;
-    size_t maxsize = 4+5+5+4+4+1+4+4+4+4+4+1+4+4+4+4+4*12;
-
-    damageInfo->HitInfo &= ~(HITINFO_FULL_ABSORB | HITINFO_PARTIAL_ABSORB);
+    size_t maxsize = 4 + 5 + 5 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 4 * 12;
 
     WorldPacket data(SMSG_ATTACKER_STATE_UPDATE, maxsize);    // we guess size
 
@@ -5905,17 +5903,12 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
     }
 
     if (damageInfo->HitInfo & (HITINFO_FULL_ABSORB | HITINFO_PARTIAL_ABSORB))
-    {
-
         for (uint32 i = 0; i < count; ++i)
             data << uint32(damageInfo->absorb);             // Absorb
-    }
 
     if (damageInfo->HitInfo & (HITINFO_FULL_RESIST | HITINFO_PARTIAL_RESIST))
-    {
         for (uint32 i = 0; i < count; ++i)
             data << uint32(damageInfo->resist);             // Resist
-    }
 
     data << uint8(damageInfo->TargetState);
     data << int32(0);  // Unknown attackerstate 0 or -1
@@ -5951,7 +5944,7 @@ void Unit::SendAttackStateUpdate(CalcDamageInfo* damageInfo)
     if (damageInfo->HitInfo & (HITINFO_BLOCK | HITINFO_UNK12))
         data << float(0);
 
-    data.put(size, data.wpos() - datapos); // Blizz - Weird and Lazy people....
+    data.put(size, uint32(data.wpos() - datapos)); // Blizz - Weird and Lazy people....
 
     bool hasUnkFlags = damageInfo->HitInfo & HITINFO_UNK26;
     uint32 unkCounter  = 0;
@@ -12101,6 +12094,9 @@ void Unit::SetMinion(Minion *minion, bool apply, PetSlot slot, bool stampeded)
                 // Check if there is another minion
                 for (ControlList::iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr)
                 {
+                    if ((*itr) == nullptr)
+                        continue;
+
                     // do not use this check, creature do not have charm guid
                     //if (GetCharmGUID() == (*itr)->GetGUID())
                     if (GetGUID() == (*itr)->GetCharmerGUID())
@@ -14832,23 +14828,10 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             {
                 GetVehicleKit()->Reset();
 
-                // Send others that we now have a vehicle
-                ObjectGuid guid = GetGUID();
-                WorldPacket data(SMSG_PLAYER_VEHICLE_DATA, GetPackGUID().size()+4);
-                uint8 bitOrder[8] = {6, 3, 0, 1, 5, 7, 4, 2};
-                data.WriteBitInOrder(guid, bitOrder);
-                data.WriteByteSeq(guid[4]);
-                data.WriteByteSeq(guid[3]);
-                data.WriteByteSeq(guid[1]);
-                data << uint32(VehicleId);
-                data.WriteByteSeq(guid[6]);
-                data.WriteByteSeq(guid[7]);
-                data.WriteByteSeq(guid[5]);
-                data.WriteByteSeq(guid[2]);
-                data.WriteByteSeq(guid[0]);
-                SendMessageToSet(&data, true);
+                // Send to others that we now have a vehicle.
+                ToPlayer()->SendPlayerVehicleData(VehicleId);
 
-                data.Initialize(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
+                WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
                 player->GetSession()->SendPacket(&data);
 
                 // mounts can also have accessories
@@ -14905,21 +14888,9 @@ void Unit::Dismount()
     // dismount as a vehicle
     if (GetTypeId() == TYPEID_PLAYER && GetVehicleKit())
     {
-        // Send other players that we are no longer a vehicle
-        ObjectGuid guid = GetGUID();
-        data.Initialize(SMSG_PLAYER_VEHICLE_DATA, 8+4);
-        uint8 bitOrder[8] = {6, 3, 0, 1, 5, 7, 4, 2};
-        data.WriteBitInOrder(guid, bitOrder);
-        data.WriteByteSeq(guid[4]);
-        data.WriteByteSeq(guid[3]);
-        data.WriteByteSeq(guid[1]);
-        data << uint32(0);
-        data.WriteByteSeq(guid[6]);
-        data.WriteByteSeq(guid[7]);
-        data.WriteByteSeq(guid[5]);
-        data.WriteByteSeq(guid[2]);
-        data.WriteByteSeq(guid[0]);
-        ToPlayer()->SendMessageToSet(&data, true);
+        // Send to other players that we are no longer a vehicle
+        ToPlayer()->SendPlayerVehicleData(0);
+
         // Remove vehicle from player
         RemoveVehicleKit(true);
     }
@@ -23302,15 +23273,11 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
 
     ByteBuffer fieldBuffer;
 
-    uint32 valCount = m_valuesCount;
-    if (GetTypeId() == TYPEID_PLAYER)
-        valCount = PLAYER_END_NOT_SELF;
-
     UpdateMask updateMask;
     updateMask.SetCount(m_valuesCount);
 
     uint32* flags = UnitUpdateFieldFlags;
-    uint32 visibleFlag = UF_FLAG_PUBLIC;
+    uint32 visibleFlag = UF_FLAG_PUBLIC | UF_FLAG_DYNAMIC;
 
     if (target == this)
         visibleFlag |= UF_FLAG_PRIVATE;

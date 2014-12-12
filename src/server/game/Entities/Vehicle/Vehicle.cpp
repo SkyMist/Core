@@ -517,8 +517,13 @@ void Vehicle::RelocatePassengers()
         {
             ASSERT(passenger->IsInWorld());
 
-            float px, py, pz, po;
-            passenger->m_movementInfo.t_pos.GetPosition(px, py, pz, po);
+            VehicleSeatEntry const* veSeat = itr->second.SeatInfo;
+            float px = veSeat->m_attachmentOffsetX;
+            float py = veSeat->m_attachmentOffsetY;
+            float pz = veSeat->m_attachmentOffsetZ;
+            float po = 0.0f;
+            //passenger->m_movementInfo.t_pos.GetPosition(px, py, pz, po);
+
             CalculatePassengerPosition(px, py, pz, po);
             passenger->UpdatePosition(px, py, pz, po);
         }

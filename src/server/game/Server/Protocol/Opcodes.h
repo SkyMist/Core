@@ -1155,7 +1155,7 @@ enum Opcodes
     SMSG_SPELLDISPELLOG                               = 0x0919, // 5.4.7 18019
     SMSG_SPELLINSTAKILLLOG                            = 0x0D7A, // 5.4.7 18019
     SMSG_SPELLINTERRUPTLOG                            = 0x091A, // 5.4.7 18019
-    SMSG_SPELLLOGEXECUTE                              = 0x19B4, // 5.4.7 18019 - CHECK!
+    SMSG_SPELLLOGEXECUTE                              = 0x19B4, // 5.4.7 18019
     SMSG_SPELLLOGMISS                                 = 0x0000,
     SMSG_SPELLORDAMAGE_IMMUNE                         = 0x1B9F, // 5.4.7 18019
     SMSG_SPELLSTEALLOG                                = 0x0000,
@@ -1163,7 +1163,7 @@ enum Opcodes
     SMSG_SPELL_CHANNEL_START                          = 0x1B15, // 5.4.7 18019
     SMSG_SPELL_CHANNEL_UPDATE                         = 0x087B, // 5.4.7 18019
     SMSG_SPELL_COOLDOWN                               = 0x1B14, // 5.4.7 18019
-    SMSG_SPELL_DELAYED                                = 0x0037, // 5.4.7 18019
+    SMSG_SPELL_DELAYED                                = 0x015B, // 5.4.7 18019
     SMSG_SPELL_ENERGIZE_LOG                           = 0x0071, // 5.4.7 18019
     SMSG_SPELL_FAILED_OTHER                           = 0x1E7A, // 5.4.7 18019
     SMSG_SPELL_FAILURE                                = 0x0E03, // 5.4.7 18019

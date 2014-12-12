@@ -170,7 +170,8 @@ namespace Movement
 
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)
     {
-        ASSERT(!moveSpline.Finalized());
+        bool isSplineEnabled = moveSpline.Initialized() && !moveSpline.Finalized();
+        ASSERT(isSplineEnabled);
 
         MoveSplineFlag flags = moveSpline.splineflags;
 
@@ -181,16 +182,20 @@ namespace Movement
         data.WriteBits(flags.raw(), 25);
         data.WriteBit(flags.parabolic);
         data.WriteBit(false);
-        if (false)
+
+        if (!isSplineEnabled)
         {
             data.WriteBits(0, 2);
             data.WriteBits(0, 21);
         }
     }
 
-    void PacketBuilder::WriteCreateData(MoveSpline const& moveSpline, ByteBuffer& data, Unit* unit)
+    void PacketBuilder::WriteCreateData(MoveSpline const& moveSpline, ByteBuffer& data)
     {
-        if (/*!moveSpline.Finalized()*/true)
+        bool isSplineEnabled = moveSpline.Initialized() && !moveSpline.Finalized();
+        ASSERT(isSplineEnabled);
+
+        if (isSplineEnabled)
         {
             MoveSplineFlag splineFlags = moveSpline.splineflags;
 
@@ -265,6 +270,8 @@ namespace Movement
 
             uint8 bitOrder[8] = { 6, 7, 3, 0, 5, 1, 4, 2 };
             data.WriteBitInOrder(facingGuid, bitOrder);
+
+            data.FlushBits();
 
             uint8 byteOrder[8] = { 4, 2, 5, 6, 0, 7, 1, 3 };
             data.WriteBytesSeq(facingGuid, byteOrder);

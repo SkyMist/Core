@@ -245,22 +245,26 @@ public:
                 {
                     // Also needs an exception in spell system.
                     unit->CastSpell(unit, SPELL_GRAVITY_LAPSE_FLY, true, 0, NULLAURA_EFFECT, me->GetGUID());
-                    // Use packet hack
-                    WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 12);
+
+                    // Use packet.
+                    WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 1 + 8 + 4);
                     ObjectGuid guid = unit->GetGUID();
-                    uint8 bitOrder[8] = {0, 1, 6, 5, 7, 2, 3, 4};
+
+                    uint8 bitOrder[8] = {4, 2, 3, 0, 5, 1, 7, 6};
                     data.WriteBitInOrder(guid, bitOrder);
 
-                    data << uint32(0);          //! movement counter
-
-                    data.WriteByteSeq(guid[4]);
-                    data.WriteByteSeq(guid[3]);
-                    data.WriteByteSeq(guid[2]);
                     data.WriteByteSeq(guid[0]);
-                    data.WriteByteSeq(guid[1]);
                     data.WriteByteSeq(guid[5]);
-                    data.WriteByteSeq(guid[7]);
+
+                    data << uint32(0);          // ! movement counter
+
+                    data.WriteByteSeq(guid[2]);
+                    data.WriteByteSeq(guid[1]);
                     data.WriteByteSeq(guid[6]);
+                    data.WriteByteSeq(guid[3]);
+                    data.WriteByteSeq(guid[4]);
+                    data.WriteByteSeq(guid[7]);
+
                     unit->SendMessageToSet(&data, true);
                 }
             }
@@ -277,20 +281,24 @@ public:
                     unit->RemoveAurasDueToSpell(SPELL_GRAVITY_LAPSE_FLY);
                     unit->RemoveAurasDueToSpell(SPELL_GRAVITY_LAPSE_DOT);
 
-                    WorldPacket data(SMSG_MOVE_UNSET_CAN_FLY, 12);
+                    WorldPacket data(SMSG_MOVE_UNSET_CAN_FLY, 1 + 8 + 4);
                     ObjectGuid guid = unit->GetGUID();
-                    uint8 bitOrder[8] = {2, 1, 5, 0, 3, 4, 6, 7};
+
+                    uint8 bitOrder[8] = {5, 3, 2, 4, 7, 1, 0, 6};
                     data.WriteBitInOrder(guid, bitOrder);
 
-                    data.WriteByteSeq(guid[1]);
-                    data.WriteByteSeq(guid[5]);
-                    data.WriteByteSeq(guid[6]);
-                    data << uint32(0);          //! movement counter
-                    data.WriteByteSeq(guid[7]);
                     data.WriteByteSeq(guid[4]);
-                    data.WriteByteSeq(guid[2]);
+                    data.WriteByteSeq(guid[5]);
+
+                    data << uint32(0);          // ! movement counter
+
+                    data.WriteByteSeq(guid[1]);
                     data.WriteByteSeq(guid[3]);
+                    data.WriteByteSeq(guid[7]);
+                    data.WriteByteSeq(guid[2]);
+                    data.WriteByteSeq(guid[6]);
                     data.WriteByteSeq(guid[0]);
+
                     unit->SendMessageToSet(&data, true);
                 }
             }

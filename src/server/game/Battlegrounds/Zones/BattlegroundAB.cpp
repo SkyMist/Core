@@ -47,9 +47,9 @@ void BattlegroundAB::PostUpdateImpl(uint32 diff)
 {
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
-        uint8 team_points[BG_TEAMS_COUNT] = { 0, 0 };
+        int team_points[BG_TEAMS_COUNT] = { 0, 0 };
 
-        for (uint8 node = 0; node < BG_AB_DYNAMIC_NODES_COUNT; ++node)
+        for (int node = 0; node < BG_AB_DYNAMIC_NODES_COUNT; ++node)
         {
             // 3 sec delay to spawn new banner instead of the previous, despawned one.
             if (m_BannerTimers[node].timer)
@@ -97,15 +97,15 @@ void BattlegroundAB::PostUpdateImpl(uint32 diff)
                 }
             }
 
-            for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
+            for (int team = 0; team < BG_TEAMS_COUNT; ++team)
                 if (m_Nodes[node] == team + BG_AB_NODE_TYPE_OCCUPIED)
                     ++team_points[team];
         }
 
         // Accumulate points.
-        for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
+        for (int team = 0; team < BG_TEAMS_COUNT; ++team)
         {
-            uint8 points = team_points[team];
+            int points = team_points[team];
             if (!points)
                 continue;
 
@@ -193,16 +193,14 @@ void BattlegroundAB::PostUpdateImpl(uint32 diff)
 void BattlegroundAB::StartingEventCloseDoors()
 {
     // Despawn banners, auras and buffs.
-    for (uint8 obj = BG_AB_OBJECT_BANNER_NEUTRAL; obj < BG_AB_DYNAMIC_NODES_COUNT * 8; ++obj)
+    for (int obj = BG_AB_OBJECT_BANNER_NEUTRAL; obj < BG_AB_DYNAMIC_NODES_COUNT * 8; ++obj)
         SpawnBGObject(obj, RESPAWN_ONE_DAY);
-    for (uint8 i = 0; i < BG_AB_DYNAMIC_NODES_COUNT * 3; ++i)
+    for (int i = 0; i < BG_AB_DYNAMIC_NODES_COUNT * 3; ++i)
         SpawnBGObject(BG_AB_OBJECT_SPEEDBUFF_STABLES + i, RESPAWN_ONE_DAY);
 
     // Spawn starting doors.
     DoorClose(BG_AB_OBJECT_GATE_A);
     DoorClose(BG_AB_OBJECT_GATE_H);
-    SpawnBGObject(BG_AB_OBJECT_GATE_A, RESPAWN_IMMEDIATELY);
-    SpawnBGObject(BG_AB_OBJECT_GATE_H, RESPAWN_IMMEDIATELY);
 
     // Spawn starting base spirit guides.
     _NodeOccupied(BG_AB_SPIRIT_ALIANCE, ALLIANCE);
@@ -212,11 +210,11 @@ void BattlegroundAB::StartingEventCloseDoors()
 void BattlegroundAB::StartingEventOpenDoors()
 {
     // Spawn neutral banners.
-    for (uint8 banner = BG_AB_OBJECT_BANNER_NEUTRAL, i = 0; i < 5; banner += 8, ++i)
+    for (int banner = BG_AB_OBJECT_BANNER_NEUTRAL, i = 0; i < 5; banner += 8, ++i)
         SpawnBGObject(banner, RESPAWN_IMMEDIATELY);
 
     // Spawn buffs (randomly select the one to spawn).
-    for (uint8 i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
+    for (int i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
     {
         uint8 buff = urand(0, 2);
         SpawnBGObject(BG_AB_OBJECT_SPEEDBUFF_STABLES + buff + i * 3, RESPAWN_IMMEDIATELY);
@@ -359,7 +357,7 @@ void BattlegroundAB::FillInitialWorldStates(ByteBuffer& data)
     data << uint32(m_TeamScores[BG_TEAM_HORDE])       << uint32(BG_AB_OP_RESOURCES_HORDE);
 
     // other unknown
-    data << uint32(0x2)                               << uint32(0x745);           // 37 1861 unk
+    //data << uint32(0x2)                               << uint32(0x745);           // 37 1861 unk
 }
 
 void BattlegroundAB::_SendNodeUpdate(uint8 node)
@@ -576,7 +574,7 @@ void BattlegroundAB::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
 bool BattlegroundAB::SetupBattleground()
 {
     // Banners
-    for (uint8 i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
+    for (int i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
     {
         if (!AddObject(BG_AB_OBJECT_BANNER_NEUTRAL    + 8 * i, BG_AB_OBJECTID_NODE_BANNER_0 + i, BG_AB_NodePositions[i][0], BG_AB_NodePositions[i][1], BG_AB_NodePositions[i][2], BG_AB_NodePositions[i][3], 0, 0, std::sin(BG_AB_NodePositions[i][3] / 2), std::cos(BG_AB_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
          || !AddObject(BG_AB_OBJECT_BANNER_CONT_A     + 8 * i, BG_AB_OBJECTID_BANNER_CONT_A,     BG_AB_NodePositions[i][0], BG_AB_NodePositions[i][1], BG_AB_NodePositions[i][2], BG_AB_NodePositions[i][3], 0, 0, std::sin(BG_AB_NodePositions[i][3] / 2), std::cos(BG_AB_NodePositions[i][3] / 2), RESPAWN_ONE_DAY)
@@ -601,7 +599,7 @@ bool BattlegroundAB::SetupBattleground()
     }
 
     // Buffs
-    for (uint8 i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
+    for (int i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
     {
         if (!AddObject(BG_AB_OBJECT_SPEEDBUFF_STABLES + 3 * i,     Buff_Entries[0], BG_AB_BuffPositions[i][0], BG_AB_BuffPositions[i][1], BG_AB_BuffPositions[i][2], BG_AB_BuffPositions[i][3], 0, 0, std::sin(BG_AB_BuffPositions[i][3] / 2), std::cos(BG_AB_BuffPositions[i][3] / 2), RESPAWN_ONE_DAY)
          || !AddObject(BG_AB_OBJECT_SPEEDBUFF_STABLES + 3 * i + 1, Buff_Entries[1], BG_AB_BuffPositions[i][0], BG_AB_BuffPositions[i][1], BG_AB_BuffPositions[i][2], BG_AB_BuffPositions[i][3], 0, 0, std::sin(BG_AB_BuffPositions[i][3] / 2), std::cos(BG_AB_BuffPositions[i][3] / 2), RESPAWN_ONE_DAY)
@@ -734,8 +732,7 @@ bool BattlegroundAB::IsAllNodesControlledByTeam(uint32 team) const
 {
     uint32 count = 0;
     for (uint8 i = 0; i < BG_AB_DYNAMIC_NODES_COUNT; ++i)
-        if ((team == ALLIANCE && m_Nodes[i] == BG_AB_NODE_STATUS_ALLY_OCCUPIED) ||
-            (team == HORDE    && m_Nodes[i] == BG_AB_NODE_STATUS_HORDE_OCCUPIED))
+        if ((team == ALLIANCE && m_Nodes[i] == BG_AB_NODE_STATUS_ALLY_OCCUPIED) || (team == HORDE && m_Nodes[i] == BG_AB_NODE_STATUS_HORDE_OCCUPIED))
             ++count;
 
     return count == BG_AB_DYNAMIC_NODES_COUNT;

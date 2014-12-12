@@ -175,7 +175,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 {
     // We can be in 2 queues in same time.
     if (!bg)
-        StatusID = STATUS_NONE;
+        return; // StatusID = STATUS_NONE;
 
     // Calculate Min / Max level.
     uint8 minLevel = 0;
@@ -229,7 +229,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[3]);
             data->WriteByteSeq(playerGuid[5]);
 
-            *data << uint32(bg ? (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()) : 0); // Client Instance Id
+            *data << uint32(QueueSlot);                 // Queue Slot
                
             data->WriteByteSeq(playerGuid[0]);
             data->WriteByteSeq(playerGuid[7]);
@@ -240,18 +240,18 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->Initialize(SMSG_BATTLEGROUND_STATUS_QUEUED);
 
             *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1);                       // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
-            *data << uint32(GetMSTimeDiffToNow(Time2));                                            // Estimated Wait Time (Needs calculation somewhere, bad)
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
-            *data << uint32(GetMSTimeDiffToNow(Time1));                                            // Time since joined
+            *data << uint32(Time1);                                            // Estimated Wait Time (Needs calculation somewhere, bad)
+            *data << uint32(QueueSlot);                                                            // Queue Slot
+            *data << uint32(GetMSTimeDiffToNow(Time2));                                            // Time since joined
 
             //if (bg->isRated())
             //    *data << uint8(count for players in queue Rated Mode);
             //else
                 *data << uint8(0);                      // Team Size
 
-            *data << uint32(Time1);                     // Join Time
+            *data << uint32(Time2);                     // Join Time
             *data << uint8(minLevel);                   // Min Level
-            *data << uint32(QueueSlot);                 // Queue Slot
+            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
             *data << uint8(maxLevel);                   // Max level
 
             data->WriteBit(battlegroundGuid[1]);
@@ -336,7 +336,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(battlegroundGuid[3]);
 
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
+            *data << uint32(QueueSlot);        // Queue Slot
 
             data->WriteByteSeq(playerGuid[2]);
             data->WriteByteSeq(battlegroundGuid[7]);
@@ -352,12 +352,12 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(battlegroundGuid[5]);
             data->WriteByteSeq(playerGuid[7]);
 
-            *data << uint32(QueueSlot);        // Queue Slot
+            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
             *data << uint8(maxLevel);          // Max Level
 
             data->WriteByteSeq(playerGuid[6]);
 
-            *data << uint32(Time1);            // Join Time
+            *data << uint32(Time2);            // Join Time
 
             if (HasRoles)
                 *data << uint8((player->GetBattleGroundRoles() == ROLE_TANK) ? 0 : 1); // Client uses sent value like this: Role = 1 << (val + 1).
@@ -374,7 +374,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(battlegroundGuid[4]);
             data->WriteByteSeq(battlegroundGuid[2]);
 
-            *data << uint32(Time2);                     // Time until response window is closed (90000).
+            *data << uint32(Time1);                     // Time until response window is closed (90000).
 
             data->WriteByteSeq(playerGuid[3]);
 
@@ -435,14 +435,14 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(battlegroundGuid[5]);
 
-            *data << uint32(QueueSlot);                 // Queue Slot
+            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID  
 
             data->WriteByteSeq(battlegroundGuid[4]);
             data->WriteByteSeq(playerGuid[7]);
             data->WriteByteSeq(playerGuid[5]);
             data->WriteByteSeq(playerGuid[0]);
 
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID     
+            *data << uint32(QueueSlot);                 // Queue Slot
             *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1);                  // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
 
             data->WriteByteSeq(playerGuid[4]);
@@ -460,7 +460,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[1]);
             data->WriteByteSeq(playerGuid[2]);
 
-            *data << uint32(GetMSTimeDiffToNow(Time2)); // Elapsed Time
+            *data << uint32(Time2);                       // Elapsed Time
             break;
         }
 
@@ -1425,7 +1425,7 @@ void BattlegroundMgr::SendToBattleground(Player* player, uint32 instanceId, Batt
             team = player->GetTeam();
         bg->GetTeamStartLoc(team, x, y, z, O);
 
-        sLog->outInfo(LOG_FILTER_SERVER_LOADING, "BATTLEGROUND: Sending %s to map %u, X %f, Y %f, Z %f, O %f", player->GetName(), mapid, x, y, z, O);
+        // sLog->outInfo(LOG_FILTER_SERVER_LOADING, "BATTLEGROUND: Sending %s to map %u, X %f, Y %f, Z %f, O %f", player->GetName(), mapid, x, y, z, O);
         player->TeleportTo(mapid, x, y, z, O);
     }
     else

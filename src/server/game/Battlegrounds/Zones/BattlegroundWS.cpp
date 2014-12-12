@@ -300,13 +300,19 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* Source)
     uint32 winner = 0;
 
     Source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+
+    // Alliance captured Horde flag.
     if (Source->GetBGTeam() == ALLIANCE)
     {
         if (!this->IsHordeFlagPickedup())
             return;
+
         SetHordeFlagPicker(0);                              // must be before aura remove to prevent 2 events (drop+capture) at the same time
                                                             // horde flag in base (but not respawned yet)
         _flagState[BG_TEAM_HORDE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
+        UpdateFlagState(ALLIANCE, BG_WS_FLAG_STATE_WAIT_RESPAWN);
+        UpdateWorldState(BG_WS_FLAG_UNK_HORDE, 0);
+
                                                             // Drop Horde Flag from Player
         Source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
         if (_flagDebuffState == 1)
@@ -318,13 +324,16 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* Source)
         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_ALLIANCE);
         RewardReputationToTeam(890, m_ReputationCapture, ALLIANCE);
     }
-    else
+    else // Horde captured Alliance flag.
     {
         if (!this->IsAllianceFlagPickedup())
             return;
+
         SetAllianceFlagPicker(0);                           // must be before aura remove to prevent 2 events (drop+capture) at the same time
                                                             // alliance flag in base (but not respawned yet)
         _flagState[BG_TEAM_ALLIANCE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
+        UpdateFlagState(HORDE, BG_WS_FLAG_STATE_WAIT_RESPAWN);
+        UpdateWorldState(BG_WS_FLAG_UNK_ALLIANCE, 0);
                                                             // Drop Alliance Flag from Player
         Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
         if (_flagDebuffState == 1)

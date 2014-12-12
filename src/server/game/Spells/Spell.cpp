@@ -5654,10 +5654,13 @@ void Spell::SendLogExecute()
         return;
 
     ObjectGuid guid = m_caster->GetGUID();
-    WorldPacket data(SMSG_SPELLLOGEXECUTE, (8+4+4+4+4+8));
+
+    WorldPacket data(SMSG_SPELLLOGEXECUTE, (8 + 4 + 4 + 4 + 4 + 8));
 
     data.WriteBit(false);
+
     data.WriteBit(guid[6]);
+
     data.WriteBits(m_effectExecuteData.size(), 19);
 
     for (auto itr : m_effectExecuteData)
@@ -5666,15 +5669,20 @@ void Spell::SendLogExecute()
 
         data.WriteBits(0, 21); // unk block Guids1 in parser
         data.WriteBits(helper.Energizes.size(), 20);
+
         for (auto energize : helper.Energizes)
         {
             uint8 bitOrder[8] = {4, 6, 5, 7, 0, 1, 2, 3};
             data.WriteBitInOrder(energize.Guid, bitOrder);
         }
+
         data.WriteBits(helper.CreatedItems.size(), 22);
+
         data.WriteBits(0, 22); // unk counter84
         data.WriteBits(0, 21); // unk block Guids2 in parser
+
         data.WriteBits(helper.Targets.size(), 24);
+
         for (auto target : helper.Targets)
         {
             uint8 bitOrder[8] = {4, 6, 2, 7, 0, 5, 1, 3};
@@ -5683,11 +5691,14 @@ void Spell::SendLogExecute()
     }
 
     data.WriteBit(guid[1]);
+    data.WriteBit(guid[4]);
     data.WriteBit(guid[7]);
     data.WriteBit(guid[5]);
     data.WriteBit(guid[0]);
     data.WriteBit(guid[2]);
     data.WriteBit(guid[3]);
+
+    data.FlushBits();
 
     for (auto itr : m_effectExecuteData)
     {
@@ -5708,9 +5719,13 @@ void Spell::SendLogExecute()
             data << float(energize.Multiplier);
 
             data.WriteByteSeq(energize.Guid[3]);
+
             data << uint32(energize.PowerType);
+
             data.WriteByteSeq(energize.Guid[4]);
+
             data << uint32(energize.Value);
+
             data.WriteByteSeq(energize.Guid[1]);
             data.WriteByteSeq(energize.Guid[7]);
             data.WriteByteSeq(energize.Guid[6]);
@@ -5722,9 +5737,7 @@ void Spell::SendLogExecute()
         data << uint32(m_spellInfo->Effects[effIndex].Effect);
 
         for (auto id : helper.CreatedItems)
-        {
             data << uint32(id);
-        }
     }
 
     data.WriteByteSeq(guid[5]);
@@ -5733,7 +5746,9 @@ void Spell::SendLogExecute()
     data.WriteByteSeq(guid[3]);
     data.WriteByteSeq(guid[0]);
     data.WriteByteSeq(guid[7]);
+
     data << uint32(m_spellInfo->Id);
+
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[4]);
 
@@ -8417,13 +8432,17 @@ void Spell::Delayed()
     else
         m_timer += delaytime;
 
-    WorldPacket data(SMSG_SPELL_DELAYED, 8+4);
     ObjectGuid casterGuid = m_caster->GetGUID();
+
+    WorldPacket data(SMSG_SPELL_DELAYED, 1 + 8 + 4);
 
     uint8 bits[8] = { 4, 6, 0, 7, 5, 3, 1, 2 };
     data.WriteBitInOrder(casterGuid, bits);
 
+    data.FlushBits();
+
     data << uint32(delaytime);
+
     data.WriteByteSeq(casterGuid[5]);
     data.WriteByteSeq(casterGuid[7]);
     data.WriteByteSeq(casterGuid[6]);

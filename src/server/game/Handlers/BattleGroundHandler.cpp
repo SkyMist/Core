@@ -419,13 +419,13 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
 
     uint32 playerCount;
     uint32 joinTime;
-    uint32 clientInstanceId;
+    uint32 queueSlot;
     ObjectGuid playerGuid;
 
     bool action = recvData.ReadBit() ?  true : false;          // 128 = Accept and port; 0 = Cancel.
 
     recvData >> playerCount;                                   // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
-    recvData >> clientInstanceId;
+    recvData >> queueSlot;
     recvData >> joinTime;
 
     playerGuid[6] = recvData.ReadBit();
@@ -454,36 +454,23 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
         return;
     }
 
-    Battleground* bg = NULL;
-    for (uint32 i = BATTLEGROUND_AV; i < MAX_BATTLEGROUND_TYPE_ID; i++)
-    {
-		if (Battleground* battleground = sBattlegroundMgr->GetBattlegroundThroughClientInstance(clientInstanceId, BattlegroundTypeId(i)))
-        {
-            bg = battleground;
-            break;
-        }
-    }
-
-    if (!bg)
-        return;
-
-    BattlegroundTypeId bgTypeId = bg->GetTypeID(bg->IsRandom() ? true : false);
-    BattlegroundQueueTypeId bgQueueTypeId = sBattlegroundMgr->BGQueueTypeId(bgTypeId, bg->GetArenaType());
+    // Get GroupQueueInfo from BattlegroundQueue.
+    BattlegroundQueueTypeId bgQueueTypeId = _player->GetBattlegroundQueueTypeId(queueSlot);
 
     if (bgQueueTypeId == BATTLEGROUND_QUEUE_NONE)
     {
         sLog->outDebug(LOG_FILTER_BATTLEGROUND, "HandleBattlegroundPortOpcode: invalid bgQueueTypeId (%u) received.", bgQueueTypeId);
+        sLog->outDebug(LOG_FILTER_BATTLEGROUND, "CMSG_BATTLEFIELD_PORT Player : %s Slot: %u, Playercount: %u, Join Time: %u, Action: %u. Invalid queueSlot!", _player->GetName(), queueSlot, playerCount, joinTime, action);
         return;
     }
 
     if (bgQueueTypeId >= MAX_BATTLEGROUND_QUEUE_TYPES)
     {
-        sLog->OutPandashan("HandleBattlegroundPortOpcode: bgQueueTypeId %u", bgQueueTypeId);
+        sLog->OutPandashan("HandleBattlegroundPortOpcode: bgQueueTypeId %u in conflict with MAX_BATTLEGROUND_QUEUE_TYPES!", bgQueueTypeId);
         return;
     }
 
-    uint32 queueSlot = _player->GetBattlegroundQueueIndex(bgQueueTypeId);
-    BattlegroundQueue& bgQueue = sBattlegroundMgr->m_BattlegroundQueues[bgQueueTypeId];
+    BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
 
     // We must use a temporary variable, because GroupQueueInfo pointer can be deleted in BattlegroundQueue::RemovePlayer() function.
     GroupQueueInfo ginfo;
@@ -493,10 +480,31 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
         return;
     }
 
+    BattlegroundTypeId bgTypeId = BattlegroundMgr::BGTemplateId(bgQueueTypeId);
+
+    // BGTemplateId returns BATTLEGROUND_AA when it is arena queue.
+    // Do instance id search as there is no AA bg instances.
+    Battleground* bg = sBattlegroundMgr->GetBattleground(ginfo.IsInvitedToBGInstanceGUID, bgTypeId == BATTLEGROUND_AA ? BATTLEGROUND_TYPE_NONE : bgTypeId);
+
+    // bg template might and must be used in case of leaving queue, when instance is not created yet
+    if (!bg && action == false)
+        bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
+    if (!bg)
+    {
+        sLog->outError(LOG_FILTER_NETWORKIO, "BattlegroundHandler: bg_template not found for type id %u.", bgTypeId);
+        return;
+    }
+
+    // get real bg type
+    bgTypeId = bg->GetTypeID();
+
     // expected bracket entry
     PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->getLevel());
     if (!bracketEntry)
+    {
+        sLog->outError(LOG_FILTER_NETWORKIO, "BattlegroundHandler: No bracket entry for Port!");
         return;
+    }
 
     // some checks if player isn't cheating - it is not exactly cheating, but we cannot allow it
     if (action == true && ginfo.ArenaType == 0)
@@ -523,7 +531,10 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
     if (action == true)
     {
         if (!_player->IsInvitedForBattlegroundQueueType(bgQueueTypeId))
+        {
+            sLog->outError(LOG_FILTER_NETWORKIO, "BattlegroundHandler: BG Port : Not invited to BG Queue!");
             return;                                 // cheating?
+        }
 
         if (!_player->InBattleground())
             _player->SetBattlegroundEntryPoint();
@@ -573,11 +584,12 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
         if (bg->isArena() && bg->GetStatus() > STATUS_WAIT_QUEUE)
             return;
 
+        _player->RemoveBattlegroundQueueId(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
+
         WorldPacket data;
         sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, _player, queueSlot, STATUS_NONE, _player->GetBattlegroundQueueJoinTime(bgTypeId), 0, 0);
-        SendPacket(&data);
+        _player->GetSession()->SendPacket(&data);
 
-        _player->RemoveBattlegroundQueueId(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
         bgQueue.RemovePlayer(_player->GetGUID(), true);
 
         if (ginfo.IsRatedBG)
