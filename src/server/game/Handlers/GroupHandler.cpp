@@ -1749,7 +1749,7 @@ void WorldSession::HandleClearRaidMarkerOpcode(WorldPacket& recvData)
     if (!group)
         return;
 
-    if (!group->isRaidGroup() || group->isRaidGroup() && (group->IsAssistant(plr->GetGUID()) || group->IsLeader(plr->GetGUID())) || group->GetGroupType() & GROUPTYPE_EVERYONE_IS_ASSISTANT))
+    if (!group->isRaidGroup() || group->isRaidGroup() && (group->IsAssistant(plr->GetGUID()) || group->IsLeader(plr->GetGUID())) || group->GetGroupType() & GROUPTYPE_EVERYONE_IS_ASSISTANT)
     {
         if (markerId < MAX_RAID_MARKERS)
             group->RemoveRaidMarker(markerId);

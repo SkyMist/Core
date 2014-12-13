@@ -3143,12 +3143,12 @@ Group::RaidMarker Group::GetRaidMarkerById(uint8 markerId)
     // Build a "default" one to return. Should never happen.
     RaidMarker marker;
 
-    marker.mapId = 0;
-    marker.posX = 0;
-    marker.posY = 0;
-    marker.posZ = 0;
-    marker.mask = 0;
-    marker.guid = 0;
+    marker.mapId   = 0;
+    marker.posX    = 0.0f;
+    marker.posY    = 0.0f;
+    marker.posZ    = 0.0f;
+    marker.mask    = 0;
+    marker.guid    = 0;
     marker.spellId = 0;
 
     return marker;
