@@ -2046,6 +2046,12 @@ bool WorldObject::canSeeOrDetect(WorldObject const* obj, bool ignoreStealth, boo
     if (!CanDetect(obj, ignoreStealth))
         return false;
 
+    if (obj->GetTypeId() == TYPEID_DYNAMICOBJECT) // Update raid marker visibility.
+        if (((DynamicObject*)obj)->GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+            if (Player const* thisPlayer = ToPlayer())
+                if (!thisPlayer->GetGroup() || ((DynamicObject*)obj)->GetCasterGUID() != thisPlayer->GetGroup()->GetGUID())
+                    return false;
+
     return true;
 }
 

@@ -64,6 +64,8 @@ Group::Group() : m_leaderGuid(0), m_leaderName(""), m_groupType(GROUPTYPE_NORMAL
 {
     for (uint8 i = 0; i < TARGETICONCOUNT; ++i)
         m_targetIcons[i] = 0;
+
+    m_raidMarkers.clear();
 }
 
 Group::~Group()
@@ -155,6 +157,9 @@ bool Group::Create(Player* leader)
         ASSERT(AddMember(leader)); // If the leader can't be added to a new group because it appears full, something is clearly wrong.
 
         Player::ConvertInstancesToGroup(leader, this, false);
+
+        // Remove all raid markers.
+        RemoveAllRaidMarkers();
     }
     else if (!AddMember(leader))
         return false;
@@ -739,6 +744,9 @@ void Group::ChangeLeader(uint64 newLeaderGuid)
 void Group::Disband(bool hideDestroy /* = false */)
 {
     sScriptMgr->OnGroupDisband(this);
+
+    // Remove all raid markers.
+    RemoveAllRaidMarkers();
 
     Player* player;
     for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
@@ -3019,55 +3027,189 @@ bool Group::HasFreeSlotSubGroup(uint8 subgroup) const
     return (m_subGroupsCounts && m_subGroupsCounts[subgroup] < MAXGROUPSIZE);
 }
 
-void Group::SendRaidMarkersUpdate()
+bool Group::HasRaidMarker(uint64 objectGuid)
 {
-    // return;
+    for (RaidMarkerList::iterator itr = m_raidMarkers.begin(); itr != m_raidMarkers.end(); itr++)
+        if (objectGuid == (*itr).guid)
+            return true;
 
+    return false;
+}
+
+bool Group::HasRaidMarker(uint8 markerId)
+{
     uint32 mask = RAID_MARKER_NONE;
 
-    if (!m_raidMarkers.empty())
+    switch (markerId)
+    {
+        case 0: // Blue
+            mask = RAID_MARKER_BLUE;
+            break;
+        case 1: // Green
+            mask = RAID_MARKER_GREEN;
+            break;
+        case 2: // Purple
+            mask = RAID_MARKER_PURPLE;
+            break;
+        case 3: // Red
+            mask = RAID_MARKER_RED;
+            break;
+        case 4: // Yellow
+            mask = RAID_MARKER_YELLOW;
+            break;
+
+        default: break;
+    }
+
+    for (RaidMarkerList::iterator itr = m_raidMarkers.begin(); itr != m_raidMarkers.end(); itr++)
+        if (mask == (*itr).mask)
+            return true;
+
+    return false;
+}
+
+uint8 Group::GetRaidMarkerByGuid(uint64 objectGuid)
+{
+    uint8 markerId = 0;
+    uint32 mask = RAID_MARKER_NONE;
+
+    for (RaidMarkerList::iterator itr = m_raidMarkers.begin(); itr != m_raidMarkers.end(); itr++)
+    {
+        if (objectGuid == (*itr).guid)
+        {
+            mask = (*itr).mask;
+            break;
+        }
+    }
+
+    switch (mask)
+    {
+        case RAID_MARKER_BLUE:
+            markerId = 0; // Blue
+            break;
+        case RAID_MARKER_GREEN:
+            markerId = 1; // Green
+            break;
+        case RAID_MARKER_PURPLE:
+            markerId = 2; // Purple
+            break;
+        case RAID_MARKER_RED:
+            markerId = 3; // Red
+            break;
+        case RAID_MARKER_YELLOW:
+            markerId = 4; // Yellow
+            break;
+
+        default: break;
+    }
+
+    return markerId;
+}
+
+Group::RaidMarker Group::GetRaidMarkerById(uint8 markerId)
+{
+    uint32 mask = RAID_MARKER_NONE;
+
+    switch (markerId)
+    {
+        case 0: // Blue
+            mask = RAID_MARKER_BLUE;
+            break;
+        case 1: // Green
+            mask = RAID_MARKER_GREEN;
+            break;
+        case 2: // Purple
+            mask = RAID_MARKER_PURPLE;
+            break;
+        case 3: // Red
+            mask = RAID_MARKER_RED;
+            break;
+        case 4: // Yellow
+            mask = RAID_MARKER_YELLOW;
+            break;
+
+        default: break;
+    }
+
+    for (RaidMarkerList::iterator itr = m_raidMarkers.begin(); itr != m_raidMarkers.end(); itr++)
+    {
+        if (mask == (*itr).mask)
+        {
+            return (*itr);
+            break;
+        }
+    }
+
+    // Build a "default" one to return. Should never happen.
+    RaidMarker marker;
+
+    marker.mapId = 0;
+    marker.posX = 0;
+    marker.posY = 0;
+    marker.posZ = 0;
+    marker.mask = 0;
+    marker.guid = 0;
+    marker.spellId = 0;
+
+    return marker;
+}
+
+void Group::SendRaidMarkersUpdate()
+{
+    uint32 mask = RAID_MARKER_NONE;
+
+    if (!GetRaidMarkers().empty())
         for (auto itr : GetRaidMarkers())
             mask |= itr.mask;
 
-    WorldPacket data(SMSG_RAID_MARKERS_CHANGED, 4);
-    data << uint32(mask);
-
-    /*
-    WorldPacket data(SMSG_RAID_MARKERS_CHANGED, 10);
+    WorldPacket data(SMSG_RAID_MARKERS_CHANGED);
     ByteBuffer dataBuffer;
 
     data << uint8(0);
     data << uint32(mask);
 
-    data.WriteBits(GetRaidMarkers().size(), 3);
+    data.WriteBits(!GetRaidMarkers().empty() ? GetRaidMarkers().size() : 0, 3);
 
-    // @TODO: Send in classic order instead of summon order
-    for (auto itr : GetRaidMarkers())
+    if (!GetRaidMarkers().empty())
     {
-        ObjectGuid guid = 0;
+        for (uint8 i = 0; i < MAX_RAID_MARKERS; i++)
+        {
+            if (HasRaidMarker(i))
+            {
+                RaidMarker marker = GetRaidMarkerById(i);
 
-        uint8 bits[8] = { 6, 7, 4, 0, 5, 1, 3, 2 };
-        data.WriteBitInOrder(guid, bits);
+                ObjectGuid guid = marker.guid;
 
-        dataBuffer << float(itr.posX);
-        dataBuffer.WriteByteSeq(guid[2]);
-        dataBuffer.WriteByteSeq(guid[1]);
-        dataBuffer.WriteByteSeq(guid[7]);
-        dataBuffer.WriteByteSeq(guid[5]);
-        dataBuffer << float(itr.posY);
-        dataBuffer.WriteByteSeq(guid[3]);
-        dataBuffer.WriteByteSeq(guid[0]);
-        dataBuffer << float(itr.posZ);
-        dataBuffer.WriteByteSeq(guid[4]);
-        dataBuffer << uint32(itr.mapId);
-        dataBuffer.WriteByteSeq(guid[6]);
+                uint8 bits[8] = { 6, 7, 4, 0, 5, 1, 3, 2 };
+                data.WriteBitInOrder(guid, bits);
+
+                dataBuffer << float(marker.posX);
+
+                dataBuffer.WriteByteSeq(guid[2]);
+                dataBuffer.WriteByteSeq(guid[1]);
+                dataBuffer.WriteByteSeq(guid[7]);
+                dataBuffer.WriteByteSeq(guid[5]);
+
+                dataBuffer << float(marker.posY);
+
+                dataBuffer.WriteByteSeq(guid[3]);
+                dataBuffer.WriteByteSeq(guid[0]);
+
+                dataBuffer << float(marker.posZ);
+
+                dataBuffer.WriteByteSeq(guid[4]);
+
+                dataBuffer << uint32(marker.mapId);
+
+                dataBuffer.WriteByteSeq(guid[6]);
+            }
+        }
     }
 
     data.FlushBits();
 
-    if (dataBuffer.size())
+    if (!dataBuffer.empty())
         data.append(dataBuffer);
-    */
 
     BroadcastPacket(&data, true);
 }
@@ -3093,8 +3235,8 @@ void Group::AddRaidMarker(uint64 objectGuid, uint32 spellId, uint32 mapId, float
         case 85000: // Raid Marker 5
             mask = RAID_MARKER_YELLOW;
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     RaidMarker marker;
@@ -3132,8 +3274,8 @@ void Group::RemoveRaidMarker(uint8 markerId)
         case 4: // Yellow
             mask = RAID_MARKER_YELLOW;
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     for (RaidMarkerList::iterator itr = m_raidMarkers.begin(); itr != m_raidMarkers.end();)
@@ -3145,8 +3287,7 @@ void Group::RemoveRaidMarker(uint8 markerId)
 
             m_raidMarkers.erase(itr++);
         }
-        else
-            ++itr;
+        else ++itr;
     }
 
     SendRaidMarkersUpdate();

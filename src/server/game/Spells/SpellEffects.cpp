@@ -67,6 +67,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Group.h"
+#include "UpdateFieldFlags.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
 {
@@ -6585,6 +6586,9 @@ void Spell::EffectSummonRaidMarker(SpellEffIndex effIndex)
     if (!group)
         return;
 
+    if (group->isRaidGroup() && ((!group->IsAssistant(_player->GetGUID()) && !group->IsLeader(_player->GetGUID())) || !(group->GetGroupType() & GROUPTYPE_EVERYONE_IS_ASSISTANT)))
+        return;
+
     Group::RaidMarkerList& markers = group->GetRaidMarkers();
     for (Group::RaidMarkerList::iterator itr = markers.begin(); itr != markers.end();)
     {
@@ -6595,13 +6599,15 @@ void Spell::EffectSummonRaidMarker(SpellEffIndex effIndex)
 
             itr = markers.erase(itr);
         }
-        else
-            itr++;
+        else itr++;
     }
 
-    uint32 slotMask = 1 << m_spellInfo->Effects[effIndex].BasePoints;
-
+    // We could, but we do not use the ID or slot directly :).
+    // uint32 go_id = m_spellInfo->Effects[effIndex].MiscValue;
+    // uint32 slot = m_spellInfo->Effects[effIndex].BasePoints;
+    // uint32 slotMask = 1 << m_spellInfo->Effects[effIndex].BasePoints;
     float radius = m_spellInfo->Effects[effIndex].CalcRadius(m_caster);
+
     DynamicObject* dynObj = new DynamicObject(false);
     if (!dynObj->CreateDynamicObject(sObjectMgr->GenerateLowGuid(HIGHGUID_DYNAMICOBJECT), m_caster, m_spellInfo, *destTarget, radius, DYNAMIC_OBJECT_RAID_MARKER))
     {
@@ -6609,16 +6615,19 @@ void Spell::EffectSummonRaidMarker(SpellEffIndex effIndex)
         return;
     }
 
+    dynObj->UpdateObjectVisibility(false);
 
+    int32 duration = m_spellInfo->GetDuration();
+    dynObj->SetDuration(duration);
 
+    dynObj->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
+
+    // Calculate the position.
     float x = 0.0f, y = 0.0f, z = 0.0f;
     if (m_targets.HasDst())
         destTarget->GetPosition(x, y, z);
 
     group->AddRaidMarker(dynObj->GetGUID(), m_spellInfo->Id, m_caster->GetMapId(), x, y, z);
-
-    int32 duration = m_spellInfo->GetDuration();
-    dynObj->SetDuration(duration);
 }
 
 void Spell::EffectResurrect(SpellEffIndex effIndex)

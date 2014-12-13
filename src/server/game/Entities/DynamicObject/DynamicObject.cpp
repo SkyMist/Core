@@ -26,6 +26,8 @@
 #include "CellImpl.h"
 #include "GridNotifiersImpl.h"
 #include "ScriptMgr.h"
+#include "Group.h"
+#include "GroupMgr.h"
 
 DynamicObject::DynamicObject(bool isWorldObject) : WorldObject(isWorldObject),
     _aura(NULL), _removedAura(NULL), _caster(NULL), _duration(0), _isViewpoint(false)
@@ -53,7 +55,9 @@ void DynamicObject::AddToWorld()
     {
         sObjectAccessor->AddObject(this);
         WorldObject::AddToWorld();
-        BindToCaster();
+
+        if (GetType() != DYNAMIC_OBJECT_RAID_MARKER)
+            BindToCaster();
     }
 }
 
@@ -72,7 +76,9 @@ void DynamicObject::RemoveFromWorld()
         if (!IsInWorld())
             return;
 
-        UnbindFromCaster();
+        if (GetType() != DYNAMIC_OBJECT_RAID_MARKER)
+            UnbindFromCaster();
+
         WorldObject::RemoveFromWorld();
         sObjectAccessor->RemoveObject(this);
     }
@@ -96,6 +102,14 @@ bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, SpellInfo 
     SetEntry(spell->Id);
     SetObjectScale(1.0f);
     SetUInt64Value(DYNAMICOBJECT_CASTER, caster->GetGUID());
+
+    if (type == DYNAMIC_OBJECT_RAID_MARKER) // The group is considered the caster.
+    {
+        ASSERT(caster->GetTypeId() == TYPEID_PLAYER && caster->ToPlayer()->GetGroup() && "DYNAMIC_OBJECT_RAID_MARKER must only be casted by players which are in the group.");
+        SetUInt64Value(DYNAMICOBJECT_CASTER, caster->ToPlayer()->GetGroup()->GetGUID());
+    }
+    else
+        SetUInt64Value(DYNAMICOBJECT_CASTER, caster->GetGUID());
 
     // The lower word of DYNAMICOBJECT_FIELD_TYPE_AND_VISUAL_ID must be 0x0001. This value means that the visual radius will be overriden
     // by client for most of the "ground patch" visual effect spells and a few "skyfall" ones like Hurricane.
@@ -126,9 +140,25 @@ bool DynamicObject::CreateDynamicObject(uint32 guidlow, Unit* caster, SpellInfo 
 
 void DynamicObject::Update(uint32 p_time)
 {
-    // caster has to be always available and in the same map
-    ASSERT(_caster);
-    ASSERT(_caster->GetMap() == GetMap());
+    // Caster has to be always available and in the same map, except for raid markers.
+    if (GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+    {
+        Group* group = sGroupMgr->GetGroupByGUID(GetCasterGUID());
+        if (!group || !group->HasRaidMarker(GetGUID()))
+        {
+            Remove();
+            return;
+        }
+    }
+    else
+    {
+        // Caster can be 'not in world' at the time dynamic objects update, but are not yet deleted in Unit destructor.
+        if (!_caster || _caster->GetMap() != GetMap())
+        {
+            Remove();
+            return;
+        }
+    }
 
     bool expired = false;
 
@@ -150,7 +180,13 @@ void DynamicObject::Update(uint32 p_time)
     }
 
     if (expired)
+    {
+        if (GetType() == DYNAMIC_OBJECT_RAID_MARKER)
+            if (Group* group = sGroupMgr->GetGroupByGUID(GetCasterGUID()))
+                group->RemoveRaidMarker(group->GetRaidMarkerByGuid(GetGUID()));
+
         Remove();
+    }
     else
         sScriptMgr->OnDynamicObjectUpdate(this, p_time);
 }
@@ -221,17 +257,19 @@ void DynamicObject::RemoveCasterViewpoint()
 
 void DynamicObject::BindToCaster()
 {
-    //ASSERT(!_caster);
+    ASSERT(!_caster);
     _caster = ObjectAccessor::GetUnit(*this, GetCasterGUID());
-    //ASSERT(_caster);
-    //ASSERT(_caster->GetMap() == GetMap());
-    if (_caster)
-        _caster->_RegisterDynObject(this);
+
+    ASSERT(_caster);
+    ASSERT(_caster->GetMap() == GetMap());
+
+    _caster->_RegisterDynObject(this);
 }
 
 void DynamicObject::UnbindFromCaster()
 {
-    //ASSERT(_caster);
+    ASSERT(_caster);
+
     _caster->_UnregisterDynObject(this);
     _caster = NULL;
 }

@@ -25793,6 +25793,9 @@ void Player::SendInitialVisiblePackets(Unit* target)
 template<class T>
 void Player::UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow)
 {
+    if (!target)
+        return;
+
     if (HaveAtClient(target))
     {
         if (!canSeeOrDetect(target, false, true))
@@ -26777,6 +26780,7 @@ void Player::UpdateForQuestWorldObjects()
 
     UpdateData udata(GetMapId());
     WorldPacket packet;
+
     for (ClientGUIDs::iterator itr=m_clientGUIDs.begin(); itr != m_clientGUIDs.end(); ++itr)
     {
         if (IS_GAMEOBJECT_GUID(*itr))

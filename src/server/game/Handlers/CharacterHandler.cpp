@@ -976,32 +976,34 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     LoadAccountData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACCOUNTDATA), PER_CHARACTER_CACHE_MASK);
     SendAccountDataTimes(PER_CHARACTER_CACHE_MASK);
 
-    bool sessionTimeAlert = false;
-    bool inGameShop = false;
-    bool inGameShopIcon = true;
-    bool inGameShopParentalContor = false;
-    bool webTicketFeature = false;
-    bool scrollOfRessurect = false;
-    bool voiceChat = false;
-    bool travelPass = true;
+    bool inGameShop                = true;
+    bool inGameShopIcon            = true;
+    bool travelPass                = true;
+    bool sessionTimeAlert          = false;
+    bool inGameShopParentalControl = false;
+    bool webTicketFeature          = false;
+    bool scrollOfRessurect         = false;
+    bool scrollOfRessurectSend     = false;
+    bool voiceChat                 = false;
 
     data.Initialize(SMSG_FEATURE_SYSTEM_STATUS, 35);
 
-    data << uint8(2);
-    data << uint32(1);
-    data << uint32(realmID);
-    data << uint32(1);
-    data << uint32(43);
-    data.WriteBit(1);
-    data.WriteBit(sessionTimeAlert);                           // parental controls
-    data.WriteBit(inGameShopIcon);                             // show ingame shop icon
-    data.WriteBit(false);                                      // Recruit a Friend button
-    data.WriteBit(travelPass);
-    data.WriteBit(webTicketFeature);
-    data.WriteBit(voiceChat);                                  // voice chat
-    data.WriteBit(inGameShop);                                 // ingame shop status (0 - "The Shop is temporarily unavailable.")
-    data.WriteBit(scrollOfRessurect);                          // Scroll of Resurrection button
-    data.WriteBit(inGameShopParentalContor);                   // ingame shop parental control (1 - "Feature has been disabled by Parental Controls.")
+    data << uint8(2);                                          // Complain System Status
+    data << uint32(0);                                         // NumSoRRemaining
+    data << uint32(realmID);                                   // Is lua function LoadURL enabled
+    data << uint32(1);                                         // unk dword10
+    data << uint32(43);                                        // unk dword1C
+    data.WriteBit(1);                                          // GMItemRestorationButtonEnabled (Item restoration button)
+    data.WriteBit(sessionTimeAlert);                           // IsSessionTimeAlertEnabled (parental controls)
+    data.WriteBit(inGameShopIcon);                             // IsInGameStoreEnabled (show ingame shop icon)
+    data.WriteBit(scrollOfRessurectSend);                      // CanSendSoRRequest (Recruit a Friend button)
+    data.WriteBit(travelPass);                                 // GMQuickTicketSystemEnabled (feedback system - bug, suggestion and report systems)
+    data.WriteBit(webTicketFeature);                           // Web Ticket system
+    data.WriteBit(voiceChat);                                  // IsVoiceChatEnabled
+    data.WriteBit(inGameShop);                                 // IsInGameStoreAPIAvailable (ingame shop status; 0 - "The Shop is temporarily unavailable.")
+    data.WriteBit(scrollOfRessurect);                          // CanSendSoRByText (Scroll of Resurrection button)
+    data.WriteBit(inGameShopParentalControl);                  // IsInGameStoreDisabledByParentalControl (1 - "Feature has been disabled by Parental Controls.")
+
     data.FlushBits();
         
     if (travelPass)
