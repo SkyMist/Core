@@ -3448,16 +3448,25 @@ void World::ResetEventSeasonalQuests(uint16 event_id)
             itr->second->GetPlayer()->ResetSeasonalQuestStatus(event_id);
 }
 
+// Below is used to reset both random and Call To Arms BG's.
 void World::ResetRandomBG()
 {
-    sLog->outInfo(LOG_FILTER_GENERAL, "Random BG status reset for all characters.");
+    sLog->outInfo(LOG_FILTER_GENERAL, "Random / Call To Arms (Weekend) BG status reset for all characters.");
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BATTLEGROUND_RANDOM);
     CharacterDatabase.Execute(stmt);
 
+    PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BATTLEGROUND_WEEKEND);
+    CharacterDatabase.Execute(stmt2);
+
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
+    {
         if (itr->second->GetPlayer())
+        {
             itr->second->GetPlayer()->SetRandomWinner(false);
+            itr->second->GetPlayer()->SetBgWeekendWinner(false);
+        }
+    }
 
     m_NextRandomBGReset = time_t(m_NextRandomBGReset + DAY);
     sWorld->setWorldState(WS_BG_DAILY_RESET_TIME, uint64(m_NextRandomBGReset));

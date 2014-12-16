@@ -1318,12 +1318,12 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     if (!player)
         return;
 
-    uint32 winnerConquest  = (!player->GetRandomWinner() ? BG_REWARD_WINNER_CONQUEST_FIRST : BG_REWARD_WINNER_CONQUEST_LAST) / CURRENCY_PRECISION;
-    uint32 winnerHonor     = (!player->GetRandomWinner() ? BG_REWARD_WINNER_HONOR_FIRST    : BG_REWARD_WINNER_HONOR_LAST)    / CURRENCY_PRECISION;
-    uint32 loserHonor      = (!player->GetRandomWinner() ? BG_REWARD_LOSER_HONOR_FIRST     : BG_REWARD_LOSER_HONOR_LAST)     / CURRENCY_PRECISION;
+    bool HasWonRandomBg   = (bgTypeId == BATTLEGROUND_RB && player->GetRandomWinner()) ? true : false;
+    bool HasWonCallToArms = (IsBGWeekend(bgTypeId) && player->GetBgWeekendWinner())   ? true : false;
 
-    bool HasWonRandomBg   = player->GetRandomWinner() ? true : false;
-    bool HasWonCallToArms = false; // IsBGWeekend(bgTypeId) and he won it.
+    uint32 winnerConquest  = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_WINNER_CONQUEST_FIRST : BG_REWARD_WINNER_CONQUEST_LAST) / CURRENCY_PRECISION;
+    uint32 winnerHonor     = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_WINNER_HONOR_FIRST    : BG_REWARD_WINNER_HONOR_LAST)    / CURRENCY_PRECISION;
+    uint32 loserHonor      = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_LOSER_HONOR_FIRST     : BG_REWARD_LOSER_HONOR_LAST)     / CURRENCY_PRECISION;
 
     ByteBuffer dataBuffer;
     uint32 count = 0;
@@ -1405,13 +1405,13 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     data->WriteByteSeq(guid[5]);
     data->WriteByteSeq(guid[3]);
 
-    *data << uint32(winnerHonor);              // Winner Honor Reward or Random Winner Honor Reward.
-    *data << uint32(winnerHonor);              // Winner Honor Reward or Random Winner Honor Reward.
+    *data << uint32(winnerHonor);     // Winner Honor Reward or Random Winner Honor Reward.
+    *data << uint32(winnerHonor);     // Winner Honor Reward or Random Winner Honor Reward.
 
     data->WriteByteSeq(guid[2]);
 
-    *data << uint32(winnerConquest);           // Winner Conquest Reward or Random Winner Conquest Reward.
-    *data << uint32(loserHonor);               // Loser Honor Reward or Random Loser Honor Reward.
+    *data << uint32(winnerConquest);  // Winner Conquest Reward or Random Winner Conquest Reward.
+    *data << uint32(loserHonor);      // Loser Honor Reward or Random Loser Honor Reward.
 }
 
 void BattlegroundMgr::SendToBattleground(Player* player, uint32 instanceId, BattlegroundTypeId bgTypeId)

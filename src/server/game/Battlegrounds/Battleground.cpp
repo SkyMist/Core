@@ -954,14 +954,18 @@ void Battleground::EndBattleground(uint32 winner)
                 if (IsRandom() || BattlegroundMgr::IsBGWeekend(GetTypeID()))
                 {
                     UpdatePlayerScore(player, NULL, SCORE_BONUS_HONOR, winner_bonus);
-                    if (!player->GetRandomWinner())
+                    if (!player->GetRandomWinner() && IsRandom() || !player->GetBgWeekendWinner() && BattlegroundMgr::IsBGWeekend(GetTypeID()))
                     {
-                        // 100cp awarded for the first rated battleground won each day 
+                        // 150 cp awarded for the first Random / Call to Arms battleground won each day.
                         player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, BG_REWARD_WINNER_CONQUEST_FIRST);
-                        player->SetRandomWinner(true);
+
+                        if (IsRandom()) // Player won daily random BG.
+                            player->SetRandomWinner(true);
+                        else            // Player won Weekend Call To Arms BG.
+                            player->SetBgWeekendWinner(true);
                     }
-                    else // 50cp awarded for each non-rated battleground won 
-                        player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, BG_REWARD_WINNER_CONQUEST_LAST);
+                    else if (player->GetRandomWinner() && IsRandom() || player->GetBgWeekendWinner() && BattlegroundMgr::IsBGWeekend(GetTypeID())) 
+                        player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, BG_REWARD_WINNER_CONQUEST_LAST); // 75 cp awarded for each subsequent Random / Call to Arms battleground won.
                 }
             }
 
@@ -970,12 +974,14 @@ void Battleground::EndBattleground(uint32 winner)
             {
                 guildAwarded = true;
                 if (uint32 guildId = GetBgMap()->GetOwnerGuildId(player->GetTeam()))
+                {
                     if (Guild* guild = sGuildMgr->GetGuildById(guildId))
                     {
                         guild->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1, 0, NULL, player);
                         if (isArena() && isRated() && winner_team && loser_team && winner_team != loser_team)
                             guild->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, std::max<uint32>(winner_team->GetRating(Arena::GetSlotByType(GetArenaType())), 1), 0, 0, NULL, player);
                     }
+                }
             }
         }
         else

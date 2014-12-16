@@ -909,6 +909,7 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     m_lastHonorUpdateTime = time(NULL);
 
     m_IsBGRandomWinner = false;
+    m_IsBGWeekendWinner = false;
 
     // Player summoning
     m_summon_expire = 0;
@@ -20139,6 +20140,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
     _LoadSeasonalQuestStatus(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADSEASONALQUESTSTATUS));
     _LoadMonthlyQuestStatus(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS));
     _LoadRandomBGStatus(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADRANDOMBG));
+    _LoadWeekendBGStatus(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADWEEKENDBG));
 
     // after spell and quest load
     InitTalentForLevel();
@@ -29765,10 +29767,31 @@ void Player::SetRandomWinner(bool isWinner)
 
 void Player::_LoadRandomBGStatus(PreparedQueryResult result)
 {
-    //QueryResult result = CharacterDatabase.PQuery("SELECT guid FROM character_battleground_random WHERE guid = '%u'", GetGUIDLow());
+    // QueryResult result = CharacterDatabase.PQuery("SELECT guid FROM character_battleground_random WHERE guid = '%u'", GetGUIDLow());
 
     if (result)
         m_IsBGRandomWinner = true;
+}
+
+void Player::SetBgWeekendWinner(bool isWinner)
+{
+    m_IsBGWeekendWinner = isWinner;
+    if (m_IsBGWeekendWinner)
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_BATTLEGROUND_WEEKEND);
+
+        stmt->setUInt32(0, GetGUIDLow());
+
+        CharacterDatabase.Execute(stmt);
+    }
+}
+
+void Player::_LoadWeekendBGStatus(PreparedQueryResult result)
+{
+    // QueryResult result = CharacterDatabase.PQuery("SELECT guid FROM character_battleground_weekend WHERE guid = '%u'", GetGUIDLow());
+
+    if (result)
+        m_IsBGWeekendWinner = true;
 }
 
 uint32 Player::GetAverageItemLevel()

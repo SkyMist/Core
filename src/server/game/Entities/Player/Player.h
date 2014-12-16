@@ -913,15 +913,17 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADSKILLS                   = 29,
     PLAYER_LOGIN_QUERY_LOADWEEKLYQUESTSTATUS        = 30,
     PLAYER_LOGIN_QUERY_LOADRANDOMBG                 = 31,
-    PLAYER_LOGIN_QUERY_LOADBANNED                   = 32,
-    PLAYER_LOGIN_QUERY_LOADQUESTSTATUSREW           = 33,
-    PLAYER_LOGIN_QUERY_LOADINSTANCELOCKTIMES        = 34,
-    PLAYER_LOGIN_QUERY_LOADSEASONALQUESTSTATUS      = 35,
-    PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS    = 36,
-    PLAYER_LOGIN_QUERY_LOADVOIDSTORAGE              = 37,
-    PLAYER_LOGIN_QUERY_LOADCURRENCY                 = 38,
-    PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES            = 39,
-    PLAYER_LOGIN_QUERY_LOAD_ARCHAEOLOGY             = 40,
+    PLAYER_LOGIN_QUERY_LOADWEEKENDBG                = 32,
+    PLAYER_LOGIN_QUERY_LOADBANNED                   = 33,
+    PLAYER_LOGIN_QUERY_LOADQUESTSTATUSREW           = 34,
+    PLAYER_LOGIN_QUERY_LOADINSTANCELOCKTIMES        = 35,
+    PLAYER_LOGIN_QUERY_LOADSEASONALQUESTSTATUS      = 36,
+    PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS    = 37,
+    PLAYER_LOGIN_QUERY_LOADVOIDSTORAGE              = 38,
+    PLAYER_LOGIN_QUERY_LOADCURRENCY                 = 39,
+    PLAYER_LOGIN_QUERY_LOAD_CUF_PROFILES            = 40,
+    PLAYER_LOGIN_QUERY_LOAD_ARCHAEOLOGY             = 41,
+
     MAX_PLAYER_LOGIN_QUERY
 };
 
@@ -2670,6 +2672,9 @@ class Player : public Unit, public GridObject<Player>
         bool GetRandomWinner() { return m_IsBGRandomWinner; }
         void SetRandomWinner(bool isWinner);
 
+        bool GetBgWeekendWinner() { return m_IsBGWeekendWinner; }
+        void SetBgWeekendWinner(bool isWinner);
+
         /*********************************************************/
         /***               OUTDOOR PVP SYSTEM                  ***/
         /*********************************************************/
@@ -3099,6 +3104,7 @@ class Player : public Unit, public GridObject<Player>
         BGData                    m_bgData;
 
         bool m_IsBGRandomWinner;
+        bool m_IsBGWeekendWinner;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
@@ -3136,6 +3142,7 @@ class Player : public Unit, public GridObject<Player>
         void _LoadMonthlyQuestStatus(PreparedQueryResult result);
         void _LoadSeasonalQuestStatus(PreparedQueryResult result);
         void _LoadRandomBGStatus(PreparedQueryResult result);
+        void _LoadWeekendBGStatus(PreparedQueryResult result);
         void _LoadGroup(PreparedQueryResult result);
         void _LoadSkills(PreparedQueryResult result);
         void _LoadSpells(PreparedQueryResult result);
