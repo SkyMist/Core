@@ -3221,9 +3221,11 @@ class Player : public Unit, public GridObject<Player>
 
         VoidStorageItem* _voidStorageItems[VOID_STORAGE_MAX_SLOT];
 
+     public:
         std::vector<Item*> m_itemUpdateQueue;
         bool m_itemUpdateQueueBlocked;
 
+     private:
         uint32 m_ExtraFlags;
         uint64 m_curSelection;
 

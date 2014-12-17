@@ -1964,19 +1964,24 @@ void WorldSession::HandleItemTextQuery(WorldPacket& recvData )
         data << uint64(itemGuid);                               // item guid
         data << item->GetText();
     }
-    else
-    {
-        data << uint8(1);                                       // no text
-    }
+    else data << uint8(1);                                       // no text
 
     SendPacket(&data);
 }
 
 void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
 {
-    //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_TRANSMOGRIFY_ITEMS");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_TRANSMOGRIFY_ITEMS");
 
     Player* player = GetPlayer();
+    if (!player)
+    {
+        recvData.rfinish();
+        return;
+    }
+
+    // Read the Transmog data.
+    uint32 count;
     ObjectGuid npcGuid;
 
     npcGuid[3] = recvData.ReadBit();
@@ -1985,45 +1990,49 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
     npcGuid[5] = recvData.ReadBit();
     npcGuid[1] = recvData.ReadBit();
     npcGuid[0] = recvData.ReadBit();
-    uint32 count = recvData.ReadBits(21);
+
+    count = recvData.ReadBits(21);
+
     npcGuid[7] = recvData.ReadBit();
     npcGuid[6] = recvData.ReadBit();
 
     if (count < EQUIPMENT_SLOT_START || count >= EQUIPMENT_SLOT_END)
     {
-        //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) sent a wrong count (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName(), count);
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) sent a wrong count (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName(), count);
         recvData.rfinish();
         return;
     }
 
-    std::vector<ObjectGuid> itemGuids(count, ObjectGuid(0));
-    std::vector<ObjectGuid> unkGuids(count, ObjectGuid(0));
+    std::vector<ObjectGuid> originalItemGuid(count, ObjectGuid(0));
+    std::vector<ObjectGuid> targetItemGuid(count, ObjectGuid(0));
+
     std::vector<uint32> newEntries(count, 0);
     std::vector<uint32> slots(count, 0);
-    std::vector<bool> hasItemGuid(count, false);
-    std::vector<bool> hasUnkGuid(count, false);
+
+    std::vector<bool> hasItemGuid1(count, false); // Original Item.
+    std::vector<bool> hasItemGuid2(count, false); // Item to transmog to.
 
     for (uint8 i = 0; i < count; ++i)
     {
-        hasUnkGuid[i] = recvData.ReadBit();
-        hasItemGuid[i] = recvData.ReadBit();
+        hasItemGuid2[i] = recvData.ReadBit();
+        hasItemGuid1[i] = recvData.ReadBit();
 
-        if (hasItemGuid[i])
+        if (hasItemGuid1[i])
         {
             uint8 bitsOrder[8] = { 5, 6, 4, 0, 7, 3, 1, 2 };
-            recvData.ReadBitInOrder(itemGuids[i], bitsOrder);
+            recvData.ReadBitInOrder(originalItemGuid[i], bitsOrder);
         }
 
-        if (hasUnkGuid[i])
+        if (hasItemGuid2[i])
         {
             uint8 bitsOrder[8] = { 3, 6, 4, 0, 1, 7, 5, 2 };
-            recvData.ReadBitInOrder(unkGuids[i], bitsOrder);
+            recvData.ReadBitInOrder(targetItemGuid[i], bitsOrder);
         }
     }
 
     recvData.FlushBits();
 
-    for (uint32 i = 0; i < count; ++i)
+    for (uint8 i = 0; i < count; ++i)
     {
         recvData >> newEntries[i];
         recvData >> slots[i];
@@ -2032,45 +2041,45 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
     uint8 bytesNpcOrder[8] = { 5, 4, 1, 0, 2, 7, 6, 3 };
     recvData.ReadBytesSeq(npcGuid, bytesNpcOrder);
 
-    for (uint32 i = 0; i < count; ++i)
+    for (uint8 i = 0; i < count; ++i)
     {
-        if (hasUnkGuid[i])
+        if (hasItemGuid2[i])
         {
             uint8 bytesOrder[8] = { 4, 0, 5, 6, 2, 7, 1, 3 };
-            recvData.ReadBytesSeq(unkGuids[i], bytesOrder);
+            recvData.ReadBytesSeq(targetItemGuid[i], bytesOrder);
         }
 
-        if (hasItemGuid[i])
+        if (hasItemGuid1[i])
         {
             uint8 bytesOrder[8] = { 3, 6, 2, 7, 4, 5, 0, 1 };
-            recvData.ReadBytesSeq(itemGuids[i], bytesOrder);
+            recvData.ReadBytesSeq(originalItemGuid[i], bytesOrder);
         }
     }
 
-    // Validate
+    // Validate.
     if (!player->GetNPCIfCanInteractWith(npcGuid, UNIT_NPC_FLAG_TRANSMOGRIFIER))
     {
-        //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Unit (GUID: %u) not found or player can't interact with it.", GUID_LOPART(npcGuid));
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Unit (GUID: %u) not found or player can't interact with it.", GUID_LOPART(npcGuid));
         return;
     }
 
     int32 cost = 0;
     for (uint8 i = 0; i < count; ++i)
     {
-        // slot of the transmogrified item
+        // Slot of the transmogrified item
         if (slots[i] < EQUIPMENT_SLOT_START || slots[i] >= EQUIPMENT_SLOT_END)
         {
-            //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an item (lowguid: %u) with a wrong slot (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName(), GUID_LOPART(itemGuids[i]), slots[i]);
+            sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an item (lowguid: %u) with a wrong slot (%u) when transmogrifying items.", player->GetGUIDLow(), player->GetName(), GUID_LOPART(originalItemGuid[i]), slots[i]);
             return;
         }
 
-        // entry of the transmogrifier item, if it's not 0
+        // Entry of the transmogrifier item, if it's not 0.
         if (newEntries[i])
         {
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(newEntries[i]);
             if (!proto)
             {
-                //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify to an invalid item (entry: %u).", player->GetGUIDLow(), player->GetName(), newEntries[i]);
+                sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify to an invalid item (entry: %u).", player->GetGUIDLow(), player->GetName(), newEntries[i]);
                 return;
             }
 
@@ -2079,42 +2088,56 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
         }
 
         Item* itemTransmogrifier = NULL;
-        // guid of the transmogrifier item, if it's not 0
-        if (itemGuids[i])
+
+        // Guid of the transmogrifier item, if it's not 0.
+        if (originalItemGuid[i])
         {
-            itemTransmogrifier = player->GetItemByGuid(itemGuids[i]);
+            itemTransmogrifier = player->GetItemByGuid(originalItemGuid[i]);
             if (!itemTransmogrifier)
             {
-                //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify with an invalid item (lowguid: %u).", player->GetGUIDLow(), player->GetName(), GUID_LOPART(itemGuids[i]));
+                sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify with an invalid item (lowguid: %u).", player->GetGUIDLow(), player->GetName(), GUID_LOPART(originalItemGuid[i]));
                 return;
             }
         }
 
-        // transmogrified item
+        // Transmogrified item.
         Item* itemTransmogrified = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slots[i]);
         if (!itemTransmogrified)
         {
-            //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an invalid item in a valid slot (slot: %u).", player->GetGUIDLow(), player->GetName(), slots[i]);
+            sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) tried to transmogrify an invalid item in a valid slot (slot: %u).", player->GetGUIDLow(), player->GetName(), slots[i]);
             return;
         }
 
-        if (!newEntries[i]) // reset look
+        if (!newEntries[i]) // Reset look.
         {
-            itemTransmogrified->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, 0);
-            itemTransmogrified->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x3);
+	        if (itemTransmogrified->GetTransmogrifyId() != 0) // If the item has a transmog id.
+                itemTransmogrified->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, 0);
+
+            itemTransmogrified->SetState(ITEM_CHANGED, player);
             player->SetVisibleItemSlot(slots[i], itemTransmogrified);
         }
         else
         {
-            if (!Item::CanTransmogrifyItemWithItem(itemTransmogrified, itemTransmogrifier))
+            if (!itemTransmogrifier)
             {
-                //sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUIDLow(), player->GetName(), itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
+                sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - No item to transmogrify to!");
                 return;
             }
 
-            // All okay, proceed
+            if (!Item::CanTransmogrifyItemWithItem(itemTransmogrified, itemTransmogrifier))
+            {
+                sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleTransmogrifyItems - Player (GUID: %u, name: %s) failed CanTransmogrifyItemWithItem (%u with %u).", player->GetGUIDLow(), player->GetName(), itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
+                return;
+            }
+
+            // All okay, proceed.
             itemTransmogrified->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, newEntries[i]);
-            itemTransmogrified->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x3);
+
+            if (itemTransmogrified->CanUpgrade())
+                itemTransmogrified->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+            else
+                itemTransmogrified->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+
             player->SetVisibleItemSlot(slots[i], itemTransmogrified);
 
             itemTransmogrified->UpdatePlayedTime(player);
@@ -2130,13 +2153,14 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             itemTransmogrifier->SetNotRefundable(player);
             itemTransmogrifier->ClearSoulboundTradeable(player);
 
+            itemTransmogrified->SetState(ITEM_CHANGED, player);
+
             cost += itemTransmogrified->GetSpecialPrice();
         }
     }
 
-    // trusting the client, if it got here it has to have enough money
-    // ... unless client was modified
-    if (cost) // 0 cost if reverting look
+    // Trusting the client, if it got here it has to have enough money... unless client was modified.
+    if (cost) // 0 cost if reverting look.
         player->ModifyMoney(-cost);
 }
 
@@ -2145,6 +2169,7 @@ void WorldSession::SendReforgeResult(bool success)
     WorldPacket data(SMSG_REFORGE_RESULT, 1);
     data.WriteBit(success);
     data.FlushBits();
+
     SendPacket(&data);
 }
 
@@ -2152,10 +2177,15 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_REFORGE_ITEM");
 
-    uint32 slot, reforgeEntry;
     ObjectGuid guid;
-    uint32 bag;
+    uint32 bag, reforgeEntry, slot;
+
     Player* player = GetPlayer();
+    if (!player)
+    {
+        recvData.rfinish();
+        return;
+    }
 
     recvData >> slot >> reforgeEntry >> bag;
 
@@ -2184,12 +2214,13 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     if (!reforgeEntry)
     {
-        // Reset the item
+        // Reset the item.
         if (item->IsEquipped() && !item->IsBroken())
             player->ApplyReforgeEnchantment(item, false);
 
-        item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
-        //item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+        if (item->GetReforgeId() != 0) // If the item has a reforge id.
+            item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
+
         item->SetState(ITEM_CHANGED, player);
         SendReforgeResult(true);
         return;
@@ -2215,7 +2246,7 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (item->GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0) != 0)
+    if (item->GetReforgeId() != 0)
     {
         SendReforgeResult(false);
         return;
@@ -2224,7 +2255,17 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
     player->ModifyMoney(-int64(item->GetSpecialPrice()));
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, reforgeEntry);
-    item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+
+    if (item->CanUpgrade())
+        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+    else
+    {
+        if (item->CanTransmogrify())
+            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+        else
+            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+    }
+
     item->SetState(ITEM_CHANGED, player);
 
     SendReforgeResult(true);
@@ -2248,6 +2289,7 @@ void WorldSession::SendItemUpgradeResult(bool success)
     WorldPacket data(SMSG_ITEM_UPGRADE_RESULT, 1);
     data.WriteBit(success);
     data.FlushBits();
+
     SendPacket(&data);
 }
 
@@ -2255,53 +2297,54 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_UPGRADE_ITEM");
 
-    ObjectGuid npcGuid, guid1;
-    ObjectGuid itemGuid, guid2;
-    Player* player = GetPlayer();
+    uint32 item_bag, item_slot, upgradeEntry;
+    ObjectGuid npcGuid;
+    ObjectGuid itemGuid;
 
-    uint32 item_slot = 0;
-    uint32 upgradeEntry = 0;
-    uint32 item_bag = 0;
+    Player* player = GetPlayer();
+    if (!player)
+    {
+        recvData.rfinish();
+        return;
+    }
+
     recvData >> item_slot >> item_bag >> upgradeEntry;
 
-    guid1[7] = recvData.ReadBit();
-    guid1[4] = recvData.ReadBit();
-    guid2[3] = recvData.ReadBit();
-    guid1[0] = recvData.ReadBit();
-    guid2[5] = recvData.ReadBit();
-    guid2[0] = recvData.ReadBit();
-    guid1[1] = recvData.ReadBit();
-    guid1[2] = recvData.ReadBit();
-    guid2[2] = recvData.ReadBit();
-    guid1[3] = recvData.ReadBit();
-    guid2[4] = recvData.ReadBit();
-    guid2[6] = recvData.ReadBit();
-    guid1[5] = recvData.ReadBit();
-    guid2[7] = recvData.ReadBit();
-    guid2[1] = recvData.ReadBit();
-    guid1[6] = recvData.ReadBit();
+    itemGuid[7] = recvData.ReadBit();
+    itemGuid[4] = recvData.ReadBit();
+     npcGuid[3] = recvData.ReadBit();
+    itemGuid[0] = recvData.ReadBit();
+     npcGuid[5] = recvData.ReadBit();
+     npcGuid[0] = recvData.ReadBit();
+    itemGuid[1] = recvData.ReadBit();
+    itemGuid[2] = recvData.ReadBit();
+     npcGuid[2] = recvData.ReadBit();
+    itemGuid[3] = recvData.ReadBit();
+     npcGuid[4] = recvData.ReadBit();
+     npcGuid[6] = recvData.ReadBit();
+    itemGuid[5] = recvData.ReadBit();
+     npcGuid[7] = recvData.ReadBit();
+     npcGuid[1] = recvData.ReadBit();
+    itemGuid[6] = recvData.ReadBit();
 
     recvData.FlushBits();
 
-    recvData.ReadByteSeq(guid1[6]);
-    recvData.ReadByteSeq(guid1[1]);
-    recvData.ReadByteSeq(guid2[7]);
-    recvData.ReadByteSeq(guid1[5]);
-    recvData.ReadByteSeq(guid1[4]);
-    recvData.ReadByteSeq(guid2[6]);
-    recvData.ReadByteSeq(guid1[0]);
-    recvData.ReadByteSeq(guid2[3]);
-    recvData.ReadByteSeq(guid1[7]);
-    recvData.ReadByteSeq(guid2[2]);
-    recvData.ReadByteSeq(guid2[4]);
-    recvData.ReadByteSeq(guid2[5]);
-    recvData.ReadByteSeq(guid1[3]);
-    recvData.ReadByteSeq(guid2[1]);
-    recvData.ReadByteSeq(guid2[0]);
-    recvData.ReadByteSeq(guid1[2]);
-    
-    npcGuid = guid2;
-    itemGuid = guid1;
+    recvData.ReadByteSeq(itemGuid[6]);
+    recvData.ReadByteSeq(itemGuid[1]);
+    recvData.ReadByteSeq( npcGuid[7]);
+    recvData.ReadByteSeq(itemGuid[5]);
+    recvData.ReadByteSeq(itemGuid[4]);
+    recvData.ReadByteSeq( npcGuid[6]);
+    recvData.ReadByteSeq(itemGuid[0]);
+    recvData.ReadByteSeq( npcGuid[3]);
+    recvData.ReadByteSeq(itemGuid[7]);
+    recvData.ReadByteSeq( npcGuid[2]);
+    recvData.ReadByteSeq( npcGuid[4]);
+    recvData.ReadByteSeq( npcGuid[5]);
+    recvData.ReadByteSeq(itemGuid[3]);
+    recvData.ReadByteSeq( npcGuid[1]);
+    recvData.ReadByteSeq( npcGuid[0]);
+    recvData.ReadByteSeq(itemGuid[2]);
 
     if (!player->GetNPCIfCanInteractWithFlag2(npcGuid, UNIT_NPC_FLAG2_ITEM_UPGRADE))
     {
@@ -2318,7 +2361,14 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    // Check if item guid is the same as item related to bag and slot
+    if (!upgradeEntry)
+    {
+        // Upgraded items cannot be reset.
+        SendItemUpgradeResult(false);
+        return;
+    }
+
+    // Check if item guid is the same as item related to bag and slot.
     if (Item* tempItem = player->GetItemByPos(item_bag, item_slot))
     {
         if (item != tempItem)
@@ -2343,7 +2393,7 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    // Check if player has enough currency
+    // Check if player has enough currency.
     if (player->GetCurrency(itemUpEntry->currencyId, false) < itemUpEntry->currencyCost)
     {
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleReforgeItemOpcode - Player has not enougth currency (ID: %u, Cost: %u) not found.", itemUpEntry->currencyId, itemUpEntry->currencyCost);
@@ -2351,24 +2401,28 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
         return;
     }
 
-    uint32 actualUpgrade = item->GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2);
-    if (actualUpgrade != itemUpEntry->precItemUpgradeId)
+    if (item->GetUpgradeId() && item->GetUpgradeId() != itemUpEntry->precItemUpgradeId)
     {
-        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleReforgeItemOpcode - ItemUpgradeEntry (%u) is not related to this ItemUpgradePath (%u).", itemUpEntry->Id, actualUpgrade);
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleReforgeItemOpcode - ItemUpgradeEntry (%u) is not related to this ItemUpgradePath (%u).", itemUpEntry->Id, itemUpEntry->precItemUpgradeId);
         SendItemUpgradeResult(false);
         return;
     }
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, itemUpEntry->Id);
-    item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x4);
+
+    if (item->CanTransmogrify())
+        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+    else
+        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x4);
+
     item->SetState(ITEM_CHANGED, player);
 
-    // Don't forget to remove currency cost
     SendItemUpgradeResult(true);
 
     if (item->IsEquipped())
         player->ApplyItemUpgrade(item, true);
 
+    // Remove currency cost.
 	int32 count = itemUpEntry->currencyCost;
     player->ModifyCurrency(itemUpEntry->currencyId, -count, false, true, true);
 }

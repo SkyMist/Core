@@ -269,7 +269,7 @@ Item::Item()
 Item::~Item()
 {
     // WARNING : THAT CHECK MAY CAUSE LAGS !
-    if (Player * plr = GetOwner())
+    if (Player* plr = GetOwner())
         if (plr->RemoveItemByDelete(this))
             sLog->OutPandashan("Item %u on player guid %u is in destructor, and pointer is still referenced in player's data ...", GetEntry(), plr->GetGUIDLow());
 }
@@ -287,6 +287,8 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     ItemTemplate const* itemProto = sObjectMgr->GetItemTemplate(itemid);
     if (!itemProto)
         return false;
+
+    SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
 
     // For Item Upgrade
     if (CanUpgrade())
@@ -308,7 +310,7 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
                 SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
         }
 
-        SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1|0x2|0x4);
+        SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
     }
 
     SetUInt32Value(ITEM_FIELD_STACK_COUNT, 1);
@@ -487,31 +489,43 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
     std::string enchants = fields[6].GetString();
     _LoadIntoDataField(enchants.c_str(), ITEM_FIELD_ENCHANTMENT_1_1, MAX_ENCHANTMENT_SLOT * MAX_ENCHANTMENT_OFFSET);
 
-    if (uint32 reforgeEntry = fields[8].GetInt32())
+    SetInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID, fields[7].GetInt16());
+    // Recalculate suffix factor.
+    if (GetItemRandomPropertyId() < 0)
+        UpdateItemSuffixFactor();
+
+    uint32 reforgeEntry = fields[8].GetInt32();
+    uint32 transmogId = fields[9].GetInt32();
+    uint32 upgradeId = fields[10].GetUInt32();
+
+    bool reforgeApplied  = false;
+    bool transmogApplied = false;
+    bool upgradeApplied  = false;
+
+    if (reforgeEntry)
     {
         SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, reforgeEntry);
-        SetFlag(ITEM_FIELD_MODIFIERS_MASK, 1);
+        reforgeApplied = true;
     }
 
-    if (uint32 transmogId = fields[9].GetInt32())
+    if (transmogId)
     {
         const ItemTemplate* proto1 = sObjectMgr->GetItemTemplate(transmogId);
         const ItemTemplate* proto2 = GetTemplate();
-        if (ItemTemplate::CanTransmogrifyItemWithItem(proto1, proto2))
-        {
-            SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, transmogId);
-            SetFlag(ITEM_FIELD_MODIFIERS_MASK, 2);
-        }
-        else if (GetOwner())
-            SetState(ITEM_CHANGED, GetOwner());
+
+        if (proto1 && proto2)
+            if (ItemTemplate::CanTransmogrifyItemWithItem(proto1, proto2))
+                SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, transmogId);
+
+        transmogApplied = true; // Updates the item in both cases, signaling a transmog applied or removed.
     }
 
-    if (uint32 upgradeId = fields[10].GetUInt32())
+    if (upgradeId)
     {
         if (CanUpgrade())
         {
-             SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, upgradeId);
-             SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1|0x2|0x4);
+            SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, upgradeId);
+            upgradeApplied = true;
         }
     }
     else
@@ -536,18 +550,30 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
                     SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
             }
 
-            SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1|0x2|0x4);
+            upgradeApplied = true;
         }
     }
 
-    SetInt32Value(ITEM_FIELD_RANDOM_PROPERTIES_ID, fields[7].GetInt16());
-    // recalculate suffix factor
-    if (GetItemRandomPropertyId() < 0)
-        UpdateItemSuffixFactor();
+    if (reforgeApplied || transmogApplied || upgradeApplied)
+    {
+        if (upgradeApplied)
+            SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+        else
+        {
+            if (transmogApplied)
+                SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+            else
+            {
+                if (reforgeApplied)
+                    SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+            }
+        }
+    }
+    else SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
 
     uint32 durability = fields[11].GetUInt16();
     SetUInt32Value(ITEM_FIELD_DURABILITY, durability);
-    // update max durability (and durability) if need
+    // Update max durability (and durability) if needed.
     SetUInt32Value(ITEM_FIELD_MAXDURABILITY, proto->MaxDurability);
     if (durability > proto->MaxDurability)
     {
@@ -556,6 +582,7 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
     }
 
     SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, fields[12].GetUInt32());
+
     SetText(fields[13].GetString());
 
     if (need_save)                                           // normal item changed state set not work at loading
@@ -748,7 +775,7 @@ void Item::AddToUpdateQueueOf(Player* player)
         return;
 
     player->m_itemUpdateQueue.push_back(this);
-    uQueuePos = player->m_itemUpdateQueue.size()-1;
+    uQueuePos = player->m_itemUpdateQueue.size() - 1;
 }
 
 void Item::RemoveFromUpdateQueueOf(Player* player)
@@ -1730,3 +1757,19 @@ bool Item::IsLegendaryCloak() const
 
     return false;
 }
+
+uint32 Item::GetReforgeId()
+{
+    return GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0) ? GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0) : 0;
+}
+
+uint32 Item::GetTransmogrifyId()
+{
+    return GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1) ? GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1) : 0;
+}
+
+uint32 Item::GetUpgradeId()
+{
+    return GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2) ? GetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2) : 0;
+}
+

@@ -389,6 +389,11 @@ class Item : public Object
         bool CanUpgrade() const;
         bool IsLegendaryCloak() const;
 
+        // Get Item Reforge / Transmogrification / Upgrade entries.
+        uint32 GetReforgeId();
+        uint32 GetTransmogrifyId();
+        uint32 GetUpgradeId();
+
     private:
         std::string m_text;
         uint8 m_slot;
