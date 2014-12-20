@@ -60,6 +60,8 @@ void WorldSession::HandleSetSpecialization(WorldPacket& recvData)
             _player->learnSpell(specializationSpell, false);
         _player->InitSpellForLevel();
         _player->UpdateMasteryPercentage();
+        for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
+            _player->SetMaxPower(Powers(i), _player->GetCreatePowers(Powers(i)));
     }
 }
 

@@ -1,0 +1,16 @@
+UPDATE `spell_bonus_data` SET `dot_bonus`='0.29' WHERE `entry`='30108';
+UPDATE `spell_bonus_data` SET `direct_bonus`='-1' WHERE `entry`='31117';
+UPDATE `spell_bonus_data` SET `dot_bonus`='0.257' WHERE `entry`='1120';
+UPDATE `spell_bonus_data` SET `dot_bonus`='0.21' WHERE `entry` IN (27243,114790);
+UPDATE `spell_bonus_data` SET `direct_bonus`='1.54' WHERE `entry`='29722';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.693' WHERE `entry`='114654';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.47',`dot_bonus`='0.47' WHERE `entry`='348';
+INSERT INTO `spell_bonus_data` SET `entry`='108686',`direct_bonus`='0.215',`dot_bonus`='0.215';
+UPDATE `spell_bonus_data` SET `dot_bonus`='0.21' WHERE `entry`='1949';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.21' WHERE `entry`='5857';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.575' WHERE `entry`='86040';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.028' WHERE `entry`='47960';
+UPDATE `spell_bonus_data` SET `direct_bonus`='0.85' WHERE `entry`='6353';
+UPDATE `spell_bonus_data` SET `direct_bonus`='1.38' WHERE `entry`='686';
+UPDATE `spell_bonus_data` SET `dot_bonus`='0.23' WHERE `entry`='603';
+INSERT INTO `spell_bonus_data` SET `entry`='143323',`direct_bonus`='0.207',`dot_bonus`='0',`ap_bonus`='0',`ap_dot_bonus`='0',`comments`='Abyssal aoe';

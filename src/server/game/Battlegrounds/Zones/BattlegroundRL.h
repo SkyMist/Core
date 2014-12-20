@@ -42,6 +42,7 @@ class BattlegroundRLScore : public BattlegroundScore
 {
     public:
         BattlegroundRLScore() { };
+
         virtual ~BattlegroundRLScore() { };
 };
 
@@ -51,19 +52,27 @@ class BattlegroundRL : public Battleground
         BattlegroundRL();
         ~BattlegroundRL();
 
-        /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player* player);
-        virtual void StartingEventCloseDoors();
-        virtual void StartingEventOpenDoors();
+        /* Inherited from Battleground class. */
 
-        virtual bool SetupBattleground();
-        virtual void Reset();
-        virtual void FillInitialWorldStates(ByteBuffer &data);
+        void Reset();
+        bool SetupBattleground();
 
-        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        virtual void HandleKillPlayer(Player* player, Player* killer);
+        /* Players. */
+        void AddPlayer(Player* player);
+        void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        void HandleKillPlayer(Player* player, Player* killer);
 
+        /* Doors. */
+        void StartingEventCloseDoors();
+        void StartingEventOpenDoors();
+
+        /* WorldStates. */
+        void FillInitialWorldStates(ByteBuffer &data);
+
+        /* Areatriggers. */
+        void HandleAreaTrigger(Player* Source, uint32 Trigger);
+
+        /* Cheaters / Players under map. */
         bool HandlePlayerUnderMap(Player* player);
 };
 

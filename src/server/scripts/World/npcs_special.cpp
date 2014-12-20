@@ -2133,24 +2133,14 @@ class npc_new_lightwell : public CreatureScript
         {
             npc_new_lightwellAI(Creature* creature) : PassiveAI(creature)
             {
-                DoCast(me, 59907, false);
-                renewTimer = 1000;
+                me->CastSpell(me, 126150, true);
 
-                if (AuraPtr charges = me->GetAura(59907))
-                {
-                    if (Unit* owner = me->GetOwner())
-                    {
-                        // Glyph of Deep Wells
-                        if (owner->HasAura(55673))
-                        {
-                            charges->SetCharges(17);
-                            charges->GetEffect(0)->ChangeAmount(17);
-                        }
-                    }
-                }
+                renewTimer = 1000;
+                stacks = false;
             }
 
             uint32 renewTimer;
+            bool stacks;
 
             void Reset()
             {
@@ -2170,6 +2160,24 @@ class npc_new_lightwell : public CreatureScript
 
             void UpdateAI(const uint32 diff)
             {
+                if (!stacks)
+                {
+                    if (AuraPtr charges = me->GetAura(126150))
+                    {
+                        if (me->ToTempSummon())
+                        {
+                            if (Unit* owner = me->ToTempSummon()->GetSummoner())
+                            {
+                                stacks = true;
+                                charges->ModStackAmount(15);
+
+                                if (owner->HasAura(55673)) // Glyph of Deep Well
+                                    charges->ModStackAmount(17);
+                            }
+                        }
+                    }
+                }
+
                 if (renewTimer)
                 {
                     if (renewTimer <= diff)
@@ -2184,9 +2192,7 @@ class npc_new_lightwell : public CreatureScript
 
                                 for (auto itr : party)
                                 {
-                                    if (itr->GetHealthPct() >= 50.0f ||
-                                        itr->GetDistance(me) >= 40.0f ||
-                                        itr->HasAura(7001))
+                                    if (itr->GetHealthPct() >= 50.0f || itr->GetDistance(me) >= 40.0f || itr->HasAura(126154))
                                         continue;
 
                                     tempList.push_back(itr);
@@ -3606,6 +3612,7 @@ class npc_frozen_orb : public CreatureScript
             }
 
             uint32 frozenOrbTimer;
+            float angle;
 
             void IsSummonedBy(Unit* owner)
             {
@@ -3614,9 +3621,13 @@ class npc_frozen_orb : public CreatureScript
                     owner->CastSpell(me, SPELL_SNARE_DAMAGE, true);
                     owner->CastSpell(owner, SPELL_FINGERS_OF_FROST_VISUAL, true);
                     owner->CastSpell(owner, SPELL_FINGERS_OF_FROST, true);
-                    me->AddAura(SPELL_SELF_SNARE_90, me);
+                    angle = me->GetOwner()->GetOrientation();
+                    me->SetReactState(REACT_PASSIVE);
+                    me->SetSpeed(MOVE_RUN, 0.50f);
+				    me->SetSpeed(MOVE_WALK, 0.50f);
+					me->SetWalk(true);
 
-                    frozenOrbTimer = 1000;
+                    frozenOrbTimer = 2000;
                 }
                 else
                     me->DespawnOrUnsummon();
@@ -3636,10 +3647,12 @@ class npc_frozen_orb : public CreatureScript
                             owner->ToPlayer()->RemoveSpellCooldown(SPELL_SNARE_DAMAGE);
 
                     owner->CastSpell(me, SPELL_SNARE_DAMAGE, true);
-                    frozenOrbTimer = 1000;
+                    frozenOrbTimer = 2000;
                 }
-                else
-                    frozenOrbTimer -= diff;
+                else frozenOrbTimer -= diff;
+
+				me->GetMotionMaster()->Clear(false);
+				me->GetMotionMaster()->MovePoint(0, me->GetPositionX() + 60 * cos(angle), me->GetPositionY() + 60 * sin(angle), me->GetPositionZ());
             }
         };
 
@@ -4246,8 +4259,10 @@ class npc_wild_imp : public CreatureScript
                 if ((me->getVictim() || pOwner->getAttackerForHelper()))
                 {
                     me->CastSpell(me->getVictim() ? me->getVictim() : pOwner->getAttackerForHelper(), FIREBOLT, false);
-                    pOwner->EnergizeBySpell(pOwner, FIREBOLT, 5, POWER_DEMONIC_FURY);
                     charges--;
+
+                    int32 demonicFury = 5;
+                    pOwner->CastCustomSpell(pOwner, 104314, NULL, &demonicFury, NULL, true);
 
                     if (pOwner->HasAura(122351) && pOwner->getLevel() >= 69)
                         if (roll_chance_i(8))
@@ -4258,7 +4273,6 @@ class npc_wild_imp : public CreatureScript
                     if (pet->getAttackerForHelper())
                     {
                         me->CastSpell(me->getVictim() ? me->getVictim() : pet->getAttackerForHelper(), FIREBOLT, false);
-                        pOwner->EnergizeBySpell(pOwner, FIREBOLT, 5, POWER_DEMONIC_FURY);
                         charges--;
 
                         if (pOwner->HasAura(122351) && pOwner->getLevel() >= 69)
@@ -4412,79 +4426,13 @@ class npc_ring_of_frost : public CreatureScript
         {
             npc_ring_of_frostAI(Creature *c) : Scripted_NoMovementAI(c)
             {
-                me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                Reset();
             }
-            bool isReady;
-            uint32 releaseTimer;
 
             void Reset()
             {
                 me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                releaseTimer = 3000;
-                isReady = false;
-            }
-
-            void InitializeAI()
-            {
-                ScriptedAI::InitializeAI();
-                Unit * owner = me->GetOwner();
-                if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
-                    return;
-
-                me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-
-                std::list<Creature*> templist;
-                me->GetCreatureListWithEntryInGrid(templist, me->GetEntry(), 200.0f);
-                if (!templist.empty())
-                    for (std::list<Creature*>::const_iterator itr = templist.begin(); itr != templist.end(); ++itr)
-                        if ((*itr)->GetOwner() == me->GetOwner() && *itr != me)
-                            (*itr)->DisappearAndDie();
-            }
-
-            void CheckIfMoveInRing(Unit *who)
-            {
-                if (who->isAlive() && me->IsInRange(who, 4.0f, 8.0f, true, false) && me->IsWithinLOSInMap(who) && isReady)
-                {
-                    if (!who->HasAura(82691))
-                    {
-                        if (!who->HasAura(91264))
-                        {
-                            me->CastSpell(who, 82691, true);
-                            me->CastSpell(who, 91264, true);
-                        }
-                    }
-                    else me->CastSpell(who, 91264, true);
-                }
-            }
-
-            void UpdateAI(const uint32 diff)
-            {
-                if (releaseTimer <= diff)
-                {
-                    if (!isReady)
-                    {
-                        isReady = true;
-                        releaseTimer = 9000; // 9sec
-                    }
-                    else
-                        me->DisappearAndDie();
-                }
-                else releaseTimer -= diff;
-
-                // Find all the enemies
-                std::list<Unit*> targets;
-                JadeCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, 5.0f);
-                JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(me, targets, u_check);
-                me->VisitNearbyObject(5.0f, searcher);
-                for (std::list<Unit*>::const_iterator iter = targets.begin(); iter != targets.end(); ++iter)
-                    if (!(*iter)->isTotem())
-                        CheckIfMoveInRing(*iter);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
             }
         };
 
@@ -4822,10 +4770,6 @@ class npc_past_self : public CreatureScript
         }
 };
 
-/*######
-## npc_transcendence_spirit -- 54569
-######*/
-
 enum TranscendenceSpiritSpells
 {
     SPELL_INITIALIZE_IMAGES = 102284,
@@ -4833,82 +4777,6 @@ enum TranscendenceSpiritSpells
     SPELL_VISUAL_SPIRIT     = 119053,
     SPELL_MEDITATE          = 124416,
     SPELL_ROOT_FOR_EVER     = 31366,
-};
-
-enum transcendenceActions
-{
-    ACTION_TELEPORT     = 1,
-};
-
-class npc_transcendence_spirit : public CreatureScript
-{
-    public:
-        npc_transcendence_spirit() : CreatureScript("npc_transcendence_spirit") { }
-
-        struct npc_transcendence_spiritAI : public Scripted_NoMovementAI
-        {
-            npc_transcendence_spiritAI(Creature* c) : Scripted_NoMovementAI(c)
-            {
-                me->SetReactState(REACT_PASSIVE);
-            }
-
-            void Reset()
-            {
-                if (!me->HasAura(SPELL_MEDITATE))
-                    me->AddAura(SPELL_MEDITATE, me);
-            }
-
-            void IsSummonedBy(Unit* owner)
-            {
-                if (owner && owner->GetTypeId() == TYPEID_PLAYER)
-                {
-                    me->SetMaxHealth(owner->GetMaxHealth() / 2);
-                    me->SetHealth(me->GetMaxHealth());
-
-                    me->CastSpell(me, SPELL_VISUAL_SPIRIT, true);
-                    owner->CastSpell(me, SPELL_INITIALIZE_IMAGES, true);
-                    owner->CastSpell(me, SPELL_CLONE_CASTER, true);
-                    owner->AddAura(SPELL_MEDITATE, me);
-                    me->AddAura(SPELL_ROOT_FOR_EVER, me);
-                }
-                else
-                    me->DespawnOrUnsummon();
-            }
-
-            void MovementInform(uint32 type, uint32 id)
-            {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                if (id == 0)
-                    me->SetSpeed(MOVE_RUN, 0.0f);
-            }
-
-            void DoAction(int32 const action)
-            {
-                switch (action)
-                {
-                    case ACTION_TELEPORT:
-                        if (!me->GetOwner())
-                        {
-                            me->DespawnOrUnsummon(500);
-                            break;
-                        }
-
-                        me->SetSpeed(MOVE_RUN, 10.0f);
-                        me->GetMotionMaster()->MovePoint(0, me->GetOwner()->GetPositionX(), me->GetOwner()->GetPositionY(), me->GetOwner()->GetPositionZ());
-                        me->SetOrientation(me->GetOwner()->GetOrientation());
-                        break;
-                    default:
-                        break;
-                }
-            }
-        };
-
-        CreatureAI* GetAI(Creature *creature) const
-        {
-            return new npc_transcendence_spiritAI(creature);
-        }
 };
 
 /*######
@@ -5703,35 +5571,48 @@ class npc_monk_spirit : public CreatureScript
             {
                 me->SetDisplayId(38551);
 
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+
                 Unit* owner = me->GetOwner();
                 if (!owner)
                     return;
 
-                me->SetShapeshiftForm(owner->GetShapeshiftForm());
+                float mindamageBASE, maxdamageBASE, mindamageOFF, maxdamageOFF;
+
+                if (owner->ToPlayer())
+                {
+                    owner->ToPlayer()->CalculateMinMaxDamage(BASE_ATTACK, false, true, mindamageBASE, maxdamageBASE);
+                    owner->ToPlayer()->CalculateMinMaxDamage(BASE_ATTACK, false, true, mindamageOFF, maxdamageOFF);
+                }
+
+                mindamageBASE = mindamageBASE * 2.2;
+                maxdamageBASE = maxdamageBASE * 2.2;
+                mindamageOFF  = mindamageOFF  * 2.2;
+                maxdamageOFF  = maxdamageOFF  * 2.2;
 
                 switch (me->GetEntry())
                 {
                     case NPC_STORM_SPIRIT:
                         me->CastSpell(me, visualMorph[0], true);
                         SetEquipmentSlots(false, EQUIP_STORM_TWO_HANDS, EQUIP_STORM_TWO_HANDS, EQUIP_NO_CHANGE);
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE));
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE));
-                        me->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, owner->GetWeaponDamageRange(OFF_ATTACK, MINDAMAGE) / 2);
-                        me->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, owner->GetWeaponDamageRange(OFF_ATTACK, MAXDAMAGE) / 2);
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, mindamageBASE);
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxdamageBASE);
+                        me->SetBaseWeaponDamage(OFF_ATTACK,  MINDAMAGE, mindamageOFF);
+                        me->SetBaseWeaponDamage(OFF_ATTACK,  MAXDAMAGE, maxdamageOFF);
                         break;
                     case NPC_EARTH_SPIRIT:
                         me->CastSpell(me, visualMorph[1], true);
                         SetEquipmentSlots(false, EQUIP_EARTH_STAFF, EQUIP_NO_CHANGE, EQUIP_NO_CHANGE);
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE));
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE));
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, mindamageBASE);
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxdamageBASE);
                         break;
                     case NPC_FIRE_SPIRIT:
                         me->CastSpell(me, visualMorph[2], true);
                         SetEquipmentSlots(false, EQUIP_FIRE_TWO_HANDS, EQUIP_FIRE_TWO_HANDS, EQUIP_NO_CHANGE);
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE));
-                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, owner->GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE));
-                        me->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, owner->GetWeaponDamageRange(OFF_ATTACK, MINDAMAGE) / 2);
-                        me->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, owner->GetWeaponDamageRange(OFF_ATTACK, MAXDAMAGE) / 2);
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, mindamageBASE);
+                        me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxdamageBASE);
+                        me->SetBaseWeaponDamage(OFF_ATTACK,  MINDAMAGE, mindamageOFF);
+                        me->SetBaseWeaponDamage(OFF_ATTACK,  MAXDAMAGE, maxdamageOFF);
                         break;
                 }
             }
@@ -5742,7 +5623,8 @@ class npc_monk_spirit : public CreatureScript
 
                 if (Unit* victim = Unit::GetUnit(*me, targetGuid))
                 {
-                    me->CastSpell(victim, 138104, true);    // Jump
+                    me->GetMotionMaster()->MovementExpired();
+                    me->GetMotionMaster()->MoveJump(victim->GetPositionX(), victim->GetPositionY(), victim->GetPositionZ(), 15.0f, 10.0f, me->GetOrientation());
                     me->CastSpell(me, 138130, true);
                     AttackStart(victim);
                 }
@@ -5759,6 +5641,7 @@ class npc_monk_spirit : public CreatureScript
                     return;
 
                 summoner->CastSpell(me, 119051, true);
+                me->setFaction(summoner->getFaction());
                 me->SetLevel(summoner->getLevel());
                 me->SetHealth(summoner->CountPctFromMaxHealth(10));
                 me->SetMaxHealth(summoner->CountPctFromMaxHealth(10));
@@ -5773,14 +5656,14 @@ class npc_monk_spirit : public CreatureScript
                     {
                         if (Unit* owner = me->GetOwner())
                         {
-                            me->GetMotionMaster()->Clear();
-                            me->GetMotionMaster()->MoveJump(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), 15.0f, 10.0f, me->GetOrientation(), MOVE_DESPAWN);
+                            me->GetMotionMaster()->MovementExpired();
+                            me->GetMotionMaster()->MoveJump(me->GetOwner()->GetPositionX(), me->GetOwner()->GetPositionY(), me->GetOwner()->GetPositionZ(), 15.0f, 10.0f, me->GetOrientation(), MOVE_DESPAWN);
+                            me->DespawnOrUnsummon(500);
                         }
 
                         break;
                     }
-                    default:
-                        break;
+                    default: break;
                 }
             }
 
@@ -5799,12 +5682,11 @@ class npc_monk_spirit : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (targetGuid)
-                {
-                    if (me->getVictim() && me->getVictim()->GetGUID() != targetGuid)
+                    if (!me->getVictim() || me->getVictim() && (!me->getVictim()->isAlive() || me->getVictim()->GetGUID() != targetGuid))
                         DoAction(0);
-                    else if (!me->getVictim())
-                        DoAction(0);
-                }
+
+                if (!me->GetOwner() || me->GetOwner() && me->GetDistance(me->GetOwner()) > 200.0f)
+                    DoAction(0);
 
                 DoMeleeAttackIfReady();
             }
@@ -5844,6 +5726,90 @@ class npc_army_of_the_dead : public CreatureScript
         CreatureAI* GetAI(Creature *creature) const
         {
             return new npc_army_of_the_deadAI(creature);
+        }
+};
+
+// Grimuar of service
+class npc_grimuar_minion : public CreatureScript
+{
+    public:
+        npc_grimuar_minion() : CreatureScript("npc_grimuar_minion") { }
+
+        struct npc_grimuar_minionAI : public ScriptedAI
+        {
+            npc_grimuar_minionAI(Creature* c) : ScriptedAI(c)
+            {
+                if (c->isPet())
+                    NeedScript = false;
+                else
+                    NeedScript = true;
+
+                firstCast = false;
+                fireBoltCastTime = 3000;
+            }
+
+            bool NeedScript, firstCast;
+            uint32 fireBoltCastTime;
+
+            void UpdateAI(const uint32 diff)
+            {
+                if (!NeedScript || me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
+                if (Unit *owner = me->GetOwner())
+                {
+                    if (!me->getVictim())
+                    {
+                        if (Unit *victim = owner->getVictim())
+                            me->AI()->AttackStart(victim);
+                        else
+                            me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, owner->GetFollowAngle());
+                    }
+
+                    me->SetReactState(REACT_HELPER);
+
+                    if (!firstCast && me->getVictim())
+                    {
+                        switch (me->GetEntry())
+                        {
+                           case 416:
+                               me->CastSpell(owner,89808,true);
+                               break;
+                           case 417:
+                               me->CastSpell(me->getVictim(),19647,true);
+                               break;
+                           case 1860:
+                               me->CastSpell(me->getVictim(),17735,true);
+                               break;
+                           case 1863:
+                               me->CastSpell(me->getVictim(),6358,true);
+                               break;
+                           case 17252:
+                               me->CastSpell(me->getVictim(),89766,true);
+                               break;
+                        }
+                        firstCast = true;
+                    }
+
+                    if (me->GetEntry() == 416 && me->getVictim())
+                    {
+                        if (fireBoltCastTime <= diff)
+                        {
+                            fireBoltCastTime = 3000;
+                            me->CastSpell(me->getVictim(),3110,true);
+                        }
+                        else fireBoltCastTime -= diff;
+                    }
+                }
+
+                if (me->GetEntry() != 416)
+                    DoMeleeAttackIfReady();
+            }
+        };
+
+        CreatureAI* GetAI(Creature *creature) const
+        {
+            return new npc_grimuar_minionAI(creature);
         }
 };
 
@@ -5904,7 +5870,6 @@ void AddSC_npcs_special()
     new npc_fungal_growth();
     new npc_bloodworm();
     new npc_past_self();
-    new npc_transcendence_spirit();
     new npc_void_tendrils();
     new npc_psyfiend();
     new npc_spectral_guise();
@@ -5916,4 +5881,5 @@ void AddSC_npcs_special()
     new npc_luo_meng();
     new npc_monk_spirit();
     new npc_army_of_the_dead();
+    new npc_grimuar_minion();
 }

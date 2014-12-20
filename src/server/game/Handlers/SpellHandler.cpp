@@ -1150,6 +1150,36 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
             spellId = newSpellInfo->Id;
         }
     }
+    // Mind flay for Solace and Insanity
+    else if (spellInfo->Id == 15407 && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_PRIEST_SHADOW && _player->HasAura(139139) && targets.GetUnitTarget() && targets.GetUnitTarget()->HasAura(2944))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(129197);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Summon terrorguard grimuar supremacy
+    else if (spellInfo->Id == 30146 && _player->HasAura(108499))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(112870);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
+    // Twilight ward
+    else if (spellInfo->Id == 6229 && _player->HasAura(103965))
+    {
+        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(104048);
+        if (newSpellInfo)
+        {
+            spellInfo = newSpellInfo;
+            spellId = newSpellInfo->Id;
+        }
+    }
     // Aimed Shot - 19434 and Aimed Shot (for Master Marksman) - 82928
     else if (spellInfo->Id == 19434 && _player->HasAura(82926))
     {
@@ -1341,6 +1371,14 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
                 spellId = newSpellInfo->Id;
             }
         }
+    }
+    // Glyph of Distracting Shot
+    else if (spellInfo->Id == 20736 && _player->HasAura(123632) && targets.GetUnitTarget())
+    {
+        recvPacket.rfinish();
+        if (Pet* pet = _player->GetPet())
+            pet->CastSpell(targets.GetUnitTarget(), 123588, true);
+        return;
     }
 
     Spell* spell = new Spell(mover, spellInfo, TRIGGERED_NONE, 0, false);

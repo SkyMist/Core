@@ -568,9 +568,48 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
     float DoneActualBenefit = 0.0f;
 
+    // custom aura effects scripted
+    switch (GetId())
+    {
+        case 20572: // Blood fury attack power
+        case 33702: // Blood fury spellpower
+        case 33697: // Blood fury spellpower + melee attack power
+            if (!caster) break;
+
+            if (GetId() == 20572)
+                amount = caster->getLevel() == 90 ? 4514 : caster->getLevel() * 5;
+            else if (GetId() == 33702)
+                amount = caster->getLevel() == 90 ? 2257 : caster->getLevel() * 5;
+            else if (GetId() == 33697)
+                amount = caster->getLevel() == 90 ? (GetEffIndex() == 0 ? 4514 : 2257) : caster->getLevel() * 5;
+            break;
+
+        default: break;
+    }
+
     // custom amount calculations go here
     switch (GetAuraType())
     {
+        case SPELL_AURA_HASTE_SPELLS:
+        {
+            if (Unit* target = GetBase()->GetUnitOwner())
+                if (target->GetTypeId() == TYPEID_PLAYER)
+                {
+                    m_canBeRecalculated = false;
+                    amount /= m_spellInfo->GetCastTimeReduction();
+                }
+            break;
+        }
+        case SPELL_AURA_MOD_DAMAGE_PERCENT_DONE:
+        {
+            if (m_spellInfo->Id == 115556)
+                if (Unit *owner = caster->GetOwner())
+                    amount = owner->GetFloatValue(PLAYER_MASTERY);
+
+            if (m_spellInfo->Id == 103958)
+                amount = caster->GetFloatValue(PLAYER_MASTERY) * 3;
+            break;
+        }
         case SPELL_AURA_MOD_RATING:
         {
             // Heart's Judgment, Heart of Ignacious trinket (Heroic) 
@@ -912,6 +951,10 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                 {
                     int32 heal_pct = amount * 1000;
 
+                    // Glyph of Recuperate
+                    if (caster->HasAura(56806))
+                        heal_pct += caster->GetMaxHealth() * 0.01; 
+
                     // Improved Recuperate
                     if (constAuraEffectPtr aurEff = caster->GetAuraEffect(SPELL_AURA_DUMMY, SPELLFAMILY_ROGUE, 4819, 0))
                         heal_pct += aurEff->GetAmount();
@@ -920,8 +963,8 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     break;
                 }
-                default:
-                    break;
+
+                default: break;
             }
 
             break;
@@ -930,19 +973,23 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
         {
             uint8 level_diff = 0;
             float multiplier = 0.0f;
+
             switch (GetId())
             {
-                // Arcane Shroud
+                // Arcane Shroud.
                 case 26400:
                     level_diff = GetBase()->GetUnitOwner()->getLevel() - 60;
                     multiplier = 2;
                     break;
-                // The Eye of Diminution
+                // The Eye of Diminution.
                 case 28862:
                     level_diff = GetBase()->GetUnitOwner()->getLevel() - 60;
                     multiplier = 1;
                     break;
+
+                default: break;
             }
+
             if (level_diff > 0)
                 amount += int32(multiplier * level_diff);
             break;
@@ -968,94 +1015,89 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
         {
             if (caster)
             {
-                // if Level <= 70 resist = player level
+                // If Level <= 70 resist = player level.
                 int32 resist = caster->getLevel();
 
-                if (resist > 70 && resist < 81)
-                    resist += (resist - 70) * 5;
+                if (resist > 70 && resist <= 80)
+                    resist +=  (resist - 70) * 5;
                 else if (resist > 80)
-                    resist += ((resist-70) * 5 + (resist - 80) * 7);
+                    resist += ((resist - 70) * 5 + (resist - 80) * 7);
 
                 switch (GetId())
                 {
-                    case 20043: // Aspect of the Wild
-                    case 8185:  // Elemental Resistance
-                    case 19891: // Resistance Aura
-                    case 79106: // Shadow Protection
-                    case 79107: // Shadow Protection
+                    case 20043: // Aspect of the Wild.
+                    case 8185:  // Elemental Resistance.
+                    case 19891: // Resistance Aura.
+                    case 79106: // Shadow Protection.
+                    case 79107: // Shadow Protection.
                         amount = resist;
                         break;
-                    case 79060: // Mark of the Wild
-                    case 79061: // Mark of the Wild
-                    case 79062: // Blessing of Kings
-                    case 79063: // Blessing of Kings
-                    case 90363: // Embrace of the Shale Spider
+                    case 79060: // Mark of the Wild.
+                    case 79061: // Mark of the Wild.
+                    case 79062: // Blessing of Kings.
+                    case 79063: // Blessing of Kings.
+                    case 90363: // Embrace of the Shale Spider.
                         amount = resist / 2;
                         break;
-                    }
-                break;
+                }
             }
+            break;
         }
         case SPELL_AURA_BYPASS_ARMOR_FOR_CASTER:
         {
             switch (GetId())
             {
-                case 108126: // Colossus Smash
+                case 108126: // Colossus Smash.
                     if (GetBase()->GetUnitOwner()->GetTypeId() == TYPEID_PLAYER)
                         amount /= 2;
                     break;
-                case 91021: // Find Weakness
+                case 91021: // Find Weakness.
                     if (GetBase()->GetUnitOwner()->GetTypeId() == TYPEID_PLAYER)
                         amount /= 2;
                     break;
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT:
         {
             switch (GetId())
             {
-                case 120954:// Fortifying Brew
+                case 120954: // Fortifying Brew.
                 {
                     // Glyph of Fortifying Brew
                     if (caster->HasAura(124997))
                         amount = 10;
-
                     break;
                 }
-                case 108503://Grimoire of Sacrifice
+                case 108503: // Grimoire of Sacrifice.
                 {
-                    // If warlock doesn't have Soul Link talent we don't need to increase hp
-                    if (!caster->HasAura(108446))
-                        amount = 0;
-                    
+                    // If the Warlock doesn't have Soul Link talent we don't need to increase hp.
+                    if (caster->ToPlayer())
+                        if (!caster->ToPlayer()->HasSpell(108415))
+                            amount = 0;
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:
         {
             switch (GetId())
             {
-                case 120954:// Fortifying Brew
+                case 120954: // Fortifying Brew
                 {
                     // Glyph of Fortifying Brew
                     if (caster->HasAura(124997))
                         amount = 25;
-
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_OBS_MOD_HEALTH:
@@ -1066,17 +1108,22 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                     if (!caster->HasAura(56224)) // Glyph of Healthstone
                         amount = 0;
                     break;
-                default:
-                    break;
-            }
+            	case 12051: // Glyph of Evocation
+					if (caster->HasAura(56380) && !caster->HasAura(114003))
+						amount = 15;
+					else
+						amount = 0;
+					break;
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_MOD_DECREASE_SPEED:
         {
             switch (GetId())
             {
-                case 73682: // Unleash Frost
+                case 73682: // Unleash Frost.
                 {
                     if (Unit* target = GetBase()->GetUnitOwner())
                     {
@@ -1090,12 +1137,11 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                             }
                         }
                     }
-
                     break;
                 }
-                // Glyph of Hurricane - 54831
-                case 16914: // Hurricane
-                case 106996:// Astral Storm
+                // Glyph of Hurricane - 54831.
+                case 16914:  // Hurricane.
+                case 106996: // Astral Storm.
                 {
                     if (!caster)
                         break;
@@ -1105,8 +1151,8 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     break;
                 }
-                // Glyph of Death and Decay
-                case 43265: // Death and Decay
+                // Glyph of Death and Decay.
+                case 43265: // Death and Decay.
                 {
                     if (!caster)
                         break;
@@ -1118,8 +1164,8 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                     
                     break;
                 }
-                case 5215:  // Prowl
-                case 102547:// Prowl (overrided)
+                case 5215:   // Prowl.
+                case 102547: // Prowl (overrided).
                 {
                     // Glyph of Prowl, remove the speed malus
                     if (Unit* target = GetBase()->GetUnitOwner())
@@ -1127,31 +1173,36 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                             amount = 0;
                     break;
                 }
-                case 15407: // Mind flay
+                case 15407: // Mind flay.
+                case 129197:
                 {
                     // Glyph of Mind Flay, remove the slow effect
                     if (!caster)
                         break;
 
                     if (caster->HasAura(120585))
-                            amount = 0;
+                        amount = 0;
                     break;
                 }
+
+                default: break;
             }
+            break;
         }
         case SPELL_AURA_MOD_SPEED_ALWAYS:
         {
             // Stealth / Prowl
             if (m_spellInfo->HasAura(SPELL_AURA_MOD_STEALTH))
             {
-                Unit * target = GetBase()->GetUnitOwner();
+                Unit* target = GetBase()->GetUnitOwner();
                 if (!target)
                     break;
 
-                // Elusiveness (Racial Passive)
+                // Elusiveness (Racial Passive).
                 if (AuraEffectPtr eff = target->GetAuraEffect(21009, 0))
                     amount += eff->GetAmount();
             }
+
             // Shapeshift Movement Speed (23218) doesn't stack with Feline Swiftness (131768)
             if (GetSpellInfo()->Id == 23218)
                 amount = GetBase()->GetUnitOwner()->HasAura(131768) ? 0 : amount;
@@ -1172,13 +1223,11 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                     // Glyph of Icy Veins, remove casting speed bonus effect
                     if (caster->HasAura(56364))
                         amount = 0;
-
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_MOD_MELEE_HASTE_3:
@@ -1199,13 +1248,11 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     float MasteryPCT = 1.0f + plr->GetFloatValue(PLAYER_MASTERY) * 3.0f;
                     AddPct(amount, MasteryPCT);
-
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_MOD_PARRY_PERCENT:
@@ -1220,8 +1267,8 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     break;
                 }
-                default:
-                    break;
+
+                default: break;
             }
 
             break;
@@ -1243,7 +1290,6 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                         else
                             break;
                     }
-
                     break;
                 }
                 case 5421: // Aquatic Form
@@ -1253,13 +1299,11 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                         break;
 
                     amount = 150;
-                    
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
         case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
@@ -1277,16 +1321,15 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                     break;
                 }
-                default:
-                    break;
-            }
 
+                default: break;
+            }
             break;
         }
-        default:
-            break;
 
+        default: break;
     }
+
     if (DoneActualBenefit != 0.0f)
     {
         DoneActualBenefit *= caster->CalculateLevelPenalty(GetSpellInfo());
@@ -1296,13 +1339,10 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
     GetBase()->CallScriptEffectCalcAmountHandlers(CONST_CAST(AuraEffect, shared_from_this()), amount, m_canBeRecalculated);
     amount *= GetBase()->GetStackAmount();
 
-    // Fixate damage for periodic damage auras
-    // It's only for players now
+    // Fixate damage for periodic damage auras. It's only for players now.
     if (caster && caster->GetTypeId() == TYPEID_PLAYER)
     {
-        if (GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE || 
-        GetAuraType() == SPELL_AURA_PERIODIC_LEECH || 
-        GetAuraType() == SPELL_AURA_PERIODIC_HEAL)
+        if (GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE || GetAuraType() == SPELL_AURA_PERIODIC_LEECH ||  GetAuraType() == SPELL_AURA_PERIODIC_HEAL)
         {
             if (GetBase()->GetType() == UNIT_AURA_TYPE)
             {
@@ -1319,10 +1359,6 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
 
                 m_fixed_periodic.SetFixedDamage(temp_damage);
                 m_fixed_periodic.SetCriticalChance(temp_crit);
-
-                // Seed of Corruption and Soulburn : Seed of corruption - Set Total damage for explode
-                if (GetSpellInfo()->Id == 27243 || GetSpellInfo()->Id == 114790)
-                    m_fixed_periodic.SetFixedTotalDamage(temp_damage * (GetBase()->GetMaxDuration() / GetAmplitude()));
 
                 hasFixedPeriodic = true;
                 amount = temp_damage;
@@ -5397,9 +5433,6 @@ void AuraEffect::HandleModCastingSpeed(AuraApplication const* aurApp, uint8 mode
 
     float value = float(GetAmount());
 
-    if (target->GetTypeId() == TYPEID_PLAYER)
-        value /= m_spellInfo->GetCastTimeReduction();
-
     target->ApplyCastTimePercentMod(value, apply);
 }
 
@@ -6936,6 +6969,29 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
         {
             switch (GetSpellInfo()->Id)
             {
+                // A murder of crows
+                case 131894:
+                {
+                    if (!caster)
+                        break;
+
+                    if (target->HealthBelowPct(20))
+                    {
+                        if (Player* cst = caster->ToPlayer())
+                        {
+                            if (cst->GetSpellCooldownDelay(131894) > 60)
+                            {
+                                int32 cooldown = (cst->GetSpellCooldownDelay(131894) - 60) * 1000;
+
+                                cst->RemoveSpellCooldown(131984, true);
+                                cst->ReduceSpellCooldown(131894, cooldown);
+                            }
+                        }
+                    }
+
+                    caster->CastSpell(target, 131900, true);
+                    break;
+                }
                 // Camouflage
                 case 80326:
                 {
@@ -7036,8 +7092,7 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
         case SPELLFAMILY_WARLOCK:
             switch (GetId())
             {
-                // Curse of Elements - Jinx
-                case 1490:
+                case 1490: // Curse of Elements - Jinx
                 {
                     Unit * caster = GetCaster();
                     if (!caster)
@@ -7050,10 +7105,18 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
                     }
                     break;
                 }
+                case 108446: // Soul link remove from pet
+                {
+                    if (target->GetTypeId() != TYPEID_PLAYER)
+                        if (Unit *owner = target->GetOwner())
+                            if (!owner->HasAura(108446))
+                                target->RemoveAurasDueToSpell(108446);
+                    break;
+                }
             }
             break;
-        default:
-            break;
+
+        default: break;
     }
 }
 
@@ -7487,15 +7550,18 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
     {
         switch (GetSpellInfo()->Id)
         {
+            // Custom MoP Script
+            case 146739:   // Corruption
+            {
+                int32 demonicFury = 4;
+                caster->CastCustomSpell(caster, 104314, NULL, &demonicFury, NULL, true);
+                break;
+            }
             case 1120:  // Soul Drain
             {
                 caster->CombatStart(target, true);
                 break;
             }
-            // Custom MoP Script
-            case 172:   // Corruption
-                caster->EnergizeBySpell(caster, 172, 4, POWER_DEMONIC_FURY);
-                break;
             case 43093: case 31956: case 38801:  // Grievous Wound
             case 35321: case 38363: case 39215:  // Gushing Wound
                 if (target->IsFullHealth())
@@ -7597,29 +7663,13 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
                 damage *= 0.85f;
         }
 
-        // Hack fix damage of Drain Life with Grimoire of Sacrifice
-        if (GetSpellInfo()->Id == 689)
-        {
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                if (_player->HasAura(108503))
-                    damage *= 0.714f;
-            }
-        }
-
         // Mind flay with Solace and Insanity
-        if (GetSpellInfo()->Id == 15407 && (GetCaster()->HasSpell(129250) || GetCaster()->HasSpell(129249)))
+        if (GetSpellInfo()->Id == 129197)
         {
-            if (Player* _player = GetCaster()->ToPlayer())
+            if (AuraPtr devouringPlague = target->GetAura(2944))
             {
-                if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_PRIEST_SHADOW && target->HasAura(2944))
-                {
-                    if (AuraPtr devouringPlague = target->GetAura(2944))
-                    {
-                        uint8 powerUsed = devouringPlague->GetEffect(2)->GetAmount();
-                        damage *= (powerUsed * 0.33f + 1);
-                    }
-                }
+                uint8 powerUsed = devouringPlague->GetEffect(2)->GetAmount();
+                damage *= (powerUsed * 0.33f + 1);
             }
         }
 
@@ -7878,6 +7928,10 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
 
     if (crit)
         damage = caster->SpellCriticalDamageBonus(m_spellInfo, damage, target);
+
+    // Periodic crit tick of immolate generates burning ember
+    if ((m_spellInfo->Id == 348 || m_spellInfo->Id == 108686) && crit)
+        caster->SetPower(POWER_BURNING_EMBERS, caster->GetPower(POWER_BURNING_EMBERS) + 1);
 
     // If Doom critical tick, a Wild Imp will appear to fight with the Warlock
     if (m_spellInfo->Id == 603 && crit)
@@ -8157,6 +8211,14 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
     if (crit)
         damage = caster->SpellCriticalHealingBonus(m_spellInfo, damage, target);
 
+   	// Glyph of evocation: invocation
+	if (GetSpellInfo()->Id == 12051 && m_tickNumber == 4 && caster->HasAura(56380) && caster->HasAura(114003))
+		damage = caster->GetMaxHealth() * 0.10;
+
+    // Temporal Shield - 115610
+    if (GetSpellInfo()->Id == 115611)
+        damage = caster->GetDamageTakenInPastSecs(2);
+
     uint32 absorb = 0;
     uint32 heal = uint32(damage);
     caster->CalcHealAbsorb(target, GetSpellInfo(), heal, absorb);
@@ -8272,11 +8334,6 @@ void AuraEffect::HandleObsModPowerAuraTick(Unit* target, Unit* caster) const
     uint32 amount = std::max(m_amount, 0) * target->GetMaxPower(powerType) /100;
     SpellPeriodicAuraLogInfo pInfo(CONST_CAST(AuraEffect, shared_from_this()), amount, 0, 0, 0, 0.0f, false);
     target->SendPeriodicAuraLog(&pInfo);
-
-    // Hack Fix Glyph of Evocation - 56380
-    if (GetBase()->GetId() == 12051 && GetTickNumber() > 1)
-        if (target->HasAura(56380) && !target->HasAura(114003))
-            target->HealBySpell(target, sSpellMgr->GetSpellInfo(12051), target->CountPctFromMaxHealth(20), false);
 
     int32 gain = target->ModifyPower(powerType, amount);
 
@@ -8569,7 +8626,11 @@ void AuraEffect::HandleAuraStrangulate(AuraApplication const* aurApp, uint8 mode
     if (m_spellInfo->Id == 108194)
     {
         int32 newZ = 5;
-        target->SetControlled(apply, UNIT_STATE_STUNNED);
+
+        if (target->IsImmunedToSpell(sSpellMgr->GetSpellInfo(108194)))
+            apply ? target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED) : target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED);
+        else
+            target->SetControlled(apply, UNIT_STATE_STUNNED);
 
         if (apply)
             target->UpdateHeight(target->GetPositionZ() + newZ);

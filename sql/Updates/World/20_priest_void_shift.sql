@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='142723',`ScriptName`='spell_pri_void_shift';

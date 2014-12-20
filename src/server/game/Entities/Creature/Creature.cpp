@@ -644,6 +644,23 @@ void Creature::Update(uint32 diff)
             else
                 RegenerateMana();
 
+            // Master demonology
+            if (GetOwner())
+            {
+                if (GetOwner()->HasAura(77219))
+                {
+                    if (!HasAura(115556))
+                    {
+                        int32 bp = GetOwner()->GetFloatValue(PLAYER_MASTERY);
+                        CastCustomSpell(this,115556,&bp,NULL,NULL,true);
+                    }
+                    else
+                        GetAura(115556)->GetEffect(EFFECT_0)->ChangeAmount(GetOwner()->GetFloatValue(PLAYER_MASTERY));
+                }
+                else if (HasAura(115556))
+                    RemoveAurasDueToSpell(115556);
+            }
+
             /*if (!bIsPolymorphed) // only increase the timer if not polymorphed
                     m_regenTimer += CREATURE_REGEN_INTERVAL - diff;
             }
@@ -653,8 +670,8 @@ void Creature::Update(uint32 diff)
             m_regenTimer = CREATURE_REGEN_INTERVAL;
             break;
         }
-        default:
-            break;
+
+        default: break;
     }
 
     sScriptMgr->OnCreatureUpdate(this, diff);

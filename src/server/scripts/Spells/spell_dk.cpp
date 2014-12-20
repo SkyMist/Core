@@ -465,7 +465,7 @@ class spell_dk_necrotic_strike : public SpellScriptLoader
                         // amount of heal absorb
                         if (AuraPtr necroticHealAbsorb = target->GetAura(DK_SPELL_NECROTIC_STRIKE))
                         {
-                            float amount = _player->GetTotalAttackPowerValue(BASE_ATTACK) * 2.25f;
+                            float amount = _player->GetTotalAttackPowerValue(BASE_ATTACK);
                             float percent = (target->GetTypeId() == TYPEID_PLAYER) ? (target->ToPlayer()->GetFloatValue(PLAYER_FIELD_MOD_RESILIENCE_PCT) + 100.0f) / 100 : 1.0f;  
                             float PvPPower = (1 + GetCaster()->GetFloatValue(PLAYER_FIELD_PVP_POWER_DAMAGE) / 100);
                             if (newBonus != 0)

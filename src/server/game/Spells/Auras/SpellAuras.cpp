@@ -963,6 +963,7 @@ void Aura::SetDuration(int32 duration, bool withMods)
             if (Player* modOwner = caster->GetSpellModOwner())
                 modOwner->ApplySpellMod(GetId(), SPELLMOD_DURATION, duration);
     }
+
     m_duration = duration;
     SetNeedClientUpdateForTargets();
 }
@@ -1015,6 +1016,7 @@ void Aura::SetCharges(uint8 charges)
 {
     if (m_procCharges == charges)
         return;
+
     m_procCharges = charges;
     m_isUsingCharges = m_procCharges != 0;
     SetNeedClientUpdateForTargets();
@@ -1136,6 +1138,7 @@ bool Aura::ModStackAmount(int32 num, AuraRemoveMode removeMode)
                     if (SpellModifier* mod = aurEff->GetSpellModifier())
                         mod->charges = GetCharges();
     }
+
     SetNeedClientUpdateForTargets();
     return false;
 }
@@ -1445,6 +1448,21 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
         }
     }
 
+    // Soul burn: Unending Breath
+    if (GetId() == 5697 && target)
+    {
+        if (apply)
+       {
+            if (target->HasAura(74434))
+            {
+                target->RemoveAurasDueToSpell(74434);
+                target->AddAura(104242,target);
+            }
+        }
+        else
+            target->RemoveAurasDueToSpell(104242);
+    }
+
     // mods at aura apply
     if (apply)
     {
@@ -1554,6 +1572,9 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
 
                 switch (GetId())
                 {
+                    case 10: // Blizzard
+                        target->UpdateSpeed(MOVE_RUN, true);
+                        break;
                     case 118:   // Polymorph
                     case 61305: // Polymorph (Black Cat)
                     {
@@ -1629,12 +1650,8 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
 
                         break;
                     }
-                    // Ring of Frost - 2.5 sec immune
-                    case 82691:
-                        target->AddAura(91264, target);
-                        break;
-                    default:
-                        break;
+
+                    default: break;
                 }
 
                 break;
@@ -1742,6 +1759,15 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                         target->CastSpell(target, 105877, true);
                 }
                 
+                break;
+            case SPELLFAMILY_WARLOCK:
+                if (GetId() == 80240 && caster && !onReapply) // havoc
+                {
+                    if (caster->HasAura(146962)) // Glyph of havoc
+                        ModStackAmount(5);
+                    else
+                        ModStackAmount(2);
+                }
                 break;
             case SPELLFAMILY_WARRIOR:
                 // Heroic Fury
@@ -1906,6 +1932,10 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             {
                 switch (GetId())
                 {
+                    // Blizzard
+                    case 10:
+                        target->UpdateSpeed(MOVE_RUN, true);
+                        break;
                     case 66: // Invisibility
                     {
                         // Glyph of Invisibility
@@ -1947,6 +1977,19 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             case SPELLFAMILY_WARLOCK:
                 if (!caster)
                     break;
+
+                // Glyph of Verdant Spheres
+                if (GetSpellInfo()->Id == SPELL_GLYPH_VERDANT_SPHERES)
+                {
+                    caster->RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_DESTRO);
+                    caster->RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_AFFL);
+                    caster->RemoveAurasDueToSpell(SPELL_VERDANT_SPHERE_AFFL_2);
+                }
+
+                // Soul burn: health funnel
+                if (GetSpellInfo()->Id == 755)
+                    caster->RemoveAurasDueToSpell(74434);
+
                 // Improved Fear
                 if (GetSpellInfo()->SpellFamilyFlags[1] & 0x00000400)
                 {

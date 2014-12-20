@@ -664,6 +664,8 @@ enum TrinityStrings
     LANG_BG_EY_CAPTURED_FLAG_H          = 685,
     LANG_BG_EY_DROPPED_FLAG             = 686,
     LANG_BG_EY_RESETED_FLAG             = 687,
+    LANG_BG_EY_A_NEAR_VICTORY           = 688,
+    LANG_BG_EY_H_NEAR_VICTORY           = 689,
 
     LANG_ARENA_ONE_TOOLOW               = 700,
     LANG_ARENA_ONE_MINUTE               = 701,

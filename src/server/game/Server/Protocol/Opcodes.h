@@ -593,7 +593,6 @@ enum Opcodes
     SMSG_AI_REACTION                                  = 0x0721, // 5.4.7 18019
     SMSG_ALL_ACHIEVEMENT_DATA                         = 0x072B, // 5.4.7 18019
     SMSG_AREA_SPIRIT_HEALER_TIME                      = 0x0441, // 5.4.7 18019
-    SMSG_AREA_TRIGGER_MESSAGE                         = 0x0000,
     SMSG_ARENA_ERROR                                  = 0x0000,
     SMSG_ARENA_OPPONENT_SPECIALIZATIONS               = 0x0E3D, // 5.4.7 18019
     SMSG_ATTACKER_STATE_UPDATE                        = 0x0540, // 5.4.7 18019
@@ -1168,7 +1167,7 @@ enum Opcodes
     SMSG_SET_RAID_DIFFICULTY                          = 0x16A6, // 5.4.7 18019
     SMSG_SHOP_AUTH_BUY_FAILED                         = 0x0C40, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SHOP_CONTENT_RESPONSE                        = 0x1C29, // 5.4.7 18019
-    SMSG_SHOP_INGAME_BUY_FAILED                       = 0x145A, // 5.4.7 18019 Not implemented - CHECK!
+    SMSG_SHOP_INGAME_BUY_FAILED                       = 0x0000,
     SMSG_SHOW_BANK                                    = 0x060B, // 5.4.7 18019
     SMSG_SHOW_NEUTRAL_PLAYER_FACTION_SELECT_UI        = 0x0C98, // 5.4.7 18019
     SMSG_SHOW_TAXI_NODES                              = 0x14A3, // 5.4.7 18019

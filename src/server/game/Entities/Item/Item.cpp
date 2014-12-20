@@ -302,12 +302,17 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
         }
         else
         {
-            if (itemProto->Quality == ITEM_QUALITY_EPIC)
-                SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 445);
-            else if (itemProto->Quality == ITEM_QUALITY_LEGENDARY)
-                SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 465);
+            if ((itemProto->Quality == ITEM_QUALITY_EPIC || itemProto->Quality == ITEM_QUALITY_LEGENDARY) && itemProto->ItemLevel >= 553)
+                SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 491);
             else
-                SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
+            {
+			    if (itemProto->Quality == ITEM_QUALITY_EPIC)
+                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 445);
+                else if (itemProto->Quality == ITEM_QUALITY_LEGENDARY)
+                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 465);
+                else
+                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
+            }
         }
 
         SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
@@ -514,10 +519,13 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
         const ItemTemplate* proto2 = GetTemplate();
 
         if (proto1 && proto2)
+        {
             if (ItemTemplate::CanTransmogrifyItemWithItem(proto1, proto2))
+            {
                 SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, transmogId);
-
-        transmogApplied = true; // Updates the item in both cases, signaling a transmog applied or removed.
+                transmogApplied = true;
+            }
+        }
     }
 
     if (upgradeId)
@@ -542,12 +550,17 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
             }
             else
             {
-                if (proto->Quality == ITEM_QUALITY_EPIC)
-                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 445);
-                else if (proto->Quality == ITEM_QUALITY_LEGENDARY)
-                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 465);
+                if ((proto->Quality == ITEM_QUALITY_EPIC || proto->Quality == ITEM_QUALITY_LEGENDARY) && proto->ItemLevel >= 553)
+                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 491);
                 else
-                    SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
+                {
+				    if (proto->Quality == ITEM_QUALITY_EPIC)
+                        SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 445);
+                    else if (proto->Quality == ITEM_QUALITY_LEGENDARY)
+                        SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 465);
+                    else
+                        SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, 451);
+                }
             }
 
             upgradeApplied = true;

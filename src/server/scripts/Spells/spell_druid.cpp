@@ -88,6 +88,8 @@ enum DruidSpells
     SPELL_DRUID_STAMPEDING_ROAR             = 106898,
     SPELL_DRUID_SOLAR_BEAM                  = 78675,
     SPELL_DRUID_SOLAR_BEAM_SILENCE          = 81261,
+    SPELL_DRUID_SOLAR_BEAM_SYMBIOS          = 113286,
+    SPELL_DRUID_SOLAR_BEAM_SILENCE_SYMBIOS  = 113287,
     SPELL_DRUID_URSOLS_VORTEX_AREA_TRIGGER  = 102793,
     SPELL_DRUID_URSOLS_VORTEX_SNARE         = 127797,
     SPELL_DRUID_URSOLS_VORTEX_JUMP_DEST     = 118283,
@@ -1735,8 +1737,8 @@ class spell_dru_solar_beam : public SpellScriptLoader
 
             void OnTick(constAuraEffectPtr aurEff)
             {
-                if (DynamicObject* dynObj = GetCaster()->GetDynObject(SPELL_DRUID_SOLAR_BEAM))
-                    GetCaster()->CastSpell(dynObj->GetPositionX(), dynObj->GetPositionY(), dynObj->GetPositionZ(), SPELL_DRUID_SOLAR_BEAM_SILENCE, true);
+                if (DynamicObject* dynObj = GetCaster()->GetDynObject(GetId()))
+                    GetCaster()->CastSpell(dynObj->GetPositionX(), dynObj->GetPositionY(), dynObj->GetPositionZ(), GetId() == SPELL_DRUID_SOLAR_BEAM ? SPELL_DRUID_SOLAR_BEAM_SILENCE : SPELL_DRUID_SOLAR_BEAM_SILENCE_SYMBIOS, true);
             }
 
             void Register()
@@ -2750,6 +2752,7 @@ class spell_dru_wild_mushroom : public SpellScriptLoader
                     summon->setFaction(player->getFaction());
                     summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, GetSpellInfo()->Id);
                     summon->SetMaxHealth(5);
+                    summon->SetFullHealth();
                     summon->CastSpell(summon, DRUID_SPELL_MUSHROOM_BIRTH_VISUAL, true); // Wild Mushroom : Detonate Birth Visual
                 }
             }

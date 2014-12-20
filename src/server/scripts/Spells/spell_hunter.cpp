@@ -171,21 +171,17 @@ class spell_hun_glaive_toss_damage : public SpellScriptLoader
 
             uint64 mainTargetGUID;
 
-            bool Load()
+            void CorrectRange(std::list<WorldObject*>& targets)
             {
                 mainTargetGUID = 0;
-                return true;
-            }
 
-            void CorrectDamageRange(std::list<WorldObject*>& targets)
-            {
                 targets.clear();
 
                 std::list<Unit*> targetList;
-                float radius = 50.0f;
+                float radius = 40.0f;
 
-                JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
-                JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
+                JadeCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
+                JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
                 GetCaster()->VisitNearbyObject(radius, searcher);
 
                 for (auto itr : targetList)
@@ -196,43 +192,6 @@ class spell_hun_glaive_toss_damage : public SpellScriptLoader
                         break;
                     }
                 }
-
-                if (!mainTargetGUID)
-                    return;
-
-                Unit* target = ObjectAccessor::FindUnit(mainTargetGUID);
-                if (!target)
-                    return;
-
-                targets.push_back(target);
-
-                for (auto itr : targetList)
-                    if (itr->IsInBetween(GetCaster(), target, 5.0f))
-                        targets.push_back(itr);
-            }
-
-            void CorrectSnareRange(std::list<WorldObject*>& targets)
-            {
-                targets.clear();
-
-                std::list<Unit*> targetList;
-                float radius = 50.0f;
-
-                JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
-                JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
-                GetCaster()->VisitNearbyObject(radius, searcher);
-
-                for (auto itr : targetList)
-                {
-                    if (itr->HasAura(HUNTER_SPELL_GLAIVE_TOSS_AURA))
-                    {
-                        mainTargetGUID = itr->GetGUID();
-                        break;
-                    }
-                }
-
-                if (!mainTargetGUID)
-                    return;
 
                 if (!mainTargetGUID)
                     return;
@@ -264,8 +223,8 @@ class spell_hun_glaive_toss_damage : public SpellScriptLoader
 
             void Register()
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_glaive_toss_damage_SpellScript::CorrectDamageRange, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_glaive_toss_damage_SpellScript::CorrectSnareRange, EFFECT_1, TARGET_UNIT_DEST_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_glaive_toss_damage_SpellScript::CorrectRange, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_glaive_toss_damage_SpellScript::CorrectRange, EFFECT_1, TARGET_UNIT_DEST_AREA_ENEMY);
                 OnHit += SpellHitFn(spell_hun_glaive_toss_damage_SpellScript::OnDamage);
             }
         };
@@ -612,66 +571,6 @@ class spell_hun_dire_beast : public SpellScriptLoader
         SpellScript* GetSpellScript() const
         {
             return new spell_hun_dire_beast_SpellScript();
-        }
-};
-
-// A Murder of Crows - 131894
-class spell_hun_a_murder_of_crows : public SpellScriptLoader
-{
-    public:
-        spell_hun_a_murder_of_crows() : SpellScriptLoader("spell_hun_a_murder_of_crows") { }
-
-        class spell_hun_a_murder_of_crows_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_hun_a_murder_of_crows_AuraScript);
-
-            void OnTick(constAuraEffectPtr aurEff)
-            {
-                if (Unit* target = GetTarget())
-                {
-                    if (!GetCaster())
-                        return;
-
-                    if (aurEff->GetTickNumber() > 15)
-                        return;
-
-                    if (Player* _player = GetCaster()->ToPlayer())
-                    {
-                        _player->CastSpell(target, HUNTER_SPELL_A_MURDER_OF_CROWS_SUMMON, true);
-
-                        std::list<Creature*> tempList;
-                        std::list<Creature*> crowsList;
-
-                        _player->GetCreatureListWithEntryInGrid(tempList, HUNTER_NPC_MURDER_OF_CROWS, 100.0f);
-
-                        for (auto itr : tempList)
-                            crowsList.push_back(itr);
-
-                        // Remove other players Crows
-                        for (std::list<Creature*>::iterator i = tempList.begin(); i != tempList.end(); ++i)
-                        {
-                            Unit* owner = (*i)->GetOwner();
-                            if (owner && owner == _player && (*i)->isSummon())
-                                continue;
-
-                            crowsList.remove((*i));
-                        }
-
-                        for (auto itr : crowsList)
-                            itr->AI()->AttackStart(target);
-                    }
-                }
-            }
-
-            void Register()
-            {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_hun_a_murder_of_crows_AuraScript::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_hun_a_murder_of_crows_AuraScript();
         }
 };
 
@@ -1686,8 +1585,6 @@ class spell_hun_cobra_shot : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        _player->CastSpell(_player, HUNTER_SPELL_COBRA_SHOT_ENERGIZE, true);
-
                         if (AuraEffectPtr aurEff = target->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_HUNTER, 16384, 0, 0, GetCaster()->GetGUID()))
                         {
                             AuraPtr serpentSting = aurEff->GetBase();
@@ -1700,8 +1597,16 @@ class spell_hun_cobra_shot : public SpellScriptLoader
                 }
             }
 
+            void HandleAfterCast()
+            {
+                if (Player* _player = GetCaster()->ToPlayer())
+                    if (Unit* target = GetHitUnit())
+                        _player->CastSpell(_player, HUNTER_SPELL_COBRA_SHOT_ENERGIZE, true);
+            }
+
             void Register()
             {
+                AfterCast += SpellCastFn(spell_hun_cobra_shot_SpellScript::HandleAfterCast);
                 OnEffectHitTarget += SpellEffectFn(spell_hun_cobra_shot_SpellScript::HandleScriptEffect, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
             }
         };
@@ -1725,19 +1630,21 @@ class spell_hun_steady_shot : public SpellScriptLoader
             void HandleOnHit()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                {
                     if (Unit* target = GetHitUnit())
-                    {
-                        _player->CastSpell(_player, HUNTER_SPELL_STEADY_SHOT_ENERGIZE, true);
-
                         if (GetSpell()->IsCritForTarget(target))
                             _player->CastSpell(target, HUNTER_SPELL_PIERCIG_SHOTS_EFFECT, true);
-                    }
-                }
+            }
+
+            void HandleAfterCast()
+            {
+                if (Player* _player = GetCaster()->ToPlayer())
+                    if (Unit* target = GetHitUnit())
+                        _player->CastSpell(_player, HUNTER_SPELL_STEADY_SHOT_ENERGIZE, true);
             }
 
             void Register()
             {
+                AfterCast += SpellCastFn(spell_hun_steady_shot_SpellScript::HandleAfterCast);
                 OnHit += SpellHitFn(spell_hun_steady_shot_SpellScript::HandleOnHit);
             }
         };
@@ -2309,7 +2216,6 @@ void AddSC_hunter_spell_scripts()
     new spell_hun_dash();
     new spell_hun_stampede();
     new spell_hun_dire_beast();
-    new spell_hun_a_murder_of_crows();
     new spell_hun_focus_fire();
     new spell_hun_frenzy();
     new spell_hun_lynx_rush();

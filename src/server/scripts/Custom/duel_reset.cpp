@@ -80,13 +80,13 @@ class duel_reset : public PlayerScript
                                     player1->SetPower(POWER_CHI, 0);
                                     break;
                                 case POWER_DEMONIC_FURY:
-                                    player1->SetPower(POWER_DEMONIC_FURY, 0);
+                                    player1->SetPower(POWER_DEMONIC_FURY, 200);
                                     break;
                                 case POWER_HOLY_POWER:
                                     player1->SetPower(POWER_HOLY_POWER, 0);
                                     break;
                                 case POWER_BURNING_EMBERS:
-                                    player1->SetPower(POWER_BURNING_EMBERS, 0);
+                                    player1->SetPower(POWER_BURNING_EMBERS, 10);
                                     break;
                                 case POWER_SHADOW_ORBS:
                                     player1->SetPower(POWER_SHADOW_ORBS, 0);
@@ -94,8 +94,8 @@ class duel_reset : public PlayerScript
                                 case POWER_SOUL_SHARDS:
                                     player1->SetPower(POWER_SOUL_SHARDS, 0);
                                     break;
-                                default:
-                                    break;
+
+                                default: break;
                             }
 
                             switch (player2->getPowerType())

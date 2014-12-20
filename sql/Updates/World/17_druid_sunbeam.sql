@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='113286',`ScriptName`='spell_dru_solar_beam';

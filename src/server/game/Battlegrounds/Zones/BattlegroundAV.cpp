@@ -24,6 +24,7 @@
 #include "Language.h"
 #include "Player.h"
 #include "SpellAuras.h"
+#include "Chat.h"
 
 #include "BattlegroundAV.h"
 
@@ -550,13 +551,13 @@ void BattlegroundAV::HandleAreaTrigger(Player* Source, uint32 Trigger)
         case 95:
         case 2608:
             if (Source->GetTeam() != ALLIANCE)
-                Source->GetSession()->SendAreaTriggerMessage("Only The Alliance can use that portal");
+                ChatHandler(Source).PSendSysMessage("Only The Alliance can use that portal");
             else
                 Source->LeaveBattleground();
             break;
         case 2606:
             if (Source->GetTeam() != HORDE)
-                Source->GetSession()->SendAreaTriggerMessage("Only The Horde can use that portal");
+                ChatHandler(Source).PSendSysMessage("Only The Horde can use that portal");
             else
                 Source->LeaveBattleground();
             break;

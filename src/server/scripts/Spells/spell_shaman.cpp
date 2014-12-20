@@ -1329,14 +1329,33 @@ class spell_sha_healing_stream : public SpellScriptLoader
 
                 if (Player* _player = GetCaster()->GetOwner()->ToPlayer())
                     if (Unit* target = GetHitUnit())
-                        // Glyph of Healing Stream Totem
-                        if (target->GetGUID() != _player->GetGUID() && _player->HasAura(SPELL_SHA_GLYPH_OF_HEALING_STREAM_TOTEM))
+                        if (target->GetGUID() != _player->GetGUID() && _player->HasAura(SPELL_SHA_GLYPH_OF_HEALING_STREAM_TOTEM)) // Glyph of HST.
                             _player->CastSpell(target, SPELL_SHA_GLYPH_OF_HEALING_STREAM, true);
+            }
+
+            void TargetCorrect(std::list<WorldObject*>& targets)
+            {
+                if (!GetCaster())
+                    return;
+
+                targets.clear();
+                std::list<Unit*> GetTargets;
+
+                JadeCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+                JadeCore::UnitListSearcher<JadeCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+                GetCaster()->VisitNearbyObject(40.0f, searcher);
+
+                GetTargets.sort(JadeCore::HealthPctOrderPred());
+                GetTargets.resize(GetCaster()->HasAura(147074) ? 2 : 1);
+
+                for (auto itr : GetTargets)
+                    targets.push_back(itr);
             }
 
             void Register()
             {
                 OnHit += SpellHitFn(spell_sha_healing_stream_SpellScript::HandleOnHit);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_healing_stream_SpellScript::TargetCorrect, EFFECT_0, TARGET_UNIT_DEST_AREA_ALLY);
             }
         };
 

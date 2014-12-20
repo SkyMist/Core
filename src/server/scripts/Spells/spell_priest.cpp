@@ -83,7 +83,7 @@ enum PriestSpells
     PRIEST_EVANGELISM_AURA                          = 81662,
     PRIEST_EVANGELISM_STACK                         = 81661,
     PRIEST_ARCHANGEL                                = 81700,
-    LIGHTWELL_CHARGES                               = 59907,
+    LIGHTWELL_CHARGES                               = 126150,
     LIGHTSPRING_RENEW                               = 126154,
     PRIEST_SMITE                                    = 585,
     PRIEST_HOLY_WORD_CHASTISE                       = 88625,
@@ -815,16 +815,8 @@ class spell_pri_surge_of_light : public SpellScriptLoader
             void HandleOnCast()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                {
                     if (AuraPtr surgeOfLight = _player->GetAura(PRIEST_SURGE_OF_LIGHT))
-                    {
-                        int32 stacks = surgeOfLight->GetStackAmount();
-                        if (stacks <= 1)
-                                _player->RemoveAura(PRIEST_SURGE_OF_LIGHT);
-                            else
-                                surgeOfLight->SetStackAmount(stacks - 1);
-                    }
-                }
+                        surgeOfLight->ModStackAmount(-1);
             }
 
             void Register()
@@ -1146,7 +1138,7 @@ class spell_pri_lightwell_renew : public SpellScriptLoader
                         if (AuraPtr chargesAura = m_caster->GetAura(LIGHTWELL_CHARGES))
                         {
                             m_caster->CastSpell(unitTarget, LIGHTSPRING_RENEW, true, NULL, NULLAURA_EFFECT, m_caster->ToTempSummon()->GetSummonerGUID());
-                            if (chargesAura->ModCharges(-1))
+                            if (chargesAura->ModStackAmount(-1))
                                 m_caster->ToTempSummon()->UnSummon();
                         }
                     }
@@ -2709,9 +2701,14 @@ class spell_pri_levitate : public SpellScriptLoader
 
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
-                if (GetCaster())
-                    if (GetHitUnit())
-                        GetCaster()->CastSpell(GetHitUnit(), PRIEST_SPELL_LEVITATE, true);
+                if (!GetCaster() || !GetHitUnit())
+                    return;
+
+                // Glyph of the Heavens
+                if (GetCaster()->HasAura(120581))
+                    GetCaster()->AddAura(124433, GetCaster());
+
+                GetCaster()->CastSpell(GetHitUnit(), PRIEST_SPELL_LEVITATE, true);
             }
 
             void Register()

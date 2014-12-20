@@ -2420,13 +2420,17 @@ SpellSpecificType SpellInfo::GetSpellSpecific() const
         }
         case SPELLFAMILY_HUNTER:
         {
-            // only hunter stings have this
+            // Only hunter stings have this
             if (Dispel == DISPEL_POISON)
                 return SPELL_SPECIFIC_STING;
 
-            // only hunter aspects have this (but not all aspects in hunter family) and Hack fix for Deterrence - Is not an aspect !
+            // Only hunter aspects have this (but not all aspects in hunter family) and Hack fix for Deterrence - Is not an aspect !
             if (SpellFamilyFlags.HasFlag(0x00380000, 0x00440000, 0x00001010) && Id != 67801)
                 return SPELL_SPECIFIC_ASPECT;
+
+            // Can't stack reduce healing pct of hunter.
+            if (Id == 82654 || Id == 54680)
+                return SPELL_SPECIFIC_TOXINE;
 
             break;
         }
@@ -3289,8 +3293,12 @@ bool SpellInfo::_IsCrowdControl(uint8 effMask, bool nodamage) const
                     case 15:
                     case 457:
                         return false;
-                    default:
                         break;
+                    case 174: // Cyclone having shared diminishing returns with other forms of crowd control.
+                        return true;
+                        break;
+
+                    default: break;
                 }
             case SPELL_AURA_MOD_CONFUSE:
             case SPELL_AURA_MOD_FEAR:

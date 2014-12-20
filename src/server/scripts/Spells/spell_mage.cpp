@@ -103,7 +103,8 @@ enum MageSpells
     SPELL_MAGE_GLYPH_OF_ICY_VEINS                = 56364,
     SPELL_MAGE_INSTANT_WATERBOLT                 = 131581,
     SPELL_MAGE_INSTANT_FROSTBOLT                 = 121138,
-    SPELL_MAGE_GLYPH_OF_RAPID_DISPLACEMENT       = 146659
+    SPELL_MAGE_GLYPH_OF_RAPID_DISPLACEMENT       = 146659,
+    SPELL_MAGE_RING_OF_FROST_FROZEN              = 82691
 };
 
 // Flamestrike - 2120
@@ -788,7 +789,6 @@ class spell_mage_frostbolt : public SpellScriptLoader
         }
 };
 
-// Called by Evocation - 12051
 // Invocation - 114003
 class spell_mage_invocation : public SpellScriptLoader
 {
@@ -806,15 +806,8 @@ class spell_mage_invocation : public SpellScriptLoader
                     return;
 
                 if (Unit* caster = GetCaster())
-                {
                     if (caster->HasAura(SPELL_MAGE_INVOCATION))
-                    {
                         caster->CastSpell(caster, SPELL_MAGE_INVOKERS_ENERGY, true);
-
-                        if (caster->HasAura(SPELL_MAGE_GLYPH_OF_EVOCATION))
-                            caster->HealBySpell(caster, sSpellMgr->GetSpellInfo(12051), caster->CountPctFromMaxHealth(10), false);
-                    }
-                }
             }
 
             void Register()
@@ -1754,6 +1747,158 @@ class spell_mage_blink : public SpellScriptLoader
         }
 };
 
+class spell_mage_ring_of_frost : public SpellScriptLoader
+{
+public:
+	spell_mage_ring_of_frost() : SpellScriptLoader("spell_mage_ring_of_frost") { }
+
+	class spell_mage_ring_of_frost_AuraScript : public AuraScript
+	{
+		PrepareAuraScript(spell_mage_ring_of_frost_AuraScript);
+
+		void OnTick(constAuraEffectPtr aurEff)
+		{
+			if (!GetCaster())
+				return;
+
+			// This could be far more efficient if units would store a pointer to their summoned creatures. Only a small change, might want to consider it.
+			std::list<Creature*> rings;
+			GetCreatureListWithEntryInGrid(rings, GetCaster(), 44199, 100.0f);
+			Creature* castingRing = NULL;
+
+			for (Creature* ring : rings)
+				if (ring->ToTempSummon())
+					if (ring->ToTempSummon()->GetSummoner() == GetCaster())
+						castingRing = ring;
+
+			if (!castingRing)
+				return;
+
+			GetCaster()->CastSpell(castingRing, SPELL_MAGE_RING_OF_FROST_FROZEN, true);
+		}
+
+		void Register()
+		{
+			OnEffectPeriodic += AuraEffectPeriodicFn(spell_mage_ring_of_frost_AuraScript::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+		}
+	};
+
+	AuraScript* GetAuraScript() const
+	{
+		return new spell_mage_ring_of_frost_AuraScript();
+	}
+};
+
+class spell_mage_ring_of_frost_frozen : public SpellScriptLoader
+{
+public:
+	spell_mage_ring_of_frost_frozen() : SpellScriptLoader("spell_mage_ring_of_frost_frozen") { }
+
+	class spell_mage_ring_of_frost_frozen_AuraScript : public AuraScript
+	{
+		PrepareAuraScript(spell_mage_ring_of_frost_frozen_AuraScript);
+
+		void AfterRemove(constAuraEffectPtr aurEff, AuraEffectHandleModes /*mode*/)
+		{
+			AuraRemoveMode removeMode = GetTargetApplication()->GetRemoveMode();
+			if (removeMode != AURA_REMOVE_BY_ENEMY_SPELL)
+				return;
+
+			if (Unit* target = GetUnitOwner())
+				target->CastSpell(target, 91264, true);
+		}
+
+		void Register()
+		{
+			AfterEffectRemove += AuraEffectRemoveFn(spell_mage_ring_of_frost_frozen_AuraScript::AfterRemove, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
+		}
+	};
+
+	AuraScript* GetAuraScript() const
+	{
+		return new spell_mage_ring_of_frost_frozen_AuraScript();
+	}
+
+	class spell_mage_ring_of_frost_frozen_SpellScript : public SpellScript
+	{
+		PrepareSpellScript(spell_mage_ring_of_frost_frozen_SpellScript);
+
+		void FilterTargets(std::list<WorldObject*>& targets)
+		{
+			if (!GetCaster())
+				return;
+
+			struct is_not_valid_target {
+				Unit* caster;
+
+				bool operator() (WorldObject* target)
+				{
+					if (!target->ToUnit())
+						return true;
+					if (target->ToUnit()->HasAura(SPELL_MAGE_RING_OF_FROST_FROZEN))
+						return true;
+					if (target->ToUnit()->HasAura(91264))
+						return true;
+					if (target->ToUnit()->isTotem())
+						return true;
+					// cloak of shadows
+					if (target->ToUnit()->HasAura(31224))
+						return true;
+
+					return false;
+				}
+			};
+
+			is_not_valid_target target_check;
+			target_check.caster = GetCaster();
+			targets.remove_if(target_check);
+		}
+
+		void Register()
+		{
+			OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_mage_ring_of_frost_frozen_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+		}
+	};
+
+	SpellScript* GetSpellScript() const
+	{
+		return new spell_mage_ring_of_frost_frozen_SpellScript();
+	}
+};
+
+class spell_mage_ring_of_frost_boot : public SpellScriptLoader
+{
+public:
+	spell_mage_ring_of_frost_boot() : SpellScriptLoader("spell_mage_ring_of_frost_boot") { }
+
+	class spell_mage_ring_of_frost_boot_SpellScript : public SpellScript
+	{
+		PrepareSpellScript(spell_mage_ring_of_frost_boot_SpellScript);
+
+		// remove all previous rings of frost
+		void HandleOnCast()
+		{
+			std::list<Creature*> rings;
+			GetCreatureListWithEntryInGrid(rings, GetCaster(), 44199, 200.0f);
+
+			for (Creature* ring : rings)
+				if (ring->ToTempSummon())
+					if (ring->ToTempSummon()->GetSummoner() == GetCaster())
+						ring->DespawnOrUnsummon();
+		}
+
+		void Register()
+		{
+			OnCast += SpellCastFn(spell_mage_ring_of_frost_boot_SpellScript::HandleOnCast);
+		}
+	};
+
+	SpellScript* GetSpellScript() const
+	{
+		return new spell_mage_ring_of_frost_boot_SpellScript();
+	}
+};
+
 void AddSC_mage_spell_scripts()
 {
     new spell_mage_flamestrike();
@@ -1793,4 +1938,7 @@ void AddSC_mage_spell_scripts()
     new spell_mage_illusion();
     new spell_mage_blink();
     new spell_mage_glyph_of_icy_veins();
+    new spell_mage_ring_of_frost();
+    new spell_mage_ring_of_frost_frozen();
+    new spell_mage_ring_of_frost_boot();
 }

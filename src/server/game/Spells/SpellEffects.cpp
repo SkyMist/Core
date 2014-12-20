@@ -2434,6 +2434,20 @@ void Spell::EffectHeal(SpellEffIndex effIndex)
 
                 break;
             }
+            case 19750: // Flash heal bastion of glory
+            {
+                if (!caster || !unitTarget)
+                    break;
+
+                if (caster->HasAura(114637) && caster->HasAura(114250) && unitTarget->GetGUID() == caster->GetGUID())
+                {
+                    int32 amount = caster->GetAura(114637)->GetStackAmount() * 20;
+                    AddPct(addhealth, (amount * caster->GetAura(114250)->GetStackAmount()));
+                    caster->RemoveAurasDueToSpell(114637);
+                    caster->RemoveAurasDueToSpell(114250);
+                }
+                break;
+            }
             case 115072:// Expel Harm
             case 147489:// Expel Harm with glyph of Targeted Expulsion
             {
@@ -2588,6 +2602,11 @@ void Spell::EffectHealPct(SpellEffIndex /*effIndex*/)
         case 115450: // Detox
             if (!m_caster->HasAura(146954))
                 return;
+            break;
+        case 118779: // Victory rush heal
+            // Glyph of victory rush
+            if (m_caster->HasAura(58382))
+                damage += 50;
             break;
         case 118340:// Impending Victory - Heal
             // Victorious State causes your next Impending Victory to heal for 20% of your maximum health.
@@ -2959,6 +2978,7 @@ void Spell::EffectEnergize(SpellEffIndex effIndex)
             break;
         case 35395: // Crusader Strike
             if (uint64 targetGUID = m_targets.GetUnitTargetGUID())
+            {
                 for (std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
                 {
                     if (ihit->targetGUID == targetGUID)
@@ -2967,9 +2987,14 @@ void Spell::EffectEnergize(SpellEffIndex effIndex)
                             return;
                     }
                 }
+            }
             break;
-        default:
+        case 77443: // concentration
+            if (m_caster->HasAura(53220))
+                damage += 3;
             break;
+
+        default: break;
     }
 
     // Master Mana Potion - 105709
@@ -4006,13 +4031,11 @@ void Spell::EffectDispel(SpellEffIndex effIndex)
             break;
         case 19505: // Devour Magic
         {
-            int32 heal_amount = m_spellInfo->Effects[EFFECT_1].CalcValue(m_caster);
-            m_caster->CastCustomSpell(m_caster, 19658, &heal_amount, NULL, NULL, true);
+            m_caster->CastSpell(m_caster, 19658, true);
             // Glyph of Felhunter
             if (Unit* owner = m_caster->GetOwner())
-                if (owner->GetAura(56249))
-                    owner->CastCustomSpell(owner, 19658, &heal_amount, NULL, NULL, true);
-
+                if (owner->HasAura(56249))
+                    owner->CastSpell(owner, 19658, true);
             break;
         }
         case 51886: // Cleanse Spirit
@@ -4020,8 +4043,8 @@ void Spell::EffectDispel(SpellEffIndex effIndex)
             if (m_caster->HasAura(86959)) // Glyph of Cleansing Waters
                 m_caster->CastSpell(unitTarget, 86961, true);
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     // If we dispelled Execution Sentence - 114916 damage aura, victim must receive 500% damage of last tick.
@@ -4590,6 +4613,34 @@ void Spell::EffectSummonPet(SpellEffIndex effIndex)
         }
     }
 
+    // Fel energy, must be added only for visual on pet.
+    if (owner->GetTypeId() == TYPEID_PLAYER)
+        if (owner->ToPlayer()->getClass() == CLASS_WARLOCK)
+            if (pet->GetEntry() != ENTRY_INFERNAL && pet->GetEntry() != ENTRY_ABYSSAL)
+                if (!pet->HasSpell(123746))
+                    pet->learnSpell(123746);
+
+    if (pet->GetEntry() == ENTRY_VOIDWALKER || pet->GetEntry() == ENTRY_VOIDLORD || pet->GetEntry() == ENTRY_WRATHGUARD)
+    {
+        // Threatening Presence
+        if (!pet->HasSpell(112042))
+            pet->learnSpell(112042);
+
+        // Void Reflexes
+        if (!pet->HasSpell(117225))
+            pet->learnSpell(117225);
+    }
+
+    // Grimoire of Supremacy increase damage
+    if (pet->GetEntry() == ENTRY_FEL_IMP  || pet->GetEntry() == ENTRY_VOIDLORD   || pet->GetEntry() == ENTRY_SHIVARRA || 
+        pet->GetEntry() == ENTRY_OBSERVER || pet->GetEntry() == ENTRY_WRATHGUARD || pet->GetEntry() == ENTRY_ABYSSAL  || pet->GetEntry() == ENTRY_TERRORGUARD)
+        if (!pet->HasSpell(115578))
+            pet->learnSpell(115578);
+
+    // Soul burn: summon pet
+    if (m_caster->HasAura(74434))
+        m_caster->RemoveAurasDueToSpell(74434);
+
     // generate new name for summon pet
     if (petentry)
     {
@@ -4728,40 +4779,6 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
                     break;
                 }
             }
-            break;
-        }
-        case SPELLFAMILY_WARLOCK:
-        {
-            switch (m_spellInfo->Id)
-            {
-                case 30213: // Legion Strike
-                {
-                    if (Unit* owner = m_caster->GetOwner())
-                    {
-                        int32 spd = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL);
-                        fixed_bonus += spd * 0.264f;
-
-                        if (owner->GetTypeId() == TYPEID_PLAYER)
-                            if (owner->ToPlayer()->GetSpecializationId(owner->ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
-                                owner->EnergizeBySpell(owner, m_spellInfo->Id, 12, POWER_DEMONIC_FURY);
-                    }
-
-                    break;
-                }
-                case 89753: // Fel Storm
-                {
-                    if (Unit* owner = m_caster->GetOwner())
-                    {
-                        int32 spd = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL);
-                        fixed_bonus += spd * 0.33f;
-                    }
-
-                    break;
-                }
-                default:
-                    break;
-            }
-
             break;
         }
         case SPELLFAMILY_ROGUE:
@@ -4981,8 +4998,8 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
 
     m_damage += unitTarget->MeleeDamageBonusTaken(m_caster, damage, m_attackType, m_spellInfo);
 
-    // Legion Strike
-    if (m_spellInfo->Id == 30213)
+    // Legion Strike and Mortal Cleave 
+    if (m_spellInfo->Id == 30213 || m_spellInfo->Id == 115625)
     {
         uint32 count = 0;
         for (std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
@@ -7668,6 +7685,16 @@ void Spell::EffectStealBeneficialBuff(SpellEffIndex effIndex)
     // Glyph of SpellSteal
     if (m_caster->HasAura(115713))
         m_caster->HealBySpell(m_caster, m_spellInfo, m_caster->CountPctFromMaxHealth(5));
+
+    // Observer: Clone magic
+    if (m_spellInfo->Id == 115284)
+    {
+        m_caster->CastSpell(m_caster, 19658, true);
+        // Glyph of Felhunter
+        if (Unit* owner = m_caster->GetOwner())
+            if (owner->HasAura(56249))
+                owner->CastSpell(owner, 19658, true);
+    }
 }
 
 void Spell::EffectKillCreditPersonal(SpellEffIndex effIndex)

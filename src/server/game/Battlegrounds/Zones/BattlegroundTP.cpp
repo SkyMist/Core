@@ -15,18 +15,19 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gamePCH.h"
-#include "Battleground.h"
-#include "BattlegroundTP.h"
-#include "Creature.h"
-#include "GameObject.h"
-#include "Language.h"
-#include "Object.h"
-#include "ObjectMgr.h"
-#include "BattlegroundMgr.h"
-#include "Player.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include "ObjectMgr.h"
+#include "BattlegroundMgr.h"
+#include "Battleground.h"
+#include "Creature.h"
+#include "Language.h"
+#include "Object.h"
+#include "Player.h"
+#include "Util.h"
+#include "Chat.h"
+
+#include "BattlegroundTP.h"
 
 // these variables aren't used outside of this file, so declare them only here
 enum BG_TP_Rewards
@@ -632,7 +633,7 @@ void BattlegroundTP::EventPlayerClickedOnFlag(Player *Source, GameObject* target
     Source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattlegroundTP::RemovePlayer(Player *player, uint64 guid)
+void BattlegroundTP::RemovePlayer(Player* player, uint64 guid, uint32 team)
 {
     // sometimes flag auras are not removed :(
     if (IsAllianceFlagPickedup() && _flagKeepers[TEAM_ALLIANCE] == guid)
@@ -675,7 +676,7 @@ void BattlegroundTP::UpdateTeamScore(uint32 team)
         UpdateWorldState(BG_TP_FLAG_CAPTURES_HORDE, GetTeamScore(team));
 }
 
-void BattlegroundTP::HandleAreaTrigger(Player *Source, uint32 Trigger)
+void BattlegroundTP::HandleAreaTrigger(Player* Source, uint32 Trigger)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
@@ -916,7 +917,7 @@ void BattlegroundTP::FillInitialWorldStates(ByteBuffer &data)
     else
         data << uint32(0) << uint32(BG_TP_FLAG_UNK_HORDE);
 
-    data << uint32(BG_TP_FLAG_CAPTURES_MAX) << uint32(BG_TP_MAX_TEAM_SCORE);
+    data << uint32(BG_TP_MAX_TEAM_SCORE) << uint32(BG_TP_FLAG_CAPTURES_MAX) ;
 
     if (GetStatus() == STATUS_IN_PROGRESS)
     {

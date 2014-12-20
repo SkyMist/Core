@@ -3432,13 +3432,14 @@ void SpellMgr::LoadSpellCustomAttr()
 
             switch (spellInfo->Id)
             {
-                // Divine Star Visual
-                case 122127:
+                case 115176: // Zen meditation
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    break;
+                case 122127: // Divine Star Visual
                 case 58880:
                     spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
                     break;
-                // Divine Star aura
-                case 122121:
+                case 122121: // Divine Star aura
                 case 110744:
                     spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
                     break;
@@ -3494,6 +3495,9 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 138130:// Storm, Earth and Fire (for spirits)
                     spellInfo->Effects[0].Effect = 0;
+                    break;
+                case 108501: // Grimmuar of service
+                    spellInfo->Attributes &= ~(SPELL_ATTR0_HIDDEN_CLIENTSIDE);
                     break;
                 case 130393:// Blink Strike
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10); // 30y
@@ -3859,6 +3863,9 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 18540: // Summon Doomguard
                     spellInfo->OverrideSpellList.push_back(112927); // Summon Terrorguard
                     break;
+                case 114255: // Surge of Light
+                    spellInfo->ProcCharges = 2;
+                    break;
                 case 120517:// Halo (Holy)
                 case 120644:// Halo (Shadow)
                     spellInfo->AttributesCu &= ~SPELL_ATTR0_CU_NEGATIVE;
@@ -3872,13 +3879,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetA = TARGET_SRC_CASTER;
                     spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
-                    break;
-                case 20572: // Blood Fury
-                    spellInfo->Effects[0].BasePoints = 4514;
-                    spellInfo->Effects[1].BasePoints = 4514;
-                    break;
-                case 80240: // Havoc
-                    spellInfo->ProcCharges = 3;
                     break;
                 case 77799: // Fel Flame
                     spellInfo->ManaCost = 0;
@@ -4027,6 +4027,10 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 144864:// Item - Druid T16 Feral 2P Bonus
                     spellInfo->ProcFlags = 0;
+                    break;
+                // Lava lash
+                case 60103:
+                    spellInfo->Effects[2].Effect = SPELL_EFFECT_DUMMY;
                     break;
                 case 42292: // PvP trinket
                 case 59752: // Every Man for Himself
@@ -4267,8 +4271,11 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[1].BasePoints = 1;
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[1].TargetB = 0;
-                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(1); // 10s
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(8); // 15s
                     spellInfo->Speed = 100.0f;
+                    break;
+                case 132467:
+                    spellInfo->Effects[0].Effect = SPELL_EFFECT_SCRIPT_EFFECT;
                     break;
                 case 125195:// Tigereye brew stacks
                 case 115867:// Mana Tea stacks
@@ -4316,6 +4323,7 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 103965:// Metamorphosis (override auras)
                     spellInfo->Effects[2].SpellClassMask[0] = 64;
                     spellInfo->Effects[7].SpellClassMask[1] = 0x400;
+                    spellInfo->Effects[15].ApplyAuraName = SPELL_AURA_OVERRIDE_ACTIONBAR_SPELLS;
                     break;
                 case 104025:// Immolation Aura
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
@@ -4334,7 +4342,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 109468:// Curse of Enfeeblement
                 case 104225:// Curse of Elements
                     spellInfo->AttributesEx4 |= SPELL_ATTR4_NOT_CHECK_SELFCAST_POWER;
-                    spellInfo->ManaCost = 1;
                     break;
                 case 86213: // Soul Swap Exhale
                     spellInfo->ManaCostPercentage = 0;
@@ -4427,10 +4434,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 27285: // Seed of Corruption
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13); // 10 Yards
                     break;
-                case 104220:// Soulburn : Health Funnel
-                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
-                    spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
-                    break;
                 case 87385: // Soulburn : Seed of Corruption - damage
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_DEST_AREA_ENEMY;
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13); // 10 Yards
@@ -4492,6 +4495,10 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 88767: // Fulmination (triggered)
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
                     break;
+                case 20167: // Seal of insight
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_DUMMY;
+                    break;
                 case 146585:// Execution Sentence
                 case 146586:// Stay of Execution
                 case 53652: // Beacon of Light (heal)
@@ -4546,12 +4553,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 108503:// Grimoire of Sacrifice
                     spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
-                    spellInfo->Effects[6].Effect = 0;
-                    spellInfo->Effects[8].Effect = SPELL_EFFECT_APPLY_AURA;
-                    spellInfo->Effects[8].ApplyAuraName = SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT;
-                    spellInfo->Effects[8].BasePoints = 20;
-                    spellInfo->Effects[8].TargetA = TARGET_UNIT_CASTER;
-                    spellInfo->Effects[8].TargetB = 0;
                     break;
                 case 119905:// Cauterize (Command Demon)
                 case 119907:// Disarm (Command Demon)
@@ -4579,8 +4580,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->AttributesEx5 |= SPELL_ATTR5_SINGLE_TARGET_SPELL;
                     break;
                 case 82691: // Ring of Frost
-                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
-                    spellInfo->Effects[0].TargetB = 0;
+                    spellInfo->AttributesEx5 &= ~SPELL_ATTR5_SINGLE_TARGET_SPELL;
                     spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REFLECTED;
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
                     break;
@@ -4674,10 +4674,8 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 108446:// Soul Link
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_DUMMY;
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
-                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DUMMY;
                     spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_PET;
-                    //spellInfo->AttributesEx3 |= SPELL_ATTR3_DEATH_PERSISTENT;
                     break;
                 case 6785:  // Ravage
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET;
@@ -4693,6 +4691,9 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_MOD_DECREASE_SPEED;
                     spellInfo->Effects[0].Mechanic = MECHANIC_SNARE;
                     spellInfo->OverrideSpellList.push_back(106996); // Replace Hurricane by Astral Storm
+                    break;
+                case 80240: // Havoc
+                    spellInfo->StackAmount = 6;
                     break;
                 case 5487:  // Bear Form
                     spellInfo->Effects[2].BasePoints = 120;
@@ -4972,10 +4973,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->AttributesEx5 &= ~SPELL_ATTR5_SINGLE_TARGET_SPELL;
                     spellInfo->MaxAffectedTargets = 3;
                     break;
-                case 12051: // Evocation
-                    spellInfo->Effects[1].Effect = 0;
-                    spellInfo->Effects[1].ApplyAuraName = 0;
-                    break;
                 case 23691: // Berzerker Rage Effect
                     spellInfo->Effects[0].BasePoints = 100;
                     break;
@@ -4985,6 +4982,14 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 77762: // Lava Surge (cast time)
                     spellInfo->ProcFlags = 0; // we will remove it in spellscript, to prevent bug
+                    break;
+                case 78675: // Sunbeam
+                case 113286:
+                    spellInfo->Effects[2].ApplyAuraName = SPELL_AURA_PERIODIC_DUMMY;
+                    break;
+                case 81261: // Sunbeam
+                case 113287:
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(285); // 1s
                     break;
                 case 29166: // Innervate
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_PERIODIC_DUMMY;
@@ -5003,7 +5008,9 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
                     spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
                     break;
-                case 12975:// Last Stand
+                case 12975:  // Last Stand
+                case 17767:  // Shadow bulwark
+                case 132413: // Shadow bulwark
                     spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT;
                     break;
                 case 122507:// Rallying Cry
@@ -5120,7 +5127,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 48108: // Hot Streak
                 case 57761: // Brain Freeze
                 case 132158:// Nature's Swiftness
-                case 74434: // Soul Burn
                 case 23920: // Spell Reflection
                 case 113002:// Spell Reflection (Symbiosis)
                 case 124430:// Divine Insight (Shadow)
@@ -5185,7 +5191,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_DEAD;
                     break;
                 case 52042: // Healing Stream - Totem
-                    spellInfo->Effects[0].Effect = SPELL_EFFECT_HEAL;
                     spellInfo->Effects[0].BasePoints = 31;
                     break;
                 case 324:   // Lightning Shield
@@ -5230,6 +5235,9 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 121253:// Keg Smash
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                    spellInfo->MaxAffectedTargets = 3;
+                    break;
+                case 115276:// Sear magic
                     spellInfo->MaxAffectedTargets = 3;
                     break;
                 case 115308:// Elusive Brew

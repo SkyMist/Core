@@ -19,15 +19,13 @@
 #ifndef __BATTLEGROUNDWS_H
 #define __BATTLEGROUNDWS_H
 
-#include "Battleground.h"
+class Battleground;
 
 enum BG_WS_TimerOrScore
 {
-    BG_WS_MAX_TEAM_SCORE    = 3,
-    BG_WS_FLAG_RESPAWN_TIME = 23000,
-    BG_WS_FLAG_DROP_TIME    = 10000,
-    BG_WS_SPELL_FORCE_TIME  = 600000,
-    BG_WS_SPELL_BRUTAL_TIME = 900000
+    BG_WS_MAX_TEAM_SCORE                = 3,
+    BG_WS_FLAG_RESPAWN_TIME             = 23000,
+    BG_WS_FLAG_DROP_TIME                = 10000
 };
 
 enum BG_WS_Sound
@@ -55,43 +53,51 @@ enum BG_WS_SpellId
 
 enum BG_WS_WorldStates
 {
-    BG_WS_FLAG_UNK_ALLIANCE       = 1545,
-    BG_WS_FLAG_UNK_HORDE          = 1546,
-//    FLAG_UNK                      = 1547,
-    BG_WS_FLAG_CAPTURES_ALLIANCE  = 1581,
-    BG_WS_FLAG_CAPTURES_HORDE     = 1582,
-    BG_WS_FLAG_CAPTURES_MAX       = 1601,
-    BG_WS_FLAG_STATE_HORDE        = 2338,
-    BG_WS_FLAG_STATE_ALLIANCE     = 2339,
-    BG_WS_STATE_TIMER             = 4248,
-    BG_WS_STATE_TIMER_ACTIVE      = 4247
+    BG_WS_FLAG_UNK_ALLIANCE             = 1545,
+    BG_WS_FLAG_UNK_HORDE                = 1546,
+    // FLAG_UNK                            = 1547,
+    BG_WS_FLAG_CAPTURES_ALLIANCE        = 1581,
+    BG_WS_FLAG_CAPTURES_HORDE           = 1582,
+    BG_WS_FLAG_CAPTURES_MAX             = 1601,
+    BG_WS_FLAG_STATE_HORDE              = 2338,
+    BG_WS_FLAG_STATE_ALLIANCE           = 2339,
+    BG_WS_STATE_TIMER                   = 4248,
+    BG_WS_STATE_TIMER_ACTIVE            = 4247
 };
 
 enum BG_WS_ObjectTypes
 {
-    BG_WS_OBJECT_DOOR_A_1       = 0,
-    BG_WS_OBJECT_DOOR_A_2       = 1,
-    BG_WS_OBJECT_DOOR_A_3       = 2,
-    BG_WS_OBJECT_DOOR_A_4       = 3,
-    BG_WS_OBJECT_DOOR_A_5       = 4,
-    BG_WS_OBJECT_DOOR_A_6       = 5,
-    BG_WS_OBJECT_DOOR_H_1       = 6,
-    BG_WS_OBJECT_DOOR_H_2       = 7,
-    BG_WS_OBJECT_DOOR_H_3       = 8,
-    BG_WS_OBJECT_DOOR_H_4       = 9,
-    BG_WS_OBJECT_A_FLAG         = 10,
-    BG_WS_OBJECT_H_FLAG         = 11,
-    BG_WS_OBJECT_SPEEDBUFF_1    = 12,
-    BG_WS_OBJECT_SPEEDBUFF_2    = 13,
-    BG_WS_OBJECT_REGENBUFF_1    = 14,
-    BG_WS_OBJECT_REGENBUFF_2    = 15,
-    BG_WS_OBJECT_BERSERKBUFF_1  = 16,
-    BG_WS_OBJECT_BERSERKBUFF_2  = 17,
-    BG_WS_OBJECT_MAX            = 18
+    // Gates.
+    BG_WS_OBJECT_DOOR_A_1               = 0,
+    BG_WS_OBJECT_DOOR_A_2               = 1,
+    BG_WS_OBJECT_DOOR_A_3               = 2,
+    BG_WS_OBJECT_DOOR_A_4               = 3,
+    BG_WS_OBJECT_DOOR_A_5               = 4,
+    BG_WS_OBJECT_DOOR_A_6               = 5,
+    BG_WS_OBJECT_DOOR_H_1               = 6,
+    BG_WS_OBJECT_DOOR_H_2               = 7,
+    BG_WS_OBJECT_DOOR_H_3               = 8,
+    BG_WS_OBJECT_DOOR_H_4               = 9,
+
+    // Flags.
+    BG_WS_OBJECT_A_FLAG                 = 10,
+    BG_WS_OBJECT_H_FLAG                 = 11,
+
+    // Buffs.
+    BG_WS_OBJECT_SPEEDBUFF_1            = 12,
+    BG_WS_OBJECT_SPEEDBUFF_2            = 13,
+    BG_WS_OBJECT_REGENBUFF_1            = 14,
+    BG_WS_OBJECT_REGENBUFF_2            = 15,
+    BG_WS_OBJECT_BERSERKBUFF_1          = 16,
+    BG_WS_OBJECT_BERSERKBUFF_2          = 17,
+
+    BG_WS_OBJECT_MAX                    = 18
 };
 
+/* Object id templates from DB */
 enum BG_WS_ObjectEntry
 {
+    // Gates.
     BG_OBJECT_DOOR_A_1_WS_ENTRY          = 179918,
     BG_OBJECT_DOOR_A_2_WS_ENTRY          = 179919,
     BG_OBJECT_DOOR_A_3_WS_ENTRY          = 179920,
@@ -102,46 +108,50 @@ enum BG_WS_ObjectEntry
     BG_OBJECT_DOOR_H_2_WS_ENTRY          = 179917,
     BG_OBJECT_DOOR_H_3_WS_ENTRY          = 180322,
     BG_OBJECT_DOOR_H_4_WS_ENTRY          = 180322,
+
+    // Flags.
     BG_OBJECT_A_FLAG_WS_ENTRY            = 179830,
     BG_OBJECT_H_FLAG_WS_ENTRY            = 179831,
+
+    // Buffs.
     BG_OBJECT_A_FLAG_GROUND_WS_ENTRY     = 179785,
     BG_OBJECT_H_FLAG_GROUND_WS_ENTRY     = 179786
 };
 
 enum BG_WS_FlagState
 {
-    BG_WS_FLAG_STATE_ON_BASE      = 0,
-    BG_WS_FLAG_STATE_WAIT_RESPAWN = 1,
-    BG_WS_FLAG_STATE_ON_PLAYER    = 2,
-    BG_WS_FLAG_STATE_ON_GROUND    = 3
+    BG_WS_FLAG_STATE_ON_BASE             = 0,
+    BG_WS_FLAG_STATE_WAIT_RESPAWN        = 1,
+    BG_WS_FLAG_STATE_ON_PLAYER           = 2,
+    BG_WS_FLAG_STATE_ON_GROUND           = 3
 };
 
 enum BG_WS_Graveyards
 {
-    WS_GRAVEYARD_FLAGROOM_ALLIANCE = 769,
-    WS_GRAVEYARD_FLAGROOM_HORDE    = 770,
-    WS_GRAVEYARD_MAIN_ALLIANCE     = 771,
-    WS_GRAVEYARD_MAIN_HORDE        = 772
+    WS_GRAVEYARD_FLAGROOM_ALLIANCE       = 769,
+    WS_GRAVEYARD_FLAGROOM_HORDE          = 770,
+    WS_GRAVEYARD_MAIN_ALLIANCE           = 771,
+    WS_GRAVEYARD_MAIN_HORDE              = 772
 };
 
 enum BG_WS_CreatureTypes
 {
-    WS_SPIRIT_MAIN_ALLIANCE   = 0,
-    WS_SPIRIT_MAIN_HORDE      = 1,
+    WS_SPIRIT_MAIN_ALLIANCE              = 0,
+    WS_SPIRIT_MAIN_HORDE                 = 1,
 
-    BG_CREATURES_MAX_WS       = 2
+    BG_CREATURES_MAX_WS                  = 2
 };
 
 enum BG_WS_CarrierDebuffs
 {
-    WS_SPELL_FOCUSED_ASSAULT   = 46392,
-    WS_SPELL_BRUTAL_ASSAULT    = 46393
+    WS_SPELL_FOCUSED_ASSAULT             = 46392,
+    WS_SPELL_BRUTAL_ASSAULT              = 46393
 };
 
 enum BG_WS_Objectives
 {
-    WS_OBJECTIVE_CAPTURE_FLAG   = 42,
-    WS_OBJECTIVE_RETURN_FLAG    = 44
+    WS_OBJECTIVE_CAPTURE_FLAG            = 42,
+    WS_OBJECTIVE_RETURN_FLAG             = 44
 };
 
 #define WS_EVENT_START_BATTLE   8563
@@ -149,8 +159,10 @@ enum BG_WS_Objectives
 class BattlegroundWGScore : public BattlegroundScore
 {
     public:
-        BattlegroundWGScore() : FlagCaptures(0), FlagReturns(0) {};
-        virtual ~BattlegroundWGScore() {};
+        BattlegroundWGScore() : FlagCaptures(0), FlagReturns(0) { };
+
+        virtual ~BattlegroundWGScore() { };
+
         uint32 FlagCaptures;
         uint32 FlagReturns;
 };
@@ -158,73 +170,89 @@ class BattlegroundWGScore : public BattlegroundScore
 class BattlegroundWS : public Battleground
 {
     public:
-        /* Construction */
+        /* Construction. */
         BattlegroundWS();
         ~BattlegroundWS();
 
-        /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player* player);
-        virtual void StartingEventCloseDoors();
-        virtual void StartingEventOpenDoors();
+        /* Inherited from Battleground class. */
 
-        /* BG Flags */
+        void Reset();
+        bool SetupBattleground();
+        void EndBattleground(uint32 winner);
+
+        /* Players. */
+        void AddPlayer(Player* player);
+        void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        void HandleKillPlayer(Player* player, Player* killer);
+
+        /* Doors. */
+        void StartingEventCloseDoors();
+        void StartingEventOpenDoors();
+
+        /* BG Flags. */
         uint64 GetFlagPickerGUID(int32 team) const
         {
             if (team == BG_TEAM_ALLIANCE || team == BG_TEAM_HORDE)
                 return m_FlagKeepers[team];
             return 0;
         }
-        void SetAllianceFlagPicker(uint64 guid)     { m_FlagKeepers[BG_TEAM_ALLIANCE] = guid; }
-        void SetHordeFlagPicker(uint64 guid)        { m_FlagKeepers[BG_TEAM_HORDE] = guid; }
-        bool IsAllianceFlagPickedup() const         { return m_FlagKeepers[BG_TEAM_ALLIANCE] != 0; }
-        bool IsHordeFlagPickedup() const            { return m_FlagKeepers[BG_TEAM_HORDE] != 0; }
-        void RespawnFlag(uint32 Team, bool captured);
-        void RespawnFlagAfterDrop(uint32 Team);
-        uint8 GetFlagState(uint32 team)             { return _flagState[GetTeamIndexByTeamId(team)]; }
 
-        /* Battleground Events */
-        virtual void EventPlayerDroppedFlag(Player* Source);
-        virtual void EventPlayerClickedOnFlag(Player* Source, GameObject* target_obj);
-        virtual void EventPlayerCapturedFlag(Player* Source);
+        /* WorldStates. */
+        void FillInitialWorldStates(ByteBuffer &data);
 
-        void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        /* Areatriggers. */
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        void HandleKillPlayer(Player* player, Player* killer);
-        bool SetupBattleground();
-        virtual void Reset();
-        void EndBattleground(uint32 winner);
-        virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 
-        void UpdateFlagState(uint32 team, uint32 value);
-        void SetLastFlagCapture(uint32 team)                { _lastFlagCaptureTeam = team; }
-        void UpdateTeamScore(uint32 team);
+        /* Graveyards. */
+        WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
+
+        /* ScoreKeeping. */
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
-        void SetDroppedFlagGUID(uint64 guid, uint32 TeamID)  { m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)] = guid;}
-        uint64 GetDroppedFlagGUID(uint32 TeamID)             { return m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)];}
-        virtual void FillInitialWorldStates(ByteBuffer &data);
 
-        /* Scorekeeping */
+        void UpdateTeamScore(uint32 team);
         uint32 GetTeamScore(uint32 TeamID) const            { return m_TeamScores[GetTeamIndexByTeamId(TeamID)]; }
         void AddPoint(uint32 TeamID, uint32 Points = 1)     { m_TeamScores[GetTeamIndexByTeamId(TeamID)] += Points; }
         void SetTeamPoint(uint32 TeamID, uint32 Points = 0) { m_TeamScores[GetTeamIndexByTeamId(TeamID)] = Points; }
         void RemovePoint(uint32 TeamID, uint32 Points = 1)  { m_TeamScores[GetTeamIndexByTeamId(TeamID)] -= Points; }
+
+        /* Flag Events. */
+        void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
+        void EventPlayerDroppedFlag(Player* Source);
+        void EventPlayerCapturedFlag(Player* Source);
+
+        void UpdateFlagState(uint32 team, uint32 value);
+        void SetLastFlagCapture(uint32 team)                { _lastFlagCaptureTeam = team; }
+
+        void SetDroppedFlagGUID(uint64 guid, uint32 TeamID) { m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)] = guid;}
+        uint64 GetDroppedFlagGUID(uint32 TeamID)            { return m_DroppedFlagGUID[GetTeamIndexByTeamId(TeamID)];}
+
+        void SetAllianceFlagPicker(uint64 guid)             { m_FlagKeepers[BG_TEAM_ALLIANCE] = guid; }
+        void SetHordeFlagPicker(uint64 guid)                { m_FlagKeepers[BG_TEAM_HORDE] = guid; }
+        bool IsAllianceFlagPickedup() const                 { return m_FlagKeepers[BG_TEAM_ALLIANCE] != 0; }
+        bool IsHordeFlagPickedup() const                    { return m_FlagKeepers[BG_TEAM_HORDE] != 0; }
+        uint8 GetFlagState(uint32 team)                     { return _flagState[GetTeamIndexByTeamId(team)]; }
+        void RespawnFlag(uint32 Team, bool captured);
+        void RespawnFlagAfterDrop(uint32 Team);
+
     private:
-        uint64 m_FlagKeepers[2];                            // 0 - alliance, 1 - horde
-        uint64 m_DroppedFlagGUID[2];
-        uint8 _flagState[2];                               // for checking flag state
-        int32 _flagsTimer[2];
-        int32 _flagsDropTimer[2];
-        uint32 _lastFlagCaptureTeam;                       // Winner is based on this if score is equal
 
-        uint32 m_ReputationCapture;
-        uint32 m_HonorWinKills;
-        uint32 m_HonorEndKills;
-        int32 _flagSpellForceTimer;
-        bool _bothFlagsKept;
-        uint8 _flagDebuffState;                            // 0 - no debuffs, 1 - focused assault, 2 - brutal assault
-        uint8 _minutesElapsed;
+        void PostUpdateImpl(uint32 diff);
 
-        virtual void PostUpdateImpl(uint32 diff);
-        int32 m_CheatersCheckTimer;
+        uint64                 m_FlagKeepers[2];                            // 0 - Alliance, 1 - Horde.
+        uint64                 m_DroppedFlagGUID[2];
+        uint8                  _flagState[2];                               // For checking flag state.
+        int32                  _flagsTimer[2];
+        int32                  _flagsDropTimer[2];
+        uint32                 _lastFlagCaptureTeam;                        // Winner is based on this if score is equal.
+
+        uint32                 m_ReputationCapture;
+        uint32                 m_HonorWinKills;
+        uint32                 m_HonorEndKills;
+        int32                  _flagSpellForceTimer;
+        bool                   _bothFlagsKept;
+        uint8                  _flagDebuffState;                            // 0 - No debuffs, 1 - Focused assault, 2 - Brutal assault.
+        uint8                  _minutesElapsed;
+        int32                  m_CheatersCheckTimer;
 };
+
 #endif

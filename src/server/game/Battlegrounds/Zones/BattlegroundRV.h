@@ -95,6 +95,7 @@ class BattlegroundRVScore : public BattlegroundScore
 {
     public:
         BattlegroundRVScore() { };
+
         virtual ~BattlegroundRVScore() { };
 };
 
@@ -104,37 +105,47 @@ class BattlegroundRV : public Battleground
         BattlegroundRV();
         ~BattlegroundRV();
 
-        /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player* player);
-        virtual void StartingEventCloseDoors();
-        virtual void StartingEventOpenDoors();
+        /* Inherited from Battleground class. */
 
-        virtual bool SetupBattleground();
-        virtual void Reset();
-        virtual void FillInitialWorldStates(ByteBuffer &data);
+        void Reset();
+        bool SetupBattleground();
 
-        virtual void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        virtual void HandleAreaTrigger(Player* Source, uint32 Trigger);
-        virtual void HandleKillPlayer(Player* player, Player* killer);
+        /* Players. */
+        void AddPlayer(Player* player);
+        void RemovePlayer(Player* player, uint64 guid, uint32 team);
+        void HandleKillPlayer(Player* player, Player* killer);
 
-        virtual void PostUpdateImpl(uint32 diff);
+        /* Doors. */
+        void StartingEventCloseDoors();
+        void StartingEventOpenDoors();
 
+        /* WorldStates. */
+        void FillInitialWorldStates(ByteBuffer &data);
+
+        /* Areatriggers. */
+        void HandleAreaTrigger(Player* Source, uint32 Trigger);
+
+        /* Cheaters / Players under map. */
         bool HandlePlayerUnderMap(Player* player);
-        bool fencesOpened;
 
     private:
+
+        void PostUpdateImpl(uint32 diff);
+
         uint32 Timer;
         uint32 State;
         uint32 teleportTimer;
         bool   PillarCollision;
+        bool   fencesOpened;
 
     protected:
-        uint32 getTimer() { return Timer; };
-        void setTimer(uint32 timer) { Timer = timer; };
+        uint32 getTimer()             { return Timer; };
+        void   setTimer(uint32 timer) { Timer = timer; };
         uint32 fencesTimer;
 
-        uint32 getState() { return State; };
-        void setState(uint32 state) { State = state; };
+        uint32 getState()             { return State; };
+        void setState(uint32 state)   { State = state; };
+
         void TogglePillarCollision();
         void UpdateElevatorsType();
         bool GetPillarCollision() { return PillarCollision; }

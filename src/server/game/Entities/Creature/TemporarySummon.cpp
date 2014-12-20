@@ -190,13 +190,11 @@ void TempSummon::InitStats(uint32 duration)
     if (!m_Properties)
         return;
 
-    // Fix Force of Nature treants stats
-    if (owner && owner->getClass() == CLASS_DRUID && owner->HasSpell(106737))
-    {
-        float damage = 0.0f;
+    float damage = 0.0f;
 
-        switch (GetEntry())
-        {
+    switch (GetEntry())
+    {
+        // Fix Force of Nature treants stats.
         case ENTRY_TREANT_RESTO:
         case ENTRY_TREANT_BALANCE:
             SetMaxHealth(owner->CountPctFromMaxHealth(40));
@@ -207,15 +205,16 @@ void TempSummon::InitStats(uint32 duration)
             damage = ((owner->GetTotalAttackPowerValue(BASE_ATTACK) / 14.0f) * 2.0f * 0.75f) * 0.2f;
             SetStatFloatValue(UNIT_FIELD_MINDAMAGE, damage);
             SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, damage);
+            break;
         case ENTRY_TREANT_FERAL:
             SetMaxHealth(owner->CountPctFromMaxHealth(40));
             // Attack power / 14 * 2 * 0.75
             damage = (owner->GetTotalAttackPowerValue(BASE_ATTACK) / 14.0f) * 2.0f * 0.75f;
             SetStatFloatValue(UNIT_FIELD_MINDAMAGE, damage);
             SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, damage);
-        default:
             break;
-        }
+
+        default: break;
     }
 
     if (owner)
@@ -342,7 +341,8 @@ bool Minion::IsGuardianPet() const
 
 bool Minion::IsWarlockPet() const
 {
-    return isPet() && (GetEntry() == ENTRY_INFERNAL || GetEntry() == ENTRY_IMP || GetEntry() == ENTRY_VOIDWALKER || GetEntry() == ENTRY_SUCCUBUS || GetEntry() == ENTRY_FELHUNTER || GetEntry() == ENTRY_FELGUARD);
+    return isPet() && (GetEntry() == ENTRY_INFERNAL || GetEntry() == ENTRY_IMP     || GetEntry() == ENTRY_FELHUNTER || GetEntry() == ENTRY_VOIDWALKER || GetEntry() == ENTRY_SUCCUBUS || GetEntry() == ENTRY_DOOMGUARD   || GetEntry() == ENTRY_FELGUARD ||
+	                   GetEntry() == ENTRY_ABYSSAL  || GetEntry() == ENTRY_FEL_IMP || GetEntry() == ENTRY_OBSERVER  || GetEntry() == ENTRY_VOIDLORD   || GetEntry() == ENTRY_SHIVARRA || GetEntry() == ENTRY_TERRORGUARD || GetEntry() == ENTRY_WRATHGUARD);
 }
 
 Guardian::Guardian(SummonPropertiesEntry const* properties, Unit* owner, bool isWorldObject) : Minion(properties, owner, isWorldObject)

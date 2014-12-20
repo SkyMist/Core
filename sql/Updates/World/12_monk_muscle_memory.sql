@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='107270',`ScriptName`='spell_monk_muscle_memory';

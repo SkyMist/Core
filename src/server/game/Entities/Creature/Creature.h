@@ -37,24 +37,98 @@ class Player;
 class WorldSession;
 class CreatureGroup;
 
+// Creature / Player Pet entries.
+enum CreaturePetEntry
+{
+    // Paladin
+    ENTRY_GUARDIAN_KINGS_H  = 46499, // Temp Summon. - Holy.
+    ENTRY_GUARDIAN_KINGS_P  = 46490, // Temp Summon. - Protection.
+    ENTRY_GUARDIAN_KINGS_D  = 46506, // Temp Summon. - Retribution.
+
+    // Warlock
+    // -- Normal Pets.
+    ENTRY_IMP               = 416,
+    ENTRY_VOIDWALKER        = 1860,
+    ENTRY_SUCCUBUS          = 1863,
+    ENTRY_FELHUNTER         = 417,
+    ENTRY_FELGUARD          = 17252,
+    ENTRY_INFERNAL          = 89,    // Temp Summon.
+    ENTRY_DOOMGUARD         = 11859, // Temp Summon.
+
+    // -- With Grimoire of Supremacy.
+    ENTRY_FEL_IMP           = 58959,
+    ENTRY_VOIDLORD          = 58960,
+    ENTRY_SHIVARRA          = 58963,
+    ENTRY_OBSERVER          = 58964,
+    ENTRY_WRATHGUARD        = 58965,
+    ENTRY_ABYSSAL           = 58997, // Temp Summon.
+    ENTRY_TERRORGUARD       = 59000, // Temp Summon.
+
+    ENTRY_WILD_IMP          = 55659, // Temp Summon.
+    ENTRY_EBON_IMP          = 50675, // Temp Summon.
+
+    // Mage
+    ENTRY_WATER_ELEMENTAL   = 510,
+    ENTRY_MIRROR_IMAGE      = 31216, // Temp Summon.
+
+    // Priest
+    ENTRY_SHADOWFIEND       = 19668, // Temp Summon.
+    ENTRY_PSYFIEND          = 59190, // Temp Summon.
+    ENTRY_MINDBENDER        = 62982, // Temp Summon.
+    ENTRY_MINDBENDER_SHA    = 67236, // Temp Summon.
+    ENTRY_SHADOWY_APPAR     = 46954, // Temp Summon.
+    ENTRY_SHADOWY_APPAR_2   = 61966, // Temp Summon.
+
+    // Hunter
+    ENTRY_VIPER             = 19921, // Temp Summon.
+    ENTRY_VENOMOUS_SNAKE    = 19833, // Temp Summon.
+
+    ENTRY_CROW              = 61994, // Temp Summon.
+
+    // Druid
+    ENTRY_TREANT_GUARDIAN   = 54985,
+    ENTRY_TREANT_FERAL      = 54984,
+    ENTRY_TREANT_RESTO      = 54983,
+    ENTRY_TREANT_BALANCE    = 1964,
+
+    // Shaman
+    ENTRY_EARTH_ELEMENTAL   = 15352,
+    ENTRY_FIRE_ELEMENTAL    = 15438,
+    ENTRY_SPIRIT_WOLF       = 29264,
+    ENTRY_SPIRIT_WOLF_S     = 58488,
+    ENTRY_HEALING_T_TOTEM   = 59764,
+    ENTRY_EARTH_ELEM_TOTEM  = 61056,
+    ENTRY_FIRE_ELEM_TOTEM   = 61029,
+
+    // Death Knight
+    ENTRY_GHOUL             = 26125,
+    ENTRY_BLOODWORM         = 28017,
+    ENTRY_GARGOYLE          = 27829,
+
+    ENTRY_AOD_GHOUL         = 24207,
+
+    // Monk
+    ENTRY_XUEN_WHITE_TIGER  = 63508  // Temp Summon.
+};
+
 enum CreatureFlagsExtra
 {
-    CREATURE_FLAG_EXTRA_INSTANCE_BIND   = 0x00000001,       // creature kill bind instance with killer and killer's group
-    CREATURE_FLAG_EXTRA_CIVILIAN        = 0x00000002,       // not aggro (ignore faction/reputation hostility)
-    CREATURE_FLAG_EXTRA_NO_PARRY        = 0x00000004,       // creature can't parry
-    CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN = 0x00000008,       // creature can't counter-attack at parry
-    CREATURE_FLAG_EXTRA_NO_BLOCK        = 0x00000010,       // creature can't block
-    CREATURE_FLAG_EXTRA_NO_CRUSH        = 0x00000020,       // creature can't do crush attacks
-    CREATURE_FLAG_EXTRA_NO_XP_AT_KILL   = 0x00000040,       // creature kill not provide XP
-    CREATURE_FLAG_EXTRA_TRIGGER         = 0x00000080,       // trigger creature
-    CREATURE_FLAG_EXTRA_NO_TAUNT        = 0x00000100,       // creature is immune to taunt auras and effect attack me
-    CREATURE_FLAG_EXTRA_WORLDEVENT      = 0x00004000,       // custom flag for world event creatures (left room for merging)
-    CREATURE_FLAG_EXTRA_GUARD           = 0x00008000,       // Creature is guard
-    CREATURE_FLAG_EXTRA_NO_CRIT         = 0x00020000,       // creature can't do critical strikes
-    CREATURE_FLAG_EXTRA_NO_SKILLGAIN    = 0x00040000,       // creature won't increase weapon skills
-    CREATURE_FLAG_EXTRA_TAUNT_DIMINISH  = 0x00080000,       // Taunt is a subject to diminishing returns on this creautre
-    CREATURE_FLAG_EXTRA_ALL_DIMINISH    = 0x00100000,       // Creature is subject to all diminishing returns as player are
-    CREATURE_FLAG_EXTRA_DUNGEON_BOSS    = 0x10000000,       // creature is a dungeon boss (SET DYNAMICALLY, DO NOT ADD IN DB)
+    CREATURE_FLAG_EXTRA_INSTANCE_BIND                   = 0x00000001,       // creature kill bind instance with killer and killer's group
+    CREATURE_FLAG_EXTRA_CIVILIAN                        = 0x00000002,       // not aggro (ignore faction/reputation hostility)
+    CREATURE_FLAG_EXTRA_NO_PARRY                        = 0x00000004,       // creature can't parry
+    CREATURE_FLAG_EXTRA_NO_PARRY_HASTEN                 = 0x00000008,       // creature can't counter-attack at parry
+    CREATURE_FLAG_EXTRA_NO_BLOCK                        = 0x00000010,       // creature can't block
+    CREATURE_FLAG_EXTRA_NO_CRUSH                        = 0x00000020,       // creature can't do crush attacks
+    CREATURE_FLAG_EXTRA_NO_XP_AT_KILL                   = 0x00000040,       // creature kill not provide XP
+    CREATURE_FLAG_EXTRA_TRIGGER                         = 0x00000080,       // trigger creature
+    CREATURE_FLAG_EXTRA_NO_TAUNT                        = 0x00000100,       // creature is immune to taunt auras and effect attack me
+    CREATURE_FLAG_EXTRA_WORLDEVENT                      = 0x00004000,       // custom flag for world event creatures (left room for merging)
+    CREATURE_FLAG_EXTRA_GUARD                           = 0x00008000,       // Creature is guard
+    CREATURE_FLAG_EXTRA_NO_CRIT                         = 0x00020000,       // creature can't do critical strikes
+    CREATURE_FLAG_EXTRA_NO_SKILLGAIN                    = 0x00040000,       // creature won't increase weapon skills
+    CREATURE_FLAG_EXTRA_TAUNT_DIMINISH                  = 0x00080000,       // Taunt is a subject to diminishing returns on this creautre
+    CREATURE_FLAG_EXTRA_ALL_DIMINISH                    = 0x00100000,       // Creature is subject to all diminishing returns as player are
+    CREATURE_FLAG_EXTRA_DUNGEON_BOSS                    = 0x10000000,       // creature is a dungeon boss (SET DYNAMICALLY, DO NOT ADD IN DB)
     CREATURE_FLAG_EXTRA_VEHICLE_ATTACKABLE_PASSENGERS   = 0x20000000,       // creature is vehicle, UNIT_STATE_ONVEHICLE will not add to passengers
 };
 
@@ -71,37 +145,6 @@ enum CreatureFlagsExtra
 #else
 #pragma pack(push, 1)
 #endif
-
-// Creature Pet entries
-// Warlock
-#define ENTRY_INFERNAL          89
-#define ENTRY_IMP               416
-#define ENTRY_VOIDWALKER        1860
-#define ENTRY_SUCCUBUS          1863
-#define ENTRY_FELHUNTER         417
-#define ENTRY_FELGUARD          17252
-#define ENTRY_FEL_IMP           58959
-#define ENTRY_VOIDLORD          58960
-#define ENTRY_SHIVARRA          58963
-#define ENTRY_OBSERVER          58964
-#define ENTRY_WRATHGUARD        58965
-
-// Mage
-#define ENTRY_WATER_ELEMENTAL   510
-
-// Druid
-#define ENTRY_TREANT_GUARDIAN   54985
-#define ENTRY_TREANT_FERAL      54984
-#define ENTRY_TREANT_RESTO      54983
-#define ENTRY_TREANT_BALANCE    1964
-
-// Shaman
-#define ENTRY_FIRE_ELEMENTAL    15438
-
-// Death Knight
-#define ENTRY_GHOUL             26125
-#define ENTRY_BLOODWORM         28017
-#define ENTRY_GARGOYLE          27829
 
 #define MAX_KILL_CREDIT 2
 #define CREATURE_REGEN_INTERVAL 2 * IN_MILLISECONDS

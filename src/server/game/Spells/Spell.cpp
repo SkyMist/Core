@@ -1359,6 +1359,23 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
                         break;
                 }
                 break;
+            case SPELLFAMILY_WARLOCK:
+                // Fire and brimstone
+                if (m_spellInfo->Id == 114654 || m_spellInfo->Id == 108685)
+                {
+                    for (std::list<Unit*>::iterator itr = unitTargets.begin(); itr != unitTargets.end();++itr)
+                    {
+                        if (IsCritForTarget((*itr)))
+                            m_caster->SetPower(POWER_BURNING_EMBERS, m_caster->GetPower(POWER_BURNING_EMBERS) + 2);
+                        else
+                            m_caster->SetPower(POWER_BURNING_EMBERS, m_caster->GetPower(POWER_BURNING_EMBERS) + 1);
+
+                        // hotfix 5.4 - this spells can generate additional burning ember with 15% chance
+                        if (roll_chance_i(15))
+                            m_caster->SetPower(POWER_BURNING_EMBERS, m_caster->GetPower(POWER_BURNING_EMBERS) + 1);
+                    }
+                }
+                break;
             case SPELLFAMILY_PRIEST:
                 if (m_spellInfo->SpellFamilyFlags[0] == 0x10000000) // Circle of Healing
                 {
@@ -1580,10 +1597,6 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
                     m_caster->ToPlayer()->AddSpellCooldown(129881, 0, time(NULL) + 6);
                 else
                     m_caster->ToPlayer()->AddSpellCooldown(129881, 0, time(NULL) + 3);
-
-                // Muscle Memory
-                if (m_caster->HasAura(139598))
-                    m_caster->AddAura(139597,m_caster);
             }
         }
 
@@ -1809,58 +1822,6 @@ void Spell::SelectImplicitChainTargets(SpellEffIndex effIndex, SpellImplicitTarg
     uint32 maxTargets = m_spellInfo->Effects[effIndex].ChainTarget;
     if (Player* modOwner = m_caster->GetSpellModOwner())
         modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_JUMP_TARGETS, maxTargets, this);
-
-    // Havoc
-    if (AuraPtr havoc = m_caster->GetAura(80240))
-    {
-        if (havoc->GetCharges() > 0 && target->ToUnit() && !target->ToUnit()->HasAura(80240))
-        {
-            std::list<Unit*> targets;
-            Unit* secondTarget = NULL;
-            m_caster->GetAttackableUnitListInRange(targets, 150.0f);
-
-            if (target->ToUnit())
-                targets.remove(target->ToUnit());
-            targets.remove(m_caster);
-
-            for (auto itr : targets)
-            {
-                if (itr->IsWithinLOSInMap(m_caster) && itr->IsWithinDist(m_caster, 150.0f)
-                    && target->GetGUID() != itr->GetGUID() && itr->HasAura(80240, m_caster->GetGUID()))
-                {
-                    secondTarget = itr;
-                    break;
-                }
-            }
-
-            if (secondTarget && target->GetGUID() != secondTarget->GetGUID() && m_spellInfo->Id != 127802)
-            {
-                // Allow only one Chaos Bolt to be duplicated ...
-                if (m_spellInfo->Id == 116858 && havoc->GetCharges() >= 3)
-                {
-                    m_caster->RemoveAura(80240);
-                    secondTarget->RemoveAura(80240);
-                    m_caster->CastSpell(secondTarget, m_spellInfo->Id, true);
-                }
-                // ... or allow three next single target spells to be duplicated
-                else if (targetType.GetTarget() == TARGET_UNIT_TARGET_ENEMY && havoc->GetCharges() > 0)
-                {
-                    havoc->DropCharge();
-
-                    if (AuraPtr secondHavoc = secondTarget->GetAura(80240, m_caster->GetGUID()))
-                        secondHavoc->DropCharge();
-                    if (m_spellInfo->Id == 17877)
-                    {
-                        int32 basePoints = m_caster->CalculateSpellDamage(secondTarget, m_spellInfo, 0);
-                        uint32 damage = m_caster->SpellDamageBonusDone(secondTarget, m_spellInfo, basePoints, SPELL_DIRECT_DAMAGE);
-                        m_caster->DealDamage(secondTarget, damage / 2, 0, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_SHADOW);
-                    }
-                    else
-                        m_caster->CastSpell(secondTarget, m_spellInfo->Id, true);
-                }
-            }
-        }
-    }
 
     if (maxTargets > 1)
     {
@@ -3091,14 +3052,14 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
         // Ring of Frost
         if (m_spellInfo->Id == 82691)
         {
-            m_diminishLevel = unit->GetDiminishing(DIMINISHING_DEEP_FREEZE);
+            m_diminishLevel = unit->GetDiminishing(DIMINISHING_RING_OF_FROST);
             if (unit->GetCharmerOrOwnerPlayerOrPlayerItself())
                 unit->IncrDiminishing(DIMINISHING_RING_OF_FROST);
         }
         // Deep Freze
         else if (m_spellInfo->Id == 44572)
         {
-            m_diminishLevel = unit->GetDiminishing(DIMINISHING_RING_OF_FROST);
+            m_diminishLevel = unit->GetDiminishing(DIMINISHING_DEEP_FREEZE);
             if (unit->GetCharmerOrOwnerPlayerOrPlayerItself())
                 unit->IncrDiminishing(DIMINISHING_DEEP_FREEZE);
         }
@@ -4284,14 +4245,24 @@ void Spell::finish(bool ok)
         if (!m_triggeredByAuraSpell)
             m_caster->ToPlayer()->UpdatePotionCooldown(this);
 
-        // triggered spell pointer can be not set in some cases
-        // this is needed for proper apply of triggered spell mods
-        m_caster->ToPlayer()->SetSpellModTakingSpell(this, true);
+        // Presence of mind hack
+        if (m_spellInfo->Id == 11366 && m_caster->HasAura(12043) && m_caster->HasAura(48108))
+        {
+            m_caster->RemoveAurasDueToSpell(48108);
+            m_caster->RemoveAurasDueToSpell(12043);
+            m_caster->AddAura(12043,m_caster);
+        }
+        else
+        {
+            // triggered spell pointer can be not set in some cases
+            // this is needed for proper apply of triggered spell mods
+            m_caster->ToPlayer()->SetSpellModTakingSpell(this, true);
 
-        // Take mods after trigger spell (needed for 14177 to affect 48664)
-        // mods are taken only on succesfull cast and independantly from targets of the spell
-        m_caster->ToPlayer()->RemoveSpellMods(this);
-        m_caster->ToPlayer()->SetSpellModTakingSpell(this, false);
+            // Take mods after trigger spell (needed for 14177 to affect 48664)
+            // mods are taken only on succesfull cast and independantly from targets of the spell
+            m_caster->ToPlayer()->RemoveSpellMods(this);
+            m_caster->ToPlayer()->SetSpellModTakingSpell(this, false);
+        }
     }
 
     // Stop Attack for some spells
@@ -4431,8 +4402,59 @@ void Spell::finish(bool ok)
 
             break;
         }
-        default:
+        case 1680: // Glyph of the Raging Whirlwind
+        {
+            if (m_caster->HasAura(146968))
+                m_caster->CastSpell(m_caster, 147297, true);
             break;
+        }
+
+        default: break;
+    }
+
+    // Havoc
+    if (AuraPtr havoc = m_caster->GetAura(80240))
+    {
+        bool isAoe = true;
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (m_spellInfo->Effects[i].TargetA.GetTarget() == TARGET_UNIT_TARGET_ENEMY)
+                isAoe = false;
+
+        if (unitTarget && !unitTarget->HasAura(80240) && !isAoe)
+        {
+            std::list<Unit*> targets;
+            Unit* secondTarget = NULL;
+            m_caster->GetAttackableUnitListInRange(targets, 150.0f);
+
+            targets.remove(unitTarget);
+            targets.remove(m_caster);
+
+            for (auto itr : targets)
+            {
+                if (itr->IsWithinLOSInMap(m_caster) && itr->IsWithinDist(m_caster, 150.0f)
+                    && unitTarget->GetGUID() != itr->GetGUID() && itr->HasAura(80240, m_caster->GetGUID()))
+                {
+                    secondTarget = itr;
+                    break;
+                }
+            }
+
+            if (secondTarget && unitTarget->GetGUID() != secondTarget->GetGUID() && m_spellInfo->Id != 127802)
+            {
+                havoc->ModStackAmount(m_spellInfo->Id == 116858 ? -3 : -1);
+
+                if (AuraPtr secondHavoc = secondTarget->GetAura(80240, m_caster->GetGUID()))
+                    secondHavoc->ModStackAmount(m_spellInfo->Id == 116858 ? -3 : -1);
+                if (m_spellInfo->Id == 17877)
+                {
+                    int32 basePoints = m_caster->CalculateSpellDamage(secondTarget, m_spellInfo, 0);
+                    uint32 damage = m_caster->SpellDamageBonusDone(secondTarget, m_spellInfo, basePoints, SPELL_DIRECT_DAMAGE);
+                    m_caster->DealDamage(secondTarget, damage / 2, 0, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_SHADOW);
+                }
+                else
+                    m_caster->CastSpell(secondTarget, m_spellInfo->Id, true);
+            }
+        }
     }
 }
 
@@ -6715,7 +6737,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             return SPELL_FAILED_CASTER_AURASTATE;
 
         // Note: spell 62473 requres casterAuraSpell = triggering spell
-        if (!((m_spellInfo->Id == 48020 || m_spellInfo->Id == 114794) && m_spellInfo->CasterAuraSpell == 62388) && m_spellInfo->CasterAuraSpell && !m_caster->HasAura(sSpellMgr->GetSpellIdForDifficulty(m_spellInfo->CasterAuraSpell, m_caster)))
+        if (!((m_spellInfo->Id == 48020 || m_spellInfo->Id == 104136 || m_spellInfo->Id == 114794) && m_spellInfo->CasterAuraSpell == 62388) && m_spellInfo->CasterAuraSpell && !m_caster->HasAura(sSpellMgr->GetSpellIdForDifficulty(m_spellInfo->CasterAuraSpell, m_caster)))
             return SPELL_FAILED_CASTER_AURASTATE;
         if (m_spellInfo->ExcludeCasterAuraSpell && m_caster->HasAura(sSpellMgr->GetSpellIdForDifficulty(m_spellInfo->ExcludeCasterAuraSpell, m_caster)))
             return SPELL_FAILED_CASTER_AURASTATE;
@@ -7505,7 +7527,18 @@ SpellCastResult Spell::CheckCast(bool strict)
         {
             if (m_caster->GetTypeId() != TYPEID_PLAYER || !m_caster->ToPlayer()->IsInFeralForm())
                 return SPELL_FAILED_ONLY_SHAPESHIFT;
+            break;
         }
+        case 30213:  // Legion strike
+        case 89766:  // Axe toss
+        case 30151:  // Pursuit
+        case 115625: // Mortal cleave
+        {
+            if (m_caster->HasAura(89751) || m_caster->HasAura(115831)) // Felstorm and Wrathstorm
+                return SPELL_FAILED_SPELL_IN_PROGRESS;
+            break;
+        }
+
         default: break;
     }
 

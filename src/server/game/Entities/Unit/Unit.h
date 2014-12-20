@@ -2398,7 +2398,7 @@ class Unit : public WorldObject
         AuraApplicationList m_interruptableAuras;             // auras which have interrupt mask applied on unit
         AuraStateAurasMap m_auraStateAuras;        // Used for improve performance of aura state checks on aura apply/remove
         uint32 m_interruptMask;
-        AuraIdList _SoulSwapDOTList;
+        AuraList _SoulSwapDOTList;
 
         typedef std::list<HealDamageLog> HealDamageLogList;
         HealDamageLogList m_healDamage;

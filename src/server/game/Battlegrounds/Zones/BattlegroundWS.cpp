@@ -16,32 +16,19 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Battleground.h"
-#include "BattlegroundWS.h"
-#include "Creature.h"
-#include "GameObject.h"
-#include "Language.h"
-#include "Object.h"
-#include "ObjectMgr.h"
-#include "BattlegroundMgr.h"
-#include "Player.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include "ObjectMgr.h"
+#include "BattlegroundMgr.h"
+#include "Battleground.h"
+#include "Creature.h"
+#include "Language.h"
+#include "Object.h"
+#include "Player.h"
+#include "Util.h"
+#include "Chat.h"
 
-// these variables aren't used outside of this file, so declare them only here
-enum BG_WSG_Rewards
-{
-    BG_WSG_WIN = 0,
-    BG_WSG_FLAG_CAP,
-    BG_WSG_MAP_COMPLETE,
-    BG_WSG_REWARD_NUM
-};
-
-uint32 BG_WSG_Honor[BG_HONOR_MODE_NUM][BG_WSG_REWARD_NUM] =
-{
-    {20, 40, 40}, // normal honor
-    {60, 40, 80}  // holiday
-};
+#include "BattlegroundWS.h"
 
 BattlegroundWS::BattlegroundWS()
 {
@@ -156,27 +143,88 @@ void BattlegroundWS::PostUpdateImpl(uint32 diff)
         if (_bothFlagsKept)
         {
             _flagSpellForceTimer += diff;
-            if (_flagDebuffState == 0 && _flagSpellForceTimer >= 10*MINUTE*IN_MILLISECONDS)  //10 minutes
+
+            /* Stated as http://us.battle.net/wow/en/forum/topic/11914141511 MOP 5.4.7 changes.
+            Warsong Gulch and Twin Peaks are getting a slightly different treatment.
+            We’re going to apply the Focused Assault debuff 1 minute after both flags have been picked up.
+            Once it’s begun to apply, it will continue to increase at the current rate of 1 stack every minute. */
+
+            if (_flagDebuffState == 0 && _flagSpellForceTimer >= 1 * MINUTE * IN_MILLISECONDS)  // 1 minute.
             {
                 if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[0]))
                     player->CastSpell(player, WS_SPELL_FOCUSED_ASSAULT, true);
                 if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[1]))
                     player->CastSpell(player, WS_SPELL_FOCUSED_ASSAULT, true);
+
                 _flagDebuffState = 1;
             }
-            else if (_flagDebuffState == 1 && _flagSpellForceTimer >= 900000) //15 minutes
+            else if (_flagDebuffState == 1)
             {
-                if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[0]))
+                if (_flagSpellForceTimer < 6 * MINUTE * IN_MILLISECONDS) // 5 stacks of Assault max.
                 {
-                    player->RemoveAurasDueToSpell(WS_SPELL_FOCUSED_ASSAULT);
-                    player->CastSpell(player, WS_SPELL_BRUTAL_ASSAULT, true);
+                    int32 stacks = 0;
+
+					for (int32 i = 2; i <= 5; i++)
+                    {
+					    if (_flagSpellForceTimer >= (i * MINUTE * IN_MILLISECONDS)  && _flagSpellForceTimer < ((i + 1) * MINUTE * IN_MILLISECONDS))
+                        {
+					        stacks = i;
+					        break;
+					    }
+					}
+
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[0]))
+                        if (AuraPtr assault = player->GetAura(WS_SPELL_FOCUSED_ASSAULT))
+                            if (assault->GetStackAmount() < stacks)
+                                assault->SetStackAmount(stacks);
+
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[1]))
+                        if (AuraPtr assault = player->GetAura(WS_SPELL_FOCUSED_ASSAULT))
+                            if (assault->GetStackAmount() < stacks)
+                                assault->SetStackAmount(stacks);
                 }
-                if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[1]))
+                else if (_flagSpellForceTimer >= 6 * MINUTE * IN_MILLISECONDS) // 6 minutes (5th stack of Focused assault + 1).
                 {
-                    player->RemoveAurasDueToSpell(WS_SPELL_FOCUSED_ASSAULT);
-                    player->CastSpell(player, WS_SPELL_BRUTAL_ASSAULT, true);
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[0]))
+                    {
+                        player->RemoveAurasDueToSpell(WS_SPELL_FOCUSED_ASSAULT);
+                        player->CastSpell(player, WS_SPELL_BRUTAL_ASSAULT, true);
+                    }
+
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[1]))
+                    {
+                        player->RemoveAurasDueToSpell(WS_SPELL_FOCUSED_ASSAULT);
+                        player->CastSpell(player, WS_SPELL_BRUTAL_ASSAULT, true);
+                    }
+
+                    _flagDebuffState = 2;
                 }
-                _flagDebuffState = 2;
+            }
+            else if (_flagDebuffState == 2)
+            {
+                if (_flagSpellForceTimer <= (20 * MINUTE * IN_MILLISECONDS + 1 * IN_MILLISECONDS)) // 6 is first stack applied. 20 is last. + 1 second.
+                {
+                    int32 stacks = 0;
+
+					for (int32 i = 2; i <= 15; i++)
+                    {
+					    if (_flagSpellForceTimer >= ((i + 5) * MINUTE * IN_MILLISECONDS) && _flagSpellForceTimer < ((i + 6) * MINUTE * IN_MILLISECONDS))
+                        {
+					        stacks = i;
+					        break;
+					    }
+					}
+
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[0]))
+                        if (AuraPtr assault = player->GetAura(WS_SPELL_BRUTAL_ASSAULT))
+                            if (assault->GetStackAmount() < stacks)
+                                assault->SetStackAmount(stacks);
+
+                    if (Player* player = ObjectAccessor::FindPlayer(m_FlagKeepers[1]))
+                        if (AuraPtr assault = player->GetAura(WS_SPELL_BRUTAL_ASSAULT))
+                            if (assault->GetStackAmount() < stacks)
+                                assault->SetStackAmount(stacks);
+                }
             }
         }
         else
@@ -192,7 +240,7 @@ void BattlegroundWS::PostUpdateImpl(uint32 diff)
                 player->RemoveAurasDueToSpell(WS_SPELL_BRUTAL_ASSAULT);
             }
 
-            _flagSpellForceTimer = 0; //reset timer.
+            _flagSpellForceTimer = 0;         // reset timer.
             _flagDebuffState = 0;
         }
     }
@@ -345,7 +393,8 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* Source)
         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_HORDE);
         RewardReputationToTeam(889, m_ReputationCapture, HORDE);
     }
-    //for flag capture is reward 2 honorable kills
+
+    // For flag capture is reward 2 honorable kills
     RewardHonorToTeam(GetBonusHonorFromKill(2), Source->GetBGTeam());
 
     SpawnBGObject(BG_WS_OBJECT_H_FLAG, BG_WS_FLAG_RESPAWN_TIME);
@@ -378,13 +427,9 @@ void BattlegroundWS::EventPlayerCapturedFlag(Player* Source)
         UpdateWorldState(BG_WS_FLAG_STATE_HORDE, 1);
         UpdateWorldState(BG_WS_STATE_TIMER_ACTIVE, 0);
 
-        RewardHonorToTeam(BG_WSG_Honor[m_HonorMode][BG_WSG_WIN], winner);
         EndBattleground(winner);
     }
-    else
-    {
-        _flagsTimer[GetTeamIndexByTeamId(Source->GetBGTeam()) ? 0 : 1] = BG_WS_FLAG_RESPAWN_TIME;
-    }
+    else _flagsTimer[GetTeamIndexByTeamId(Source->GetBGTeam()) ? 0 : 1] = BG_WS_FLAG_RESPAWN_TIME;
 }
 
 void BattlegroundWS::EventPlayerDroppedFlag(Player* Source)
@@ -767,12 +812,28 @@ void BattlegroundWS::Reset()
 
 void BattlegroundWS::EndBattleground(uint32 winner)
 {
-    //win reward
+    /* Stated as http://us.battle.net/wow/en/forum/topic/11914141511 MOP 5.4.7 changes.
+    On top of that, we’re adding a new bonus at the end of the match: 
+    For every flag you prevent the opposing team from capturing (so, every flag under 3), you’ll earn 18 extra Honor. */
+    uint32 HONOR_KILLS_PER_FLAG = 2;
+
+    // Win rewards.
     if (winner == ALLIANCE)
+    {
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), ALLIANCE);
-    if (winner == HORDE)
+
+        if (GetTeamScore(BG_TEAM_HORDE) < BG_WS_MAX_TEAM_SCORE)
+            RewardHonorToTeam(GetBonusHonorFromKill(HONOR_KILLS_PER_FLAG * (BG_WS_MAX_TEAM_SCORE - GetTeamScore(BG_TEAM_HORDE))), ALLIANCE);
+    }
+    else if (winner == HORDE)
+    {
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), HORDE);
-    //complete map_end rewards (even if no team wins)
+
+        if (GetTeamScore(BG_TEAM_ALLIANCE) < BG_WS_MAX_TEAM_SCORE)
+            RewardHonorToTeam(GetBonusHonorFromKill(HONOR_KILLS_PER_FLAG * (BG_WS_MAX_TEAM_SCORE - GetTeamScore(BG_TEAM_ALLIANCE))), HORDE);
+    }
+
+    // Complete map rewards (even if no team wins).
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), ALLIANCE);
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), HORDE);
 

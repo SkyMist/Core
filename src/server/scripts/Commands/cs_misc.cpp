@@ -2646,11 +2646,11 @@ public:
         }
 
         /// - Send the message
-        // Use SendAreaTriggerMessage for fastest delivery.
-        player->GetSession()->SendAreaTriggerMessage("%s", msgStr);
-        player->GetSession()->SendAreaTriggerMessage("|cffff0000[Message from administrator]:|r");
+        // Deliver message.
+        handler->PSendSysMessage("%s", msgStr);
+        handler->PSendSysMessage("|cffff0000[Message from administrator]:|r");
 
-        // Confirmation message
+        // Confirmation message.
         std::string nameLink = handler->GetNameLink(player);
         handler->PSendSysMessage(LANG_SENDMESSAGE, nameLink.c_str(), msgStr);
 

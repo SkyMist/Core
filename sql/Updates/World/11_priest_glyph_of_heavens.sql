@@ -1,0 +1,1 @@
+INSERT INTO `spell_linked_spell` SET `spell_trigger`='111758',`spell_effect`='-124433',`type`='2';

@@ -1,0 +1,2 @@
+INSERT INTO `spell_linked_spell` SET `spell_trigger`='-131523',`spell_effect`='-115176',`type`='0',`comment`='Zen meditation';
+INSERT INTO `spell_linked_spell` SET `spell_trigger`='-115176',`spell_effect`='-131523',`type`='0',`comment`='Zen meditation';

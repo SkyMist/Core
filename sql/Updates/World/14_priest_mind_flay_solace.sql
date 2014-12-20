@@ -1,0 +1,1 @@
+INSERT INTO `spell_bonus_data` SET `entry`='129197',`dot_bonus`='0.5',`direct_bonus`='0',`ap_bonus`='0',`ap_dot_bonus`='0';

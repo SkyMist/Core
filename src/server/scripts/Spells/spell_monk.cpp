@@ -323,14 +323,20 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                     {
                         for (uint8 i = 0; i < 3; ++i)
                         {
-                            for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                            if (!caster->m_Controlled.empty())
                             {
-                                if ((*itr)->GetEntry() == spiritEntry[i])
+                                for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                                 {
-                                    ++summonsCount;
+                                    if (!(*itr))
+                                        continue;
 
-                                    if (firstSpirit == 3)
-                                        firstSpirit = i;
+                                    if ((*itr)->GetEntry() == spiritEntry[i])
+                                    {
+                                        ++summonsCount;
+
+                                        if (firstSpirit == 3)
+                                            firstSpirit = i;
+                                    }
                                 }
                             }
                         }
@@ -341,14 +347,20 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                         ++summonsCount;
 
                         // Find summonned spirit
-                        for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                        if (!caster->m_Controlled.empty())
                         {
-                            if (Creature* spirit = (*itr)->ToCreature())
+                            for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                             {
-                                if (spirit->AI() && spirit->AI()->GetGUID() == target->GetGUID())
+                                if (!(*itr))
+                                    continue;
+
+                                if (Creature* spirit = (*itr)->ToCreature())
                                 {
-                                    spirit->AI()->DoAction(0);
-                                    return;
+                                    if (spirit->AI() && spirit->AI()->GetGUID() == target->GetGUID())
+                                    {
+                                        spirit->AI()->DoAction(0);
+                                        return;
+                                    }
                                 }
                             }
                         }
@@ -356,16 +368,25 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                         Unit* spiritRemoved = NULL;
                         if (summonsCount > 2)
                         {
-                            for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                            if (!caster->m_Controlled.empty())
                             {
-                                if ((*itr)->GetEntry() == spiritEntry[firstSpirit])
+                                for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                                 {
-                                    if (Creature* spirit = (*itr)->ToCreature())
+                                    if (!(*itr))
+                                        continue;
+
+                                    if ((*itr)->GetEntry() == spiritEntry[firstSpirit])
                                     {
-                                        spirit->GetMotionMaster()->Clear();
-                                        spirit->GetMotionMaster()->MoveJump(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 15.0f, 10.0f, spirit->GetOrientation(), 1);
-                                        spiritRemoved = spirit->ToUnit();
-                                        break;
+                                        if (Creature* spirit = (*itr)->ToCreature())
+                                        {
+                                            if (Unit* owner = spirit->GetOwner())
+                                            {
+                                                spirit->GetMotionMaster()->MovementExpired();
+                                                spirit->GetMotionMaster()->MoveJump(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), 15.0f, 10.0f, spirit->GetOrientation(), 1);
+                                                spiritRemoved = spirit->ToUnit();
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -380,18 +401,27 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                                 {
                                     caster->CastSpell(caster, summonsMonk[i], true);
 
-                                    // Find summonned spirit
-                                    for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                                    // Find summoned spirit
+                                    if (!caster->m_Controlled.empty())
                                     {
-                                        if ((*itr)->GetEntry() == spiritEntry[i] && (*itr) != spiritRemoved)
+                                        for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                                         {
-                                            pPet = *itr;
-                                            break;
+                                            if (!(*itr))
+                                                continue;
+
+                                            if ((*itr)->GetEntry() == spiritEntry[i] && (*itr) != spiritRemoved)
+                                            {
+                                                pPet = *itr;
+                                                break;
+                                            }
                                         }
                                     }
 
                                     if (pPet && pPet->GetAI())
                                         pPet->GetAI()->SetGUID(target->GetGUID());
+
+                                    if (firstSpirit == 3)
+                                        firstSpirit = i;
 
                                     return;
                                 }
@@ -408,13 +438,19 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
 
                             caster->CastSpell(caster, summonsMonk[i], true);
 
-                            // Find summonned spirit
-                            for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                            // Find summoned spirit
+                            if (!caster->m_Controlled.empty())
                             {
-                                if ((*itr)->GetEntry() == spiritEntry[i] && (*itr) != spiritRemoved)
+                                for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                                 {
-                                    pPet = *itr;
-                                    break;
+                                    if (!(*itr))
+                                        continue;
+
+                                    if ((*itr)->GetEntry() == spiritEntry[i] && (*itr) != spiritRemoved)
+                                    {
+                                        pPet = *itr;
+                                        break;
+                                    }
                                 }
                             }
 
@@ -450,9 +486,11 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                 if (Unit* caster = GetCaster())
                 {
                     uint8 count = 0;
-                    for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
-                        if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
-                            ++count;
+
+                    if (!caster->m_Controlled.empty())
+                        for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                            if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
+                                ++count;
 
                     if (!count)
                     {
@@ -465,15 +503,52 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                         if (count != stormAura->GetStackAmount())
                             stormAura->SetStackAmount(count);
 
+                        int32 haste = caster->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE);
+                        if (caster->ToPlayer())
+                            haste *= caster->ToPlayer()->GetRatingMultiplier(CR_HASTE_MELEE);
+                        haste /= 100.0f;
+
                         if (stormAura->GetStackAmount() > 1)
                         {
-                            stormAura->GetEffect(1)->ChangeAmount(-70);
-                            stormAura->GetEffect(2)->ChangeAmount(-70);
-                            stormAura->GetEffect(3)->ChangeAmount(-70);
-                            stormAura->GetEffect(4)->ChangeAmount(-70);
+                            if (!caster->m_Controlled.empty())
+                            {
+                                for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                                {
+                                    if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
+                                    {
+                                        if ((*itr)->HasAura(138130))
+                                        {
+                                            (*itr)->GetAura(138130)->GetEffect(1)->ChangeAmount(-45);
+                                            (*itr)->GetAura(138130)->GetEffect(4)->ChangeAmount(caster->GetTotalAttackPowerValue(BASE_ATTACK));
+                                            (*itr)->GetAura(138130)->GetEffect(5)->ChangeAmount(haste);
+                                        }
+                                    }
+                                }
+                            }
+
+                            stormAura->GetEffect(1)->ChangeAmount(-45);
+                            stormAura->GetEffect(2)->ChangeAmount(-45);
+                            stormAura->GetEffect(3)->ChangeAmount(-45);
+                            stormAura->GetEffect(4)->ChangeAmount(-45);
                         }
                         else
                         {
+                            if (!caster->m_Controlled.empty())
+                            {
+                                for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                                {
+                                    if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
+                                    {
+                                        if ((*itr)->HasAura(138130))
+                                        {
+                                            (*itr)->GetAura(138130)->GetEffect(1)->ChangeAmount(-30);
+                                            (*itr)->GetAura(138130)->GetEffect(4)->ChangeAmount(caster->GetTotalAttackPowerValue(BASE_ATTACK));
+                                            (*itr)->GetAura(138130)->GetEffect(5)->ChangeAmount(haste);
+                                        }
+                                    }
+                                }
+                            }
+
                             stormAura->GetEffect(1)->ChangeAmount(-30);
                             stormAura->GetEffect(2)->ChangeAmount(-30);
                             stormAura->GetEffect(3)->ChangeAmount(-30);
@@ -490,14 +565,17 @@ class spell_monk_storm_earth_and_fire : public SpellScriptLoader
                     for (uint8 i = 0; i < 3; ++i)
                         caster->RemoveAura(visualMorph[i]);
 
-                    for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                    if (!caster->m_Controlled.empty())
                     {
-                        if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
+                        for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                         {
-                            if (Creature* spirit = (*itr)->ToCreature())
+                            if ((*itr)->GetEntry() == 69680 || (*itr)->GetEntry() == 69792 || (*itr)->GetEntry() == 69791)
                             {
-                                spirit->GetMotionMaster()->Clear();
-                                spirit->GetMotionMaster()->MoveJump(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 15.0f, 10.0f, spirit->GetOrientation(), 1);
+                                if (Creature* spirit = (*itr)->ToCreature())
+                                {
+                                    spirit->GetMotionMaster()->Clear();
+                                    spirit->GetMotionMaster()->MoveJump(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ(), 15.0f, 10.0f, spirit->GetOrientation(), 1);
+                                }
                             }
                         }
                     }
@@ -591,7 +669,7 @@ class spell_monk_expel_harm : public SpellScriptLoader
         }
 };
 
-// Chi Wave (healing bolt) - 132464
+// Chi Wave (damage bolt) - 132464
 class spell_monk_chi_wave_healing_bolt : public SpellScriptLoader
 {
     public:
@@ -607,8 +685,18 @@ class spell_monk_chi_wave_healing_bolt : public SpellScriptLoader
                     return;
 
                 if (Player* _player = GetOriginalCaster()->ToPlayer())
+                {
                     if (Unit* target = GetHitUnit())
-                        _player->CastSpell(target, SPELL_MONK_CHI_WAVE_HEAL, true);
+                    {
+                        if (GetSpellInfo()->Id == 132464)
+                            _player->CastSpell(target, SPELL_MONK_CHI_WAVE_HEAL, true);
+                        else if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(SPELL_MONK_CHI_WAVE_HEAL)) // Not have enough spell for school damage
+                        {
+                            int32 damage = _player->SpellNonMeleeDamageLog(target,SPELL_MONK_CHI_WAVE_HEAL,spellInfo->Effects[0].CalcValue(GetOriginalCaster()));
+                            _player->DealDamage(target, damage, NULL, SPELL_DIRECT_DAMAGE, spellInfo->GetSchoolMask(), spellInfo, true);
+                        }
+                    }
+                }
             }
 
             void Register()
@@ -666,14 +754,14 @@ class spell_monk_chi_wave_bolt : public SpellScriptLoader
                         Cell cell(p);
                         cell.SetNoCreate();
 
-                        JadeCore::AnyUnitInObjectRangeCheck u_check(_player, 20.0f);
+                        JadeCore::AnyUnitInObjectRangeCheck u_check(_player, 25.0f);
                         JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck> searcher(_player, targetList, u_check);
 
                         TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer> world_unit_searcher(searcher);
                         TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer>  grid_unit_searcher(searcher);
 
-                        cell.Visit(p, world_unit_searcher, *_player->GetMap(), *_player, 20.0f);
-                        cell.Visit(p, grid_unit_searcher, *_player->GetMap(), *_player, 20.0f);
+                        cell.Visit(p, world_unit_searcher, *_player->GetMap(), *_player, 25.0f);
+                        cell.Visit(p, grid_unit_searcher, *_player->GetMap(), *_player, 25.0f);
 
                         for (auto itr : targetList)
                         {
@@ -880,17 +968,46 @@ class spell_monk_transcendence_transfer : public SpellScriptLoader
         {
             PrepareSpellScript(spell_monk_transcendence_transfer_SpellScript);
 
+            SpellCastResult CheckTarget()
+            {
+                if (Player* _player = GetCaster()->ToPlayer())
+                {
+                    if (Guardian* pet = _player->GetGuardianPet())
+                    {
+                        if (_player->GetDistance(pet) > 40.0f)
+                            return SPELL_FAILED_OUT_OF_RANGE;
+
+                        if (!_player->IsWithinLOSInMap(pet))
+                            return SPELL_FAILED_LINE_OF_SIGHT;
+
+                        return SPELL_CAST_OK;
+                    }
+                }
+
+                return SPELL_FAILED_DONT_REPORT;
+            }
+
             void HandleDummy(SpellEffIndex effIndex)
             {
                 if (Player* _player = GetCaster()->ToPlayer())
+                {
                     if (Unit* target = GetHitUnit())
-                        if (Pet* pet = target->ToPet())
-                            if (pet->AI())
-                                pet->AI()->DoAction(1);
+                    {
+                        if (Guardian* pet = target->GetGuardianPet())
+                        {
+                            float x = pet->GetPositionX();
+                            float y = pet->GetPositionY();
+                            float z = pet->GetPositionZ();
+                            pet->NearTeleportTo(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation());
+                            target->NearTeleportTo(x, y, z, pet->GetOrientation());
+                        }
+                    }
+                }
             }
 
             void Register()
             {
+                OnCheckCast += SpellCheckCastFn(spell_monk_transcendence_transfer_SpellScript::CheckTarget);
                 OnEffectHitTarget += SpellEffectFn(spell_monk_transcendence_transfer_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };
@@ -898,6 +1015,41 @@ class spell_monk_transcendence_transfer : public SpellScriptLoader
         SpellScript* GetSpellScript() const
         {
             return new spell_monk_transcendence_transfer_SpellScript();
+        }
+};
+
+// Transcendence : remove old spirit - 101643
+class spell_monk_transcendence_remove_spirit : public SpellScriptLoader
+{
+    public:
+        spell_monk_transcendence_remove_spirit() : SpellScriptLoader("spell_monk_transcendence_remove_spirit") { }
+
+        class spell_monk_transcendence_remove_spirit_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_monk_transcendence_remove_spirit_SpellScript);
+
+            void HandleBeforeCast()
+            {
+                if (!GetCaster())
+                    return;
+
+                // Despawn if find old spirit
+                if (!GetCaster()->m_Controlled.empty())
+                    for (Unit::ControlList::const_iterator itr = GetCaster()->m_Controlled.begin(); itr != GetCaster()->m_Controlled.end(); ++itr)
+                        if ((*itr) && (*itr)->GetEntry() == 54569)
+                            if ((*itr)->ToCreature())
+                                (*itr)->ToCreature()->DespawnOrUnsummon();
+            }
+
+            void Register()
+            {
+                BeforeCast += SpellCastFn(spell_monk_transcendence_remove_spirit_SpellScript::HandleBeforeCast);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_monk_transcendence_remove_spirit_SpellScript();
         }
 };
 
@@ -1840,7 +1992,7 @@ class spell_monk_thunder_focus_tea : public SpellScriptLoader
 
             void Register()
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_thunder_focus_tea_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CASTER_AREA_RAID);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_thunder_focus_tea_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ALLY);
                 OnHit += SpellHitFn(spell_monk_thunder_focus_tea_SpellScript::HandleOnHit);
             }
         };
@@ -3379,6 +3531,13 @@ class spell_monk_paralysis : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
+                        if (caster->HasAura(125755)) // Glyph of Paralysis
+                        {
+                            caster->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE); 
+                            caster->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+                            caster->RemoveAurasByType(SPELL_AURA_PERIODIC_LEECH);
+                        }
+
                         if (target->isInBack(caster))
                         {
                             if (AuraApplication* aura = target->GetAuraApplication(115078))
@@ -3642,6 +3801,7 @@ class spell_monk_tigereye_brew_stacks : public SpellScriptLoader
 
 // Called by Jab - 100780
 // Muscle Memory - 139598
+// Spinning crane kick - 107270
 class spell_monk_muscle_memory : public SpellScriptLoader
 {
     public:
@@ -3654,18 +3814,27 @@ class spell_monk_muscle_memory : public SpellScriptLoader
             void HandleOnHit()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                {
-                    if (Unit* target = GetHitUnit())
-                    {
-                        if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_MONK_MISTWEAVER)
-                            _player->AddAura(SPELL_MONK_MUSCLE_MEMORY_EFFECT,_player);
-                    }
-                }
+                    if (_player->HasSpell(139598))
+                        if (Unit* target = GetHitUnit())
+                            if (GetSpellInfo()->Id != 107270)
+                                if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_MONK_MISTWEAVER)
+                                    _player->AddAura(SPELL_MONK_MUSCLE_MEMORY_EFFECT,_player);
+            }
+
+            void SelectTarget(std::list<WorldObject*>& targets)
+            {
+                if (targets.size() >= 3)
+                    if (Player* _player = GetCaster()->ToPlayer())
+                        if (_player->HasSpell(139598))
+                            if (GetSpellInfo()->Id == 107270)
+                                if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_MONK_MISTWEAVER)
+                                    _player->AddAura(SPELL_MONK_MUSCLE_MEMORY_EFFECT,_player);
             }
 
             void Register()
             {
                 OnHit += SpellHitFn(spell_monk_muscle_memory_SpellScript::HandleOnHit);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_monk_muscle_memory_SpellScript::SelectTarget, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
             }
         };
 
@@ -4070,6 +4239,7 @@ void AddSC_monk_spell_scripts()
     new spell_monk_chi_wave();
     new spell_monk_grapple_weapon();
     new spell_monk_transcendence_transfer();
+    new spell_monk_transcendence_remove_spirit();
     new spell_monk_serpents_zeal();
     new spell_monk_dampen_harm();
     new spell_monk_item_s12_4p_mistweaver();

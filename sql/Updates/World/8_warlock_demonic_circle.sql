@@ -1,0 +1,2 @@
+INSERT INTO `spell_script_names` SET `spell_id`='104135',`ScriptName`='spell_warl_demonic_circle_summon';
+INSERT INTO `spell_script_names` SET `spell_id`='104136',`ScriptName`='spell_warl_demonic_circle_teleport';

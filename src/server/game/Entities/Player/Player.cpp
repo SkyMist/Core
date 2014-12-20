@@ -4937,6 +4937,10 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
         return false;
     }
 
+    // Warlock demonology
+    if ((spellInfo->Id == 77219 && HasSpell(108501)) || (spellInfo->Id == 108501 && HasAura(77219)) ) // Grimuar of service, in demonology must be added felguard
+        learnSpell(111898, true);
+
     // If is summon companion spell, send update of battle pet journal
     if (learning && spellInfo->Effects[0].Effect == SPELL_EFFECT_SUMMON && spellInfo->Effects[0].MiscValueB == 3221)
     {
@@ -5315,6 +5319,10 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
             }
         }
     }
+
+    // Warlock demonology
+    if (spell_id == 77219 || spell_id == 108501)
+        removeSpell(111898); // Grimuar of service felguard
 
     if (spell_id == 46917 && m_canTitanGrip)
         SetCanTitanGrip(false);
@@ -7158,14 +7166,15 @@ float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
     switch (attType)
     {
         case BASE_ATTACK:
-            return GetFloatValue(PLAYER_EXPERTISE) / 4.0f;
+            return GetFloatValue(PLAYER_EXPERTISE);
         case OFF_ATTACK:
-            return GetFloatValue(PLAYER_OFFHAND_EXPERTISE) / 4.0f;
+            return GetFloatValue(PLAYER_OFFHAND_EXPERTISE);
         case RANGED_ATTACK:
-            return GetFloatValue(PLAYER_RANGED_EXPERTISE) / 4.0f;
-        default:
-            break;
+            return GetFloatValue(PLAYER_RANGED_EXPERTISE);
+
+        default: break;
     }
+
     return 0.0f;
 }
 
@@ -21611,7 +21620,7 @@ bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report
 
         if (DisableMgr::IsDisabledFor(DISABLE_TYPE_MAP, target_map, this))
         {
-            GetSession()->SendAreaTriggerMessage("%s", GetSession()->GetTrinityString(LANG_INSTANCE_CLOSED));
+            ChatHandler(this).PSendSysMessage("%s", GetSession()->GetTrinityString(LANG_INSTANCE_CLOSED));
             return false;
         }
 
@@ -21643,11 +21652,16 @@ bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report
                 if (missingQuest && !ar->questFailedText.empty())
                     ChatHandler(GetSession()).PSendSysMessage("%s", ar->questFailedText.c_str());
                 else if (mapDiff->hasErrorMessage) // if (missingAchievement) covered by this case
-                    SendTransferAborted(target_map, TRANSFER_ABORT_DIFFICULTY, target_difficulty);
+                {
+                    if (!ar->questFailedText.empty())
+                        ChatHandler(GetSession()).PSendSysMessage("%s", ar->questFailedText.c_str());
+                    else
+                        SendTransferAborted(target_map, TRANSFER_ABORT_DIFFICULTY, target_difficulty);
+                }
                 else if (missingItem)
-                    GetSession()->SendAreaTriggerMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED_AND_ITEM), LevelMin, sObjectMgr->GetItemTemplate(missingItem)->Name1.c_str());
+                    ChatHandler(this).PSendSysMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED_AND_ITEM), LevelMin, sObjectMgr->GetItemTemplate(missingItem)->Name1.c_str());
                 else if (LevelMin)
-                    GetSession()->SendAreaTriggerMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED), LevelMin);
+                    ChatHandler(this).PSendSysMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED), LevelMin);
             }
             return false;
         }
@@ -23187,13 +23201,7 @@ void Player::RemovePet(Pet* pet, PetSlot mode, bool returnreagent, bool stampede
 
     // Soul Link
     if (Unit* owner = pet->GetOwner())
-    {
-        if (owner->ToPlayer() && owner->ToPlayer()->HasSpell(108415))
-        {
-            owner->RemoveAura(108446);
-            pet->RemoveAura(108446);
-        }
-    }
+        owner->RemoveAurasDueToSpell(108446);
 }
 
 void Player::StopCastingCharm()
@@ -30519,9 +30527,6 @@ void Player::CastPassiveTalentSpell(uint32 spellId)
             if (!HasAura(17005))
                 CastSpell(this, 17005, true); // +6% stats
             break;
-        case 108415:// Soul Link
-            RemoveAura(108503); // Remove Grimoire of sacrifice
-            break;
         case 108499:// Grimoire of Supremacy
             if (!HasAura(108499))
                 AddAura(108499, this);
@@ -30555,10 +30560,6 @@ void Player::RemovePassiveTalentSpell(uint32 spellId)
             break;
         case 108288:// Heart of the Wild
             RemoveAura(17005);
-            break;
-        case 108415:// Soul Link
-            RemoveAura(108446);
-            RemoveAura(108503); // Remove Grimoire of sacrifice
             break;
         case 108499:// Grimoire of Supremacy
             RemoveAura(108499);

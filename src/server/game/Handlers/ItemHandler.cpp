@@ -2221,6 +2221,16 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
         if (item->GetReforgeId() != 0) // If the item has a reforge id.
             item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
 
+        if (item->CanUpgrade())
+            item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+        else
+        {
+            if (item->CanTransmogrify())
+                item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+            else
+                item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+        }
+
         item->SetState(ITEM_CHANGED, player);
         SendReforgeResult(true);
         return;
