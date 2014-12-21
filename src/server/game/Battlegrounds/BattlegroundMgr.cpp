@@ -1321,9 +1321,15 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     bool HasWonRandomBg   = (bgTypeId == BATTLEGROUND_RB && player->GetRandomWinner()) ? true : false;
     bool HasWonCallToArms = (IsBGWeekend(bgTypeId) && player->GetBgWeekendWinner())   ? true : false;
 
-    uint32 winnerConquest  = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_WINNER_CONQUEST_FIRST : BG_REWARD_WINNER_CONQUEST_LAST) / CURRENCY_PRECISION;
-    uint32 winnerHonor     = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_WINNER_HONOR_FIRST    : BG_REWARD_WINNER_HONOR_LAST)    / CURRENCY_PRECISION;
-    uint32 loserHonor      = ((!HasWonRandomBg || !HasWonCallToArms) ? BG_REWARD_LOSER_HONOR_FIRST     : BG_REWARD_LOSER_HONOR_LAST)     / CURRENCY_PRECISION;
+    // Maybe this should be split for Random and Call to Arms, as there are x2 each in packet, but when doing this the display shows same for both anyway.
+    // However, it is stipulated that "The first victory each day in a Bonus Battleground offers increased rewards."
+    // Also "The Call to Arms and Random Battleground systems offer players two different ways of earning the same Bonus Battleground rewards,
+    // and CtA battlegrounds chosen randomly through the Random Battleground option do not grant double rewards."
+    // This means logically that, of these two ways, one can be selected and done as "First", and all next victories on any grant "Last" rewards.
+    // Thus what is below now is correct, even though the packet sending looks weird.
+    uint32 winnerConquest  = ((!HasWonRandomBg && !HasWonCallToArms) ? BG_REWARD_WINNER_CONQUEST_FIRST : BG_REWARD_WINNER_CONQUEST_LAST) / CURRENCY_PRECISION;
+    uint32 winnerHonor     = ((!HasWonRandomBg && !HasWonCallToArms) ? BG_REWARD_WINNER_HONOR_FIRST    : BG_REWARD_WINNER_HONOR_LAST)    / CURRENCY_PRECISION;
+    uint32 loserHonor      = ((!HasWonRandomBg && !HasWonCallToArms) ? BG_REWARD_LOSER_HONOR_FIRST     : BG_REWARD_LOSER_HONOR_LAST)     / CURRENCY_PRECISION;
 
     ByteBuffer dataBuffer;
     uint32 count = 0;

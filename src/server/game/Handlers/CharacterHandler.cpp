@@ -980,7 +980,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     LoadAccountData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACCOUNTDATA), PER_CHARACTER_CACHE_MASK);
     SendAccountDataTimes(PER_CHARACTER_CACHE_MASK);
 
-    bool inGameShop                = true;
+    bool inGameShop                = false;
     bool inGameShopIcon            = true;
     bool travelPass                = true;
     bool sessionTimeAlert          = false;

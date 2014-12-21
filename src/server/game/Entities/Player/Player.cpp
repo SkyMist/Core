@@ -8833,7 +8833,23 @@ void Player::SendCurrencies()
 {
     WorldPacket packet(SMSG_INIT_CURRENCY);
 
-    packet.WriteBits(_currencyStorage.empty() ? 0 : _currencyStorage.size(), 21);
+    uint32 currencyCount = 0;
+
+    if (!_currencyStorage.empty())
+    {
+        for (PlayerCurrenciesMap::const_iterator itr = _currencyStorage.begin(); itr != _currencyStorage.end(); ++itr)
+        {
+            CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(itr->first);
+
+            // Do not init meta currencies.
+            if (!entry || entry->Category == CURRENCY_CATEGORY_META_CONQUEST)
+                continue;
+
+            currencyCount++;
+        }
+    }
+
+    packet.WriteBits(currencyCount, 21);
 
     if (!_currencyStorage.empty())
     {
@@ -8842,7 +8858,9 @@ void Player::SendCurrencies()
         for (PlayerCurrenciesMap::const_iterator itr = _currencyStorage.begin(); itr != _currencyStorage.end(); ++itr)
         {
             CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(itr->first);
-            if (!entry) // should never happen
+
+            // Do not init meta currencies.
+            if (!entry || entry->Category == CURRENCY_CATEGORY_META_CONQUEST)
                 continue;
 
             uint32 precision   = (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
@@ -8859,8 +8877,6 @@ void Player::SendCurrencies()
             packet.WriteBit(hasWeekCap);
             packet.WriteBit(hasWeekCount);
             packet.WriteBit(hasSeasonTotal);
-
-            packet.FlushBits();
 
             currencyData << uint32(totalCount);
             currencyData << uint32(entry->ID);
@@ -8997,21 +9013,21 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         oldSeasonTotalCount = itr->second.seasonTotal;
     }
 
-    // count can't be more then weekCap if used (weekCap > 0).
+    // Count can't be more then weekCap if used (weekCap > 0).
     uint32 weekCap = GetCurrencyWeekCap(currency->ID);
-    if (!ignoreLimit && weekCap && count > int32(weekCap))
-        count = weekCap;
+    if (!ignoreLimit && weekCap && oldTotalCount + count > int32(weekCap))
+        count = weekCap - oldTotalCount;
 
-    // count can't be more then totalCap if used (totalCap > 0)
+    // Count can't be more then totalCap if used (totalCap > 0)
     uint32 totalCap = GetCurrencyTotalCap(currency);
-    if (totalCap && count > int32(totalCap))
-        count = totalCap;
+    if (totalCap && oldTotalCount + count > int32(totalCap))
+        count = totalCap - oldTotalCount;
 
     int32 newTotalCount = int32(oldTotalCount) + count;
     if (newTotalCount < 0)
         newTotalCount = 0;
 
-    int32 newWeekCount = !ignoreLimit ? (int32(oldWeekCount) + (count > 0 ? count : 0)) : int32(oldWeekCount);
+    int32 newWeekCount = int32(oldWeekCount) + (count > 0 ? count : 0);
     if (newWeekCount < 0)
         newWeekCount = 0;
 
@@ -9019,19 +9035,13 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
     if (!ignoreLimit)
     {
-        // if we get more then weekCap just set to limit
+        // If we get more then weekCap just set to limit.
         if (weekCap && int32(weekCap) < newWeekCount)
-        {
             newWeekCount = int32(weekCap);
-            newTotalCount = oldTotalCount + (weekCap - oldWeekCount);
-        }
 
-        // if we get more then totalCap set to maximum;
+        // If we get more then totalCap set to limit.
         if (totalCap && int32(totalCap) < newTotalCount)
-        {
             newTotalCount = int32(totalCap);
-            newWeekCount = weekCap;
-        }
     }
 
     if (newWeekCount < 0)
@@ -9041,10 +9051,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         newTotalCount = 0;
 
     if (id == CURRENCY_TYPE_HONOR_POINTS || id == CURRENCY_TYPE_JUSTICE_POINTS)
-    {
-        newWeekCount = newTotalCount;
         weekCap = 0;
-    }
 
     if (uint32(newTotalCount) != oldTotalCount)
     {
@@ -9058,13 +9065,13 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         if (count > 0 && !ignoreLimit)
             UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CURRENCY, id, count);
 
+        // Check Conquest Points cap against current.
+        if (!ignoreLimit && currency->ID == CURRENCY_TYPE_CONQUEST_POINTS && weekCap != GetCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_POINTS))
+            UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_POINTS);
+
         if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
         {
-            // Update Random BG cap.
-            if (id == CURRENCY_TYPE_CONQUEST_META_RANDOM_BG)
-                UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG);
-
-            // count was changed to week limit, now we can modify original points.
+            // Count was changed to week limit, now we can modify original points.
             ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog);
             return;
         }
@@ -9182,22 +9189,17 @@ uint32 Player::GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const
 
 void Player::UpdateConquestCurrencyCap(uint32 currency)
 {
-    uint32 currenciesToUpdate[2] = { currency, CURRENCY_TYPE_CONQUEST_POINTS };
+    CurrencyTypesEntry const* currencyEntry = sCurrencyTypesStore.LookupEntry(currency);
+	if (!currencyEntry || currencyEntry->Category == CURRENCY_CATEGORY_META_CONQUEST)
+        return;
 
-    for (uint32 i = 0; i < 2; ++i)
-    {
-        CurrencyTypesEntry const* currencyEntry = sCurrencyTypesStore.LookupEntry(currenciesToUpdate[i]);
-        if (!currencyEntry)
-            continue;
+    uint32 precision = (currencyEntry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? 100 : 1;
+    uint32 cap = GetCurrencyWeekCap(currencyEntry->ID);
 
-        uint32 precision = (currencyEntry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? 100 : 1;
-        uint32 cap = GetCurrencyWeekCap(currencyEntry->ID);
-
-        WorldPacket packet(SMSG_UPDATE_CURRENCY_WEEK_LIMIT, 8);
-        packet << uint32(currenciesToUpdate[i]);
-        packet << uint32(cap / precision);
-        GetSession()->SendPacket(&packet);
-    }
+    WorldPacket packet(SMSG_UPDATE_CURRENCY_WEEK_LIMIT, 8);
+    packet << uint32(currency);
+    packet << uint32(cap / precision);
+    GetSession()->SendPacket(&packet);
 }
 
 void Player::ResetCurrencyWeekCap()
@@ -11046,7 +11048,7 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
     BuildWorldState(data, 0xC77, ArenaSeasonInProgress);    // 7 - 1 - Arena season in progress, 0 - end of season
     BuildWorldState(data, 0xF3D, ArenaSeasonId);            // 8 Arena season id
 
-    BuildWorldState(data, 0x1584, 0x1);                     // Show Rated BG's Interface - WS 5508.
+    // BuildWorldState(data, 0x1584, 0x1);                     // Show Rated BG's Interface - WS 5508.
 
     // Zone / Map specific.
     if (mapid == 530)                                       // OUTLAND

@@ -939,8 +939,10 @@ void Battleground::EndBattleground(uint32 winner)
             }
         }
 
-        uint32 winner_bonus = player->GetRandomWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
-        uint32 loser_bonus = player->GetRandomWinner() ? BG_REWARD_LOSER_HONOR_LAST : BG_REWARD_LOSER_HONOR_FIRST;
+        bool wonRandomOrCallToArmsBG = (player->GetRandomWinner() || player->GetBgWeekendWinner()) ? true : false;
+        uint32 winnerConquestBonus = (!wonRandomOrCallToArmsBG ? BG_REWARD_WINNER_CONQUEST_FIRST : BG_REWARD_WINNER_CONQUEST_LAST);
+        uint32 winnerHonorBonus    = (!wonRandomOrCallToArmsBG ? BG_REWARD_WINNER_HONOR_FIRST    : BG_REWARD_WINNER_HONOR_LAST);
+        uint32 loserHonorBonus     = (!wonRandomOrCallToArmsBG ? BG_REWARD_LOSER_HONOR_FIRST     : BG_REWARD_LOSER_HONOR_LAST);
 
         // remove temporary currency bonus auras before rewarding player
         player->RemoveAura(SPELL_HONORABLE_DEFENDER_25Y);
@@ -953,19 +955,19 @@ void Battleground::EndBattleground(uint32 winner)
             {
                 if (IsRandom() || BattlegroundMgr::IsBGWeekend(GetTypeID()))
                 {
-                    UpdatePlayerScore(player, NULL, SCORE_BONUS_HONOR, winner_bonus);
-                    if (!player->GetRandomWinner() && IsRandom() || !player->GetBgWeekendWinner() && BattlegroundMgr::IsBGWeekend(GetTypeID()))
-                    {
-                        // 150 cp awarded for the first Random / Call to Arms battleground won each day.
-                        player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, BG_REWARD_WINNER_CONQUEST_FIRST);
+                    UpdatePlayerScore(player, NULL, SCORE_BONUS_HONOR, winnerHonorBonus);
 
+                    // 150 cp awarded for the first Random / Call to Arms battleground won each day.
+                    // 75 cp awarded for each subsequent Random / Call to Arms battleground won.
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, winnerConquestBonus);
+
+                    if (!wonRandomOrCallToArmsBG)
+                    {
                         if (IsRandom()) // Player won daily random BG.
                             player->SetRandomWinner(true);
                         else            // Player won Weekend Call To Arms BG.
                             player->SetBgWeekendWinner(true);
                     }
-                    else if (player->GetRandomWinner() && IsRandom() || player->GetBgWeekendWinner() && BattlegroundMgr::IsBGWeekend(GetTypeID())) 
-                        player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RANDOM_BG, BG_REWARD_WINNER_CONQUEST_LAST); // 75 cp awarded for each subsequent Random / Call to Arms battleground won.
                 }
             }
 
@@ -987,7 +989,7 @@ void Battleground::EndBattleground(uint32 winner)
         else
         {
             if (IsRandom() || BattlegroundMgr::IsBGWeekend(GetTypeID()))
-                UpdatePlayerScore(player, NULL, SCORE_BONUS_HONOR, loser_bonus);
+                UpdatePlayerScore(player, NULL, SCORE_BONUS_HONOR, loserHonorBonus);
         }
 
         player->ResetAllPowers();
