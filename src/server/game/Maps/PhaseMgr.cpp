@@ -89,7 +89,9 @@ void PhaseMgr::Recalculate()
 
     PhaseDefinitionStore::const_iterator itr = _PhaseDefinitionStore->find(player->GetZoneId());
     if (itr != _PhaseDefinitionStore->end())
+    {
         for (PhaseDefinitionContainer::const_iterator phase = itr->second.begin(); phase != itr->second.end(); ++phase)
+        {
             if (CheckDefinition(&(*phase)))
             {
                 phaseData.AddPhaseDefinition(&(*phase));
@@ -97,12 +99,14 @@ void PhaseMgr::Recalculate()
                 if (phase->phasemask)
                     _UpdateFlags |= PHASE_UPDATE_FLAG_SERVERSIDE_CHANGED;
 
-                if (phase->phaseId || phase->terrainswapmap)
+                if (phase->phaseId || phase->terrainswapmap || phase->worldmaparea)
                     _UpdateFlags |= PHASE_UPDATE_FLAG_CLIENTSIDE_CHANGED;
 
                 if (phase->IsLastDefinition())
                     break;
             }
+        }
+    }
 }
 
 inline bool PhaseMgr::CheckDefinition(PhaseDefinition const* phaseDefinition)
@@ -151,6 +155,9 @@ void PhaseMgr::RegisterPhasingAuraEffect(AuraEffect const* auraEffect)
 
             if (itr->second.terrainswapmap)
                 phaseInfo.terrainswapmap = itr->second.terrainswapmap;
+
+            if (itr->second.worldmaparea)
+                phaseInfo.worldmaparea = itr->second.worldmaparea;
         }
     }
 
@@ -234,7 +241,7 @@ inline uint32 PhaseData::GetPhaseMaskForSpawn() const
 
 void PhaseData::SendPhaseMaskToPlayer()
 {
-    // Server side update
+    // Server - side updates.
     uint32 const phasemask = GetCurrentPhasemask();
     if (player->GetPhaseMask() == phasemask)
         return;
@@ -247,20 +254,24 @@ void PhaseData::SendPhaseMaskToPlayer()
 
 void PhaseData::SendPhaseshiftToPlayer()
 {
-    // Client side update
+    // Client - side updates.
     std::set<uint32> phaseIds;
     std::set<uint32> terrainswaps;
+    std::set<uint32> worldmapareas;
 
     // Phases from Auras.
     if (!spellPhaseInfo.empty())
     {
         for (PhaseInfoContainer::const_iterator itr = spellPhaseInfo.begin(); itr != spellPhaseInfo.end(); ++itr)
         {
+            if (itr->second.phaseId)
+                phaseIds.insert(itr->second.phaseId);
+
             if (itr->second.terrainswapmap)
                 terrainswaps.insert(itr->second.terrainswapmap);
 
-            if (itr->second.phaseId)
-                phaseIds.insert(itr->second.phaseId);
+            if (itr->second.worldmaparea)
+                worldmapareas.insert(itr->second.worldmaparea);
         }
     }
 
@@ -274,10 +285,13 @@ void PhaseData::SendPhaseshiftToPlayer()
 
             if ((*itr)->terrainswapmap)
                 terrainswaps.insert((*itr)->terrainswapmap);
+
+            if ((*itr)->worldmaparea)
+                worldmapareas.insert((*itr)->worldmaparea);
         }
     }
 
-    player->GetSession()->SendSetPhaseShift(phaseIds, terrainswaps);
+    player->GetSession()->SendSetPhaseShift(phaseIds, terrainswaps, worldmapareas);
 }
 
 void PhaseData::GetActivePhases(std::set<uint32>& phases) const

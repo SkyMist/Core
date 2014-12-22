@@ -290,6 +290,8 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
 
     SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
 
+    HasBeenReforged = false;
+
     // For Item Upgrade
     if (CanUpgrade())
     {
@@ -498,6 +500,8 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
     // Recalculate suffix factor.
     if (GetItemRandomPropertyId() < 0)
         UpdateItemSuffixFactor();
+
+    HasBeenReforged = false;
 
     uint32 reforgeEntry = fields[8].GetInt32();
     uint32 transmogId = fields[9].GetInt32();

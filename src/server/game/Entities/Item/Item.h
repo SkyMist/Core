@@ -389,6 +389,8 @@ class Item : public Object
         bool CanUpgrade() const;
         bool IsLegendaryCloak() const;
 
+        bool HasBeenReforged;
+
         // Get Item Reforge / Transmogrification / Upgrade entries.
         uint32 GetReforgeId();
         uint32 GetTransmogrifyId();
