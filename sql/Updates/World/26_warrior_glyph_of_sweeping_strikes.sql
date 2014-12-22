@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='26654',`ScriptName`='spell_warr_glyph_sweeping_strikes';

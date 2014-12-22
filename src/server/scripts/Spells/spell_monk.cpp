@@ -1034,11 +1034,11 @@ class spell_monk_transcendence_remove_spirit : public SpellScriptLoader
                     return;
 
                 // Despawn if find old spirit
-                if (!GetCaster()->m_Controlled.empty())
-                    for (Unit::ControlList::const_iterator itr = GetCaster()->m_Controlled.begin(); itr != GetCaster()->m_Controlled.end(); ++itr)
-                        if ((*itr) && (*itr)->GetEntry() == 54569)
-                            if ((*itr)->ToCreature())
-                                (*itr)->ToCreature()->DespawnOrUnsummon();
+                std::list<Creature*> transcendence;
+                GetCaster()->GetAllMinionsByEntry(transcendence, 54569);
+                if (!transcendence.empty())
+                    for (auto itr : transcendence)
+                        itr->DespawnOrUnsummon();
             }
 
             void Register()

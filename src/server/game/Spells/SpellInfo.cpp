@@ -3608,8 +3608,6 @@ bool SpellInfo::IsCustomCharged(SpellInfo const* procSpell) const
                 procSpell->Id == 1725   ||  // Distract
                 procSpell->Id == 114198 ||  // Mocking Banner taunt
                 procSpell->Id == 130733 ||  // and Shadow Word: Insanity allowing Cast
-                procSpell->Id == 115191 ||  // Stealth
-                procSpell->Id == 115192 ||  // Subterfuge
                 procSpell->Id == 114842 ||  // Shadow Walk
                 procSpell->Id == 5171   ||  // Slice and Dice
                 procSpell->Id == 2983   ||  // Sprint
@@ -3662,6 +3660,7 @@ bool SpellInfo::IsCustomCharged(SpellInfo const* procSpell) const
             if (procSpell && procSpell->Id == 31803)
                 return true;
             break;
+        case 58385: // Glyph of Hamstring
         case 324:   // Lightning Shield
         case 36032: // Arcane Charge
         case 79683: // Arcane Missiles !
@@ -3857,10 +3856,10 @@ bool SpellInfo::IsBreakingStealth(Unit* m_caster) const
         return false;
 
     // Hearthstone shoudn't call subterfuge
-    if ((SpellIconID == 776 || SpellFamilyName == SPELLFAMILY_POTION) && m_caster->HasAura(115191) && !m_caster->HasAura(115192))
+    if ((SpellIconID == 776 || SpellFamilyName == SPELLFAMILY_POTION) && m_caster && m_caster->HasAura(115191))
     {
         m_caster->RemoveAura(115191);
-        return true;
+        return false;
     }
 
     switch (GetSpellSpecific())
@@ -3868,35 +3867,28 @@ bool SpellInfo::IsBreakingStealth(Unit* m_caster) const
         case SPELL_SPECIFIC_FOOD:
         case SPELL_SPECIFIC_FOOD_AND_DRINK:
         case SPELL_SPECIFIC_WELL_FED:
+        {
+            if (m_caster && m_caster->HasAura(115191))
+            {
+                m_caster->RemoveAura(115191);
+                return false;
+            }
             return true;
+        }
     }
 
-    bool callSubterfuge = true;
-
-    if (m_caster && m_caster->HasAura(108208) && m_caster->HasAura(115191) && !m_caster->HasAura(115192) && !HasAttribute(SPELL_ATTR1_NOT_BREAK_STEALTH) && !m_caster->HasAura(51713))
+    if (m_caster && m_caster->HasAura(115191) && !HasAttribute(SPELL_ATTR1_NOT_BREAK_STEALTH) && !m_caster->HasAura(51713))
     {
         // mount shouldn't call subterfuge
         for (uint8 i = 0; i <MAX_SPELL_EFFECTS; ++i)
         {
             if (Effects[i].ApplyAuraName == SPELL_AURA_MOUNTED)
-                callSubterfuge = false;
-        }
-
-        // an excepton for Mass Dispel
-        if (Id == 32375 || Id == 32592 || Id == 72734 || Id == 39897 ||
-            Id == 114198 ||  // Mocking Banner
-            Id == 114205)    // Demoralizing Banner
-            callSubterfuge = false;
-
-        if (callSubterfuge)
-        {
-            m_caster->CastSpell(m_caster, 115192, true);
-            return false;
+            {
+                m_caster->RemoveAura(115191);
+                return false;
+            }
         }
     }
-
-    if (m_caster && m_caster->HasAura(115191))
-        return false;
 
     //if ((!m_caster || !m_caster->HasAuraType(SPELL_AURA_335)) && IsPositive())
     //    return false;
@@ -3929,6 +3921,12 @@ bool SpellInfo::IsBreakingStealth(Unit* m_caster) const
 
     if (HasAttribute(SPELL_ATTR4_DAMAGE_DOESNT_BREAK_AURAS) || HasAttribute(SPELL_ATTR1_NOT_BREAK_STEALTH))
         return false;
+
+    if (m_caster && m_caster->HasAura(115191))
+    {
+        m_caster->CastSpell(m_caster, 115192, true);
+        return false;
+    }
 
     return true;
 }
