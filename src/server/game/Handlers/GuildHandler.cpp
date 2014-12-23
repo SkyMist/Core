@@ -603,32 +603,34 @@ void WorldSession::HandleGuildBankSwapItems(WorldPacket& recvData)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received (CMSG_GUILD_BANK_SWAP_ITEMS)");
 
     ObjectGuid GoGuid;
-    uint32 amountSplited = 0;
+
+    uint32 amountSplited  = 0;
     uint32 originalItemId = 0;
-    uint32 itemId = 0;
-    uint32 autostoreCount = 0;
-    uint8 srcTabSlot = 0;
-    uint8 toChar = 0;
-    uint8 srcTabId = 0;
-    uint8 dstTabId = 0;
-    uint8 dstTabSlot = 0;
-    uint8 plrSlot = 0;
-    uint8 plrBag = 0;
-    bool bit52 = false;
-    bool hasDstTab = false;
-    bool bankToBank = false;
-    bool hasSrcTabSlot = false;
-    bool hasPlrSlot = false;
-    bool hasItemId = false;
-    bool hasPlrBag = false;
-    bool autostore = false;
+    uint32 itemId         = 0;
+    uint32 bankItemCount  = 0;
+    uint8 srcTabSlot      = 0;
+    uint8 toChar          = 0;
+    uint8 srcTabId        = 0;
+    uint8 dstTabId        = 0;
+    uint8 dstTabSlot      = 0;
+    uint8 plrSlot         = 0;
+    uint8 plrBag          = 0;
+
+    bool autostore        = false;
+    bool hasDstTab        = false;
+    bool bankToBank       = false;
+    bool hasSrcTabSlot    = false;
+    bool hasPlrSlot       = false;
+    bool hasItemId        = false;
+    bool hasPlrBag        = false;
+    bool hasBankItemCount = false;
 
     recvData >> amountSplited;
     recvData >> dstTabSlot;
     recvData >> originalItemId;
     recvData >> toChar >> srcTabId;
 
-    bit52 = recvData.ReadBit();
+    autostore = recvData.ReadBit();
     hasPlrBag = !recvData.ReadBit();
     GoGuid[2] = recvData.ReadBit();
     hasItemId = !recvData.ReadBit();
@@ -641,7 +643,7 @@ void WorldSession::HandleGuildBankSwapItems(WorldPacket& recvData)
     GoGuid[6] = recvData.ReadBit();
     GoGuid[1] = recvData.ReadBit();
     hasSrcTabSlot = !recvData.ReadBit();
-    autostore = !recvData.ReadBit();
+    hasBankItemCount = !recvData.ReadBit();
     GoGuid[5] = recvData.ReadBit();
     GoGuid[4] = recvData.ReadBit();
 
@@ -652,16 +654,21 @@ void WorldSession::HandleGuildBankSwapItems(WorldPacket& recvData)
 
     if (hasSrcTabSlot)
         srcTabSlot = recvData.read<uint8>();
+
     if (hasItemId)
         itemId = recvData.read<uint32>();
+
     if (hasPlrBag)
         plrBag = recvData.read<uint8>();
+
     if (hasPlrSlot)
         plrSlot = recvData.read<uint8>();
+
     if (hasDstTab)
         dstTabId = recvData.read<uint8>();
-    if (autostore)
-        autostoreCount = recvData.read<uint32>();
+
+    if (hasBankItemCount)
+        bankItemCount = recvData.read<uint32>();
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(GoGuid, GAMEOBJECT_TYPE_GUILD_BANK))
     {
@@ -678,8 +685,8 @@ void WorldSession::HandleGuildBankSwapItems(WorldPacket& recvData)
 
     if (bankToBank)
         guild->SwapItems(GetPlayer(), dstTabId, srcTabSlot, srcTabId, dstTabSlot, amountSplited);
-    else if (autostore)
-        guild->AutoStoreItemInInventory(GetPlayer(), srcTabId, dstTabSlot, autostoreCount);
+    // else if (autostore)
+    //     guild->AutoStoreItemInInventory(GetPlayer(), srcTabId, dstTabSlot, autostoreCount);
     else
     {
         // Player <-> Bank
@@ -687,7 +694,7 @@ void WorldSession::HandleGuildBankSwapItems(WorldPacket& recvData)
         if (!Player::IsInventoryPos(plrBag, plrSlot) && !(plrBag == NULL_BAG && plrSlot == NULL_SLOT))
             GetPlayer()->SendEquipError(EQUIP_ERR_INTERNAL_BAG_ERROR, NULL);
         else
-            guild->SwapItemsWithInventory(GetPlayer(), toChar, srcTabId, dstTabSlot, plrBag, plrSlot, amountSplited);
+            guild->SwapItemsWithInventory(GetPlayer(), toChar != 0, srcTabId, dstTabSlot, plrBag, plrSlot, amountSplited);
     }
 }
 
