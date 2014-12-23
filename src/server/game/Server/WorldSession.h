@@ -625,6 +625,8 @@ class WorldSession
         void HandleGuildEventLogQueryOpcode(WorldPacket& recvPacket);
         void HandleGuildRosterOpcode(WorldPacket& recvPacket);
         void HandleGuildRewardsQueryOpcode(WorldPacket& recvPacket);
+        void HandleGuildPromoteOpcode(WorldPacket& recvPacket);
+        void HandleGuildDemoteOpcode(WorldPacket& recvPacket);
         void HandleGuildAssignRankOpcode(WorldPacket& recvPacket);
         void HandleGuildLeaveOpcode(WorldPacket& recvPacket);
         void HandleGuildDisbandOpcode(WorldPacket& recvPacket);
@@ -641,7 +643,6 @@ class WorldSession
         void HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket);
         void HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket);
         void HandleGuildRequestPartyState(WorldPacket& recvPacket);
-        void HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket);
         void HandleAutoDeclineGuildInvites(WorldPacket& recvPacket);
         void HandleGuildRequestChallengeUpdate(WorldPacket& recvPacket);
         void HandleGuildRequestGuildRecipes(WorldPacket& recvPacket);

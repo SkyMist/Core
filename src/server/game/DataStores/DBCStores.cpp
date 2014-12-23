@@ -920,6 +920,27 @@ uint32 GetVirtualMapForMapAndZone(uint32 mapid, uint32 zoneId)
     return mapid;
 }
 
+uint32 GetMinLevelForExpansion(uint32 expansion)
+{
+    switch (expansion)
+    {
+        case CONTENT_1_60:
+            return 1;
+        case CONTENT_61_70:
+            return 58;
+        case CONTENT_71_80:
+            return 68;
+        case CONTENT_81_85:
+            return 80;
+        case CONTENT_86_90:
+            return 85;
+
+        default: break;
+    }
+
+    return 0;
+}
+
 uint32 GetMaxLevelForExpansion(uint32 expansion)
 {
     switch (expansion)
@@ -934,10 +955,10 @@ uint32 GetMaxLevelForExpansion(uint32 expansion)
             return 85;
         case CONTENT_86_90:
             return 90;
-        default:
-            break;
 
+        default: break;
     }
+
     return 0;
 }
 

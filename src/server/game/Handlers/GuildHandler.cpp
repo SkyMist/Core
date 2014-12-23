@@ -160,10 +160,9 @@ void WorldSession::HandleGuildMasterReplaceOpcode(WorldPacket& recvPacket)
 void WorldSession::HandleGuildAcceptOpcode(WorldPacket& /*recvPacket*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_GUILD_ACCEPT");
-    // Player cannot be in guild
-    if (!GetPlayer()->GetGuildId())
-        // Guild where player was invited must exist
-        if (Guild* guild = sGuildMgr->GetGuildById(GetPlayer()->GetGuildIdInvited()))
+
+    if (!GetPlayer()->GetGuildId()) // Player cannot be in guild
+        if (Guild* guild = sGuildMgr->GetGuildById(GetPlayer()->GetGuildIdInvited())) // Guild where player was invited must exist
             guild->HandleAcceptMember(this);
 }
 
@@ -183,6 +182,44 @@ void WorldSession::HandleGuildRosterOpcode(WorldPacket& recvPacket)
 
     if (Guild* guild = _GetPlayerGuild(this, true))
         guild->HandleRoster(this);
+    else
+        Guild::SendCommandResult(this, GUILD_COMMAND_ROSTER, ERR_GUILD_PLAYER_NOT_IN_GUILD);
+}
+
+void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
+{
+    ObjectGuid targetGuid;
+
+    uint8 bitOrder[8] = { 4, 0, 3, 5, 7, 1, 2, 6 };
+    recvPacket.ReadBitInOrder(targetGuid, bitOrder);
+
+    recvPacket.FlushBits();
+
+    uint8 byteOrder[8] = { 7, 0, 5, 2, 3, 6, 4, 1 };
+    recvPacket.ReadBytesSeq(targetGuid, byteOrder);
+
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_PROMOTE [%s]: Target: %u", GetPlayerInfo().c_str(), GUID_LOPART(targetGuid));
+
+    // if (Guild* guild = GetPlayer()->GetGuild())
+    //     guild->HandleUpdateMemberRank(this, targetGuid, false);
+}
+
+void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
+{
+    ObjectGuid targetGuid;
+
+    uint8 bitOrder[8] = { 1, 0, 7, 5, 3, 2, 4, 6 };
+    recvPacket.ReadBitInOrder(targetGuid, bitOrder);
+
+    recvPacket.FlushBits();
+
+    uint8 byteOrder[8] = { 3, 4, 1, 0, 7, 2, 5, 6 };
+    recvPacket.ReadBytesSeq(targetGuid, byteOrder);
+
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_DEMOTE [%s]: Target: %u", GetPlayerInfo().c_str(), GUID_LOPART(targetGuid));
+
+    // if (Guild* guild = GetPlayer()->GetGuild())
+    //     guild->HandleUpdateMemberRank(this, targetGuid, true);
 }
 
 void WorldSession::HandleGuildAssignRankOpcode(WorldPacket& recvPacket)
@@ -342,9 +379,7 @@ void WorldSession::HandleGuildAddRankOpcode(WorldPacket& recvPacket)
     recvPacket >> rankId;
 
     uint32 length = recvPacket.ReadBits(7);
-
     recvPacket.FlushBits();
-
     std::string rankName = recvPacket.ReadString(length);
 
     if (Guild* guild = _GetPlayerGuild(this, true))
@@ -450,7 +485,9 @@ void WorldSession::HandleGuildBankerActivate(WorldPacket& recvData)
     GoGuid[6] = recvData.ReadBit();
     GoGuid[0] = recvData.ReadBit();
     GoGuid[5] = recvData.ReadBit();
+
     fullSlotList = recvData.ReadBit(); // 0 = only slots updated in last operation are shown. 1 = all slots updated
+
     GoGuid[1] = recvData.ReadBit();
 
     recvData.FlushBits();
@@ -482,7 +519,9 @@ void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvData)
     GoGuid[0] = recvData.ReadBit();
     GoGuid[1] = recvData.ReadBit();
     GoGuid[7] = recvData.ReadBit();
+
     fullSlotList = recvData.ReadBit(); // 0 = only slots updated in last operation are shown. 1 = all slots updated
+
     GoGuid[3] = recvData.ReadBit();
     GoGuid[6] = recvData.ReadBit();
     GoGuid[2] = recvData.ReadBit();
@@ -752,9 +791,7 @@ void WorldSession::HandleSetGuildBankTabText(WorldPacket& recvData)
     recvData >> tabId;
 
     uint32 textLen = recvData.ReadBits(14);
-
     recvData.FlushBits();
-
     std::string text = recvData.ReadString(textLen);
 
     if (Guild* guild = _GetPlayerGuild(this))
@@ -839,27 +876,6 @@ void WorldSession::HandleGuildRequestPartyState(WorldPacket& recvData)
 
     if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
         guild->HandleGuildPartyRequest(this);
-}
-
-void WorldSession::HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket)
-{
-    ObjectGuid guildGuid;
-
-    uint8 bitOrder[8] = {2, 5, 3, 7, 4, 1, 0, 6};
-    recvPacket.ReadBitInOrder(guildGuid, bitOrder);
-
-    uint8 byteOrder[8] = {7, 3, 2, 1, 0, 5, 6, 4};
-    recvPacket.ReadBytesSeq(guildGuid, byteOrder);
-
-    if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
-    {
-        if (guild->IsMember(_player->GetGUID()))
-        {
-            WorldPacket data(SMSG_GUILD_MAX_DAILY_XP, 8);
-            data << uint64(sWorld->getIntConfig(CONFIG_GUILD_DAILY_XP_CAP));
-            SendPacket(&data);
-        }
-    }
 }
 
 void WorldSession::HandleAutoDeclineGuildInvites(WorldPacket& recvPacket)

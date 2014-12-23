@@ -545,6 +545,7 @@ inline void KillRewarder::_RewardHonor(Player* player)
 inline void KillRewarder::_RewardXP(Player* player, float rate)
 {
     uint32 xp(_xp);
+
     if (_group)
     {
         // 4.2.1. If player is in group, adjust XP:
@@ -558,6 +559,7 @@ inline void KillRewarder::_RewardXP(Player* player, float rate)
         else
             xp = 0;
     }
+
     if (xp)
     {
         // 4.2.2. Apply auras modifying rewarded XP (SPELL_AURA_MOD_XP_PCT).
@@ -565,14 +567,22 @@ inline void KillRewarder::_RewardXP(Player* player, float rate)
         for (Unit::AuraEffectList::const_iterator i = auras.begin(); i != auras.end(); ++i)
             AddPct(xp, (*i)->GetAmount());
 
-        // 4.2.3. Calculate expansion penalty
-        if (_victim->GetTypeId() == TYPEID_UNIT && player->getLevel() >= GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
-            xp = CalculatePct(xp, 10); // Players get only 10% xp for killing creatures of lower expansion levels than himself
+        // 4.2.3. Calculate expansion penalties.
+        if (_victim->GetTypeId() == TYPEID_UNIT)
+		{
+            if (player->getLevel() >= GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
+                xp = CalculatePct(xp, 10); // Players get only 10% xp for killing creatures of lower expansion levels than himself.
+            else
+            {
+                if (player->getLevel() < GetMinLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
+                    xp = 0; // Players get no xp for killing creatures of higher expansion levels than himself.
+            }
+        }
 
         // 4.2.4. Give XP to player.
         player->GiveXP(xp, _victim, _groupRate);
-        if (Pet* pet = player->GetPet())
-            // 4.2.5. If player has pet, reward pet with XP (100% for single player, 50% for group case).
+        // 4.2.5. If player has pet, reward pet with XP (100% for single player, 50% for group case).
+        if (Pet* pet = player->GetPet()) 
             pet->GivePetXP(_group ? xp / 2 : xp);
     }
 }
@@ -3855,6 +3865,38 @@ void Player::RemoveFromGroup(Group* group, uint64 guid, RemoveMethod method /* =
     }
 }
 
+// Below is related to EVENT_TRIAL_CAP_REACHED_LEVEL. 
+// Dismisses the XP bar and player cannot gain anymore XP. Used in tandem with PLAYER_FLAGS_NO_XP_GAIN Set / Remove.
+// Also a player selection option from the npc, allows making twinks.
+// Usage: 
+// If you do not want to gain XP, you can visit Behsten (Alliance) or Slahtz (Horde) to turn off all experience gain. 
+// It costs 10g to disable XP gain, and another 10g to re-enable it. Be aware that any potential XP gains wasted in this way cannot be recovered.
+// Disabling XP gain does not affect the gain of guild experience or guild reputation from turning in quests.
+// This is useful for players who wish to stay in a battleground bracket & still able to farm for better equipment and kill monsters without lvlup.
+// This is called twinking. Players with XP gain disabled (twinks) are matched against other twinks in the battleground queue system.
+// Another use for this feature is visiting old content at the original level, e.g. Burning Crusade raids at level 70, for Achievs etc.
+void Player::SendXPGainAborted()
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_XP_GAIN_ABORTED, 1 + 8 + 4 + 4 + 4);
+
+    uint8 bitOrder[8] = { 0, 2, 7, 4, 5, 1, 3, 6 };
+    recvData.ReadBitInOrder(guid, bitOrder);
+
+    data.FlushBits();
+
+    data << uint32(0); // unk1
+    data << uint32(0); // unk2
+
+    uint8 byteOrder[8] = { 6, 0, 3, 7, 2, 5, 1, 4 };
+    recvData.ReadBytesSeq(guid, byteOrder);
+
+    data << uint32(0); // unk3
+
+    GetSession()->SendPacket(&data);
+}
+
 void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool recruitAFriend, float /*group_rate*/)
 {
     WorldPacket data(SMSG_LOG_XP_GAIN, 1 + 1 + 8 + 4 + 4 + 4 + 1);
@@ -3878,12 +3920,17 @@ void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool re
     data.WriteByteSeq(victimGuid[3]);
     data.WriteByteSeq(victimGuid[5]);
     data.WriteByteSeq(victimGuid[2]);
+
     data << float(1);                                       // 1 - none 0 - 100% group bonus output
+
     data.WriteByteSeq(victimGuid[4]);
     data.WriteByteSeq(victimGuid[6]);
+
     data << uint32(GivenXP);                                // experience without bonus
     data << uint32(GivenXP + BonusXP);                      // given experience
+
     data.WriteByteSeq(victimGuid[0]);
+
     data << uint8(recruitAFriend ? 1 : 0);                  // does the GivenXP include a RaF bonus?
 
     GetSession()->SendPacket(&data);
@@ -4010,8 +4057,8 @@ void Player::GiveLevel(uint8 level)
         case 90:
             talent = true;
             break;
-        default:
-            break;
+
+        default: break;
     }
 
     // send levelup info to client
@@ -8334,7 +8381,7 @@ int32 Player::CalculateReputationGain(uint32 creatureOrQuestLevel, int32 rep, in
     if (percent <= 0.0f)
         return 0;
 
-    return int32(rep*percent/100);
+    return int32(rep * percent/100);
 }
 
 //Calculates how many reputation points player gains in victim's enemy factions
@@ -17846,8 +17893,10 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     else
         moneyRew = int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY));
 
+    // Calculate and award Guild XP.
     if (Guild* guild = sGuildMgr->GetGuildById(GetGuildId()))
-        guild->GiveXP(uint32(quest->XPValue(this) * sWorld->getRate(RATE_XP_QUEST) * sWorld->getRate(RATE_XP_GUILD_MODIFIER)), this);
+        if (GetQuestLevel(quest) > JadeCore::XP::GetGrayLevel(getLevel()))
+            guild->GiveXP(uint32(guild->CalculateQuestExperienceReward(getLevel(), GetQuestLevel(quest)) * sWorld->getRate(RATE_XP_QUEST)), this);
 
     // Give player extra money if GetRewOrReqMoney > 0 and get ReqMoney if negative
     if (quest->GetRewOrReqMoney())

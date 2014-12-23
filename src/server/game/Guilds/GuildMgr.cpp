@@ -123,15 +123,17 @@ void GuildMgr::ResetExperienceCaps()
 {
     CharacterDatabase.Execute(CharacterDatabase.GetPreparedStatement(CHAR_UPD_GUILD_RESET_TODAY_EXPERIENCE));
 
-    for (GuildContainer::iterator itr = GuildStore.begin(); itr != GuildStore.end(); ++itr)
-        itr->second->ResetDailyExperience();
+    if (!GuildStore.empty())
+        for (GuildContainer::iterator itr = GuildStore.begin(); itr != GuildStore.end(); ++itr)
+            itr->second->ResetDailyExperience();
 }
 
 void GuildMgr::ResetReputationCaps()
 {
-    /// @TODO: Implement
+    if (!GuildStore.empty())
+        for (GuildContainer::iterator itr = GuildStore.begin(); itr != GuildStore.end(); ++itr)
+            itr->second->ResetWeeklyReputation();
 }
-
 
 void GuildMgr::LoadGuilds()
 {
