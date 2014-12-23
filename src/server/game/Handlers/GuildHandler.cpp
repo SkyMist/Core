@@ -198,7 +198,7 @@ void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
     uint8 byteOrder[8] = { 7, 0, 5, 2, 3, 6, 4, 1 };
     recvPacket.ReadBytesSeq(targetGuid, byteOrder);
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_PROMOTE [%s]: Target: %u", GetPlayerInfo().c_str(), GUID_LOPART(targetGuid));
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_PROMOTE: Target: %u", GUID_LOPART(targetGuid));
 
     // if (Guild* guild = GetPlayer()->GetGuild())
     //     guild->HandleUpdateMemberRank(this, targetGuid, false);
@@ -216,7 +216,7 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
     uint8 byteOrder[8] = { 3, 4, 1, 0, 7, 2, 5, 6 };
     recvPacket.ReadBytesSeq(targetGuid, byteOrder);
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_DEMOTE [%s]: Target: %u", GetPlayerInfo().c_str(), GUID_LOPART(targetGuid));
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_GUILD_DEMOTE: Target: %u", GUID_LOPART(targetGuid));
 
     // if (Guild* guild = GetPlayer()->GetGuild())
     //     guild->HandleUpdateMemberRank(this, targetGuid, true);

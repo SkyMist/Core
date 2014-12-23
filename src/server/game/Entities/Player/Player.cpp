@@ -569,7 +569,7 @@ inline void KillRewarder::_RewardXP(Player* player, float rate)
 
         // 4.2.3. Calculate expansion penalties.
         if (_victim->GetTypeId() == TYPEID_UNIT)
-		{
+        {
             if (player->getLevel() >= GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
                 xp = CalculatePct(xp, 10); // Players get only 10% xp for killing creatures of lower expansion levels than himself.
             else
@@ -3882,7 +3882,7 @@ void Player::SendXPGainAborted()
     WorldPacket data(SMSG_XP_GAIN_ABORTED, 1 + 8 + 4 + 4 + 4);
 
     uint8 bitOrder[8] = { 0, 2, 7, 4, 5, 1, 3, 6 };
-    recvData.ReadBitInOrder(guid, bitOrder);
+    data.WriteBitInOrder(guid, bitOrder);
 
     data.FlushBits();
 
@@ -3890,7 +3890,7 @@ void Player::SendXPGainAborted()
     data << uint32(0); // unk2
 
     uint8 byteOrder[8] = { 6, 0, 3, 7, 2, 5, 1, 4 };
-    recvData.ReadBytesSeq(guid, byteOrder);
+    data.WriteBytesSeq(guid, byteOrder);
 
     data << uint32(0); // unk3
 

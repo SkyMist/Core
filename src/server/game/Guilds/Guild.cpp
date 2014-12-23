@@ -1402,7 +1402,7 @@ void Guild::HandleRoster(WorldSession* session /*= NULL*/)
         memberData << uint32(player ? player->GetReputation(REP_GUILD) : 0);
         memberData << uint8(member->GetClass());
         memberData << uint8(member->GetLevel());
-        memberData << uint32(sWorld->getIntConfig(CONFIG_GUILD_WEEKLY_REP_CAP));
+        memberData << uint32(0); // sWorld->getIntConfig(CONFIG_GUILD_WEEKLY_REP_CAP)
         memberData << uint64(0); // Total activity
         memberData.WriteString(member->GetPublicNote());
         memberData.WriteByteSeq(guid[1]);
@@ -3796,15 +3796,16 @@ void Guild::SendGuildXP(WorldSession* session) const
 // The exact formula appears to be 60k Guild XP for every level-appropriate quest.
 // Any quests that are too low for your character to earn XP will earn zero Guild XP.
 // Red caps at Orange. Red / Orange quests 90k, Yellow quests 60k, Green 30k, Grey 0.
-uint32 CalculateQuestExperienceReward(uint8 playerLevel, uint32 questLevel)
+uint32 Guild::CalculateQuestExperienceReward(uint8 playerLevel, uint32 questLevel)
 {
     uint32 experience = 0;
 
-    if (questLevel >= playerLevel + 3)                                       // Red + Orange (High level) quests (questLevel >= playerLevel + 3 (O) / 5 (R)) award N x 1.5.
+	uint32 pLevel = playerLevel;
+    if (questLevel >= pLevel + 3)                                       // Red + Orange (High level) quests (questLevel >= playerLevel + 3 (O) / 5 (R)) award N x 1.5.
         experience = GUILD_EXPERIENCE_ABOVE_LEVEL_QUEST;
-    else if (questLevel >= playerLevel - 2 && questLevel < playerLevel + 3)  // Yellow (Normal) quests (questLevel >= playerLevel - 2) award N x 1.
+    else if (questLevel >= pLevel - 2 && questLevel < pLevel + 3)       // Yellow (Normal) quests (questLevel >= playerLevel - 2) award N x 1.
         experience = GUILD_EXPERIENCE_SAME_LEVEL_QUEST;
-    else                                                                     // Green (Low level) quests award N x 0.5.
+    else                                                                // Green (Low level) quests award N x 0.5.
         experience = GUILD_EXPERIENCE_BELOW_LEVEL_QUEST;
 
     return experience;
