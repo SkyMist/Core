@@ -2108,13 +2108,26 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             return;
         }
 
-        if (!newEntries[i]) // Reset look.
+        if (!newEntries[i])
         {
 	        if (itemTransmogrified->GetTransmogrifyId() != 0) // If the item has a transmog id.
+            {
+                // Reset look.
                 itemTransmogrified->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, 0);
 
-            itemTransmogrified->SetState(ITEM_CHANGED, player);
-            player->SetVisibleItemSlot(slots[i], itemTransmogrified);
+                if (itemTransmogrified->CanUpgrade())
+                    itemTransmogrified->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+                else
+                {
+                    if (itemTransmogrified->GetReforgeId())
+                        itemTransmogrified->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+                    else
+                        itemTransmogrified->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
+                }
+
+                itemTransmogrified->SetState(ITEM_CHANGED, player);
+                player->SetVisibleItemSlot(slots[i], itemTransmogrified);
+            }
         }
         else
         {
@@ -2134,9 +2147,9 @@ void WorldSession::HandleTransmogrifyItems(WorldPacket& recvData)
             itemTransmogrified->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 1, newEntries[i]);
 
             if (itemTransmogrified->CanUpgrade())
-                itemTransmogrified->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+                itemTransmogrified->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
             else
-                itemTransmogrified->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+                itemTransmogrified->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
 
             player->SetVisibleItemSlot(slots[i], itemTransmogrified);
 
@@ -2207,35 +2220,36 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
     Item* item = player->GetItemByPos(bag, slot);
     if (!item)
     {
-        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleReforgeItemOpcode - Player (Guid: %u Name: %s) tried to reforge an invalid/non-existant item.", player->GetGUIDLow(), player->GetName());
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: HandleReforgeItemOpcode - Player (Guid: %u Name: %s) tried to reforge an invalid / non-existant item.", player->GetGUIDLow(), player->GetName());
         SendReforgeResult(false);
         return;
     }
 
     if (!reforgeEntry)
     {
-        // Reset the item.
-        if (item->IsEquipped() && !item->IsBroken())
-            player->ApplyReforgeEnchantment(item, false);
-
         if (item->GetReforgeId() != 0) // If the item has a reforge id.
+        {
+            // Reset the item.
+            if (item->IsEquipped() && !item->IsBroken())
+                player->ApplyReforgeEnchantment(item, false);
+
             item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
 
-        item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-        // if (item->CanUpgrade())
-        //     item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-        // else
-        // {
-        //     if (item->CanTransmogrify())
-        //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-        //     else
-        //         item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-        // }
+            if (item->CanUpgrade())
+                item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+            else
+            {
+                if (item->CanTransmogrify())
+                    item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+                else
+                    item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
+            }
 
-        item->SetState(ITEM_CHANGED, player);
-        SendReforgeResult(true);
+            item->SetState(ITEM_CHANGED, player);
 
-        item->HasBeenReforged = true;
+            SendReforgeResult(true);
+        }
+        else SendReforgeResult(false);
         return;
     }
 
@@ -2269,16 +2283,15 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, reforgeEntry);
 
-    item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-    // if (item->CanUpgrade())
-    //     item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-    // else
-    // {
-    //     if (item->CanTransmogrify())
-    //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-    //     else
-    //         item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-    // }
+    if (item->CanUpgrade())
+        item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
+    else
+    {
+        if (item->CanTransmogrify())
+            item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
+        else
+            item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+    }
 
     item->SetState(ITEM_CHANGED, player);
 
@@ -2286,8 +2299,6 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     if (item->IsEquipped() && !item->IsBroken())
         player->ApplyReforgeEnchantment(item, true);
-
-    item->HasBeenReforged = true;
 }
 
 void WorldSession::HandleChangeCurrencyFlags(WorldPacket& recvPacket)
@@ -2426,10 +2437,7 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 2, itemUpEntry->Id);
 
-    if (item->CanTransmogrify())
-        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-    else
-        item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x4);
+    item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
 
     item->SetState(ITEM_CHANGED, player);
 

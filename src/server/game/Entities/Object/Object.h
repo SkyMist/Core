@@ -284,6 +284,7 @@ class Object
         }
 
         void SetFlag(uint16 index, uint32 newFlag);
+        void SetFixedFlag(uint16 index, uint32 newFlag);
         void RemoveFlag(uint16 index, uint32 oldFlag);
 
         void ToggleFlag(uint16 index, uint32 flag)
