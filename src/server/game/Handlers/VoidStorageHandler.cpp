@@ -133,8 +133,8 @@ void WorldSession::HandleVoidStorageQuery(WorldPacket& recvData)
 
         itemData.WriteByteSeq(guid1[4]);
         itemData.WriteByteSeq(guid2[2]);
-        itemData.WriteByteSeq(guid2);
-        itemData.WriteByteSeq(guid2);
+        itemData.WriteByteSeq(guid2[3]);
+        itemData.WriteByteSeq(guid2[1]);
         itemData.WriteByteSeq(guid2[4]);
         itemData.WriteByteSeq(guid2[0]);
         itemData.WriteByteSeq(guid1[3]);
