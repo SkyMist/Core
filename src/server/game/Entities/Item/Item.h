@@ -390,6 +390,8 @@ class Item : public Object
         bool IsLegendaryCloak() const;
 
         bool HasBeenReforged;
+        void SetReforgeTimer(uint32 value) { m_reforgeTimer = value; }
+        uint32 GetReforgeTimer() { return m_reforgeTimer; }
 
         // Get Item Reforge / Transmogrification / Upgrade entries.
         uint32 GetReforgeId();
@@ -407,6 +409,7 @@ class Item : public Object
         uint32 m_refundRecipient;
         uint32 m_paidMoney;
         uint32 m_paidExtendedCost;
+        uint32 m_reforgeTimer;
         AllowedLooterSet allowedGUIDs;
 };
 #endif

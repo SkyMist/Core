@@ -2235,19 +2235,17 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
             item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, 0);
 
-            if (item->CanUpgrade())
-                item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-            else
-            {
-                if (item->CanTransmogrify())
-                    item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-                else
-                    item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0);
-            }
+            item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
 
             item->SetState(ITEM_CHANGED, player);
 
             SendReforgeResult(true);
+
+            if (!item->HasBeenReforged && !item->GetReforgeTimer())
+            {
+                item->HasBeenReforged = true;
+                item->SetReforgeTimer(1000);
+            }
         }
         else SendReforgeResult(false);
         return;
@@ -2283,15 +2281,9 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     item->SetDynamicUInt32Value(ITEM_DYNAMIC_MODIFIERS, 0, reforgeEntry);
 
-    if (item->CanUpgrade())
-        item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2 | 0x4);
-    else
-    {
-        if (item->CanTransmogrify())
-            item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1 | 0x2);
-        else
-            item->SetFixedFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
-    }
+    // Should be the below thing, but with the client bug it doesn't work.
+    // item->SetFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
+    item->RemoveFlag(ITEM_FIELD_MODIFIERS_MASK, 0x1);
 
     item->SetState(ITEM_CHANGED, player);
 
@@ -2299,6 +2291,12 @@ void WorldSession::HandleReforgeItemOpcode(WorldPacket& recvData)
 
     if (item->IsEquipped() && !item->IsBroken())
         player->ApplyReforgeEnchantment(item, true);
+
+    if (!item->HasBeenReforged && !item->GetReforgeTimer())
+    {
+        item->HasBeenReforged = true;
+        item->SetReforgeTimer(1000);
+    }
 }
 
 void WorldSession::HandleChangeCurrencyFlags(WorldPacket& recvPacket)

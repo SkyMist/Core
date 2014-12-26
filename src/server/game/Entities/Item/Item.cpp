@@ -289,6 +289,7 @@ bool Item::Create(uint32 guidlow, uint32 itemid, Player const* owner)
         return false;
 
     HasBeenReforged = false;
+    SetReforgeTimer(0);
 
     // For Item Upgrade
     if (CanUpgrade())
@@ -501,6 +502,7 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, Field* fields, uint32 entr
         UpdateItemSuffixFactor();
 
     HasBeenReforged = false;
+    SetReforgeTimer(0);
 
     uint32 reforgeEntry = fields[8].GetInt32();
     uint32 transmogId = fields[9].GetInt32();
