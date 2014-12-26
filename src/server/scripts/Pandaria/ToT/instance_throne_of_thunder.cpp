@@ -1,3 +1,11 @@
+/*
+*
+* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sew your ass.
+*
+* Raid: Throne of Thunder.
+* Description: Instance Script.
+*/
+
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "InstanceScript.h"

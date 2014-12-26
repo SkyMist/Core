@@ -281,9 +281,10 @@ void Group::ConvertToRaid()
     SendUpdate();
 
     // update quest related GO states (quest activity dependent from raid membership)
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
-        if (Player* player = ObjectAccessor::FindPlayer(citr->guid))
-            player->UpdateForQuestWorldObjects();
+    if (!m_memberSlots.empty())
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+            if (Player* player = ObjectAccessor::FindPlayer(citr->guid))
+                player->UpdateForQuestWorldObjects();
 }
 
 void Group::ConvertToGroup()
@@ -312,9 +313,10 @@ void Group::ConvertToGroup()
     SendUpdate();
 
     // update quest related GO states (quest activity dependent from raid membership)
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
-        if (Player* player = ObjectAccessor::FindPlayer(citr->guid))
-            player->UpdateForQuestWorldObjects();
+    if (!m_memberSlots.empty())
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+            if (Player* player = ObjectAccessor::FindPlayer(citr->guid))
+                player->UpdateForQuestWorldObjects();
 }
 
 bool Group::AddInvite(Player* player)
@@ -627,12 +629,15 @@ bool Group::RemoveMember(uint64 guid, const RemoveMethod &method /*= GROUP_REMOV
         // Pick new leader if necessary
         if (m_leaderGuid == guid)
         {
-            for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            if (!m_memberSlots.empty())
             {
-                if (ObjectAccessor::FindPlayer(itr->guid))
+                for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
                 {
-                    ChangeLeader(itr->guid);
-                    break;
+                    if (ObjectAccessor::FindPlayer(itr->guid))
+                    {
+                        ChangeLeader(itr->guid);
+                        break;
+                    }
                 }
             }
         }
@@ -749,6 +754,8 @@ void Group::Disband(bool hideDestroy /* = false */)
     RemoveAllRaidMarkers();
 
     Player* player;
+
+    if (!m_memberSlots.empty())
     for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
     {
         player = ObjectAccessor::FindPlayer(citr->guid);
@@ -1974,8 +1981,9 @@ void Group::SendTargetIconList(WorldSession* session)
 
 void Group::SendUpdate()
 {
-    for (member_witerator witr = m_memberSlots.begin(); witr != m_memberSlots.end(); ++witr)
-        SendUpdateToPlayer(witr->guid, &(*witr));
+    if (!m_memberSlots.empty())
+        for (member_witerator witr = m_memberSlots.begin(); witr != m_memberSlots.end(); ++witr)
+            SendUpdateToPlayer(witr->guid, &(*witr));
 }
 
 void Group::SendUpdatePlayerAtLeave(uint64 playerGUID, ObjectGuid groupGuid, ObjectGuid looterGuid, uint8 lootMethod, uint8 lootThreshold, uint32 raidDifficulty, uint32 dungeonDifficulty, uint32 counter)
@@ -2088,18 +2096,21 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     uint8 groupPosition;
     uint8 i = 0;
 
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+    if (!m_memberSlots.empty())
     {
-        if(citr->group != slot->group)
-            continue;
-
-        if(citr->guid == slot->guid)
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
         {
-            groupPosition = i;
-            break;
-        }
+            if(citr->group != slot->group)
+                continue;
 
-        i++;
+            if(citr->guid == slot->guid)
+            {
+                groupPosition = i;
+                break;
+            }
+
+            i++;
+        }
     }
 
     ByteBuffer memberData(32);
@@ -2124,6 +2135,7 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
     data.WriteBit(groupGuid[7]);
     data.WriteBit(leaderGuid[1]);
 
+    if (!m_memberSlots.empty())
     for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
     {
         ObjectGuid memberGuid = citr->guid;
@@ -2310,56 +2322,90 @@ void Group::BroadcastReadyCheck(WorldPacket* packet)
 
 void Group::OfflineReadyCheck()
 {
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+    if (!m_memberSlots.empty())
     {
-        Player* player = ObjectAccessor::FindPlayer(citr->guid);
-        if (!player || !player->GetSession())
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
         {
-            bool ready = false;
-            ObjectGuid plGUID = citr->guid;
-            ObjectGuid grpGUID = GetGUID();
+            Player* player = ObjectAccessor::FindPlayer(citr->guid);
+            if (!player || !player->GetSession())
+            {
+                bool ready = false;
+                ObjectGuid playerGuid = citr->guid;
+                ObjectGuid groupGuid = GetGUID();
 
-            WorldPacket data(SMSG_RAID_READY_CHECK_RESPONSE, 19);
+                WorldPacket data(SMSG_RAID_READY_CHECK_RESPONSE, 1 + 1 + 8 + 1 + 8);
 
-            data.WriteBit(plGUID[1]);
-            data.WriteBit(plGUID[3]);
-            data.WriteBit(plGUID[7]);
-            data.WriteBit(plGUID[0]);
-            data.WriteBit(grpGUID[4]);
-            data.WriteBit(grpGUID[7]);
-            data.WriteBit(plGUID[2]);
-            data.WriteBit(ready);
-            data.WriteBit(grpGUID[2]);
-            data.WriteBit(grpGUID[6]);
-            data.WriteBit(plGUID[4]);
-            data.WriteBit(plGUID[5]);
-            data.WriteBit(grpGUID[1]);
-            data.WriteBit(grpGUID[0]);
-            data.WriteBit(grpGUID[5]);
-            data.WriteBit(grpGUID[3]);
-            data.WriteBit(plGUID[6]);
+                data.WriteBit(groupGuid[0]);
+                data.WriteBit(groupGuid[2]);
 
-            data.WriteByteSeq(plGUID[2]);
-            data.WriteByteSeq(plGUID[3]);
-            data.WriteByteSeq(plGUID[7]);
-            data.WriteByteSeq(grpGUID[1]);
-            data.WriteByteSeq(grpGUID[7]);
-            data.WriteByteSeq(plGUID[1]);
-            data.WriteByteSeq(plGUID[0]);
-            data.WriteByteSeq(grpGUID[2]);
-            data.WriteByteSeq(grpGUID[3]);
-            data.WriteByteSeq(plGUID[6]);
-            data.WriteByteSeq(grpGUID[0]);
-            data.WriteByteSeq(plGUID[5]);
-            data.WriteByteSeq(plGUID[4]);
-            data.WriteByteSeq(grpGUID[4]);
-            data.WriteByteSeq(grpGUID[5]);
-            data.WriteByteSeq(grpGUID[6]);
+                data.WriteBit(ready);
 
-            BroadcastReadyCheck(&data);
+                data.WriteBit(playerGuid[7]);
+                data.WriteBit(playerGuid[6]);
+                data.WriteBit(playerGuid[2]);
+                data.WriteBit(groupGuid[4]);
+                data.WriteBit(groupGuid[3]);
+                data.WriteBit(groupGuid[5]);
+                data.WriteBit(playerGuid[3]);
+                data.WriteBit(groupGuid[7]);
+                data.WriteBit(playerGuid[5]);
+                data.WriteBit(groupGuid[6]);
+                data.WriteBit(groupGuid[1]);
+                data.WriteBit(playerGuid[0]);
+                data.WriteBit(playerGuid[1]);
+                data.WriteBit(playerGuid[4]);
 
-            m_readyCheckCount++;
+                data.FlushBits();
+
+                data.WriteByteSeq(playerGuid[1]);
+                data.WriteByteSeq(groupGuid[5]);
+                data.WriteByteSeq(playerGuid[2]);
+                data.WriteByteSeq(groupGuid[7]);
+                data.WriteByteSeq(groupGuid[0]);
+                data.WriteByteSeq(playerGuid[4]);
+                data.WriteByteSeq(playerGuid[3]);
+                data.WriteByteSeq(groupGuid[4]);
+                data.WriteByteSeq(playerGuid[7]);
+                data.WriteByteSeq(groupGuid[6]);
+                data.WriteByteSeq(playerGuid[5]);
+                data.WriteByteSeq(groupGuid[2]);
+                data.WriteByteSeq(groupGuid[1]);
+                data.WriteByteSeq(groupGuid[3]);
+                data.WriteByteSeq(playerGuid[0]);
+                data.WriteByteSeq(playerGuid[6]);
+
+                BroadcastReadyCheck(&data);
+
+                SetReadyCheckCount(GetReadyCheckCount() + 1);
+            }
         }
+    }
+
+    if (GetReadyCheckCount() >= GetMembersCount())
+    {
+        ObjectGuid grpGUID = GetGUID();
+        bool checkCompleted = true;
+
+        WorldPacket data2(SMSG_RAID_READY_CHECK_COMPLETED);
+
+        uint8 bitOrder[8] = { 1, 5, 6, 3, 2, 7, 0, 4 };
+        data2.WriteBitInOrder(grpGUID, bitOrder);
+
+        data2.FlushBits();
+
+        data2.WriteByteSeq(grpGUID[4]);
+        data2.WriteByteSeq(grpGUID[7]);
+
+        data2 << uint8(checkCompleted);
+
+        data2.WriteByteSeq(grpGUID[0]);
+        data2.WriteByteSeq(grpGUID[3]);
+        data2.WriteByteSeq(grpGUID[6]);
+        data2.WriteByteSeq(grpGUID[5]);
+        data2.WriteByteSeq(grpGUID[2]);
+        data2.WriteByteSeq(grpGUID[1]);
+
+        BroadcastPacket(&data2, true);
     }
 }
 
@@ -2494,11 +2540,13 @@ void Group::UpdateLooterGuid(WorldObject* pLootedObject, bool ifneed)
     for (member_citerator itr = guid_itr; itr != m_memberSlots.end(); ++itr)
     {
         if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+        {
             if (player->IsWithinDistInMap(pLootedObject, sWorld->getFloatConfig(CONFIG_GROUP_XP_DISTANCE), false))
             {
                 pNewLooter = player;
                 break;
             }
+        }
     }
 
     if (!pNewLooter)
@@ -2507,11 +2555,13 @@ void Group::UpdateLooterGuid(WorldObject* pLootedObject, bool ifneed)
         for (member_citerator itr = m_memberSlots.begin(); itr != guid_itr; ++itr)
         {
             if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+            {
                 if (player->IsWithinDistInMap(pLootedObject, sWorld->getFloatConfig(CONFIG_GROUP_XP_DISTANCE), false))
                 {
                     pNewLooter = player;
                     break;
                 }
+            }
         }
     }
 
@@ -2866,14 +2916,17 @@ void Group::BroadcastGroupUpdate(void)
 {
     // FG: HACK: force flags update on group leave - for values update hack
     // -- not very efficient but safe
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+    if (!m_memberSlots.empty())
     {
-        Player* pp = ObjectAccessor::FindPlayer(citr->guid);
-        if (pp && pp->IsInWorld())
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
         {
-            pp->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
-            pp->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);
-            sLog->outDebug(LOG_FILTER_GENERAL, "-- Forced group value update for '%s'", pp->GetName());
+            Player* pp = ObjectAccessor::FindPlayer(citr->guid);
+            if (pp && pp->IsInWorld())
+            {
+                pp->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
+                pp->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);
+                sLog->outDebug(LOG_FILTER_GENERAL, "-- Forced group value update for '%s'", pp->GetName());
+            }
         }
     }
 }
@@ -2882,11 +2935,15 @@ void Group::ResetMaxEnchantingLevel()
 {
     m_maxEnchantingLevel = 0;
     Player* pMember = NULL;
-    for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+
+    if (!m_memberSlots.empty())
     {
-        pMember = ObjectAccessor::FindPlayer(citr->guid);
-        if (pMember && m_maxEnchantingLevel < pMember->GetSkillValue(SKILL_ENCHANTING))
-            m_maxEnchantingLevel = pMember->GetSkillValue(SKILL_ENCHANTING);
+        for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
+        {
+            pMember = ObjectAccessor::FindPlayer(citr->guid);
+            if (pMember && m_maxEnchantingLevel < pMember->GetSkillValue(SKILL_ENCHANTING))
+                m_maxEnchantingLevel = pMember->GetSkillValue(SKILL_ENCHANTING);
+        }
     }
 }
 
@@ -2992,9 +3049,11 @@ bool Group::IsLeader(uint64 guid) const
 
 uint64 Group::GetMemberGUID(const std::string& name)
 {
-    for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-        if (itr->name == name)
-            return itr->guid;
+    if (!m_memberSlots.empty())
+        for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            if (itr->name == name)
+                return itr->guid;
+
     return 0;
 }
 
@@ -3323,14 +3382,18 @@ void Group::SetBattlefieldGroup(Battlefield *bg)
 
 void Group::setGroupMemberRole(uint64 guid, uint32 role)
 {
-    for (auto member = m_memberSlots.begin(); member != m_memberSlots.end(); ++member)
+    if (!m_memberSlots.empty())
     {
-        if (member->guid == guid)
+        for (auto member = m_memberSlots.begin(); member != m_memberSlots.end(); ++member)
         {
-            member->roles = role;
-            break;
+            if (member->guid == guid)
+            {
+                member->roles = role;
+                break;
+            }
         }
     }
+
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_GROUP_MEMBER_ROLE);
     if (stmt != nullptr)
     {
@@ -3342,9 +3405,10 @@ void Group::setGroupMemberRole(uint64 guid, uint32 role)
 
 uint32 Group::getGroupMemberRole(uint64 guid)
 {
-    for (auto member = m_memberSlots.begin(); member != m_memberSlots.end(); ++member)
-        if (member->guid == guid)
-            return member->roles;
+    if (!m_memberSlots.empty())
+        for (auto member = m_memberSlots.begin(); member != m_memberSlots.end(); ++member)
+            if (member->guid == guid)
+                return member->roles;
 
     return 0;
 }
@@ -3449,25 +3513,30 @@ void Group::_initRaidSubGroupsCounter()
     if (!m_subGroupsCounts)
         m_subGroupsCounts = new uint8[MAX_RAID_SUBGROUPS];
 
-    memset((void*)m_subGroupsCounts, 0, (MAX_RAID_SUBGROUPS)*sizeof(uint8));
+    memset((void*)m_subGroupsCounts, 0, (MAX_RAID_SUBGROUPS) * sizeof(uint8));
 
-    for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-        ++m_subGroupsCounts[itr->group];
+    if (!m_memberSlots.empty())
+        for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            ++m_subGroupsCounts[itr->group];
 }
 
 Group::member_citerator Group::_getMemberCSlot(uint64 Guid) const
 {
-    for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-        if (itr->guid == Guid)
-            return itr;
+    if (!m_memberSlots.empty())
+        for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            if (itr->guid == Guid)
+                return itr;
+
     return m_memberSlots.end();
 }
 
 Group::member_witerator Group::_getMemberWSlot(uint64 Guid)
 {
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-        if (itr->guid == Guid)
-            return itr;
+    if (!m_memberSlots.empty())
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            if (itr->guid == Guid)
+                return itr;
+
     return m_memberSlots.end();
 }
 
@@ -3485,9 +3554,10 @@ void Group::SubGroupCounterDecrease(uint8 subgroup)
 
 void Group::RemoveUniqueGroupMemberFlag(GroupMemberFlags flag)
 {
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-        if (itr->flags & flag)
-            itr->flags &= ~flag;
+    if (!m_memberSlots.empty())
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            if (itr->flags & flag)
+                itr->flags &= ~flag;
 }
 
 void Group::ToggleGroupMemberFlag(member_witerator slot, uint8 flag, bool apply)
@@ -3501,23 +3571,26 @@ void Group::ToggleGroupMemberFlag(member_witerator slot, uint8 flag, bool apply)
 void Group::OfflineMemberLost(uint64 guid, uint32 againstMatchmakerRating, uint8 slot, int32 MatchmakerRatingChange)
 {
     // Called for offline player after ending rated arena match!
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+    if (!m_memberSlots.empty())
     {
-        if (itr->guid == guid)
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            if (Player* p = ObjectAccessor::FindPlayer(guid))
+            if (itr->guid == guid)
             {
-                // update personal rating
-                int32 mod = Arena::GetRatingMod(p->GetArenaPersonalRating(slot), againstMatchmakerRating, false);
-                p->SetArenaPersonalRating(slot, p->GetArenaPersonalRating(slot) + mod);
+                if (Player* p = ObjectAccessor::FindPlayer(guid))
+                {
+                    // update personal rating
+                    int32 mod = Arena::GetRatingMod(p->GetArenaPersonalRating(slot), againstMatchmakerRating, false);
+                    p->SetArenaPersonalRating(slot, p->GetArenaPersonalRating(slot) + mod);
 
-                // update matchmaker rating
-                p->SetArenaMatchMakerRating(slot, p->GetArenaMatchMakerRating(slot) + MatchmakerRatingChange);
+                    // update matchmaker rating
+                    p->SetArenaMatchMakerRating(slot, p->GetArenaMatchMakerRating(slot) + MatchmakerRatingChange);
 
-                // update personal played stats
-                p->IncrementWeekGames(slot);
-                p->IncrementSeasonGames(slot);
-                return;
+                    // update personal played stats
+                    p->IncrementWeekGames(slot);
+                    p->IncrementSeasonGames(slot);
+                    return;
+                }
             }
         }
     }
@@ -3526,21 +3599,24 @@ void Group::OfflineMemberLost(uint64 guid, uint32 againstMatchmakerRating, uint8
 void Group::MemberLost(Player* player, uint32 againstMatchmakerRating, uint8 slot, int32 MatchmakerRatingChange)
 {
     // Called for each participant of a match after losing
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+    if (!m_memberSlots.empty())
     {
-        if (itr->guid == player->GetGUID())
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            // Update personal rating
-            int32 mod = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), againstMatchmakerRating, false);
-            player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + mod);
+            if (itr->guid == player->GetGUID())
+            {
+                // Update personal rating
+                int32 mod = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), againstMatchmakerRating, false);
+                player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + mod);
 
-            // Update matchmaker rating
-            player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + MatchmakerRatingChange);
+                // Update matchmaker rating
+                player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + MatchmakerRatingChange);
 
-            // Update personal played stats
-            player->IncrementWeekGames(slot);
-            player->IncrementSeasonGames(slot);
-            return;
+                // Update personal played stats
+                player->IncrementWeekGames(slot);
+                player->IncrementSeasonGames(slot);
+                return;
+            }
         }
     }
 }
@@ -3549,12 +3625,16 @@ uint32 Group::GetRating(uint8 slot)
 {
     uint32 rating = 0;
     uint32 count = 0;
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+
+    if (!m_memberSlots.empty())
     {
-        if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            rating += player->GetArenaPersonalRating(slot);
-            ++count;
+            if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+            {
+                rating += player->GetArenaPersonalRating(slot);
+                ++count;
+            }
         }
     }
 
@@ -3571,31 +3651,34 @@ void Group::WonAgainst(uint32 Own_MMRating, uint32 Opponent_MMRating, int32& rat
     // Change in Matchmaker rating
     int32 mod = Arena::GetMatchmakerRatingMod(Own_MMRating, Opponent_MMRating, true);
 
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+    if (!m_memberSlots.empty())
     {
-        if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            // Change in Team Rating
-            rating_change = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), Opponent_MMRating, true);
+            if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+            {
+                // Change in Team Rating
+                rating_change = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), Opponent_MMRating, true);
 
-            if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
-                rating_change = 0;
+                if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
+                    rating_change = 0;
 
-            if (player->GetArenaPersonalRating(slot) < 1000)
-                rating_change = 96;
+                if (player->GetArenaPersonalRating(slot) < 1000)
+                    rating_change = 96;
 
-            if (player->GetBattleground())
-                for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
-                    if (itr2->first == itr->guid)
-                        itr2->second->RatingChange = rating_change;
+                if (player->GetBattleground())
+                    for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
+                        if (itr2->first == itr->guid)
+                            itr2->second->RatingChange = rating_change;
 
-            player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
-            player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + mod);
+                player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
+                player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + mod);
 
-            player->IncrementWeekWins(slot);
-            player->IncrementSeasonWins(slot);
-            player->IncrementWeekGames(slot);
-            player->IncrementSeasonGames(slot);
+                player->IncrementWeekWins(slot);
+                player->IncrementSeasonWins(slot);
+                player->IncrementWeekGames(slot);
+                player->IncrementSeasonGames(slot);
+            }
         }
     }
 }
@@ -3606,47 +3689,53 @@ void Group::LostAgainst(uint32 Own_MMRating, uint32 Opponent_MMRating, int32& ra
     // Change in Matchmaker Rating
     int32 mod = Arena::GetMatchmakerRatingMod(Own_MMRating, Opponent_MMRating, false);
 
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+    if (!m_memberSlots.empty())
     {
-        if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            // Change in Team Rating
-            rating_change = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), Opponent_MMRating, false);
+            if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+            {
+                // Change in Team Rating
+                rating_change = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), Opponent_MMRating, false);
 
-            if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
-                rating_change = 0;
+                if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
+                    rating_change = 0;
 
-            if (player->GetBattleground())
-                for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
-                    if (itr2->first == itr->guid)
-                        itr2->second->RatingChange = rating_change;
+                if (player->GetBattleground())
+                    for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
+                        if (itr2->first == itr->guid)
+                            itr2->second->RatingChange = rating_change;
 
-            player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
-            player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + mod);
+                player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
+                player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) + mod);
 
-            player->IncrementWeekGames(slot);
-            player->IncrementSeasonGames(slot);
+                player->IncrementWeekGames(slot);
+                player->IncrementSeasonGames(slot);
+            }
         }
     }
 }
 
 void Group::FinishGame(int32 rating_change, uint8 slot)
 {
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+    if (!m_memberSlots.empty())
     {
-        if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+        for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
         {
-            if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
-                rating_change = 0;
+            if (Player* player = ObjectAccessor::FindPlayer(itr->guid))
+            {
+                if (player->GetArenaPersonalRating(slot) < 1000 && rating_change < 0)
+                    rating_change = 0;
 
-            if (player->GetBattleground())
-                for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
-                    if (itr2->first == itr->guid)
-                        itr2->second->RatingChange = rating_change;
+                if (player->GetBattleground())
+                    for (Battleground::BattlegroundScoreMap::const_iterator itr2 = player->GetBattleground()->GetPlayerScoresBegin(); itr2 != player->GetBattleground()->GetPlayerScoresEnd(); ++itr2)
+                        if (itr2->first == itr->guid)
+                            itr2->second->RatingChange = rating_change;
 
-            player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
-            player->IncrementWeekGames(slot);
-            player->IncrementSeasonGames(slot);
+                player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + rating_change);
+                player->IncrementWeekGames(slot);
+                player->IncrementSeasonGames(slot);
+            }
         }
     }
 }
@@ -3663,10 +3752,7 @@ bool Group::CanEnterInInstance()
     {
         switch (GetRaidDifficulty())
         {
-            case SCENARIO_DIFFICULTY_NORMAL:
-            case SCENARIO_DIFFICULTY_HEROIC:
-                maxplayers = 3;
-                break;
+            case DUNGEON_DIFFICULTY_NORMAL:
             case DUNGEON_DIFFICULTY_HEROIC:
             case DUNGEON_DIFFICULTY_CHALLENGE:
                 maxplayers = 5;
@@ -3677,11 +3763,16 @@ bool Group::CanEnterInInstance()
                 break;
             case RAID_DIFFICULTY_25MAN_NORMAL:
             case RAID_DIFFICULTY_25MAN_HEROIC:
+            case RAID_DIFFICULTY_25MAN_LFR:
             case RAID_DIFFICULTY_1025MAN_FLEX:
                 maxplayers = 25;
                 break;
             case RAID_DIFFICULTY_40MAN:
                 maxplayers = 40;
+                break;
+            case SCENARIO_DIFFICULTY_NORMAL:
+            case SCENARIO_DIFFICULTY_HEROIC:
+                maxplayers = 3;
                 break;
 
 			default: break;

@@ -1027,21 +1027,21 @@ void WorldSession::HandleGroupAssistantLeaderOpcode(WorldPacket& recvData)
 
     recvData.read_skip<uint8>(); // Unknown.
 
-    guid[0] = recvData.ReadBit();
-    guid[7] = recvData.ReadBit();
-    guid[5] = recvData.ReadBit();
-    guid[2] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
 
     apply = recvData.ReadBit();
 
+    guid[0] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
     guid[3] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
     guid[4] = recvData.ReadBit();
-    guid[1] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
 
     recvData.FlushBits();
 
-    uint8 byteOrder[8] = { 6, 3, 2, 5, 7, 1, 0, 4 };
+    uint8 byteOrder[8] = { 7, 4, 1, 6, 0, 2, 3, 5 };
     recvData.ReadBytesSeq(guid, byteOrder);
 
     group->SetGroupMemberFlag(guid, apply, MEMBER_FLAG_ASSISTANT);
@@ -1069,20 +1069,20 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recvData)
     recvData.read_skip<uint8>(); // Unknown.
 
     guid[0] = recvData.ReadBit();
+    guid[5] = recvData.ReadBit();
+    guid[6] = recvData.ReadBit();
+    guid[7] = recvData.ReadBit();
+    guid[3] = recvData.ReadBit();
+    guid[1] = recvData.ReadBit();
+    guid[2] = recvData.ReadBit();
 
     apply = recvData.ReadBit();
 
     guid[4] = recvData.ReadBit();
-    guid[2] = recvData.ReadBit();
-    guid[1] = recvData.ReadBit();
-    guid[3] = recvData.ReadBit();
-    guid[6] = recvData.ReadBit();
-    guid[5] = recvData.ReadBit();
-    guid[7] = recvData.ReadBit();
 
     recvData.FlushBits();
 
-    uint8 byteOrder[8] = { 5, 4, 7, 6, 3, 0, 1, 2 };
+    uint8 byteOrder[8] = { 4, 3, 1, 5, 2, 6, 7, 0 };
     recvData.ReadBytesSeq(guid, byteOrder);
 
     switch (assignment)
@@ -1256,7 +1256,7 @@ void WorldSession::HandleRaidConfirmReadyCheck(WorldPacket& recvData)
     data.WriteByteSeq(playerGuid[0]);
     data.WriteByteSeq(playerGuid[6]);
 
-    group->BroadcastPacket(&data, true);
+    group->BroadcastReadyCheck(&data); // BroadcastPacket(&data, true);
 
     // Send SMSG_RAID_READY_CHECK_COMPLETED if needed.
 
@@ -1590,8 +1590,8 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
 
     if (mask & GROUP_UPDATE_FLAG_PHASE)
     {
-        dataBuffer << uint32(phases.empty() ? 8 : 0); // Same as found in SMSG_SET_PHASE_SHIFT.
-        dataBuffer.WriteBits(phases.size(), 23);         // Phases Count.
+        dataBuffer << uint32(phases.empty() ? 0x8 : 0x10); // Same as found in SMSG_SET_PHASE_SHIFT.
+        dataBuffer.WriteBits(phases.size(), 23);           // Phases Count.
 
         dataBuffer.FlushBits();
 

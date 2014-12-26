@@ -1,3 +1,11 @@
+/*
+*
+* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sew your ass.
+*
+* Raid: Throne of Thunder.
+* Description: Header Script.
+*/
+
 #ifndef DEF_THRONE_OF_THUNDER_H
 #define DEF_THRONE_OF_THUNDER_H
 
@@ -110,16 +118,16 @@ enum CreatureIds
 
 enum GameObjectIds
 {
-    GO_FIRST_DOOR           = 218665,
+    GO_FIRST_DOOR              = 218665,
 
     // Jin'Rokh the Breaker
-    GO_MOGU_FOUNTAIN_NE     = 218678,
-    GO_MOGU_FOUNTAIN_NW     = 218675,
-    GO_MOGU_FOUNTAIN_SE     = 218677,
-    GO_MOGU_FOUNTAIN_SW     = 218676,
+    GO_MOGU_FOUNTAIN_NE        = 218678,
+    GO_MOGU_FOUNTAIN_NW        = 218675,
+    GO_MOGU_FOUNTAIN_SE        = 218677,
+    GO_MOGU_FOUNTAIN_SW        = 218676,
 
-    GO_JIN_ROKH_FRONT_DOOR  = 218664,     // door he is looking at
-    GO_JIN_ROKH_BACK_DOOR   = 218663,     // door to the next boss
+    GO_JIN_ROKH_FRONT_DOOR     = 218664,     // door he is looking at
+    GO_JIN_ROKH_BACK_DOOR      = 218663,     // door to the next boss
 };
 
 #endif // DEF_THRONE_OF_THUNDER_H
