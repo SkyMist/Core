@@ -1463,6 +1463,11 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             target->RemoveAurasDueToSpell(104242);
     }
 
+    // Glyph of water elemental 
+    if (GetId() == 63090 && target->GetTypeId() == TYPEID_PLAYER)
+        if (Pet* pet = target->ToPlayer()->GetPet())
+            pet->UpdateMaxHealth();
+
     // mods at aura apply
     if (apply)
     {

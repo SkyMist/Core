@@ -7439,8 +7439,13 @@ void Player::UpdateRangeHaste()
 {
     float haste = GetRatingBonusValue(CR_HASTE_RANGED);
 
-    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE) / 10.0f;
-    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE_2) / 10.0f;
+    haste += GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW);
+    haste += GetTotalAuraModifier(SPELL_AURA_HASTE_RANGED);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKSPEED);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_RANGED_HASTE);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_RANGED_HASTE_2);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE_2);
 
     haste = 1.0f - (haste / 100.0f);
     SetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE, haste);
@@ -7450,18 +7455,26 @@ void Player::UpdateSpellHaste()
 {
     float haste = GetRatingBonusValue(CR_HASTE_SPELL);
 
+    haste += GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW);
+    haste += GetTotalAuraModifier(SPELL_AURA_HASTE_SPELLS);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK);
+
     haste = 1.0f - (haste / 100.0f);
     SetFloatValue(UNIT_MOD_CAST_HASTE, haste);
 }
 
 void Player::UpdateMeleeHaste()
 {
+    // TODO: solve visual problem.
     float haste = GetRatingBonusValue(CR_HASTE_MELEE);
+
     haste += GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKSPEED);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE);
     haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE_2);
     haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE_3);
-    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE) / 10.0f;
-    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE_2) / 10.0f;
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE);
+    haste += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE_2);
 
     haste = 1.0f - (haste / 100.0f);
     SetFloatValue(UNIT_MOD_HASTE, haste);

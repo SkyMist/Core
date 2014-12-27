@@ -1644,7 +1644,7 @@ class spell_dk_corpse_explosion : public SpellScriptLoader
 
             SpellCastResult CheckTarget()
             {
-                // Any effect on Mechanical or Elemental units
+                // Any effect on Mechanical or Elemental units or player corpses.
                 if (Unit* caster = GetCaster())
                 {
                     Unit* target = GetExplTargetUnit();
@@ -1652,20 +1652,16 @@ class spell_dk_corpse_explosion : public SpellScriptLoader
                         return SPELL_FAILED_NO_VALID_TARGETS;
 
                     if (Creature* c = target->ToCreature())
-                    {
-                        if (c->GetCreatureTemplate() && (c->GetCreatureTemplate()->type == CREATURE_TYPE_MECHANICAL ||
-                                                         c->GetCreatureTemplate()->type == CREATURE_TYPE_ELEMENTAL))
+                        if (c->GetCreatureTemplate() && (c->GetCreatureTemplate()->type == CREATURE_TYPE_MECHANICAL || c->GetCreatureTemplate()->type == CREATURE_TYPE_ELEMENTAL || c->IsDungeonBoss()))
                             return SPELL_FAILED_BAD_TARGETS;
-                        else if (c->IsDungeonBoss())
-                            return SPELL_FAILED_BAD_TARGETS;
-                    }
-                    else if (target->GetGUID() == caster->GetGUID())
+
+                    if (target->GetTypeId() == TYPEID_PLAYER || target->isAlive() || target->HasAura(127344))
                         return SPELL_FAILED_BAD_TARGETS;
-                    else if (target->isAlive())
-                        return SPELL_FAILED_BAD_TARGETS;
+
+                    return SPELL_CAST_OK;
                 }
 
-                return SPELL_CAST_OK;
+                return SPELL_FAILED_DONT_REPORT;
             }
 
             void Register()

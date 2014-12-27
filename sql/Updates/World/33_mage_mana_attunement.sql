@@ -1,0 +1,1 @@
+INSERT INTO `spell_script_names` SET `spell_id`='121039',`ScriptName`='spell_mage_mana_attunement';

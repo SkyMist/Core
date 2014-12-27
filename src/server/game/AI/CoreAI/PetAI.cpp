@@ -461,24 +461,33 @@ void PetAI::DoAttack(Unit* target, bool chase)
     // (Follow && (Aggressive || Defensive))
     // ((Stay || Follow) && (Passive && player clicked attack))
 
-    if (chase)
+    bool glyphwaterelemn = false;
+    if (me->GetOwner() && me->GetOwner()->HasAura(63090) && me->GetCharmInfo() && me->GetCharmInfo()->HasCommandState(COMMAND_FOLLOW) && me->HasReactState(REACT_HELPER))
+        glyphwaterelemn = true;
+
+    if (!glyphwaterelemn)
     {
-        if (me->Attack(target, true))
+        if (chase)
         {
-            me->GetCharmInfo()->SetIsAtStay(false);
+            if (me->Attack(target, true))
+            {
+                me->GetCharmInfo()->SetIsAtStay(false);
+                me->GetCharmInfo()->SetIsFollowing(false);
+                me->GetCharmInfo()->SetIsReturning(false);
+                me->GetMotionMaster()->Clear();
+                me->GetMotionMaster()->MoveChase(target);
+            }
+        }
+        else // (Stay && ((Aggressive || Defensive) && In Melee Range)))
+        {
+            me->GetCharmInfo()->SetIsAtStay(true);
             me->GetCharmInfo()->SetIsFollowing(false);
             me->GetCharmInfo()->SetIsReturning(false);
-            me->GetMotionMaster()->Clear();
-            me->GetMotionMaster()->MoveChase(target);
+            me->Attack(target, true);
         }
     }
-    else // (Stay && ((Aggressive || Defensive) && In Melee Range)))
-    {
-        me->GetCharmInfo()->SetIsAtStay(true);
-        me->GetCharmInfo()->SetIsFollowing(false);
-        me->GetCharmInfo()->SetIsReturning(false);
-        me->Attack(target, true);
-    }
+    else if (!me->HasUnitState(UNIT_STATE_CASTING))
+        me->Attack(target,false);
 }
 
 void PetAI::MovementInform(uint32 moveType, uint32 data)

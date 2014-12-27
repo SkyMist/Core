@@ -1095,10 +1095,8 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                     // Hardcode : Ghoul Base HP
                     if (IsPetGhoul() && getLevel() > 86)
                     {
-                        SetCreateHealth(GetCreateHealth() / 7);
                         CastSpell(this, 47466, true);
-                        int32 basepoints = -90;
-                        CastCustomSpell(this, 62137, &basepoints, 0, 0, true);   // Avoidance
+                        CastSpell(this, 62137, true);   // Avoidance
 
                         // Glyph of the Geist
                         if (m_owner->HasAura(58640) && !HasAura(146652))
@@ -1107,10 +1105,6 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                         else if (m_owner->HasAura(146652))
                             CastSpell(this, 147157, true);
                     }
-
-                    SetBonusDamage(int32(m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.9f));
-                    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float((petlevel * 4 - petlevel) + (m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.9f * 2 / 14)));
-                    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float((petlevel * 4 + petlevel) + (m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.9f * 2 / 14)));
                     break;
                 }
                 case ENTRY_SHADOWFIEND: // Shadowfiend.

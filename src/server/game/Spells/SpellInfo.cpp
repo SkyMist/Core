@@ -1691,9 +1691,11 @@ SpellCastResult SpellInfo::CheckLocation(uint32 map_id, uint32 zone_id, uint32 a
             for (uint8 i = 0; i < MAX_GROUP_AREA_IDS; ++i)
                 if (groupEntry->AreaId[i] == zone_id || groupEntry->AreaId[i] == area_id)
                     found = true;
+
             if (found || !groupEntry->nextGroup)
                 break;
-            // Try search in next group
+
+            // Try search in next group.
             groupEntry = sAreaGroupStore.LookupEntry(groupEntry->nextGroup);
         }
 
@@ -1876,6 +1878,18 @@ SpellCastResult SpellInfo::CheckLocation(uint32 map_id, uint32 zone_id, uint32 a
     {
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
+            switch (Effects[i].Effect)
+            {
+                case SPELL_EFFECT_RESURRECT:
+                case SPELL_EFFECT_RESURRECT_NEW:
+                case SPELL_EFFECT_RESURRECT_WITH_AURA:
+                    if (player->InBattleground())
+                        return SPELL_FAILED_NOT_IN_BATTLEGROUND;
+                    break;
+
+                default: break;
+            }
+
             if (!Effects[i].IsAura())
                 continue;
 
@@ -3660,7 +3674,6 @@ bool SpellInfo::IsCustomCharged(SpellInfo const* procSpell) const
             if (procSpell && procSpell->Id == 31803)
                 return true;
             break;
-        case 58385: // Glyph of Hamstring
         case 324:   // Lightning Shield
         case 36032: // Arcane Charge
         case 79683: // Arcane Missiles !
