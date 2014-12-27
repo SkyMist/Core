@@ -421,7 +421,7 @@ class boss_rook_stonetoe : public CreatureScript
 				events.ScheduleEvent(EVENT_ROOK_CORRUPTED_BREW, 18000);
 				events.ScheduleEvent(EVENT_ROOK_CLASH, 45000);
 
-				events.ScheduleEvent(EVENT_BERSERK, (!IsHeroic() ? 15 : 10) * MINUTE * IN_MILLISECONDS);
+				events.ScheduleEvent(EVENT_BERSERK, (!me->GetMap()->IsHeroic() ? 15 : 10) * MINUTE * IN_MILLISECONDS);
 
                 if (instance)
                     instance->SetData(DATA_FALLEN_PROTECTORS_EVENT, IN_PROGRESS);
@@ -434,13 +434,15 @@ class boss_rook_stonetoe : public CreatureScript
                 if (uiDamage >= me->GetHealth())
                 {
                     if (!eventComplete)
-                        uiDamage = me->GetHealth() - 1;
+                    {
+                        uiDamage = 0;
+                        me->SetHealth(1);
+                    }
 
                     if (!lotusScheduled)
                     {
                         Talk(ROOK_SAY_BOND_LOTUS);
                         Talk(ROOK_ANNOUNCE_BOND_LOTUS);
-                        me->SetHealth(1);
                         events.ScheduleEvent(EVENT_CHECK_BOND_OF_THE_GOLDEN_LOTUS, 1000);
                         lotusScheduled = true;
                     }
@@ -518,8 +520,6 @@ class boss_rook_stonetoe : public CreatureScript
                 me->setFaction(35);
                 me->SetFullHealth();
 
-                eventComplete = true;
-
                 me->GetMotionMaster()->MovementExpired();
                 me->GetMotionMaster()->MoveTargetedHome();
 
@@ -542,7 +542,7 @@ class boss_rook_stonetoe : public CreatureScript
                             {
                                 heSoftfoot->AI()->DoAction(ACTION_EVENT_COMPLETE);
                                 sunTenderheart->AI()->DoAction(ACTION_EVENT_COMPLETE);
-                                JustDied(NULL);
+                                FinishEvent();
                                 eventComplete = true;
                             }
                         }
@@ -736,13 +736,15 @@ class boss_he_softfoot : public CreatureScript
                 if (uiDamage >= me->GetHealth())
                 {
                     if (!eventComplete)
-                        uiDamage = me->GetHealth() - 1;
+                    {
+                        uiDamage = 0;
+                        me->SetHealth(1);
+                    }
 
                     if (!lotusScheduled)
                     {
                         Talk(HE_SAY_BOND_LOTUS);
                         Talk(HE_ANNOUNCE_BOND_LOTUS);
-                        me->SetHealth(1);
                         events.ScheduleEvent(EVENT_CHECK_BOND_OF_THE_GOLDEN_LOTUS, 1000);
                         lotusScheduled = true;
                     }
@@ -772,7 +774,7 @@ class boss_he_softfoot : public CreatureScript
                 switch (action)
                 {
                     case ACTION_EVENT_COMPLETE:
-                        JustDied(NULL);
+                        FinishEvent();
                         break;
 
                     default: break;
@@ -800,6 +802,7 @@ class boss_he_softfoot : public CreatureScript
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GOUGE_DMG_STUN);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_MAIN);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_TRANSFER);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS_AURA);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEBILITATION);
                 }
@@ -842,6 +845,7 @@ class boss_he_softfoot : public CreatureScript
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_HE_GOUGE_DMG_STUN);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_MAIN);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MARK_OF_ANGUISH_TRANSFER);
+                    instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS_AURA);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SHADOW_WEAKNESS);
                     instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEBILITATION);
                 }
@@ -963,13 +967,12 @@ class boss_he_softfoot : public CreatureScript
 
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
                             {
-                                DoCast(target, SPELL_MARK_OF_ANGUISH);
-
                                 if (Creature* anguish = me->SummonCreature(NPC_EMBODIED_ANGUISH, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 1000))
                                 {
                                     anguish->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, true);
                                     anguish->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
                                     anguish->AI()->AttackStart(target);
+                                    anguish->CastSpell(target, SPELL_MARK_OF_ANGUISH, false);
                                 }
                             }
                             break;
@@ -1054,14 +1057,16 @@ class boss_sun_tenderheart : public CreatureScript
             {
                 if (uiDamage >= me->GetHealth())
                 {
-                    if (!lotusScheduled || lotusScheduled && !eventComplete)
-                        uiDamage = me->GetHealth() - 1;
+                    if (!eventComplete)
+                    {
+                        uiDamage = 0;
+                        me->SetHealth(1);
+                    }
 
                     if (!lotusScheduled)
                     {
                         Talk(SUN_SAY_BOND_LOTUS);
                         Talk(SUN_ANNOUNCE_BOND_LOTUS);
-                        me->SetHealth(1);
                         events.ScheduleEvent(EVENT_CHECK_BOND_OF_THE_GOLDEN_LOTUS, 1000);
                         lotusScheduled = true;
                     }
@@ -1097,7 +1102,7 @@ class boss_sun_tenderheart : public CreatureScript
                 switch (action)
                 {
                     case ACTION_EVENT_COMPLETE:
-                        JustDied(NULL);
+                        FinishEvent();
                         break;
 
                     default: break;
@@ -2008,7 +2013,7 @@ class spell_he_mark_of_anguish_transfer : public SpellScriptLoader
         {
             PrepareSpellScript(spell_he_mark_of_anguish_transfer_SpellScript);
 
-            void HandleDummy(SpellEffIndex /*effIndex*/)
+            void HandleDummyLaunchTarget(SpellEffIndex /*effIndex*/)
             {
                 Unit* caster = GetCaster();
                 Unit* target = GetHitUnit();
@@ -2016,15 +2021,19 @@ class spell_he_mark_of_anguish_transfer : public SpellScriptLoader
                 if (!caster || !target)
                     return;
 
-                caster->CastSpell(caster, SPELL_SHADOW_WEAKNESS_TRANSFER, true);
-                caster->AddAura(SPELL_MARK_OF_ANGUISH_MAIN, target);
+                if (Creature* anguish = caster->FindNearestCreature(NPC_EMBODIED_ANGUISH, 300.0f, true))
+                {
+                    anguish->AddAura(SPELL_MARK_OF_ANGUISH_MAIN, target);
+                    anguish->CastSpell(anguish, SPELL_SHADOW_WEAKNESS_TRANSFER, true);
+                }
+
                 caster->RemoveAurasDueToSpell(SPELL_MARK_OF_ANGUISH_MAIN);
                 caster->RemoveAurasDueToSpell(SPELL_DEBILITATION);
             }
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_he_mark_of_anguish_transfer_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+                OnEffectLaunchTarget += SpellEffectFn(spell_he_mark_of_anguish_transfer_SpellScript::HandleDummyLaunchTarget, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };
 
@@ -2057,7 +2066,7 @@ class spell_sun_sha_shear : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_sun_sha_shear_SpellScript::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+                OnEffectHitTarget += SpellEffectFn(spell_sun_sha_shear_SpellScript::CalculateDamage, EFFECT_1, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 

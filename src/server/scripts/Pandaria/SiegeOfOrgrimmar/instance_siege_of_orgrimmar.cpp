@@ -129,7 +129,7 @@ class instance_siege_of_orgrimmar : public InstanceMapScript
                         fallenProtectorsGUID[HE_SOFTFOOT] = creature->GetGUID();
                         break;
                     case DATA_FALLEN_PROTECTOR_3:
-                        fallenProtectorsGUID[SUN_THUNDERHEART] = creature->GetGUID();
+                        fallenProtectorsGUID[SUN_TENDERHEART] = creature->GetGUID();
                         break;
                     case DATA_NORUSHEN:
                         norushenGUID = creature->GetGUID();
@@ -263,7 +263,7 @@ class instance_siege_of_orgrimmar : public InstanceMapScript
                     case DATA_FALLEN_PROTECTOR_2:
                         return fallenProtectorsGUID[HE_SOFTFOOT];
                     case DATA_FALLEN_PROTECTOR_3:
-                        return fallenProtectorsGUID[SUN_THUNDERHEART];
+                        return fallenProtectorsGUID[SUN_TENDERHEART];
                     case DATA_NORUSHEN:
                         return norushenGUID;
                     case DATA_AMALGAM_OF_CORRUPTION:
