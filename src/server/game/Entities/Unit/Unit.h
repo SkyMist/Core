@@ -1379,6 +1379,8 @@ class Unit : public WorldObject
         uint32 CountPctFromMaxPower(int32 pct, Powers power) const { return CalculatePct(GetMaxPower(power), pct); }
         uint32 CountPctFromCurPower(int32 pct, Powers power) const { return CalculatePct(GetPower(power), pct); }
 
+        void CheckEclipsePowerAuras(int32 powerValue);
+
         void SetHealth(uint32 val);
         void SetMaxHealth(uint32 val);
         inline void SetFullHealth() { SetHealth(GetMaxHealth()); }
@@ -1390,7 +1392,7 @@ class Unit : public WorldObject
         int32 GetPower(Powers power) const;
         int32 GetMinPower(Powers power) const { return power == POWER_ECLIPSE ? -100 : 0; }
         int32 GetMaxPower(Powers power) const;
-        void SetPower(Powers power, int32 val, bool regen = false);
+        void SetPower(Powers power, int32 val);
         void SetMaxPower(Powers power, int32 val);
         SpellPowerEntry const* GetSpellPowerEntryBySpell(SpellInfo const* spell) const;
 
@@ -2312,10 +2314,6 @@ class Unit : public WorldObject
         void FocusTarget(Spell const* focusSpell, uint64 target);
         void ReleaseFocus(Spell const* focusSpell);
 
-        int32 GetEclipsePower() { return _eclipsePower; };
-        void SetEclipsePower(int32 power, bool send = true);
-        void SendEclipse();
-
         uint32 GetHealingDoneInPastSecs(uint32 secs);
         uint32 GetHealingTakenInPastSecs(uint32 secs);
         uint32 GetDamageDoneInPastSecs(uint32 secs);
@@ -2443,9 +2441,6 @@ class Unit : public WorldObject
 
         uint32 m_SendTransportMoveTimer;
 
-        uint32 m_lastRegenTime[MAX_POWERS];
-        uint32 m_powers[MAX_POWERS];
-
         uint32 m_oldEmoteState; // Used to store and restore old emote states for creatures.
 
     private:
@@ -2509,8 +2504,6 @@ class Unit : public WorldObject
 
         Spell const* _focusSpell;   ///> Locks the target during spell cast for proper facing       
         bool _isWalkingBeforeCharm; // Are we walking before we were charmed? 
-
-        int32 _eclipsePower;
 
         time_t _lastDamagedTime;
 };

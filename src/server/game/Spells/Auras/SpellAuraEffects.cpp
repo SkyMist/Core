@@ -815,7 +815,7 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                 int32 AP = caster->GetTotalAttackPowerValue(BASE_ATTACK);
 
                 // In feral spec : 0.484 * $AP * cp
-                if (caster->ToPlayer()->GetSpecializationId(caster->ToPlayer()->GetActiveSpec()) == SPEC_DROOD_CAT)
+                if (caster->ToPlayer()->GetSpecializationId(caster->ToPlayer()->GetActiveSpec()) == SPEC_DRUID_CAT)
                     amount += int32(cp * AP * 0.484f);
                 // In other spec : 0.387 * $AP * cp
                 else
@@ -2739,6 +2739,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
             if (target->getClass() == CLASS_DRUID)
             {
                 target->setPowerType(POWER_MANA);
+                target->SetMaxPower(POWER_MANA, target->GetCreatePowers(POWER_MANA));
+                target->SetPower(POWER_MANA, target->GetMaxPower(POWER_MANA));
                 // Remove movement impairing effects also when shifting out
                 target->RemoveMovementImpairingAuras();
             }
@@ -2784,12 +2786,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
         // If druid shifts while being disarmed we need to deal with that since forms aren't affected by disarm
         // and also HandleAuraModDisarm is not triggered
         if (!target->CanUseAttackType(BASE_ATTACK))
-        {
             if (Item* pItem = target->ToPlayer()->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
-            {
                 target->ToPlayer()->_ApplyWeaponDamage(EQUIPMENT_SLOT_MAINHAND, pItem->GetTemplate(), NULL, apply);
-            }
-        }
     }
 
     // stop handling the effect if it was removed by linked event

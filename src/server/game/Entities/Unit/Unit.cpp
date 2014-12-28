@@ -277,11 +277,6 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
     _lastLiquid = NULL;
     _isWalkingBeforeCharm = false;
 
-    _eclipsePower = 0;
-
-    // Don't send packet in constructor, it may cause crashes
-    SetEclipsePower(0, false); // Not sure of 0
-
     // Area Skip Update
     _skipCount = 0;
     _skipDiff = 0;
@@ -291,12 +286,6 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
 
     m_SendTransportMoveTimer = 0;
     m_lastVisibilityUpdPos = *this;
-
-    for (int i = 0; i < MAX_POWERS; ++i)
-        m_lastRegenTime[i] = getMSTime();
-
-    for (int i = 0; i < MAX_POWERS; ++i)
-        m_powers[i] = 0;
 
     m_oldEmoteState = 0;
 }
@@ -1779,18 +1768,25 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     DealDamage(victim, damageInfo->damage, &cleanDamage, DIRECT_DAMAGE, SpellSchoolMask(damageInfo->damageSchoolMask), NULL, durabilityLoss);
 
     // Rage from Damage made (only from direct weapon damage)
-    if (this != victim && GetTypeId() == TYPEID_PLAYER && getPowerType() == POWER_RAGE && (GetShapeshiftForm() == FORM_BATTLESTANCE || GetShapeshiftForm() == FORM_BERSERKERSTANCE))
+    if (this != victim && GetTypeId() == TYPEID_PLAYER && getPowerType() == POWER_RAGE)
     {
-        bool cooldown = false;
-        if (ToPlayer()->HasSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381))
-            cooldown = true;
-
-        if (!cooldown)
+        // 12 Rage in Battle Stance / 6 in Berserker Stance for each Warrior auto - attack.
+	    if (getClass == CLASS_WARRIOR && (GetShapeshiftForm() == FORM_BATTLESTANCE || GetShapeshiftForm() == FORM_BERSERKERSTANCE))
         {
-            ToPlayer()->AddSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381, 0, time(NULL) + 1.5);
-            float weaponSpeed = GetAttackTime(damageInfo->attackType) / 100.0f;
-            RewardRage(weaponSpeed,true);
+            bool cooldown = false;
+            if (ToPlayer()->HasSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381))
+                cooldown = true;
+
+            if (!cooldown)
+            {
+                ToPlayer()->AddSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381, 0, time(NULL) + 1.5);
+                RewardRage(GetShapeshiftForm() == FORM_BATTLESTANCE ? 120 : 60, true);
+            }
         }
+
+        // 6 Rage for each Bear auto - attack.
+        if (getClass == CLASS_DRUID && GetShapeshiftForm() == FORM_BEAR)
+            RewardRage(60, true);
     }
 
     // If this is a creature and it attacks from behind it has a probability to daze it's victim
@@ -2951,21 +2947,17 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spell)
     // Check for attack from behind
     if (!victim->HasInArc(M_PI, this))
     {
-        if (!victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION))
-        {
-            // Can`t dodge from behind in PvP (but its possible in PvE)
-            if (victim->GetTypeId() == TYPEID_PLAYER)
-                canDodge = false;
-            // Can`t parry or block
-            canParry = false;
-            canBlock = false;
-        }
-        else // Only deterrence as of 3.3.5
-        {
-            if (spell->AttributesCu & SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET)
-                canParry = false;
-        }
+        // Players can't dodge attacks that are from behind, however a mob can.
+        if (victim->GetTypeId() == TYPEID_PLAYER)
+            canDodge = false;
+
+        if (!victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION) || spell->AttributesCu & SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET)
+            canParry = false; // Can`t parry attacks from behind (unless with SPELL_AURA_IGNORE_HIT_DIRECTION).
+
+        // Can`t block attacks from behind.
+        canBlock = false;
     }
+
     // Check creatures flags_extra for disable parry
     if (victim->GetTypeId() == TYPEID_UNIT)
     {
@@ -2976,6 +2968,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spell)
         if (flagEx & CREATURE_FLAG_EXTRA_NO_BLOCK)
             canBlock = false;
     }
+
     // Ignore combat result aura
     AuraEffectList const& ignore = GetAuraEffectsByType(SPELL_AURA_IGNORE_COMBAT_RESULT);
     for (AuraEffectList::const_iterator i = ignore.begin(); i != ignore.end(); ++i)
@@ -6985,7 +6978,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
         {
             switch (dummySpell->Id)
             {
-                // Berserk stances - rage generate when got attack
+                // Berserk stances - generate rage when getting attacked.
                 case 7381:
                     if (GetTypeId() != TYPEID_PLAYER)
                         return false;
@@ -6997,7 +6990,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     if (getPowerType() == POWER_RAGE)
                     {
-                        // every hit got 3 rage
+                        // 3 Rage each hit.
                         RewardRage(30, false);
                         return true;
                     }
@@ -7616,27 +7609,27 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     ToPlayer()->AddSpellCooldown(46832, 0, time(NULL) + 6);
 
                     if (ToPlayer()->GetLastEclipsePower() == 48518)
-                        SetEclipsePower(GetEclipsePower() + 20);
+                        SetPower(POWER_ECLIPSE, GetPower(POWER_ECLIPSE) + 20);
                     else
-                        SetEclipsePower(GetEclipsePower() - 20);
+                        SetPower(POWER_ECLIPSE, GetPower(POWER_ECLIPSE) - 20);
 
-                    if (GetEclipsePower() == 100)
+                    if (GetPower(POWER_ECLIPSE) == 100)
                     {
-                        CastSpell(this, 48517, true, 0); // Cast Lunar Eclipse
-                        CastSpell(this, 16886, true); // Cast Nature's Grace
-                        CastSpell(this, 81070, true); // Cast Eclipse - Give 35% of POWER_MANA
+                        CastSpell(this, 48517, true, 0); // Cast Solar Eclipse.
+                        CastSpell(this, 16886, true);    // Cast Nature's Grace..
+                        CastSpell(this, 81070, true);    // Cast Eclipse - Give 35% of POWER_MANA.
 
-                        // Now our last eclipse is Solar
+                        // Now our last eclipse is Solar.
                         ToPlayer()->SetLastEclipsePower(48517);
                     }
-                    else if (GetEclipsePower() == -100)
+                    else if (GetPower(POWER_ECLIPSE) == -100)
                     {
-                        CastSpell(this, 48518, true, 0); // Cast Lunar Eclipse
-                        CastSpell(this, 16886, true); // Cast Nature's Grace
-                        CastSpell(this, 81070, true); // Cast Eclipse - Give 35% of POWER_MANA
+                        CastSpell(this,  48518, true, 0); // Cast Lunar Eclipse.
+                        CastSpell(this,  16886, true);    // Cast Nature's Grace.
+                        CastSpell(this,  81070, true);    // Cast Eclipse - Give 35% of POWER_MANA.
                         CastSpell(this, 107095, true);
 
-                        // Now our last eclipse is Lunar
+                        // Now our last eclipse is Lunar.
                         ToPlayer()->SetLastEclipsePower(48518);
 
                         if (ToPlayer()->HasSpellCooldown(48505))
@@ -11483,12 +11476,11 @@ void Unit::setPowerType(Powers new_powertype)
 
     switch (new_powertype)
     {
-        default:
         case POWER_MANA:
             break;
         case POWER_RAGE:
             SetMaxPower(POWER_RAGE, GetCreatePowers(POWER_RAGE));
-            //SetPower(POWER_RAGE, 0);
+            SetPower(POWER_RAGE, 0);
             break;
         case POWER_FOCUS:
             SetMaxPower(POWER_FOCUS, GetCreatePowers(POWER_FOCUS));
@@ -11497,9 +11489,55 @@ void Unit::setPowerType(Powers new_powertype)
         case POWER_ENERGY:
             SetMaxPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
             break;
-    }
+        // POWER_LIGHT_FORCE - Deprecated.
+        case POWER_RUNES:
+            SetMaxPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            SetPower(POWER_RUNES, GetCreatePowers(POWER_RUNES));
+            break;
+        case POWER_RUNIC_POWER:
+            SetMaxPower(POWER_RUNIC_POWER, GetCreatePowers(POWER_RUNIC_POWER));
+            SetPower(POWER_RUNIC_POWER, 0);
+            break;
+        case POWER_SOUL_SHARDS:
+            SetMaxPower(POWER_SOUL_SHARDS, GetCreatePowers(POWER_SOUL_SHARDS));
+            SetPower(POWER_SOUL_SHARDS, 100);
+            break;
+        case POWER_ECLIPSE:
+            SetMaxPower(POWER_ECLIPSE, GetCreatePowers(POWER_ECLIPSE));
+            SetPower(POWER_ECLIPSE, 0);
+            break;
+        case POWER_HOLY_POWER:
+            SetMaxPower(POWER_HOLY_POWER, GetCreatePowers(POWER_HOLY_POWER));
+            SetPower(POWER_HOLY_POWER, 0);
+            break;
+        case POWER_ALTERNATE_POWER: // Differs after this based on aura.
+            SetMaxPower(POWER_ALTERNATE_POWER, GetCreatePowers(POWER_ALTERNATE_POWER));
+            SetPower(POWER_ALTERNATE_POWER, 0);
+            break;
+        // POWER_DARK_FORCE - Deprecated.
+        case POWER_CHI:
+            SetMaxPower(POWER_CHI, GetCreatePowers(POWER_CHI));
+            SetPower(POWER_CHI, 0);
+            break;
+        case POWER_SHADOW_ORBS:
+            SetMaxPower(POWER_SHADOW_ORBS, GetCreatePowers(POWER_SHADOW_ORBS));
+            SetPower(POWER_SHADOW_ORBS, 0);
+            break;
+        case POWER_BURNING_EMBERS:
+            SetMaxPower(POWER_BURNING_EMBERS, GetCreatePowers(POWER_BURNING_EMBERS));
+            SetPower(POWER_BURNING_EMBERS, 10);
+            break;
+        case POWER_DEMONIC_FURY:
+            SetMaxPower(POWER_DEMONIC_FURY, GetCreatePowers(POWER_DEMONIC_FURY));
+            SetPower(POWER_DEMONIC_FURY, 200);
+            break;
+        case POWER_ARCANE_CHARGES:
+            SetMaxPower(POWER_ARCANE_CHARGES, GetCreatePowers(POWER_ARCANE_CHARGES));
+            SetPower(POWER_ARCANE_CHARGES, 0);
+            break;
 
-    //SetPower(new_powertype, GetPower(new_powertype));
+        default: break;
+    }
 }
 
 FactionTemplateEntry const* Unit::getFactionTemplateEntry() const
@@ -16815,6 +16853,64 @@ void Unit::SetLevel(uint8 lvl)
         sWorld->UpdateCharacterNameDataLevel(ToPlayer()->GetGUIDLow(), lvl);
 }
 
+void Unit::CheckEclipsePowerAuras(int32 powerValue)
+{
+    if (GetTypeId() != TYPEID_PLAYER)
+        return;
+
+    uint32 solarEclipseMarker = 67483;
+    uint32 lunarEclipseMarker = 67484;
+
+    if (powerValue > 0)
+    {
+        if (HasAura(48518))
+            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
+        if (HasAura(107095))
+            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
+
+        if (HasAura(lunarEclipseMarker))
+        {
+            RemoveAurasDueToSpell(lunarEclipseMarker);
+            CastSpell(this, solarEclipseMarker, true);
+        }
+        else if (!HasAura(solarEclipseMarker))
+        {
+            CastSpell(this, solarEclipseMarker, true);
+        }
+    }
+
+    if (powerValue == 0)
+    {
+        if (HasAura(48517))
+            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
+        if (HasAura(48518))
+            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
+        if (HasAura(107095))
+            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
+
+        if (HasAura(lunarEclipseMarker))
+            RemoveAurasDueToSpell(lunarEclipseMarker);
+        if (HasAura(solarEclipseMarker))
+            RemoveAurasDueToSpell(solarEclipseMarker);
+    }
+
+    if (powerValue < 0)
+    {
+        if (HasAura(48517))
+            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
+
+        if (HasAura(solarEclipseMarker))
+        {
+            RemoveAurasDueToSpell(solarEclipseMarker);
+            CastSpell(this, lunarEclipseMarker, true);
+        }
+        else if (!HasAura(lunarEclipseMarker))
+        {
+            CastSpell(this, lunarEclipseMarker, true);
+        }
+    }
+}
+
 void Unit::SetHealth(uint32 val)
 {
     if (getDeathState() == JUST_DIED)
@@ -16890,19 +16986,15 @@ uint32 Unit::GetPowerIndexByClass(uint32 powerId, uint32 classId) const
             case 60047:
             case 60051:
                 return 0;
-            default:
-                break;
+
+            default: break;
         }
     }
 
     if (Creature const* creature = ToCreature())
-    {
         if (creature->GetCreatureTemplate())
-        {
             if (creature->GetCreatureTemplate()->VehicleId)
                 return 0;
-        }
-    }
 
     return GetPowerByClass(powerId, classId);
 };
@@ -16916,7 +17008,7 @@ int32 Unit::GetPower(Powers power) const
     if (powerIndex == MAX_POWERS)
         return 0;
 
-    return m_powers[powerIndex];
+    return (GetInt32Value(UNIT_FIELD_POWER1 + powerIndex) ? GetInt32Value(UNIT_FIELD_POWER1 + powerIndex) : 0);
 }
 
 int32 Unit::GetMaxPower(Powers power) const
@@ -16928,42 +17020,42 @@ int32 Unit::GetMaxPower(Powers power) const
     if (powerIndex == MAX_POWERS)
         return 0;
 
-    return GetInt32Value(UNIT_FIELD_MAXPOWER1 + powerIndex);
+    return (GetInt32Value(UNIT_FIELD_MAXPOWER1 + powerIndex) ? GetInt32Value(UNIT_FIELD_MAXPOWER1 + powerIndex) : 0);
 }
 
-void Unit::SetPower(Powers power, int32 val, bool regen)
+void Unit::SetPower(Powers power, int32 val)
 {
     if (power == POWER_HEALTH)
-        return SetHealth(val >= 0 ? val : 0);
+    {
+        SetHealth(val >= 0 ? val : 0);
+        return;
+    }
 
     uint32 powerIndex = GetPowerIndexByClass(power, getClass());
     if (powerIndex == MAX_POWERS)
         return;
 
-    int32 maxPower = int32(GetMaxPower(power));
+    int32 maxPower = GetMaxPower(power);
     if (maxPower < val)
         val = maxPower;
 
-    m_powers[powerIndex] = val;
+    if (IsInWorld() ||  GetTypeId() == TYPEID_PLAYER && ToPlayer()->GetSession()->PlayerLoading())
+    {
+        // Check and update the field.
+        if (GetPower(power) == val)
+            return;
 
-    uint32 regen_diff = getMSTime() - m_lastRegenTime[powerIndex];
-    
-    if (regen)
-        m_lastRegenTime[powerIndex] = getMSTime();
-
-    if (!regen || regen_diff > 2000)
         SetInt32Value(UNIT_FIELD_POWER1 + powerIndex, val);
 
-    if (IsInWorld() && (!regen || regen_diff > 2000))
-    {
-        WorldPacket data(SMSG_POWER_UPDATE, 8 + 4 + 1 + 4);
+        // Send the packet.
+        WorldPacket data(SMSG_POWER_UPDATE);
         ObjectGuid guid = GetGUID();
 
         data.WriteBit(guid[3]);
         data.WriteBit(guid[6]);
         data.WriteBit(guid[4]);
 
-        int powerCounter = 1;
+        uint8 powerCounter = 1;
         data.WriteBits(powerCounter, 21);
 
         data.WriteBit(guid[2]);
@@ -16987,8 +17079,12 @@ void Unit::SetPower(Powers power, int32 val, bool regen)
         data.WriteByteSeq(guid[6]);
         data.WriteByteSeq(guid[2]);
 
-        SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER);
+        SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
     }
+
+    // Check and add / remove Druid Eclipse auras.
+    if (power == POWER_ECLIPSE)
+        CheckEclipsePowerAuras(val);
 
     // Custom MoP Script
     // Pursuit of Justice - 26023
@@ -17013,7 +17109,7 @@ void Unit::SetPower(Powers power, int32 val, bool regen)
             _player->RemoveAura(114695);
     }
 
-    // group update
+    // Group update.
     if (Player* player = ToPlayer())
     {
         if (player->GetGroup())
@@ -17033,7 +17129,10 @@ void Unit::SetPower(Powers power, int32 val, bool regen)
 void Unit::SetMaxPower(Powers power, int32 val)
 {
     if (power == POWER_HEALTH)
-        return SetMaxHealth(val >= 0 ? val : 0);
+    {
+        SetMaxHealth(val >= 0 ? val : 0);
+        return;
+    }
 
     uint32 powerIndex = GetPowerIndexByClass(power, getClass());
     if (powerIndex == MAX_POWERS)
@@ -17066,41 +17165,39 @@ int32 Unit::GetCreatePowers(Powers power) const
 {
     switch (power)
     {
-        case POWER_MANA:
-            return GetCreateMana();
-        case POWER_RAGE:
-            return 1000;
-        case POWER_FOCUS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER)
-                return 100;
-            return (GetTypeId() == TYPEID_PLAYER || !((Creature const*)this)->isPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : 100);
-        case POWER_ENERGY:
-            return (ToPet() && ToPet()->IsWarlockPet() ? 200 : 100);
-        case POWER_RUNIC_POWER:
-            return 1000;
-        case POWER_RUNES:
-            return 0;
-        case POWER_SHADOW_ORBS:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_PRIEST_SHADOW) ? 3 : 0);
-        case POWER_BURNING_EMBERS:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION) ? 40 : 0);
-        case POWER_DEMONIC_FURY:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY) ? 1000 : 0);
-        case POWER_SOUL_SHARDS:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION) ? 400 : 0);
-        case POWER_ECLIPSE:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID && (ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_DROOD_BALANCE) ? 100 : 0); // Should be -100 to 100 this needs the power to be int32 instead of uint32
-        case POWER_HOLY_POWER:
-            if (HasAura(115675))
-                return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN ? 5 : 0);
-            else
-                return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN ? 3 : 0);
         case POWER_HEALTH:
             return 0;
+        case POWER_MANA:
+            return GetCreateMana();
+
+        case POWER_RAGE:
+            return ((GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARRIOR || GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DRUID) ? 1000 : 0);
+        case POWER_FOCUS:
+            return ((GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_HUNTER || GetTypeId() == TYPEID_UNIT && ToCreature()->isPet() && ToPet()->getPetType() == HUNTER_PET) ? 100 : 0);
+        case POWER_ENERGY:
+            return ((GetTypeId() == TYPEID_UNIT && ToCreature()->isPet() && ToPet() && ToPet()->IsWarlockPet()) ? 200 : 100);
+        case POWER_RUNES:
+            return ((GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 8 : 0); // Normally 6 but Death Runes count as two more (4 types x 2).
+        case POWER_RUNIC_POWER:
+            return ((GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_DEATH_KNIGHT) ? 1000 : 0);
+        case POWER_SOUL_SHARDS:     // Available from level 19.
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION && ToPlayer()->getLevel() >= 19) ? 400 : 0);
+        case POWER_ECLIPSE:
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_DRUID && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_DRUID_BALANCE) ? 100 : 0);
+        case POWER_HOLY_POWER:      // 5 max after learning Boundless Conviction at 85, otherwise 3.
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PALADIN) ? (HasAura(115675) ? 5 : 3) : 0);
+        case POWER_ALTERNATE_POWER: // Relative, depends on the aura.
+            return 100;
         case POWER_CHI:
-            return (GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MONK ? 4 : 0);
-        default:
-            break;
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_MONK) ? (HasAura(115396) ? 5 : 4) : 0);
+        case POWER_SHADOW_ORBS:     // Available from level 21.
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_PRIEST && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_PRIEST_SHADOW && ToPlayer()->getLevel() >= 21) ? 3 : 0);
+        case POWER_BURNING_EMBERS:  // Available from level 42. 4 full x 10 minor.
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION && ToPlayer()->getLevel() >= 42) ? 40 : 0);
+        case POWER_DEMONIC_FURY:
+            return ((GetTypeId() == TYPEID_PLAYER && ToPlayer()->getClass() == CLASS_WARLOCK && ToPlayer()->GetSpecializationId(ToPlayer()->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY) ? 1000 : 0);
+
+        default: break;
     }
 
     return 0;
@@ -17127,9 +17224,7 @@ SpellPowerEntry const* Unit::GetSpellPowerEntryBySpell(SpellInfo const* spell) c
 void Unit::AddToWorld()
 {
     if (!IsInWorld())
-    {
         WorldObject::AddToWorld();
-    }
 }
 
 void Unit::RemoveFromWorld()
@@ -22190,15 +22285,7 @@ void Unit::RewardRage(uint32 baseRage, bool attacker)
     float addRage = baseRage;
 
     if (attacker)
-    {
-        // Talent which gives more rage on attack.
-        addRage += GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT);
-
-        // Sentinel - Protection Warrior Mastery
-        if (AuraEffectPtr aurEff = GetAuraEffect(29144, 1))
-            if (getVictim() && (!getVictim()->getVictim() || (getVictim()->getVictim() && this != getVictim()->getVictim())))
-                addRage *= float((aurEff->GetAmount() + 100.0f) / 100.0f);
-    }
+        addRage += GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT); // Talents which give more rage on attack.
     else
     {
         // Generate rage from damage taken only in Berserker Stance
@@ -22690,109 +22777,6 @@ void Unit::SendCanTurnWhileFalling(bool apply)
 bool Unit::IsSplineEnabled() const
 {
     return movespline->Initialized();
-}
-
-void Unit::SetEclipsePower(int32 power, bool send)
-{
-    if (power > 100)
-        power = 100;
-
-    if (power < -100)
-        power = -100;
-
-    if (power > 0)
-    {
-        if (HasAura(48518))
-            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
-        if (HasAura(107095))
-            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
-    }
-
-    if (power == 0)
-    {
-        if (HasAura(48517))
-            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
-        if (HasAura(48518))
-            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
-        if (HasAura(107095))
-            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
-    }
-
-    if (power < 0)
-    {
-        if (HasAura(48517))
-            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
-    }
-    
-    const uint32 solarEclipseMarker = 67483;
-    const uint32 lunarEclipseMarker = 67484;
-    
-    int diff = power - _eclipsePower;
-
-    if (diff < 0)
-    {
-        if (HasAura(solarEclipseMarker))
-        {
-            RemoveAurasDueToSpell(solarEclipseMarker);
-            CastSpell(this, lunarEclipseMarker, true);
-        }
-        else if (!HasAura(lunarEclipseMarker))
-        {
-            CastSpell(this, lunarEclipseMarker, true);
-        }
-    }
-    else if (diff > 0)
-    {
-        if (HasAura(lunarEclipseMarker))
-        {
-            RemoveAurasDueToSpell(lunarEclipseMarker);
-            CastSpell(this, solarEclipseMarker, true);
-        }
-        else if (!HasAura(solarEclipseMarker))
-        {
-            CastSpell(this, solarEclipseMarker, true);
-        }
-    }
-    else if (power == 0)
-    {
-        if (HasAura(lunarEclipseMarker))
-            RemoveAurasDueToSpell(lunarEclipseMarker);
-        if (HasAura(solarEclipseMarker))
-            RemoveAurasDueToSpell(solarEclipseMarker);
-    }
-
-    _eclipsePower = power;
-
-    if (send)
-    {
-        WorldPacket data(SMSG_POWER_UPDATE, 17);
-
-        ObjectGuid guid = GetGUID();
-
-        data.WriteBit(guid[3]);
-        data.WriteBit(guid[6]);
-        data.WriteBit(guid[4]);
-        int powerCounter = 1;
-        data.WriteBits(powerCounter, 21);
-        data.WriteBit(guid[2]);
-        data.WriteBit(guid[1]);
-        data.WriteBit(guid[7]);
-        data.WriteBit(guid[5]);
-        data.WriteBit(guid[0]);
-
-        data.WriteByteSeq(guid[3]);
-        data.WriteByteSeq(guid[5]);
-        data.WriteByteSeq(guid[7]);
-        data.WriteByteSeq(guid[1]);
-        data << uint8(POWER_ECLIPSE);  
-        data << int32(_eclipsePower);     
-        data.WriteByteSeq(guid[0]);
-        data.WriteByteSeq(guid[4]);
-        data.WriteByteSeq(guid[6]);
-        data.WriteByteSeq(guid[2]);
-
-        SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
-    }
 }
 
 /* In the next functions, we keep 1 minute of last damage */
@@ -23524,45 +23508,3 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
 }
-
-void Unit::SendEclipse()
-{
-    enum DruidEclipseSpells
-    {
-        DRUID_SOLAR_ECLIPSE               = 48517,
-        DRUID_LUNAR_ECLIPSE               = 48518,
-        DRUID_LUNAR_ECLIPSE_OVERRIDE      = 107095,
-        DRUID_ECLIPSE_GENERAL_ENERGIZE    = 81070,
-        DRUID_NATURES_GRACE               = 16886,
-        DRUID_STARFALL                    = 48505
-    };
-
-    if (Player* _player = this->ToPlayer())
-    {
-        if (_player->getClass() != CLASS_DRUID)
-            return;
-
-        if (_player->GetEclipsePower() == 100 && !_player->HasAura(DRUID_SOLAR_ECLIPSE))
-        {
-            _player->CastSpell(_player, DRUID_SOLAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
-            _player->CastSpell(_player, DRUID_NATURES_GRACE, true); // Cast Nature's Grace
-            _player->CastSpell(_player, DRUID_ECLIPSE_GENERAL_ENERGIZE, true); // Cast Eclipse - Give 35% of POWER_MANA
-    
-            // Now our last eclipse is Solar
-            _player->SetLastEclipsePower(DRUID_SOLAR_ECLIPSE);
-        }
-        else if (_player->GetEclipsePower() == -100 && !_player->HasAura(DRUID_LUNAR_ECLIPSE))
-        {
-            _player->CastSpell(_player, DRUID_LUNAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
-            _player->CastSpell(_player, DRUID_NATURES_GRACE, true); // Cast Nature's Grace
-            _player->CastSpell(_player, DRUID_ECLIPSE_GENERAL_ENERGIZE, true); // Cast Eclipse - Give 35% of POWER_MANA
-            _player->CastSpell(_player, DRUID_LUNAR_ECLIPSE_OVERRIDE, true);
-
-            // Now our last eclipse is Lunar
-            _player->SetLastEclipsePower(DRUID_LUNAR_ECLIPSE);
-
-            if (_player->HasSpellCooldown(DRUID_STARFALL))
-                _player->RemoveSpellCooldown(DRUID_STARFALL, true);
-        }
-    }
-};

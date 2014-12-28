@@ -2763,7 +2763,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
                 // Soul of the Forest - 4 Energy
                 else if (plrCaster->HasAura(114107))
                 {
-                    if (plrCaster->GetSpecializationId(plrCaster->GetActiveSpec()) == SPEC_DROOD_CAT)
+                    if (plrCaster->GetSpecializationId(plrCaster->GetActiveSpec()) == SPEC_DRUID_CAT)
                         plrCaster->EnergizeBySpell(plrCaster, 114107, 4 * cp, POWER_ENERGY);
                 }
             }

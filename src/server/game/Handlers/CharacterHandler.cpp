@@ -1299,7 +1299,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     uint32 time8 = getMSTime() - time7;
 
     // Druids eclipse power must be == 0 on login, so we need to remove last eclipse power
-    if (pCurrChar->getClass() == CLASS_DRUID && pCurrChar->getLevel() > 20 && pCurrChar->GetSpecializationId(pCurrChar->GetActiveSpec()) == SPEC_DROOD_BALANCE)
+    if (pCurrChar->getClass() == CLASS_DRUID && pCurrChar->getLevel() > 20 && pCurrChar->GetSpecializationId(pCurrChar->GetActiveSpec()) == SPEC_DRUID_BALANCE)
         pCurrChar->RemoveLastEclipsePower();
 
     std::string IP_str = GetRemoteAddress();

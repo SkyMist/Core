@@ -774,7 +774,7 @@ ULONG         /*SymbolSize*/,
 PVOID         UserContext)
 {
 
-    char szBuffer[2048];
+    char szBuffer[1024 * 64];
 
     __try
     {
@@ -897,7 +897,7 @@ char* /*Name*/)
     // TI_FINDCHILDREN_PARAMS struct has.  Use derivation to accomplish this.
     struct FINDCHILDREN : TI_FINDCHILDREN_PARAMS
     {
-        ULONG   MoreChildIds[1024];
+        ULONG   MoreChildIds[1024 * 2];
         FINDCHILDREN(){Count = sizeof(MoreChildIds) / sizeof(MoreChildIds[0]);}
     } children;
 
@@ -1045,7 +1045,7 @@ WheatyExceptionReport::GetBasicType(DWORD typeIndex, DWORD64 modBase)
 //============================================================================
 int __cdecl WheatyExceptionReport::_tprintf(const TCHAR * format, ...)
 {
-    TCHAR szBuff[1024];
+    TCHAR szBuff[1024 * 64];
     int retValue;
     DWORD cbWritten;
     va_list argptr;
