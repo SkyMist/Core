@@ -128,10 +128,9 @@ enum Opcodes
     CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE           = 0x053B, // 5.4.7 18019
     CMSG_CHANNEL_ANNOUNCEMENTS                        = 0x0623, // 5.4.7 18019
     CMSG_CHANNEL_BAN                                  = 0x1E69, // 5.4.7 18019
-    CMSG_CHANNEL_DISPLAY_LIST                         = 0x1D08, // 5.4.7 18019
     CMSG_CHANNEL_INVITE                               = 0x1D68, // 5.4.7 18019
     CMSG_CHANNEL_KICK                                 = 0x1C68, // 5.4.7 18019
-    CMSG_CHANNEL_LIST                                 = 0x0541, // 5.4.7 18019
+    CMSG_CHANNEL_LIST                                 = 0x1D08, // 5.4.7 18019
     CMSG_CHANNEL_MODERATOR                            = 0x0F03, // 5.4.7 18019
     CMSG_CHANNEL_MUTE                                 = 0x0E42, // 5.4.7 18019
     CMSG_CHANNEL_OWNER                                = 0x1508, // 5.4.7 18019
@@ -824,7 +823,7 @@ enum Opcodes
     SMSG_GUILD_ACHIEVEMENT_EARNED                     = 0x1B1B, // 5.4.7 18019
     SMSG_GUILD_ACHIEVEMENT_MEMBERS                    = 0x0000,
     SMSG_GUILD_BANK_LIST                              = 0x1B7B, // 5.4.7 18019
-    SMSG_GUILD_BANK_LOG_QUERY_RESULT                  = 0x1B53, // 5.4.7 18019 - CHECK!
+    SMSG_GUILD_BANK_LOG_QUERY_RESULT                  = 0x1B53, // 5.4.7 18019
     SMSG_GUILD_BANK_MONEY_WITHDRAWN                   = 0x1A70, // 5.4.7 18019
     SMSG_GUILD_BANK_QUERY_TEXT_RESULT                 = 0x1B3B, // 5.4.7 18019
     SMSG_GUILD_CHALLENGE_COMPLETED                    = 0x1A10, // 5.4.7 18019 Not implemented - CHECK!.

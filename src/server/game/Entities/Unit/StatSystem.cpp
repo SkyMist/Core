@@ -85,8 +85,12 @@ bool Player::UpdateStats(Stats stat)
             break;
         case STAT_SPIRIT:
             break;
-        default:
+        case STAT_STRENGTH:
+            if (getLevel() == 90 && (getClass() == CLASS_DEATH_KNIGHT || getClass() == CLASS_WARRIOR || getClass() == CLASS_PALADIN))
+                UpdateParryPercentage();
             break;
+
+        default: break;
     }
 
     if (stat == STAT_STRENGTH)
@@ -681,11 +685,14 @@ void Player::UpdateParryPercentage()
     uint32 pclass = getClass()-1;
     if (CanParry() && parry_cap[pclass] > 0.0f)
     {
-        float nondiminishing  = 5.0f;
+        float nondiminishing  = 3.0f;
+
         // Parry from rating
         float diminishing = GetRatingBonusValue(CR_PARRY);
+
         // Parry from SPELL_AURA_MOD_PARRY_PERCENT aura
         nondiminishing += GetTotalAuraModifier(SPELL_AURA_MOD_PARRY_PERCENT);
+
         // apply diminishing formula to diminishing parry chance
         value = nondiminishing + diminishing * parry_cap[pclass] / (diminishing + parry_cap[pclass] * m_diminishing_k[pclass]);
 
@@ -697,9 +704,12 @@ void Player::UpdateParryPercentage()
 
     // Special cases for Monks
     if (getClass() == CLASS_MONK)
-        value += 3.0f;
-    if (getClass() == CLASS_MONK && getLevel() >= 23)
-        value += 5.0f;
+    {
+        if (getLevel() < 23)
+            value += 3.0f;
+        else
+            value += 5.0f;
+    }
 
     // on 90 lvl dk/warrior/paladin should receive 1% of parry from every 952 strength - http://www.mmo-champion.com/threads/1198733-Str-to-Parry-conversion-rate?p=18501401&viewfull=1#post18501401
     if (getLevel() == 90 && (getClass() == CLASS_DEATH_KNIGHT || getClass() == CLASS_WARRIOR || getClass() == CLASS_PALADIN))
@@ -850,7 +860,7 @@ void Player::UpdatePvPPowerPercentage()
         case SPEC_PRIEST_DISCIPLINE:
         case SPEC_PRIEST_HOLY:
         case SPEC_SHAMAN_RESTORATION:
-        case SPEC_DROOD_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
         case SPEC_MONK_MISTWEAVER:
             damage_value = 0.0f;
             break;

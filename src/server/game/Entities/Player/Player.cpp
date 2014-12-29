@@ -1194,28 +1194,28 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
         // Factions depending on team, like cities and some more stuff
         switch (GetTeam())
         {
-        case ALLIANCE:
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(72), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(47), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(69), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(930), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(730), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(978), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(54), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(946), 42999);
-            break;
-        case HORDE:
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(76), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(68), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(81), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(911), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(729), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(941), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(530), 42999);
-            GetReputationMgr().SetReputation(sFactionStore.LookupEntry(947), 42999);
-            break;
-        default:
-            break;
+            case ALLIANCE:
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(72), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(47), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(69), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(930), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(730), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(978), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(54), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(946), 42999);
+                break;
+            case HORDE:
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(76), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(68), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(81), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(911), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(729), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(941), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(530), 42999);
+                GetReputationMgr().SetReputation(sFactionStore.LookupEntry(947), 42999);
+                break;
+
+            default: break;
         }
     }
 
@@ -1230,23 +1230,25 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     InitGlyphsForLevel();
     InitTalentForLevel();
     InitSpellForLevel();
-    InitPrimaryProfessions();                               // to max set before any spell added
+    InitPrimaryProfessions();                               // To max set before any spell added.
 
-    // apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods()
-    UpdateMaxHealth();                                      // Update max Health (for add bonus from stamina)
+    // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods().
+
+    UpdateMaxHealth();                                      // Update max Health (for adding bonus from stamina).
     SetFullHealth();
+
     if (getPowerType() == POWER_MANA)
     {
-        UpdateMaxPower(POWER_MANA);                         // Update max Mana (for add bonus from intellect)
+        UpdateMaxPower(POWER_MANA);                         // Update max Mana (for adding bonus from intellect).
         SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
     }
 
     if (getPowerType() == POWER_RUNIC_POWER)
     {
-        SetPower(POWER_RUNES, 8);
-        SetMaxPower(POWER_RUNES, 8);
-        SetPower(POWER_RUNIC_POWER, 0);
-        SetMaxPower(POWER_RUNIC_POWER, 1000);
+        SetMaxPower(POWER_RUNES,       GetCreatePowers(POWER_RUNES));
+        SetPower(POWER_RUNES,          GetCreatePowers(POWER_RUNES));
+        SetMaxPower(POWER_RUNIC_POWER, GetCreatePowers(POWER_RUNIC_POWER));
+        SetPower(POWER_RUNIC_POWER,    0);
     }
 
     // original spells
@@ -2748,7 +2750,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         DuelComplete(DUEL_FLED);
 
     // Druids eclipse power == 0 after teleport, so we need to remove last eclipse power
-    if (getClass() == CLASS_DRUID && getLevel() > 20 && GetSpecializationId(GetActiveSpec()) == SPEC_DROOD_BALANCE)
+    if (getClass() == CLASS_DRUID && getLevel() > 20 && GetSpecializationId(GetActiveSpec()) == SPEC_DRUID_BALANCE)
         RemoveLastEclipsePower();
 
     if (GetMapId() == mapid)
@@ -2988,9 +2990,20 @@ void Player::ProcessDelayedOperations()
         else
             SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
 
-        SetPower(POWER_RAGE, 0);
-        SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-        SetPower(POWER_ECLIPSE, 0);
+        SetPower(POWER_RAGE,            0);
+        SetPower(POWER_ENERGY,        GetMaxPower(POWER_ENERGY));
+        SetPower(POWER_FOCUS,         GetMaxPower(POWER_FOCUS));
+        SetPower(POWER_RUNES,         GetMaxPower(POWER_RUNES));
+        SetPower(POWER_RUNIC_POWER,     0);
+        SetPower(POWER_SOUL_SHARDS,   100);
+        SetPower(POWER_ECLIPSE,         0);
+        SetPower(POWER_HOLY_POWER,      0);
+        SetPower(POWER_ALTERNATE_POWER, 0);
+        SetPower(POWER_CHI,             0);
+        SetPower(POWER_SHADOW_ORBS,     0);
+        SetPower(POWER_BURNING_EMBERS, 10);
+        SetPower(POWER_DEMONIC_FURY,  200);
+        SetPower(POWER_ARCANE_CHARGES,  0);
 
         if (uint32 aura = _resurrectionData->Aura)
             CastSpell(this, aura, true, NULL, NULLAURA_EFFECT, _resurrectionData->GUID);
@@ -3031,7 +3044,7 @@ void Player::ProcessDelayedOperations()
             g->SendUpdateToPlayer(GetGUID(), nullptr);
     }
 
-    //we have executed ALL delayed ops, so clear the flag
+    // We have executed ALL delayed ops, so clear the flag.
     m_DelayedOperations = 0;
 }
 
@@ -3205,11 +3218,11 @@ void Player::RegenerateAll()
 
 void Player::Regenerate(Powers power)
 {
-    uint32 maxValue = GetMaxPower(power);
+    int32 maxValue = GetMaxPower(power);
     if (!maxValue)
         return;
 
-    uint32 curValue = GetPower(power);
+    int32 curValue = GetPower(power);
 
     if (HasAuraTypeWithValue(SPELL_AURA_PREVENT_REGENERATE_POWER, power))
         return;
@@ -3225,8 +3238,6 @@ void Player::Regenerate(Powers power)
     float rangedHaste = GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE);
     float meleeHaste = GetFloatValue(UNIT_MOD_HASTE);
     float spellHaste = GetFloatValue(UNIT_MOD_CAST_SPEED);
-
-    // float HastePct = 1.0f + GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + CR_HASTE_MELEE) * GetRatingMultiplier(CR_HASTE_MELEE) / 100.0f;
 
     switch (power)
     {
@@ -3250,7 +3261,6 @@ void Player::Regenerate(Powers power)
         {
             float FocusRegenRate = sWorld->getRate(RATE_POWER_FOCUS);
             addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * FocusRegenRate;
-
             break;
         }
         case POWER_ENERGY:                                              // Regenerate Energy (Rogue, Feral Druid, Monk).
@@ -3412,12 +3422,12 @@ void Player::Regenerate(Powers power)
     if (power != POWER_MANA && power != POWER_CHI && power != POWER_HOLY_POWER && power != POWER_SOUL_SHARDS && power != POWER_BURNING_EMBERS && power != POWER_DEMONIC_FURY)
     {
         AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
-        for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
+        for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); i++)
             if (Powers((*i)->GetMiscValue()) == power)
                 AddPct(addvalue, (*i)->GetAmount());
 
         // Butchery requires combat for this effect
-        if (power != POWER_RUNIC_POWER || isInCombat())
+        if (power != POWER_RUNIC_POWER && isInCombat())
             addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, power) * ((power != POWER_ENERGY) ? m_regenTimerCount : m_regenTimer) / (5 * IN_MILLISECONDS);
     }
 
@@ -3431,11 +3441,10 @@ void Player::Regenerate(Powers power)
         if (curValue == maxValue)
             return;
     }
-    else
-        return;
+    else return;
 
     addvalue += m_powerFraction[powerIndex];
-    uint32 integerValue = uint32(fabs(addvalue));
+    int32 integerValue = int32(fabs(addvalue));
 
     if (addvalue < 0.0f)
     {
@@ -3463,7 +3472,10 @@ void Player::Regenerate(Powers power)
             m_powerFraction[powerIndex] = addvalue - integerValue;
     }
 
-    SetPower(power, curValue, true);
+    if (m_regenTimerCount >= 2000 || power == POWER_HOLY_POWER || power == POWER_CHI || power == POWER_SOUL_SHARDS || power == POWER_DEMONIC_FURY || power == POWER_BURNING_EMBERS)
+        SetPower(power, curValue);
+    else
+        SetInt32Value(UNIT_FIELD_POWER1 + powerIndex, curValue);
 }
 
 void Player::RegenerateHealth()
@@ -3475,36 +3487,41 @@ void Player::RegenerateHealth()
         return;
 
     float HealthIncreaseRate = sWorld->getRate(RATE_HEALTH);
-
     float addvalue = 0.0f;
-    bool inFight = isInCombat();
 
-    // polymorphed case
+    // Polymorphed case.
     if (IsPolymorphed())
-        addvalue = (float)GetMaxHealth()/3;
-    // normal regen case (maybe partly in combat case)
-    else if (!inFight || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))
+        addvalue = (float)GetMaxHealth() / 3;
+
+    // Normal regen + partly in combat case.
+    else if (!isInCombat() || HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))
     {
         addvalue = HealthIncreaseRate;
-        if (getLevel() < 15)
-            addvalue = (0.20f*((float)GetMaxHealth())/getLevel()*HealthIncreaseRate);
+
+        if (!isInCombat())
+        {
+            if (getLevel() < 15)
+                addvalue = (0.20f*((float)GetMaxHealth())/getLevel()*HealthIncreaseRate);
+            else
+                addvalue = 0.015f*((float)GetMaxHealth())*HealthIncreaseRate;
+
+            AuraEffectList const& mModHealthRegenPct = GetAuraEffectsByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
+            for (AuraEffectList::const_iterator i = mModHealthRegenPct.begin(); i != mModHealthRegenPct.end(); ++i)
+                AddPct(addvalue, (*i)->GetAmount());
+
+            addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_REGEN) * 2 * IN_MILLISECONDS / (5 * IN_MILLISECONDS);
+        }
         else
-            addvalue = 0.015f*((float)GetMaxHealth())*HealthIncreaseRate;
-
-        AuraEffectList const& mModHealthRegenPct = GetAuraEffectsByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
-        for (AuraEffectList::const_iterator i = mModHealthRegenPct.begin(); i != mModHealthRegenPct.end(); ++i)
-            AddPct(addvalue, (*i)->GetAmount());
-
-        addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_REGEN) * 2 * IN_MILLISECONDS / (5 * IN_MILLISECONDS);
-
-        if (inFight)
-            ApplyPct(addvalue, GetTotalAuraModifier(SPELL_AURA_MOD_REGEN_DURING_COMBAT));
+        {
+            if (HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))
+                ApplyPct(addvalue, GetTotalAuraModifier(SPELL_AURA_MOD_REGEN_DURING_COMBAT));
+        }
 
         if (!IsStandState())
             addvalue *= 1.5f;
     }
 
-    // always regeneration bonus (including combat)
+    // The regeneration bonus always applies (including in combat).
     addvalue += GetTotalAuraModifier(SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT);
     addvalue += m_baseHealthRegen / 2.5f;
 
@@ -3516,38 +3533,7 @@ void Player::RegenerateHealth()
 
 void Player::ResetAllPowers()
 {
-    SetHealth(GetMaxHealth());
-
-    // for shadow priest
-    if (getClass() == CLASS_PRIEST && GetSpecializationId(GetActiveSpec()) == SPEC_PRIEST_SHADOW)
-        SetPower(POWER_SHADOW_ORBS, 0);
-
-    // for warlocks
-    if (getClass() == CLASS_WARLOCK)
-    {
-        switch (GetSpecializationId(GetActiveSpec()))
-        {
-            case SPEC_WARLOCK_DEMONOLOGY:
-                SetPower(POWER_DEMONIC_FURY, 200);
-                break;
-            case SPEC_WARLOCK_DESTRUCTION:
-                SetPower(POWER_BURNING_EMBERS, 10);
-                break;
-            case SPEC_WARLOCK_AFFLICTION:
-                SetPower(POWER_SOUL_SHARDS, 100);
-                break;
-            default:
-                break;
-        }
-    }
-
-    // for druids
-    if (getClass() == CLASS_DRUID && GetSpecializationId(GetActiveSpec()) == SPEC_DROOD_BALANCE)
-        SetPower(POWER_ECLIPSE, 0);
-
-    // for paladins
-    if (getClass() == CLASS_PALADIN)
-        SetPower(POWER_HOLY_POWER, 0);
+    SetFullHealth();
 
     switch (getPowerType())
     {
@@ -3557,11 +3543,26 @@ void Player::ResetAllPowers()
         case POWER_RAGE:
             SetPower(POWER_RAGE, 0);
             break;
+        case POWER_FOCUS:
+            SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
+            break;
         case POWER_ENERGY:
             SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
             break;
+        case POWER_RUNES:
+            SetPower(POWER_RUNES, GetMaxPower(POWER_RUNES));
+            break;
         case POWER_RUNIC_POWER:
             SetPower(POWER_RUNIC_POWER, 0);
+            break;
+        case POWER_SOUL_SHARDS:
+            SetPower(POWER_SOUL_SHARDS, 100);
+            break;
+        case POWER_ECLIPSE:
+            SetPower(POWER_ECLIPSE, 0);
+            break;
+        case POWER_HOLY_POWER:
+            SetPower(POWER_HOLY_POWER, 0);
             break;
         case POWER_ALTERNATE_POWER:
             SetPower(POWER_ALTERNATE_POWER, 0);
@@ -3569,8 +3570,20 @@ void Player::ResetAllPowers()
         case POWER_CHI:
             SetPower(POWER_CHI, 0);
             break;
-        default:
+        case POWER_SHADOW_ORBS:
+            SetPower(POWER_SHADOW_ORBS, 0);
             break;
+        case POWER_BURNING_EMBERS:
+            SetPower(POWER_BURNING_EMBERS, 10);
+            break;
+        case POWER_DEMONIC_FURY:
+            SetPower(POWER_DEMONIC_FURY, 200);
+            break;
+        case POWER_ARCANE_CHARGES:
+            SetPower(POWER_ARCANE_CHARGES, 0);
+            break;
+
+        default: break;
     }
 }
 
@@ -4164,13 +4177,8 @@ void Player::GiveLevel(uint8 level)
     UpdateAllStats();
     _ApplyAllLevelScaleItemMods(true);                      // Moved to above SetFullHealth so player will have full health from Heirlooms
 
-    // set current level health and mana/energy to maximum after applying all mods.
-    SetFullHealth();
-    SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    if (GetPower(POWER_RAGE) > GetMaxPower(POWER_RAGE))
-        SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
-    SetPower(POWER_FOCUS, 0);
+    // Reset powers.
+    ResetAllPowers();
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -4543,20 +4551,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
     if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
         _ApplyAllStatBonuses();
 
-    // set current level health and mana/energy to maximum after applying all mods.
-    SetFullHealth();
-    SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    if (GetPower(POWER_RAGE) > GetMaxPower(POWER_RAGE))
-        SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
-    SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
-    SetPower(POWER_RUNIC_POWER, 0);
-    SetPower(POWER_CHI, 0);
-    SetPower(POWER_SOUL_SHARDS, 100);
-    SetPower(POWER_DEMONIC_FURY, 200);
-    SetPower(POWER_BURNING_EMBERS, 10);
-    SetPower(POWER_SHADOW_ORBS, 0);
-    SetPower(POWER_ECLIPSE, 0);
+    // Reset all powers.
+    ResetAllPowers();
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -5843,8 +5839,8 @@ uint32 Player::GetRoleForGroup(uint32 specializationId)
         case SPEC_SHAMAN_ENHANCEMENT:
         case SPEC_WARRIOR_ARMS:
         case SPEC_WARRIOR_FURY:
-        case SPEC_DROOD_BALANCE:
-        case SPEC_DROOD_CAT:
+        case SPEC_DRUID_BALANCE:
+        case SPEC_DRUID_CAT:
             roleId = ROLES_DPS;
             break;
         case SPEC_MONK_MISTWEAVER:
@@ -5852,13 +5848,13 @@ uint32 Player::GetRoleForGroup(uint32 specializationId)
         case SPEC_PRIEST_DISCIPLINE:
         case SPEC_PRIEST_HOLY:
         case SPEC_SHAMAN_RESTORATION:
-        case SPEC_DROOD_RESTORATION:
+        case SPEC_DRUID_RESTORATION:
             roleId = ROLES_HEALER;
             break;
         case SPEC_MONK_BREWMASTER:
         case SPEC_DK_BLOOD:
         case SPEC_WARRIOR_PROTECTION:
-        case SPEC_DROOD_BEAR:
+        case SPEC_DRUID_BEAR:
         case SPEC_PALADIN_PROTECTION:
             roleId = ROLES_TANK;
             break;
@@ -6468,7 +6464,8 @@ void Player::BuildPlayerRepop()
 
 void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 {
-    WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4*4);          // remove spirit healer position
+    // Remove spirit healer position.
+    WorldPacket data(SMSG_DEATH_RELEASE_LOC, 4 * 4);
     data << float(0);
     data << float(0);
     data << float(0);
@@ -6506,17 +6503,22 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
         for (AuraEffectList::const_iterator i = mResurrectedHealthByGuildMember.begin(); i != mResurrectedHealthByGuildMember.end(); ++i)
             AddPct(restore_percent, (*i)->GetAmount());
 
-        SetHealth(uint32(GetMaxHealth()*restore_percent));
-        SetPower(POWER_MANA, uint32(GetMaxPower(POWER_MANA)*restore_percent));
-        SetPower(POWER_RAGE, 0);
-        SetPower(POWER_ENERGY, uint32(GetMaxPower(POWER_ENERGY)*restore_percent));
-        SetPower(POWER_FOCUS, uint32(GetMaxPower(POWER_FOCUS)*restore_percent));
-        SetPower(POWER_ECLIPSE, 0);
-        SetPower(POWER_DEMONIC_FURY, 200);
-        SetPower(POWER_BURNING_EMBERS, 10);
-        SetPower(POWER_SOUL_SHARDS, 100);
-        SetPower(POWER_CHI, 0);
-        SetPower(POWER_SHADOW_ORBS, 0);
+        SetHealth(                      uint32(GetMaxHealth()                 * restore_percent));
+        SetPower(POWER_MANA,            uint32(GetMaxPower(POWER_MANA)        * restore_percent));
+        SetPower(POWER_RAGE,              0);
+        SetPower(POWER_ENERGY,          uint32(GetMaxPower(POWER_ENERGY)      * restore_percent));
+        SetPower(POWER_FOCUS,           uint32(GetMaxPower(POWER_FOCUS)       * restore_percent));
+        SetPower(POWER_RUNES,           GetMaxPower(POWER_RUNES));
+        SetPower(POWER_RUNIC_POWER,       0);
+        SetPower(POWER_SOUL_SHARDS,     100);
+        SetPower(POWER_ECLIPSE,           0);
+        SetPower(POWER_HOLY_POWER,        0);
+        SetPower(POWER_ALTERNATE_POWER,   0);
+        SetPower(POWER_CHI,               0);
+        SetPower(POWER_SHADOW_ORBS,       0);
+        SetPower(POWER_BURNING_EMBERS,   10);
+        SetPower(POWER_DEMONIC_FURY,    200);
+        SetPower(POWER_ARCANE_CHARGES,    0);
     }
 
     // trigger update zone for alive state zone updates
@@ -6526,10 +6528,8 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     sOutdoorPvPMgr->HandlePlayerResurrects(this, newzone);
 
     if (InBattleground())
-    {
         if (Battleground* bg = GetBattleground())
             bg->HandlePlayerResurrect(this);
-    }
 
     // update visibility
     UpdateObjectVisibility();
@@ -20302,12 +20302,13 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
     // restore remembered power/health values (but not more max values)
     uint32 savedHealth = fields[46].GetUInt32();
     SetHealth(savedHealth > GetMaxHealth() ? GetMaxHealth() : savedHealth);
+
     uint32 loadedPowers = 0;
     for (uint32 i = 0; i < MAX_POWERS; ++i)
     {
         if (GetPowerIndexByClass(Powers(i), getClass()) != MAX_POWERS)
         {
-            uint32 savedPower = fields[47+loadedPowers].GetUInt32();
+            uint32 savedPower = fields[47 + loadedPowers].GetInt32();
             uint32 maxPower = GetUInt32Value(UNIT_FIELD_MAXPOWER1 + loadedPowers);
             SetPower(Powers(i), (savedPower > maxPower) ? maxPower : savedPower);
             if (++loadedPowers >= MAX_POWERS_PER_CLASS)
@@ -20316,7 +20317,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
     }
 
     for (; loadedPowers < MAX_POWERS_PER_CLASS; ++loadedPowers)
-        SetUInt32Value(UNIT_FIELD_POWER1 + loadedPowers, 0);
+        SetInt32Value(UNIT_FIELD_POWER1 + loadedPowers, 0);
 
     SetPower(POWER_ECLIPSE, 0);
 
@@ -20575,6 +20576,9 @@ void Player::_LoadAuras(PreparedQueryResult result, PreparedQueryResult resultEf
                     aura->Remove();
                     continue;
                 }
+
+                if (AuraEffectPtr aurEff = aura->GetEffect(EFFECT_0))
+                    aurEff->GetFixedDamageInfo().SetFixedDamage(baseDamage[0]);
 
                 aura->SetLoadedState(maxduration, remaintime, remaincharges, stackcount, recalculatemask, &damage[0]);
                 aura->ApplyForTargets();
@@ -21946,7 +21950,7 @@ void Player::SaveToDB(bool create /*=false*/)
         {
             if (GetPowerIndexByClass(Powers(i), getClass()) != MAX_POWERS)
             {
-                stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_POWER1 + storedPowers));
+                stmt->setInt32(index++, GetInt32Value(UNIT_FIELD_POWER1 + storedPowers));
                 if (++storedPowers >= MAX_POWERS_PER_CLASS)
                     break;
             }
@@ -22071,7 +22075,7 @@ void Player::SaveToDB(bool create /*=false*/)
         {
             if (GetPowerIndexByClass(Powers(i), getClass()) != MAX_POWERS)
             {
-                stmt->setUInt32(index++, GetUInt32Value(UNIT_FIELD_POWER1 + storedPowers));
+                stmt->setInt32(index++, GetInt32Value(UNIT_FIELD_POWER1 + storedPowers));
                 if (++storedPowers >= MAX_POWERS_PER_CLASS)
                     break;
             }
@@ -24544,6 +24548,8 @@ void Player::InitDataForForm(bool reapplyMods)
         {
             if (getPowerType() != POWER_MANA)
                 setPowerType(POWER_MANA);
+            SetMaxPower(POWER_MANA, GetCreatePowers(POWER_MANA));
+            SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
             break;
         }
         default:                                            // 0, for example
@@ -27322,15 +27328,20 @@ void Player::ResurectUsingRequestData()
     else
         SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
 
-    SetPower(POWER_RAGE, 0);
-    SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    SetPower(POWER_FOCUS, GetMaxPower(POWER_FOCUS));
-    SetPower(POWER_ECLIPSE, 0);
+    SetPower(POWER_RAGE,            0);
+    SetPower(POWER_ENERGY,        GetMaxPower(POWER_ENERGY));
+    SetPower(POWER_FOCUS,         GetMaxPower(POWER_FOCUS));
+    SetPower(POWER_RUNES,         GetMaxPower(POWER_RUNES));
+    SetPower(POWER_RUNIC_POWER,     0);
+    SetPower(POWER_SOUL_SHARDS,   100);
+    SetPower(POWER_ECLIPSE,         0);
+    SetPower(POWER_HOLY_POWER,      0);
+    SetPower(POWER_ALTERNATE_POWER, 0);
+    SetPower(POWER_CHI,             0);
+    SetPower(POWER_SHADOW_ORBS,     0);
     SetPower(POWER_BURNING_EMBERS, 10);
-    SetPower(POWER_SOUL_SHARDS, 100);
-    SetPower(POWER_DEMONIC_FURY, 200);
-    SetPower(POWER_SHADOW_ORBS, 0);
-    SetPower(POWER_CHI, 0);
+    SetPower(POWER_DEMONIC_FURY,  200);
+    SetPower(POWER_ARCANE_CHARGES,  0);
 
     if (uint32 aura = _resurrectionData->Aura)
         CastSpell(this, aura, true, NULL, NULLAURA_EFFECT, _resurrectionData->GUID);
@@ -28136,9 +28147,14 @@ uint32 Player::GetRuneTypeBaseCooldown(RuneType runeType) const
 
     // Runes cooldown are now affected by player's haste from equipment ...
     hastePct = GetRatingBonusValue(CR_HASTE_MELEE);
-    hastePct += GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW);
+
+    // ... and some auras.
     hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE);
-    hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE) / 10.0f;
+    hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE_2);
+    hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_HASTE_3);
+    hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE);
+    hastePct += GetTotalAuraModifier(SPELL_AURA_MOD_MELEE_RANGED_HASTE_2);
+    hastePct += GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW);
 
     cooldown *=  1.0f - (hastePct / 100.0f);
 
@@ -29550,11 +29566,7 @@ void Player::ActivateSpec(uint8 spec)
 
     SendActionButtons(1);
 
-    for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
-    {
-        SetPower(Powers(i), 0);
-        SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
-    }
+    ResetAllPowers();
 }
 
 void Player::ResetTimeSync()

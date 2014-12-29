@@ -112,6 +112,10 @@ void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
     recvPacket.FlushBits();
     std::string invitedName = recvPacket.ReadString(nameLength);
 
+    auto delimeter_pos = invitedName.find("-");
+    if (delimeter_pos > 0)
+        invitedName = invitedName.substr(0, delimeter_pos);
+
     if (normalizePlayerName(invitedName))
         if (Guild* guild = _GetPlayerGuild(this, true))
             guild->HandleInviteMember(this, invitedName);
@@ -863,6 +867,8 @@ void WorldSession::HandleGuildSetRankPermissionsOpcode(WorldPacket& recvPacket)
     uint32 nameLength = recvPacket.ReadBits(7);
     recvPacket.FlushBits();
     std::string rankName = recvPacket.ReadString(nameLength);
+
+    moneyPerDay = std::min<uint64>(uint64(moneyPerDay * GOLD), uint64(std::numeric_limits<uint32>::max));
 
     guild->HandleSetRankInfo(this, rankId, rankName, newRights, moneyPerDay, rightsAndSlots);
 }

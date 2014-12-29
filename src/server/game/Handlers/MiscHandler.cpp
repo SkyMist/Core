@@ -721,8 +721,11 @@ void WorldSession::HandleAddFriendOpcode(WorldPacket& recvData)
     std::string friendNote;
 
     recvData >> friendName;
-
     recvData >> friendNote;
+
+    auto delimeter_pos = friendName.find("-");
+    if (delimeter_pos > 0)
+        friendName = friendName.substr(0, delimeter_pos);
 
     if (!normalizePlayerName(friendName))
         return;

@@ -546,9 +546,9 @@ class spell_dru_soul_of_the_forest_eclipse : public SpellScriptLoader
                     if (_player->HasAura(SPELL_DRUID_SOUL_OF_THE_FOREST_HASTE))
                     {
                         if (aurEff->GetSpellInfo()->Id == SPELL_DRUID_SOLAR_ECLIPSE)
-                            _player->SetEclipsePower(int32(_player->GetEclipsePower() - 20));
+                            _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - 20);
                         else if (aurEff->GetSpellInfo()->Id == SPELL_DRUID_LUNAR_ECLIPSE)
-                            _player->SetEclipsePower(int32(_player->GetEclipsePower() + 20));
+                            _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + 20);
                     }
                 }
             }
@@ -591,7 +591,7 @@ class spell_dru_soul_of_the_forest : public SpellScriptLoader
                     if (GetSpellInfo()->Id == 33878)
                     {
                         // Dream of Cenarius
-                        if (caster->ToPlayer()->GetSpecializationId(caster->ToPlayer()->GetActiveSpec()) == SPEC_DROOD_BEAR && GetSpell()->IsCritForTarget(GetHitUnit()))
+                        if (caster->ToPlayer()->GetSpecializationId(caster->ToPlayer()->GetActiveSpec()) == SPEC_DRUID_BEAR && GetSpell()->IsCritForTarget(GetHitUnit()))
                         {
                             if (roll_chance_i(40))
                                 caster->AddAura(SPELL_DRUID_DREAM_OF_CENARIUS_BEAR, caster);
@@ -1176,16 +1176,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110570;   // Anti-Magic Shell
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 122285;   // Bone Shield
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 122282;   // Death Coil
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110575;   // Icebound Fortitude
                                             break;
                                         default:
@@ -1206,16 +1206,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110588;   // Misdirection
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 110600;   // Ice Trap
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110597;   // Play Dead
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110617;   // Deterrence
                                             break;
                                         default:
@@ -1231,16 +1231,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110621;   // Mirror Image
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 110694;   // Frost Armor
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110693;   // Frost Nova
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110696;   // Ice Block
                                             break;
                                         default:
@@ -1255,16 +1255,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 126458;   // Grapple Weapon
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 126453;   // Elusive Brew
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 126449;   // Clash
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 126456;   // Fortifying Brew
                                             break;
                                         default:
@@ -1286,16 +1286,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110698;   // Hammer of Justice
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 110701;   // Consecration
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110700;   // Divine Shield
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 122288;   // Cleanse
                                             break;
                                         default:
@@ -1317,16 +1317,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110707;   // Mass Dispel
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 110717;   // Fear Ward
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110715;   // Dispersion
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110718;   // Leap of Faith
                                             break;
                                         default:
@@ -1347,16 +1347,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110788;   // Cloak of Shadows
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 122289;   // Feint
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110730;   // Redirect
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110791;   // Evasion
                                             break;
                                         default:
@@ -1371,16 +1371,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 110802;   // Purge
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 110803;   // Lightning Shield
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110807;   // Feral Spirit
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 110806;   // Spiritwalker's Grace
                                             break;
                                         default:
@@ -1401,16 +1401,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 122291;   // Unending Resolve
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 122290;   // Life Tap
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 110810;   // Soul Swap
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 112970;   // Demonic Circle : Teleport
                                             break;
                                         default:
@@ -1425,16 +1425,16 @@ class spell_dru_symbiosis : public SpellScriptLoader
 
                                     switch (specId)
                                     {
-                                        case SPEC_DROOD_BALANCE:
+                                        case SPEC_DRUID_BALANCE:
                                             spellCaster = 122292;   // Intervene
                                             break;
-                                        case SPEC_DROOD_BEAR:
+                                        case SPEC_DRUID_BEAR:
                                             spellCaster = 113002;   // Spell Reflection
                                             break;
-                                        case SPEC_DROOD_CAT:
+                                        case SPEC_DRUID_CAT:
                                             spellCaster = 112997;   // Shattering Blow
                                             break;
-                                        case SPEC_DROOD_RESTORATION:
+                                        case SPEC_DRUID_RESTORATION:
                                             spellCaster = 113004;   // Intimidating Roar
                                             break;
                                         default:
@@ -3101,9 +3101,9 @@ class spell_dru_astral_communion : public SpellScriptLoader
 
                     // Give Solar energy just if our last eclipse was lunar else, give Lunar energy
                     if (_player->GetLastEclipsePower() == SPELL_DRUID_LUNAR_ECLIPSE)
-                        _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
                     else
-                        _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                     if (_player->HasAura(SPELL_DRUID_ASTRAL_INSIGHT))
                     {
@@ -3111,7 +3111,7 @@ class spell_dru_astral_communion : public SpellScriptLoader
                         _player->RemoveAura(SPELL_DRUID_ASTRAL_INSIGHT);
                     }
 
-                    if (_player->GetEclipsePower() == 100 && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE))
+                    if (_player->GetPower(POWER_ECLIPSE) == 100 && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE))
                     {
                         _player->CastSpell(_player, SPELL_DRUID_SOLAR_ECLIPSE, true, 0); // Cast Solar Eclipse
                         _player->CastSpell(_player, SPELL_DRUID_NATURES_GRACE, true); // Cast Nature's Grace
@@ -3121,7 +3121,7 @@ class spell_dru_astral_communion : public SpellScriptLoader
                         // Now our last eclipse is Solar
                         _player->SetLastEclipsePower(SPELL_DRUID_SOLAR_ECLIPSE);
                     }
-                    else if (_player->GetEclipsePower() == -100 && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
+                    else if (_player->GetPower(POWER_ECLIPSE) == -100 && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                     {
                         _player->CastSpell(_player, SPELL_DRUID_LUNAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
                         _player->CastSpell(_player, SPELL_DRUID_NATURES_GRACE, true); // Cast Nature's Grace
@@ -3166,7 +3166,7 @@ class spell_dru_celestial_alignment : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        _player->SetEclipsePower(0);
+                        _player->SetPower(POWER_ECLIPSE, 0);
                         _player->RemoveLastEclipsePower();
 
                         _player->CastSpell(_player, SPELL_DRUID_SOLAR_ECLIPSE, true, 0); // Cast Solar Eclipse
@@ -3635,7 +3635,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                 {
                     if (Unit* target = GetExplTargetUnit())
                     {
-                        if ((!_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) || !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE)) && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_DROOD_BALANCE)
+                        if ((!_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) || !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE)) && _player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_DRUID_BALANCE)
                         {
                             switch (GetSpellInfo()->Id)
                             {
@@ -3650,7 +3650,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                     if (_player->HasAura(SPELL_DRUID_EUPHORIA) && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                                         eclipse *= 2;
 
-                                    _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                                    _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                                     // Your crits with Wrath also increase sunfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3676,7 +3676,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                     if (_player->HasAura(SPELL_DRUID_EUPHORIA) && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                                         eclipse *= 2;
 
-                                    _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                                    _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
 
                                     // Your crits with Starfire also increase moonfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3700,9 +3700,9 @@ class spell_dru_eclipse : public SpellScriptLoader
 
                                     // Give Solar energy just if our last eclipse was lunar else, give Lunar energy
                                     if (_player->GetLastEclipsePower() == SPELL_DRUID_LUNAR_ECLIPSE)
-                                        _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
                                     else
-                                        _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                                     // Your crits with Starsurge also increase sunfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3729,7 +3729,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                 }
                             }
                             // Now check if we have lunar or solar eclipse and give it with effects
-                            _player->SendEclipse();
+                            // _player->SendEclipse(); // Done in Unit::SetPower.
                         }
                     }
                 }
@@ -4167,13 +4167,13 @@ class spell_dru_heart_wild : public SpellScriptLoader
                 if (GetTarget()->ToPlayer())
                     return;
 
-                if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DROOD_CAT)
+                if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DRUID_CAT)
                     GetTarget()->CastSpell(GetTarget(),123737,true);
-                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DROOD_BEAR)
+                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DRUID_BEAR)
                     GetTarget()->CastSpell(GetTarget(),123738,true);
-                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DROOD_BALANCE)
+                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DRUID_BALANCE)
                     GetTarget()->CastSpell(GetTarget(),108294,true);
-                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DROOD_RESTORATION)
+                else if (GetTarget()->ToPlayer()->GetActiveSpec() == SPEC_DRUID_RESTORATION)
                     GetTarget()->CastSpell(GetTarget(),108291,true);
 
             }
@@ -4210,7 +4210,7 @@ class spell_dru_dream_of_cenarius : public SpellScriptLoader
                         if (caster->HasAura(SPELL_DRUID_DREAM_OF_CENARIUS))
                         {
                             // Increases healing from Healing Touch by 20% for all specs except Restoration.
-                            if (caster->GetActiveSpec() != SPEC_DROOD_RESTORATION)
+                            if (caster->GetActiveSpec() != SPEC_DRUID_RESTORATION)
                             {
                                 int32 currentHeal = GetHitHeal();
                                 currentHeal = int32(currentHeal * 1.2f);
@@ -4218,10 +4218,10 @@ class spell_dru_dream_of_cenarius : public SpellScriptLoader
 
                                 switch (caster->GetSpecializationId(caster->GetActiveSpec()))
                                 {
-                                    case SPEC_DROOD_BALANCE:
+                                    case SPEC_DRUID_BALANCE:
                                         caster->AddAura(SPELL_DRUID_DREAM_OF_CENARIUS_BALANCE, caster);
                                         break;
-                                    case SPEC_DROOD_CAT:
+                                    case SPEC_DRUID_CAT:
                                         caster->AddAura(SPELL_DRUID_DREAM_OF_CENARIUS_CAT, caster);
                                         caster->AddAura(SPELL_DRUID_DREAM_OF_CENARIUS_CAT, caster);
                                         break;
@@ -4263,7 +4263,7 @@ class spell_dru_dream_of_cenarius_restor : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        if (caster->GetSpecializationId(caster->GetActiveSpec()) == SPEC_DROOD_RESTORATION && caster->HasAura(SPELL_DRUID_DREAM_OF_CENARIUS))
+                        if (caster->GetSpecializationId(caster->GetActiveSpec()) == SPEC_DRUID_RESTORATION && caster->HasAura(SPELL_DRUID_DREAM_OF_CENARIUS))
                         {
                             int32 hitDamage = GetHitDamage();
                             caster->CastCustomSpell(target, SPELL_DRUID_DREAM_OF_CENARIUS_RESTOR, &hitDamage, NULL, NULL, true);
@@ -4490,7 +4490,7 @@ class spell_druid_natures_grace : public SpellScriptLoader
                     {
                         _player->RemoveAura(SPELL_DRUID_SOLAR_ECLIPSE);
                         _player->RemoveAura(SPELL_DRUID_LUNAR_ECLIPSE);
-                        _player->SetEclipsePower(0);
+                        _player->SetPower(POWER_ECLIPSE, 0);
                     }
                 }
             }

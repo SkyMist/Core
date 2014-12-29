@@ -165,7 +165,7 @@ class mob_wolf_rider_farseer : public CreatureScript
         }
 };
 
-void AddSC_Garrosh_Hellscream()
+void AddSC_garrosh_hellscream()
 {
     new boss_garrosh_hellscream();
     new mob_siege_engineer();

@@ -971,6 +971,14 @@ void Object::SetUInt32Value(uint16 index, uint32 value)
     }
 }
 
+void Object::UpdateInt32Value(uint16 index, int32 value)
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+
+    m_uint32Values[index] = value;
+    _changedFields[index] = true;
+}
+
 void Object::UpdateUInt32Value(uint16 index, uint32 value)
 {
     ASSERT(index < m_valuesCount || PrintIndexError(index, true));
@@ -3286,47 +3294,46 @@ void WorldObject::SetPhaseMask(uint32 newPhaseMask, bool update)
 
 void WorldObject::PlayDistanceSound(uint32 sound_id, Player* target /*= NULL*/)
 {
-    WorldPacket data(SMSG_PLAY_OBJECT_SOUND, 4+8);
-    ObjectGuid guid = GetGUID();
+    ObjectGuid guid1 = GetGUID();
+    ObjectGuid guid2 = GetGUID();
 
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[2]);
-    data.WriteBit(guid[1]);
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[1]);
-    data.WriteBit(guid[6]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[7]);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[2]);
-    data.WriteBit(guid[0]);
-    data.WriteBit(guid[4]);
-    data.WriteBit(guid[6]);
-    data.WriteBit(guid[3]);
-    data.WriteBit(guid[5]);
-    data.WriteBit(guid[4]);
+    WorldPacket data(SMSG_PLAY_OBJECT_SOUND, 2 + 16 + 4);
 
-    data.FlushBits();
-
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[5]);
-    data.WriteByteSeq(guid[3]);
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[6]);
-    data.WriteByteSeq(guid[2]);
-    data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[4]);
-    data.WriteByteSeq(guid[1]);
-    data.WriteByteSeq(guid[0]);
-    data.WriteByteSeq(guid[1]);
+    data.WriteBit(guid2[0]);
+    data.WriteBit(guid1[6]);
+    data.WriteBit(guid1[0]);
+    data.WriteBit(guid1[7]);
+    data.WriteBit(guid1[2]);
+    data.WriteBit(guid1[5]);
+    data.WriteBit(guid2[5]);
+    data.WriteBit(guid2[3]);
+    data.WriteBit(guid1[1]);
+    data.WriteBit(guid1[4]);
+    data.WriteBit(guid2[4]);
+    data.WriteBit(guid2[6]);
+    data.WriteBit(guid1[3]);
+    data.WriteBit(guid2[7]);
+    data.WriteBit(guid2[1]);
+    data.WriteBit(guid2[2]);
 
     data << uint32(sound_id);
 
-    data.WriteByteSeq(guid[7]);
-    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid1[6]);
+    data.WriteByteSeq(guid1[2]);
+    data.WriteByteSeq(guid1[4]);
+    data.WriteByteSeq(guid1[5]);
+    data.WriteByteSeq(guid1[1]);
+    data.WriteByteSeq(guid2[1]);
+    data.WriteByteSeq(guid2[0]);
+    data.WriteByteSeq(guid2[4]);
+    data.WriteByteSeq(guid2[2]);
+    data.WriteByteSeq(guid2[6]);
+    data.WriteByteSeq(guid1[7]);
+    data.WriteByteSeq(guid1[3]);
+    data.WriteByteSeq(guid2[7]);
+    data.WriteByteSeq(guid1[0]);
+    data.WriteByteSeq(guid2[5]);
+    data.WriteByteSeq(guid2[3]);
 
     if (target)
         target->SendDirectMessage(&data);

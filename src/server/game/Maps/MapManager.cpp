@@ -250,37 +250,40 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
                     return false;
 
         // Player permanently bound to different instance than group leader one.
-        Player* leader = ObjectAccessor::FindPlayer(group->GetLeaderGUID());
-        InstancePlayerBind* leaderBoundInstance = player->GetBoundInstance(mapid, leader->GetDifficulty(entry->IsRaid()));
-        InstancePlayerBind* playerBoundInstance = player->GetBoundInstance(mapid, player->GetDifficulty(entry->IsRaid())); // Player inherits leader difficulty.
+        if (group->GetLeaderGUID())
+        if (Player* leader = ObjectAccessor::FindPlayer(group->GetLeaderGUID()))
+		{
+             InstancePlayerBind* leaderBoundInstance = leader->GetBoundInstance(mapid, leader->GetDifficulty(entry->IsRaid()));
+             InstancePlayerBind* playerBoundInstance = player->GetBoundInstance(mapid, player->GetDifficulty(entry->IsRaid())); // Player inherits leader difficulty.
 
-        // The leader and the player are both bound to an instance, check if it's the same.
-        if (leaderBoundInstance && playerBoundInstance)
-        {
-            if (playerBoundInstance->perm && playerBoundInstance->save && leaderBoundInstance->perm && leaderBoundInstance->save)
-			{
-                // Different save instance id's.
-                if (playerBoundInstance->save->GetInstanceId() != leaderBoundInstance->save->GetInstanceId())
-                {
-                    player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE);
-                    return false;
-                }
+            // The leader and the player are both bound to an instance, check if it's the same.
+            if (leaderBoundInstance && playerBoundInstance)
+            {
+                if (playerBoundInstance->perm && playerBoundInstance->save && leaderBoundInstance->perm && leaderBoundInstance->save)
+		    	{
+                    // Different save instance id's.
+                    if (playerBoundInstance->save->GetInstanceId() != leaderBoundInstance->save->GetInstanceId())
+                    {
+                        player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE);
+                        return false;
+                    }
 
-                // Different save defeated encounters. If the player has more, error. Else he inherits them on entrance.
-                if (playerBoundInstance->save->GetEncounterMask() > leaderBoundInstance->save->GetEncounterMask())
-                {
-                    player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER);
-                    return false;
+                    // Different save defeated encounters. If the player has more, error. Else he inherits them on entrance.
+                    if (playerBoundInstance->save->GetEncounterMask() > leaderBoundInstance->save->GetEncounterMask())
+                    {
+                        player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER);
+                        return false;
+                    }
                 }
+		    }
+
+            // The player is bound to an instance to which the leader is not (reverse doesn't count as the player gets the leader bind on entrance).
+            if (!leaderBoundInstance && playerBoundInstance)
+            {
+                player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER);
+                return false;
             }
 		}
-
-        // The player is bound to an instance to which the leader is not (reverse doesn't count as the player gets the leader bind on entrance).
-        if (!leaderBoundInstance && playerBoundInstance)
-        {
-            player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER);
-            return false;
-        }
 
         // Group check for max players in instance.
         if (!group->CanEnterInInstance())

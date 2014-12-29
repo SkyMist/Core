@@ -122,15 +122,14 @@ public:
         std::string uptime          = secsToTimeString(sWorld->GetUptime());
         uint32 updateTime           = sWorld->GetUpdateTime();
 
-        handler->PSendSysMessage("WoW Circle MoP Development 5.4.8");
-        handler->PSendSysMessage("WoW Circle Core: Last Update: 23.09.2014 Updatepack: 2");
-        handler->PSendSysMessage("WoW Circle DB: Last Update: 22.09.2014 Updatepack: 20");
+        handler->PSendSysMessage("WoW SkyMist MoP 5.4.8");
+        handler->PSendSysMessage("WoW SkyMist Core & DB");
         handler->PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
         handler->PSendSysMessage(LANG_UPTIME, uptime.c_str());
         handler->PSendSysMessage("Server delay: %u ms", updateTime);
 
         // Bypass player/VIP
-        if (handler->GetSession()->GetSecurity() > 1)
+        if (handler->GetSession()&& handler->GetSession()->GetSecurity() > 1)
         {
             handler->PSendSysMessage("Map diff : %u ms", sWorld->GetRecordDiff(RECORD_DIFF_MAP));
             handler->PSendSysMessage("Battleground diff : %u ms", sWorld->GetRecordDiff(RECORD_DIFF_BATTLEGROUND));
