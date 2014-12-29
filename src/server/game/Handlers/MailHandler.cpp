@@ -122,6 +122,10 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         return;
     }
 
+    auto delimeter_pos = receiver.find("-");
+    if (delimeter_pos > 0)
+        receiver = receiver.substr(0, delimeter_pos);
+
     if (player->getLevel() < sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ))
     {
         SendNotification(GetTrinityString(LANG_MAIL_SENDER_REQ), sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ));

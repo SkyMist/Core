@@ -27,14 +27,21 @@ void WorldSession::HandleJoinChannel(WorldPacket& recvPacket)
     uint32 channelId;
     uint32 channelLength = 0;
     uint32 passLength = 0;
+
+    uint8 hasVoice;
+    uint8 joinedByZoneUpdate;
+
     std::string channelName, pass;
 
     recvPacket >> channelId;
 
     passLength = recvPacket.ReadBits(7);
-    uint8 unknown1 = recvPacket.ReadBit();                  // unknown bit
+
+    joinedByZoneUpdate = recvPacket.ReadBit();
+
     channelLength = recvPacket.ReadBits(7);
-    uint8 unknown2 = recvPacket.ReadBit();                  // unknown bit
+
+    hasVoice = recvPacket.ReadBit();
 
     recvPacket.FlushBits();
 
@@ -73,9 +80,10 @@ void WorldSession::HandleLeaveChannel(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
 
-    uint32 unk;
+    uint32 channelId;
     std::string channelname;
-    recvPacket >> unk;                                      // channel id?
+
+    recvPacket >> channelId;
 
     uint32 length = recvPacket.ReadBits(7);
 
@@ -122,7 +130,7 @@ void WorldSession::HandleChannelPassword(WorldPacket& recvPacket)
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "Opcode %u", recvPacket.GetOpcode());
 
-    uint32 passLength = recvPacket.ReadBits(6);
+    uint32 passLength = recvPacket.ReadBits(7);
     uint32 nameLength = recvPacket.ReadBits(7);
 
     recvPacket.FlushBits();
@@ -300,8 +308,8 @@ void WorldSession::HandleChannelInvite(WorldPacket& recvPacket)
 
     recvPacket.FlushBits();
 
-    std::string channelname = recvPacket.ReadString(channelLength);
     std::string otp = recvPacket.ReadString(nameLength);
+    std::string channelname = recvPacket.ReadString(channelLength);
 
     if (!normalizePlayerName(otp))
         return;
@@ -412,12 +420,6 @@ void WorldSession::HandleChannelAnnouncements(WorldPacket& recvPacket)
     if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
         if (Channel* chn = cMgr->GetChannel(channelname, _player))
             chn->Announce(_player->GetGUID());
-}
-
-void WorldSession::HandleChannelDisplayListQuery(WorldPacket &recvPacket)
-{
-    // this should be OK because the 2 functions _were_ the same
-    HandleChannelList(recvPacket);
 }
 
 void WorldSession::HandleGetChannelMemberCount(WorldPacket &recvPacket)

@@ -20577,6 +20577,9 @@ void Player::_LoadAuras(PreparedQueryResult result, PreparedQueryResult resultEf
                     continue;
                 }
 
+                if (AuraEffectPtr aurEff = aura->GetEffect(EFFECT_0))
+                    aurEff->GetFixedDamageInfo().SetFixedDamage(baseDamage[0]);
+
                 aura->SetLoadedState(maxduration, remaintime, remaincharges, stackcount, recalculatemask, &damage[0]);
                 aura->ApplyForTargets();
                 sLog->outInfo(LOG_FILTER_PLAYER, "Added aura spellid %u, effectmask %u", spellInfo->Id, effmask);

@@ -1771,7 +1771,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     if (this != victim && GetTypeId() == TYPEID_PLAYER && getPowerType() == POWER_RAGE)
     {
         // 12 Rage in Battle Stance / 6 in Berserker Stance for each Warrior auto - attack.
-	    if (getClass == CLASS_WARRIOR && (GetShapeshiftForm() == FORM_BATTLESTANCE || GetShapeshiftForm() == FORM_BERSERKERSTANCE))
+        if (getClass() == CLASS_WARRIOR && (GetShapeshiftForm() == FORM_BATTLESTANCE || GetShapeshiftForm() == FORM_BERSERKERSTANCE))
         {
             bool cooldown = false;
             if (ToPlayer()->HasSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381))
@@ -1785,7 +1785,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         }
 
         // 6 Rage for each Bear auto - attack.
-        if (getClass == CLASS_DRUID && GetShapeshiftForm() == FORM_BEAR)
+        if (getClass() == CLASS_DRUID && GetShapeshiftForm() == FORM_BEAR)
             RewardRage(60, true);
     }
 
@@ -3219,7 +3219,7 @@ float Unit::GetUnitDodgeChance() const
             return 0.0f;
         else
         {
-            float dodge = 5.0f;
+            float dodge = 3.0f;
             dodge += GetTotalAuraModifier(SPELL_AURA_MOD_DODGE_PERCENT);
             return dodge > 0.0f ? dodge : 0.0f;
         }
@@ -3249,7 +3249,7 @@ float Unit::GetUnitParryChance() const
     {
         if (GetCreatureType() == CREATURE_TYPE_HUMANOID)
         {
-            chance = 5.0f;
+            chance = 3.0f;
             chance += GetTotalAuraModifier(SPELL_AURA_MOD_PARRY_PERCENT);
         }
     }
@@ -20424,7 +20424,10 @@ void Unit::SendPlaySpellVisualKit(uint32 id, uint32 unkParam)
 void Unit::ApplyResilience(Unit const* victim, int32* damage) const
 {
     // player mounted on multi-passenger mount is also classified as vehicle
-    if (IsVehicle() || (victim->IsVehicle() && victim->GetTypeId() != TYPEID_PLAYER))
+    if (IsVehicle() && GetTypeId() != TYPEID_PLAYER)
+        return;
+
+    if (victim->IsVehicle() && victim->GetTypeId() != TYPEID_PLAYER)
         return;
 
     // Resilience works only for players or pets against other players or pets

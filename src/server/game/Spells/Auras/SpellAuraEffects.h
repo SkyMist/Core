@@ -110,11 +110,7 @@ class AuraEffect : public std::enable_shared_from_this<AuraEffect>
 
         struct FixedPeriodic
         {
-            float fx_crit_chance;
-            int32 fx_fixed_damage;
-            int32 fx_fixed_total_damage;
-            bool bCrit;
-            bool bDamage;
+        public:
 
             void Clear()
             {
@@ -134,6 +130,14 @@ class AuraEffect : public std::enable_shared_from_this<AuraEffect>
             int32 GetFixedDamage() const { return fx_fixed_damage; }
             int32 GetFixedTotalDamage() const { return fx_fixed_total_damage; }
             bool HasDamage() const { return bDamage; }
+
+        private:
+
+            float fx_crit_chance;
+            int32 fx_fixed_damage;
+            int32 fx_fixed_total_damage;
+            bool bCrit;
+            bool bDamage;
         };
 
         bool HasFixedDamageInfo() { return hasFixedPeriodic; }

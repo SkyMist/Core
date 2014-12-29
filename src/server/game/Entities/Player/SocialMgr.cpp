@@ -252,7 +252,8 @@ void SocialMgr::GetFriendInfo(Player* player, uint32 friendGUID, FriendInfo &fri
 
 void SocialMgr::MakeFriendStatusPacket(FriendsResult result, uint32 guid, WorldPacket* data)
 {
-    data->Initialize(SMSG_FRIEND_STATUS, 5);
+    data->Initialize(SMSG_FRIEND_STATUS, 9);
+
     *data << uint8(result);
     *data << uint64(MAKE_NEW_GUID(guid, 0, HIGHGUID_PLAYER));
 }
@@ -320,6 +321,33 @@ void SocialMgr::BroadcastToFriendListers(Player* player, WorldPacket* packet)
             {
                 pFriend->GetSession()->SendPacket(packet);
             }
+        }
+    }
+}
+
+void SocialMgr::UpdateFriendList(Player* player)
+{
+    if (!player)
+        return;
+
+    uint32 team = player->GetTeam();
+    AccountTypes security = player->GetSession()->GetSecurity();
+    uint32 guid = player->GetGUIDLow();
+    AccountTypes gmLevelInWhoList = AccountTypes(sWorld->getIntConfig(CONFIG_GM_LEVEL_IN_WHO_LIST));
+    bool allowTwoSideWhoList = sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_WHO_LIST);
+
+    for (SocialMap::const_iterator itr = m_socialMap.begin(); itr != m_socialMap.end(); ++itr)
+    {
+        PlayerSocialMap::const_iterator itr2 = itr->second.m_playerSocialMap.find(guid);
+        if (itr2 != itr->second.m_playerSocialMap.end() && (itr2->second.Flags & SOCIAL_FLAG_FRIEND))
+        {
+            Player* pFriend = ObjectAccessor::FindPlayer(MAKE_NEW_GUID(itr->first, 0, HIGHGUID_PLAYER));
+
+            // PLAYER sees his team only and PLAYER can't see MODERATOR, GAME MASTER, ADMINISTRATOR characters.
+            // MODERATOR, GAME MASTER, ADMINISTRATOR can see all.
+            if (pFriend && pFriend->IsInWorld() && (!AccountMgr::IsPlayerAccount(pFriend->GetSession()->GetSecurity()) ||
+              ((pFriend->GetTeam() == team || allowTwoSideWhoList) && security <= gmLevelInWhoList)) && player->IsVisibleGloballyFor(pFriend))
+                pFriend->GetSocial()->SendSocialList(pFriend);
         }
     }
 }
