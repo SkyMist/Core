@@ -1485,6 +1485,17 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             case SPELLFAMILY_GENERIC:
                 switch (GetId())
                 {
+                    // Spark of Zandalar
+                    case 138958:
+                        if (target && target->GetTypeId() == TYPEID_PLAYER && target->HasAura(138958))
+                        {
+                            if (target->GetAura(138958)->GetStackAmount() == 10)
+                            {
+                                target->RemoveAurasDueToSpell(138958);
+                                target->CastSpell(target, 138960, true, target->ToPlayer()->GetItemByGuid(GetCastItemGUID()));
+                            }
+                        }
+                        break;
                     // PvP Trinket
                     case 42292:
                         if (target && target->GetTypeId() == TYPEID_PLAYER)
