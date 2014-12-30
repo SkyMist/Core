@@ -795,7 +795,6 @@ class WorldSession
         void HandleChannelList(WorldPacket& recvPacket);
         void HandleChannelPassword(WorldPacket& recvPacket);
         void HandleChannelSetOwner(WorldPacket& recvPacket);
-        void HandleChannelOwner(WorldPacket& recvPacket);
         void HandleChannelModerator(WorldPacket& recvPacket);
         void HandleChannelUnmoderator(WorldPacket& recvPacket);
         void HandleChannelMute(WorldPacket& recvPacket);

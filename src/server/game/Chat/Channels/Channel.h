@@ -188,7 +188,7 @@ class Channel
         void MakePlayerNotBanned(WorldPacket* data, const std::string& name);   //? 0x16
         void MakePlayerAlreadyMember(WorldPacket* data, uint64 guid);           //+ 0x17
         void MakeInvite(WorldPacket* data, uint64 guid);                        //? 0x18
-        void MakeInviteWrongFaction(WorldPacket* data);                         //? 0x19
+        void MakeInviteWrongFaction(WorldPacket* data, const std::string& name, uint32 faction);                         //? 0x19
         void MakeWrongFaction(WorldPacket* data);                               //? 0x1A
         void MakeInvalidName(WorldPacket* data);                                //? 0x1B
         void MakeNotModerated(WorldPacket* data);                               //? 0x1C
