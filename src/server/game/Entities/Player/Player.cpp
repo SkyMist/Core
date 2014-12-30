@@ -9166,7 +9166,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
         {
             // Count was changed to week limit, now we can modify original points.
-            ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog);
+            ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog, true);
             return;
         }
 
@@ -26310,6 +26310,10 @@ void Player::SendInitialPacketsAfterAddToMap()
         default:
             break;
     }
+
+	// Ancestral Swiftness.
+	if (HasSpell(16188))
+		SendCooldownEvent(sSpellMgr->GetSpellInfo(16188), 0, NULL, false);
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()
@@ -30632,10 +30636,8 @@ void Player::CastPassiveTalentSpell(uint32 spellId)
             }
             break;
         case 16188: // Ancestral Swiftness
-            if (!HasAura(51470))
-                CastSpell(this, 51470, true);  // +5% spell haste
             if (!HasAura(121617))
-                CastSpell(this, 121617, true); // +5% melee haste
+                CastSpell(this, 121617, true); // +10% melee haste +5% spell hate
             break;
         case 96268: // Death's Advance
             if (!HasAura(124285))
@@ -30657,8 +30659,8 @@ void Player::CastPassiveTalentSpell(uint32 spellId)
             if (!HasAura(108507))
                 CastSpell(this, 108507, true); // Passive
             break;
-        default:
-            break;
+
+        default: break;
     }
 }
 
@@ -30670,7 +30672,6 @@ void Player::RemovePassiveTalentSpell(uint32 spellId)
             RemoveAura(118858);
             break;
         case 16188: // Ancestral Swiftness
-            RemoveAura(51470);
             RemoveAura(121617);
             break;
         case 96268: // Death's Advance

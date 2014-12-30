@@ -1344,41 +1344,40 @@ class spell_rog_recuperate : public SpellScriptLoader
     public:
         spell_rog_recuperate() : SpellScriptLoader("spell_rog_recuperate") { }
 
-        class spell_rog_recuperate_SpellScript : public SpellScript
+        class spell_rog_recuperate_AuraScript : public AuraScript
         {
-            PrepareSpellScript(spell_rog_recuperate_SpellScript);
+            PrepareAuraScript(spell_rog_recuperate_AuraScript);
 
-            void HandleOnHit()
+            void CalculateAmount(constAuraEffectPtr /*auraEffect*/, int32& amount, bool& /*canBeRecalculated*/)
             {
-                if (Player* _player = GetCaster()->ToPlayer())
+                if (!GetTarget())
+                    return;
+
+                if (Player* roguePlayer = GetTarget()->ToPlayer())
                 {
-                    if (AuraPtr recuperate = _player->GetAura(ROGUE_SPELL_RECUPERATE))
-                    {
-                        int32 bp;
-                        bp = _player->CountPctFromMaxHealth(4);
+                    uint32 oneHealthPct = roguePlayer->GetMaxHealth() / 100;
 
-                        if (_player->HasAura(ROGUE_GLYPH_OF_RECUPERATE))
-                            bp += _player->CountPctFromMaxHealth(1);
+                    int32 bp = oneHealthPct * 4; // 4% of max HP.
 
-                        if (_player->HasAura(ROGUE_SPELL_IMPROVED_RECUPERATE))
-                            bp += _player->CountPctFromMaxHealth(1);
+                    if (roguePlayer->HasAura(ROGUE_GLYPH_OF_RECUPERATE))
+                        bp += oneHealthPct;
 
-                        bp = _player->SpellHealingBonusDone(_player, GetSpellInfo(), bp, HEAL);
-                        bp = _player->SpellHealingBonusTaken(_player, GetSpellInfo(), bp, HEAL);
-                        recuperate->GetEffect(0)->ChangeAmount(bp);
-                    }
+                    if (roguePlayer->HasAura(ROGUE_SPELL_IMPROVED_RECUPERATE))
+                        bp += oneHealthPct;
+
+                    amount = bp;
                 }
             }
 
             void Register()
             {
-                OnHit += SpellHitFn(spell_rog_recuperate_SpellScript::HandleOnHit);
+                DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_rog_recuperate_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
             }
         };
 
-        SpellScript* GetSpellScript() const
+        AuraScript* GetAuraScript() const
         {
-            return new spell_rog_recuperate_SpellScript();
+            return new spell_rog_recuperate_AuraScript();
         }
 };
 

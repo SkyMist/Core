@@ -1780,13 +1780,13 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
             if (!cooldown)
             {
                 ToPlayer()->AddSpellCooldown(GetShapeshiftForm() == FORM_BATTLESTANCE ? 21156 : 7381, 0, time(NULL) + 1.5);
-                RewardRage(GetShapeshiftForm() == FORM_BATTLESTANCE ? 120 : 60, true);
+                RewardRage(GetShapeshiftForm() == FORM_BATTLESTANCE ? 120 : 60, true, false);
             }
         }
 
         // 6 Rage for each Bear auto - attack.
         if (getClass() == CLASS_DRUID && GetShapeshiftForm() == FORM_BEAR)
-            RewardRage(60, true);
+            RewardRage(60, true, false);
     }
 
     // If this is a creature and it attacks from behind it has a probability to daze it's victim
@@ -15598,7 +15598,7 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
     if (val <= GetMinPower(power))
     {
         SetPower(power, GetMinPower(power));
-        return -curPower;
+        return -curPower; // This is not correct and should probably be removed.
     }
 
     int32 maxPower = GetMaxPower(power);
@@ -15606,12 +15606,15 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
     if (val < maxPower)
     {
         SetPower(power, val);
-        gain = val - curPower;
+        gain = dVal;
     }
-    else if (curPower != maxPower)
+    else
     {
-        SetPower(power, maxPower);
-        gain = maxPower - curPower;
+        if (curPower != maxPower)
+        {
+            SetPower(power, maxPower);
+            gain = maxPower - curPower;
+        }
     }
 
     if (power == POWER_SHADOW_ORBS)
@@ -22282,21 +22285,23 @@ void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
     SendMessageToSet(&data, false);
 }
 
-// baseRage means damage taken when attacker = false
-void Unit::RewardRage(uint32 baseRage, bool attacker)
+void Unit::RewardRage(uint32 baseRage, bool attacker, bool useBonus /* = true */)
 {
-    float addRage = baseRage;
+    uint32 addRage = baseRage; // baseRage means damage taken when attacker = false.
 
     if (attacker)
-        addRage += GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT); // Talents which give more rage on attack.
+    {
+        if (useBonus) // useBonus is false on white damage (normal melee attacks) for exact calculation, bonus added just for abilities.
+            addRage += GetTotalAuraModifier(SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT); // Talents which give more rage on attack.
+    }
     else
     {
-        // Generate rage from damage taken only in Berserker Stance
+        // Generate rage from damage taken only in Berserker Stance.
         if (!HasAura(2458))
             return;
     }
 
-    ModifyPower(POWER_RAGE, uint32(addRage));
+    ModifyPower(POWER_RAGE, addRage);
 }
 
 void Unit::StopAttackFaction(uint32 faction_id)
