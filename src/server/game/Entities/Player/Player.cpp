@@ -9166,7 +9166,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         if (currency->Category == CURRENCY_CATEGORY_META_CONQUEST)
         {
             // Count was changed to week limit, now we can modify original points.
-            ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog);
+            ModifyCurrency(CURRENCY_TYPE_CONQUEST_POINTS, count, printLog, true);
             return;
         }
 
