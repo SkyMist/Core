@@ -770,7 +770,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     bool HasLanguage = (language > LANG_UNIVERSAL) ? true : false;
     bool HasChannel = (type == CHAT_MSG_CHANNEL && channelNameLength > 0) ? true : false;
     bool HasAddonPrefix = (addonPrefixLength > 0) ? true : false;
-    bool HasAchievement = (type == CHAT_MSG_ACHIEVEMENT && achievementId > 0) ? true : false;
+    bool HasAchievement = ((type == CHAT_MSG_ACHIEVEMENT || type == CHAT_MSG_GUILD_ACHIEVEMENT) && achievementId > 0) ? true : false;
     bool HasChatTag = (chatTag > CHAT_TAG_NONE) ? true : false;
     bool HasConstantTime = true;       // This represents the current time (or the time at which the text is sent).
     bool ShowInChatBubble = true;      // Toggle show in chat window - show in chat bubble.
