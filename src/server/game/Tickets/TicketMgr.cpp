@@ -38,8 +38,8 @@ GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NUL
 
     recvData >> _posX >> _posY >> _mapId >> _posZ >> UnkByte;
 
-    size_t BufferSize = recvData.read<size_t>();
-    recvData.read_skip(BufferSize);
+    size_t BufferSize = recvData.read<uint32>();
+    std::string Buffer = recvData.ReadString(BufferSize);
 
     _needResponse = recvData.ReadBit();
     _haveTicket = recvData.ReadBit();
