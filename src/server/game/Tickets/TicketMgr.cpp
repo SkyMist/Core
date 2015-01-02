@@ -35,6 +35,7 @@ GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NUL
                                                             _escalatedStatus(TICKET_UNASSIGNED), _needResponse(false), _haveTicket(false), _viewed(false)
 {
     uint8 UnkByte;
+
     recvData >> _posX >> _posY >> _mapId >> _posZ >> UnkByte;
 
     size_t BufferSize = recvData.read<size_t>();
