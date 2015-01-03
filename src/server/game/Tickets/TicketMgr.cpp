@@ -35,11 +35,13 @@ GmTicket::GmTicket(Player* player, WorldPacket& recvData) : _createTime(time(NUL
                                                             _escalatedStatus(TICKET_UNASSIGNED), _needResponse(false), _haveTicket(false), _viewed(false)
 {
     uint8 UnkByte;
+    WorldPacket UnkBuffer;
 
     recvData >> _posX >> _posY >> _mapId >> _posZ >> UnkByte;
 
     size_t BufferSize = recvData.read<uint32>();
-    std::string Buffer = recvData.ReadString(BufferSize);
+    UnkBuffer.resize(BufferSize);
+    recvData.read((uint8*)UnkBuffer.contents(), BufferSize);
 
     _needResponse = recvData.ReadBit();
     _haveTicket = recvData.ReadBit();
