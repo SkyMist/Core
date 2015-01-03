@@ -1061,10 +1061,11 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 {
     uint8 digest[20];
     uint32 clientSeed;
-    uint8 security;
+    uint8 security, LoginServerType;
     uint16 clientBuild;
     uint32 id;
     uint32 addonSize;
+    uint32 GruntServerId, Region, RealmIndex, Battlegroup;
     LocaleConstant locale;
     std::string account;
     SHA1Hash sha;
@@ -1073,33 +1074,32 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     bool isPremium = false;
 
     // TEMP! Digest fails to verify, incorrect?
-    recvPacket.read<uint32>();
-    recvPacket.read<uint32>();
-    recvPacket >> digest[4];
-    recvPacket >> digest[13];
+    recvPacket >> Region >> GruntServerId;
     recvPacket >> digest[3];
-    recvPacket >> digest[8];
-    recvPacket.read<uint32>();
     recvPacket >> digest[12];
+    recvPacket >> digest[2];
+    recvPacket >> digest[7];
+    recvPacket >> Battlegroup;
+    recvPacket >> digest[11];
+    recvPacket >> digest[17];
+    recvPacket >> digest[14];
+    recvPacket >> digest[4];
+    recvPacket.read<uint64>(); // Dos Response
+    recvPacket >> digest[10];
+    recvPacket >> RealmIndex;
+    recvPacket >> digest[6];
     recvPacket >> digest[18];
     recvPacket >> digest[15];
-    recvPacket >> digest[5];
-    recvPacket.read<uint64>();
-    recvPacket >> digest[11];
-    recvPacket.read<uint32>();
-    recvPacket >> digest[7];
+    recvPacket >> digest[13];
+    recvPacket >> LoginServerType;
+    recvPacket >> digest[8];
+    recvPacket >> clientBuild;
+    recvPacket >> digest[0];
     recvPacket >> digest[19];
     recvPacket >> digest[16];
-    recvPacket >> digest[14];
-    recvPacket >> digest[0];
     recvPacket >> digest[9];
-    recvPacket >> clientBuild;
+    recvPacket >> digest[5];
     recvPacket >> digest[1];
-    recvPacket.read<uint8>();
-    recvPacket >> digest[17];
-    recvPacket >> digest[10];
-    recvPacket >> digest[6];
-    recvPacket >> digest[2];
     recvPacket.read<uint8>();
     recvPacket >> clientSeed;
     recvPacket >> addonSize;
@@ -1187,8 +1187,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     std::string os = fields[10].GetString();
 
     // Checks gmlevel per Realm
-    result =
-        LoginDatabase.PQuery ("SELECT "
+    result = LoginDatabase.PQuery ("SELECT "
                               "RealmID, "            //0
                               "gmlevel "             //1
                               "FROM account_access "
@@ -1206,8 +1205,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     }
 
     // Re-check account ban (same check as in realmd)
-    QueryResult banresult =
-          LoginDatabase.PQuery ("SELECT 1 FROM account_banned WHERE id = %u AND active = 1 "
+    QueryResult banresult = LoginDatabase.PQuery ("SELECT 1 FROM account_banned WHERE id = %u AND active = 1 "
                                 "UNION "
                                 "SELECT 1 FROM ip_banned WHERE ip = '%s'",
                                 id, GetRemoteAddress().c_str());
@@ -1253,17 +1251,17 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     std::string address = GetRemoteAddress();
 
-    /*if (memcmp(sha.GetDigest(), digest, 20))
+    if (memcmp(sha.GetDigest(), digest, 20))
     {
-    WorldPacket packet(SMSG_AUTH_RESPONSE, 1);
-    packet.WriteBit(0); // has queue info
-    packet.WriteBit(0); // has account info
-    packet << uint8(AUTH_FAILED);
-    SendPacket(packet);
+        WorldPacket packet(SMSG_AUTH_RESPONSE, 1);
+        packet.WriteBit(0); // has queue info
+        packet.WriteBit(0); // has account info
+        packet << uint8(AUTH_FAILED);
+        SendPacket(&packet);
 
-    sLog->outError(LOG_FILTER_NETWORKIO, "WorldSocket::HandleAuthSession: Authentication failed for account: %u ('%s') address: %s", id, account.c_str(), address.c_str());
-    return -1;
-    }*/
+        sLog->outError(LOG_FILTER_NETWORKIO, "WorldSocket::HandleAuthSession: Authentication failed for account: %u ('%s') address: %s", id, account.c_str(), address.c_str());
+        return -1;
+    }
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.",
         account.c_str(),
