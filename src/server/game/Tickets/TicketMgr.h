@@ -107,7 +107,7 @@ public:
 
         return name;
     }
-    uint64 GetLastModifiedTime() const { return _lastModifiedTime; }
+    time_t GetLastModifiedTime() const { return _lastModifiedTime; }
     GMTicketEscalationStatus GetEscalatedStatus() const { return _escalatedStatus; }
 
     void SetEscalatedStatus(GMTicketEscalationStatus escalatedStatus) { _escalatedStatus = escalatedStatus; }
@@ -124,7 +124,7 @@ public:
     void SetMessage(const std::string& message)
     {
         _message = message;
-        _lastModifiedTime = uint64(time(NULL));
+        _lastModifiedTime = time(NULL);
     }
     void SetComment(const std::string& comment) { _comment = comment; }
     void SetViewed() { _viewed = true; }
@@ -152,8 +152,8 @@ private:
     float _posZ;
     uint32 _mapId;
     std::string _message;
-    uint64 _createTime;
-    uint64 _lastModifiedTime;
+    time_t _createTime;
+    time_t _lastModifiedTime;
     int64 _closedBy; // 0 = Open, -1 = Console, playerGuid = player abandoned ticket, other = GM who closed it.
     uint64 _assignedTo;
     std::string _comment;
@@ -212,8 +212,8 @@ public:
     bool GetStatus() const { return _status; }
     void SetStatus(bool status) { _status = status; }
 
-    uint64 GetLastChange() const { return _lastChange; }
-    void UpdateLastChange() { _lastChange = uint64(time(NULL)); }
+    time_t GetLastChange() const { return _lastChange; }
+    void UpdateLastChange() { _lastChange = time(NULL); }
 
     uint32 GenerateTicketId() { return ++_lastTicketId; }
     uint32 GetOpenTicketCount() const { return _openTicketCount; }
@@ -238,7 +238,7 @@ protected:
     uint32 _lastTicketId;
     uint32 _lastSurveyId;
     uint32 _openTicketCount;
-    uint64 _lastChange;
+    time_t _lastChange;
 };
 
 #define sTicketMgr ACE_Singleton<TicketMgr, ACE_Null_Mutex>::instance()

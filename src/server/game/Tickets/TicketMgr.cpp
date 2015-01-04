@@ -125,25 +125,26 @@ void GmTicket::DeleteFromDB()
 void GmTicket::WritePacket(WorldPacket& data) const
 {
     if (GmTicket* ticket = sTicketMgr->GetOldestOpenTicket())
-        data << uint32(GetAge(ticket->GetLastModifiedTime()));
+        data << uint32(ticket->GetLastModifiedTime());
     else
-        data << uint32(float(0));
+        data << uint32(0);
 
     data << uint32(GetId());
-    data << uint32(GetAge(sTicketMgr->GetLastChange()));
+    data << uint32(sTicketMgr->GetLastChange());
     data << uint8(_viewed ? GMTICKET_OPENEDBYGM_STATUS_OPENED : GMTICKET_OPENEDBYGM_STATUS_NOT_OPENED); // whether or not it has been viewed
 
-    if (GetMessage().size())
-        data.append(GetMessage().c_str(), GetMessage().size());
+    //waitTimeOverrideMessage
+    /*if (_message.size())
+        data.WriteString(_message);*/
 
     data << uint32(0); // waitTimeOverrideMinutes
+    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data
+    data << uint32(_lastModifiedTime - _createTime);
+
+    if (_message.size())
+        data.WriteString(_message);
+ 
     data << uint8(_haveTicket);
-    data << uint32(GetAge(_lastModifiedTime));
-
-    if (GetMessage().size())
-        data.append(GetMessage().c_str(), GetMessage().size());
-
-    data << uint8(std::min(_escalatedStatus, TICKET_IN_ESCALATION_QUEUE));                              // escalated data 
 }
 
 void GmTicket::SendResponse(WorldSession* session) const
@@ -394,7 +395,7 @@ void TicketMgr::SendTicket(WorldSession* session, GmTicket* ticket) const
 
     if (status == GMTICKET_STATUS_HASTEXT)
     {
-        data.WriteBits(message.size(), 10);
+        data.WriteBits(0, 10);              //waitTimeOverrideMessage size
         data.WriteBits(message.size(), 11);
 
         data.FlushBits();
