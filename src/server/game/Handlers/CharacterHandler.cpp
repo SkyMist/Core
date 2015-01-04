@@ -980,45 +980,51 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     LoadAccountData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOADACCOUNTDATA), PER_CHARACTER_CACHE_MASK);
     SendAccountDataTimes(PER_CHARACTER_CACHE_MASK);
 
-    bool inGameShop                = false;
-    bool inGameShopIcon            = true;
-    bool travelPass                = true;
-    bool sessionTimeAlert          = false;
-    bool inGameShopParentalControl = false;
-    bool webTicketFeature          = false;
-    bool scrollOfRessurect         = false;
-    bool scrollOfRessurectSend     = false;
-    bool voiceChat                 = false;
+    uint8  complainSystemStatus    = 2;     // All sniffs have this.
+    uint32 remainingScrollsOfRes   = 0;     // 1 in sniffs.
+    uint32 loadURLNumber           = 0;     // Common values are 1306 / 1270 in sniffs. Could be realmId?
+    uint32 unk1                    = 1;     // 1 in sniffs.
+    uint32 unk2                    = 13;    // Common values are 9 and 13 in sniffs. Old here was 43.
+    bool itemRestorationEnabled    = true;  // True in sniffs.
+    bool sessionTimeAlertEnabled   = false; // Mostly false in sniffs.
+    bool inGameShopIcon            = true;  // True in sniffs.
+    bool recruitAFriendEnabled     = false; // True in sniffs.
+    bool ticketSystemEnabled       = true;  // True in sniffs.
+    bool webTicketFeature          = false; // True in sniffs.
+    bool voiceChat                 = false; // True in sniffs.
+    bool inGameShop                = false; // True in sniffs.
+    bool scrollsOfResEnabled       = false; // Mostly false in sniffs.
+    bool inGameShopParentalControl = false; // Mostly false in sniffs.
 
     data.Initialize(SMSG_FEATURE_SYSTEM_STATUS, 35);
 
-    data << uint8(2);                                          // Complain System Status
-    data << uint32(0);                                         // NumSoRRemaining
-    data << uint32(realmID);                                   // Is lua function LoadURL enabled
-    data << uint32(1);                                         // unk dword10
-    data << uint32(43);                                        // unk dword1C
-    data.WriteBit(1);                                          // GMItemRestorationButtonEnabled (Item restoration button)
-    data.WriteBit(sessionTimeAlert);                           // IsSessionTimeAlertEnabled (parental controls)
+    data << uint8(complainSystemStatus);                       // Complain System Status
+    data << uint32(remainingScrollsOfRes);                     // NumSoRRemaining
+    data << uint32(loadURLNumber);                             // Is lua function LoadURL enabled
+    data << uint32(unk1);                                      // unk dword10
+    data << uint32(unk2);                                      // unk dword1C
+    data.WriteBit(itemRestorationEnabled);                     // GMItemRestorationButtonEnabled (Item restoration button)
+    data.WriteBit(sessionTimeAlertEnabled);                    // IsSessionTimeAlertEnabled (parental controls)
     data.WriteBit(inGameShopIcon);                             // IsInGameStoreEnabled (show ingame shop icon)
-    data.WriteBit(scrollOfRessurectSend);                      // CanSendSoRRequest (Recruit a Friend button)
-    data.WriteBit(travelPass);                                 // GMQuickTicketSystemEnabled (feedback system - bug, suggestion and report systems)
+    data.WriteBit(recruitAFriendEnabled);                      // CanSendSoRRequest (Recruit a Friend button)
+    data.WriteBit(ticketSystemEnabled);                        // GMQuickTicketSystemEnabled (travelPass, feedback system; bug, suggestion and report systems)
     data.WriteBit(webTicketFeature);                           // Web Ticket system
     data.WriteBit(voiceChat);                                  // IsVoiceChatEnabled
     data.WriteBit(inGameShop);                                 // IsInGameStoreAPIAvailable (ingame shop status; 0 - "The Shop is temporarily unavailable.")
-    data.WriteBit(scrollOfRessurect);                          // CanSendSoRByText (Scroll of Resurrection button)
+    data.WriteBit(scrollsOfResEnabled);                        // CanSendSoRByText (Scroll of Resurrection button)
     data.WriteBit(inGameShopParentalControl);                  // IsInGameStoreDisabledByParentalControl (1 - "Feature has been disabled by Parental Controls.")
 
     data.FlushBits();
         
-    if (travelPass)
+    if (ticketSystemEnabled)
     {
         data << uint32(60000);
-        data << uint32(114194674);
+        data << uint32(time);
         data << uint32(1);
         data << uint32(10);
     }
 
-    if (sessionTimeAlert)
+    if (sessionTimeAlertEnabled)
     {
         data << uint32(0);
         data << uint32(0);
