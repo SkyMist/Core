@@ -987,13 +987,14 @@ enum TrinityStrings
     LANG_BG_SM_H_NEAR_VICTORY           = 1345,
 
     // Temple of Kotmogu
+    LANG_BG_KT_START_TWO_MINUTES        = 1352,
     LANG_BG_KT_START_ONE_MINUTE         = 1346,
     LANG_BG_KT_START_HALF_MINUTE        = 1347,
     LANG_BG_KT_HAS_BEGUN                = 1348,
     LANG_BG_KT_DROPPED                  = 1349,
     LANG_BG_KT_PICKEDUP                 = 1350,
     LANG_BG_KT_O_PLACED                 = 1351,
-    // FREE IDS                           1352-1999
+    // FREE IDS                           1353-1999
 
     // Ticket Strings 2000-2029
     LANG_COMMAND_TICKETNEW              = 2000,

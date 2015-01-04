@@ -150,7 +150,7 @@ private:
     float _posX;
     float _posY;
     float _posZ;
-    uint16 _mapId;
+    uint32 _mapId;
     std::string _message;
     uint64 _createTime;
     uint64 _lastModifiedTime;
@@ -227,6 +227,7 @@ public:
     void ShowEscalatedList(ChatHandler& handler) const;
 
     void SendTicket(WorldSession* session, GmTicket* ticket) const;
+    void SendTicketStatusUpdate(WorldSession* session, uint8 response) const;
 
 protected:
     void _RemoveTicket(uint32 ticketId, int64 source = -1, bool permanently = false);

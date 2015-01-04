@@ -15812,7 +15812,7 @@ void Player::SendSellError(SellResult msg, Creature* creature, uint64 guid)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_SELL_ITEM");
 
     ObjectGuid guid1 = guid;
-    ObjectGuid guid2 = creature ? creature->GetGUID() : NULL;
+    ObjectGuid guid2 = creature ? creature->GetGUID() : 0;
 
     WorldPacket data(SMSG_SELL_ITEM);
 

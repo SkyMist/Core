@@ -15,26 +15,27 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Object.h"
-#include "Player.h"
-#include "Battleground.h"
-#include "BattlegroundKT.h"
-#include "Creature.h"
-#include "GameObject.h"
+#include "World.h"
+#include "WorldPacket.h"
 #include "ObjectMgr.h"
 #include "BattlegroundMgr.h"
-#include "WorldPacket.h"
+#include "Battleground.h"
+#include "Creature.h"
 #include "Language.h"
-#include "MapManager.h"
+#include "Object.h"
+#include "Player.h"
+#include "Util.h"
+#include "Chat.h"
+
+#include "BattlegroundKT.h"
 
 BattlegroundKT::BattlegroundKT()
 {
-    StartMessageIds[BG_STARTING_EVENT_FIRST]  = 0;
+    StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BG_KT_START_TWO_MINUTES;
     StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_KT_START_ONE_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BG_KT_START_HALF_MINUTE;
     StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BG_KT_HAS_BEGUN;
 
-    m_ReputationCapture = 0;
     m_HonorWinKills = 0;
     m_HonorEndKills = 0;
 
@@ -43,9 +44,7 @@ BattlegroundKT::BattlegroundKT()
     m_LastCapturedOrbTeam = TEAM_NONE;
 }
 
-BattlegroundKT::~BattlegroundKT()
-{
-}
+BattlegroundKT::~BattlegroundKT() { }
 
 void BattlegroundKT::PostUpdateImpl(uint32 diff)
 {
@@ -59,7 +58,8 @@ void BattlegroundKT::PostUpdateImpl(uint32 diff)
                 Player * plr = ObjectAccessor::FindPlayer(itr->first);
                 if (!plr || !plr->IsInWorld())
                     continue;
-                if (plr->GetPositionZ() < 24)
+
+                if (plr->GetPositionZ() < 24.0f)
                 {
                     if (plr->GetBGTeam() == HORDE)
                         plr->TeleportTo(998, 1781.31f, 1597.76f, 33.61f, plr->GetOrientation(), 0);
@@ -67,9 +67,11 @@ void BattlegroundKT::PostUpdateImpl(uint32 diff)
                         plr->TeleportTo(998, 1784.42f, 1072.73f, 29.88f, plr->GetOrientation(), 0);
                 }
             }
+
             m_CheatersCheckTimer = 4000;
         }
     }
+
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
         if (m_EndTimer <= diff)
@@ -82,10 +84,7 @@ void BattlegroundKT::PostUpdateImpl(uint32 diff)
             else if (allianceScore < hordeScore)
                 EndBattleground(HORDE);
             else
-            {
-                // if 0 => tie
-                EndBattleground(m_LastCapturedOrbTeam);
-            }
+                EndBattleground(m_LastCapturedOrbTeam); // if 0 => tie
         }
         else
         {
@@ -100,13 +99,19 @@ void BattlegroundKT::PostUpdateImpl(uint32 diff)
         if (m_UpdatePointsTimer <= diff)
         {
             for (uint8 i = 0; i < MAX_ORBS; ++i)
+            {
                 if (uint64 guid = m_OrbKeepers[i])
+                {
                     if (m_playersZone.find(guid) != m_playersZone.end())
+                    {
                         if (Player* player = ObjectAccessor::FindPlayer(guid))
                         {
                             AccumulateScore(player->GetBGTeam() == ALLIANCE ? BG_TEAM_ALLIANCE : BG_TEAM_HORDE, m_playersZone[guid]);
                             UpdatePlayerScore(player, SCORE_ORB_SCORE, m_playersZone[guid]);
                         }
+                    }
+                }
+            }
 
             m_UpdatePointsTimer = BG_KT_POINTS_UPDATE_TIME;
         }
@@ -117,41 +122,41 @@ void BattlegroundKT::PostUpdateImpl(uint32 diff)
 
 void BattlegroundKT::StartingEventCloseDoors()
 {
-    SpawnBGObject(BG_KT_OBJECT_A_DOOR, RESPAWN_IMMEDIATELY);
-    SpawnBGObject(BG_KT_OBJECT_H_DOOR, RESPAWN_IMMEDIATELY);
+    for (uint32 i = BG_KT_OBJECT_A_DOOR; i <= BG_KT_OBJECT_H_DOOR; ++i)
+    {
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
+        DoorClose(i);
+    }
 
-    DoorClose(BG_KT_OBJECT_A_DOOR);
-    DoorClose(BG_KT_OBJECT_H_DOOR);
-
-    for (uint8 i = 0; i < 4; ++i)
-        SpawnBGObject(BG_KT_OBJECT_ORB_1 + i, RESPAWN_ONE_DAY);
+    for (uint8 i = BG_KT_OBJECT_ORB_1; i <= BG_KT_OBJECT_ORB_4; ++i)
+        SpawnBGObject(i, RESPAWN_ONE_DAY);
 }
 
 void BattlegroundKT::StartingEventOpenDoors()
 {
-    DoorOpen(BG_KT_OBJECT_A_DOOR);
-    DoorOpen(BG_KT_OBJECT_H_DOOR);
+    for (uint8 i = BG_KT_OBJECT_A_DOOR; i <= BG_KT_OBJECT_H_DOOR; ++i)
+        DoorOpen(i);
 
-    for (uint8 i = 0; i < 4; ++i)
-        SpawnBGObject(BG_KT_OBJECT_ORB_1 + i, RESPAWN_IMMEDIATELY);
+    for (uint8 i = BG_KT_OBJECT_ORB_1; i <= BG_KT_OBJECT_ORB_4; ++i)
+        SpawnBGObject(i, RESPAWN_IMMEDIATELY);
 
-    // Players that join battleground after start are not eligible to get achievement.
+    // Players that join the battleground after it starts are not eligible to get the achievement.
     StartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, BG_KT_EVENT_START_BATTLE);
 }
 
-void BattlegroundKT::AddPlayer(Player *plr)
+void BattlegroundKT::AddPlayer(Player* player)
 {
-    Battleground::AddPlayer(plr);
-    //create score and add it to map, default values are set in constructor
-    BattleGroundKTScore* sc = new BattleGroundKTScore;
+    Battleground::AddPlayer(player);
 
-    PlayerScores[plr->GetGUID()] = sc;
-    m_playersZone[plr->GetGUID()] = KT_ZONE_OUT;
+    BattleGroundKTScore* sc = new BattleGroundKTScore; // Create the score and add it to map, default values are set in constructor.
+
+    PlayerScores[player->GetGUID()] = sc;
+    m_playersZone[player->GetGUID()] = KT_ZONE_OUT;
 }
 
 void BattlegroundKT::EventPlayerClickedOnOrb(Player* source, GameObject* target_obj)
 {
-    if (GetStatus() != STATUS_IN_PROGRESS)
+    if (!source || GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     if (!source->IsWithinDistInMap(target_obj, 10))
@@ -217,10 +222,10 @@ void BattlegroundKT::EventPlayerDroppedOrb(Player* source)
     source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattlegroundKT::RemovePlayer(Player* plr, ObjectGuid guid)
+void BattlegroundKT::RemovePlayer(Player* player, uint64 guid, uint32 /*team*/)
 {
-    EventPlayerDroppedOrb(plr);
-    m_playersZone.erase(plr->GetGUID());
+    EventPlayerDroppedOrb(player);
+    m_playersZone.erase(player->GetGUID());
 }
 
 void BattlegroundKT::UpdateOrbState(Team team, uint32 value)
@@ -241,12 +246,12 @@ void BattlegroundKT::UpdateTeamScore(Team team)
 
 void BattlegroundKT::HandleAreaTrigger(Player* source, uint32 trigger)
 {
-    // this is wrong way to implement these things. On official it done by gameobject spell cast.
-    if (GetStatus() != STATUS_IN_PROGRESS)
+    // This is a wrong way to implement these things. On official it done by gameobject spell cast.
+    if (!source || GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     uint64 sourceGuid = source->GetGUID();
-    switch(trigger)
+    switch (trigger)
     {
         case 7734: // Out-In trigger
         {
@@ -270,26 +275,28 @@ void BattlegroundKT::HandleAreaTrigger(Player* source, uint32 trigger)
                 m_playersZone[sourceGuid] = KT_ZONE_IN;
             break;
         }
+
         default:
+            Battleground::HandleAreaTrigger(source, trigger);
             break;
     }
 }
 
 bool BattlegroundKT::SetupBattleground()
 {
-    // Doors
-    if (   !AddObject(BG_KT_OBJECT_A_DOOR, BG_KT_OBJECT_DOOR_ENTRY, BG_KT_DoorPositions[0][0], BG_KT_DoorPositions[0][1], BG_KT_DoorPositions[0][2], BG_KT_DoorPositions[0][3], 0, 0, sin(BG_KT_DoorPositions[0][3]/2), cos(BG_KT_DoorPositions[0][3]/2), RESPAWN_IMMEDIATELY)
-        || !AddObject(BG_KT_OBJECT_H_DOOR, BG_KT_OBJECT_DOOR_ENTRY, BG_KT_DoorPositions[1][0], BG_KT_DoorPositions[1][1], BG_KT_DoorPositions[1][2], BG_KT_DoorPositions[1][3], 0, 0, sin(BG_KT_DoorPositions[1][3]/2), cos(BG_KT_DoorPositions[1][3]/2), RESPAWN_IMMEDIATELY))
+    // Doors.
+    if (!AddObject(BG_KT_OBJECT_A_DOOR, BG_KT_OBJECT_DOOR_ENTRY, BG_KT_DoorPositions[0][0], BG_KT_DoorPositions[0][1], BG_KT_DoorPositions[0][2], BG_KT_DoorPositions[0][3], 0, 0, sin(BG_KT_DoorPositions[0][3] / 2), cos(BG_KT_DoorPositions[0][3] / 2), RESPAWN_IMMEDIATELY)
+     || !AddObject(BG_KT_OBJECT_H_DOOR, BG_KT_OBJECT_DOOR_ENTRY, BG_KT_DoorPositions[1][0], BG_KT_DoorPositions[1][1], BG_KT_DoorPositions[1][2], BG_KT_DoorPositions[1][3], 0, 0, sin(BG_KT_DoorPositions[1][3] / 2), cos(BG_KT_DoorPositions[1][3] / 2), RESPAWN_IMMEDIATELY))
         return false;
 
-    if (   !AddSpiritGuide(BG_KT_CREATURE_SPIRIT_1, BG_KT_SpiritPositions[0][0], BG_KT_SpiritPositions[0][1], BG_KT_SpiritPositions[0][2], BG_KT_SpiritPositions[0][3], ALLIANCE)
-        || !AddSpiritGuide(BG_KT_CREATURE_SPIRIT_2, BG_KT_SpiritPositions[1][0], BG_KT_SpiritPositions[1][1], BG_KT_SpiritPositions[1][2], BG_KT_SpiritPositions[1][3], HORDE))
+    if (!AddSpiritGuide(BG_KT_CREATURE_SPIRIT_1, BG_KT_SpiritPositions[0][0], BG_KT_SpiritPositions[0][1], BG_KT_SpiritPositions[0][2], BG_KT_SpiritPositions[0][3], ALLIANCE)
+     || !AddSpiritGuide(BG_KT_CREATURE_SPIRIT_2, BG_KT_SpiritPositions[1][0], BG_KT_SpiritPositions[1][1], BG_KT_SpiritPositions[1][2], BG_KT_SpiritPositions[1][3], HORDE))
         return false;
 
-    // Orbs
+    // Orbs.
     for (uint8 i = 0; i < MAX_ORBS; ++i)
     {
-        if (!AddObject(BG_KT_OBJECT_ORB_1 + i, BG_KT_OBJECT_ORB_1_ENTRY + i, BG_KT_OrbPositions[i][0], BG_KT_OrbPositions[i][1], BG_KT_OrbPositions[i][2], BG_KT_OrbPositions[i][3], 0, 0, sin(BG_KT_OrbPositions[i][3]/2), cos(BG_KT_OrbPositions[i][3]/2), RESPAWN_ONE_DAY))
+        if (!AddObject(BG_KT_OBJECT_ORB_1 + i, BG_KT_OBJECT_ORB_1_ENTRY + i, BG_KT_OrbPositions[i][0], BG_KT_OrbPositions[i][1], BG_KT_OrbPositions[i][2], BG_KT_OrbPositions[i][3], 0, 0, sin(BG_KT_OrbPositions[i][3] / 2), cos(BG_KT_OrbPositions[i][3] / 2), RESPAWN_ONE_DAY))
             return false;
 
         if (Creature* trigger = AddCreature(WORLD_TRIGGER, BG_KT_CREATURE_ORB_AURA_1 + i, TEAM_NEUTRAL, BG_KT_OrbPositions[i][0], BG_KT_OrbPositions[i][1], BG_KT_OrbPositions[i][2], BG_KT_OrbPositions[i][3], RESPAWN_IMMEDIATELY))
@@ -303,16 +310,22 @@ void BattlegroundKT::Reset()
 {
     //call parent's class reset
     Battleground::Reset();
-    BgObjects.resize(BG_KT_OBJECT_MAX);
-    BgCreatures.resize(BG_KT_CREATURE_MAX);
+
+    m_TeamScores[BG_TEAM_ALLIANCE]      = 0;
+    m_TeamScores[BG_TEAM_HORDE]         = 0;
+
+    m_playersZone.clear();
 
     for (uint32 i = 0; i < MAX_ORBS; ++i)
         m_OrbKeepers[i] = 0;
 
+    BgObjects.resize(BG_KT_OBJECT_MAX);
+    BgCreatures.resize(BG_KT_CREATURE_MAX);
+
     bool isBGWeekend = BattlegroundMgr::IsBGWeekend(GetTypeID());
-    m_ReputationCapture = (isBGWeekend) ? 45 : 35;
-    m_HonorWinKills = (isBGWeekend) ? 3 : 1;
-    m_HonorEndKills = (isBGWeekend) ? 4 : 2;
+    m_HonorWinKills =     (isBGWeekend) ? 3 : 1;
+    m_HonorEndKills =     (isBGWeekend) ? 4 : 2;
+
     m_CheatersCheckTimer = 0;
 
     m_EndTimer = BG_KT_TIME_LIMIT;
@@ -321,12 +334,13 @@ void BattlegroundKT::Reset()
 
 void BattlegroundKT::EndBattleground(uint32 winner)
 {
-    //win reward
+    // Win rewards.
     if (winner == ALLIANCE)
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), ALLIANCE);
     if (winner == HORDE)
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), HORDE);
-    //complete map_end rewards (even if no team wins)
+
+    // Complete map_end rewards (even if no team wins).
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), ALLIANCE);
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), HORDE);
 
@@ -365,11 +379,9 @@ void BattlegroundKT::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
 
 WorldSafeLocsEntry const* BattlegroundKT::GetClosestGraveYard(Player* player)
 {
-    //if status in progress, it returns main graveyards with spiritguides
-    //else it will return the graveyard in the flagroom - this is especially good
-    //if a player dies in preparation phase - then the player can't cheat
-    //and teleport to the graveyard outside the flagroom
-    //and start running around, while the doors are still closed
+    // If status in progress, it returns main graveyards with spiritguides
+    // else it will return the graveyard in the flagroom - this is especially good if a player dies in preparation phase - then the player can't cheat
+    // and teleport to the graveyard outside the flagroom and start running around, while the doors are still closed.
     if (player->GetBGTeam() == ALLIANCE)
     {
         if (GetStatus() == STATUS_IN_PROGRESS)
@@ -418,7 +430,7 @@ void BattlegroundKT::FillInitialWorldStates(ByteBuffer &data)
 {
     data << uint32(GetTeamScore(ALLIANCE))      << uint32(BG_KT_ORB_POINTS_A);
     data << uint32(GetTeamScore(HORDE))         << uint32(BG_KT_ORB_POINTS_H);
-    data << uint32(BG_KT_MAX_TEAM_SCORE)        << uint32(BG_KT_ORB_POINTS_MAX);
+    data << uint32(0x1)                         << uint32(BG_KT_NEUTRAL_ORBS);
 
     data << uint32(0x1)                         << uint32(BG_KT_TIME_ENABLED);
     data << uint32(GetRemainingTimeInMinutes()) << uint32(BG_KT_TIME_REMAINING);

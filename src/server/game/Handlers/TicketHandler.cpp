@@ -39,18 +39,19 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recvData)
     }
 
     GMTicketResponse response = GMTICKET_RESPONSE_CREATE_ERROR;
-    // Player must not have opened ticket
+
+    // Player must not have an opened ticket.
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
     {
         if (ticket->IsCompleted())
         {
+            // Close and delete the ticket, creating a new one.
             sTicketMgr->CloseTicket(ticket->GetId(), GetPlayer()->GetGUID());
+            sTicketMgr->SendTicketStatusUpdate(this, GMTICKET_RESPONSE_TICKET_DELETED);
             sTicketMgr->SendTicket(this, NULL);
+            sTicketMgr->RemoveTicket(ticket->GetId());
 
-            WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
-            data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
-            SendPacket(&data);
-
+            // Time to build the new ticket.
             GmTicket* newTicket = new GmTicket(GetPlayer(), recvData);
             sTicketMgr->AddTicket(newTicket);
             sTicketMgr->UpdateLastChange();
@@ -77,9 +78,7 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recvData)
         response = GMTICKET_RESPONSE_CREATE_SUCCESS;
     }
 
-    WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 2);
-    data << uint8(response);
-    SendPacket(&data);
+    sTicketMgr->SendTicketStatusUpdate(this, response);
 }
 
 void WorldSession::HandleGMTicketUpdateOpcode(WorldPacket& recvData)
@@ -91,6 +90,8 @@ void WorldSession::HandleGMTicketUpdateOpcode(WorldPacket& recvData)
     std::string message = recvData.ReadString(strLen);
 
     GMTicketResponse response = GMTICKET_RESPONSE_UPDATE_ERROR;
+
+    // If the ticket is found, update it.
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
     {
         SQLTransaction trans = SQLTransaction(NULL);
@@ -100,26 +101,26 @@ void WorldSession::HandleGMTicketUpdateOpcode(WorldPacket& recvData)
         sWorld->SendGMText(LANG_COMMAND_TICKETUPDATED, GetPlayer()->GetName(), ticket->GetId());
 
         sTicketMgr->SendTicket(this, ticket);
+        sTicketMgr->UpdateLastChange();
+
         response = GMTICKET_RESPONSE_UPDATE_SUCCESS;
     }
 
-    WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 2);
-    data << uint8(response);
-    SendPacket(&data);
+    sTicketMgr->SendTicketStatusUpdate(this, response);
 }
 
 void WorldSession::HandleGMTicketDeleteOpcode(WorldPacket& /*recvData*/)
 {
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
     {
-        WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
-        data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
-        SendPacket(&data);
-
         sWorld->SendGMText(LANG_COMMAND_TICKETPLAYERABANDON, GetPlayer()->GetName(), ticket->GetId());
 
         sTicketMgr->CloseTicket(ticket->GetId(), GetPlayer()->GetGUID());
+        sTicketMgr->SendTicketStatusUpdate(this, GMTICKET_RESPONSE_TICKET_DELETED);
         sTicketMgr->SendTicket(this, NULL);
+
+        sTicketMgr->RemoveTicket(ticket->GetId());
+        sTicketMgr->UpdateLastChange();
     }
 }
 
@@ -144,8 +145,8 @@ void WorldSession::HandleGMTicketGetWebTicketOpcode(WorldPacket& /*recvPacket*/)
 
 void WorldSession::HandleGMTicketSystemStatusOpcode(WorldPacket& /*recvData*/)
 {
-    // Note: This only disables the ticket UI at client side and is not fully reliable
-    // are we sure this is a uint32? Should ask Zor
+    // Note: This only disables the ticket UI at client side and is not fully reliable.
+
     WorldPacket data(SMSG_GM_TICKET_SYSTEM_STATUS, 4);
     data << uint32(sTicketMgr->GetStatus() ? GMTICKET_QUEUE_STATUS_ENABLED : GMTICKET_QUEUE_STATUS_DISABLED);
     SendPacket(&data);
@@ -153,55 +154,55 @@ void WorldSession::HandleGMTicketSystemStatusOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleGMSurveySubmit(WorldPacket& recvData)
 {
+    // Just puts the survey in the database.
+
     uint32 nextSurveyID = sTicketMgr->GetNextSurveyID();
-    // just put the survey into the database
-    uint32 mainSurvey; // GMSurveyCurrentSurvey.dbc, column 1 (all 9) ref to GMSurveySurveys.dbc
+
+    uint32 mainSurvey;       // GMSurveyCurrentSurvey.dbc, column 1 (all 9) ref to GMSurveySurveys.dbc
+    std::string mainComment; // Just a guess.
+
     recvData >> mainSurvey;
 
     // sub_survey1, r1, comment1, sub_survey2, r2, comment2, sub_survey3, r3, comment3, sub_survey4, r4, comment4, sub_survey5, r5, comment5, sub_survey6, r6, comment6, sub_survey7, r7, comment7, sub_survey8, r8, comment8, sub_survey9, r9, comment9, sub_survey10, r10, comment10,
     for (uint8 i = 0; i < 10; i++)
     {
-        uint32 subSurveyId; // ref to i'th GMSurveySurveys.dbc field (all fields in that dbc point to fields in GMSurveyQuestions.dbc)
+        uint32 subSurveyId;      // Ref to i'th GMSurveySurveys.dbc field (all fields in that dbc point to fields in GMSurveyQuestions.dbc)
+        uint8 rank;              // Probably some sort of ref to GMSurveyAnswers.dbc.
+        std::string subComment;  // Comment ("Usage: GMSurveyAnswerSubmit(question, rank, comment)").
+
         recvData >> subSurveyId;
         if (!subSurveyId)
             break;
 
-        uint8 rank; // probably some sort of ref to GMSurveyAnswers.dbc
-        recvData >> rank;
-        std::string comment; // comment ("Usage: GMSurveyAnswerSubmit(question, rank, comment)")
-        recvData >> comment;
+        recvData >> rank >> subComment;
 
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GM_SUBSURVEY);
         stmt->setUInt32(0, nextSurveyID);
         stmt->setUInt32(1, subSurveyId);
         stmt->setUInt32(2, rank);
-        stmt->setString(3, comment);
+        stmt->setString(3, subComment);
         CharacterDatabase.Execute(stmt);
     }
 
-    std::string comment; // just a guess
-    recvData >> comment;
+    recvData >> mainComment;
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GM_SURVEY);
     stmt->setUInt32(0, GUID_LOPART(GetPlayer()->GetGUID()));
     stmt->setUInt32(1, nextSurveyID);
     stmt->setUInt32(2, mainSurvey);
-    stmt->setString(3, comment);
+    stmt->setString(3, mainComment);
 
     CharacterDatabase.Execute(stmt);
 }
 
 void WorldSession::HandleReportLag(WorldPacket& recvData)
 {
-    // just put the lag report into the database...
-    // can't think of anything else to do with it
+    // Just put the lag report in the database... can't think of anything else to do with it.
+
     uint32 lagType, mapId;
-    recvData >> lagType;
-    recvData >> mapId;
     float x, y, z;
-    recvData >> x;
-    recvData >> y;
-    recvData >> z;
+
+    recvData >> lagType >> mapId >> x >> y >> z;
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_LAG_REPORT);
     stmt->setUInt32(0, GUID_LOPART(GetPlayer()->GetGUID()));
@@ -217,14 +218,14 @@ void WorldSession::HandleReportLag(WorldPacket& recvData)
 
 void WorldSession::HandleGMResponseResolve(WorldPacket& /*recvPacket*/)
 {
-    // empty packet
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
     {
-        WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
-        data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
-        SendPacket(&data);
-
         sTicketMgr->CloseTicket(ticket->GetId(), GetPlayer()->GetGUID());
+
+        sTicketMgr->SendTicketStatusUpdate(this, GMTICKET_RESPONSE_TICKET_DELETED);
         sTicketMgr->SendTicket(this, NULL);
+
+        sTicketMgr->RemoveTicket(ticket->GetId());
+        sTicketMgr->UpdateLastChange();
     }
 }

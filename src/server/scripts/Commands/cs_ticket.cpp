@@ -164,11 +164,11 @@ public:
         {
             if (submitter->IsInWorld())
             {
-                WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
-                data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
-                submitter->GetSession()->SendPacket(&data);
+                sTicketMgr->SendTicketStatusUpdate(submitter->GetSession(), GMTICKET_RESPONSE_TICKET_DELETED);
+                sTicketMgr->SendTicket(submitter->GetSession(), NULL);
             }
         }
+
         return true;
     }
 
@@ -269,19 +269,16 @@ public:
 
         if (Player* player = ticket->GetPlayer())
         {
-            if (player->IsInWorld())
+            if (player->IsInWorld()) // Force abandon ticket
             {
-                // Force abandon ticket
-                WorldPacket data(SMSG_GM_TICKET_STATUS_UPDATE, 4);
-                data << uint8(GMTICKET_RESPONSE_TICKET_DELETED);
-                player->GetSession()->SendPacket(&data);
+                sTicketMgr->SendTicketStatusUpdate(player->GetSession(), GMTICKET_RESPONSE_TICKET_DELETED);
+                sTicketMgr->SendTicket(player->GetSession(), NULL);
             }
         }
 
-        // Ticket pointer must be delete AFTER last use !!
+        // Remove the ticket.
         sTicketMgr->RemoveTicket(ticket->GetId());
         sTicketMgr->UpdateLastChange();
-
         return true;
     }
 
