@@ -2180,7 +2180,7 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
         memberData.WriteByteSeq(memberGuid[0]);
     }
 
-    data.WriteBit(isLFGGroup());                           // is LFG
+    data.WriteBit(isLFGGroup());                        // is LFG
     data.WriteBit(leaderGuid[5]);
     data.WriteBit(groupGuid[0]);
     data.WriteBit(groupGuid[4]);
@@ -2250,8 +2250,8 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
 
     if (sendDifficulty)
     {
-        data << uint32(m_dungeonDifficulty); 
-        data << uint32(m_raidDifficulty);            
+        data << uint32(GetDungeonDifficulty()); // Dungeon Difficulty
+        data << uint32(GetRaidDifficulty());    // Raid Difficulty
     }
 
     data.WriteByteSeq(leaderGuid[5]);

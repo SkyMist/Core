@@ -1751,63 +1751,62 @@ void WorldSession::HandleClientReportError(WorldPacket& recvData)
 void WorldSession::HandleInspectRatedBGStatsOpcode(WorldPacket& recvData)
 {
     ObjectGuid guid;
-    uint32 unk;
+    uint32 realmId;
 
-    recvData >> unk;
+    recvData >> realmId;
 
-    uint8 bitOrder[8] = { 1, 3, 5, 2, 6, 7, 0, 4 };
+    uint8 bitOrder[8] = { 0, 1, 6, 4, 7, 5, 2, 3 };
     recvData.ReadBitInOrder(guid, bitOrder);
 
     recvData.FlushBits();
 
-    uint8 byteOrder[8] = { 4, 7, 0, 3, 5, 2, 6, 1 };
+    uint8 byteOrder[8] = { 2, 0, 1, 3, 4, 7, 5, 6 };
     recvData.ReadBytesSeq(guid, byteOrder);
 
     Player* player = ObjectAccessor::FindPlayer(guid);
     if (!player)
     {
-        //sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_REQUEST_INSPECT_RATED_BG_STATS: No player found from GUID: " UI64FMTD, guid);
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_REQUEST_INSPECT_RATED_BG_STATS: No player found from GUID: " UI64FMTD, guid);
         return;
     }
 
-    return;
-
-    // TODO //
     ObjectGuid playerGuid = player->GetGUID();
+
     WorldPacket data(SMSG_INSPECT_RATED_BG_STATS);
 
-    ObjectGuid gguid = guid;
-    data << uint32(0); //SeasonWin
-    data << uint32(0); //SeasonPlayed
-    data << uint32(0); //Rating
-    
-    uint8 bitOrder3[8] = {5, 7, 2, 3, 4, 6, 0, 1};
-    data.WriteBitInOrder(gguid, bitOrder3);
-    
-    uint8 byteOrder2[8] = {6, 2, 3, 1, 7, 5, 4, 0};
-    data.WriteBytesSeq(gguid, byteOrder2);
+    data.WriteBit(playerGuid[4]);
+    data.WriteBit(playerGuid[1]);
+    data.WriteBit(playerGuid[0]);
+    data.WriteBit(playerGuid[6]);
+    data.WriteBit(playerGuid[2]);
+    data.WriteBit(playerGuid[3]);
 
-    SendPacket(&data);
-
-/*
     data.WriteBits(MAX_PVP_SLOT, 3);
 
-    for (int i = 0; i < MAX_PVP_SLOT; ++i)
-    {
-        // Client display only this two fields
+    data.WriteBit(playerGuid[7]);
+    data.WriteBit(playerGuid[5]);
 
+    data.FlushBits();
+
+    for (uint8 i = 0; i < MAX_PVP_SLOT; ++i)
+    {
+        // TODO: FIXME: Client displays only two fields. Missing: WeekWins, SeasonGames, WeekGames, MMR Rating + one extra (realmId from CMSG / Rank?).
+        data << uint32(0);
+        data << uint32(0);
         data << uint32(player->GetSeasonWins(i));
         data << uint32(0);
         data << uint32(0);
-        
+
         data << uint8(i);
-        
-        data << uint32(0);
-        data << uint32(0);
+
         data << uint32(player->GetArenaPersonalRating(i));
         data << uint32(0);
     }
-*/
+
+    uint8 byteOrder2[8] = { 7, 4, 6, 3, 1, 0, 2, 5 };
+    data.WriteBytesSeq(playerGuid, byteOrder2);
+
+    SendPacket(&data);
 }
 
 void WorldSession::HandleWorldTeleportOpcode(WorldPacket& recvData)

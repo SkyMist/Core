@@ -223,6 +223,7 @@ class npc_ook_barrel : public CreatureScript
 
             InstanceScript* instance;
             EventMap events;
+            bool exploded;
 
             void IsSummonedBy(Unit* /*summoner*/)
             {
@@ -236,6 +237,8 @@ class npc_ook_barrel : public CreatureScript
                 me->AddAura(SPELL_BARREL_COSMETIC, me);
                 me->SetSpeed(MOVE_WALK, 0.7f);
                 me->SetSpeed(MOVE_RUN, 0.7f);
+
+                exploded = false;
 
                 float x, y, z;
                 me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 40.0f);
@@ -303,17 +306,21 @@ class npc_ook_barrel : public CreatureScript
 
             void DoExplode(bool onPlayer = true)
             {
-                if (onPlayer) // On players.
-                    DoCast(me, SPELL_BARREL_EXPLOSION);
-                else // On Ook-Ook.
+                if (!exploded)
                 {
-                    if (Vehicle* barrel = me->GetVehicleKit())
-                        barrel->RemoveAllPassengers();
+                    if (onPlayer) // On players.
+                        DoCast(me, SPELL_BARREL_EXPLOSION);
+                    else // On Ook-Ook.
+                    {
+                        if (Vehicle* barrel = me->GetVehicleKit())
+                            barrel->RemoveAllPassengers();
 
-                    DoCast(me, SPELL_BARREL_EXPLOSION_O);
+                        DoCast(me, SPELL_BARREL_EXPLOSION_O);
+                    }
+
+                    me->DespawnOrUnsummon(200);
+                    exploded = true;
                 }
-
-                me->DespawnOrUnsummon(200);
             }
         };
 
