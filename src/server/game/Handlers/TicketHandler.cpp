@@ -129,12 +129,7 @@ void WorldSession::HandleGMTicketGetTicketOpcode(WorldPacket& /*recvData*/)
     SendQueryTimeResponse();
 
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
-    {
-        if (ticket->IsCompleted())
-            ticket->SendResponse(this);
-        else
-            sTicketMgr->SendTicket(this, ticket);
-    }
+        sTicketMgr->SendTicket(this, ticket);
     else
         sTicketMgr->SendTicket(this, NULL);
 }

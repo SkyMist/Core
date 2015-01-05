@@ -96,6 +96,7 @@ public:
     Player* GetPlayer() const { return ObjectAccessor::FindPlayer(_playerGuid); }
     std::string GetPlayerName() const { return _playerName; }
     std::string GetMessage() const { return _message; }
+    std::string GetResponse() const { return _response; }
     Player* GetAssignedPlayer() const { return ObjectAccessor::FindPlayer(_assignedTo); }
     uint64 GetAssignedToGUID() const { return _assignedTo; }
     std::string GetAssignedToName() const
@@ -131,13 +132,13 @@ public:
     void SetUnassigned();
 
     void AppendResponse(const std::string& response) { _response += response; }
+    void SetResponse(const std::string& response) { _response = response; }
 
     bool LoadFromDB(Field* fields);
     void SaveToDB(SQLTransaction& trans) const;
     void DeleteFromDB();
 
     void WritePacket(WorldPacket& data) const;
-    void SendResponse(WorldSession* session) const;
 
     void TeleportTo(Player* player) const;
     std::string FormatMessageString(ChatHandler& handler, bool detailed = false) const;

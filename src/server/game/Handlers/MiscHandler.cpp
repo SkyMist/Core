@@ -943,16 +943,11 @@ void WorldSession::HandleRequestBattlePetJournal(WorldPacket& /*recvPacket*/)
     SendPacket(&data);
 }
 
-void WorldSession::HandleRequestGmTicket(WorldPacket& /*recvPakcet*/)
+void WorldSession::HandleRequestGmTicket(WorldPacket& /*recvPacket*/)
 {
     // Notify player if he has a ticket in progress
     if (GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
-    {
-        if (ticket->IsCompleted())
-            ticket->SendResponse(this);
-        else
             sTicketMgr->SendTicket(this, ticket);
-    }
 }
 
 void WorldSession::HandleReclaimCorpseOpcode(WorldPacket& recvData)
