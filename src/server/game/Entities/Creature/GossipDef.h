@@ -282,9 +282,12 @@ class PlayerMenu
         void SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, bool enableNext) const;
         void SendQuestGiverRequestItems(Quest const* quest, uint64 npcGUID, bool canComplete, bool closeOnCancel) const;
 
+        static void AddQuestLevelToTitle(std::string &title, int32 level);
+
     private:
         GossipMenu _gossipMenu;
         QuestMenu  _questMenu;
         WorldSession* _session;
 };
+
 #endif

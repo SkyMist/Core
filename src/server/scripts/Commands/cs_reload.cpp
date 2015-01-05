@@ -92,6 +92,7 @@ public:
             { "fishing_loot_template",        SEC_ADMINISTRATOR, true,  &HandleReloadLootTemplatesFishingCommand,       "", NULL },
             { "game_graveyard_zone",          SEC_ADMINISTRATOR, true,  &HandleReloadGameGraveyardZoneCommand,          "", NULL },
             { "game_tele",                    SEC_ADMINISTRATOR, true,  &HandleReloadGameTeleCommand,                   "", NULL },
+            { "gameobject_template",          SEC_ADMINISTRATOR, true,  &HandleReloadGameobjectTemplatesCommand,        "", NULL },
             { "gameobject_involvedrelation",  SEC_ADMINISTRATOR, true,  &HandleReloadGOQuestInvRelationsCommand,        "", NULL },
             { "gameobject_loot_template",     SEC_ADMINISTRATOR, true,  &HandleReloadLootTemplatesGameobjectCommand,    "", NULL },
             { "gameobject_questrelation",     SEC_ADMINISTRATOR, true,  &HandleReloadGOQuestRelationsCommand,           "", NULL },
@@ -100,6 +101,7 @@ public:
             { "gossip_menu",                  SEC_ADMINISTRATOR, true,  &HandleReloadGossipMenuCommand,                 "", NULL },
             { "gossip_menu_option",           SEC_ADMINISTRATOR, true,  &HandleReloadGossipMenuOptionCommand,           "", NULL },
             { "guild_rewards",                SEC_ADMINISTRATOR, true,  &HandleReloadGuildRewardsCommand,               "", NULL },
+            { "item_template",                SEC_ADMINISTRATOR, true,  &HandleReloadItemTemplatesCommand,              "", NULL },
             { "item_enchantment_template",    SEC_ADMINISTRATOR, true,  &HandleReloadItemEnchantementsCommand,          "", NULL },
             { "item_loot_template",           SEC_ADMINISTRATOR, true,  &HandleReloadLootTemplatesItemCommand,          "", NULL },
             { "lfg_dungeon_rewards",          SEC_ADMINISTRATOR, true,  &HandleReloadLfgRewardsCommand,                 "", NULL },
@@ -564,6 +566,22 @@ public:
         sLog->outInfo(LOG_FILTER_GENERAL, "Re-Loading `guild_rewards` Table!");
         sGuildMgr->LoadGuildRewards();
         handler->SendGlobalGMSysMessage("DB table `guild_rewards` reloaded.");
+        return true;
+    }
+
+    static bool HandleReloadItemTemplatesCommand(ChatHandler* handler, const char* /*args*/)
+    {
+        sLog->outInfo(LOG_FILTER_GENERAL, "Loading Item templates... (`item_template`)");
+        sObjectMgr->LoadItemTemplates();
+        handler->SendGlobalGMSysMessage("DB table `item_template` (item templates) reloaded.");
+        return true;
+    }
+
+    static bool HandleReloadGameobjectTemplatesCommand(ChatHandler* handler, const char* /*args*/)
+    {
+        sLog->outInfo(LOG_FILTER_GENERAL, "Loading Gameobject templates... (`gameobject_template`)");
+        sObjectMgr->LoadGameObjectTemplate();
+        handler->SendGlobalGMSysMessage("DB table `gameobject_template` (gameobject templates) reloaded.");
         return true;
     }
 

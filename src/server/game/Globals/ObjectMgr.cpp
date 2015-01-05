@@ -3579,37 +3579,37 @@ void ObjectMgr::LoadQuests()
         "RequiredFactionId1, RequiredFactionId2, RequiredFactionValue1, RequiredFactionValue2, RequiredMinRepFaction, RequiredMaxRepFaction, RequiredMinRepValue, RequiredMaxRepValue, "
         //     22         23             24                25             26              27                    28                29            30              31              32
         "PrevQuestId, NextQuestId, ExclusiveGroup, NextQuestIdChain, RewardXPId, RewardOrRequiredMoney, RewardMoneyMaxLevel, RewardSpell, RewardSpellCast, RewardHonor, RewardHonorMultiplier, "
-        //         33                  34            35             36               37         38         39            40                41                42               43                 44
-        "RewardMailTemplateId, RewardMailDelay, SourceItemId, SourceItemCount, SourceSpellId, Flags, SpecialFlags, MinimapTargetMark, RewardTitleId, RequiredPlayerKills, RewardTalents, RewardArenaPoints, "
-        //      45            46                    47                    48                  49               50             51              52             53                54                55                56               57
-        "RewardSkillId, RewardSkillPoints, RewardReputationMask, QuestGiverPortrait, QuestTurnInPortrait, RewardItemId1, RewardItemId2, RewardItemId3, RewardItemId4, RewardItemCount1, RewardItemCount2, RewardItemCount3, RewardItemCount4, "
-        //         58                  59                  60                    61                    62                   63                      64                  65                        66                       67                      68                      69
+        //         33                  34            35             36               37         38     39         40             41                42               43                 44             45
+        "RewardMailTemplateId, RewardMailDelay, SourceItemId, SourceItemCount, SourceSpellId, Flags, Flags2, SpecialFlags, MinimapTargetMark, RewardTitleId, RequiredPlayerKills, RewardTalents, RewardArenaPoints, "
+        //      46            47                    48                    49                  50               51                  52              53             54                55                56                57               58            59
+        "RewardSkillId, RewardSkillPoints, RewardReputationMask, QuestGiverPortrait, QuestTurnInPortrait, RewardPackageItemId, RewardItemId1, RewardItemId2, RewardItemId3, RewardItemId4, RewardItemCount1, RewardItemCount2, RewardItemCount3, RewardItemCount4, "
+        //         60                  61                  62                    63                    64                   65                      66                  67                        68                       69                      70                      71
         "RewardChoiceItemId1, RewardChoiceItemId2, RewardChoiceItemId3, RewardChoiceItemId4, RewardChoiceItemId5, RewardChoiceItemId6, RewardChoiceItemCount1, RewardChoiceItemCount2, RewardChoiceItemCount3, RewardChoiceItemCount4, RewardChoiceItemCount5, RewardChoiceItemCount6, "
-        //        70                71                72                73             74                   75                      76                     77                    78                      79
+        //        72                73                74                75             76                   77                      78                     79                    80                      81
         "RewardFactionId1, RewardFactionId2, RewardFactionId3, RewardFactionId4, RewardFactionId5, RewardFactionValueId1, RewardFactionValueId2, RewardFactionValueId3, RewardFactionValueId4, RewardFactionValueId5, "
-        //                80                          81                           82                              83                           84
+        //                82                          83                           84                              85                           86
         "RewardFactionValueIdOverride1, RewardFactionValueIdOverride2, RewardFactionValueIdOverride3, RewardFactionValueIdOverride4, RewardFactionValueIdOverride5, "
-        //    85        86      87      88          89       90        91      92          93             94              95
+        //    87        88      89      90          91       92        93      94          95             96              97
         "PointMapId, PointX, PointY, PointOption, Title, Objectives, Details, EndText, CompletedText, OfferRewardText, RequestItemsText, "
-        //        96              97               98               99                  100                     101                      102                  103
+        //        98              99               100               101                  102                     103                      104                  105
         "RequiredNpcOrGo1, RequiredNpcOrGo2, RequiredNpcOrGo3, RequiredNpcOrGo4, RequiredNpcOrGoCount1, RequiredNpcOrGoCount2, RequiredNpcOrGoCount3, RequiredNpcOrGoCount4, "
-        //         104                     105                    106                   107                     108                       109                     110                       111
+        //         106                     107                    108                   109                     110                       111                     112                       113
         "RequiredSourceItemId1, RequiredSourceItemId2, RequiredSourceItemId3, RequiredSourceItemId4, RequiredSourceItemCount1, RequiredSourceItemCount2, RequiredSourceItemCount3, RequiredSourceItemCount4, "
-        //       112               113             114             115              116             117                 118                   119               120               121                 122                 123
+        //       114               115             116             117              118             119                 120                   121               122               123                 124                 125
         "RequiredItemId1, RequiredItemId2, RequiredItemId3, RequiredItemId4, RequiredItemId5, RequiredItemId6, RequiredItemCount1, RequiredItemCount2, RequiredItemCount3, RequiredItemCount4, RequiredItemCount5, RequiredItemCount6, "
-        //      124             125                 126                127                  128              129              130             131           132
+        //      126             127                 128                129                  130              131              132             133           134
         "RequiredSpell, RequiredSpellCast1, RequiredSpellCast2, RequiredSpellCast3, RequiredSpellCast4, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4, "
-        //     133                  134               135               136                  137                  138                     139                   140
+        //     135                  136               137               138                  139                  140                     141                   142
         "RewardCurrencyId1, RewardCurrencyId2, RewardCurrencyId3, RewardCurrencyId4, RewardCurrencyCount1, RewardCurrencyCount2, RewardCurrencyCount3, RewardCurrencyCount4, "
-        //      141                  142                 143                   144                    145                    146                     147                   148
+        //      143                  144                 145                   146                    147                    148                     149                   150
         "RequiredCurrencyId1, RequiredCurrencyId2, RequiredCurrencyId3, RequiredCurrencyId4, RequiredCurrencyCount1, RequiredCurrencyCount2, RequiredCurrencyCount3, RequiredCurrencyCount4, "
-        //      149                  150                 151                   152               153          154
+        //      151                  152                 153                   154               155          156
         "QuestGiverTextWindow, QuestGiverTargetName, QuestTurnTextWindow, QuestTurnTargetName, SoundAccept, SoundTurnIn, "
-        //      155          156           157            158               159                160                  161                  162                163             164
+        //      157          158           159            160               161                162                  163                  164                165             166
         "DetailsEmote1, DetailsEmote2, DetailsEmote3, DetailsEmote4, DetailsEmoteDelay1, DetailsEmoteDelay2, DetailsEmoteDelay3, DetailsEmoteDelay4, EmoteOnIncomplete, EmoteOnComplete, "
-        //      165                 166               167                168                   169                      170                     171                  172
+        //      167                 168               169                170                   171                      172                     173                  174
         "OfferRewardEmote1, OfferRewardEmote2, OfferRewardEmote3, OfferRewardEmote4, OfferRewardEmoteDelay1, OfferRewardEmoteDelay2, OfferRewardEmoteDelay3, OfferRewardEmoteDelay4, "
-        //    173           174           175
+        //    175           176           177
         "StartScript, CompleteScript, WDBVerified"
         " FROM quest_template");
     if (!result)
@@ -3717,6 +3717,7 @@ void ObjectMgr::LoadQuests()
                 // No changes, quest not dependent from this value but can have problems at client
             }
         }
+
         // Client quest log visual (sort case)
         if (qinfo->ZoneOrSort < 0)
         {
@@ -3750,6 +3751,7 @@ void ObjectMgr::LoadQuests()
                 qinfo->RequiredClasses = 0;
             }
         }
+
         // RequiredRaces, can be 0/RACEMASK_ALL_PLAYABLE to allow any race
         if (qinfo->RequiredRaces)
         {
@@ -3761,6 +3763,7 @@ void ObjectMgr::LoadQuests()
                 qinfo->RequiredRaces = 0;
             }
         }
+
         // RequiredSkillId, can be 0
         if (qinfo->RequiredSkillId)
         {
@@ -7710,8 +7713,8 @@ void ObjectMgr::LoadGameObjectForQuests()
                 }
                 break;
             }
-            default:
-                break;
+
+            default: break;
         }
     }
 
