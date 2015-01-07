@@ -468,6 +468,8 @@ enum ItemLimitCategoryMode
 
 enum MountFlags
 {
+    MOUNT_FLAG_CAN_WALK                 = 0x1,                    // client checks MOVEMENTFLAG_WALKING
+    MOUNT_FLAG_CAN_FLY                  = 0x2,                    // client checks MOVEMENTFLAG_FLYING
     MOUNT_FLAG_CAN_PITCH                = 0x4,                    // client checks MOVEMENTFLAG2_FULL_SPEED_PITCHING
     MOUNT_FLAG_CAN_SWIM                 = 0x8                     // client checks MOVEMENTFLAG_SWIMMING
 };

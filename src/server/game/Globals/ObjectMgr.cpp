@@ -3612,10 +3612,10 @@ void ObjectMgr::LoadQuests()
         //    175           176           177
         "StartScript, CompleteScript, WDBVerified"
         " FROM quest_template");
+
     if (!result)
     {
         sLog->outError(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 quests definitions. DB table `quest_template` is empty.");
-
         return;
     }
 
@@ -4329,6 +4329,12 @@ void ObjectMgr::LoadQuests()
             }
         }
 
+        // Check Reward Package Item Id
+        if (qinfo->RewardPackageItemId)
+            if (!sQuestPackageItemStore.LookupEntry(qinfo->RewardPackageItemId))
+                sLog->outError(LOG_FILTER_SQL, "Quest %u has `RewardPackageItemId` = %u but this package does not exist.",
+                    qinfo->GetQuestId(), qinfo->RewardPackageItemId);
+
         // Fill additional data stores
         if (qinfo->PrevQuestId)
         {
@@ -4380,7 +4386,7 @@ void ObjectMgr::LoadQuests()
 
             if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT))
             {
-                sLog->outError(LOG_FILTER_SQL, "Spell (id: %u) have SPELL_EFFECT_QUEST_COMPLETE for quest %u, but quest not have flag QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT. Quest flags must be fixed, quest modified to enable objective.", spellInfo->Id, quest_id);
+                sLog->outError(LOG_FILTER_SQL, "Spell (id: %u) have SPELL_EFFECT_QUEST_COMPLETE for quest %u, but quest doesn't have QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT. Quest flags must be fixed and quest modified to enable the objective.", spellInfo->Id, quest_id);
 
                 // This will prevent quest completing without objective
                 const_cast<Quest*>(quest)->SetSpecialFlag(QUEST_SPECIAL_FLAGS_EXPLORATION_OR_EVENT);
@@ -5607,6 +5613,7 @@ void ObjectMgr::LoadAreaTriggerScripts()
             sLog->outError(LOG_FILTER_SQL, "Area trigger (ID:%u) does not exist in `AreaTrigger.dbc`.", Trigger_ID);
             continue;
         }
+
         _areaTriggerScriptStore[Trigger_ID] = GetScriptId(scriptName);
     }
     while (result->NextRow());
@@ -5628,7 +5635,7 @@ uint32 ObjectMgr::GetNearestTaxiNode(float x, float y, float z, uint32 mapid, ui
             continue;
 
         uint8  field   = (uint8)((i - 1) / 8);
-        uint32 submask = 1 << ((i-1) % 8);
+        uint32 submask = 1 << ((i - 1) % 8);
 
         // skip not taxi network nodes
         if ((sTaxiNodesMask[field] & submask) == 0)
@@ -5687,18 +5694,12 @@ uint32 ObjectMgr::GetTaxiMountDisplayId(uint32 id, uint32 team, bool allowed_alt
     if (node)
     {
         uint32 mount_entry = 0;
-        if (team == ALLIANCE)
-            mount_entry = node->MountCreatureID[1];
-        else
-            mount_entry = node->MountCreatureID[0];
+        mount_entry = (team == ALLIANCE) ? node->MountCreatureID[1] : node->MountCreatureID[0];
 
-        // Fix for Alliance not being able to use Acherus taxi
-        // only one mount type for both sides
+        // Fix for Alliance not being able to use Acherus taxi. Only one mount type for both sides.
+        // Simply reverse the selection. At least one team in theory should have a valid mount ID to choose.
         if (mount_entry == 0 && allowed_alt_team)
-        {
-            // Simply reverse the selection. At least one team in theory should have a valid mount ID to choose.
-            mount_entry = team == ALLIANCE ? node->MountCreatureID[0] : node->MountCreatureID[1];
-        }
+            mount_entry = (team == ALLIANCE) ? node->MountCreatureID[0] : node->MountCreatureID[1];
 
         CreatureTemplate const* mount_info = GetCreatureTemplate(mount_entry);
         if (mount_info)

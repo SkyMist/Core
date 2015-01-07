@@ -145,7 +145,7 @@ struct ItemUpgradeEntry
 struct RulesetItemUpgradeEntry
 {
     uint32 Id;
-    uint32 unk;
+    uint32 itemUpgradeIndex;
     uint32 itemUpgradeId;
     uint32 itemid;
 };
@@ -167,9 +167,18 @@ struct ItemExtendedCostEntry
     uint32      RequiredCurrencyCount[MAX_ITEM_EXT_COST_CURRENCIES];    // 21-25 required curency count
     //uint32    Unk_1;                                                  // 26 Only 0
     //uint32    Unk_2;                                                  // 27 Only 0
-    //uint32    Unk_3;                                                  // 28
+    //uint32    Unk_3;                                                  // 28 Some flags
     //uint32    Unk_4;                                                  // 29 Only 0
     //uint32    Unk_5;                                                  // 30 Only 0
+};
+
+struct QuestPackageItemEntry
+{
+    // uint32  Id;         // 0 Unique id.
+    uint32  packageId;     // 1 Unique package id for each quest. Example : packageId 266 for quest 31327.
+    uint32  ItemId;        // 2 Item Id's affiliated to each pack.
+    uint32  ItemQuantity;  // 3 Only 1.
+    uint32  ItemType;      // 4 Item type. 0 - defined for specs, on quest complete -> only reward, 1 you select from multiple possible rewards, 2 = bag.
 };
 
 struct BattlePetSpeciesEntry

@@ -14917,11 +14917,6 @@ float Unit::GetPPMProcChance(uint32 WeaponSpeed, float PPM, const SpellInfo* spe
 
 void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
 {
-    // to prevent a bug with mounts on 1-19 lvls
-    if (ToPlayer())
-        if (ToPlayer()->getLevel() < 20)
-            return;
-
     if (mount)
         SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, mount);
 
@@ -14930,7 +14925,6 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
     if (Player* player = ToPlayer())
     {
         ClearEmotes();
-
         player->SetFallInformation(0, GetPositionZ());
 
         // mount as a vehicle
@@ -14991,6 +14985,8 @@ void Unit::Dismount()
 
     uint8 bitsOrder[8] = { 3, 2, 6, 5, 1, 0, 7, 4 };
     data.WriteBitInOrder(guid, bitsOrder);
+
+    data.FlushBits();
 
     uint8 bytesOrder[8] = { 3, 4, 1, 2, 7, 5, 0, 6 };
     data.WriteBytesSeq(guid, bytesOrder);
@@ -15060,9 +15056,9 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
             if (!(mountCapability->Flags & MOUNT_FLAG_CAN_SWIM))
                 continue;
         }
-        else if (!(mountCapability->Flags & 0x1))   // unknown flags, checked in 4.2.2 14545 client
+        else if (!(mountCapability->Flags & MOUNT_FLAG_CAN_WALK))
         {
-            if (!(mountCapability->Flags & 0x2))
+            if (!(mountCapability->Flags & MOUNT_FLAG_CAN_FLY))
                 continue;
         }
 

@@ -31,6 +31,7 @@ DB2Storage <BattlePetSpeciesEntry> sBattlePetSpeciesStore(BattlePetSpeciesEntryf
 DB2Storage <SpellReagentsEntry> sSpellReagentsStore(SpellReagentsEntryfmt);
 DB2Storage <ItemUpgradeEntry> sItemUpgradeStore(ItemUpgradeEntryfmt);
 DB2Storage <RulesetItemUpgradeEntry> sRulesetItemUpgradeStore(RulesetItemUpgradeEntryfmt);
+DB2Storage <QuestPackageItemEntry> sQuestPackageItemStore(QuestPackageItemEntryfmt);
 
 typedef std::list<std::string> StoreProblemList1;
 
@@ -92,6 +93,7 @@ void LoadDB2Stores(const std::string& dataPath)
     LoadDB2(bad_db2_files, sSpellReagentsStore, db2Path, "SpellReagents.db2");                                                 // 17399
     LoadDB2(bad_db2_files, sItemUpgradeStore, db2Path, "ItemUpgrade.db2");
     LoadDB2(bad_db2_files, sRulesetItemUpgradeStore, db2Path, "RulesetItemUpgrade.db2");
+    LoadDB2(bad_db2_files, sQuestPackageItemStore, db2Path, "QuestPackageItem.db2");
 
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)

@@ -26,5 +26,6 @@ const char BattlePetSpeciesEntryfmt[] = "inxxxxxxx";
 const char SpellReagentsEntryfmt[] = "diiiiiiiiiiiiiiiixx";
 const char ItemUpgradeEntryfmt[] = "niiiii";
 const char RulesetItemUpgradeEntryfmt[] = "niii";
+const char QuestPackageItemEntryfmt[] = "xniii";
 
 #endif
