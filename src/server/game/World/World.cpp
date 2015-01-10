@@ -1186,7 +1186,7 @@ void World::LoadConfigSettings(bool reload)
 
     ///- Read the "Data" directory from the config file
     std::string dataPath = ConfigMgr::GetStringDefault("DataDir", "./");
-    if (dataPath.at(dataPath.length()-1) != '/' && dataPath.at(dataPath.length()-1) != '\\')
+    if (dataPath.empty() || dataPath.at(dataPath.length()-1) != '/' && dataPath.at(dataPath.length()-1) != '\\')
         dataPath.push_back('/');
 
     if (reload)
