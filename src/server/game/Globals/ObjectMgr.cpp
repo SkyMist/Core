@@ -4219,11 +4219,14 @@ void ObjectMgr::LoadQuests()
                     qinfo->RewardCurrencyCount[j] = 0;         // Prevent incorrect work of quest
                 }
             }
-            else if (qinfo->RewardCurrencyCount[j] > 0)
+            else
             {
-                sLog->outError(LOG_FILTER_SQL, "Quest %u has `RewardCurrencyId%d` = 0 but `RewardCurrencyCount%d` = %u, quest can't be done.",
-                    qinfo->GetQuestId(), j + 1, j + 1, qinfo->RewardCurrencyCount[j]);
-                qinfo->RewardCurrencyCount[j] = 0;             // Prevent incorrect work of quest
+		        if (qinfo->RewardCurrencyCount[j] > 0)
+                {
+                    sLog->outError(LOG_FILTER_SQL, "Quest %u has `RewardCurrencyId%d` = 0 but `RewardCurrencyCount%d` = %u, quest can't be done.",
+                        qinfo->GetQuestId(), j + 1, j + 1, qinfo->RewardCurrencyCount[j]);
+                    qinfo->RewardCurrencyCount[j] = 0;             // Prevent incorrect work of quest
+                }
             }
         }
 

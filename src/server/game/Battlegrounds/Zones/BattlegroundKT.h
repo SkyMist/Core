@@ -219,7 +219,7 @@ class BattlegroundKT : public Battleground
         void UpdateOrbState(Team team, uint32 value);
         void EventPlayerClickedOnFlag(Player* player, GameObject* target_obj) { EventPlayerClickedOnOrb(player, target_obj); }
         void EventPlayerClickedOnOrb(Player* source, GameObject* target_obj);
-        void EventPlayerDroppedOrb(Player* source);
+        void EventPlayerDroppedOrb(Player* source, uint64 guid = 0);
 
         /* Timers. */
         uint32 GetRemainingTimeInMinutes() { return m_EndTimer ? ((m_EndTimer - 1) / (MINUTE * IN_MILLISECONDS) + 1) : 0; }

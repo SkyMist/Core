@@ -190,9 +190,9 @@ void BattlegroundKT::EventPlayerClickedOnOrb(Player* source, GameObject* target_
     source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattlegroundKT::EventPlayerDroppedOrb(Player* source)
+void BattlegroundKT::EventPlayerDroppedOrb(Player* source, uint64 guid /*= 0*/)
 {
-    if (GetStatus() != STATUS_IN_PROGRESS)
+    if (!source || GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     uint8 index = 0;
@@ -202,7 +202,7 @@ void BattlegroundKT::EventPlayerDroppedOrb(Player* source)
         if (index == MAX_ORBS)
             return;
 
-        if (m_OrbKeepers[index] == source->GetGUID())
+        if (m_OrbKeepers[index] == guid ? guid : source->GetGUID())
             break;
     }
 
@@ -224,8 +224,8 @@ void BattlegroundKT::EventPlayerDroppedOrb(Player* source)
 
 void BattlegroundKT::RemovePlayer(Player* player, uint64 guid, uint32 /*team*/)
 {
-    EventPlayerDroppedOrb(player);
-    m_playersZone.erase(player->GetGUID());
+    EventPlayerDroppedOrb(player, guid);
+    m_playersZone.erase(guid ? guid : player->GetGUID());
 }
 
 void BattlegroundKT::UpdateOrbState(Team team, uint32 value)
@@ -347,7 +347,7 @@ void BattlegroundKT::EndBattleground(uint32 winner)
     Battleground::EndBattleground(winner);
 }
 
-void BattlegroundKT::HandleKillPlayer(Player *player, Player *killer)
+void BattlegroundKT::HandleKillPlayer(Player* player, Player* killer)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
