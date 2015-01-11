@@ -4352,6 +4352,7 @@ void Spell::finish(bool ok)
             }
         }
         case 32379: // Shadow Word: Death
+        case 129176:
         {
             if (m_caster->GetTypeId() != TYPEID_PLAYER)
                 break;
@@ -4362,7 +4363,10 @@ void Spell::finish(bool ok)
             if (m_caster->HasAura(95652))
                 break;
 
-            if (!unitTarget || !unitTarget->isAlive() || unitTarget->GetHealthPct() >= 20.0f)
+            if (m_spellInfo->Id == 129176 && unitTarget->GetHealthPct() >= 20.0f)
+                break;
+
+            if (!unitTarget || !unitTarget->isAlive())
             {
                 m_caster->CastSpell(m_caster, 125927, true); // Shadow Orb energize
                 break;

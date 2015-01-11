@@ -321,12 +321,13 @@ void WorldSession::HandleLfgLockInfoRequestOpcode(WorldPacket& recvData)
 
             if (qRew->GetRewCurrencyCount())
             {
-                for (uint8 i = 0; i < QUEST_REWARDS_COUNT; ++i)
+                for (uint8 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
                 {
                     if (!qRew->RewardCurrencyId[i])
                         continue;
 
                     data << uint32(qRew->RewardCurrencyId[i]);
+                    data << uint32(0);
                     data << uint32(qRew->RewardCurrencyCount[i]);
                 }
             }
@@ -343,7 +344,6 @@ void WorldSession::HandleLfgLockInfoRequestOpcode(WorldPacket& recvData)
             data << uint32(0); // 32
             data << uint32(qRew->GetRewOrReqMoney());
             data << uint32(*it);
-
         }
         else
         {
@@ -854,13 +854,14 @@ void WorldSession::SendLfgPlayerReward(uint32 rdungeonEntry, uint32 sdungeonEntr
             bytereward << uint32(qRew->RewardCurrencyId[i]);
         }
     }
+
     data.FlushBits();
+
     data.append(bytereward);
     data << uint32(qRew->XPValue(GetPlayer()));
     data << uint32(rdungeonEntry);                         // Random Dungeon Finished
     data << uint32(sdungeonEntry);                         // Dungeon Finished
     data << uint32(qRew->GetRewOrReqMoney());
-    
 
     SendPacket(&data);
 }

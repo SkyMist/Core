@@ -898,35 +898,31 @@ void WorldSession::HandleLoadScreenOpcode(WorldPacket& recvPacket)
     recvPacket >> mapID;
     recvPacket.ReadBit();
 
-    // Refresh spellmods for client
-    // This is Hackypig fix : find a better way
+    // Refresh spellmods for the client.
     if (Player* _plr = GetPlayer())
     {
-        std::list<uint32> spellToCast;
-
         Unit::AuraApplicationMap& auraList = _plr->GetAppliedAuras();
-        for (Unit::AuraApplicationMap::iterator iter = auraList.begin(); iter != auraList.end();)
+        for (auto app : auraList)
         {
-            AuraApplication* aurApp = iter->second;
+            AuraApplication* aurApp = app.second;
             if (!aurApp)
                 continue;
 
             AuraPtr aura = aurApp->GetBase();
-            if (aura && (
-                            aura->HasEffectType(SPELL_AURA_ADD_FLAT_MODIFIER) ||
-                            aura->HasEffectType(SPELL_AURA_ADD_PCT_MODIFIER)) && aura->GetSpellInfo())
+            if (aura)
             {
-                spellToCast.push_back(aura->GetSpellInfo()->Id);
-                _player->RemoveAura(iter);
+                for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                {
+                    if (AuraEffectPtr effect = aura->GetEffect(i))
+                    {
+                        if (effect->GetAuraType() == SPELL_AURA_ADD_FLAT_MODIFIER || effect->GetAuraType() == SPELL_AURA_ADD_PCT_MODIFIER)
+                        {
+                            effect->ApplySpellMod(_plr, false);
+                            effect->ApplySpellMod(_plr, true);
+                        }
+                    }
+                }
             }
-            else
-                ++iter;
-        }
-
-        for (auto id : spellToCast)
-        {
-            if (id > 0 && _plr)
-                _plr->CastSpell(_plr, id, true);
         }
 
         if (_plr->hasForcedMovement)
@@ -1124,7 +1120,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
     uint32 time3 = getMSTime() - time2;
     
     // Send item extended costs hotfix
-    std::set<uint32> extendedCostHotFix = sObjectMgr->GetOverwriteExtendedCosts();
+    std::set<uint32> const& extendedCostHotFix = sObjectMgr->GetOverwriteExtendedCosts();
     for (auto itr : extendedCostHotFix)
     {
         const ItemExtendedCostEntry* extendedCost = sItemExtendedCostStore.LookupEntry(itr);
@@ -1132,42 +1128,41 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
         if (!extendedCost)
             continue;
         
-        WorldPacket data(SMSG_DB_REPLY);
+        data.Initialize(SMSG_DB_REPLY);
         ByteBuffer buff;
-        
+
         buff << uint32(extendedCost->ID);
         buff << uint32(0); // reqhonorpoints
         buff << uint32(0); // reqarenapoints
         buff << uint32(extendedCost->RequiredArenaSlot);
-        
+
         for (uint32 i = 0; i < MAX_ITEM_EXT_COST_ITEMS; i++)
             buff << uint32(extendedCost->RequiredItem[i]);
-        
+
         for (uint32 i = 0; i < MAX_ITEM_EXT_COST_ITEMS; i++)
             buff << uint32(extendedCost->RequiredItemCount[i]);
-        
+
         buff << uint32(extendedCost->RequiredPersonalArenaRating);
         buff << uint32(0); // ItemPurchaseGroup
-        
+
         for (uint32 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; i++)
             buff << uint32(extendedCost->RequiredCurrency[i]);
-        
+
         for (uint32 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; i++)
             buff << uint32(extendedCost->RequiredCurrencyCount[i]);
-        
+
         // Unk
         for (uint32 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; i++)
             buff << uint32(0);
-        
+
         data << uint32(buff.size());
         data.append(buff);
-        
+
         data << uint32(DB2_REPLY_ITEM_EXTENDED_COST);
         data << uint32(sObjectMgr->GetHotfixDate(extendedCost->ID, DB2_REPLY_ITEM_EXTENDED_COST));
         data << uint32(extendedCost->ID);
-        
+
         //SendPacket(&data);
-        
     }
 
     pCurrChar->SendInitialPacketsBeforeAddToMap();

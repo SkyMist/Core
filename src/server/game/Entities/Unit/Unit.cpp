@@ -471,9 +471,10 @@ void Unit::UpdateSplinePosition()
         pos.m_positionY = loc.y;
         pos.m_positionZ = loc.z;
         pos.SetOrientation(loc.orientation);
+
         if (Unit* vehicle = GetVehicleBase())
-        if (TransportBase* transport = GetDirectTransport())
-            transport->CalculatePassengerPosition(loc.x, loc.y, loc.z, loc.orientation);
+            if (TransportBase* transport = GetDirectTransport())
+                transport->CalculatePassengerPosition(loc.x, loc.y, loc.z, loc.orientation);
     }
 
     if (HasUnitState(UNIT_STATE_CANNOT_TURN))
@@ -3082,7 +3083,9 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* victim, SpellInfo const* spell)
     // Increase hit chance from attacker SPELL_AURA_MOD_SPELL_HIT_CHANCE and attacker ratings
     HitChance += int32(m_modSpellHitChance * 100.0f);
 
-    if (HitChance < 100)
+    if (HitChance <= 0)
+        return SPELL_MISS_MISS;
+    else if (HitChance < 100)
         HitChance = 100;
     else if (HitChance > 10000)
         HitChance = 10000;
@@ -3903,8 +3906,6 @@ void Unit::_ApplyAura(AuraApplication * aurApp, uint32 effMask)
     if (aurApp->GetRemoveMode())
         return;
 
-    aura->HandleAuraSpecificMods(aurApp, caster, true, false);
-
     // Epicurean
     if (GetTypeId() == TYPEID_PLAYER &&
         getRace() == RACE_PANDAREN_ALLI ||
@@ -3919,12 +3920,14 @@ void Unit::_ApplyAura(AuraApplication * aurApp, uint32 effMask)
         }
     }
 
-    // apply effects of the aura
+    // Apply aura effects.
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
-        if (effMask & 1<<i && (!aurApp->GetRemoveMode()))
+        if (effMask & 1 << i && (!aurApp->GetRemoveMode()))
             aurApp->_HandleEffect(i, true);
     }
+
+    aura->HandleAuraSpecificMods(aurApp, caster, true, false);
 }
 
 // removes aura application from lists and unapplies effects
@@ -4128,8 +4131,12 @@ void Unit::RemoveOwnedAura(AuraPtr aura, AuraRemoveMode removeMode)
 AuraPtr Unit::GetOwnedAura(uint32 spellId, uint64 casterGUID, uint64 itemCasterGUID, uint32 reqEffMask, AuraPtr except) const
 {
     for (AuraMap::const_iterator itr = m_ownedAuras.lower_bound(spellId); itr != m_ownedAuras.upper_bound(spellId); ++itr)
-        if (((itr->second->GetEffectMask() & reqEffMask) == reqEffMask) && (!casterGUID || itr->second->GetCasterGUID() == casterGUID) && (!itemCasterGUID || itr->second->GetCastItemGUID() == itemCasterGUID) && (!except || except != itr->second))
+        if (((itr->second->GetEffectMask() & reqEffMask) == reqEffMask) && 
+            (!casterGUID || itr->second->GetSpellInfo()->HasCustomAttribute(SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS) || itr->second->GetCasterGUID() == casterGUID) && 
+            (!itemCasterGUID || itr->second->GetCastItemGUID() == itemCasterGUID) && 
+            (!except || except != itr->second))
             return itr->second;
+
     return NULLAURA;
 }
 
@@ -9590,7 +9597,7 @@ bool Unit::HandleModDamagePctTakenAuraProc(Unit* victim, uint32 /*damage*/, Aura
 }
 
 // Used in case when access to whole aura is needed. All procs should be handled like this.
-bool Unit::HandleAuraProc(Unit* victim, uint32 damage, AuraPtr triggeredByAura, SpellInfo const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 cooldown, bool *handled)
+bool Unit::HandleAuraProc(Unit* victim, uint32 damage, AuraPtr triggeredByAura, SpellInfo const* procSpell, uint32 procFlag, uint32 /*procEx*/, uint32 cooldown, bool * handled)
 {
     SpellInfo const* dummySpell = triggeredByAura->GetSpellInfo();
 
@@ -9687,6 +9694,13 @@ bool Unit::HandleAuraProc(Unit* victim, uint32 damage, AuraPtr triggeredByAura, 
         {
             switch (dummySpell->Id)
             {
+                // Polymorph
+                case 118:
+                {
+                    if (procFlag & PROC_FLAG_TAKEN_DAMAGE)
+                        RemoveAurasDueToSpell(118);
+                    break;
+                }
                 // Ring of frost.
                 case 82691:
                 {
@@ -10121,9 +10135,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
                         target = this;
                         break;
                     }
-                    case 30881: // Nature's Guardian Rank 1
-                    case 30883: // Nature's Guardian Rank 2
-                    case 30884: // Nature's Guardian Rank 3
+                    case 30884: // Nature's Guardian
                     {
                         if (HealthBelowPctDamaged(30, damage))
                         {
@@ -13080,6 +13092,11 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
     // Increases damage of Hammer of Wrath and Judgement too
     if (GetTypeId() == TYPEID_PLAYER && spellProto && ToPlayer()->IsTwoHandUsed() && HasAura(53503) && (spellProto->Id == 20271 || spellProto->Id == 24275))
         AddPct(DoneTotalMod, 30);
+
+    // Shadow Word: Death glyph
+    if (spellProto && spellProto->Id == 129176)
+        if (victim->GetHealthPct() <= 20.0f)
+            AddPct(DoneTotalMod, 400);
 
     // Pet damage?
     if (GetTypeId() == TYPEID_UNIT && !ToCreature()->isPet())
@@ -22386,7 +22403,8 @@ uint32 Unit::GetRemainingPeriodicAmount(uint64 caster, uint32 spellId, AuraType 
     {
         if ((*i)->GetCasterGUID() != caster || (*i)->GetId() != spellId || (*i)->GetEffIndex() != effectIndex || !(*i)->GetTotalTicks())
             continue;
-        amount += uint32(((*i)->GetAmount() * std::max<int32>((*i)->GetTotalTicks() - int32((*i)->GetTickNumber()), 0)) / (*i)->GetTotalTicks());
+
+        amount += uint32(((*i)->GetAmount() * std::max<int32>((*i)->GetTotalTicks() - int32((*i)->GetTickNumber()), 0)));
         break;
     }
 

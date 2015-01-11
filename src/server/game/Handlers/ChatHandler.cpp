@@ -571,14 +571,14 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
             break;
         /*case CMSG_MESSAGECHAT_ADDON_OFFICER:
             type = CHAT_MSG_OFFICER;
-            break;
+            break;*/
         case CMSG_MESSAGECHAT_ADDON_PARTY:
             type = CHAT_MSG_PARTY;
             break;
         case CMSG_MESSAGECHAT_ADDON_RAID:
             type = CHAT_MSG_RAID;
             break;
-        case CMSG_MESSAGECHAT_ADDON_WHISPER:
+        /*case CMSG_MESSAGECHAT_ADDON_WHISPER:
             type = CHAT_MSG_WHISPER;
             break;*/
         default:
@@ -612,13 +612,13 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
         case CHAT_MSG_GUILD:
         case CHAT_MSG_INSTANCE_CHAT:
         {
-            uint32 msgLen = recvData.ReadBits(9);
             uint32 prefixLen = recvData.ReadBits(5);
+            uint32 msgLen = recvData.ReadBits(8);
 
             recvData.FlushBits();
 
-            prefix = recvData.ReadString(prefixLen);
             message = recvData.ReadString(msgLen);
+            prefix = recvData.ReadString(prefixLen);
             break;
         }
 

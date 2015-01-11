@@ -1,0 +1,2 @@
+UPDATE `spell_bonus_data` SET `direct_bonus`='2.157' WHERE `entry`='32379';
+INSERT INTO `spell_bonus_data` SET `entry`='129176',`direct_bonus`='0.539',`dot_bonus`='0',`ap_bonus`='0',`ap_dot_bonus`='0',`comments`='shadow word: death glyph';

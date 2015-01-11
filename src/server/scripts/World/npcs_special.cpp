@@ -1881,24 +1881,22 @@ class npc_mirror_image : public CreatureScript
 public:
     npc_mirror_image() : CreatureScript("npc_mirror_image") { }
 
-    struct npc_mirror_imageAI : CasterAI
+    struct npc_mirror_imageAI : ScriptedAI
     {
-        npc_mirror_imageAI(Creature* creature) : CasterAI(creature) {}
+        npc_mirror_imageAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 spell_id;
 
-        void InitializeAI()
+        void IsSummonedBy(Unit* owner)
         {
             spell_id = SPELL_FROST_SPEC;
 
-            CasterAI::InitializeAI();
-            Unit* owner = me->GetOwner();
             if (!owner)
                 return;
 
             if (Player* player = owner->ToPlayer())
             {
-                if (player->HasGlyph(63093))
+                if (player->HasSpell(63093))
                 {
                     switch (player->GetSpecializationId(player->GetActiveSpec()))
                     {
@@ -1918,6 +1916,16 @@ public:
             // here should be auras (not present in client dbc): 35657, 35658, 35659, 35660 selfcasted by mirror images (stats related?)
             // Clone Me!
             owner->CastSpell(me, 45204, true);
+
+         /* me->SetReactState(REACT_AGGRESSIVE);
+            Unit* target = NULL;
+            if (owner->GetTypeId() == TYPEID_PLAYER)
+                target = owner->ToPlayer()->GetSelectedUnit();
+            else
+                target = owner->getVictim();
+
+            if (target && me->IsValidAttackTarget(target))
+                AttackStart(target);*/
         }
 
         void UpdateAI(const uint32 diff)
@@ -2372,8 +2380,7 @@ enum fireEvents
 enum fireSpells
 {
     SPELL_SHAMAN_FIRE_BLAST     = 57984,
-    SPELL_SHAMAN_FIRE_NOVA      = 12470,
-    SPELL_SHAMAN_FIRE_SHIELD    = 13376
+    SPELL_SHAMAN_FIRE_NOVA      = 12470
 };
 
 class npc_fire_elemental : public CreatureScript
@@ -2383,17 +2390,17 @@ class npc_fire_elemental : public CreatureScript
 
         struct npc_fire_elementalAI : public ScriptedAI
         {
-            npc_fire_elementalAI(Creature* creature) : ScriptedAI(creature) {}
+            npc_fire_elementalAI(Creature* creature) : ScriptedAI(creature) { }
 
-            EventMap events;
+            uint32 fireNova_Timer, fireBlast_Timer;
 
             void Reset()
             {
-                events.Reset();
-                events.ScheduleEvent(EVENT_FIRE_NOVA, urand(5000, 20000));
-                events.ScheduleEvent(EVENT_FIRE_BLAST, urand(5000, 20000));
-                events.ScheduleEvent(EVENT_FIRE_SHIELD, 0);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 me->ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FIRE, true);
+
+                fireNova_Timer = urand(5000, 20000);
+                fireBlast_Timer = urand(5000, 20000);
             }
 
             void UpdateAI(const uint32 diff)
@@ -2404,39 +2411,37 @@ class npc_fire_elemental : public CreatureScript
                     {
                         Unit* ownerTarget = NULL;
                         if (Player* plr = owner->ToPlayer())
-                            ownerTarget = plr->GetSelectedUnit();
-                        else
                             ownerTarget = owner->getVictim();
 
                         if (ownerTarget)
                             AttackStart(ownerTarget);
                     }
-
-                    return;
                 }
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                events.Update(diff);
-
-                switch (events.ExecuteEvent())
+                if (fireNova_Timer <= diff)
                 {
-                    case EVENT_FIRE_NOVA:
-                        DoCastVictim(SPELL_SHAMAN_FIRE_NOVA);
-                        events.ScheduleEvent(EVENT_FIRE_NOVA, urand(5000, 20000));
-                        break;
-                    case EVENT_FIRE_BLAST:
-                        DoCastVictim(SPELL_SHAMAN_FIRE_BLAST);
-                        events.ScheduleEvent(EVENT_FIRE_BLAST, urand(5000, 20000));
-                        break;
-                    case EVENT_FIRE_SHIELD:
-                        DoCastVictim(SPELL_SHAMAN_FIRE_SHIELD);
-                        events.ScheduleEvent(EVENT_FIRE_SHIELD, 4000);
-                        break;
-                    default:
-                        break;
+                    if (me->getVictim())
+                    {
+                        DoCast(me->getVictim(), SPELL_SHAMAN_FIRE_NOVA);
+                        fireNova_Timer = urand(5000, 20000);
+                    }
+                    else fireNova_Timer = 2000;
                 }
+                else fireNova_Timer -= diff;
+
+                if (fireBlast_Timer <= diff)
+                {
+                    if (me->getVictim())
+                    {
+                        DoCast(me->getVictim(), SPELL_SHAMAN_FIRE_BLAST);
+                        fireBlast_Timer = urand(5000, 20000);
+                    }
+                    else fireBlast_Timer = 2000;
+                }
+                else fireBlast_Timer -= diff;
 
                 DoMeleeAttackIfReady();
             }
@@ -2470,6 +2475,12 @@ class npc_earth_elemental : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_NATURE, true);
             }
 
+            void IsSummonedBy(Unit* owner)
+            {
+                if (Unit *target = me->SelectNearestTargetInAttackDistance(40.0f))
+                    AttackStart(target);
+            }
+
             void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
@@ -2478,8 +2489,6 @@ class npc_earth_elemental : public CreatureScript
                     {
                         Unit* ownerTarget = NULL;
                         if (Player* plr = owner->ToPlayer())
-                            ownerTarget = plr->GetSelectedUnit();
-                        else
                             ownerTarget = owner->getVictim();
 
                         if (ownerTarget)
@@ -4871,28 +4880,36 @@ class npc_psyfiend : public CreatureScript
             npc_psyfiendAI(Creature* c) : Scripted_NoMovementAI(c)
             {
                 me->SetReactState(REACT_PASSIVE);
-                psychicHorrorTimer = 2500;
+                psychicHorrorTimer = 1500;
             }
-
-            void OwnerDamagedBy(Unit* attacker)
-            {
-                //
-            }
-
 
             void UpdateAI(uint32 const diff)
             {
+                if (me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
                 if (psychicHorrorTimer <= diff)
                 {
-                    Unit* target = NULL;
-                    NearestTarget u_check(me);
-                    JadeCore::UnitSearcher<NearestTarget> searcher(me, target, u_check);
-                    me->VisitNearbyGridObject(20.0f, searcher);
+                    std::list<Unit*> targetList;
+                    float radius = 20.0f;
+
+                    JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(me, me, radius);
+                    JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(me, targetList, u_check);
+
+                    me->VisitNearbyObject(radius, searcher);
+
+                    targetList.remove_if(JadeCore::UnitAuraCheck(true, SPELL_PSYCHIC_HORROR));
+
+                    if (!targetList.empty())
+                    {
+                        targetList.sort(JadeCore::ObjectDistanceOrderPred(me));
+                        targetList.resize(1);
+
+                        for (auto itr : targetList)
+                            me->CastSpell(itr, SPELL_PSYCHIC_HORROR,true);
+                    }
                     
-                    if (target)
-                        me->CastSpell(target, SPELL_PSYCHIC_HORROR);
-                    
-                    psychicHorrorTimer = 2500;
+                    psychicHorrorTimer = 1500;
                 }
                 else
                     psychicHorrorTimer -= diff;
@@ -5756,12 +5773,18 @@ class npc_grimuar_minion : public CreatureScript
                 if (!NeedScript || me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                if (Unit *owner = me->GetOwner())
+                if (Unit* owner = me->GetOwner())
                 {
                     if (!me->getVictim())
                     {
-                        if (Unit *victim = owner->getVictim())
-                            me->AI()->AttackStart(victim);
+                        Unit * target = NULL;
+                        if (owner->GetTypeId() == TYPEID_PLAYER)
+                            target = owner->ToPlayer()->GetSelectedUnit();
+                        else
+                            target = owner->getVictim();
+
+                        if (target)
+                            me->AI()->AttackStart(target);
                         else
                             me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, owner->GetFollowAngle());
                     }

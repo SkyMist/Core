@@ -3561,14 +3561,10 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     if (!summon || !summon->isTotem())
                         return;
 
-                    // Mana Tide Totem
-                    if (m_spellInfo->Id == 16190)
-                        damage = m_caster->CountPctFromMaxHealth(10);
-
                     if (damage)                                            // if not spell info, DB values used
                     {
-                        summon->SetMaxHealth(damage);
-                        summon->SetHealth(damage);
+                        summon->SetMaxHealth(damage != 10 ? (m_caster->HasAura(63298) ? m_caster->CountPctFromMaxHealth(5) : damage) : m_caster->CountPctFromMaxHealth(m_caster->HasAura(63298) ? 15 : 10));
+                        summon->SetHealth(damage != 10 ? (m_caster->HasAura(63298) ? m_caster->CountPctFromMaxHealth(5) : damage) : m_caster->CountPctFromMaxHealth(m_caster->HasAura(63298) ? 15 : 10));
                     }
                     break;
                 }

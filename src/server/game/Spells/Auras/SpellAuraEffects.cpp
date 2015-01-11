@@ -4653,6 +4653,9 @@ void AuraEffect::HandleModMechanicImmunity(AuraApplication const* aurApp, uint8 
         {
             if (target && target->HasAura(146659))
                 return;
+
+            mechanic = 1 << GetMiscValue();
+            target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, GetMiscValue(), apply);
             break;
         }
         case 54508: // Demonic Empowerment
