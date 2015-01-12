@@ -383,7 +383,7 @@ Player* Group::GetInvitedByGuid(uint64 guid) const
         if (itr && itr->GetGUID() == guid)
             return itr;
 
-    return  NULL;
+    return NULL;
 }
 
 Player* Group::GetInvitedByName(const std::string& name) const
