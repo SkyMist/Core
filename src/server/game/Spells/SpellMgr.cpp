@@ -4229,6 +4229,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->AttributesEx |= SPELL_ATTR1_NOT_BREAK_STEALTH;
                     break;
                 case 73651: // Recuperate
+				    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_OBS_MOD_HEALTH;
                     spellInfo->Effects[1].Effect = 0;
                     break;
                 case 124271:// Sanguinary Vein
