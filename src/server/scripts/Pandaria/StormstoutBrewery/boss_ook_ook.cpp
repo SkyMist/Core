@@ -298,8 +298,8 @@ class npc_ook_barrel : public CreatureScript
             bool CheckIfAgainstPlayer()
             {
                 if (Player* nearPlayer = me->FindNearestPlayer(1.0f))
-                    if (nearPlayer->IsWithinDistInMap(me, 1.0f))
-                    return true;
+                    if (nearPlayer->IsWithinDistInMap(me, 1.0f) && me->isInFront(nearPlayer, M_PI / 3))
+                        return true;
 
                 return false;
             }

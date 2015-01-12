@@ -97,6 +97,7 @@ class boss_hoptallus : public CreatureScript
                 {
                     me->SetReactState(REACT_PASSIVE);
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    me->SetHomePosition(hoptallusMovePosition.GetPositionX(), hoptallusMovePosition.GetPositionY(), hoptallusMovePosition.GetPositionZ(), 1.85f);
                     me->GetMotionMaster()->MovePoint(1, hoptallusMovePosition);
                     introStarted = true;
                 }
@@ -406,7 +407,7 @@ class PositionCheck : public std::unary_function<Unit*, bool>
         explicit PositionCheck(Unit* _caster) : caster(_caster) { }
         bool operator()(WorldObject* object)
         {
-              return !caster->HasInArc(M_PI / 6, object);
+            return !caster->HasInArc(M_PI / 3, object);
         }
 
     private:
@@ -420,6 +421,20 @@ class PlayerCheck : public std::unary_function<Unit*, bool>
         bool operator()(WorldObject* object)
         {
             return object->GetTypeId() != TYPEID_PLAYER;
+        }
+
+    private:
+        Unit* caster;
+};
+
+class VerminCheck : public std::unary_function<Unit*, bool>
+{
+    public:
+        explicit VerminCheck(Unit* _caster) : caster(_caster) { }
+        bool operator()(WorldObject* object)
+        {
+            return (object->GetTypeId() == TYPEID_UNIT && 
+                   (object->GetEntry() == NPC_BOPPER || object->GetEntry() == NPC_HOPPER || object->GetEntry() == NPC_HOPPLING)) ? true : false;
         }
 
     private:
@@ -509,6 +524,69 @@ public:
     }
 };
 
+// Hoptallus Hammer: Smash! 111666.
+class spell_hoptallus_hammer_smash : public SpellScriptLoader
+{
+public:
+    spell_hoptallus_hammer_smash() : SpellScriptLoader("spell_hoptallus_hammer_smash") { }
+
+    class spell_hoptallus_hammer_smashSpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_hoptallus_hammer_smashSpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            targets.remove_if(VerminCheck(GetCaster()));
+        }
+
+        void HandleScript(SpellEffIndex /*effIndex*/)
+        {
+            Unit* caster = GetCaster();
+            Unit* target = GetHitUnit();
+
+            if (!caster || !target)
+                return;
+
+            if (AuraPtr smash = caster->GetAura(SPELL_SMASH_AURA))
+            {
+                int32 stacks = smash->GetStackAmount();
+                if (stacks)
+                {
+                    if (stacks > 1)
+                        smash->SetStackAmount(stacks - 1);
+                    else
+                        caster->RemoveAurasDueToSpell(SPELL_SMASH_AURA);
+                }
+            }
+
+            const SpellInfo* SmashSpell = sSpellMgr->GetSpellInfo(SPELL_SMASH, caster->GetMap()->GetDifficulty());
+            if (SmashSpell)
+            {
+                std::list<Creature*> verminList;
+                GetCreatureListWithEntryInGrid(verminList, caster, NPC_BOPPER,   6.0f);
+                GetCreatureListWithEntryInGrid(verminList, caster, NPC_HOPPER,   6.0f);
+                GetCreatureListWithEntryInGrid(verminList, caster, NPC_HOPPLING, 6.0f);
+
+                if (!verminList.empty())
+                    for (auto vermin: verminList)
+                        caster->DealDamage(vermin, vermin->GetHealth(), NULL, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, SmashSpell);
+            }
+        }
+
+        void Register()
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hoptallus_hammer_smashSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hoptallus_hammer_smashSpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
+            OnEffectHitTarget += SpellEffectFn(spell_hoptallus_hammer_smashSpellScript::HandleScript, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
+        }
+    };
+
+    SpellScript* GetSpellScript() const
+    {
+        return new spell_hoptallus_hammer_smashSpellScript();
+    }
+};
+
 void AddSC_boss_hoptallus()
 {
 	new boss_hoptallus();
@@ -518,4 +596,5 @@ void AddSC_boss_hoptallus()
     new spell_hoptallus_carrot_breath();
     new spell_hoptallus_carrot_breath_damage();
     new spell_hoptallus_furlwind_damage();
+    new spell_hoptallus_hammer_smash();
 }

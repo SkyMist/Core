@@ -9108,21 +9108,21 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
     // Count can't be more then weekCap if used (weekCap > 0).
     uint32 weekCap = GetCurrencyWeekCap(currency->ID);
-    if (!ignoreLimit && weekCap && oldTotalCount + count > int32(weekCap))
-        count = weekCap - oldTotalCount;
+    if (!ignoreLimit && weekCap && (oldWeekCount + count) > int32(weekCap))
+        count = weekCap - oldWeekCount;
 
     // Count can't be more then totalCap if used (totalCap > 0)
     uint32 totalCap = GetCurrencyTotalCap(currency);
-    if (totalCap && oldTotalCount + count > int32(totalCap))
+    if (totalCap && (oldTotalCount + count) > int32(totalCap))
         count = totalCap - oldTotalCount;
-
-    int32 newTotalCount = int32(oldTotalCount) + count;
-    if (newTotalCount < 0)
-        newTotalCount = 0;
 
     int32 newWeekCount = int32(oldWeekCount) + (count > 0 ? count : 0);
     if (newWeekCount < 0)
         newWeekCount = 0;
+
+    int32 newTotalCount = int32(oldTotalCount) + count;
+    if (newTotalCount < 0)
+        newTotalCount = 0;
 
     int32 newSeasonTotalCount = !ignoreLimit ? (int32(oldSeasonTotalCount) + (count > 0 ? count : 0)) : int32(oldSeasonTotalCount);
 
@@ -9263,6 +9263,8 @@ uint32 Player::GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const
             uint32 honorcap = sWorld->getIntConfig(CONFIG_CURRENCY_MAX_HONOR_POINTS);
             if (honorcap > 0)
                 cap = honorcap;
+            else
+                cap = 0;
             break;
         }
 
@@ -9271,6 +9273,8 @@ uint32 Player::GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const
             uint32 justicecap = sWorld->getIntConfig(CONFIG_CURRENCY_MAX_JUSTICE_POINTS);
             if (justicecap > 0)
                 cap = justicecap;
+            else
+                cap = 0;
             break;
         }
 
