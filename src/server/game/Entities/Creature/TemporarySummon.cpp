@@ -221,13 +221,34 @@ void TempSummon::InitStats(uint32 duration)
     {
         if (uint32 slot = m_Properties->Slot)
         {
-            if (owner->m_SummonSlot[slot] && owner->m_SummonSlot[slot] != GetGUID())
+            bool TotemCheck = false;
+            if (AuraEffectPtr totemicPersistence = owner->GetAuraEffect(108284, EFFECT_0)) // Totemic Persistence
             {
-                Creature* oldSummon = GetMap()->GetCreature(owner->m_SummonSlot[slot]);
-                if (oldSummon && oldSummon->isSummon())
-                    oldSummon->ToTempSummon()->UnSummon();
+                if (isTotem())
+                {
+                    if (owner->m_SummonSlot[slot] != 2523 && owner->m_SummonSlot[slot] != 5929 && owner->m_SummonSlot[slot] != 15439)
+                    {
+                        Creature* oldSummon = GetMap()->GetCreature(owner->m_SummonSlot[slot]);
+                        if (oldSummon && oldSummon->isSummon())
+                        {
+                            if (Creature* TotemPersistence = GetMap()->GetCreature(owner->m_SummonSlot[MAX_TOTEM_SLOT+1]))
+                                TotemPersistence->ToTempSummon()->UnSummon();
+                            owner->m_SummonSlot[MAX_TOTEM_SLOT+1] = GetGUID();
+                            TotemCheck = true;
+                        }
+                    }
+			    }
             }
-            owner->m_SummonSlot[slot] = GetGUID();
+            if (!TotemCheck)
+            {
+                if (owner->m_SummonSlot[slot] && owner->m_SummonSlot[slot] != GetGUID())
+                {
+                    Creature* oldSummon = GetMap()->GetCreature(owner->m_SummonSlot[slot]);
+                    if (oldSummon && oldSummon->isSummon())
+                        oldSummon->ToTempSummon()->UnSummon();
+                }
+                owner->m_SummonSlot[slot] = GetGUID();
+            }
         }
     }
 

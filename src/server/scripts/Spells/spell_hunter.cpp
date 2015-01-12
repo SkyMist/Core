@@ -1123,30 +1123,6 @@ class spell_hun_improved_serpent_sting : public SpellScriptLoader
         {
             return new spell_hun_improved_serpent_sting_SpellScript();
         }
-
-        class spell_hun_improved_serpent_sting_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_hun_improved_serpent_sting_AuraScript);
-
-            void OnTick(constAuraEffectPtr aurEff)
-            {
-                if (!GetCaster())
-                    return;
-
-                if (GetCaster()->HasAura(HUNTER_SPELL_VIPER_VENOM))
-                    GetCaster()->EnergizeBySpell(GetCaster(), HUNTER_SPELL_VIPER_VENOM, 3, POWER_FOCUS);
-            }
-
-            void Register()
-            {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_hun_improved_serpent_sting_AuraScript::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_hun_improved_serpent_sting_AuraScript();
-        }
 };
 
 // Powershot - 109259

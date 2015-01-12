@@ -1,0 +1,2 @@
+INSERT INTO `spell_script_names` SET `spell_id`='122233',`ScriptName`='spell_rog_sanguinary_vein';
+DELETE FROM `spell_script_names` WHERE `spell_id`='121411' AND `ScriptName`='spell_rog_sanguinary_vein';

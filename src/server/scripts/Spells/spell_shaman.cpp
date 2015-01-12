@@ -107,32 +107,13 @@ class spell_sha_totemic_projection : public SpellScriptLoader
         {
             PrepareSpellScript(spell_sha_totemic_projection_SpellScript);
 
-            void HandleDummy(SpellEffIndex /*effIndex*/)
+            void HandleDummy()
             {
                 if (Unit* caster = GetCaster())
                 {
-                    std::list<Creature*> leapList;
-                    Unit* leapTarget = NULL;
-
-                    caster->GetCreatureListWithEntryInGrid(leapList, 47319, 45.0f);
-
-                    for (auto itr : leapList)
-                    {
-                        if (!itr->ToUnit() || !itr->ToTempSummon())
-                            continue;
-
-                        if (!itr->ToTempSummon()->GetSummoner())
-                            continue;
-
-                        if (itr->ToTempSummon()->GetSummoner()->GetGUID() != caster->GetGUID())
-                            continue;
-
-                        leapTarget = itr->ToUnit();
-                        break;
-                    }
-
-                    if (!leapTarget)
-                        return;
+                    float x, y, z;
+                    const WorldLocation* wl = GetExplTargetDest();
+                    wl->GetPosition(x, y, z);
 
                     for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
                     {
@@ -149,16 +130,13 @@ class spell_sha_totemic_projection : public SpellScriptLoader
                             if (dist < objSize)
                                 dist = objSize;
 
-                            Position pos;
-                            leapTarget->GetPosition(&pos);
-
                             angle += (*itr)->GetOrientation();
                             float destx, desty, destz, ground, floor;
-                            destx = pos.m_positionX + dist * std::cos(angle);
-                            desty = pos.m_positionY + dist * std::sin(angle);
+                            destx = x + dist * std::cos(angle);
+                            desty = y + dist * std::sin(angle);
                             ground = (*itr)->GetMap()->GetHeight((*itr)->GetPhaseMask(), destx, desty, MAX_HEIGHT, true);
-                            floor = (*itr)->GetMap()->GetHeight((*itr)->GetPhaseMask(), destx, desty, pos.m_positionZ, true);
-                            destz = fabs(ground - pos.m_positionZ) <= fabs(floor - pos.m_positionZ) ? ground : floor;
+                            floor = (*itr)->GetMap()->GetHeight((*itr)->GetPhaseMask(), destx, desty, z, true);
+                            destz = fabs(ground - z) <= fabs(floor - z) ? ground : floor;
 
                             (*itr)->NearTeleportTo(destx, desty, destz, (*itr)->GetOrientation());
                         }
@@ -168,7 +146,7 @@ class spell_sha_totemic_projection : public SpellScriptLoader
 
             void Register()
             {
-                OnEffectHitTarget += SpellEffectFn(spell_sha_totemic_projection_SpellScript::HandleDummy, EFFECT_1, SPELL_EFFECT_DUMMY);
+                AfterCast += SpellCastFn(spell_sha_totemic_projection_SpellScript::HandleDummy);
             }
         };
 

@@ -265,6 +265,9 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
 
         bool OnTrigger(Player* player, AreaTriggerEntry const* /*areaTrigger*/)
         {
+            if (!player)
+                return true;
+
             InstanceScript* instance = player->GetInstanceScript();
             if (!instance)
                 return true;
@@ -274,14 +277,17 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
                 // Add the Hozen Counter aura.
                 if (player->GetGroup())
                 {
-                    if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
-                        for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                            if (Player* member = itr->getSource())
-                                if (!member->HasAura(SPELL_BANANA_BAR))
-                                {
-                                    member->AddAura(SPELL_BANANA_BAR, member);
-                                    member->SetPower(POWER_ALTERNATE_POWER, instance->GetData(DATA_HOZEN_KILLED));
-                                }
+                    for (GroupReference* itr = player->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
+                    {
+                        if (Player* member = itr->getSource())
+                        {
+                            if (!member->HasAura(SPELL_BANANA_BAR))
+                            {
+                                member->AddAura(SPELL_BANANA_BAR, member);
+                                member->SetPower(POWER_ALTERNATE_POWER, instance->GetData(DATA_HOZEN_KILLED));
+                            }
+                        }
+                    }
                 }
                 else
                 {

@@ -562,7 +562,7 @@ class spell_rog_sanguinary_vein : public SpellScriptLoader
                             _player->CastSpell(target, ROGUE_SPELL_SANGUINARY_VEIN_DEBUFF, true);
             }
 
-            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnRemove(constAuraEffectPtr aurEff, AuraEffectHandleModes /*mode*/)
             {
                 if (!GetCaster() || !GetTarget())
                     return;
@@ -1717,8 +1717,7 @@ class spell_rog_subterfuge_effect : public SpellScriptLoader
                     return;
 
                 // Remove Stealth.
-                if (AuraPtr subterfuge = GetCaster()->GetAura(115191))
-                    GetCaster()->RemoveAura(subterfuge);
+                GetCaster()->RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
             }
 
             void Register()

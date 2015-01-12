@@ -175,27 +175,6 @@ void Totem::UnSummon(uint32 msTime)
         return;
     }
 
-    // Totemic Persistence
-    if (AuraEffectPtr totemicPersistence = m_owner->GetAuraEffect(108284, EFFECT_0))
-    {
-        if (totemicPersistence->GetAmount() == 50)
-        {
-            // Does not affect Fire totems
-            for (int i = SUMMON_SLOT_TOTEM + 1; i < MAX_TOTEM_SLOT; ++i)
-            {
-                if (m_owner->m_SummonSlot[i] == GetGUID())
-                {
-                    m_owner->m_SummonSlot[i] = 0;
-                    totemicPersistence->SetAmount(GetEntry());
-                    return;
-                }
-            }
-        }
-
-        else if (totemicPersistence->GetAmount() == GetEntry())
-            totemicPersistence->SetAmount(50);
-    }
-
     CombatStop();
     RemoveAurasDueToSpell(GetSpell(), GetGUID());
 

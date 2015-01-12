@@ -445,22 +445,26 @@ void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed)
     init.Launch();
 }
 
+uint32 const positionUpdateDelay = 400;
+
 void Unit::UpdateSplineMovement(uint32 t_diff)
 {
-    if (movespline->Finalized() || !movespline->Initialized())
+    if (!movespline->Initialized())
         return;
 
     movespline->updateState(t_diff);
+    bool arrived = movespline->Finalized();
+
+    if (arrived)
+        DisableSpline();
 
     m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed())
+    if (m_movesplineTimer.Passed() || arrived)
         UpdateSplinePosition();
 }
 
 void Unit::UpdateSplinePosition()
 {
-    uint32 const positionUpdateDelay = 400;
-
     m_movesplineTimer.Reset(positionUpdateDelay);
     Movement::Location loc = movespline->ComputePosition();
 
@@ -689,7 +693,10 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
     // Custom MoP Script - Shadow Blades
     if (this && victim && this->HasAuraType(SPELL_AURA_MOD_STEALTH) && this->HasAura(121471))
     {
-        this->RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
+        if (HasAura(115191) && !HasAura(115192))
+            this->CastSpell(this, 115192, true);
+        else if (!this->HasAura(115191))
+            RemoveAurasByType(SPELL_AURA_MOD_STEALTH);
     }
 
     // Fix Nightstalker damage from stealth
@@ -10208,6 +10215,12 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
     // Custom triggered spells
     switch (auraSpellInfo->Id)
     {
+        case 118976:
+        {
+            if (!procSpell || procSpell->Id != 118253)
+                return false;
+            break;
+        }
         // Glyph of Incite
         // Glyph of Hamstring
         case 122013:
@@ -21909,7 +21922,7 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
     bool interPolatedTurning = m_movementInfo.flags2 & MOVEMENTFLAG2_INTERPOLATED_TURNING;
     bool jumping = GetUnitMovementFlags() & MOVEMENTFLAG_FALLING;
     bool splineElevation = m_movementInfo.HaveSplineElevation;
-    bool hasSpline = false; // IsSplineEnabled();
+    bool hasSpline = IsSplineEnabled();
 
     // Fix player movement visibility during being CC-ed.
     bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;
@@ -22800,7 +22813,7 @@ void Unit::SendCanTurnWhileFalling(bool apply)
 
 bool Unit::IsSplineEnabled() const
 {
-    return movespline->Initialized(); // && !movespline->Finalized();
+    return movespline->Initialized() && !movespline->Finalized();
 }
 
 /* In the next functions, we keep 1 minute of last damage */
@@ -23109,7 +23122,7 @@ void Unit::WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extr
     bool hasMovementFlags = mi->GetMovementFlags() != 0;
     bool hasMovementFlags2 = mi->GetExtraMovementFlags() != 0;
     bool hasTransportData = mi->t_guid != 0LL;
-    bool hasSpline = false; // IsSplineEnabled();
+    bool hasSpline = IsSplineEnabled();
 
     // Fix player movement visibility during being CC-ed.
     bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;

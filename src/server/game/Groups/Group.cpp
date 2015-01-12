@@ -368,9 +368,8 @@ void Group::RemoveAllInvites()
     if (m_invitees.empty())
         return;
 
-    for (InvitesList::iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if (*itr)
-            (*itr)->SetGroupInvite(NULL);
+    for (auto itr : m_invitees)
+        itr->SetGroupInvite(NULL);
 
     m_invitees.clear();
 }
@@ -380,11 +379,11 @@ Player* Group::GetInvitedByGuid(uint64 guid) const
     if (!guid || m_invitees.empty())
         return NULL;
 
-    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if ((*itr) && (*itr)->GetGUID() == guid)
-            return (*itr);
+    for (auto itr : m_invitees)
+        if (itr && itr->GetGUID() == guid)
+            return itr;
 
-    return NULL;
+    return  NULL;
 }
 
 Player* Group::GetInvitedByName(const std::string& name) const
@@ -392,9 +391,9 @@ Player* Group::GetInvitedByName(const std::string& name) const
     if (m_invitees.empty())
         return NULL;
 
-    for (InvitesList::const_iterator itr = m_invitees.begin(); itr != m_invitees.end(); ++itr)
-        if ((*itr) && (*itr)->GetName() == name)
-            return (*itr);
+    for (auto itr : m_invitees)
+        if (itr && itr->GetName() == name)
+            return itr;
 
     return NULL;
 }

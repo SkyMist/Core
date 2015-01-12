@@ -3490,9 +3490,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 136340:
                     spellInfo->ExcludeTargetAuraSpell = 0;
                     break;
-                case 108287:// Totemic Projection
-                    spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
-                    break;
                 case 137639:// Storm, Earth and Fire
                     spellInfo->AttributesCu &= ~(SPELL_ATTR0_CU_NEGATIVE_EFF1|SPELL_ATTR0_CU_NEGATIVE_EFF0);
                     break;
