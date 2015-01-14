@@ -176,6 +176,7 @@ public:
             { "info",           SEC_ADMINISTRATOR,  false, &HandleNpcInfoCommand,              "", NULL },
             { "move",           SEC_GAMEMASTER,     false, &HandleNpcMoveCommand,              "", NULL },
             { "playemote",      SEC_ADMINISTRATOR,  false, &HandleNpcPlayEmoteCommand,         "", NULL },
+			{ "setemote",       SEC_GAMEMASTER,     false, &HandleNpcSetEmoteCommand,          "", NULL },
             { "say",            SEC_MODERATOR,      false, &HandleNpcSayCommand,               "", NULL },
             { "textemote",      SEC_MODERATOR,      false, &HandleNpcTextEmoteCommand,         "", NULL },
             { "whisper",        SEC_MODERATOR,      false, &HandleNpcWhisperCommand,           "", NULL },
@@ -881,6 +882,31 @@ public:
 
             WorldDatabase.Execute(stmt);
         }
+
+        target->HandleEmote(emote);
+
+        return true;
+    }
+
+	static bool HandleNpcSetEmoteCommand(ChatHandler* handler, const char* args)
+	{
+        uint32 emote = atoi((char*)args);
+
+        Creature* target = handler->getSelectedCreature();
+        if (!target)
+        {
+            handler->SendSysMessage(LANG_SELECT_CREATURE);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_REPLACE_CREATURE_ADDON_EMOTE);
+
+        uint32 lowGuid = target->GetDBTableGUIDLow();
+        stmt->setInt32(0, lowGuid);
+        stmt->setInt32(1, emote);
+
+        WorldDatabase.Execute(stmt);
 
         target->HandleEmote(emote);
 

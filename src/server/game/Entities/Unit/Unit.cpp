@@ -453,13 +453,20 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
         return;
 
     movespline->updateState(t_diff);
-    bool arrived = movespline->Finalized();
 
-    if (arrived)
-        DisableSpline();
+    if (movespline->Finalized())
+    {
+        if (m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FORWARD))
+            m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
+
+        if (HasUnitState(UNIT_STATE_MOVING))
+            ClearUnitState(UNIT_STATE_MOVING);
+
+        return;
+    }
 
     m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed() || arrived)
+    if (m_movesplineTimer.Passed())
         UpdateSplinePosition();
 }
 

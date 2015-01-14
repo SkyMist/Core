@@ -249,7 +249,7 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
 std::string InstanceScript::LoadBossState(const char * data)
 {
     if (!data || bosses.empty())
-        return NULL;
+        return "";
 
     std::istringstream loadStream(data);
     uint32 buff;
@@ -268,7 +268,7 @@ std::string InstanceScript::LoadBossState(const char * data)
 std::string InstanceScript::GetBossSaveData()
 {
     if (bosses.empty())
-        return NULL;
+        return "";
 
     std::ostringstream saveStream;
 

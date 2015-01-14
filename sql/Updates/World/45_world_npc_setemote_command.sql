@@ -1,0 +1,1 @@
+INSERT INTO command (name, security, help) VALUES ("npc setemote", 3, "Syntax: .npc setemote #emote Sets selected unit guid creature_addon emote.");

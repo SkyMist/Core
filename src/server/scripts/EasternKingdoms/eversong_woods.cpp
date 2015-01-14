@@ -35,6 +35,22 @@ EndContentData */
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
+#include "ObjectMgr.h"
+#include "ScriptMgr.h"
+#include "World.h"
+#include "PetAI.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "GameEventMgr.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "Cell.h"
+#include "CellImpl.h"
+#include "SpellAuras.h"
+#include "Vehicle.h"
+#include "Player.h"
+#include "SpellScript.h"
+#include "Group.h"
 
 /*######
 ## Quest 9686 Second Trial
@@ -108,7 +124,7 @@ public:
 
     struct npc_secondTrialAI : public ScriptedAI
     {
-        npc_secondTrialAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_secondTrialAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 timer;
         uint8  questPhase;
@@ -130,7 +146,7 @@ public:
           questPhase = 0;
           summonerGuid = 0;
 
-          me->SetUInt32Value(UNIT_FIELD_BYTES_1, UNIT_STAND_STATE_KNEEL);
+          me->SetStandState(UNIT_STAND_STATE_KNEEL);
           me->setFaction(FACTION_FRIENDLY);
 
           spellFlashLight = false;
@@ -165,13 +181,13 @@ public:
 
         void EnterCombat(Unit* /*who*/) {}
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 const diff)
         {
             if (questPhase == 1)
             {
                 if (timer <= diff)
                 {
-                    me->SetUInt32Value(UNIT_FIELD_BYTES_1, UNIT_STAND_STATE_STAND);
+                    me->SetStandState(UNIT_STAND_STATE_STAND);
                     me->setFaction(FACTION_HOSTILE);
                     questPhase = 0;
 
@@ -245,11 +261,11 @@ public:
         void KilledUnit(Unit* Killed)
         {
             if (Killed->GetTypeId() == TYPEID_PLAYER)
-                if (CAST_PLR(Killed)->GetQuestStatus(QUEST_SECOND_TRIAL) == QUEST_STATUS_INCOMPLETE)
-                    CAST_PLR(Killed)->FailQuest(QUEST_SECOND_TRIAL);
+				if (Killed->ToPlayer()->GetQuestStatus(QUEST_SECOND_TRIAL) == QUEST_STATUS_INCOMPLETE)
+                    Killed->ToPlayer()->FailQuest(QUEST_SECOND_TRIAL);
         }
 
-        void JustDied(Unit* killer);
+		void JustDied(Unit* killer);
     };
 };
 
@@ -314,7 +330,7 @@ public:
 
         void EnterCombat(Unit* /*who*/) {}
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 const diff)
         {
             // Quest accepted but object not activated, object despawned (if in sync 1 minute!)
             if (questPhase == 1)
@@ -474,7 +490,7 @@ public:
             Summon = false;
         }
 
-        void EnterCombat(Unit* /*who*/){}
+        void EnterCombat(Unit* /*who*/) {}
 
         void JustSummoned(Creature* summoned)
         {
@@ -495,7 +511,7 @@ public:
                     player->FailQuest(QUEST_UNEXPECTED_RESULT);
         }
 
-        void UpdateAI(const uint32 /*diff*/)
+        void UpdateAI(uint32 const diff)
         {
             if (KillCount >= 3 && PlayerGUID)
                 if (Player* player = Unit::GetPlayer(*me, PlayerGUID))
@@ -547,9 +563,9 @@ public:
         return new npc_infused_crystalAI (creature);
     }
 
-    struct npc_infused_crystalAI : public Scripted_NoMovementAI
+    struct npc_infused_crystalAI : public ScriptedAI
     {
-        npc_infused_crystalAI(Creature* creature) : Scripted_NoMovementAI(creature) {}
+        npc_infused_crystalAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 EndTimer;
         uint32 WaveTimer;
@@ -564,13 +580,15 @@ public:
             Progress = false;
             PlayerGUID = 0;
             WaveTimer = 0;
+
+            SetCombatMovement(false);
         }
 
         void MoveInLineOfSight(Unit* who)
         {
             if (!Progress && who->GetTypeId() == TYPEID_PLAYER && me->IsWithinDistInMap(who, 10.0f))
             {
-                if (CAST_PLR(who)->GetQuestStatus(QUEST_POWERING_OUR_DEFENSES) == QUEST_STATUS_INCOMPLETE)
+				if (who->ToPlayer()->GetQuestStatus(QUEST_POWERING_OUR_DEFENSES) == QUEST_STATUS_INCOMPLETE)
                 {
                     PlayerGUID = who->GetGUID();
                     WaveTimer = 1000;
@@ -589,18 +607,18 @@ public:
         {
             if (PlayerGUID && !Completed)
                 if (Player* player = Unit::GetPlayer(*me, PlayerGUID))
-                    CAST_PLR(player)->FailQuest(QUEST_POWERING_OUR_DEFENSES);
+                    player->FailQuest(QUEST_POWERING_OUR_DEFENSES);
         }
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 const diff)
         {
             if (EndTimer < diff && Progress)
             {
-                DoScriptText(EMOTE, me);
+                // DoScriptText(EMOTE, me);
                 Completed = true;
                 if (PlayerGUID)
                     if (Player* player = Unit::GetPlayer(*me, PlayerGUID))
-                        CAST_PLR(player)->CompleteQuest(QUEST_POWERING_OUR_DEFENSES);
+                        player->CompleteQuest(QUEST_POWERING_OUR_DEFENSES);
 
                 me->DealDamage(me, me->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
                 me->RemoveCorpse();
@@ -608,9 +626,9 @@ public:
 
             if (WaveTimer < diff && !Completed && Progress)
             {
-                uint32 ran1 = rand()%8;
-                uint32 ran2 = rand()%8;
-                uint32 ran3 = rand()%8;
+                uint32 ran1 = rand() % 8;
+                uint32 ran2 = rand() % 8;
+                uint32 ran3 = rand() % 8;
                 me->SummonCreature(MOB_ENRAGED_WRAITH, SpawnLocations[ran1].x, SpawnLocations[ran1].y, SpawnLocations[ran1].z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 10000);
                 me->SummonCreature(MOB_ENRAGED_WRAITH, SpawnLocations[ran2].x, SpawnLocations[ran2].y, SpawnLocations[ran2].z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 10000);
                 me->SummonCreature(MOB_ENRAGED_WRAITH, SpawnLocations[ran3].x, SpawnLocations[ran3].y, SpawnLocations[ran3].z, 0, TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN, 10000);
