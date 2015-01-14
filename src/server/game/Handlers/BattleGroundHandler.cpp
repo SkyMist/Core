@@ -556,10 +556,6 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
         if (_player->isInFlight())
             _player->CleanupAfterTaxiFlight();
 
-        // WorldPacket data;
-        // sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, _player, queueSlot, STATUS_IN_PROGRESS, _player->GetBattlegroundQueueJoinTime(bgTypeId), bg->GetElapsedTime(), bg->GetArenaType());
-        // _player->GetSession()->SendPacket(&data);
-
         // remove battleground queue status from BGmgr
         bgQueue.RemovePlayer(_player->GetGUID(), false);
         // this is still needed here if battleground "jumping" shouldn't add deserter debuff
@@ -584,29 +580,40 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
         if (bg->isArena() && bg->GetStatus() > STATUS_WAIT_QUEUE)
             return;
 
-        _player->RemoveBattlegroundQueueId(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
+        _player->RemoveBattlegroundQueueId(bgQueueTypeId);
 
         WorldPacket data;
-        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, _player, queueSlot, STATUS_NONE, _player->GetBattlegroundQueueJoinTime(bgTypeId), 0, 0);
+        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, _player, queueSlot, STATUS_NONE, _player->GetBattlegroundQueueJoinTime(bgTypeId), 0, ginfo.ArenaType);
         _player->GetSession()->SendPacket(&data);
 
         bgQueue.RemovePlayer(_player->GetGUID(), true);
 
-        if (ginfo.IsRatedBG)
+        // Remove all players in the group.
+        // We are already handling this for the current player.
+        if (_player->GetGroup())
         {
-            for (auto plrInfo : ginfo.Players)
+        	if (!ginfo.Players.empty())
             {
-                if (Player* player = ObjectAccessor::FindPlayer(plrInfo.first))
+                for (auto plrInfo : ginfo.Players)
                 {
-                    player->RemoveBattlegroundQueueId(bgQueueTypeId);  // must be called this way, because if you move this call to queue->removeplayer, it causes bugs
-                    bgQueue.RemovePlayer(player->GetGUID(), true);
-                    sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, player, queueSlot, STATUS_NONE, player->GetBattlegroundQueueJoinTime(bgTypeId), 0, 0);
-                    SendPacket(&data);
+                    if (Player* player = ObjectAccessor::FindPlayer(plrInfo.first))
+                    {
+                        if (player != _player)
+                        {
+                            player->RemoveBattlegroundQueueId(bgQueueTypeId);
+        
+                            WorldPacket data2;
+                            sBattlegroundMgr->BuildBattlegroundStatusPacket(&data2, bg, player, queueSlot, STATUS_NONE, player->GetBattlegroundQueueJoinTime(bgTypeId), 0, ginfo.ArenaType);
+                            player->GetSession()->SendPacket(&data2);
+        
+                            bgQueue.RemovePlayer(player->GetGUID(), true);
+                        }
+                    }
                 }
             }
         }
 
-        // player left queue, we should update it - do not update Arena Queue
+        // The player left the queue, we should update it (but not Arena queues).
         if (!ginfo.ArenaType)
             sBattlegroundMgr->ScheduleQueueUpdate(ginfo.ArenaMatchmakerRating, ginfo.ArenaType, bgQueueTypeId, bgTypeId, bracketEntry->GetBracketId());
     }

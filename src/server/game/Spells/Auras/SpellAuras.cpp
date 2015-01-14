@@ -1448,7 +1448,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
     }
 
     // Glyph of Rejuvenation
-    if (GetId() == 774)
+    if (GetId() == 774 && caster)
     {
         if (apply && caster->HasAura(17076))
         {

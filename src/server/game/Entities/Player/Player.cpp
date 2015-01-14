@@ -9192,6 +9192,10 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         packet << uint32(newTotalCount / precision);
 
         GetSession()->SendPacket(&packet);
+
+        // Save the currency.
+        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        _SaveCurrency(trans);
     }
 }
 

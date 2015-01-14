@@ -1046,11 +1046,14 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     if (mover->GetTypeId() == TYPEID_PLAYER)
     {
-        // not have spell in spellbook or spell passive and not casted by client
+        /* Hack for Throw Totem, Echo of Baine / Siege Explosive, Pa'valak / Mantid Barrel, Vo'jak */
+        bool SpellCanBeCast = (spellId == 101603 || spellId == 119393 || spellId == 123039) ? true : false;
+
+        // Spell not in spellbook or passive and not cast by client.
         if ((!mover->ToPlayer()->HasActiveSpell(spellId) || spellInfo->IsPassive()) 
             && !spellInfo->IsRaidMarker() 
             && !(IS_GAMEOBJECT_GUID(targetGuid) && spellId == 6478) 
-            && spellId != 101603 
+            && !SpellCanBeCast
             && !spellInfo->IsAbilityOfSkillType(SKILL_ARCHAEOLOGY))
         {
             //cheater? kick? ban?
@@ -1060,8 +1063,9 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     }
     else
     {
-        // not have spell in spellbook or spell passive and not casted by client
-        if ((mover->GetTypeId() == TYPEID_UNIT && !mover->ToCreature()->HasSpell(spellId)) || spellInfo->IsPassive())
+        bool PassengersCanCastInVehicle = (mover->GetTypeId() == TYPEID_UNIT && mover->IsVehicle() && mover->GetVehicleKit() && mover->GetVehicleKit()->CanBeCastedByPassengers()) ? true : false;
+        // Spell not in spellbook or passive and not cast by client.
+        if ((mover->GetTypeId() == TYPEID_UNIT && !mover->ToCreature()->HasSpell(spellId) && !PassengersCanCastInVehicle) || spellInfo->IsPassive())
         {
             //cheater? kick? ban?
             recvPacket.rfinish(); // prevent spam at ignore packet

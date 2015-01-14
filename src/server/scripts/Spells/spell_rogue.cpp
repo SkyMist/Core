@@ -1355,15 +1355,13 @@ class spell_rog_recuperate : public SpellScriptLoader
 
                 if (Player* roguePlayer = GetTarget()->ToPlayer())
                 {
-                    uint32 oneHealthPct = roguePlayer->GetMaxHealth() / 100;
-
-                    int32 bp = oneHealthPct * 4; // 4% of max HP.
+                    int32 bp = 4;
 
                     if (roguePlayer->HasAura(ROGUE_GLYPH_OF_RECUPERATE))
-                        bp += oneHealthPct;
+                        bp += 1;
 
                     if (roguePlayer->HasAura(ROGUE_SPELL_IMPROVED_RECUPERATE))
-                        bp += oneHealthPct;
+                        bp += 1;
 
                     amount = bp;
                 }

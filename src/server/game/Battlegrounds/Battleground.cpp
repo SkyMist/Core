@@ -1091,26 +1091,30 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
 
                 player->ResummonPetTemporaryUnSummonedIfAny();
 
+                // Left a rated arena match while it was in progress, consider as loser.
                 if (isRated() && GetStatus() == STATUS_IN_PROGRESS)
                 {
-                    //left a rated match while the encounter was in progress, consider as loser
                     Group* winner_group = GetBgRaid(GetOtherTeam(team));
                     Group* loser_group = GetBgRaid(team);
 
+                    // Only the losers lose rating and get an increased games count.
                     if (winner_group && loser_group && winner_group != loser_group)
                     {
                         uint8 slot = Arena::GetSlotByType(GetArenaType());
 
-                        // Update personal rating
-                        int32 mod = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), GetArenaMatchmakerRating(GetOtherTeam(team), slot), false);
-                        player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + mod);
+                        if (player->GetGroup() == loser_group)
+                        {
+                            // Update personal rating
+                            int32 mod = Arena::GetRatingMod(player->GetArenaPersonalRating(slot), GetArenaMatchmakerRating(GetOtherTeam(team), slot), false);
+                            player->SetArenaPersonalRating(slot, player->GetArenaPersonalRating(slot) + mod);
 
-                        // Update matchmaker rating
-                        player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) -12);
+                            // Update matchmaker rating
+                            player->SetArenaMatchMakerRating(slot, player->GetArenaMatchMakerRating(slot) -12);
 
-                        // Update personal played stats
-                        player->IncrementWeekGames(slot);
-                        player->IncrementSeasonGames(slot);
+                            // Update personal played stats
+                            player->IncrementWeekGames(slot);
+                            player->IncrementSeasonGames(slot);
+                        }
                     }
                 }
             }
@@ -1130,7 +1134,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         {
             if (isRated() && GetStatus() == STATUS_IN_PROGRESS)
             {
-                //left a rated match while the encounter was in progress, consider as loser
+                // Left a rated match while it was in progress, consider as a loser.
                 Group* others_group = GetBgRaid(GetOtherTeam(team));
                 Group* players_group = GetBgRaid(team);
                 if (others_group && players_group)

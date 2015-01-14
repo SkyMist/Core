@@ -205,6 +205,12 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
     ObjectGuid playerGuid       = player ? player->GetGUID() : 0;
     ObjectGuid battlegroundGuid = bg ? bg->GetGUID() : 0;
 
+    uint32 clientInstanceId     = bg ? (bg->isArena() ? uint32(BATTLEGROUND_AA) : (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID())) : 0;
+    uint32 timeToClose          = bg ? ((bg->GetStatus() == STATUS_WAIT_LEAVE) ? bg->GetRemainingTime() : (bg->GetPrematureCountDown() ? bg->GetPrematureCountDownTimer() : 0)) : 0;
+    uint8 playerGroupCountRated = /*bg ? ((player->GetGroup() && bg->IsRatedBG()) ? player->GetGroup()->GetMembersCount() : 0) :*/ 0; // Guild group for Rated BG Challenges?
+    bool HasRoles               = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != ROLE_DAMAGE) ? true : false;
+    bool waitingOnActivity      = false; // ToDo : While Trading, Busy, Afk or In Combat.
+
     // Note: Time1 is Join Time, Time 2 is Elapsed Time.
     switch (StatusID)
     {
@@ -217,46 +223,44 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->FlushBits();
 
-            *data << uint32(bg ? (bg->isArena() ? arenatype : 1) : 0); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
+            *data << uint32(bg ? (bg->isArena() ? arenatype : 1) : 0); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5).
 
             data->WriteByteSeq(playerGuid[4]);
             data->WriteByteSeq(playerGuid[2]);
             data->WriteByteSeq(playerGuid[1]);
             data->WriteByteSeq(playerGuid[6]);
 
-            *data << uint32(Time1);                     // Join Time
+            *data << uint32(Time1);                                    // Join Time.
 
             data->WriteByteSeq(playerGuid[3]);
             data->WriteByteSeq(playerGuid[5]);
 
-            *data << uint32(QueueSlot);                 // Queue Slot
+            *data << uint32(QueueSlot);                                // Queue Slot.
                
             data->WriteByteSeq(playerGuid[0]);
             data->WriteByteSeq(playerGuid[7]);
+
             break;
         }
         case STATUS_WAIT_QUEUE:
         {
             data->Initialize(SMSG_BATTLEGROUND_STATUS_QUEUED);
 
-            *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1);                       // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
-            *data << uint32(Time1);                                            // Estimated Wait Time (Needs calculation somewhere, bad)
-            *data << uint32(QueueSlot);                                                            // Queue Slot
-            *data << uint32(GetMSTimeDiffToNow(Time2));                                            // Time since joined
+            *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5).
+            *data << uint32(Time1);                         // Estimated Wait Time (Needs calculation somewhere, bad).
+            *data << uint32(QueueSlot);                     // Queue Slot.
+            *data << uint32(GetMSTimeDiffToNow(Time2));     // Time since joined.
 
-            //if (bg->isRated())
-            //    *data << uint8(count for players in queue Rated Mode);
-            //else
-                *data << uint8(0);                      // Team Size
+            *data << uint8(playerGroupCountRated);          // Rated Bg players count in queue (Team Size).
 
-            *data << uint32(Time2);                     // Join Time
-            *data << uint8(minLevel);                   // Min Level
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
-            *data << uint8(maxLevel);                   // Max level
+            *data << uint32(Time2);                         // Join Time.
+            *data << uint8(minLevel);                       // Min Level.
+            *data << uint32(clientInstanceId);              // Client Instance ID.
+            *data << uint8(maxLevel);                       // Max level.
 
             data->WriteBit(battlegroundGuid[1]);
 
-            data->WriteBit(1);                          // Eligible In Queue
+            data->WriteBit(1);                              // Eligible In Queue.
 
             data->WriteBit(battlegroundGuid[5]);
             data->WriteBit(playerGuid[1]);
@@ -265,12 +269,12 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteBit(battlegroundGuid[7]);
             data->WriteBit(battlegroundGuid[3]);
 
-            data->WriteBit(0);                          // Waiting On Other Activity
+            data->WriteBit(waitingOnActivity);              // Waiting On Other Activity.
 
             data->WriteBit(playerGuid[7]);
             data->WriteBit(playerGuid[0]);
 
-            data->WriteBit(bg->isArena());              // Join Failed, 1 when it's arena ...
+            data->WriteBit(bg->isArena());                  // Join Failed, 1 when it's arena.
 
             data->WriteBit(battlegroundGuid[4]);
             data->WriteBit(playerGuid[4]);
@@ -279,7 +283,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteBit(battlegroundGuid[6]);
             data->WriteBit(battlegroundGuid[2]);
 
-            data->WriteBit(bg->isRated());              // Is Rated
+            data->WriteBit(bg->isRated());                  // Is Rated.
 
             data->WriteBit(battlegroundGuid[0]);
 
@@ -301,17 +305,16 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(playerGuid[3]);
             data->WriteByteSeq(battlegroundGuid[4]);
             data->WriteByteSeq(battlegroundGuid[0]);
+
             break;
         }
         case STATUS_WAIT_JOIN:
         {
-            bool HasRoles = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != ROLE_DAMAGE) ? true : false;
-
             data->Initialize(SMSG_BATTLEGROUND_STATUS_NEED_CONFIRMATION);
 
             data->WriteBit(playerGuid[3]);
 
-            data->WriteBit(bg->isRated());     // Is Rated
+            data->WriteBit(bg->isRated());           // Is Rated.
 
             data->WriteBit(battlegroundGuid[5]);
             data->WriteBit(playerGuid[2]);
@@ -326,7 +329,7 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteBit(playerGuid[1]);
             data->WriteBit(battlegroundGuid[6]);
 
-            data->WriteBit(!HasRoles);         // Has Role (But not DPS) - Negated.
+            data->WriteBit(!HasRoles);               // Has Role (But not DPS) - Negated.
 
             data->WriteBit(battlegroundGuid[1]);
             data->WriteBit(battlegroundGuid[0]);
@@ -336,13 +339,13 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
 
             data->WriteByteSeq(battlegroundGuid[3]);
 
-            *data << uint32(QueueSlot);        // Queue Slot
+            *data << uint32(QueueSlot);              // Queue Slot.
 
             data->WriteByteSeq(playerGuid[2]);
             data->WriteByteSeq(battlegroundGuid[7]);
             data->WriteByteSeq(playerGuid[5]);
 
-            *data << uint32(bg->GetMapId());   // Map Id
+            *data << uint32(bg->GetMapId());         // Map Id.
 
             data->WriteByteSeq(playerGuid[0]);
             data->WriteByteSeq(playerGuid[4]);
@@ -352,38 +355,35 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteByteSeq(battlegroundGuid[5]);
             data->WriteByteSeq(playerGuid[7]);
 
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
-            *data << uint8(maxLevel);          // Max Level
+            *data << uint32(clientInstanceId);       // Client Instance ID.
+            *data << uint8(maxLevel);                // Max Level.
 
             data->WriteByteSeq(playerGuid[6]);
 
-            *data << uint32(Time2);            // Join Time
+            *data << uint32(Time2);                  // Join Time.
 
             if (HasRoles)
                 *data << uint8((player->GetBattleGroundRoles() == ROLE_TANK) ? 0 : 1); // Client uses sent value like this: Role = 1 << (val + 1).
 
             data->WriteByteSeq(playerGuid[1]);
 
-            *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
+            *data << uint32(bg->isArena() ? arenatype : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5).
 
-            //if (bg->isRated())
-            //    *data << uint8(count for players in queue Rated Mode);
-            //else
-                *data << uint8(0);                      // Team Size
+            *data << uint8(playerGroupCountRated);          // Rated Bg players count in queue (Team Size).
 
             data->WriteByteSeq(battlegroundGuid[4]);
             data->WriteByteSeq(battlegroundGuid[2]);
 
-            *data << uint32(Time1);                     // Time until response window is closed (90000).
+            *data << uint32(Time1);                         // Time until response window is closed (90000).
 
             data->WriteByteSeq(playerGuid[3]);
 
-            *data << uint8(minLevel);                   // Min Level
+            *data << uint8(minLevel);                       // Min Level.
             break;
         }
         case STATUS_ERROR:
         {
-            // call BuildPacketFailed to send the error to the clients
+            // Call BuildPacketFailed to send the error to the clients.
             BuildStatusFailedPacket(data, bg, player, result);
             break;
         }
@@ -407,60 +407,58 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
             data->WriteBit(playerGuid[4]);
             data->WriteBit(playerGuid[0]);
 
-            data->WriteBit(player->GetBGTeam() == HORDE ? 0 : 1);     // Battlefield Faction ( 0 horde, 1 alliance )
-            data->WriteBit(bg->isRated());   // Is Rated
+            data->WriteBit(player->GetBGTeam() == HORDE ? 0 : 1);     // Battlefield Faction ( 0 horde, 1 alliance ).
+            data->WriteBit(bg->isRated());                            // Is Rated.
 
             data->WriteBit(playerGuid[2]);
             data->WriteBit(battlegroundGuid[1]);
 
-            data->WriteBit(0);               // UNK bit.
+            data->WriteBit(0);                                        // UNK bit. Waiting on Another Activity / HasRoles ?
 
             data->FlushBits();
 
             data->WriteByteSeq(battlegroundGuid[7]);
 
-            *data << uint8(minLevel);        // Min Level
+            *data << uint8(minLevel);                                 // Min Level.
 
             data->WriteByteSeq(playerGuid[6]);
 
-            *data << uint32(bg->GetStatus() == STATUS_WAIT_LEAVE ? bg->GetRemainingTime() : (bg->GetPrematureCountDown() ? bg->GetPrematureCountDownTimer() : 0));  //  Time to Close
-            *data << uint8(maxLevel);        // Max Level
+            *data << uint32(timeToClose);                             // Time to Close.
+            *data << uint8(maxLevel);                                 // Max Level.
 
             data->WriteByteSeq(battlegroundGuid[2]);
             data->WriteByteSeq(battlegroundGuid[1]);
             data->WriteByteSeq(playerGuid[3]);
             data->WriteByteSeq(battlegroundGuid[3]);
 
-            *data << uint32(Time1);                     // Join Time
+            *data << uint32(Time1);                                   // Join Time.
 
             data->WriteByteSeq(battlegroundGuid[5]);
 
-            *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID  
+            *data << uint32(clientInstanceId);                        // Client Instance ID.
 
             data->WriteByteSeq(battlegroundGuid[4]);
             data->WriteByteSeq(playerGuid[7]);
             data->WriteByteSeq(playerGuid[5]);
             data->WriteByteSeq(playerGuid[0]);
 
-            *data << uint32(QueueSlot);                 // Queue Slot
-            *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1);                  // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
+            *data << uint32(QueueSlot);                              // Queue Slot.
+            *data << uint32(bg->isArena() ? arenatype : 1);          // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5).
 
             data->WriteByteSeq(playerGuid[4]);
 
-            //if (bg->isRated())
-            //    *data << uint8(count for players in queue Rated Mode);
-            //else
-                *data << uint8(0);                   // Team Size
+            *data << uint8(playerGroupCountRated);                   // Rated Bg players count in queue (Team Size).
 
             data->WriteByteSeq(battlegroundGuid[0]);
 
-            *data << uint32(bg->GetMapId());            // Map Id
+            *data << uint32(bg->GetMapId());                         // Map Id.
 
             data->WriteByteSeq(battlegroundGuid[6]);
             data->WriteByteSeq(playerGuid[1]);
             data->WriteByteSeq(playerGuid[2]);
 
-            *data << uint32(Time2);                       // Elapsed Time
+            *data << uint32(Time2);                                  // Elapsed Time.
+
             break;
         }
 
@@ -473,6 +471,9 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     ObjectGuid PlayerReasonGuid = player ? player->GetGUID() : 0; // player who caused the error
     ObjectGuid BattlegroundGuid = bg ? bg->GetGUID() : 0;
     ObjectGuid PlayerGuid = 0;
+
+    uint32 clientInstanceId = bg ? (bg->isArena() ? uint32(BATTLEGROUND_AA) : (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID())) : 0;
+    uint8 arenaType         = bg ? (bg->isArena() ? bg->GetArenaType() : 1) : 0;
 
     data->Initialize(SMSG_BATTLEGROUND_STATUS_FAILED);
 
@@ -503,7 +504,7 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
 
     data->FlushBits();
 
-    *data << uint32(player->GetBattlegroundQueueJoinTime(bg->GetTypeID())); // Join Time
+    *data << uint32(player->GetBattlegroundQueueJoinTime(bg->GetTypeID())); // Join Time.
 
     data->WriteByteSeq(PlayerReasonGuid[2]);
     data->WriteByteSeq(PlayerGuid[4]);
@@ -513,20 +514,20 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     data->WriteByteSeq(PlayerGuid[2]);
     data->WriteByteSeq(BattlegroundGuid[7]);
 
-    *data << uint32(bg->isArena() ? bg->GetMaxPlayersPerTeam() : 1); // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5)
+    *data << uint32(arenaType);                     // Player count, 1 for bgs, 2-3-5 for arena (2v2, 3v3, 5v5).
 
     data->WriteByteSeq(PlayerReasonGuid[0]);
     data->WriteByteSeq(BattlegroundGuid[2]);
     data->WriteByteSeq(PlayerReasonGuid[4]);
     data->WriteByteSeq(PlayerReasonGuid[5]);
 
-    *data << uint32(bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()); // Client Instance ID
+    *data << uint32(clientInstanceId);              // Client Instance ID.
 
     data->WriteByteSeq(PlayerGuid[1]);
     data->WriteByteSeq(BattlegroundGuid[1]);
     data->WriteByteSeq(PlayerReasonGuid[7]);
 
-    *data << uint32(result);                        // Result
+    *data << uint32(result);                        // Result.
 
     data->WriteByteSeq(PlayerReasonGuid[6]);
     data->WriteByteSeq(BattlegroundGuid[0]);
