@@ -176,7 +176,7 @@ public:
             { "info",           SEC_ADMINISTRATOR,  false, &HandleNpcInfoCommand,              "", NULL },
             { "move",           SEC_GAMEMASTER,     false, &HandleNpcMoveCommand,              "", NULL },
             { "playemote",      SEC_ADMINISTRATOR,  false, &HandleNpcPlayEmoteCommand,         "", NULL },
-			{ "setemote",       SEC_GAMEMASTER,     false, &HandleNpcSetEmoteCommand,          "", NULL },
+            { "setemote",       SEC_GAMEMASTER,     false, &HandleNpcSetEmoteCommand,          "", NULL },
             { "say",            SEC_MODERATOR,      false, &HandleNpcSayCommand,               "", NULL },
             { "textemote",      SEC_MODERATOR,      false, &HandleNpcTextEmoteCommand,         "", NULL },
             { "whisper",        SEC_MODERATOR,      false, &HandleNpcWhisperCommand,           "", NULL },
