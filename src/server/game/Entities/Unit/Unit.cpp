@@ -449,24 +449,20 @@ uint32 const positionUpdateDelay = 400;
 
 void Unit::UpdateSplineMovement(uint32 t_diff)
 {
-    if (!movespline->Initialized())
+    if (!IsSplineEnabled())
         return;
 
+    // Update the Spline state.
     movespline->updateState(t_diff);
 
-    if (movespline->Finalized())
-    {
-        if (m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FORWARD))
-            m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
+    // If the spline is Finalized disable it and update the mover's position.
+    bool arrived = movespline->Finalized();
 
-        if (HasUnitState(UNIT_STATE_MOVING))
-            ClearUnitState(UNIT_STATE_MOVING);
-
-        return;
-    }
+    if (arrived)
+        DisableSpline();
 
     m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed())
+    if (m_movesplineTimer.Passed() || arrived)
         UpdateSplinePosition();
 }
 

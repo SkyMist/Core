@@ -169,6 +169,10 @@ void CreatureAI::EnterEvadeMode()
     if (!_EnterEvadeMode())
         return;
 
+    me->RemoveAllAuras();
+    me->DeleteThreatList();
+    me->CombatStop(true);
+
     if (!me->GetVehicle()) // otherwise me will be in evade mode forever
     {
         if (Unit* owner = me->GetCharmerOrOwner())
