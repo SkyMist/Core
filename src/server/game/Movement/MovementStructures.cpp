@@ -7,7 +7,7 @@ MovementStatusElements const PlayerMove[] =
     MSEMovementFlags,          // 24
     MSEHasSplineElevation,     // 144
     MSEHasGuidByte6,           // 22
-    MSEHasUnkTime,             // 168
+    MSEOneBit,                 // 168 // MSEHasUnkTime
     MSEHasGuidByte5,           // 21
     MSEHasGuidByte1,           // 17
     MSEZeroBit,                // 149
@@ -59,7 +59,7 @@ MovementStatusElements const PlayerMove[] =
 
     MSEGuidByte3,              // 19
     MSEPitch,                  // 112
-    MSEUnkTime,                // 168
+    // MSEUnkTime,                // 168
     MSEGuidByte6,              // 22
     MSEPositionX,              // 36
     MSEGuidByte4,              // 20
@@ -512,7 +512,7 @@ MovementStatusElements const MovementSetPitch[] = // 5.4.7 18019
     MSEMovementFlags,          // 24
     MSEGuidByte5,              // 21
     MSEGuidByte2,              // 18
-    MSEUnkUIntLoop,            // 156
+    // MSEUnkUIntLoop,            // 156
     MSEGuidByte0,              // 16
     MSEGuidByte1,              // 17
     MSEGuidByte6,              // 22

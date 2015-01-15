@@ -205,9 +205,9 @@ void BattlegroundMgr::BuildBattlegroundStatusPacket(WorldPacket* data, Battlegro
     ObjectGuid playerGuid       = player ? player->GetGUID() : 0;
     ObjectGuid battlegroundGuid = bg ? bg->GetGUID() : 0;
 
-    uint32 clientInstanceId     = bg ? (bg->isArena() ? uint32(BATTLEGROUND_AA) : (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID())) : 0;
+    uint32 clientInstanceId     = bg ? (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()) : 0;
     uint32 timeToClose          = bg ? ((bg->GetStatus() == STATUS_WAIT_LEAVE) ? bg->GetRemainingTime() : (bg->GetPrematureCountDown() ? bg->GetPrematureCountDownTimer() : 0)) : 0;
-    uint8 playerGroupCountRated = /*bg ? ((player->GetGroup() && bg->IsRatedBG()) ? player->GetGroup()->GetMembersCount() : 0) :*/ 0; // Guild group for Rated BG Challenges?
+    uint8 playerGroupCountRated = 0; // bg ? ((player->GetGroup() && bg->IsRatedBG()) ? player->GetGroup()->GetMembersCount() : 0) : 0;  // Guild group for Rated BG Challenges?
     bool HasRoles               = (player && player->GetBattleGroundRoles() && player->GetBattleGroundRoles() != ROLE_DAMAGE) ? true : false;
     bool waitingOnActivity      = false; // ToDo : While Trading, Busy, Afk or In Combat.
 
@@ -472,7 +472,7 @@ void BattlegroundMgr::BuildStatusFailedPacket(WorldPacket* data, Battleground* b
     ObjectGuid BattlegroundGuid = bg ? bg->GetGUID() : 0;
     ObjectGuid PlayerGuid = 0;
 
-    uint32 clientInstanceId = bg ? (bg->isArena() ? uint32(BATTLEGROUND_AA) : (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID())) : 0;
+    uint32 clientInstanceId = bg ? (bg->IsRandom() ? uint32(BATTLEGROUND_RB) : bg->GetClientInstanceID()) : 0;
     uint8 arenaType         = bg ? (bg->isArena() ? bg->GetArenaType() : 1) : 0;
 
     data->Initialize(SMSG_BATTLEGROUND_STATUS_FAILED);
