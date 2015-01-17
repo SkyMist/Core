@@ -2474,7 +2474,8 @@ class Player : public Unit, public GridObject<Player>
         ReputationRank GetReputationRank(uint32 faction_id) const;
         void RewardReputation(Unit* victim, float rate);
         void RewardReputation(Quest const* quest);
-        void RewardGuildReputation(Quest const* quest);
+        void RewardGuildReputationQuest(Quest const* quest);
+        void RewardGuildReputationCreature(Creature* creature);
 
         void ModifySkillBonus(uint32 skillid, int32 val, bool talent);
 

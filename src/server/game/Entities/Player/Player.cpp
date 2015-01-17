@@ -8548,30 +8548,62 @@ Expansion Player::GetExpByLevel()
         return EXP_VANILLA;
 }
 
-void Player::RewardGuildReputation(Quest const* quest)
+void Player::RewardGuildReputationQuest(Quest const* quest)
 {
+    // Must be in a Guild.
+    Guild* guild = sGuildMgr->GetGuildById(GetGuildId());
+    if (!guild)
+        return;
+
     uint32 rep = 0;
 
-    switch (GetExpByLevel())
-    {
-        case EXP_VANILLA:   rep = 25;  break;
-        case EXP_BC:        rep = 50;  break;
-        case EXP_WOTLK:     rep = 75;  break;
-        case EXP_CATACLYSM: rep = 100; break;
-        case EXP_PANDARIA:  rep = 150; break;
-        default:            rep = 0;   break;
-    }
+    /* Patch notes 5.0.4:
+    Since guild reputation from quests is based on their guild experience yield (1 reputation per 360 experience before reputation bonuses), 
+    this dramatically increased guild experience from quests, from ~48 at level 85 (and significantly less at lower levels) to 166-167 
+    (before reputation bonuses) at all levels. */
 
-    rep = CalculateReputationGain(GetQuestLevel(quest), rep, REP_GUILD, true);
+    uint32 GUILD_REP_DIVIDER = 360;
+
+    uint32 xp = uint32(guild->CalculateQuestExperienceReward(getLevel(), GetQuestLevel(quest)) * sWorld->getRate(RATE_XP_QUEST));
+    rep = xp / GUILD_REP_DIVIDER;
 
     if (GetsRecruitAFriendBonus(false))
         rep = int32(rep * (1 + sWorld->getRate(RATE_REPUTATION_RECRUIT_A_FRIEND_BONUS)));
 
-    // Apply reputation multiplier from aura (not stacking-get highest)
+    // Apply reputation multiplier from aura (not stacking-get highest).
     AddPct(rep, GetMaxPositiveAuraModifier(SPELL_AURA_MOD_GUID_REP_GAIN_PCT));
 
+    // Modify the reputation.
     if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(REP_GUILD))
         GetReputationMgr().ModifyReputation(factionEntry, rep);
+
+    // Increase the Guild stats.
+	guild->GiveMemberReputation(GetGUID(), rep);
+}
+
+void Player::RewardGuildReputationCreature(Creature* creature)
+{
+    // Must be in a Guild.
+    Guild* guild = sGuildMgr->GetGuildById(GetGuildId());
+    if (!guild)
+        return;
+
+    uint32 rep = 0;
+
+    rep = CalculateReputationGain(creature->getLevel(), rep, REP_GUILD, true);
+
+    if (GetsRecruitAFriendBonus(false))
+        rep = int32(rep * (1 + sWorld->getRate(RATE_REPUTATION_RECRUIT_A_FRIEND_BONUS)));
+
+    // Apply reputation multiplier from aura (not stacking-get highest).
+    AddPct(rep, GetMaxPositiveAuraModifier(SPELL_AURA_MOD_GUID_REP_GAIN_PCT));
+
+    // Modify the reputation.
+    if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(REP_GUILD))
+        GetReputationMgr().ModifyReputation(factionEntry, rep);
+
+    // Increase the Guild stats.
+	guild->GiveMemberReputation(GetGUID(), rep);
 }
 
 void Player::UpdateHonorFields()
@@ -9168,22 +9200,22 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
 
         WorldPacket packet(SMSG_UPDATE_CURRENCY);
 
-        bool hasWeekCap     = weekCap > 0             ? true : false;
+        bool hasWeekCount   = (weekCap > 0 && newWeekCount > 0) ? true : false;
         bool hasSeasonTotal = newSeasonTotalCount > 0 ? true : false;
 
         packet.WriteBit(!printLog);                         // Print in log
-        packet.WriteBit(hasWeekCap);
+        packet.WriteBit(hasWeekCount);
         packet.WriteBit(hasSeasonTotal);
 
         packet.FlushBits();
 
-        if (hasWeekCap)
-            packet << uint32(weekCap / precision);
+        if (hasSeasonTotal)
+            packet << uint32(newSeasonTotalCount / precision);
 
         packet << uint32(0);                                // Has Bonus Objective
 
-        if (hasSeasonTotal)
-            packet << uint32(newSeasonTotalCount / precision);
+        if (hasWeekCount)
+            packet << uint32(newWeekCount / precision);
 
         packet << uint32(id);
         packet << uint32(newTotalCount / precision);
@@ -9287,7 +9319,7 @@ void Player::UpdateConquestCurrencyCap(uint32 currency)
 	if (!currencyEntry || currencyEntry->Category == CURRENCY_CATEGORY_META_CONQUEST)
         return;
 
-    uint32 precision = (currencyEntry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? 100 : 1;
+    uint32 precision = (currencyEntry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
     uint32 cap = GetCurrencyWeekCap(currencyEntry->ID);
 
     WorldPacket packet(SMSG_UPDATE_CURRENCY_WEEK_LIMIT, 8);
@@ -17896,7 +17928,10 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     //     UpdateSkillPro(skill, 1000, quest->GetRewardSkillPoints());
 
     RewardReputation(quest);
-    RewardGuildReputation(quest);
+
+    // Calculate and award Guild reputation.
+    if (GetGuildId())
+        RewardGuildReputationQuest(quest);
 
     uint16 log_slot = FindQuestSlot(quest_id);
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -19359,6 +19394,12 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
         GetSession()->SendPacket(&data);
 
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
+
+        WorldPacket data2(SMSG_QUESTUPDATE_FAILED, 4);
+        data2 << uint32(quest_id);
+        GetSession()->SendPacket(&data2);
+
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_FAILED");
     }
 }
 
@@ -19366,13 +19407,13 @@ void Player::SendQuestTimerFailed(uint32 quest_id)
 {
     if (quest_id)
     {
-        WorldPacket data(SMSG_QUESTUPDATE_FAILEDTIMER, 4);
+        WorldPacket data(SMSG_QUESTUPDATE_FAILED_TIMER, 4);
 
         data << uint32(quest_id);
 
         GetSession()->SendPacket(&data);
 
-        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_FAILEDTIMER");
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_FAILED_TIMER");
     }
 }
 
@@ -19492,7 +19533,7 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, 
     ObjectGuid guid = objGuid;
 
     // Send packet.
-    WorldPacket data(SMSG_QUESTUPDATE_ADD_KILL, 4 + 4 + 1 + 8);
+    WorldPacket data(SMSG_QUESTUPDATE_ADD_CREDIT, 4 + 4 + 1 + 8);
     
     uint8 bitOrder[8] = { 5, 3, 6, 7, 4, 1, 2, 0};
     data.WriteBitInOrder(guid, bitOrder);
@@ -19522,7 +19563,7 @@ void Player::SendQuestUpdateAddCreatureOrGo(Quest const* quest, uint64 objGuid, 
     
     GetSession()->SendPacket(&data);
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_KILL");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_CREDIT");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -19538,15 +19579,14 @@ void Player::SendQuestUpdateAddPlayer(Quest const* quest, uint16 old_count, uint
     uint16 killedPlayersCount = old_count + add_count;
 
     // Send packet.
-    WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_KILL, 4 + 4 + 1);
+    WorldPacket data(SMSG_QUESTUPDATE_ADD_PVP_CREDIT, 4 + 4 + 1);
 
-    data << uint8(killedPlayersCount);
-    data << uint32(quest->GetPlayersSlain());
+    data << uint16(killedPlayersCount);
     data << uint32(quest->GetQuestId());
 
     GetSession()->SendPacket(&data);
 
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_KILL");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_ADD_PVP_CREDIT");
 
     uint16 log_slot = FindQuestSlot(quest->GetQuestId());
     if (log_slot < MAX_QUEST_LOG_SIZE)
@@ -24943,7 +24983,7 @@ bool Player::BuyItemFromVendorSlot(uint64 vendorguid, uint32 vendorslot, uint32 
             // Second field in dbc is season count except two strange rows
             if (i == 1 && iece->ID != 2999)
             {
-                if ((iece->RequiredCurrencyCount[i] / precision) > GetCurrencyOnSeason(iece->RequiredCurrency[i], false))
+                if ((iece->RequiredCurrencyCount[i] / precision) > GetCurrencyOnSeason(iece->RequiredCurrency[i], true))
                 {
                     SendEquipError(EQUIP_ERR_VENDOR_MISSING_TURNINS, NULL, NULL);
                     return false;
@@ -28359,8 +28399,11 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot, uint8 linkedLootSlot)
 
     if (currency)
     {
-        if (CurrencyTypesEntry const * currencyEntry = sCurrencyTypesStore.LookupEntry(item->itemid))
-            ModifyCurrency(item->itemid, int32(item->count * currencyEntry->GetPrecision()));
+        if (CurrencyTypesEntry const* currencyEntry = sCurrencyTypesStore.LookupEntry(item->itemid))
+        {
+            uint32 precision = (currencyEntry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
+            ModifyCurrency(item->itemid, int32(item->count * precision));
+        }
 
         SendNotifyLootItemRemoved(lootSlot);
         currency->is_looted = true;
@@ -28534,7 +28577,7 @@ void Player::_LoadSkills(PreparedQueryResult result)
 
             SetUInt16Value(PLAYER_SKILL_LINEID_0 + field, offset, skill);
             uint16 step = 0;
-            
+
             if (pSkill->categoryId == SKILL_CATEGORY_SECONDARY)
                 step = max / 75;
 
@@ -29657,11 +29700,12 @@ void Player::AddRefundReference(uint32 it)
 
 void Player::DeleteRefundReference(uint32 it)
 {
+    if (m_refundableItems.empty())
+        return;
+
     std::set<uint32>::iterator itr = m_refundableItems.find(it);
     if (itr != m_refundableItems.end())
-    {
         m_refundableItems.erase(itr);
-    }
 }
 
 void Player::SendRefundInfo(Item* item)
@@ -29690,17 +29734,26 @@ void Player::SendRefundInfo(Item* item)
     }
 
     ObjectGuid itemGuid = item->GetGUID();
+
     WorldPacket data(SMSG_ITEM_REFUND_INFO_RESPONSE);
 
     uint8 bitsOrder[8] = { 6, 3, 4, 0, 5, 1, 7, 2 };
     data.WriteBitInOrder(itemGuid, bitsOrder);
 
+    data.FlushBits();
+
     data << uint32(item->GetPaidMoney());                           // Money cost
     
     for (uint8 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; ++i)
     {
+        CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(iece->RequiredCurrency[i]);
+        if (!entry)
+            continue;
+
+        uint32 precision   = (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
+
         data << uint32(iece->RequiredCurrency[i]);
-        data << uint32(iece->RequiredCurrencyCount[i] / 100);       // Must be devided by precision
+        data << uint32(iece->RequiredCurrencyCount[i] / precision);       // Must be divided by precision
     }
     
     data << uint32(GetTotalPlayedTime() - item->GetPlayedTime());   // Time Left
@@ -29770,7 +29823,13 @@ void Player::SendItemRefundResult(Item* item, ItemExtendedCostEntry const* iece,
     {
         for (uint8 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; ++i)
         {
-            data << uint32(iece->RequiredCurrencyCount[i]);
+            CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(iece->RequiredCurrency[i]);
+            if (!entry)
+                continue;
+
+            uint32 precision = (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
+
+            data << uint32(iece->RequiredCurrencyCount[i] / precision);
             data << uint32(iece->RequiredCurrency[i]);
         }
 
@@ -29855,10 +29914,13 @@ void Player::RefundItem(Item* item)
         if (!cte)
             continue;
 
-        uint32 count = iece->RequiredCurrencyCount[i] / cte->GetPrecision();
-        uint32 plrCount = GetCurrency(currencyId, cte->HasPrecision());
+        bool hasPrecision = (cte->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? true : false;
+        uint32 precision  = (cte->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
 
-        if (cte->TotalCap && (plrCount + count > (cte->TotalCap / cte->GetPrecision())))
+        uint32 count = iece->RequiredCurrencyCount[i] / precision;
+        uint32 plrCount = GetCurrency(currencyId, hasPrecision);
+
+        if (cte->TotalCap && ((plrCount + count) > (cte->TotalCap / precision)))
         {
             SendItemRefundResult(item, iece, 10);
             return;
@@ -29900,17 +29962,19 @@ void Player::RefundItem(Item* item)
         if (i == 1 && iece->ID != 2999)
             continue;
 
+        CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(iece->RequiredCurrency[i]);
+        if (!entry)
+            continue;
+
         uint32 currency = iece->RequiredCurrency[i];
         uint32 count = iece->RequiredCurrencyCount[i];
         if (currency && count)
-            ModifyCurrency(currency, count, false, true, true);
+            ModifyCurrency(currency, count, true, true);
     }
 
     // Grant back money
     if (moneyRefund)
         ModifyMoney(moneyRefund); // Saved in SaveInventoryAndGoldToDB
-
-    // Grant back Arena and Honor points ?
 
     SaveInventoryAndGoldToDB(trans);
 

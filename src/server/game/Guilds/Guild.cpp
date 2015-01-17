@@ -3820,6 +3820,12 @@ void Guild::ResetDailyExperience()
             SendGuildXP(player->GetSession());
 }
 
+void Guild::GiveMemberReputation(uint64 guid, uint32 value)
+{
+    if (Member* member = GetMember(guid))
+        member->GiveReputation(value);
+}
+
 void Guild::ResetWeeklyReputation()
 {
     for (Members::const_iterator itr = m_members.begin(); itr != m_members.end(); ++itr)

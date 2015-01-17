@@ -938,6 +938,8 @@ class Guild
 
         uint32 CalculateQuestExperienceReward(uint8 playerLevel, uint32 questLevel);
 
+        void GiveMemberReputation(uint64 guid, uint32 value);
+
         void ResetDailyExperience();
         void ResetWeeklyReputation();
 

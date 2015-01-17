@@ -3677,7 +3677,7 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(AchievementCriteriaEntry
                 if (!referencePlayer)
                     return false;
 
-                if (uint32(referencePlayer->GetReputationMgr().GetReputation(1168)) < reqValue) // 1168 = Guild faction
+                if (uint32(referencePlayer->GetReputationMgr().GetReputation(REP_GUILD)) < reqValue) // 1168 = Guild faction
                     return false;
                 break;
             }
