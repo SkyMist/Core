@@ -15049,6 +15049,22 @@ void Unit::Dismount()
         }
         else
             player->ResummonPetTemporaryUnSummonedIfAny();
+
+        // Reset the player's scale.
+        float scale = 1.0f;
+
+        // Set normal scale, bounding radius and combat reach after dismounting + handle scale auras.
+        AuraEffectList const& scaleAuras = player->GetAuraEffectsByType(SPELL_AURA_MOD_SCALE);
+        if (!scaleAuras.empty())
+            for (AuraEffectList::const_iterator itr = scaleAuras.begin(); itr != scaleAuras.end(); itr++)
+                ApplyPercentModFloatVar(scale, float((*itr)->GetAmount()), true);
+
+        AuraEffectList const& scaleAuras2 = player->GetAuraEffectsByType(SPELL_AURA_MOD_SCALE_2);
+        if (!scaleAuras2.empty())
+            for (AuraEffectList::const_iterator itr2 = scaleAuras2.begin(); itr2 != scaleAuras2.end(); itr2++)
+                ApplyPercentModFloatVar(scale, float((*itr2)->GetAmount()), true);
+
+        player->SetObjectScale(scale);
     }
 }
 

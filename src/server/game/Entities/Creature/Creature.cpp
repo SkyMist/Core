@@ -356,9 +356,6 @@ bool Creature::InitEntry(uint32 Entry, uint32 /*team*/, const CreatureData* data
 
     SetName(normalInfo->Name);                              // at normal entry always
 
-    SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, minfo->bounding_radius);
-    SetFloatValue(UNIT_FIELD_COMBATREACH, minfo->combat_reach);
-
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);
     SetFloatValue(UNIT_MOD_CAST_HASTE, 1.0f);
 
@@ -367,6 +364,7 @@ bool Creature::InitEntry(uint32 Entry, uint32 /*team*/, const CreatureData* data
     SetSpeed(MOVE_SWIM,     1.0f); // using 1.0 rate
     SetSpeed(MOVE_FLIGHT,   cinfo->speed_fly);
 
+    // Will set UNIT_FIELD_BOUNDING_RADIUS and UNIT_FIELD_COMBAT_REACH.
     SetObjectScale(cinfo->scale);
 
     SetFloatValue(UNIT_FIELD_HOVERHEIGHT, cinfo->HoverHeight);
@@ -2837,4 +2835,26 @@ Unit* Creature::SelectNearestHostileUnitInAggroRange(bool useLOS) const
     }
 
     return target;
+}
+
+void Creature::SetObjectScale(float scale)
+{
+    Unit::SetObjectScale(scale);
+
+    if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(GetDisplayId()))
+    {
+        SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, minfo->bounding_radius * scale);
+        SetFloatValue(UNIT_FIELD_COMBAT_REACH, minfo->combat_reach * scale);
+    }
+}
+
+void Creature::SetDisplayId(uint32 modelId)
+{
+    Unit::SetDisplayId(modelId);
+
+    if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
+    {
+        SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, minfo->bounding_radius * GetObjectScale());
+        SetFloatValue(UNIT_FIELD_COMBAT_REACH, minfo->combat_reach * GetObjectScale());
+    }
 }

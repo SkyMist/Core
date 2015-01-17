@@ -368,8 +368,7 @@ SpellEffectInfo::SpellEffectInfo(SpellEntry const* spellEntry, SpellInfo const* 
     TargetA = SpellImplicitTargetInfo(_effect ? _effect->EffectImplicitTargetA : 0);
     TargetB = SpellImplicitTargetInfo(_effect ? _effect->EffectImplicitTargetB : 0);
     RadiusEntry = _effect && _effect->EffectRadiusIndex ? sSpellRadiusStore.LookupEntry(_effect->EffectRadiusIndex) : NULL;
-    if (!RadiusEntry)
-         RadiusEntry = _effect && _effect->EffectRadiusMaxIndex ? sSpellRadiusStore.LookupEntry(_effect->EffectRadiusMaxIndex) : NULL;
+    MaxRadiusEntry = _effect && _effect->EffectRadiusMaxIndex ? sSpellRadiusStore.LookupEntry(_effect->EffectRadiusMaxIndex) : NULL;
     ChainTarget = _effect ? _effect->EffectChainTarget : 0;
     ItemType = _effect ? _effect->EffectItemType : 0;
     TriggerSpell = _effect ? _effect->EffectTriggerSpell : 0;
@@ -660,12 +659,19 @@ bool SpellEffectInfo::HasRadius() const
     return RadiusEntry != NULL;
 }
 
+bool SpellEffectInfo::HasMaxRadius() const
+{
+    return MaxRadiusEntry != NULL;
+}
+
 float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
 {
-    if (!HasRadius())
+    if (!HasRadius() && !HasMaxRadius())
         return 0.0f; // No radius.
 
     const SpellRadiusEntry* entry = RadiusEntry;
+    if (!HasRadius() && HasMaxRadius())
+        entry = MaxRadiusEntry;
 
     float radius = entry->RadiusMin;
     if (caster)

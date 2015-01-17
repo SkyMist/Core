@@ -63,8 +63,8 @@ enum EUnitFields
     UNIT_FIELD_AURASTATE                             = OBJECT_END + 55, // size 1, flags MIRROR_ALL
     UNIT_FIELD_BASEATTACKTIME                        = OBJECT_END + 56, // size 2, flags MIRROR_ALL
     UNIT_FIELD_RANGEDATTACKTIME                      = OBJECT_END + 58, // size 1, flags MIRROR_SELF
-    UNIT_FIELD_BOUNDINGRADIUS                        = OBJECT_END + 59, // size 1, flags MIRROR_ALL
-    UNIT_FIELD_COMBATREACH                           = OBJECT_END + 60, // size 1, flags MIRROR_ALL
+    UNIT_FIELD_BOUNDING_RADIUS                       = OBJECT_END + 59, // size 1, flags MIRROR_ALL
+    UNIT_FIELD_COMBAT_REACH                          = OBJECT_END + 60, // size 1, flags MIRROR_ALL
     UNIT_FIELD_DISPLAYID                             = OBJECT_END + 61, // size 1, flags MIRROR_VIEWER_DEPENDENT, MIRROR_URGENT
     UNIT_FIELD_NATIVEDISPLAYID                       = OBJECT_END + 62, // size 1, flags MIRROR_ALL, MIRROR_URGENT
     UNIT_FIELD_MOUNTDISPLAYID                        = OBJECT_END + 63, // size 1, flags MIRROR_ALL, MIRROR_URGENT
