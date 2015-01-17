@@ -36,7 +36,6 @@ namespace VMAP
         static const float EPS = 1e-5f;
 
         // See RTR2 ch. 13.7 for the algorithm.
-
         const Vector3 e1 = points[tri.idx1] - points[tri.idx0];
         const Vector3 e2 = points[tri.idx2] - points[tri.idx0];
         const Vector3 p(ray.direction().cross(e2));
@@ -360,15 +359,16 @@ namespace VMAP
     struct GModelRayCallback
     {
         GModelRayCallback(const std::vector<MeshTriangle> &tris, const std::vector<Vector3> &vert):
-            vertices(vert.begin()), triangles(tris.begin()), hit(false) { }
+            triangles(tris.begin()), vertices(vert.begin()), hit(false) { }
         bool operator()(const G3D::Ray& ray, uint32 entry, float& distance, bool /*pStopAtFirstHit*/)
         {
             bool result = IntersectTriangle(triangles[entry], vertices, ray, distance);
             if (result)  hit=true;
             return hit;
         }
-        std::vector<Vector3>::const_iterator vertices;
+
         std::vector<MeshTriangle>::const_iterator triangles;
+        std::vector<Vector3>::const_iterator vertices;
         bool hit;
     };
 

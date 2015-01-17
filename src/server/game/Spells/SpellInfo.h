@@ -272,8 +272,8 @@ public:
     bool IsEffect() const;
     bool IsEffect(SpellEffects effectName) const;
     bool IsAura() const;
-    bool IsPersistenAura() const;
     bool IsAura(AuraType aura) const;
+    bool IsPersistentAreaAura() const;
     bool IsTargetingArea() const;
     bool IsAreaAuraEffect() const;
     bool IsFarUnitTargetEffect() const;
@@ -364,6 +364,7 @@ public:
     uint32 ManaPerSecond;
     float ManaCostPercentage;
     uint32 RuneCostID;
+    float APMultiplier;
     SpellRangeEntry const* RangeEntry;
     float  Speed;
     uint32 StackAmount;

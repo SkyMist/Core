@@ -308,7 +308,7 @@ class boss_alar : public CreatureScript
                             case WE_SUMMON:
                                 for (uint8 i = 0; i < 2; ++i)
                                     DoSpawnCreature(CREATURE_EMBER_OF_ALAR, 0, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
-                                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 10);
+                                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 10.0f);
                                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                                 me->SetDisplayId(me->GetNativeDisplayId());
                                 DoCast(me, SPELL_REBIRTH_2, true);
@@ -393,7 +393,7 @@ class boss_alar : public CreatureScript
                         me->AttackStop();
                         me->GetMotionMaster()->MovePoint(6, waypoint[4][0], waypoint[4][1], waypoint[4][2]);
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                        me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 50);
+                        me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 50.0f);
                         WaitEvent = WE_METEOR;
                         WaitTimer = 0;
                         DiveBomb_Timer = 40000+rand()%5000;

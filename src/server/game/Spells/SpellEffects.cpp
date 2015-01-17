@@ -4729,33 +4729,17 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
     if (!unitTarget || !unitTarget->isAlive())
         return;
 
-    // We must try to find SPELL_EFFECT_WEAPON_PERCENT_DAMAGE. If found, the damage mod comes just from it.
-    bool hasPercentEff = false;
-    for (uint32 j = 1; j < MAX_SPELL_EFFECTS; ++j)
+    // Multiple weapon dmg effect fix: Execute only the last weapon damage and handle all effects at once.
+    for (uint32 j = effIndex + 1; j < MAX_SPELL_EFFECTS; ++j)
     {
         switch (m_spellInfo->Effects[j].Effect)
         {
+            case SPELL_EFFECT_WEAPON_DAMAGE:
+            case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+            case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
             case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
-                if (effIndex != j)
-                    return;
-                hasPercentEff = true;
+                return;     // we must calculate only at last weapon effect
             break;
-        }
-    }
-
-    // If we haven't found SPELL_EFFECT_WEAPON_PERCENT_DAMAGE then the damage mod is adjusted just from the last weapon effect.
-    if (!hasPercentEff)
-    {
-        for (uint32 j = effIndex+1; j < MAX_SPELL_EFFECTS; ++j)
-        {
-            switch (m_spellInfo->Effects[j].Effect)
-            {
-                case SPELL_EFFECT_WEAPON_DAMAGE:
-                case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
-                case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
-                    return;
-                break;
-            }
         }
     }
 
@@ -4922,7 +4906,7 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
 
     bool normalized = false;
     float weaponDamagePercentMod = 1.0f;
-    for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
+    for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
     {
         switch (m_spellInfo->Effects[j].Effect)
         {
@@ -4967,7 +4951,7 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
     int32 weaponDamage = m_caster->CalculateDamage(m_attackType, normalized, true);
 
     // Sequence is important
-    for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
+    for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
     {
         // We assume that a spell have at most one fixed_bonus
         // and at most one weaponDamagePercentMod
@@ -4994,20 +4978,6 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
 
     if (totalDamagePercentMod != 1.0f)
         weaponDamage = int32(weaponDamage* totalDamagePercentMod);
-
-    // We may damage only with weapon percent eff or just from the last effect, find all other effects with weapon damage and apply the points to this one.
-    for (uint32 j = EFFECT_0; j < MAX_SPELL_EFFECTS; ++j)
-    {
-        switch (m_spellInfo->Effects[j].Effect)
-        {
-            case SPELL_EFFECT_WEAPON_DAMAGE:
-            case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
-            case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
-                if (j != effIndex)
-                    weaponDamage += m_spellInfo->Effects[effIndex].CalcValue(m_caster);
-            break;
-        }
-    }
 
     // prevent negative damage
     uint32 eff_damage(std::max(weaponDamage, 0));

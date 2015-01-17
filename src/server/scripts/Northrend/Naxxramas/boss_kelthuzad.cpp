@@ -371,8 +371,8 @@ public:
             DoScriptText(SAY_SUMMON_MINIONS, me);
             Phase = 1;
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NOT_SELECTABLE);
-            me->SetFloatValue(UNIT_FIELD_COMBATREACH, 4);
-            me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 4);
+            me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 4.0f);
+            me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 4.0f);
             events.ScheduleEvent(EVENT_TRIGGER, 5000);
             events.ScheduleEvent(EVENT_WASTE, 15000);
             events.ScheduleEvent(EVENT_ABOMIN, 30000);
@@ -483,7 +483,7 @@ public:
                     {
                         // TODO : Add missing text
                         if (Creature* pGuardian = DoSummon(NPC_ICECROWN, Pos[RAND(2, 5, 8, 11)]))
-                            pGuardian->SetFloatValue(UNIT_FIELD_COMBATREACH, 2);
+                            pGuardian->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 2.0f);
                         ++nGuardiansOfIcecrownCount;
                         uiGuardiansOfIcecrownTimer = 5000;
                     }

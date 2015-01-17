@@ -1528,7 +1528,7 @@ class npc_madness_of_deathwing_blistering_tentacle : public CreatureScript
 
             void IsSummonedBy(Unit* owner)
             {
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 50.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 50.0f);
                 
                 if (owner->GetEntry() == NPC_WING_TENTACLE ||
                     owner->GetEntry() == NPC_ARM_TENTACLE_1 ||
@@ -1734,8 +1734,8 @@ class npc_madness_of_deathwing_elementium_bolt : public CreatureScript
                         DoCastAOE(SPELL_ELEMENTIUM_BLAST, true);
                         //DoCast(me, SPELL_ELEMENTIUM_METEOR_TRANSFORM_2, true);
                         DoCast(me, SPELL_ELEMENTIUM_METEOR_AURA, true);
-                        me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 0.39f);
-                        me->SetFloatValue(UNIT_FIELD_COMBATREACH, 1.f);
+                        me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 0.39f);
+                        me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 1.0f);
                         me->SetDisplayId(15435);
                     }
             }

@@ -350,8 +350,8 @@ class boss_arcanotron : public CreatureScript
                 
                 stage = 0;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 5);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 instance->SetData(DATA_HEALTH_OMNOTRON_SHARED, me->GetMaxHealth());
                 me->setPowerType(POWER_ENERGY);
@@ -575,8 +575,8 @@ class boss_electron : public CreatureScript
                 
                 stage = 0;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 5);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 instance->SetData(DATA_HEALTH_OMNOTRON_SHARED, me->GetMaxHealth());
                 me->setPowerType(POWER_ENERGY);
@@ -758,8 +758,8 @@ class boss_magmatron : public CreatureScript
 
                 stage = 0;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 5);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 instance->SetData(DATA_HEALTH_OMNOTRON_SHARED, me->GetMaxHealth());
                 me->setPowerType(POWER_ENERGY);
@@ -951,8 +951,8 @@ class boss_toxitron : public CreatureScript
 
                 stage = 0;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 5);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 instance->SetData(DATA_HEALTH_OMNOTRON_SHARED, me->GetMaxHealth());
                 me->setPowerType(POWER_ENERGY);

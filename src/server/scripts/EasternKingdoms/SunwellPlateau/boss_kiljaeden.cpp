@@ -574,7 +574,7 @@ public:
                 if (Creature* pKalec = Unit::GetCreature(*me, instance->GetData64(DATA_KALECGOS_KJ)))
                     pKalec->RemoveDynObject(SPELL_RING_OF_BLUE_FLAMES);
             }
-            me->SetFloatValue(UNIT_FIELD_COMBATREACH, 12);
+            me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 12.0f);
             ChangeTimers(false, 0);
             summons.DespawnAll();
         }

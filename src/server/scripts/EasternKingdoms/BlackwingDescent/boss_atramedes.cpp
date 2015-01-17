@@ -212,8 +212,8 @@ public:
             for (uint8 i = 0; i < 8; i++)
                 _shields[i] = me->SummonCreature(42949, dwarvenshieldsPos[i]);
 
-            me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 15);
-            me->SetFloatValue(UNIT_FIELD_COMBATREACH, 15);
+            me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 15.0f);
+            me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 15.0f);
 
             stage = 0;
             nextspell = 0;

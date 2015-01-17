@@ -278,8 +278,8 @@ class boss_sinestra : public CreatureScript
                 phase = 0;
                 eggs = 0;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 15);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 15);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 15.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 15.0f);
 
                 me->SetHealth(RAID_MODE(SINESTRA_HEALTH_10H, SINESTRA_HEALTH_25H, SINESTRA_HEALTH_10H, SINESTRA_HEALTH_25H));
 

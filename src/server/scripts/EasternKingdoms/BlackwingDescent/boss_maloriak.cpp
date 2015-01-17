@@ -196,8 +196,8 @@ class boss_maloriak : public CreatureScript
                 bExecute = false;
                 bDark = false;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 7);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 7);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 7.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 7.0f);
 
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->SetControlled(false, UNIT_STATE_STUNNED);

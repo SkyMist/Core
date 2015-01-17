@@ -186,8 +186,8 @@ public:
             summons.DespawnAll();
             events.Reset();
 
-            me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 10);
-            me->SetFloatValue(UNIT_FIELD_COMBATREACH, 10);
+            me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 10.0f);
+            me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 10.0f);
 
             if (!pInstance)
                 return;

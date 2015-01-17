@@ -179,8 +179,8 @@ class boss_halfus_wyrmbreaker : public CreatureScript
                 _Reset();
 
                 SetEquipmentSlots(false, EQUIPMENT_ONE, 0, 0);
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 10);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 10);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 10.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 10.0f);
                 bRoar = false;
                 bWhelps = false;
                 events.Reset();

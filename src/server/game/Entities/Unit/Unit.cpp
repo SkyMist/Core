@@ -16860,6 +16860,32 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
     }
 }
 
+int32 Unit::GetTotalSpellPowerValue(SpellSchoolMask mask, bool heal) const
+{
+    int32 sp = 0;
+
+    if (GetTypeId() != TYPEID_PLAYER) return sp;
+    
+    if (heal) sp = GetInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS);
+    else 
+    {
+        int32 counter = 0;
+        for (uint8 i = 0 ; i < MAX_SPELL_SCHOOL ; i++)
+        {
+            if(mask & i)
+            {
+                sp += GetInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + i);
+                counter++;
+            }
+        }
+        if (counter > 0) sp /= counter;
+    }
+
+    if (sp < 0) sp = 0;
+
+    return sp;
+}
+
 float Unit::GetTotalAttackPowerValue(WeaponAttackType attType) const
 {
     if (attType == RANGED_ATTACK)
@@ -22526,7 +22552,7 @@ uint32 Unit::GetResistance(SpellSchoolMask mask) const
             return 0;
 
     int32 resist = -1;
-    for (int i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
+    for (uint8 i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
         if (mask & (1 << i) && (resist < 0 || resist > int32(GetResistance(SpellSchools(i)))))
             resist = int32(GetResistance(SpellSchools(i)));
 

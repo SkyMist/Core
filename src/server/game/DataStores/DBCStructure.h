@@ -2102,7 +2102,7 @@ struct SpellEntry
     uint32    runeCostID;                                   // 5       m_runeCostID
     //uint32  spellMissileID;                               // 6       m_spellMissileID not used
     //uint32  spellDescriptionVariableID;                   // 7       m_spellDescriptionVariableID, 3.2.0
-    //float unk_f1;                                         // 8
+    float  APMultiplier;                                    // 8
     uint32 SpellScalingId;                                  // 9        SpellScaling.dbc
     uint32 SpellAuraOptionsId;                              // 10       SpellAuraOptions.dbc
     uint32 SpellAuraRestrictionsId;                         // 11       SpellAuraRestrictions.dbc
@@ -2832,13 +2832,10 @@ struct SpellEffect
     SpellEffect()
     {
         for (int i = 0; i < MAX_DIFFICULTY; i++)
-        {
-            for (int y = 0; y < MAX_SPELL_EFFECTS; y++)
-            {
+            for (uint8 y = 0; y < MAX_SPELL_EFFECTS; y++)
                 effects[i][y] = 0;
-            }
-        }
     }
+
     SpellEffectEntry const* effects[MAX_DIFFICULTY][32];
 };
 

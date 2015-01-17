@@ -1276,8 +1276,8 @@ class Unit : public WorldObject
         bool haveOffhandWeapon() const;
         bool CanDualWield() const { return m_canDualWield; }
         void SetCanDualWield(bool value) { m_canDualWield = value; }
-        float GetCombatReach() const { return m_floatValues[UNIT_FIELD_COMBATREACH]; }
-        float GetMeleeReach() const { float reach = m_floatValues[UNIT_FIELD_COMBATREACH]; return reach > MIN_MELEE_REACH ? reach : MIN_MELEE_REACH; }
+        float GetCombatReach() const { return m_floatValues[UNIT_FIELD_COMBAT_REACH]; }
+        float GetMeleeReach() const { float reach = m_floatValues[UNIT_FIELD_COMBAT_REACH]; return reach > MIN_MELEE_REACH ? reach : MIN_MELEE_REACH; }
         bool IsWithinCombatRange(const Unit* obj, float dist2compare) const;
         bool IsWithinMeleeRange(const Unit* obj, float dist = MELEE_RANGE) const;
         void GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const;
@@ -2001,6 +2001,7 @@ class Unit : public WorldObject
         virtual void UpdateMaxPower(Powers power) = 0;
         virtual void UpdateAttackPowerAndDamage(bool ranged = false) = 0;
         virtual void UpdateDamagePhysical(WeaponAttackType attType) = 0;
+        int32 GetTotalSpellPowerValue(SpellSchoolMask mask, bool heal) const;
         float GetTotalAttackPowerValue(WeaponAttackType attType) const;
         float GetWeaponDamageRange(WeaponAttackType attType, WeaponDamageRange type) const;
         void SetBaseWeaponDamage(WeaponAttackType attType, WeaponDamageRange damageRange, float value) { m_weaponDamage[attType][damageRange] = value; }

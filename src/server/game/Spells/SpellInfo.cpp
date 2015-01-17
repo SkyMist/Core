@@ -394,14 +394,14 @@ bool SpellEffectInfo::IsAura() const
     return (IsUnitOwnedAuraEffect() || Effect == SPELL_EFFECT_PERSISTENT_AREA_AURA) && ApplyAuraName != 0;
 }
 
-bool SpellEffectInfo::IsPersistenAura() const
-{
-    return Effect == SPELL_EFFECT_PERSISTENT_AREA_AURA && ApplyAuraName != 0;
-}
-
 bool SpellEffectInfo::IsAura(AuraType aura) const
 {
     return IsAura() && AuraType(ApplyAuraName) == uint32(aura);
+}
+
+bool SpellEffectInfo::IsPersistentAreaAura() const
+{
+    return Effect == SPELL_EFFECT_PERSISTENT_AREA_AURA && ApplyAuraName != 0;
 }
 
 bool SpellEffectInfo::IsTargetingArea() const
@@ -609,18 +609,49 @@ int32 SpellEffectInfo::CalcValue(Unit const* caster, int32 const* bp, Unit const
         value = caster->ApplyEffectModifiers(_spellInfo, _effIndex, value);
 
         // amount multiplication based on caster's level
-        if (!_spellInfo->GetSpellScaling() && !basePointsPerLevel && (_spellInfo->Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION && _spellInfo->SpellLevel) &&
-                Effect != SPELL_EFFECT_WEAPON_PERCENT_DAMAGE &&
-                Effect != SPELL_EFFECT_KNOCK_BACK &&
-                Effect != SPELL_EFFECT_ADD_EXTRA_ATTACKS &&
-                Effect != SPELL_EFFECT_GAMEOBJECT_DAMAGE &&
-                ApplyAuraName != SPELL_AURA_MOD_SPEED_ALWAYS &&
-                ApplyAuraName != SPELL_AURA_MOD_SPEED_NOT_STACK &&
-                ApplyAuraName != SPELL_AURA_MOD_INCREASE_SPEED &&
-                ApplyAuraName != SPELL_AURA_MOD_DECREASE_SPEED)
-                //there are many more: slow speed, -healing pct
-            value *= 0.25f * exp(caster->getLevel() * (70 - _spellInfo->SpellLevel) / 1000.0f);
-            //value = int32(value * (int32)getLevel() / (int32)(_spellInfo->spellLevel ? _spellInfo->spellLevel : 1));
+        if (!_spellInfo->GetSpellScaling() && !basePointsPerLevel && (_spellInfo->Attributes & SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION) && _spellInfo->SpellLevel && _spellInfo->SpellLevel != caster->getLevel())
+        {
+            bool canEffectScale = false;
+            switch (Effect)
+            {
+                case SPELL_EFFECT_SCHOOL_DAMAGE:
+                case SPELL_EFFECT_DUMMY:
+                case SPELL_EFFECT_POWER_DRAIN:
+                case SPELL_EFFECT_HEALTH_LEECH:
+                case SPELL_EFFECT_HEAL:
+                case SPELL_EFFECT_WEAPON_DAMAGE:
+                case SPELL_EFFECT_POWER_BURN:
+                case SPELL_EFFECT_SCRIPT_EFFECT:
+                case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+                case SPELL_EFFECT_FORCE_CAST_WITH_VALUE:
+                case SPELL_EFFECT_TRIGGER_SPELL_WITH_VALUE:
+                case SPELL_EFFECT_TRIGGER_MISSILE_SPELL_WITH_VALUE:
+                    canEffectScale = true;
+                    break;
+
+                default: break;
+            }
+
+            switch (ApplyAuraName)
+            {
+                case SPELL_AURA_PERIODIC_DAMAGE:
+                case SPELL_AURA_DUMMY:
+                case SPELL_AURA_PERIODIC_HEAL:
+                case SPELL_AURA_DAMAGE_SHIELD:
+                case SPELL_AURA_PROC_TRIGGER_DAMAGE:
+                case SPELL_AURA_PERIODIC_LEECH:
+                case SPELL_AURA_PERIODIC_MANA_LEECH:
+                case SPELL_AURA_SCHOOL_ABSORB:
+                case SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE:
+                    canEffectScale = true;
+                    break;
+
+                default: break;
+            }
+
+            if (canEffectScale)
+                value *= 0.25f * exp(caster->getLevel() * (70 - _spellInfo->SpellLevel) / 1000.0f); // ToDo: Fix this.
+        }
 
         // Hack Fix Arcane Barrage triggered
         if (_spellInfo->Id == 50273)
@@ -912,6 +943,7 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, uint32 difficulty)
     Rank = spellEntry->Rank;
     RuneCostID = spellEntry->runeCostID;
     SpellDifficultyId = 0;
+    APMultiplier = spellEntry->APMultiplier;
     SpellScalingId = spellEntry->SpellScalingId;
     SpellAuraOptionsId = spellEntry->SpellAuraOptionsId;
     SpellAuraRestrictionsId = spellEntry->SpellAuraRestrictionsId;
@@ -1139,7 +1171,7 @@ bool SpellInfo::HasAreaAuraEffect() const
 bool SpellInfo::HasPersistenAura() const
 {
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-        if (Effects[i].IsPersistenAura())
+        if (Effects[i].IsPersistentAreaAura())
             return true;
     return false;
 }

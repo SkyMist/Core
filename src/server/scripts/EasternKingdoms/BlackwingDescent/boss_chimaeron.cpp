@@ -126,8 +126,8 @@ class boss_chimaeron : public CreatureScript
                 uiVictims = 0;
                 bFeud = false;
 
-                me->SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, 10);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 10);
+                me->SetFloatValue(UNIT_FIELD_BOUNDING_RADIUS, 10.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 10.0f);
 
                 me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, false);
                 me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, false); 

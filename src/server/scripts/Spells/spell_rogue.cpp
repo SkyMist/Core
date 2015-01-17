@@ -1709,7 +1709,7 @@ class spell_rog_subterfuge_effect : public SpellScriptLoader
         {
             PrepareAuraScript(spell_rog_subterfuge_effect_AuraScript);
 
-            void AfterRemove(constAuraEffectPtr aurEff, AuraEffectHandleModes /*mode*/)
+            void HandleRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
             {
                 if (!GetCaster())
                     return;
@@ -1720,7 +1720,7 @@ class spell_rog_subterfuge_effect : public SpellScriptLoader
 
             void Register()
             {
-                AfterEffectRemove += AuraEffectRemoveFn(spell_rog_subterfuge_effect_AuraScript::AfterRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                AfterEffectRemove += AuraEffectRemoveFn(spell_rog_subterfuge_effect_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
             }
         };
 

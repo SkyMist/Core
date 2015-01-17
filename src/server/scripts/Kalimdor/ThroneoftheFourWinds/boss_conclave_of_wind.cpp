@@ -235,7 +235,7 @@ class boss_anshal : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
 
                 me->setActive(true);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 pInstance = pCreature->GetInstanceScript();
 
@@ -522,7 +522,7 @@ class boss_nezir : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
 
                 me->setActive(true);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 pInstance = pCreature->GetInstanceScript();
 
@@ -775,7 +775,7 @@ class boss_rohash : public CreatureScript
                 me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
 
                 me->setActive(true);
-                me->SetFloatValue(UNIT_FIELD_COMBATREACH, 5.0f);
+                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
 
                 pInstance = pCreature->GetInstanceScript();
 
