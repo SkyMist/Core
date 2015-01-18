@@ -1,0 +1,1 @@
+INSERT INTO command (name, security, help) VALUES ("npc setguidauras", 3, "Syntax: .npc setguidauras #aura1 #aura2 Sets selected unit guid creature_addon auras (2 max).");

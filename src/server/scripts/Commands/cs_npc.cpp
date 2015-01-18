@@ -177,6 +177,7 @@ public:
             { "move",           SEC_GAMEMASTER,     false, &HandleNpcMoveCommand,              "", NULL },
             { "playemote",      SEC_ADMINISTRATOR,  false, &HandleNpcPlayEmoteCommand,         "", NULL },
             { "setemote",       SEC_GAMEMASTER,     false, &HandleNpcSetEmoteCommand,          "", NULL },
+            { "setguidauras",   SEC_GAMEMASTER,     false, &HandleNpcSetGuidAurasCommand,      "", NULL },
             { "say",            SEC_MODERATOR,      false, &HandleNpcSayCommand,               "", NULL },
             { "textemote",      SEC_MODERATOR,      false, &HandleNpcTextEmoteCommand,         "", NULL },
             { "whisper",        SEC_MODERATOR,      false, &HandleNpcWhisperCommand,           "", NULL },
@@ -890,7 +891,15 @@ public:
 
 	static bool HandleNpcSetEmoteCommand(ChatHandler* handler, const char* args)
 	{
-        uint32 emote = atoi((char*)args);
+        if (!*args)
+            return false;
+
+        char* emote1 = strtok((char*)args, " ");
+
+        if (!emote1)
+            return false;
+
+        uint32 emote = atoi(emote1);
 
         Creature* target = handler->getSelectedCreature();
         if (!target)
@@ -909,6 +918,64 @@ public:
         WorldDatabase.Execute(stmt);
 
         target->HandleEmote(emote);
+
+        return true;
+    }
+
+	static bool HandleNpcSetGuidAurasCommand(ChatHandler* handler, const char* args)
+	{
+        if (!*args)
+            return false;
+
+        // Limited to 2 auras for now.
+        char* auras1 = strtok((char*)args, " ");
+        char* auras2 = strtok(NULL, " ");
+
+        if (!auras1)
+            return false;
+
+        uint32 aura1 = atoi(auras1);
+        uint32 aura2 = auras2 ? atoi(auras2) : 0;
+
+        Creature* target = handler->getSelectedCreature();
+        if (!target)
+        {
+            handler->SendSysMessage(LANG_SELECT_CREATURE);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        uint32 lowGuid = target->GetDBTableGUIDLow();
+
+        if (aura2 > 0)
+        {
+            if (!target->HasAura(aura1))
+                target->AddAura(aura1, target);
+            if (!target->HasAura(aura2))
+                target->AddAura(aura2, target);
+
+            std::ostringstream ss1;
+            std::ostringstream ss2;
+
+            // Build the aura listing.
+			ss1 << aura1 << " " << aura2;
+            // Build the full string.
+			ss2 << "UPDATE creature_addon SET auras = '" << ss1 << "' WHERE guid = " << lowGuid << ";";
+
+            WorldDatabase.DirectExecute(ss2.str().c_str()); 
+        }
+        else
+        {
+            if (!target->HasAura(aura1))
+                target->AddAura(aura1, target);
+
+            std::ostringstream ss1;
+
+            // Build the full string.
+			ss1 << "UPDATE creature_addon SET auras = '" << aura1 << "' WHERE guid = " << lowGuid << ";";
+
+            WorldDatabase.DirectExecute(ss1.str().c_str()); 
+        }
 
         return true;
     }

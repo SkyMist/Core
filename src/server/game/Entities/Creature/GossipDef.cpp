@@ -1104,7 +1104,7 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     data << uint32(hiddenReward ? 0 : quest->RewardItemId[1]);
     data << uint32(hiddenReward ? 0 : quest->RewardItemIdCount[2]);
     data << uint32(hiddenReward ? 0 : quest->RewardChoiceItemCount[0]);
-    data << uint32(quest->GetFlags() & 0xFFFF);                             // quest flags
+    data << uint32(quest->GetFlags());                                      // quest flags
     data << uint32(quest->GetRewardSkillPoints());                          // reward skill points
     data << uint32(hiddenReward ? 0 : quest->RewardChoiceItemId[1]);
     data << uint32(quest->GetQuestMethod());                                // Accepted values: 0, 1 or 2. 0 == IsAutoComplete() (skip objectives/details)

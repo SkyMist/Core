@@ -30389,7 +30389,7 @@ void Player::SendMovementSetCollisionHeight(float height)
     CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID));
 
     bool hasMountDisplayInfoScale = mountDisplayInfo ? true : false;
-    float mountDisplayScale = hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f;
+    float mountDisplayScale = GetObjectScale(); // hasMountDisplayInfoScale ? mountDisplayInfo->scale : 1.0f; but this causes scale issues (some mounts too big).
 
     ObjectGuid guid = GetGUID();
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HEIGHT, 2 + 8 + 4 + 4);
