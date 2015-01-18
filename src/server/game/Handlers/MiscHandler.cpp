@@ -1338,6 +1338,11 @@ void WorldSession::HandleCompleteCinematic(WorldPacket& /*recvData*/)
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_COMPLETE_CINEMATIC");
 }
 
+void WorldSession::HandleCompleteMovie(WorldPacket& /*recvData*/)
+{
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_COMPLETE_MOVIE");
+}
+
 void WorldSession::HandleNextCinematicCamera(WorldPacket& /*recvData*/)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_NEXT_CINEMATIC_CAMERA");

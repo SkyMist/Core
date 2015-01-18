@@ -19396,7 +19396,7 @@ void Player::SendQuestFailed(uint32 questId, InventoryResult reason)
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTGIVER_QUEST_FAILED");
 
         WorldPacket data2(SMSG_QUESTUPDATE_FAILED, 4);
-        data2 << uint32(quest_id);
+        data2 << uint32(questId);
         GetSession()->SendPacket(&data2);
 
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_QUESTUPDATE_FAILED");
@@ -21630,6 +21630,7 @@ void Player::BindToInstance()
     WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
     data << uint32(0);
     GetSession()->SendPacket(&data);
+
     BindToInstance(mapSave, true);
 
     GetSession()->SendCalendarRaidLockout(mapSave, true);
@@ -29375,7 +29376,7 @@ void Player::SendClearAllCooldowns(Unit* target)
     uint32 spellCount = m_spellCooldowns.size();
     ObjectGuid guid = target ? target->GetGUID() : 0;
 
-    WorldPacket data(SMSG_CLEAR_COOLDOWNS, 4+8+1+spellCount*4);
+    WorldPacket data(SMSG_CLEAR_COOLDOWNS, 4 + 8 + 1 + spellCount * 4);
     data.WriteBit(guid[6]);
     data.WriteBit(guid[4]);
     data.WriteBits(spellCount, 22); // Spell Count
@@ -29393,12 +29394,49 @@ void Player::SendClearAllCooldowns(Unit* target)
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid[4]);
     data.WriteByteSeq(guid[5]);
-    for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); ++itr)
-        data << uint32(itr->first); // Spell ID
+
+    if (!m_spellCooldowns.empty())
+        for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end(); ++itr)
+            data << uint32(itr->first); // Spell ID
 
     data.WriteByteSeq(guid[6]);
     data.WriteByteSeq(guid[7]);
     data.WriteByteSeq(guid[2]);
+
+    SendDirectMessage(&data);
+}
+
+void Player::SendDisenchantCredit(Item* item)
+{
+    ObjectGuid guid = GetGUID();
+
+    WorldPacket data(SMSG_DISENCHANT_CREDIT, 12 + 1 + 8);
+
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[4]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[0]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[2]);
+
+    data.FlushBits();
+
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[3]);
+
+    data << uint32(item->GetTemplate()->Quality); // Item Quality
+    data << uint32(item->GetTemplate()->Class);   // Item Class
+
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[2]);
+
+    data << uint32(item->GetEntry());             // Item ID
 
     SendDirectMessage(&data);
 }
@@ -29746,11 +29784,10 @@ void Player::SendRefundInfo(Item* item)
     
     for (uint8 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; ++i)
     {
+        uint32 precision = 1;
         CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(iece->RequiredCurrency[i]);
-        if (!entry)
-            continue;
-
-        uint32 precision   = (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
+        if (entry) if (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION)
+            precision = CURRENCY_PRECISION;
 
         data << uint32(iece->RequiredCurrency[i]);
         data << uint32(iece->RequiredCurrencyCount[i] / precision);       // Must be divided by precision
@@ -29823,11 +29860,10 @@ void Player::SendItemRefundResult(Item* item, ItemExtendedCostEntry const* iece,
     {
         for (uint8 i = 0; i < MAX_ITEM_EXT_COST_CURRENCIES; ++i)
         {
+            uint32 precision = 1;
             CurrencyTypesEntry const* entry = sCurrencyTypesStore.LookupEntry(iece->RequiredCurrency[i]);
-            if (!entry)
-                continue;
-
-            uint32 precision = (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION) ? CURRENCY_PRECISION : 1;
+            if (entry) if (entry->Flags & CURRENCY_FLAG_HIGH_PRECISION)
+                precision = CURRENCY_PRECISION;
 
             data << uint32(iece->RequiredCurrencyCount[i] / precision);
             data << uint32(iece->RequiredCurrency[i]);

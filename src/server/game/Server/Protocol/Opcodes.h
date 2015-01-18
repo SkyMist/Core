@@ -166,7 +166,7 @@ enum Opcodes
     CMSG_COMMENTATOR_START_WARGAME                    = 0x0000,
     CMSG_COMPLAIN                                     = 0x1791, // 5.4.7 18019
     CMSG_COMPLETE_CINEMATIC                           = 0x12F8, // 5.4.7 18019
-    CMSG_COMPLETE_MOVIE                               = 0x0000,
+    CMSG_COMPLETE_MOVIE                               = 0x0012, // 5.4.7 18019
     CMSG_CONNECT_TO_FAILED                            = 0x0000, // Seems like 0x16C8 // 5.4.7 18019 - CHECK!
     CMSG_CONFIRM_RESPEC_WIPE                          = 0x1712, // 5.4.7 18019
     CMSG_CONTACT_LIST                                 = 0x1186, // 5.4.7 18019
@@ -761,7 +761,7 @@ enum Opcodes
     SMSG_DESTROY_OBJECT                               = 0x1D69, // 5.4.7 18019
     SMSG_DESTRUCTIBLE_BUILDING_DAMAGE                 = 0x0562, // 5.4.7 18019
     SMSG_DIFFERENT_INSTANCE_FROM_PARTY                = 0x0000,
-    SMSG_DISENCHANT_CREDIT                            = 0x0000,
+    SMSG_DISENCHANT_CREDIT                            = 0x0749, // 5.4.7 18019
     SMSG_DISMOUNT                                     = 0x12EA, // 5.4.7 18019
     SMSG_DISMOUNTRESULT                               = 0x0642, // 5.4.7 18019
     SMSG_DISPEL_FAILED                                = 0x0000,
@@ -880,7 +880,7 @@ enum Opcodes
     SMSG_INSPECT_RESULTS_UPDATE                       = 0x0000,
     SMSG_INSPECT_TALENT                               = 0x1E49, // 5.4.7 18019
     SMSG_INSTANCE_LOCK_WARNING_QUERY                  = 0x0000,
-    SMSG_INSTANCE_RESET                               = 0x0000,
+    SMSG_INSTANCE_RESET                               = 0x1F72, // 5.4.7 18019
     SMSG_INSTANCE_RESET_FAILED                        = 0x0000,
     SMSG_INSTANCE_SAVE_CREATED                        = 0x0000,
     SMSG_INVALIDATE_DANCE                             = 0x0000,

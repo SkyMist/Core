@@ -44,7 +44,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
     //bool is_water_ok = creature.CanSwim();                // not used?
     bool is_air_ok = creature.CanFly();
 
-    const float angle = float(rand_norm()) * static_cast<float>(M_PI*2.0f);
+    const float angle = float(rand_norm()) * static_cast<float>(M_PI * 2.0f);
     const float range = float(rand_norm()) * wander_distance;
     const float distanceX = range * std::cos(angle);
     const float distanceY = range * std::sin(angle);
@@ -56,14 +56,14 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
     JadeCore::NormalizeMapCoord(destX);
     JadeCore::NormalizeMapCoord(destY);
 
-    travelDistZ = distanceX*distanceX + distanceY*distanceY;
+    travelDistZ = range; // sin^2 + cos^2 = 1, so travelDistZ = range^2; no need for sqrt below
 
     if (is_air_ok)                                          // 3D system above ground and above water (flying mode)
     {
         // Limit height change
-        const float distanceZ = float(rand_norm()) * sqrtf(travelDistZ)/2.0f;
+        const float distanceZ = float(rand_norm()) * travelDistZ / 2.0f;
         destZ = respZ + distanceZ;
-        float levelZ = map->GetWaterOrGroundLevel(destX, destY, destZ-2.0f);
+        float levelZ = map->GetWaterOrGroundLevel(destX, destY, destZ - 2.0f);
 
         // Problem here, we must fly above the ground and water, not under. Let's try on next tick
         if (levelZ >= destZ)
@@ -73,11 +73,11 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
     else                                                    // 2D only
     {
         // 10.0 is the max that vmap high can check (MAX_CAN_FALL_DISTANCE)
-        travelDistZ = travelDistZ >= 100.0f ? 10.0f : sqrtf(travelDistZ);
+        travelDistZ = travelDistZ >= 10.0f ? 10.0f : travelDistZ;
 
         // The fastest way to get an accurate result 90% of the time.
         // Better result can be obtained like 99% accuracy with a ray light, but the cost is too high and the code is too long.
-        destZ = map->GetHeight(creature.GetPhaseMask(), destX, destY, respZ+travelDistZ-2.0f, false);
+        destZ = map->GetHeight(creature.GetPhaseMask(), destX, destY, respZ + travelDistZ - 2.0f, false);
 
         if (fabs(destZ - respZ) > travelDistZ)              // Map check
         {
@@ -87,9 +87,9 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
             if (fabs(destZ - respZ) > travelDistZ)
             {
                 // Vmap Higher
-                destZ = map->GetHeight(creature.GetPhaseMask(), destX, destY, respZ+travelDistZ-2.0f, true);
+                destZ = map->GetHeight(creature.GetPhaseMask(), destX, destY, respZ + travelDistZ - 2.0f, true);
 
-                // let's forget this bad coords where a z cannot be find and retry at next tick
+                // Let's forget this bad coords where a z cannot be find and retry at next tick
                 if (fabs(destZ - respZ) > travelDistZ)
                     return;
             }

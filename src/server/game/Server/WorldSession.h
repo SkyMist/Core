@@ -810,6 +810,7 @@ class WorldSession
         void HandleSetChannelWatch(WorldPacket& recvPacket);
 
         void HandleCompleteCinematic(WorldPacket& recvPacket);
+        void HandleCompleteMovie(WorldPacket& recvPacket);
         void HandleNextCinematicCamera(WorldPacket& recvPacket);
 
         void HandlePageTextQueryOpcode(WorldPacket& recvPacket);
@@ -1136,7 +1137,6 @@ class WorldSession
         time_t timeLastArenaTeamCommand;
         time_t timeLastCalendarInvCommand;
         time_t timeLastChangeSubGroupCommand;
-        time_t timeLastSellItemOpcode;
         time_t timeLastBuyItemOpcode;
         time_t timeLastBuyItemSlotOpcode;
         uint32 m_uiAntispamMailSentCount;

@@ -6416,6 +6416,7 @@ void Spell::EffectDisEnchant(SpellEffIndex /*effIndex*/)
     {
         caster->UpdateCraftSkill(m_spellInfo->Id);
         caster->SendLoot(itemTarget->GetGUID(), LOOT_DISENCHANTING);
+        caster->SendDisenchantCredit(itemTarget); // Here he gets the SMSG.
     }
 
     // item will be removed at disenchanting end
