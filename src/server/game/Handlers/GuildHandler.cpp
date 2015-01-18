@@ -540,6 +540,10 @@ void WorldSession::HandleGuildBankQueryTab(WorldPacket& recvData)
     {
         if (Guild* guild = _GetPlayerGuild(this))
         {
+            // Purchase tab or view?
+            if (tabId == guild->GetPurchasedTabsSize())
+                return;
+
             guild->SendBankList(this, tabId, true, true);
             guild->SendMoneyInfo(this);
         }
