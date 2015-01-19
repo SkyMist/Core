@@ -166,7 +166,7 @@ enum Opcodes
     CMSG_COMMENTATOR_START_WARGAME                    = 0x0000,
     CMSG_COMPLAIN                                     = 0x1791, // 5.4.7 18019
     CMSG_COMPLETE_CINEMATIC                           = 0x12F8, // 5.4.7 18019
-    CMSG_COMPLETE_MOVIE                               = 0x0012, // 5.4.7 18019
+    CMSG_COMPLETE_MOVIE                               = 0x0000,
     CMSG_CONNECT_TO_FAILED                            = 0x0000, // Seems like 0x16C8 // 5.4.7 18019 - CHECK!
     CMSG_CONFIRM_RESPEC_WIPE                          = 0x1712, // 5.4.7 18019
     CMSG_CONTACT_LIST                                 = 0x1186, // 5.4.7 18019

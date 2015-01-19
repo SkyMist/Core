@@ -1541,32 +1541,30 @@ class Player : public Unit, public GridObject<Player>
         void AddRefundReference(uint32 it);
         void DeleteRefundReference(uint32 it);
 
-        /// send initialization of new currency for client
-        void SendNewCurrency(uint32 id);
         /// send full data about all currencies to client
         void ModifyCurrencyFlags(uint32 currencyId, uint8 flags);
         void SendCurrencies();
         void SendPvpRewards();
-        /// return count of currency witch has plr
+        /// return count of currencies that the player has
         uint32 GetCurrency(uint32 id, bool usePrecision) const;
         uint32 GetCurrencyOnWeek(uint32 id, bool usePrecision) const;
         uint32 GetCurrencyOnSeason(uint32 id, bool usePrecision) const;
-        /// return presence related currency
+        /// return currency amount the player has
         bool HasCurrency(uint32 id, uint32 count) const;
-        /// @todo: not understand why it subtract from total count and for what it used. It should be remove and replaced by ModifyCurrency
+        /// other get, set, caulculate methods related to currency
         void SetCurrency(uint32 id, uint32 count, bool printLog = true);
         uint32 GetCurrencyWeekCap(uint32 id, bool usePrecision = false);
         void ResetCurrencyWeekCap();
         uint32 CalculateCurrencyWeekCap(uint32 id);
         uint32 GetCurrencyTotalCap(CurrencyTypesEntry const* currency) const;
-        void UpdateConquestCurrencyCap(uint32 currency);
+        void UpdateConquestCurrencyWeekCap(uint32 currency);
 
         /**
         * @name ModifyCurrency
         * @brief Change specific currency and send result to client
 
         * @param id currency entry from CurrencyTypes.dbc
-        * @param count integer value for adding/removing current currency
+        * @param count integer value for adding / removing current currency
         * @param printLog used on SMSG_UPDATE_CURRENCY
         * @param ignore gain multipliers
         */
@@ -2186,7 +2184,7 @@ class Player : public Unit, public GridObject<Player>
             if (type == ARENA_TEAM_PERSONAL_RATING && value > _maxPersonalArenaRate)
             {
                 _maxPersonalArenaRate = value;
-                UpdateConquestCurrencyCap(CURRENCY_TYPE_CONQUEST_META_ARENA);
+                UpdateConquestCurrencyWeekCap(CURRENCY_TYPE_CONQUEST_META_ARENA);
             }
         }
         

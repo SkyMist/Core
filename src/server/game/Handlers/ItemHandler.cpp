@@ -2479,7 +2479,7 @@ void WorldSession::HandleUpgradeItemOpcode(WorldPacket& recvData)
 
     // Remove currency cost.
 	int32 count = itemUpEntry->currencyCost;
-    player->ModifyCurrency(itemUpEntry->currencyId, -count, false, true, true);
+    player->ModifyCurrency(itemUpEntry->currencyId, -count, false, true);
 }
 
 void WorldSession::HandleSetLootSpecialization(WorldPacket& recvData)

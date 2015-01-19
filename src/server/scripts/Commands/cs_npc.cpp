@@ -947,34 +947,73 @@ public:
 
         uint32 lowGuid = target->GetDBTableGUIDLow();
 
-        if (aura2 > 0)
+        PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_CREATURE_ADDON_BY_GUID);
+        stmt->setUInt32(0, lowGuid);
+        PreparedQueryResult result = WorldDatabase.Query(stmt);
+
+        if (result)
         {
-            if (!target->HasAura(aura1))
-                target->AddAura(aura1, target);
-            if (!target->HasAura(aura2))
-                target->AddAura(aura2, target);
+            if (aura2 > 0)
+            {
+                if (!target->HasAura(aura1))
+                    target->AddAura(aura1, target);
+                if (!target->HasAura(aura2))
+                    target->AddAura(aura2, target);
 
-            std::ostringstream ss1;
-            std::ostringstream ss2;
+                std::ostringstream ss1;
+                std::ostringstream ss2;
 
-            // Build the aura listing.
-			ss1 << aura1 << " " << aura2;
-            // Build the full string.
-			ss2 << "UPDATE creature_addon SET auras = '" << ss1 << "' WHERE guid = " << lowGuid << ";";
+                // Build the aura listing.
+		    	ss1 << aura1 << " " << aura2;
+                // Build the full string.
+		    	ss2 << "UPDATE creature_addon SET auras = '" << ss1 << "' WHERE guid = " << lowGuid << ";";
 
-            WorldDatabase.DirectExecute(ss2.str().c_str()); 
+                WorldDatabase.DirectExecute(ss2.str().c_str()); 
+            }
+            else
+            {
+                if (!target->HasAura(aura1))
+                    target->AddAura(aura1, target);
+
+                std::ostringstream ss1;
+
+                // Build the full string.
+		        ss1 << "UPDATE creature_addon SET auras = '" << aura1 << "' WHERE guid = " << lowGuid << ";";
+
+                WorldDatabase.DirectExecute(ss1.str().c_str()); 
+            }
         }
         else
         {
-            if (!target->HasAura(aura1))
-                target->AddAura(aura1, target);
+            if (aura2 > 0)
+            {
+                if (!target->HasAura(aura1))
+                    target->AddAura(aura1, target);
+                if (!target->HasAura(aura2))
+                    target->AddAura(aura2, target);
 
-            std::ostringstream ss1;
+                std::ostringstream ss1;
+                std::ostringstream ss2;
 
-            // Build the full string.
-			ss1 << "UPDATE creature_addon SET auras = '" << aura1 << "' WHERE guid = " << lowGuid << ";";
+                // Build the aura listing.
+		    	ss1 << aura1 << " " << aura2;
+                // Build the full string.
+		    	ss2 << "INSERT INTO creature_addon (guid, path_id, mount, bytes1, bytes2, emote, auras) VALUES (" << lowGuid << ", 0, 0, 0, 0, 0, '" << ss1 << "');";
 
-            WorldDatabase.DirectExecute(ss1.str().c_str()); 
+                WorldDatabase.DirectExecute(ss2.str().c_str()); 
+            }
+            else
+            {
+                if (!target->HasAura(aura1))
+                    target->AddAura(aura1, target);
+
+                std::ostringstream ss1;
+
+                // Build the full string.
+		        ss1 << "INSERT INTO creature_addon (guid, path_id, mount, bytes1, bytes2, emote, auras) VALUES (" << lowGuid << ", 0, 0, 0, 0, 0, '" << aura1 << "');";
+
+                WorldDatabase.DirectExecute(ss1.str().c_str()); 
+            }
         }
 
         return true;

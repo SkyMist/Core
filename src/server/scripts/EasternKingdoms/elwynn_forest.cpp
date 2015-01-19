@@ -169,7 +169,7 @@ public:
             if (uiSayNormalTimer <= diff)
             {
                 Talk(RAND(SAY_INFANTRY_NORMAL_1, SAY_INFANTRY_NORMAL_2, SAY_INFANTRY_NORMAL_3, SAY_INFANTRY_NORMAL_4, SAY_INFANTRY_NORMAL_5));
-                uiSayNormalTimer = urand(20000, 90000);
+                uiSayNormalTimer = urand(30000, 120000);
             }else uiSayNormalTimer -= diff;
 
             if (me->HealthBelowPct(100))
@@ -181,7 +181,7 @@ public:
                         Talk(RAND(SAY_INFANTRY_COMBAT_1, SAY_INFANTRY_COMBAT_2, SAY_INFANTRY_COMBAT_3, SAY_INFANTRY_COMBAT_4));
                         PaxtonCast(urand(1, 4));
                     }
-                    uiSayCombatTimer = urand(10000, 80000);
+                    uiSayCombatTimer = urand(10000, 100000);
                 }else uiSayCombatTimer -= diff;
             }
 
@@ -699,6 +699,59 @@ public:
     }
 };
 
+// Spray Water 80199.
+
+#define SPELL_VISUAL_EXTINGUISHER   96028
+
+class spell_spray_water : public SpellScriptLoader
+{
+    public:
+        spell_spray_water() : SpellScriptLoader("spell_spray_water") { }
+
+        class spell_spray_water_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_spray_water_AuraScript);
+
+            void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (GetCaster())
+                    GetCaster()->AddAura(SPELL_VISUAL_EXTINGUISHER, GetCaster());
+            }
+
+            void OnPeriodic(constAuraEffectPtr /*aurEff*/)
+            {
+                if (!GetCaster())
+                    return;
+
+                if (Creature* fire = GetCaster()->FindNearestCreature(42940, 5.0f, true))
+                {
+                    if (Player* player = GetCaster()->ToPlayer())
+                        player->KilledMonsterCredit(42940, 0);
+
+                    fire->DespawnOrUnsummon();
+                }
+            }
+
+            void OnRemove(constAuraEffectPtr, AuraEffectHandleModes)
+            {
+                if (GetCaster())
+                    GetCaster()->RemoveAurasDueToSpell(SPELL_VISUAL_EXTINGUISHER);
+            }
+
+            void Register()
+            {
+                OnEffectApply += AuraEffectApplyFn(spell_spray_water_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_spray_water_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_spray_water_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_spray_water_AuraScript();
+        }
+};
+
 void AddSC_elwyn_forest()
 {
     new npc_stormwind_infantry();
@@ -706,4 +759,5 @@ void AddSC_elwyn_forest()
     new npc_blackrock_battle_worg();
     new npc_injured_soldier();
     new npc_hogger();
+    new spell_spray_water();
 }

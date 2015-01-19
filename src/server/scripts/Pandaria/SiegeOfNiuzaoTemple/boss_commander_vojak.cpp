@@ -522,6 +522,8 @@ class boss_commander_vojak : public CreatureScript
                 addsDead = 0;
                 pointReached = 0;
 
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+
                 if (instance)
                     instance->SetData(DATA_COMMANDER_VOJAK_EVENT, NOT_STARTED);
 
@@ -644,6 +646,7 @@ class boss_commander_vojak : public CreatureScript
                     case 34: // Wave 4 killed - Phase 2 entry.
                         Talk(SAY_ADDS_DEAD);
                         me->MonsterTextEmote(ANN_PHASE_2, NULL, true);
+                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                         events.ScheduleEvent(EVENT_BOSS_MOVE_STAIR, 2100);
                         break;
 

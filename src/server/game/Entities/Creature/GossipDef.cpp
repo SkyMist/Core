@@ -697,8 +697,8 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, 
 
     data.WriteBit(guid2[5]);
 
-    data.WriteBits(questGiverTargetName.size(), 8);
     data.WriteBits(questTurnTargetName.size(), 8);
+    data.WriteBits(questGiverTargetName.size(), 8);
 
     data.WriteBits(0, 22);                                  // unknown counter - loop from Objectives.
     data.WriteBit(isComplete);                              // quest is complete
@@ -755,9 +755,9 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, 
 
     data.WriteByteSeq(guid2[7]);
 
-    data.WriteString(questTurnTargetName);
-    data.WriteString(questTitle);
     data.WriteString(questGiverTargetName);
+    data.WriteString(questTitle);
+    data.WriteString(questTurnTargetName);
 
     data.WriteByteSeq(guid[2]);
     data.WriteByteSeq(guid[3]);
@@ -826,7 +826,7 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     if (questLevelInTitle)
         AddQuestLevelToTitle(questTitle, quest->GetQuestLevel());
 
-    bool HasData = !quest->HasFlag(QUEST_FLAGS_AUTO_SUBMIT) ? true : false;         // Quest is not AutoComplete.
+    bool HasData = true; // Controls quest log showing, initially !quest->HasFlag(QUEST_FLAGS_AUTO_SUBMIT) ? true : false;         // Quest is not AutoComplete.
     bool hiddenReward = quest->HasFlag(QUEST_FLAGS_HIDDEN_REWARDS) ? true : false;  // Quest has hidden (non - displayed) rewards.
 
     // !! TODO: Zero values need more research.
