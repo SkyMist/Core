@@ -1193,13 +1193,13 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
 
     WorldPacket data(SMSG_QUESTGIVER_OFFER_REWARD, 100);     // guess size
 
-    data.WriteBits(questGiverTextWindow.size(), 10);
+    data.WriteBits(questTurnTextWindow.size(), 10);
     data.WriteBit(guid[6]);
     data.WriteBit(guid[0]);
     data.WriteBits(rewEmoteCount, 21);
-    data.WriteBits(questGiverTargetName.size(), 8);
-    data.WriteBit(guid[4]);
     data.WriteBits(questTurnTargetName.size(), 8);
+    data.WriteBit(guid[4]);
+    data.WriteBits(questGiverTargetName.size(), 8);
     data.WriteBits(questOfferRewardText.size(), 12);
     data.WriteBit(guid[5]);
     data.WriteBit(enableNext);
@@ -1207,7 +1207,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
     data.WriteBit(guid[2]);
     data.WriteBit(guid[1]);
     data.WriteBits(questTitle.size(), 9);
-    data.WriteBits(questTurnTextWindow.size(), 10);
+    data.WriteBits(questGiverTextWindow.size(), 10);
     data.WriteBit(guid[7]);
 
     data.FlushBits();
@@ -1222,7 +1222,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
         data << uint32(quest->RewardCurrencyCount[i]);
     }
 
-    data.WriteString(questGiverTextWindow);
+    data.WriteString(questTurnTextWindow);
 
     data << uint32(quest->RewardChoiceItemCount[1]);
     data << uint32(quest->GetRewOrReqMoney());
@@ -1246,7 +1246,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
     data << uint32(rewItemDisplayId[0]);
     data << uint32(quest->RewardChoiceItemId[3]);
 
-    data.WriteString(questGiverTargetName);
+    data.WriteString(questTurnTargetName);
 
     data << uint32(quest->GetRewChoiceItemsCount());
     data << uint32(quest->RewardItemIdCount[1]);
@@ -1257,7 +1257,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
     data << uint32(quest->RewardItemIdCount[2]);
     data << uint32(quest->GetQuestTurnInPortrait());
 
-    data.WriteString(questTurnTargetName);
+    data.WriteString(questGiverTargetName);
 
     data << uint32(quest->GetFlags());
     data << uint32(quest->RewardChoiceItemCount[4]);
@@ -1266,7 +1266,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGUID, b
     data << uint32(quest->RewardChoiceItemId[1]);
     data << uint32(quest->GetRewItemsCount());
 
-    data.WriteString(questTurnTextWindow);
+    data.WriteString(questGiverTextWindow);
 
     data << uint32(quest->GetCharTitleId());
     data << uint32(quest->RewardChoiceItemCount[5]);
