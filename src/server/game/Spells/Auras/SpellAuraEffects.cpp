@@ -430,12 +430,12 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //371 SPELL_AURA_372
     &AuraEffect::HandleNULL,                                      //372 SPELL_AURA_372
     &AuraEffect::HandleAuraModIncreaseSpeed,                      //373 SPELL_AURA_INCREASE_MIN_SWIM_SPEED
-    &AuraEffect::HandleNoImmediateEffect,                         //374 SPELL_AURA_REDUCE_FALL_DAMAGE_PERCENT implemente in Player::EnvironmentalDamage
+    &AuraEffect::HandleNoImmediateEffect,                         //374 SPELL_AURA_REDUCE_FALL_DAMAGE_PERCENT implemented in Player::EnvironmentalDamage
     &AuraEffect::HandleNULL,                                      //375 SPELL_AURA_375
     &AuraEffect::HandleNULL,                                      //376 SPELL_AURA_376
     &AuraEffect::HandleNULL,                                      //377 SPELL_AURA_377
     &AuraEffect::HandleNULL,                                      //378 SPELL_AURA_378
-    &AuraEffect::HandleModManaRegen,                              //379 SPELL_AURA_MOD_MANA_REGEN_PERCENT
+    &AuraEffect::HandleNULL,                                      //379 SPELL_AURA_INCREASE_MANA_POOL - check 112857.
     &AuraEffect::HandleNULL,                                      //380 SPELL_AURA_380
     &AuraEffect::HandleNULL,                                      //381 SPELL_AURA_381
     &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_MODE_PET_HEALTH_PCT
@@ -2859,6 +2859,8 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
             {
                 target->setPowerType(POWER_MANA);
                 target->SetMaxPower(POWER_MANA, target->GetCreatePowers(POWER_MANA));
+                if (target->ToPlayer())
+                    target->ToPlayer()->UpdateMaxPower(POWER_MANA);
                 target->SetPower(POWER_MANA, target->GetMaxPower(POWER_MANA));
                 // Remove movement impairing effects also when shifting out
                 target->RemoveMovementImpairingAuras();
@@ -2880,7 +2882,6 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
             case FORM_MOONKIN:
                 if (AuraEffectPtr dummy = target->GetAuraEffect(37324, 0))
                     target->CastSpell(target, 37325, true, NULL, dummy);
-
                 target->RemoveAurasDueToSpell(114302); // Astral Form
                 break;
 

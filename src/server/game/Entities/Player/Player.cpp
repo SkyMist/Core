@@ -1103,7 +1103,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     uint32 RaceClassGender = (createInfo->Race) | (createInfo->Class << 8) | ( createInfo->Gender << 16);
 
     SetUInt32Value(UNIT_FIELD_BYTES_0, (RaceClassPower | (createInfo->Gender << 24)));
-    SetUInt32Value(UNIT_FIELD_DISPLAY_POWER, powertype);
+    setPowerType(Powers(powertype));
     InitDisplayIds();
     if (sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_PVP || sWorld->getIntConfig(CONFIG_GAME_TYPE) == REALM_TYPE_RPPVP)
     {
@@ -1233,22 +1233,13 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
 
     // Apply original stats mods before spell loading or item equipment that call before equip _RemoveStatsMods().
 
-    UpdateMaxHealth();                                      // Update max Health (for adding bonus from stamina).
-    SetFullHealth();
+    // Update Health and set maximum Mana.
+    UpdateMaxHealth();
+    if (powertype == POWER_MANA)
+        SetMaxPower(POWER_MANA, GetCreatePowers(POWER_MANA));
 
-    if (getPowerType() == POWER_MANA)
-    {
-        UpdateMaxPower(POWER_MANA);                         // Update max Mana (for adding bonus from intellect).
-        SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-    }
-
-    if (getPowerType() == POWER_RUNIC_POWER)
-    {
-        SetMaxPower(POWER_RUNES,       GetCreatePowers(POWER_RUNES));
-        SetPower(POWER_RUNES,          GetCreatePowers(POWER_RUNES));
-        SetMaxPower(POWER_RUNIC_POWER, GetCreatePowers(POWER_RUNIC_POWER));
-        SetPower(POWER_RUNIC_POWER,    0);
-    }
+    // Reset all powers.
+    ResetAllPowers();
 
     // original spells
     learnDefaultSpells();
@@ -3236,36 +3227,41 @@ void Player::Regenerate(Powers power)
     // Powers now benefit from haste.
     float rangedHaste = GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE);
     float meleeHaste = GetFloatValue(UNIT_MOD_HASTE);
-    float spellHaste = GetFloatValue(UNIT_MOD_CAST_SPEED);
+    float spellHaste = GetFloatValue(UNIT_MOD_CAST_HASTE);
 
     switch (power)
     {
         case POWER_MANA:                                                // Regenerate Mana.
         {
-            float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
-            if (isInCombat())
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
-            else
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) *  ManaIncreaseRate * ((0.001f * m_regenTimer) + CalculatePct(0.001f, spellHaste));
+            // Players under level 15 get a regen bonus.
+            float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA) * (getLevel() < 15 ? (2.066f - (getLevel() * 0.066f)) : 1.0f);
+
+            // The fields are set for 5 - second rules, but we don't need to split anything cause we set them correctly initially.
+            // The client calculation takes the 1 second value and multiplies it by 5 to set the fields ingame.
+            float nonCombatRegen   = GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER);
+            float combatRegen      = GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER);
+            float manaRegenWHaste  = ((!isInCombat() ? nonCombatRegen : combatRegen)) * spellHaste;
+
+            addvalue += manaRegenWHaste * (0.001f * m_regenTimer) * ManaIncreaseRate;
             break;
         }
         case POWER_RAGE:                                                // Regenerate Rage.
         {
             float RageDecreaseRate = sWorld->getRate(RATE_POWER_RAGE_LOSS);
             if (!isInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
-                addvalue += -25 * RageDecreaseRate / meleeHaste;                // Remove 2.5 rage by tick (= 2 seconds => 1.25 rage/sec)
+                addvalue += (-25 * RageDecreaseRate) / meleeHaste;                // Remove 2.5 rage by tick (= 2 seconds => 1.25 rage/sec)
             break;
         }
         case POWER_FOCUS:                                               // Regenerate Focus.
         {
             float FocusRegenRate = sWorld->getRate(RATE_POWER_FOCUS);
-            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste)) * FocusRegenRate;
+            addvalue += (6.0f * rangedHaste) * FocusRegenRate;
             break;
         }
         case POWER_ENERGY:                                              // Regenerate Energy (Rogue, Feral Druid, Monk).
         {
             float EnergyRegenRate = sWorld->getRate(RATE_POWER_ENERGY);
-            addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste)) * EnergyRegenRate; // Was just * HastePct
+            addvalue += ((0.01f * m_regenTimer) * meleeHaste) * EnergyRegenRate;
             break;
         }
         case POWER_RUNIC_POWER:                                         // Regenerate Runic Power.
@@ -3417,17 +3413,17 @@ void Player::Regenerate(Powers power)
         default: break;
     }
 
-    // Mana regen calculated in Player::UpdateManaRegen(). Exists only for POWER_MANA, POWER_ENERGY, POWER_FOCUS auras.
-    if (power != POWER_MANA && power != POWER_CHI && power != POWER_HOLY_POWER && power != POWER_SOUL_SHARDS && power != POWER_BURNING_EMBERS && power != POWER_DEMONIC_FURY)
+    // Mana regen calculated in Player::UpdateManaRegen().
+    if (power != POWER_MANA)
     {
+        // Percent regen modifiers.
         AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
         for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); i++)
             if (Powers((*i)->GetMiscValue()) == power)
                 AddPct(addvalue, (*i)->GetAmount());
 
-        // Butchery requires combat for this effect
-        if (power != POWER_RUNIC_POWER && isInCombat())
-            addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, power) * ((power != POWER_ENERGY) ? m_regenTimerCount : m_regenTimer) / (5 * IN_MILLISECONDS);
+        // Normal regen modifiers.
+        addvalue += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, power) * ((power != POWER_ENERGY) ? m_regenTimerCount : m_regenTimer) / (5 * IN_MILLISECONDS);
     }
 
     if (addvalue < 0.0f)
@@ -3537,6 +3533,7 @@ void Player::ResetAllPowers()
     switch (getPowerType())
     {
         case POWER_MANA:
+            UpdateMaxPower(POWER_MANA);
             SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
             break;
         case POWER_RAGE:
@@ -4175,7 +4172,7 @@ void Player::GiveLevel(uint8 level)
     UpdateAllStats();
     _ApplyAllLevelScaleItemMods(true);                      // Moved to above SetFullHealth so player will have full health from Heirlooms
 
-    // Reset powers.
+    // Reset all powers.
     ResetAllPowers();
 
     // update level to hunter/summon pet
@@ -4515,7 +4512,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     InitDataForForm(reapplyMods);
 
     // save new stats
-    for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
+    for (uint8 i = POWER_MANA; i < MAX_POWERS; i++)
         SetMaxPower(Powers(i), GetCreatePowers(Powers(i)));
 
     SetMaxHealth(basehp);                     // stamina bonus will applied later
@@ -4548,9 +4545,6 @@ void Player::InitStatsForLevel(bool reapplyMods)
 
     if (reapplyMods)                                        // reapply stats values only on .reset stats (level) command
         _ApplyAllStatBonuses();
-
-    // Reset all powers.
-    ResetAllPowers();
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -20327,7 +20321,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
     SetHealth(savedHealth > GetMaxHealth() ? GetMaxHealth() : savedHealth);
 
     uint32 loadedPowers = 0;
-    for (uint32 i = 0; i < MAX_POWERS; ++i)
+    for (uint32 i = 0; i < MAX_POWERS; i++)
     {
         if (GetPowerIndexByClass(Powers(i), getClass()) != MAX_POWERS)
         {
@@ -24548,8 +24542,7 @@ void Player::InitDataForForm(bool reapplyMods)
         SetAttackTime(OFF_ATTACK, ssEntry->attackSpeed);
         SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
     }
-    else
-        SetRegularAttackTime();
+    else SetRegularAttackTime(); // No form / no specific attack speed changes.
 
     switch (form)
     {
@@ -24573,6 +24566,7 @@ void Player::InitDataForForm(bool reapplyMods)
             if (getPowerType() != POWER_MANA)
                 setPowerType(POWER_MANA);
             SetMaxPower(POWER_MANA, GetCreatePowers(POWER_MANA));
+            UpdateMaxPower(POWER_MANA);
             SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
             break;
         }
@@ -29634,6 +29628,7 @@ void Player::ActivateSpec(uint8 spec)
 
     SendActionButtons(1);
 
+    // Reset all powers.
     ResetAllPowers();
 }
 

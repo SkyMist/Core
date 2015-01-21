@@ -962,17 +962,19 @@ void Player::UpdateManaRegen()
     if (getPowerType() != POWER_MANA && !IsInFeralForm())
         return;
 
-    // Mana regen from spirit
-    float spirit_regen = OCTRegenMPPerSpirit();
-    float HastePct = 1.0f + (GetRatingBonusValue(CR_HASTE_SPELL) + GetTotalAuraModifier(SPELL_AURA_MELEE_SLOW) + GetTotalAuraModifier(SPELL_AURA_HASTE_SPELLS) + GetTotalAuraModifier(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK)) / 100.0f;
+    // See http://us.battle.net/wow/en/forum/topic/6794873160 .
+
+    float SpiritRegenIncrease = OCTRegenMPPerSpirit(); // Mana regen increase from spirit - per-point calculation * player stat.
+    float HastePct = GetFloatValue(UNIT_MOD_CAST_HASTE); // Mana regen increase from Haste.
 
     float CombatRegenFromSpirit = 0;
     float CombatRegenFromAurPct = 0;
     float BaseRegenFromAurPct = 0;
     float RegenFromModPowerRegen = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA) / 5.0f;
 
-    float combat_regen = int32(CalculatePct(GetMaxPower(POWER_MANA), 0.4));
-    float base_regen =  int32(CalculatePct(GetMaxPower(POWER_MANA), 0.4));
+    // 2% of base mana each 5 seconds.
+    float combat_regen = float(CalculatePct(GetMaxPower(POWER_MANA), 2));
+    float base_regen   = float(CalculatePct(GetMaxPower(POWER_MANA), 2));
 
     // Chaotic Energy : Haste also increase your mana regeneration
     // Nether Attunement - 117957 : Haste also increase your mana regeneration.
@@ -983,13 +985,14 @@ void Player::UpdateManaRegen()
     }
 
     // Try to get aura with spirit addition to combat mana regen.
-    int32 PercentIncreaseCOmbatRegenBySpirit = 0;
+    // Meditation: Allows 50% of your mana regeneration from Spirit to continue while in combat.
+    int32 PercentAllowCombatRegenBySpirit = 0;
     Unit::AuraEffectList const& ModPowerRegenPCTAuras = GetAuraEffectsByType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT);
     for (AuraEffectList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
-        PercentIncreaseCOmbatRegenBySpirit += (*i)->GetAmount();
+        PercentAllowCombatRegenBySpirit += (*i)->GetAmount();
 
-    if (HasAuraType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT) && PercentIncreaseCOmbatRegenBySpirit != 0)
-        CombatRegenFromSpirit += (PercentIncreaseCOmbatRegenBySpirit / 100.0f) * spirit_regen; // Allows you mana regeneration from Spirit to continue while in combat.
+    if (HasAuraType(SPELL_AURA_MOD_MANA_REGEN_INTERRUPT) && PercentAllowCombatRegenBySpirit != 0)
+        CombatRegenFromSpirit += (float(PercentAllowCombatRegenBySpirit) / 100) * SpiritRegenIncrease; // Allows you mana regeneration from Spirit to continue while in combat.
 
     // Increase mana regen.
     int32 PercentIncreaseManaRegen = 0;
@@ -998,23 +1001,25 @@ void Player::UpdateManaRegen()
         if (Powers((*i)->GetMiscValue()) == POWER_MANA)
             PercentIncreaseManaRegen += (*i)->GetAmount();
 
-    Unit::AuraEffectList const& ModManaRegenPct = GetAuraEffectsByType(SPELL_AURA_379); // SPELL_AURA_MOD_MANA_REGEN_PERCENT
-    for (AuraEffectList::const_iterator i = ModManaRegenPct.begin(); i != ModManaRegenPct.end(); ++i)
-        PercentIncreaseManaRegen += (*i)->GetAmount();
+    // Unit::AuraEffectList const& ModManaRegenPct = GetAuraEffectsByType(SPELL_AURA_MOD_MANA_REGEN_FROM_STAT);
+    // for (AuraEffectList::const_iterator i = ModManaRegenPct.begin(); i != ModManaRegenPct.end(); ++i)
+    //     PercentIncreaseManaRegen += (*i)->GetAmount();
 
-    if ((HasAuraType(SPELL_AURA_MOD_POWER_REGEN_PERCENT) || HasAuraType(SPELL_AURA_379)) && PercentIncreaseManaRegen != 0)
+    if ((HasAuraType(SPELL_AURA_MOD_POWER_REGEN_PERCENT) || HasAuraType(SPELL_AURA_MOD_MANA_REGEN_FROM_STAT)) && PercentIncreaseManaRegen != 0)
     {
-        CombatRegenFromAurPct = combat_regen * (PercentIncreaseManaRegen / 100.0f);
-        BaseRegenFromAurPct = base_regen     * (PercentIncreaseManaRegen / 100.0f);
+        BaseRegenFromAurPct   = base_regen   * (float(PercentIncreaseManaRegen / 100));
+        CombatRegenFromAurPct = combat_regen * (float(PercentIncreaseManaRegen / 100));
     }
 
-    combat_regen += CombatRegenFromSpirit + CombatRegenFromAurPct + RegenFromModPowerRegen;
-    base_regen += BaseRegenFromAurPct + RegenFromModPowerRegen + spirit_regen;
+    base_regen += BaseRegenFromAurPct + RegenFromModPowerRegen + SpiritRegenIncrease;
+    combat_regen += CombatRegenFromAurPct + RegenFromModPowerRegen + CombatRegenFromSpirit;
 
-    // Not In Combat : 2% of base mana + spirit_regen
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, base_regen);
-    // In Combat : 2% of base mana
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, combat_regen);
+    // Calculate for 1 second, the client multiplies the field values by 5.
+
+    // Not In Combat : 2% of base mana + SpiritRegenIncrease.
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, base_regen / 5.0f);
+    // In Combat : 2% of base mana + CombatRegenFromSpirit.
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, combat_regen / 5.0f);
 }
 
 void Player::UpdateEnergyRegen()

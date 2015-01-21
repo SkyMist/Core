@@ -28,10 +28,12 @@
 
 void WorldSession::HandleSetSpecialization(WorldPacket& recvData)
 {
-    uint32 tab = recvData.read<uint32>();
+    uint32 specializationTabId;
+    recvData >> specializationTabId;
+
     uint8 classId = _player->getClass();
 
-    // Avoid cheat - hack
+    // Avoid cheating.
     if (_player->GetSpecializationId(_player->GetActiveSpec()))
         return;
 
@@ -44,7 +46,7 @@ void WorldSession::HandleSetSpecialization(WorldPacket& recvData)
         if (!specialization)
             continue;
 
-        if (specialization->classId == classId && specialization->tabId == tab)
+        if (specialization->classId == classId && specialization->tabId == specializationTabId)
         {
             specializationId = specialization->entry;
             specializationSpell = specialization->specializationSpell;
@@ -60,8 +62,10 @@ void WorldSession::HandleSetSpecialization(WorldPacket& recvData)
             _player->learnSpell(specializationSpell, false);
         _player->InitSpellForLevel();
         _player->UpdateMasteryPercentage();
-        for (uint8 i = POWER_MANA; i < MAX_POWERS; ++i)
-            _player->SetMaxPower(Powers(i), _player->GetCreatePowers(Powers(i)));
+        _player->SaveToDB();
+
+        // Reset powers.
+        _player->ResetAllPowers();
     }
 }
 

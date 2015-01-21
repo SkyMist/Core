@@ -11486,7 +11486,7 @@ void Unit::setPowerType(Powers new_powertype)
 
     if (GetTypeId() == TYPEID_PLAYER)
     {
-        if (ToPlayer()->GetGroup())
+        if (ToPlayer()->IsInWorld() && ToPlayer()->GetGroup())
             ToPlayer()->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POWER_TYPE);
     }
     else if (Pet* pet = ToCreature()->ToPet())
@@ -17110,48 +17110,47 @@ void Unit::SetPower(Powers power, int32 val)
     if (maxPower < val)
         val = maxPower;
 
-    if (IsInWorld() ||  GetTypeId() == TYPEID_PLAYER && ToPlayer()->GetSession()->PlayerLoading())
-    {
-        // Check and update the field.
-        if (GetPower(power) == val)
-            return;
+    // Check and update the field.
+    if (GetPower(power) == val)
+        return;
 
-        SetInt32Value(UNIT_FIELD_POWER1 + powerIndex, val);
+    SetInt32Value(UNIT_FIELD_POWER1 + powerIndex, val);
 
-        // Send the packet.
-        WorldPacket data(SMSG_POWER_UPDATE);
-        ObjectGuid guid = GetGUID();
+    // Send the packet.
+    WorldPacket data(SMSG_POWER_UPDATE);
+    ObjectGuid guid = GetGUID();
 
-        data.WriteBit(guid[3]);
-        data.WriteBit(guid[6]);
-        data.WriteBit(guid[4]);
+    data.WriteBit(guid[3]);
+    data.WriteBit(guid[6]);
+    data.WriteBit(guid[4]);
 
-        uint8 powerCounter = 1;
-        data.WriteBits(powerCounter, 21);
+    uint8 powerCounter = 1;
+    data.WriteBits(powerCounter, 21);
 
-        data.WriteBit(guid[2]);
-        data.WriteBit(guid[1]);
-        data.WriteBit(guid[7]);
-        data.WriteBit(guid[5]);
-        data.WriteBit(guid[0]);
+    data.WriteBit(guid[2]);
+    data.WriteBit(guid[1]);
+    data.WriteBit(guid[7]);
+    data.WriteBit(guid[5]);
+    data.WriteBit(guid[0]);
 
-        data.FlushBits();
+    data.FlushBits();
 
-        data.WriteByteSeq(guid[3]);
-        data.WriteByteSeq(guid[5]);
-        data.WriteByteSeq(guid[7]);
-        data.WriteByteSeq(guid[1]);
+    data.WriteByteSeq(guid[3]);
+    data.WriteByteSeq(guid[5]);
+    data.WriteByteSeq(guid[7]);
+    data.WriteByteSeq(guid[1]);
 
-        data << uint8(power);
-        data << int32(val);
+    data << uint8(power);
+    data << int32(val);
 
-        data.WriteByteSeq(guid[0]);
-        data.WriteByteSeq(guid[4]);
-        data.WriteByteSeq(guid[6]);
-        data.WriteByteSeq(guid[2]);
+    data.WriteByteSeq(guid[0]);
+    data.WriteByteSeq(guid[4]);
+    data.WriteByteSeq(guid[6]);
+    data.WriteByteSeq(guid[2]);
 
-        SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
-    }
+    SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
+
+    // Packet sent. Now make the other checks.
 
     // Check and add / remove Druid Eclipse auras.
     if (power == POWER_ECLIPSE)

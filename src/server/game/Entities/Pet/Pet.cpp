@@ -279,6 +279,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
             {
                 SetUInt32Value(UNIT_FIELD_BYTES_0, 0x400); // class = rogue
                 setPowerType(POWER_ENERGY); // Warlock's pets have energy
+                SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
             }
             break;
         case HUNTER_PET:
@@ -332,7 +333,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
             else
             {
                 SetMaxPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
-                SetPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
+                SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
             }
         }
     }
@@ -1205,7 +1206,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                         setPowerType(POWER_ENERGY);
 
                     SetMaxPower(POWER_ENERGY, GetEntry() == ENTRY_WILD_IMP ? 10 : GetCreatePowers(POWER_ENERGY));
-                    SetPower(POWER_ENERGY, GetEntry() == ENTRY_WILD_IMP ? 10 : GetCreatePowers(POWER_ENERGY));
+                    SetPower(POWER_ENERGY, GetEntry() == ENTRY_WILD_IMP ? 10 : GetMaxPower(POWER_ENERGY));
 
                     SetBonusDamage(m_owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SPELL));
 
@@ -1458,10 +1459,9 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
             SetPower(POWER_ENERGY, 10);
 
         if (GetEntry() != ENTRY_INFERNAL && GetEntry() != ENTRY_ABYSSAL && GetEntry() != ENTRY_WILD_IMP)
-            SetPower(POWER_ENERGY, GetCreatePowers(POWER_ENERGY));
+            SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
     }
-    else
-        SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
+    else SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
 
     return true;
 }
