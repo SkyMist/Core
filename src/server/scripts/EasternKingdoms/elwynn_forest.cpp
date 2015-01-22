@@ -34,42 +34,47 @@ EndScriptData */
 
 enum Northshire
 {
-    NPC_BLACKROCK_BATTLE_WORG = 49871,
-    NPC_STORMWIND_INFANTRY    = 49869,
-    NPC_BROTHER_PAXTON        = 951,
+    NPC_BLACKROCK_BATTLE_WORG  = 49871,
+    NPC_STORMWIND_INFANTRY     = 49869,
+    NPC_BROTHER_PAXTON         = 951,
 
-    SAY_INFANTRY_NORMAL_1     = 0,
-    SAY_INFANTRY_NORMAL_2     = 1,
-    SAY_INFANTRY_NORMAL_3     = 2,
-    SAY_INFANTRY_NORMAL_4     = 3,
-    SAY_INFANTRY_NORMAL_5     = 4,
+    SAY_INFANTRY_NORMAL_1      = 0,
+    SAY_INFANTRY_NORMAL_2      = 1,
+    SAY_INFANTRY_NORMAL_3      = 2,
+    SAY_INFANTRY_NORMAL_4      = 3,
+    SAY_INFANTRY_NORMAL_5      = 4,
 
-    SAY_INFANTRY_COMBAT_1     = 5,
-    SAY_INFANTRY_COMBAT_2     = 6,
-    SAY_INFANTRY_COMBAT_3     = 7,
-    SAY_INFANTRY_COMBAT_4     = 8,
+    SAY_INFANTRY_COMBAT_1      = 5,
+    SAY_INFANTRY_COMBAT_2      = 6,
+    SAY_INFANTRY_COMBAT_3      = 7,
+    SAY_INFANTRY_COMBAT_4      = 8,
 
-    SAY_PAXTON_NORMAL_1       = 0,
-    SAY_PAXTON_NORMAL_2       = 1,
-    SAY_PAXTON_NORMAL_3       = 2,
-    SAY_PAXTON_NORMAL_4       = 3,
-    SAY_PAXTON_NORMAL_5       = 4,
+    SAY_PAXTON_NORMAL_1        = 0,
+    SAY_PAXTON_NORMAL_2        = 1,
+    SAY_PAXTON_NORMAL_3        = 2,
+    SAY_PAXTON_NORMAL_4        = 3,
+    SAY_PAXTON_NORMAL_5        = 4,
 
-    SPELL_RENEW               = 93094,
-    SPELL_PRAYER_OF_HEALING   = 93091,
-    SPELL_FORTITUDE           = 13864,
-    SPELL_PENANCE             = 47750,
-    SPELL_FLASH_HEAL          = 17843,
+    SPELL_RENEW                = 93094,
+    SPELL_PRAYER_OF_HEALING    = 93091,
+    SPELL_FORTITUDE            = 13864,
+    SPELL_PENANCE              = 47750,
+    SPELL_FLASH_HEAL           = 17843,
 
-    SPELL_RENEWEDLIFE         = 93097,
+    SPELL_RENEWEDLIFE          = 93097,
 
-    SPELL_SPYING              = 92857,
-    SPELL_SNEAKING            = 93046,
-    SPELL_SPYGLASS            = 80676
+    SPELL_SPYING               = 92857,
+    SPELL_SPYGLASS             = 80676,
+
+    SPELL_SNEAKING             = 93046,
+
+    SPELL_REVIVE_PAXTON        = 93799,
+
+    SPELL_VISUAL_EXTINGUISHER  = 96028
 };
 
 /*######
-## npc_stormwind_infantry
+## Stormwind Infantry 49869.
 ######*/
 
 class npc_stormwind_infantry : public CreatureScript
@@ -191,7 +196,7 @@ public:
 };
 
 /*######
-## npc_brother_paxton
+## Brother Paxton 951.
 ######*/
 
 class npc_brother_paxton : public CreatureScript
@@ -245,7 +250,7 @@ public:
 };
 
 /*######
-## npc_blackrock_battle_worg
+## Blackrock Battle Worg 49871.
 ######*/
 
 class npc_blackrock_battle_worg : public CreatureScript
@@ -330,14 +335,18 @@ public:
     };
 };
 
-class npc_injured_soldier : public CreatureScript
+/*######
+## Injured Stormwind Infantry 50047.
+######*/
+
+class npc_injured_stormwind_infantry : public CreatureScript
 {
 public:
-    npc_injured_soldier() : CreatureScript("npc_injured_soldier") { }
+    npc_injured_stormwind_infantry() : CreatureScript("npc_injured_stormwind_infantry") { }
 
-    struct npc_injured_soldierAI : public ScriptedAI
+    struct npc_injured_stormwind_infantryAI : public ScriptedAI
     {
-        npc_injured_soldierAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_injured_stormwind_infantryAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 RunTimer;
         uint8 Phase;
@@ -353,9 +362,9 @@ public:
             Phase = 0;
         }
 
-        void OnSpellClick(Unit* clicker, bool& result)
+        void SpellHit(Unit* caster, SpellInfo const* spell)
         {
-            if (!IsHealed && result)
+            if (!IsHealed && spell->Id == SPELL_REVIVE_PAXTON)
             {
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_14);
@@ -409,9 +418,13 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_injured_soldierAI (creature);
+        return new npc_injured_stormwind_infantryAI (creature);
     }
 };
+
+/*######
+## Hogger 448.
+######*/
 
 enum Hogger
 {
@@ -428,7 +441,7 @@ enum Hogger
 
 #define SAY_HOGGER_A  "Grrrr... fresh meat!" 
 #define SAY_HOGGER_E  "Yipe! Help Hogger!" 
-#define SAY_EAT       "Hogger is eating! Stop him!" // Announce
+#define SAY_EAT       "Hogger is eating! Stop him!" // Announce.
 #define SAY_HOGGER_HP "No hurt Hogger!"
 #define SAY_HOGGER_K  "More bones to gnaw on..."
 
@@ -483,10 +496,8 @@ public:
             me->DeleteThreatList();
             me->CombatStop(false);
             if (Eaten)
-            {
                 me->GetMotionMaster()->MovementExpired();
-                me->GetMotionMaster()->Clear();
-            }
+
             me->GetMotionMaster()->MoveTargetedHome();
         }
 
@@ -511,7 +522,6 @@ public:
                     me->MonsterYell(SAY_HOGGER_E, LANG_UNIVERSAL, 0);
                     me->MonsterTextEmote(SAY_EAT, NULL, true);
                     me->GetMotionMaster()->MovementExpired();
-                    me->GetMotionMaster()->Clear();
                     me->GetMotionMaster()->MovePoint(1, -10144.489f, 668.569f, 35.971f);
                     EatTimer = 3000;
                     Eaten = true;
@@ -542,7 +552,6 @@ public:
                             me->RemoveAurasDueToSpell(SPELL_UPSET_STOMACH);
                         me->SetReactState(REACT_PASSIVE);
                         me->GetMotionMaster()->MovementExpired();
-                        me->GetMotionMaster()->Clear();
                         me->GetMotionMaster()->MoveTargetedHome();
                         MovedHome = true;
                     }
@@ -606,7 +615,6 @@ public:
                 if (!me->HasAura(SPELL_EATING) && !me->HasAura(SPELL_UPSET_STOMACH) && !MovedHome && !me->isMoving())
                 {
                     me->GetMotionMaster()->MovementExpired();
-                    me->GetMotionMaster()->Clear();
                     me->GetMotionMaster()->MoveChase(me->getVictim());
                 }
 
@@ -699,9 +707,9 @@ public:
     }
 };
 
-// Spray Water 80199.
-
-#define SPELL_VISUAL_EXTINGUISHER   96028
+/*######
+## Spray Water (spell) 80199.
+######*/
 
 class spell_spray_water : public SpellScriptLoader
 {
@@ -757,7 +765,7 @@ void AddSC_elwyn_forest()
     new npc_stormwind_infantry();
     new npc_brother_paxton();
     new npc_blackrock_battle_worg();
-    new npc_injured_soldier();
+    new npc_injured_stormwind_infantry();
     new npc_hogger();
     new spell_spray_water();
 }

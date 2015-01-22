@@ -1011,15 +1011,14 @@ void Player::UpdateManaRegen()
         CombatRegenFromAurPct = combat_regen * (float(PercentIncreaseManaRegen / 100));
     }
 
-    base_regen += BaseRegenFromAurPct + RegenFromModPowerRegen + SpiritRegenIncrease;
-    combat_regen += CombatRegenFromAurPct + RegenFromModPowerRegen + CombatRegenFromSpirit;
-
     // Calculate for 1 second, the client multiplies the field values by 5.
+    base_regen   = ((base_regen   + BaseRegenFromAurPct   + RegenFromModPowerRegen) / 5.0f) + SpiritRegenIncrease;
+    combat_regen = ((combat_regen + CombatRegenFromAurPct + RegenFromModPowerRegen) / 5.0f) + CombatRegenFromSpirit;
 
     // Not In Combat : 2% of base mana + SpiritRegenIncrease.
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, base_regen / 5.0f);
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER, base_regen);
     // In Combat : 2% of base mana + CombatRegenFromSpirit.
-    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, combat_regen / 5.0f);
+    SetStatFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER, combat_regen);
 }
 
 void Player::UpdateEnergyRegen()
@@ -1033,7 +1032,7 @@ void Player::UpdateEnergyRegen()
     if (Powers((*i)->GetMiscValue()) == POWER_ENERGY)
         pct += (*i)->GetAmount();
 
-    float haste = 1.f / (1.f + (m_baseRatingValue[CR_HASTE_MELEE] * GetRatingMultiplier(CR_HASTE_MELEE) + pct) / 100.f);
+    float haste = 1.0f / (1.0f + (m_baseRatingValue[CR_HASTE_MELEE] * GetRatingMultiplier(CR_HASTE_MELEE) + pct) / 100.0f);
 
     SetFloatValue(UNIT_MOD_HASTE_REGEN, haste);
 }
