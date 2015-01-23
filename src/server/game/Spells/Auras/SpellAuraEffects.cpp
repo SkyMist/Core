@@ -3336,13 +3336,34 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
 
     AuraType type = GetAuraType();
 
-    //Prevent handling aura twice
+    // Prevent handling the aura twice.
     if ((apply) ? target->GetAuraEffectsByType(type).size() > 1 : target->HasAuraType(type))
         return;
 
-    // Adaptation
+    // Adaptation - Custom MOP script.
     if (apply && target->HasAura(126046))
         target->CastSpell(target, 126050, true);
+
+    // Check for ranged weapons.
+    bool hasRangedWeapon = false;
+
+    if (target->GetTypeId() == TYPEID_PLAYER) // Players.
+    {
+        if (Item* rangedWeapon = target->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK))
+            if (rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_BOW ||
+                rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_GUN ||
+                rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
+                hasRangedWeapon = true; // The player has a Bow / Gun / Wand.
+    }
+    else                                      // Creatures.
+    {
+        if (uint32 rangedWeaponId = target->GetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + 0))
+            if (ItemTemplate const* rangedWeapon = sObjectMgr->GetItemTemplate(rangedWeaponId))
+                if (rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_BOW ||
+                    rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_GUN ||
+                    rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
+                    hasRangedWeapon = true; // The player has a Bow / Gun / Wand.
+    }
 
     uint32 field, flag, slot;
     WeaponAttackType attType;
@@ -3352,7 +3373,7 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
             field   = UNIT_FIELD_FLAGS;
             flag    = UNIT_FLAG_DISARMED;
             slot    = EQUIPMENT_SLOT_MAINHAND;
-            attType = BASE_ATTACK;
+            attType = !hasRangedWeapon ? BASE_ATTACK : RANGED_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_OFFHAND:
             field   = UNIT_FIELD_FLAGS_2;
@@ -3361,10 +3382,8 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
             attType = OFF_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_RANGED:
-            // field = UNIT_FIELD_FLAGS_2;
-            // flag  = UNIT_FLAG2_DISARM_RANGED;
-            field   = UNIT_FIELD_FLAGS;
-            flag    = UNIT_FLAG_DISARMED;
+            field   = UNIT_FIELD_FLAGS_2;
+            flag    = UNIT_FLAG2_DISARM_RANGED;
             slot    = EQUIPMENT_SLOT_MAINHAND;
             attType = RANGED_ATTACK;
             break;
@@ -3372,16 +3391,20 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
         default: return;
     }
 
-    // if disarm aura is to be removed, remove the flag first to reapply damage/aura mods
+    // If the disarm aura is to be removed, remove the flag first to reapply damage / aura mods.
     if (!apply)
         target->RemoveFlag(field, flag);
 
-    // Handle damage modification, shapeshifted druids are not affected
+    // Handle damage modification, shapeshifted druids are not affected.
     if (target->GetTypeId() == TYPEID_PLAYER && !target->IsInFeralForm())
     {
         if (Item* pItem = target->ToPlayer()->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
         {
             uint8 attacktype = Player::GetAttackBySlot(slot);
+
+            // Use the correct attack type for ranged classes / casters to update damages / aura mods on aura removal.
+            if (attacktype == BASE_ATTACK && hasRangedWeapon && !apply)
+                attacktype = RANGED_ATTACK;
 
             if (attacktype < MAX_ATTACK)
             {
@@ -3391,10 +3414,11 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
         }
     }
 
-    // if disarm effects should be applied, wait to set flag until damage mods are unapplied
+    // If disarm effects should be applied, wait to set flag until damage mods are unapplied.
     if (apply)
         target->SetFlag(field, flag);
 
+    // Update Physical damage for creatures.
     if (target->GetTypeId() == TYPEID_UNIT && target->ToCreature()->GetCurrentEquipmentId())
         target->UpdateDamagePhysical(attType);
 }

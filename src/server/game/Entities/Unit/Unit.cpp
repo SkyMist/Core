@@ -3445,7 +3445,8 @@ void Unit::_UpdateAutoRepeatSpell()
         // Check if able to cast
         if (m_currentSpells[CURRENT_AUTOREPEAT_SPELL]->CheckCast(true) != SPELL_CAST_OK)
         {
-            InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
+            if (!HasAuraType(SPELL_AURA_MOD_DISARM) && !HasAuraType(SPELL_AURA_MOD_DISARM_RANGED))
+                InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
             return;
         }
 
