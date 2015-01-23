@@ -19740,7 +19740,8 @@ void Unit::SetControlled(bool apply, UnitState state)
                 {
                     ClearUnitState(UNIT_STATE_MELEE_ATTACKING);
                     SendMeleeAttackStop();
-                    // SendAutoRepeatCancel ?
+                    if (GetTypeId() == TYPEID_PLAYER && m_currentSpells[CURRENT_AUTOREPEAT_SPELL]) // Hunter / Priest / Mage / Warlock - Auto Shot.
+                        InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
                     SetConfused(true);
                     CastStop();
                 }
@@ -19750,13 +19751,14 @@ void Unit::SetControlled(bool apply, UnitState state)
                 {
                     ClearUnitState(UNIT_STATE_MELEE_ATTACKING);
                     SendMeleeAttackStop();
-                    // SendAutoRepeatCancel ?
+                    if (GetTypeId() == TYPEID_PLAYER && m_currentSpells[CURRENT_AUTOREPEAT_SPELL]) // Hunter / Priest / Mage / Warlock - Auto Shot.
+                        InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
                     SetFeared(true);
                     CastStop();
                 }
                 break;
-            default:
-                break;
+
+            default: break;
         }
     }
     else

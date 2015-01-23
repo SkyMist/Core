@@ -10203,6 +10203,7 @@ void Player::UpdateEquipSpellsAtFormChange()
         }
     }
 }
+
 void Player::CastItemCombatSpell(Unit* target, WeaponAttackType attType, uint32 procVictim, uint32 procEx)
 {
     if (!target || !target->isAlive() || target == this)
@@ -10212,7 +10213,9 @@ void Player::CastItemCombatSpell(Unit* target, WeaponAttackType attType, uint32 
     {
         // If usable, try to cast item spell
         if (Item* item = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+        {
             if (!item->IsBroken() && CanUseAttackType(attType))
+            {
                 if (ItemTemplate const* proto = item->GetTemplate())
                 {
                     // Additional check for weapons
@@ -10227,15 +10230,20 @@ void Player::CastItemCombatSpell(Unit* target, WeaponAttackType attType, uint32 
                             case RANGED_ATTACK: slot = EQUIPMENT_SLOT_MAINHAND;   break;
                             default: slot = EQUIPMENT_SLOT_END; break;
                         }
+
                         if (slot != i)
                             continue;
-                        // Check if item is useable (forms or disarm)
-                        if (attType == BASE_ATTACK)
-                            if (!IsUseEquipedWeapon(true) && !IsInFeralForm())
+
+                        // Check if item is useable (forms or disarm).
+                        if (attType == BASE_ATTACK || attType == RANGED_ATTACK)
+                            if (!IsUseEquipedWeapon(true))
                                 continue;
                     }
+
                     CastItemCombatSpell(target, attType, procVictim, procEx, item, proto);
                 }
+            }
+        }
     }
 }
 
@@ -30342,7 +30350,7 @@ void Player::SendMovementSetCollisionHeight(float height)
     data.WriteBit(guid[6]);
     data.WriteBit(guid[1]);
 
-    data.WriteBits(3, 2);                     // Unk, 3 on retail sniff
+    data.WriteBits(3, 2); // Reason. 1 is for Mounts, 2 for Vehicles / mounts with vehicleId. This should NOT be 3.
 
     data.WriteBit(guid[2]);
     data.WriteBit(guid[5]);

@@ -3349,25 +3349,27 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
     switch (type)
     {
         case SPELL_AURA_MOD_DISARM:
-            field=UNIT_FIELD_FLAGS;
-            flag=UNIT_FLAG_DISARMED;
-            slot=EQUIPMENT_SLOT_MAINHAND;
-            attType=BASE_ATTACK;
+            field   = UNIT_FIELD_FLAGS;
+            flag    = UNIT_FLAG_DISARMED;
+            slot    = EQUIPMENT_SLOT_MAINHAND;
+            attType = BASE_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_OFFHAND:
-            field=UNIT_FIELD_FLAGS_2;
-            flag=UNIT_FLAG2_DISARM_OFFHAND;
-            slot=EQUIPMENT_SLOT_OFFHAND;
-            attType=OFF_ATTACK;
+            field   = UNIT_FIELD_FLAGS_2;
+            flag    = UNIT_FLAG2_DISARM_OFFHAND;
+            slot    = EQUIPMENT_SLOT_OFFHAND;
+            attType = OFF_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_RANGED:
-            /*field=UNIT_FIELD_FLAGS_2;
-            flag=UNIT_FLAG2_DISARM_RANGED;
-            slot=EQUIPMENT_SLOT_MAINHAND;
-            attType=RANGED_ATTACK;
-            break*/
-        default:
-            return;
+            // field = UNIT_FIELD_FLAGS_2;
+            // flag  = UNIT_FLAG2_DISARM_RANGED;
+            field   = UNIT_FIELD_FLAGS;
+            flag    = UNIT_FLAG_DISARMED;
+            slot    = EQUIPMENT_SLOT_MAINHAND;
+            attType = RANGED_ATTACK;
+            break;
+
+        default: return;
     }
 
     // if disarm aura is to be removed, remove the flag first to reapply damage/aura mods

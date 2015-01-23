@@ -1503,8 +1503,7 @@ void WorldSession::HandleCancelGrowthAuraOpcode(WorldPacket& /*recvPacket*/)
 
 void WorldSession::HandleCancelAutoRepeatSpellOpcode(WorldPacket& /*recvPacket*/)
 {
-    // may be better send SMSG_CANCEL_AUTO_REPEAT?
-    // cancel and prepare for deleting
+    // Cancel, prepare for deleting and send SMSG_CANCEL_AUTO_REPEAT.
     _player->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
 }
 
@@ -1512,7 +1511,7 @@ void WorldSession::HandleCancelChanneling(WorldPacket& recvData)
 {
     recvData.read_skip<uint32>();                          // spellid, not used
 
-    // ignore for remote control state (for player case)
+    // Ignore for remote control state (for player case).
     Unit* mover = _player->m_mover;
     if (mover != _player && mover->GetTypeId() == TYPEID_PLAYER)
         return;

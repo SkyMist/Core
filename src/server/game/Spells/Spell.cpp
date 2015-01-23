@@ -3571,6 +3571,7 @@ void Spell::cancel()
     m_spellState = SPELL_STATE_FINISHED;
 
     m_autoRepeat = false;
+
     switch (oldState)
     {
         case SPELL_STATE_PREPARING:
@@ -3578,8 +3579,9 @@ void Spell::cancel()
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
                 m_caster->ToPlayer()->RestoreSpellMods(this);
         case SPELL_STATE_DELAYED:
-            SendInterrupted(0);
-            SendCastResult(SPELL_FAILED_INTERRUPTED);
+                SendInterrupted(0);
+                if (!m_spellInfo->IsAutoRepeatRangedSpell())
+                    SendCastResult(SPELL_FAILED_INTERRUPTED);
             break;
 
         case SPELL_STATE_CASTING:
@@ -3589,8 +3591,10 @@ void Spell::cancel()
                         unit->RemoveOwnedAura(m_spellInfo->Id, m_originalCasterGUID, 0, AURA_REMOVE_BY_CANCEL);
 
             SendChannelUpdate(0);
+
             SendInterrupted(0);
-            SendCastResult(SPELL_FAILED_INTERRUPTED);
+            if (!m_spellInfo->IsAutoRepeatRangedSpell())
+                SendCastResult(SPELL_FAILED_INTERRUPTED);
 
             // spell is canceled-take mods and clear list
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
