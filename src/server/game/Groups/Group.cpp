@@ -1562,7 +1562,7 @@ void Group::NeedBeforeGreed(Loot* loot, WorldObject* lootedObject)
 
 void Group::MasterLoot(Loot* /*loot*/, WorldObject* pLootedObject)
 {
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "Group::MasterLoot (SMSG_MASTER_LOOT_CANDIDATE_LIST)");
+    sLog->outDebug(LOG_FILTER_NETWORKIO, "Group::MasterLoot (SMSG_LOOT_MASTER_CANDIDATE_LIST)");
     uint32 real_count = 0;
 
     for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
@@ -1578,7 +1578,7 @@ void Group::MasterLoot(Loot* /*loot*/, WorldObject* pLootedObject)
     ObjectGuid guid_looted = MAKE_NEW_GUID(pLootedObject->GetGUIDLow(), 0, HIGHGUID_LOOT);
     sObjectMgr->setLootViewGUID(guid_looted, pLootedObject->GetGUID());
 
-    WorldPacket data(SMSG_MASTER_LOOT_CANDIDATE_LIST);
+    WorldPacket data(SMSG_LOOT_MASTER_CANDIDATE_LIST);
     data.WriteBit(guid_looted[6]);
     data.WriteBit(guid_looted[4]);
     data.WriteBit(guid_looted[1]);

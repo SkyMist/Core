@@ -83,7 +83,6 @@ enum Opcodes
     CMSG_BATTLEGROUND_LEAVE                           = 0x1C5B, // 5.4.7 18019
     CMSG_BATTLEGROUND_LIST                            = 0x1412, // 5.4.7 18019
     CMSG_BATTLEGROUND_PORT                            = 0x045F, // 5.4.7 18019
-    CMSG_BATTLEGROUND_PLAYER_POSITIONS                = 0x0000,
     CMSG_BATTLEGROUND_SEND_TIMER                      = 0x1D33, // 5.4.7 18019
     CMSG_BATTLEGROUND_STATUS                          = 0x04A2, // client sends 0x19B0 before status - CHECK!
     CMSG_BATTLEMASTER_JOIN                            = 0x06DD, // 5.4.7 18019
@@ -359,7 +358,7 @@ enum Opcodes
     CMSG_OBJECT_UPDATE_FAILED                         = 0x0882, // 5.4.7 18019
     CMSG_OBJECT_UPDATE_RESCUED                        = 0x042E, // 5.4.7 18019
     CMSG_OFFER_PETITION                               = 0x1992, // 5.4.7 18019
-    CMSG_OPENING_CINEMATIC                            = 0x0000,
+    CMSG_OPENING_CINEMATIC                            = 0x0146, // 5.4.7 18019 Not implemented - CHECK!
     CMSG_OPEN_ITEM                                    = 0x146C, // 5.4.7 18019
     CMSG_OPT_OUT_OF_LOOT                              = 0x0000,
     CMSG_PAGE_TEXT_QUERY                              = 0x13B1, // 5.4.7 18019
@@ -380,7 +379,7 @@ enum Opcodes
     CMSG_PET_STOP_ATTACK                              = 0x07F7, // 5.4.7 18019
     CMSG_PING                                         = 0x1070, // 5.4.7 18019
     CMSG_PLAYED_TIME                                  = 0x173A, // 5.4.7 18019
-    CMSG_PLAYER_DIFFICULTY_CHANGE                     = 0x0000,
+    CMSG_PLAYER_DIFFICULTY_CHANGE                     = 0x09A8, // 5.4.7 18019 Not implemented - CHECK!
     CMSG_PLAYER_LOGIN                                 = 0x17D3, // 5.4.7 18019
     CMSG_PLAYER_LOGOUT                                = 0x0010, // 5.4.7 18019
     CMSG_PLAYER_VEHICLE_ENTER                         = 0x13E8, // 5.4.7 18019
@@ -419,7 +418,7 @@ enum Opcodes
     CMSG_REALM_NAME_QUERY                             = 0x1899, // 5.4.7 18019
     CMSG_REALM_SPLIT                                  = 0x1282, // 5.4.7 18019
     CMSG_RECLAIM_CORPSE                               = 0x065C, // 5.4.7 18019
-    CMSG_REDIRECTION_AUTH_PROOF                       = 0x1A5B, // 5.4.7 18019 - CHECK!
+    CMSG_REDIRECTION_AUTH_PROOF                       = 0x1A5B, // 5.4.7 18019 Not implemented - CHECK!
     CMSG_REFORGE_ITEM                                 = 0x1632, // 5.4.7 18019
     CMSG_REORDER_CHARACTERS                           = 0x1892, // 5.4.7 18019
     CMSG_REPAIR_ITEM                                  = 0x0577, // 5.4.7 18019
@@ -933,7 +932,7 @@ enum Opcodes
     SMSG_LOOT_ALL_PASSED                              = 0x0126, // 5.4.7 18019
     SMSG_LOOT_CONTENTS                                = 0x0000,
     SMSG_LOOT_LIST                                    = 0x0000,
-    SMSG_LOOT_MASTER_LIST                             = 0x0000, // 0x1D5B, // 5.4.7 18019 - CHECK!
+    SMSG_LOOT_MASTER_CANDIDATE_LIST                   = 0x1D5B, // 5.4.7 18019 - CHECK! (Doesn't send group member names to give item, LUA error).
     SMSG_LOOT_MONEY_NOTIFY                            = 0x1F49, // 5.4.7 18019
     SMSG_LOOT_RELEASE_RESPONSE                        = 0x14A2, // 5.4.7 18019
     SMSG_LOOT_REMOVED                                 = 0x0D00, // 5.4.7 18019
@@ -943,7 +942,6 @@ enum Opcodes
     SMSG_LOOT_ROLLS_COMPLETE                          = 0x1473, // 5.4.7 18019
     SMSG_LOOT_START_ROLL                              = 0x1420, // 5.4.7 18019
     SMSG_MAIL_LIST_RESULT                             = 0x0401, // 5.4.7 18019
-    SMSG_MASTER_LOOT_CANDIDATE_LIST                   = 0x1D5B, // 5.4.7 18019
     SMSG_MAP_OBJ_EVENTS                               = 0x0000,
     SMSG_MESSAGE_CHAT                                 = 0x0E60, // 5.4.7 18019
     SMSG_MESSAGE_BOX                                  = 0x0000,
@@ -1048,7 +1046,7 @@ enum Opcodes
     SMSG_PET_TAME_FAILURE                             = 0x0722, // 5.4.7 18019
     SMSG_PLAYED_TIME                                  = 0x1C69, // 5.4.7 18019
     SMSG_PLAYER_BOUND                                 = 0x00E8, // 5.4.7 18019
-    SMSG_PLAYER_DIFFICULTY_CHANGE                     = 0x0000,
+    SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT              = 0x1F1A, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_PLAYER_SAVE_GUILD_EMBLEM                     = 0x04E8, // 5.4.7 18019
     SMSG_PLAYER_TABARD_VENDOR_SHOW                    = 0x12B8, // 5.4.7 18019
     SMSG_PLAYER_VEHICLE_DATA                          = 0x1F29, // 5.4.7 18019
@@ -1056,9 +1054,9 @@ enum Opcodes
     SMSG_PLAY_MUSIC                                   = 0x0000,
     SMSG_PLAY_OBJECT_SOUND                            = 0x0C43, // 5.4.7 18019
     SMSG_PLAY_ONE_SHOT_ANIM_KIT                       = 0x0000,
-    // SMSG_PLAY_SCENE                                   = 0x1748, // 5.4.7 18019 - CHECK!
+    SMSG_PLAY_SCENE                                   = 0x1748, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_PLAY_SOUND                                   = 0x0E22, // 5.4.7 18019
-    SMSG_PLAY_SPELL_VISUAL                            = 0x0000, // 0x1F3B, // 5.4.7 18019 - CHECK!
+    SMSG_PLAY_SPELL_VISUAL                            = 0x1F3B, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_PLAY_SPELL_VISUAL_KIT                        = 0x0500, // 5.4.7 18019
     SMSG_PLAY_TIME_WARNING                            = 0x0000,
     SMSG_PONG                                         = 0x15B1, // 5.4.7 18019
@@ -1158,9 +1156,9 @@ enum Opcodes
     SMSG_SET_PET_SPECIALIZATION                       = 0x1640, // 5.4.7 18019
     SMSG_SET_PHASE_SHIFT                              = 0x1D52, // 5.4.7 18019
     SMSG_SET_PLAYER_DECLINED_NAMES_RESULT             = 0x00E9, // 5.4.7 18019
-    SMSG_SET_PLAY_HOVER_ANIM                          = 0x0000, // 0x0729, // 5.4.7 18019 - CHECK!
+    SMSG_SET_PLAY_HOVER_ANIM                          = 0x0729, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SET_PROFICIENCY                              = 0x1E3B, // 5.4.7 18019
-    // SMSG_SET_VIGNETTE                                 = 0x05A1, // 5.4.7 18019 - CHECK!
+    SMSG_SET_VIGNETTE                                 = 0x05A1, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SET_PROJECTILE_POSITION                      = 0x0000,
     SMSG_SET_RAID_DIFFICULTY                          = 0x16A6, // 5.4.7 18019
     SMSG_SHOP_AUTH_BUY_FAILED                         = 0x0C40, // 5.4.7 18019 Not implemented - CHECK!
@@ -1223,18 +1221,18 @@ enum Opcodes
     SMSG_SPLINE_MOVE_UNSET_FLYING                     = 0x1798, // 5.4.7 18019
     SMSG_SPLINE_MOVE_UNSET_HOVER                      = 0x0076, // 5.4.7 18019
     SMSG_STABLE_RESULT                                = 0x0E0B, // 5.4.7 18019
-    SMSG_START_ELAPSED_TIMER                          = 0x0760, // 5.4.7 18019 - CHECK!
+    SMSG_START_ELAPSED_TIMER                          = 0x0760, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_STANDSTATE_UPDATE                            = 0x0C48, // 5.4.7 18019
     SMSG_START_MIRROR_TIMER                           = 0x0D48, // 5.4.7 18019
     SMSG_START_TIMER                                  = 0x12B3, // 5.4.7 18019
     SMSG_STOP_DANCE                                   = 0x0000,
     SMSG_STOP_MIRROR_TIMER                            = 0x1E01, // 5.4.7 18019
     SMSG_STREAMING_MOVIE                              = 0x0000,
-    SMSG_SUMMON_CANCEL                                = 0x12FA, // 5.4.7 18019 - CHECK!
+    SMSG_SUMMON_CANCEL                                = 0x12FA, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SUMMON_REQUEST                               = 0x0D29, // 5.4.7 18019
     SMSG_SUPERCEDED_SPELL                             = 0x052A, // 5.4.7 18019
     SMSG_SUPPRESS_NPC_GREETINGS                       = 0x0000,
-    SMSG_SUSPEND_COMMS                                = 0x0000, // 0x10B0, // 5.4.7 18019 - CHECK!
+    SMSG_SUSPEND_COMMS                                = 0x10B0, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SUSPEND_TOKEN_RESPONSE                       = 0x0000,
     SMSG_TALENTS_INVOLUNTARILY_RESET                  = 0x0000,
     SMSG_TAXI_NODE_STATUS                             = 0x0E23, // 5.4.7 18019
@@ -1390,7 +1388,6 @@ enum Opcodes
     SMSG_CANCEL_ORPHAN_SPELL_VISUAL = 0x0000,
     SMSG_CANCEL_SPELL_VISUAL = 0x0000,
     SMSG_CANCEL_SPELL_VISUAL_KIT = 0x0000,
-    SMSG_CHANGER_PLAYER_DIFFICULTY_RESULT = 0x0000,
     SMSG_CHAR_FACTION_OR_RACE_CHANGE = 0x0000,
     SMSG_CHAT_DOWN = 0x0000,
     SMSG_CHAT_IS_DOWN = 0x0000,
@@ -1475,7 +1472,6 @@ enum Opcodes
     SMSG_PLAYER_TABAR_VENDOR_ACTIVATE = 0x0000,
     SMSG_PLAYER_UNK_DEAD_ALIVE = 0x0000,
     SMSG_PLAY_ORPHAN_SPELL_VISUAL = 0x0000,
-    SMSG_PLAY_SCENE = 0x0000,
     SMSG_PROFILE_DATA_RESPONSE = 0x0000,
     SMSG_PUREMOUNT_CANCELLED_OBSOLETE = 0x0000,
     SMSG_QUERY_OBJECT_POSITION = 0x0000,

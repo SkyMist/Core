@@ -843,7 +843,6 @@ class WorldSession
         // Battleground
         void HandleBattlegroundLeaveOpcode(WorldPacket& recvData);
         void HandleBattlegroundListOpcode(WorldPacket& recvData);
-        void HandleBattlegroundPlayerPositionsOpcode(WorldPacket& recvData);
         void HandleBattlegroundPortOpcode(WorldPacket& recvData);
         void HandleBattlegroundStatusOpcode(WorldPacket& recvData);
         void HandleBattlemasterHelloOpcode(WorldPacket& recvData);

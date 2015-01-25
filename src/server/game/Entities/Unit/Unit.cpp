@@ -19416,7 +19416,7 @@ void Unit::PlayOneShotAnimKit(uint32 id)
 void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellProto)
 {
     // Prevent killing unit twice (and giving reward from kill twice)
-    if (!victim->GetHealth() || m_IsInKillingProcess)
+    if (!victim || !victim->GetHealth() || m_IsInKillingProcess)
         return;
 
     // Spirit of Redemption can't be killed twice
@@ -19444,15 +19444,48 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellProto)
     // call kill spell proc event (before real die and combat stop to triggering auras removed at death/combat stop)
     if (isRewardAllowed && player && player != victim)
     {
-        ObjectGuid guid = player->GetGUID();
+        ObjectGuid playerGuid = player->GetGUID();
+        ObjectGuid victimGuid = victim->GetGUID();
 
         WorldPacket data(SMSG_PARTY_KILL_LOG);
 
-        uint8 bitsOrder[8] = { 7, 0, 3, 6, 4, 1, 5, 2 };
-        data.WriteBitInOrder(guid, bitsOrder);
+        data.WriteBit(playerGuid[4]);
+        data.WriteBit(victimGuid[2]);
+        data.WriteBit(playerGuid[5]);
+        data.WriteBit(victimGuid[1]);
+        data.WriteBit(victimGuid[6]);
+        data.WriteBit(playerGuid[3]);
+        data.WriteBit(victimGuid[7]);
+        data.WriteBit(victimGuid[3]);
+        data.WriteBit(playerGuid[6]);
+        data.WriteBit(playerGuid[7]);
+        data.WriteBit(victimGuid[0]);
+        data.WriteBit(playerGuid[1]);
+        data.WriteBit(victimGuid[5]);
+        data.WriteBit(playerGuid[0]);
+        data.WriteBit(victimGuid[4]);
+        data.WriteBit(playerGuid[2]);
 
-        uint8 bytesOrder[8] = { 6, 2, 5, 7, 1, 0, 4, 3 };
-        data.WriteBytesSeq(guid, bytesOrder);
+        data.FlushBits();
+
+        data.WriteBit(victimGuid[4]);
+        data.WriteBit(victimGuid[3]);
+        data.WriteBit(playerGuid[4]);
+        data.WriteBit(playerGuid[3]);
+        data.WriteBit(playerGuid[6]);
+        data.WriteBit(victimGuid[0]);
+        data.WriteBit(playerGuid[0]);
+        data.WriteBit(playerGuid[5]);
+        data.WriteBit(victimGuid[2]);
+        data.WriteBit(playerGuid[1]);
+        data.WriteBit(playerGuid[7]);
+        data.WriteBit(victimGuid[5]);
+        data.WriteBit(victimGuid[6]);
+        data.WriteBit(victimGuid[7]);
+        data.WriteBit(victimGuid[1]);
+        data.WriteBit(playerGuid[2]);
+
+        // The packet is sent according to group participation.
 
         Player* looter = player;
 
@@ -20411,7 +20444,6 @@ AuraPtr Unit::ToggleAura(uint32 spellId, Unit* target)
     else
         return target->AddAura(spellId, target);
 
-    
     return NULLAURA;
 }
 
