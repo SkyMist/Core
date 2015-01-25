@@ -165,7 +165,7 @@ enum Opcodes
     CMSG_COMMENTATOR_START_WARGAME                    = 0x0000,
     CMSG_COMPLAIN                                     = 0x1791, // 5.4.7 18019
     CMSG_COMPLETE_CINEMATIC                           = 0x12F8, // 5.4.7 18019
-    CMSG_COMPLETE_MOVIE                               = 0x0000,
+    CMSG_COMPLETE_MOVIE                               = 0x055E, // 5.4.7 18019
     CMSG_CONNECT_TO_FAILED                            = 0x0000, // Seems like 0x16C8 // 5.4.7 18019 - CHECK!
     CMSG_CONFIRM_RESPEC_WIPE                          = 0x1712, // 5.4.7 18019
     CMSG_CONTACT_LIST                                 = 0x1186, // 5.4.7 18019
@@ -272,7 +272,7 @@ enum Opcodes
     CMSG_INSTANCE_LOCK_WARNING_RESPONSE               = 0x1CB3, // 5.4.7 18019 Not implemented - CHECK!
     CMSG_ITEM_REFUND                                  = 0x05FC, // 5.4.7 18019
     CMSG_ITEM_REFUND_INFO                             = 0x10DC, // 5.4.7 18019
-    CMSG_ITEM_TEXT_QUERY                              = 0x0000,
+    CMSG_ITEM_TEXT_QUERY                              = 0x131B, // 5.4.7 18019
     CMSG_JOIN_CHANNEL                                 = 0x1D20, // 5.4.7 18019
     CMSG_KEEP_ALIVE                                   = 0x13C8, // 5.4.7 18019
     CMSG_LEARN_PET_SPECIALIZATION_GROUP               = 0x145B, // 5.4.7 18019
@@ -894,7 +894,7 @@ enum Opcodes
     SMSG_ITEM_REFUND_RESULT                           = 0x153A, // 5.4.7 18019
     SMSG_ITEM_REMOVE_PASSIVE                          = 0x0000,
     SMSG_ITEM_SEND_PASSIVE                            = 0x0000,
-    SMSG_ITEM_TEXT_QUERY_RESPONSE                     = 0x0000,
+    SMSG_ITEM_TEXT_QUERY_RESPONSE                     = 0x06AD, // 5.4.7 18019
     SMSG_ITEM_TIME_UPDATE                             = 0x1F5B, // 5.4.7 18019
     SMSG_ITEM_UPGRADE_RESULT                          = 0x0888, // 5.4.7 18019
     SMSG_LEARNED_DANCE_MOVES                          = 0x0000,
@@ -1255,7 +1255,7 @@ enum Opcodes
     SMSG_TRANSFER_ABORTED                             = 0x0648, // 5.4.7 18019
     SMSG_TRANSFER_PENDING                             = 0x0440, // 5.4.7 18019
     SMSG_TRIGGER_CINEMATIC                            = 0x04CC, // 5.4.7 18019
-    SMSG_TRIGGER_MOVIE                                = 0x0000,
+    SMSG_TRIGGER_MOVIE                                = 0x0D0A, // 5.4.7 18019
     SMSG_TURN_IN_PETITION_RESULTS                     = 0x0509, // 5.4.7 18019
     SMSG_TUTORIAL_FLAGS                               = 0x10A7, // 5.4.7 18019
     SMSG_UNIT_HEALTH_FREQUENT                         = 0x0000,

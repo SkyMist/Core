@@ -1982,14 +1982,20 @@ void WorldSession::HandleItemRefund(WorldPacket& recvData)
  *
  * This function is called when player clicks on item which has some flag set
  */
-void WorldSession::HandleItemTextQuery(WorldPacket& recvData )
+void WorldSession::HandleItemTextQuery(WorldPacket& recvData)
 {
-    uint64 itemGuid;
-    recvData >> itemGuid;
+    ObjectGuid itemGuid;
+
+    uint32 Unk = recvData.read<uint32>();
+    uint8 bitOrder[] = {1, 5, 2, 3, 6, 4, 0, 7};
+    recvData.ReadBitInOrder(itemGuid, bitOrder);
+
+    uint8 byteOrder[] = {6, 4, 0, 3, 7, 5, 2, 1};
+    recvData.ReadBytesSeq(itemGuid, byteOrder);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_ITEM_TEXT_QUERY item guid: %u", GUID_LOPART(itemGuid));
 
-    WorldPacket data(SMSG_ITEM_TEXT_QUERY_RESPONSE, 14);    // guess size
+    WorldPacket data(SMSG_ITEM_TEXT_QUERY_RESPONSE);
 
     if (Item* item = _player->GetItemByGuid(itemGuid))
     {
