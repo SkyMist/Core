@@ -2566,7 +2566,8 @@ void InstanceMap::PermBindAllPlayers(Player* source)
         {
             player->BindToInstance(save, true);
             WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
-            data << uint32(0);
+            data.WriteBit(0);                       //Is Only debug ?
+            data.FlushBits();
             player->GetSession()->SendPacket(&data);
 
             player->GetSession()->SendCalendarRaidLockout(save, true);

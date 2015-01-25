@@ -21577,7 +21577,8 @@ void Player::BindToInstance()
         return;
 
     WorldPacket data(SMSG_INSTANCE_SAVE_CREATED, 4);
-    data << uint32(0);
+    data.WriteBit(0);                       //Is Only debug ?
+    data.FlushBits();
     GetSession()->SendPacket(&data);
 
     BindToInstance(mapSave, true);

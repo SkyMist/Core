@@ -264,7 +264,7 @@ enum Opcodes
     CMSG_GUILD_SET_NOTE                               = 0x1905, // 5.4.7 18019
     CMSG_GUILD_SET_RANK_PERMISSIONS                   = 0x19BD, // 5.4.7 18019
     CMSG_GUILD_SWITCH_RANK                            = 0x199C, // 5.4.7 18019
-    CMSG_HEARTH_AND_RESURRECT                         = 0x0000,
+    CMSG_HEARTH_AND_RESURRECT                         = 0x065F, // 5.4.7 18019
     CMSG_IGNORE_TRADE                                 = 0x0C9A, // 5.4.7 18019
     CMSG_INITIATE_TRADE                               = 0x12BB, // 5.4.7 18019
     CMSG_INSPECT                                      = 0x01D4, // 5.4.7 18019
@@ -303,7 +303,7 @@ enum Opcodes
     CMSG_LOG_DISCONNECT                               = 0x1A13, // 5.4.7 18019
     CMSG_LOOT                                         = 0x1E52, // 5.4.7 18019
     CMSG_LOOT_CURRENCY                                = 0x0000,
-    CMSG_LOOT_MASTER_GIVE                             = 0x0000,
+    CMSG_LOOT_MASTER_GIVE                             = 0x14A1, // 5.4.7 18019
     CMSG_LOOT_METHOD                                  = 0x1C10, // 5.4.7 18019
     CMSG_LOOT_MONEY                                   = 0x15A0, // 5.4.7 18019
     CMSG_LOOT_RELEASE                                 = 0x12F0, // 5.4.7 18019
@@ -881,7 +881,7 @@ enum Opcodes
     SMSG_INSTANCE_LOCK_WARNING_QUERY                  = 0x0000,
     SMSG_INSTANCE_RESET                               = 0x1F72, // 5.4.7 18019
     SMSG_INSTANCE_RESET_FAILED                        = 0x0000,
-    SMSG_INSTANCE_SAVE_CREATED                        = 0x0000,
+    SMSG_INSTANCE_SAVE_CREATED                        = 0x04A3, // 5.4.7 18019
     SMSG_INVALIDATE_DANCE                             = 0x0000,
     SMSG_INVALIDATE_PLAYER                            = 0x0000,
     SMSG_INVALID_PROMOTION_CODE                       = 0x0000,

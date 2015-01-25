@@ -596,13 +596,11 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 {
     ObjectGuid target_playerguid = 0;
 
-    target_playerguid[6] = recvData.ReadBit();
-    target_playerguid[2] = recvData.ReadBit();
-    target_playerguid[5] = recvData.ReadBit();
-    target_playerguid[7] = recvData.ReadBit();
     target_playerguid[3] = recvData.ReadBit();
-    target_playerguid[4] = recvData.ReadBit();
     target_playerguid[0] = recvData.ReadBit();
+    target_playerguid[4] = recvData.ReadBit();
+    target_playerguid[5] = recvData.ReadBit();
+    target_playerguid[1] = recvData.ReadBit();
 
     uint32 count = recvData.ReadBits(23);
     if (count > 40)
@@ -611,33 +609,37 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     std::vector<ObjectGuid> guids(count);
     std::vector<uint8> types(count);
 
-    uint8 bitOrder[8] = {1, 4, 3, 6, 0, 2, 7, 5};
+    uint8 bitOrder[8] = { 7, 5, 3, 1, 0, 4, 6, 2 };
     for (uint32 i = 0; i < count; ++i)
         recvData.ReadBitInOrder(guids[i], bitOrder);
-    
-    target_playerguid[1] = recvData.ReadBit();
+
+    target_playerguid[6] = recvData.ReadBit();
+    target_playerguid[2] = recvData.ReadBit();
 
     recvData.FlushBits();
 
+    recvData.ReadByteSeq(target_playerguid[1]);
     recvData.ReadByteSeq(target_playerguid[5]);
-    recvData.ReadByteSeq(target_playerguid[6]);
 
-    uint8 byteOrder[8] = {3, 5, 0, 6, 2, 1, 4, 7};
     for (uint32 i = 0; i < count; ++i)
     {
+        recvData.ReadByteSeq(guids[count][1]);
+        recvData.ReadByteSeq(guids[count][5]);
+        recvData.ReadByteSeq(guids[count][7]);
         recvData >> types[i];
-        recvData.ReadBytesSeq(guids[i], byteOrder);
+        recvData.ReadByteSeq(guids[count][4]);
+        recvData.ReadByteSeq(guids[count][3]);
+        recvData.ReadByteSeq(guids[count][0]);
+        recvData.ReadByteSeq(guids[count][6]);
+        recvData.ReadByteSeq(guids[count][2]); 
     }
 
-    recvData.ReadByteSeq(target_playerguid[3]);
     recvData.ReadByteSeq(target_playerguid[2]);
-    recvData.ReadByteSeq(target_playerguid[0]);
+    recvData.ReadByteSeq(target_playerguid[6]);
+    recvData.ReadByteSeq(target_playerguid[3]);
     recvData.ReadByteSeq(target_playerguid[4]);
-    recvData.ReadByteSeq(target_playerguid[1]);
     recvData.ReadByteSeq(target_playerguid[7]);
-
-
-    //recvData >> lootguid >> slotid >> target_playerguid;
+    recvData.ReadByteSeq(target_playerguid[0]);
 
     if (!_player->GetGroup() || _player->GetGroup()->GetLooterGuid() != _player->GetGUID())
     {
