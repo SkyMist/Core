@@ -8663,6 +8663,77 @@ void SpellMgr::LoadSpellCustomAttr()
                 break;
             // ENDOF ULDUAR SPELLS
             //
+
+            // -- PVE CONTENT -- //
+
+            // DUNGEONS AND RAIDS - CHECKED 18019 !!!!
+
+            // THRONE OF THUNDER (RAID).
+
+                // Jin'Rokh the Breaker.
+
+                case 137261: // Lightning Storm (Damage).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                    break;
+                case 137485: // Lightning Fissure (the same like above).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                    spellInfo->Effects[EFFECT_0].SetRadiusIndex(EFFECT_RADIUS_5_YARDS);
+                    break;
+                case 138002: // Fluidity.
+                    spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(21); // Infinite (-1).
+                    spellInfo->Effects[EFFECT_2].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[EFFECT_3].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
+                    spellInfo->Effects[EFFECT_2].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_2].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
+                    spellInfo->Effects[EFFECT_3].TargetA = TARGET_SRC_CASTER;
+                    spellInfo->Effects[EFFECT_3].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
+                    break;
+
+                // Megaera.
+
+                case 139433: // Rampage Fire Cast.
+                    spellInfo->Effects[0].Effect = SPELL_EFFECT_TRIGGER_MISSILE;
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ENEMY;
+                    spellInfo->Effects[0].TriggerSpell = 139548;
+                    spellInfo->MaxAffectedTargets = 1;
+                    break;
+                case 139440: // Rampage Frost Cast.
+                    spellInfo->Effects[0].Effect = SPELL_EFFECT_TRIGGER_MISSILE;
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ENEMY;
+                    spellInfo->Effects[0].TriggerSpell = 139549;
+                    spellInfo->MaxAffectedTargets = 1;
+                    break;
+                case 139504: // Rampage Poison Cast.
+                   spellInfo->Effects[0].Effect = SPELL_EFFECT_TRIGGER_MISSILE;
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ENEMY;
+                   spellInfo->Effects[0].TriggerSpell = 139551;
+                   spellInfo->MaxAffectedTargets = 1;
+                   break;
+                case 139513: // Rampage Arcane Cast.
+                   spellInfo->Effects[0].Effect = SPELL_EFFECT_TRIGGER_MISSILE;
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ENEMY;
+                   spellInfo->Effects[0].TriggerSpell = 139552;
+                   spellInfo->MaxAffectedTargets = 1;
+                   break;
+                case 139548: // Rampage Fire.
+                case 139549: // Rampage Frost.
+                case 139551: // Rampage Poison.
+                case 139552: // Rampage Arcane.
+                    spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                    break;
+                case 139866: // Torrent of Ice.
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+
+
+            // CLASS SPELLS
+            //
             // Glyph of Exorcism
             case 54934:
                 spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
