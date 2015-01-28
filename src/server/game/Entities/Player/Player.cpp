@@ -4618,7 +4618,7 @@ void Player::SendNewMail()
 {
     // deliver undelivered mail
     WorldPacket data(SMSG_RECEIVED_MAIL, 4);
-    data << (uint32) 0;
+    data << uint32(0);
     GetSession()->SendPacket(&data);
 }
 
@@ -24574,9 +24574,6 @@ void Player::InitDataForForm(bool reapplyMods)
         {
             if (getPowerType() != POWER_MANA)
                 setPowerType(POWER_MANA);
-            SetMaxPower(POWER_MANA, GetCreatePowers(POWER_MANA));
-            UpdateMaxPower(POWER_MANA);
-            SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
             break;
         }
         default:                                            // 0, for example
