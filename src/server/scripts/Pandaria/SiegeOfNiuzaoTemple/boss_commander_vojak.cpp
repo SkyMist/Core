@@ -916,6 +916,7 @@ class npc_sikthik_add_vojak : public CreatureScript
 				me->SetWalk(false); // Run.
                 me->SetReactState(REACT_PASSIVE);
                 me->ApplySpellImmune(0, IMMUNITY_ID, SPELL_BOMBARD_DMG, true);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
                 if (me->GetEntry() == NPC_SIKTHIK_DEMOLISHER)
                     me->AddAura(SPELL_CARRY_EXPLOSIVES, me);
@@ -968,6 +969,9 @@ class npc_sikthik_add_vojak : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_MOVE_STAIR:
+                            if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
+                                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+
                             pointReached++;
                             me->GetMotionMaster()->MovePoint(pointReached, stairPlace[pointReached - 1].GetPositionX(), stairPlace[pointReached - 1].GetPositionY(), stairPlace[pointReached - 1].GetPositionZ());
                             break;
