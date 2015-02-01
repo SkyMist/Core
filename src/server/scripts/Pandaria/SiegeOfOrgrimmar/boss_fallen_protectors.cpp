@@ -481,7 +481,7 @@ class boss_rook_stonetoe : public CreatureScript
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -514,7 +514,7 @@ class boss_rook_stonetoe : public CreatureScript
                 summons.DespawnAll();
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 me->DeleteThreatList();
                 me->CombatStop(true);
                 me->setFaction(35);
@@ -789,7 +789,7 @@ class boss_he_softfoot : public CreatureScript
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -828,7 +828,7 @@ class boss_he_softfoot : public CreatureScript
                 summons.DespawnAll();
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 me->DeleteThreatList();
                 me->CombatStop(true);
                 me->setFaction(35);
@@ -1120,7 +1120,7 @@ class boss_sun_tenderheart : public CreatureScript
                 me->AddUnitState(UNIT_STATE_EVADE);
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -1159,7 +1159,7 @@ class boss_sun_tenderheart : public CreatureScript
                 summons.DespawnAll();
 
                 me->RemoveAllAuras();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
                 me->DeleteThreatList();
                 me->CombatStop(true);
                 me->setFaction(35);
@@ -1208,7 +1208,7 @@ class boss_sun_tenderheart : public CreatureScript
                             me->RemoveAurasDueToSpell(SPELL_ROOT_GENERIC);
                         me->RemoveAurasDueToSpell(SPELL_DARK_MEDITATION_VISUAL);
                         me->RemoveAurasDueToSpell(SPELL_DARK_MEDITATION);
-                        me->RemoveAllAreasTrigger();
+                        me->RemoveAllAreaTriggers();
 
                         // Remove Meditative Field effect from players.
                         if (instance)

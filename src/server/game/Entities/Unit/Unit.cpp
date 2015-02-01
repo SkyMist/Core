@@ -5554,7 +5554,7 @@ void Unit::RemoveAllDynObjects()
         m_dynObj.front()->Remove();
 }
 
-void Unit::RemoveAllAreasTrigger()
+void Unit::RemoveAllAreaTriggers()
 {
     while (!m_AreaTrigger.empty())
         m_AreaTrigger.front()->Remove();
@@ -17315,7 +17315,7 @@ void Unit::RemoveFromWorld()
 
         RemoveAllGameObjects();
         RemoveAllDynObjects();
-        RemoveAllAreasTrigger();
+        RemoveAllAreaTriggers();
 
         ExitVehicle();  // Remove applied auras with SPELL_AURA_CONTROL_VEHICLE
         UnsummonAllTotems();

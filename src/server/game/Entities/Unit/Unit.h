@@ -2071,7 +2071,7 @@ class Unit : public WorldObject
         int32 CountAreaTrigger(uint32 spellId);
         void GetAreaTriggerList(std::list<AreaTrigger*> &list, uint32 spellId);
         void RemoveAreaTrigger(uint32 spellId);
-        void RemoveAllAreasTrigger();
+        void RemoveAllAreaTriggers();
 
         GameObject* GetGameObject(uint32 spellId) const;
         void AddGameObject(GameObject* gameObj);

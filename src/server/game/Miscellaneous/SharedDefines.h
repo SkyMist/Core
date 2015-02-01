@@ -3389,7 +3389,7 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_UNK17            = 0x00020000,         // Related to CreatureDisplayInfo and scaling in some way
     CREATURE_TYPEFLAGS_UNK18            = 0x00040000,         // ? Related to vehicle/siege weapons?
     CREATURE_TYPEFLAGS_UNK19            = 0x00080000,
-    CREATURE_TYPEFLAGS_ENVIRONMENT      = 0x00100000,
+    CREATURE_TYPEFLAGS_ENVIRONMENT      = 0x00100000,         // Hides Name Plate (when using V / Ctrl + V key).
     CREATURE_TYPEFLAGS_UNK21            = 0x00200000,         // may be has something to do with animation (disable animation?)
     CREATURE_TYPEFLAGS_UNK22            = 0x00400000,
     CREATURE_TYPEFLAGS_SQUIRE           = 0x00800000,         // @todo NEED TO IMPLEMENT IT https://github.com/mangosthree/server/commit/e6eec30f51b581b3fb4f2ea537be33d1078e1003
@@ -3399,7 +3399,7 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_UNK27            = 0x08000000,         // Used in Lua_ForceGossip
     CREATURE_TYPEFLAGS_UNK28            = 0x10000000,
     CREATURE_TYPEFLAGS_UNK29            = 0x20000000,
-    CREATURE_TYPEFLAGS_UNK30            = 0x40000000,
+    CREATURE_TYPEFLAGS_NO_NAME_RENDER   = 0x40000000,         // Prevent client from displaying object name.
     CREATURE_TYPEFLAGS_QUEST_BOSS       = 0x80000000          // Lua_UnitIsQuestBoss found on MaNGOS3
 };
 
@@ -3422,7 +3422,8 @@ enum CreatureEliteType
     CREATURE_ELITE_RAREELITE       = 2,
     CREATURE_ELITE_WORLDBOSS       = 3,
     CREATURE_ELITE_RARE            = 4,
-    CREATURE_UNKNOWN               = 5                      // found in 2.2.3 for 2 mobs
+    CREATURE_ELITE_PET             = 5,
+    CREATURE_ELITE_MINIPET         = 6  // Minimized portrait display, new to MOP.
 };
 
 // values based at Holidays.dbc

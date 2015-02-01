@@ -142,7 +142,7 @@ class boss_lei_shi : public CreatureScript
                 me->RemoveAura(SPELL_SCARY_FOG_CIRCLE);
                 me->RemoveAura(SPELL_SCARY_FOG_DOT);
                 me->RemoveAura(SPELL_SCARY_FOG_STACKS);
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
 
                 events.Reset();
 
@@ -289,7 +289,7 @@ class boss_lei_shi : public CreatureScript
                     me->RemoveAura(SPELL_SCARY_FOG_CIRCLE);
                     me->RemoveAura(SPELL_SCARY_FOG_DOT);
                     me->RemoveAura(SPELL_SCARY_FOG_STACKS);
-                    me->RemoveAllAreasTrigger();
+                    me->RemoveAllAreaTriggers();
 
                     leiShiFreed = true;
                     Talk(TALK_DEFEATED);
@@ -409,7 +409,7 @@ class boss_lei_shi : public CreatureScript
                     case ACTION_TERMINATE_GET_AWAY_PHASE:
                     {
                         getAwayPhase = false;
-                        me->RemoveAllAreasTrigger();
+                        me->RemoveAllAreaTriggers();
 
                         if (urand(0, 1))
                             events.ScheduleEvent(EVENT_HIDE, 32000);
