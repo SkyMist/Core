@@ -228,7 +228,7 @@ void ObjectGridStoper::Visit(CreatureMapType &m)
             iter->getSource()->SetLockAI(false);
         }
         iter->getSource()->RemoveAllDynObjects();
-        iter->getSource()->RemoveAllAreasTrigger();       // Calls RemoveFromWorld, needs to be after RemoveAllAuras or we invalidate the Owner pointer of the aura
+        iter->getSource()->RemoveAllAreaTriggers();       // Calls RemoveFromWorld, needs to be after RemoveAllAuras or we invalidate the Owner pointer of the aura
     }
 }
 
