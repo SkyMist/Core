@@ -198,7 +198,6 @@ class boss_tortos : public CreatureScript
                 me->AddAura(SPELL_ROCKFALL_AURA, me);
 
 				events.ScheduleEvent(EVENT_CALL_OF_TORTOS, TIMER_CALL_OF_TORTOS_F);
-				events.ScheduleEvent(EVENT_FURIOUS_STONE_BREATH, TIMER_FURIOUS_STONE_BREATH);
 				events.ScheduleEvent(EVENT_SNAPPING_BITE, IsHeroic() ? TIMER_SNAPPING_BITE_H : TIMER_SNAPPING_BITE_N);
 				events.ScheduleEvent(EVENT_QUAKE_STOMP, TIMER_QUAKE_STOMP_F);
 				events.ScheduleEvent(EVENT_SUMMON_BATS, TIMER_CALL_BATS_F);

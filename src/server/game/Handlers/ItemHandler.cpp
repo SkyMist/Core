@@ -1987,10 +1987,13 @@ void WorldSession::HandleItemTextQuery(WorldPacket& recvData)
     ObjectGuid itemGuid;
 
     uint32 Unk = recvData.read<uint32>();
-    uint8 bitOrder[] = {1, 5, 2, 3, 6, 4, 0, 7};
+
+    uint8 bitOrder[8] = { 1, 5, 2, 3, 6, 4, 0, 7 };
     recvData.ReadBitInOrder(itemGuid, bitOrder);
 
-    uint8 byteOrder[] = {6, 4, 0, 3, 7, 5, 2, 1};
+    recvData.FlushBits();
+
+    uint8 byteOrder[8] = { 6, 4, 0, 3, 7, 5, 2, 1 };
     recvData.ReadBytesSeq(itemGuid, byteOrder);
 
     sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_ITEM_TEXT_QUERY item guid: %u", GUID_LOPART(itemGuid));

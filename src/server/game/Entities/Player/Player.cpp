@@ -2871,7 +2871,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
             // remove all dyn objects and AreaTrigger
             RemoveAllDynObjects();
-            RemoveAllAreasTrigger();
+            RemoveAllAreaTriggers();
 
             // stop spellcasting
             // not attempt interrupt teleportation spell at caster teleport
@@ -4618,7 +4618,7 @@ void Player::SendNewMail()
 {
     // deliver undelivered mail
     WorldPacket data(SMSG_RECEIVED_MAIL, 4);
-    data << (uint32) 0;
+    data << uint32(0);
     GetSession()->SendPacket(&data);
 }
 
@@ -8821,17 +8821,6 @@ void Player::_LoadCurrency(PreparedQueryResult result)
         cur.seasonTotal = fields[3].GetUInt32();
         cur.flags = fields[4].GetUInt32();
         cur.weekCap = fields[5].GetUInt32();
-        cur.needResetCap = fields[6].GetUInt8();
-
-        if (cur.needResetCap)
-        {
-            FinishWeek(); // Set week Played / Won values to 0 in memory, too.
-
-            cur.weekCount = 0;
-            cur.weekCap = GetCurrencyWeekCap(currencyID);
-            cur.needResetCap = false;
-            cur.state = PLAYERCURRENCY_CHANGED;
-        }
 
         _currencyStorage.insert(PlayerCurrenciesMap::value_type(currencyID, cur));
 
@@ -8862,7 +8851,6 @@ void Player::_SaveCurrency(SQLTransaction& trans)
                     stmt->setUInt32(4, itr->second.seasonTotal);
                     stmt->setUInt32(5, itr->second.flags);
                     stmt->setUInt32(6, itr->second.weekCap);
-                    stmt->setUInt8 (7, itr->second.needResetCap);
                     trans->Append(stmt);
                     break;
 
@@ -8873,9 +8861,8 @@ void Player::_SaveCurrency(SQLTransaction& trans)
                     stmt->setUInt32(2, itr->second.seasonTotal);
                     stmt->setUInt32(3, itr->second.flags);
                     stmt->setUInt32(4, itr->second.weekCap);
-                    stmt->setUInt8 (5, itr->second.needResetCap);
-                    stmt->setUInt32(6, GetGUIDLow());
-                    stmt->setUInt16(7, itr->first);
+                    stmt->setUInt32(5, GetGUIDLow());
+                    stmt->setUInt16(6, itr->first);
                     trans->Append(stmt);
                     break;
 
@@ -9079,7 +9066,7 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
         cur.seasonTotal = 0;
         cur.flags = 0;
         cur.weekCap = GetCurrencyWeekCap(id);
-        cur.needResetCap = false;
+
         _currencyStorage[id] = cur;
         itr = _currencyStorage.find(id);
     }
@@ -9273,12 +9260,14 @@ void Player::ResetCurrencyWeekCap()
 {
     FinishWeek(); // Set week Played / Won values to 0 in memory, too.
 
-    for (PlayerCurrenciesMap::iterator itr = _currencyStorage.begin(); itr != _currencyStorage.end(); ++itr)
+    if (!_currencyStorage.empty())
     {
-        itr->second.weekCount = 0;
-        itr->second.weekCap = GetCurrencyWeekCap(itr->first);
-        itr->second.needResetCap = false;
-        itr->second.state = PLAYERCURRENCY_CHANGED;
+        for (PlayerCurrenciesMap::iterator itr = _currencyStorage.begin(); itr != _currencyStorage.end(); ++itr)
+        {
+            itr->second.weekCount = 0;
+            itr->second.weekCap = GetCurrencyWeekCap(itr->first);
+            itr->second.state = PLAYERCURRENCY_CHANGED;
+        }
     }
 
     WorldPacket data(SMSG_WEEKLY_RESET_CURRENCY, 0);
@@ -24574,9 +24563,6 @@ void Player::InitDataForForm(bool reapplyMods)
         {
             if (getPowerType() != POWER_MANA)
                 setPowerType(POWER_MANA);
-            SetMaxPower(POWER_MANA, GetCreatePowers(POWER_MANA));
-            UpdateMaxPower(POWER_MANA);
-            SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
             break;
         }
         default:                                            // 0, for example

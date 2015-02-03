@@ -154,7 +154,7 @@ class boss_zorlok : public CreatureScript
                 me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
                 me->SetDisableGravity(true);
                 me->SetReactState(REACT_PASSIVE);
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
 
                 // Set Echo
                 isAttEcho = me->GetEntry() == NPC_ECHO_OF_ATTENUATION;
@@ -293,7 +293,7 @@ class boss_zorlok : public CreatureScript
             {
                 events.Reset();
                 summons.DespawnAll();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
 
                 if (isEcho)
                     return;
@@ -546,7 +546,7 @@ class boss_zorlok : public CreatureScript
                         events.Reset();
                         summons.DespawnAll();
 
-                        me->RemoveAllAreasTrigger();
+                        me->RemoveAllAreaTriggers();
                         me->RemoveAllAuras();
                         me->SetFullHealth();
                         me->SetReactState(REACT_PASSIVE);

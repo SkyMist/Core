@@ -192,7 +192,6 @@ struct PlayerCurrency
    uint32 seasonTotal;
    uint32 weekCap;
    uint8 flags;
-   bool needResetCap;
 };
 
 typedef ACE_Based::LockedMap<uint32, PlayerTalent*> PlayerTalentMap;

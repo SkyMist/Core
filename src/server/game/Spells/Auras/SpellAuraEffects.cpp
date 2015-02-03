@@ -2857,12 +2857,10 @@ void AuraEffect::HandleAuraModShapeshift(AuraApplication const* aurApp, uint8 mo
             target->SetShapeshiftForm(FORM_NONE);
             if (target->getClass() == CLASS_DRUID)
             {
+                // Set mana as main power.
                 target->setPowerType(POWER_MANA);
-                target->SetMaxPower(POWER_MANA, target->GetCreatePowers(POWER_MANA));
-                if (target->ToPlayer())
-                    target->ToPlayer()->UpdateMaxPower(POWER_MANA);
-                target->SetPower(POWER_MANA, target->GetMaxPower(POWER_MANA));
-                // Remove movement impairing effects also when shifting out
+
+                // Remove movement impairing effects also when shifting out.
                 target->RemoveMovementImpairingAuras();
             }
         }

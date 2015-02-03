@@ -54,14 +54,25 @@ enum Spells
 
     SPELL_CONCEALING_FOG        = 137973, // Dummy on eff 0 for attackable state (body + back head).
 
+    SPELL_WATER_WALK            = 143333, // Spell used to let the heads stand above water.
+
     // Rampage - When a head dies.
     SPELL_RAMPAGE               = 139458, // Periodic dummy on eff 0 for damage increase on the specific spells (+25% for each extra available head of type).
+
+    SPELL_RAMPAGE_FIRE_CAST     = 139433,
+    SPELL_RAMPAGE_FROST_CAST    = 139440,
+    SPELL_RAMPAGE_POISON_CAST   = 139504,
+    SPELL_RAMPAGE_ARCANE_CAST   = 139513,
+
     SPELL_RAMPAGE_FIRE          = 139548, // Flaming Head.
     SPELL_RAMPAGE_FROST         = 139549, // Frozen Head.
     SPELL_RAMPAGE_POISON        = 139551, // Venomous Head.
     SPELL_RAMPAGE_ARCANE        = 139552, // Arcane Head - Heroic only!.
 
+    // Hydra Frenzy.
     SPELL_HYDRA_FRENZY          = 139942, // Attack speed increase (others when a head dies, this + heal to full).
+
+    // Elemental Bonds.
     SPELL_ELEMENTAL_BONDS_FIRE  = 139586, // 15% dmg increase aura for each additional Flaming Head, on each.
     SPELL_ELEMENTAL_BONDS_FROST = 139587, // 15% dmg increase aura for each additional Frozen Head, on each.
     SPELL_ELEMENTAL_BONDS_VENOM = 139588, // 15% dmg increase aura for each additional Venomous Head, on each.
@@ -138,7 +149,7 @@ enum Npcs
 
 enum GOs
 {
-    GO_CACHE_OF_ANICIENT_TREAS  = 218805 // Loot chest.
+    GO_CACHE_OF_ANCIENT_TREAS   = 218805 // Loot chest.
 };
 
 enum Events
@@ -200,11 +211,14 @@ Position const headPositions[2] =
 };
 
 // Concealing Fog Head positions.
-Position const concealingPositions[6] = 
+Position const concealingPositions[7] =
 {
     { 6457.16f, 4489.78f, -210.032f }, // Middle.
-    { 6436.35f, 4473.30f, -210.032f }, // Right.
+
+    { 6447.39f, 4481.54f, -210.032f }, // Right.
+    { 6436.35f, 4473.30f, -210.032f },
     { 6410.10f, 4471.53f, -210.032f },
+
     { 6468.27f, 4503.42f, -210.032f }, // Left.
     { 6472.02f, 4524.07f, -210.032f },
     { 6465.45f, 4545.15f, -210.032f },
@@ -218,12 +232,15 @@ float headOrientations[2] =
 };
 
 // Concealing Fog Head orientations.
-float concealingOrientations[6] =
+float concealingOrientations[7] =
 {
-    2.46f,
+    2.46f,                             // Middle.
+
+    2.38f,                             // Right.
     1.79f,
     1.71f,
-    2.58f,
+
+    2.58f,                             // Left.
     2.94f,
     3.13f
 };
@@ -248,7 +265,7 @@ class boss_megaera : public CreatureScript
             SummonList summons;
             EventMap events;
             uint8 headKills, rampageCount;
-            bool rageScheduled, isRampaging;
+            bool isRaging, isRampaging;
 
             /*** SPECIFIC AI FUNCTIONS ***/
 
@@ -261,16 +278,19 @@ class boss_megaera : public CreatureScript
                 {
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
                     {
-                        if (!(*summs)->HasAura(SPELL_CONCEALING_FOG))
+                        if ((*summs)->isAlive())
                         {
-                            if (!(*summs)->HasAura(SPELL_HYDRA_FRENZY))
-                                (*summs)->AddAura(SPELL_HYDRA_FRENZY, *summs);
-                            else
+                            if (!(*summs)->HasAura(SPELL_CONCEALING_FOG))
                             {
-                                if (AuraPtr frenzy = (*summs)->GetAura(SPELL_HYDRA_FRENZY))
-                                    frenzy->SetStackAmount(frenzy->GetStackAmount() + 1);
+                                if (!(*summs)->HasAura(SPELL_HYDRA_FRENZY))
+                                    (*summs)->AddAura(SPELL_HYDRA_FRENZY, *summs);
+                                else
+                                {
+                                    if (AuraPtr frenzy = (*summs)->GetAura(SPELL_HYDRA_FRENZY))
+                                        frenzy->SetStackAmount(frenzy->GetStackAmount() + 1);
+                                }
+                                (*summs)->SetFullHealth();
                             }
-                            (*summs)->SetFullHealth();
                         }
                     }
                 }
@@ -286,7 +306,8 @@ class boss_megaera : public CreatureScript
 
                 if (!summonsList.empty())
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        count++;
+                        if ((*summs)->isAlive())
+                            count++;
 
                 // Check if we have a single head of that type, no counting needed.
                 if (count <= 1)
@@ -315,59 +336,62 @@ class boss_megaera : public CreatureScript
                 {
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
                     {
-                        if (entry == NPC_FLAMING_HEAD)
+                        if ((*summs)->isAlive())
                         {
-                            if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_FIRE))
+                            if (entry == NPC_FLAMING_HEAD)
                             {
-                                if (AuraPtr elemFire = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_FIRE, *summs))
-                                    elemFire->SetStackAmount(headCount);
+                                if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_FIRE))
+                                {
+                                    if (AuraPtr elemFire = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_FIRE, *summs))
+                                        elemFire->SetStackAmount(headCount);
+                                }
+                                else
+                                {
+                                    if (AuraPtr elemFire = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_FIRE))
+                                        elemFire->SetStackAmount(headCount);
+                                }
                             }
-                            else
+                            else if (entry == NPC_FROZEN_HEAD)
                             {
-                                if (AuraPtr elemFire = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_FIRE))
-                                    elemFire->SetStackAmount(headCount);
+                                if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_FROST))
+                                {
+                                    if (AuraPtr elemFrost = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_FROST, *summs))
+                                        elemFrost->SetStackAmount(headCount);
+                                }
+                                else
+                                {
+                                    if (AuraPtr elemFrost = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_FROST))
+                                        elemFrost->SetStackAmount(headCount);
+                                }
                             }
+                            else if (entry == NPC_VENOMOUS_HEAD)
+                            {
+                                if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_VENOM))
+                                {
+                                    if (AuraPtr elemVenom = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_VENOM, *summs))
+                                        elemVenom->SetStackAmount(headCount);
+                                }
+                                else
+                                {
+                                    if (AuraPtr elemVenom = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_VENOM))
+                                        elemVenom->SetStackAmount(headCount);
+                                }
+                            }
+                            else if (entry == NPC_ARCANE_HEAD)
+                            {
+                                if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_ARCAN))
+                                {
+                                    if (AuraPtr elemArcane = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_ARCAN, *summs))
+                                        elemArcane->SetStackAmount(headCount);
+                                }
+                                else
+                                {
+                                    if (AuraPtr elemArcane = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_ARCAN))
+                                        elemArcane->SetStackAmount(headCount);
+                                }
+                            }
+                            else return; // Error! :))
                         }
-                        else if (entry == NPC_FROZEN_HEAD)
-                        {
-                            if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_FROST))
-                            {
-                                if (AuraPtr elemFrost = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_FROST, *summs))
-                                    elemFrost->SetStackAmount(headCount);
-                            }
-                            else
-                            {
-                                if (AuraPtr elemFrost = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_FROST))
-                                    elemFrost->SetStackAmount(headCount);
-                            }
-                        }
-                        else if (entry == NPC_VENOMOUS_HEAD)
-                        {
-                            if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_VENOM))
-                            {
-                                if (AuraPtr elemVenom = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_VENOM, *summs))
-                                    elemVenom->SetStackAmount(headCount);
-                            }
-                            else
-                            {
-                                if (AuraPtr elemVenom = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_VENOM))
-                                    elemVenom->SetStackAmount(headCount);
-                            }
-                        }
-                        else if (entry == NPC_ARCANE_HEAD)
-                        {
-                            if (!(*summs)->HasAura(SPELL_ELEMENTAL_BONDS_ARCAN))
-                            {
-                                if (AuraPtr elemArcane = (*summs)->AddAura(SPELL_ELEMENTAL_BONDS_ARCAN, *summs))
-                                    elemArcane->SetStackAmount(headCount);
-                            }
-                            else
-                            {
-                                if (AuraPtr elemArcane = (*summs)->GetAura(SPELL_ELEMENTAL_BONDS_ARCAN))
-                                    elemArcane->SetStackAmount(headCount);
-                            }
-                        }
-                        else return; // Error! :))
                     }
                 }
             }
@@ -397,17 +421,27 @@ class boss_megaera : public CreatureScript
                 }
 
                 // Summon the front heads.
-                if (Creature* fiHead  = me->SummonCreature(firstHead,      headPositions[0], TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                if (Creature* fiHead  = me->SummonCreature(firstHead, headPositions[0], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
+                {
                     fiHead->SetFacingTo(headOrientations[0]);
+                    fiHead->AddAura(SPELL_WATER_WALK, fiHead);
+                    fiHead->SetReactState(REACT_DEFENSIVE);
+			    }
 
-                if (Creature* secHead = me->SummonCreature(secondHead,     headPositions[1], TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                if (Creature* secHead = me->SummonCreature(secondHead, headPositions[1], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
+                {
                     secHead->SetFacingTo(headOrientations[1]);
+                    secHead->AddAura(SPELL_WATER_WALK, secHead);
+                    secHead->SetReactState(REACT_DEFENSIVE);
+			    }
 
                 // Summon the Concealing Fog head and add the aura to it.
-                if (Creature* concealing = me->SummonCreature(concealingHead, concealingPositions[0], TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                if (Creature* concealing = me->SummonCreature(concealingHead, concealingPositions[0], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
                 {
                     concealing->SetFacingTo(concealingOrientations[0]);
                     me->AddAura(SPELL_CONCEALING_FOG, concealing);
+                    concealing->AddAura(SPELL_WATER_WALK, concealing);
+                    concealing->SetReactState(REACT_DEFENSIVE);
                 }
             }
 
@@ -463,18 +497,20 @@ class boss_megaera : public CreatureScript
                 }
 
                 // Summon front head and add the Encounter frame for it.
-                if (Creature* fiNewHead   = me->SummonCreature(firstNewHead,  headPositions[frontHeadPosition], TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                if (Creature* fiNewHead   = me->SummonCreature(firstNewHead, headPositions[frontHeadPosition], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
                 {
                     fiNewHead->SetFacingTo(headOrientations[frontHeadPosition]);
                     if (instance) instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, fiNewHead);
+                    fiNewHead->AddAura(SPELL_WATER_WALK, fiNewHead);
                     me->AddAura(SPELL_SUBMERGE, fiNewHead);
                 }
 
                 // Summon Concealing Fog head + add the aura to it.
-                if (Creature* secNewHead  = me->SummonCreature(secondNewHead, concealingPositions[headKills], TEMPSUMMON_CORPSE_DESPAWN, 1000))
+                if (Creature* secNewHead  = me->SummonCreature(secondNewHead, concealingPositions[headKills], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 1000))
                 {
-                    me->AddAura(SPELL_CONCEALING_FOG, secNewHead);
                     secNewHead->SetFacingTo(concealingOrientations[headKills]);
+                    me->AddAura(SPELL_CONCEALING_FOG, secNewHead);
+                    secNewHead->AddAura(SPELL_WATER_WALK, secNewHead);
                     me->AddAura(SPELL_SUBMERGE, secNewHead);
                 }
 
@@ -500,7 +536,8 @@ class boss_megaera : public CreatureScript
                 GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
                 if (!summonsList.empty())
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->AddAura(spellId, *summs);
+                        if ((*summs)->isAlive())
+                            (*summs)->AddAura(spellId, *summs);
             }
 
             // Used to remove auras from all heads.
@@ -510,7 +547,8 @@ class boss_megaera : public CreatureScript
                 GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
                 if (!summonsList.empty())
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->RemoveAurasDueToSpell(spellId);
+                        if ((*summs)->isAlive())
+                            (*summs)->RemoveAurasDueToSpell(spellId);
             }
 
             // Used to make all same-type heads cast certain spells.
@@ -522,13 +560,16 @@ class boss_megaera : public CreatureScript
                 {
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
                     {
-                        if (randomTarget)
+                        if ((*summs)->isAlive())
                         {
-                            if (Unit* target = (*summs)->AI()->SelectTarget(SELECT_TARGET_RANDOM, 0, 200.0f, true))
-                                (*summs)->CastSpell(target, spellId, triggered);
+                            if (randomTarget)
+                            {
+                                if (Unit* target = (*summs)->AI()->SelectTarget(SELECT_TARGET_RANDOM, 0, 200.0f, true))
+                                    (*summs)->CastSpell(target, spellId, triggered);
+                            }
+                            else
+                                (*summs)->CastSpell(*summs, spellId, triggered);
                         }
-                        else
-                            (*summs)->CastSpell(*summs, spellId, triggered);
                     }
                 }
             }
@@ -540,7 +581,8 @@ class boss_megaera : public CreatureScript
                 GetCreatureListWithEntryInGrid(summonsList, me, entry, 200.0f);
                 if (!summonsList.empty())
                     for (std::list<Creature*>::iterator summs = summonsList.begin(); summs != summonsList.end(); summs++)
-                        (*summs)->DespawnOrUnsummon();
+                        if ((*summs)->isAlive())
+                            (*summs)->DespawnOrUnsummon();
             }
 
             /*** GENERAL AI FUNCTIONS ***/
@@ -553,7 +595,7 @@ class boss_megaera : public CreatureScript
                 // Set Head kills count (at 7 encounter ends), rampage damage count to 0 (20 max) and Megaera's Rage scheduled to false (check used in head scripts for melee range).
                 headKills = 0;
                 rampageCount = 0;
-                rageScheduled = false;
+                isRaging = false;
                 isRampaging = false;
 
                 // Main boss body doesn't move.
@@ -576,7 +618,7 @@ class boss_megaera : public CreatureScript
                 // Just Berserk scheduled here, the other events are handled by the specific heads / through happenings (ex. a head dies -> Rampage, etc).
 				events.ScheduleEvent(EVENT_BERSERK, (me->GetMap()->IsHeroic() ? TIMER_BERSERK_H : TIMER_BERSERK));
 
-                // Put all heads in combat and send the frames.
+                // Put all heads in combat and send the frames for the front ones.
                 if (instance)
                 {
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
@@ -615,8 +657,8 @@ class boss_megaera : public CreatureScript
                         break;
 
                     case ACTION_MEGAERAS_RAGE:
-                        rageScheduled = true;
                         events.ScheduleEvent(EVENT_MEGAERAS_RAGE, 3000);
+                        isRaging = true;
                         break;
 
                     default: break;
@@ -665,7 +707,6 @@ class boss_megaera : public CreatureScript
                     RemoveSummonFrame(NPC_ARCANE_HEAD);
 
                 me->RemoveAllAuras();
-                Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
                 me->GetMotionMaster()->MovementExpired();
@@ -683,11 +724,9 @@ class boss_megaera : public CreatureScript
             void JustReachedHome()
             {
                 me->ClearUnitState(UNIT_STATE_EVADE);
-                me->AddAura(SPELL_CONCEALING_FOG, me);
 
-                // Main boss body doesn't move.
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-                me->SetReactState(REACT_DEFENSIVE);
+                // This should take care of everything needed.
+                Reset();
 
                 _JustReachedHome();
             }
@@ -710,8 +749,8 @@ class boss_megaera : public CreatureScript
             {
                 uint8 newFrontHeadSpawnPos = 0;
 
-                // Just a sanity check.
-                if (headKills < 7 && (summon->GetEntry() == NPC_FLAMING_HEAD || summon->GetEntry() == NPC_FROZEN_HEAD || 
+                // Just a sanity check. If headKills = 6 -> gets increased to 7 -> Megaera dead.
+                if (headKills < 6 && (summon->GetEntry() == NPC_FLAMING_HEAD || summon->GetEntry() == NPC_FROZEN_HEAD || 
                     summon->GetEntry() == NPC_VENOMOUS_HEAD || me->GetMap()->IsHeroic() && summon->GetEntry() == NPC_ARCANE_HEAD))
                 {
                     if (instance)
@@ -777,7 +816,7 @@ class boss_megaera : public CreatureScript
                 summons.DespawnAll();
 
                 // Spawn the chest.
-                killer->SummonGameObject(GO_CACHE_OF_ANICIENT_TREAS, 6418.52f, 4524.48f, -209.176f, 2.42f, 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY, 0);
+                killer->SummonGameObject(GO_CACHE_OF_ANCIENT_TREAS, 6418.52f, 4524.48f, -209.176f, 2.42f, 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY, 0);
 
                 if (instance)
                 {
@@ -839,22 +878,22 @@ class boss_megaera : public CreatureScript
                                 if (!me->GetMap()->IsHeroic())
                                 {
                                     if (rampageCount == 0 || rampageCount == 3 || rampageCount == 6 || rampageCount == 9 || rampageCount == 12 || rampageCount == 15 || rampageCount == 18)
-                                        HeadsCastSpell(SPELL_RAMPAGE_FIRE, NPC_FLAMING_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_FIRE_CAST, NPC_FLAMING_HEAD, true);
                                     if (rampageCount == 1 || rampageCount == 4 || rampageCount == 7 || rampageCount == 10 || rampageCount == 13 || rampageCount == 16 || rampageCount == 19)
-                                        HeadsCastSpell(SPELL_RAMPAGE_FROST, NPC_FROZEN_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_FROST_CAST, NPC_FROZEN_HEAD, true);
                                     if (rampageCount == 2 || rampageCount == 5 || rampageCount == 8 || rampageCount == 11 || rampageCount == 14 || rampageCount == 17)
-                                        HeadsCastSpell(SPELL_RAMPAGE_POISON, NPC_VENOMOUS_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_POISON_CAST, NPC_VENOMOUS_HEAD, true);
                                 }
                                 else // Heroic!
                                 {
                                     if (rampageCount == 0 || rampageCount == 4 || rampageCount == 8 || rampageCount == 12 || rampageCount == 16)
-                                        HeadsCastSpell(SPELL_RAMPAGE_FIRE, NPC_FLAMING_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_FIRE_CAST, NPC_FLAMING_HEAD, true);
                                     if (rampageCount == 1 || rampageCount == 5 || rampageCount == 9 || rampageCount == 13 || rampageCount == 17)
-                                        HeadsCastSpell(SPELL_RAMPAGE_FROST, NPC_FROZEN_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_FROST_CAST, NPC_FROZEN_HEAD, true);
                                     if (rampageCount == 2 || rampageCount == 6 || rampageCount == 10 || rampageCount == 14 || rampageCount == 18)
-                                        HeadsCastSpell(SPELL_RAMPAGE_POISON, NPC_VENOMOUS_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_POISON_CAST, NPC_VENOMOUS_HEAD, true);
                                     if (rampageCount == 3 || rampageCount == 7 || rampageCount == 11 || rampageCount == 15 || rampageCount == 19)
-                                        HeadsCastSpell(SPELL_RAMPAGE_ARCANE, NPC_ARCANE_HEAD);
+                                        HeadsCastSpell(SPELL_RAMPAGE_ARCANE_CAST, NPC_ARCANE_HEAD, true);
                                 }
 
                                 // Increase the count and reschedule the event.
@@ -883,7 +922,7 @@ class boss_megaera : public CreatureScript
                             break;
 
                         case EVENT_MEGAERAS_RAGE:
-                            if (rageScheduled)
+                            if (isRaging)
                             {
                                 // Have each of the specific heads cast the spell (in order).
                                 HeadsCastSpell(SPELL_MEGAERAS_RAGE_FIRE, NPC_FLAMING_HEAD, true);
@@ -892,7 +931,7 @@ class boss_megaera : public CreatureScript
                                 if (me->GetMap()->IsHeroic())
                                     HeadsCastSpell(SPELL_MEGAERAS_RAGE_ARCANE, NPC_ARCANE_HEAD, true);
 
-                                events.ScheduleEvent(EVENT_MEGAERAS_RAGE, 3000);
+                                isRaging = false;
                             }
                             break;
 
@@ -935,9 +974,13 @@ class npc_flaming_head_megaera : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void EnterCombat(Unit* /*who*/)
+            void Reset()
             {
                 events.Reset();
+            }
+
+            void EnterCombat(Unit* /*who*/)
+            {
                 events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 18000);
                 events.ScheduleEvent(EVENT_CINDERS, urand(10000, 15000));
                 events.ScheduleEvent(EVENT_IGNITE_FLESH, urand(12000, 17000));
@@ -964,16 +1007,11 @@ class npc_flaming_head_megaera : public CreatureScript
                             {
                                 // Find boss and check for melee distance to victim + unscheduled boss action.
 				                if (Creature* Megaera = me->FindNearestCreature(BOSS_MEGAERA, 200.0f, true))
-                                {
                                     if (!me->IsWithinDistInMap(me->getVictim(), me->GetAttackDistance(me->getVictim())))
-                                    {
-                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled == false)
+                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->isRaging == false)
                                             Megaera->AI()->DoAction(ACTION_MEGAERAS_RAGE);
-                                    }
-                                    else CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled = false;
-                                }
 
-                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 2000);
+                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 4000);
                             }
                             break;
 
@@ -1035,10 +1073,14 @@ class npc_frozen_head_megaera : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void EnterCombat(Unit* /*who*/)
+            void Reset()
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 18000);
+            }
+
+            void EnterCombat(Unit* /*who*/)
+            {
+                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 18900);
                 events.ScheduleEvent(EVENT_TORRENT_OF_ICE, urand(14000, 19000));
                 events.ScheduleEvent(EVENT_ARCTIC_FREEZE, urand(7000, 12000));
 
@@ -1064,16 +1106,11 @@ class npc_frozen_head_megaera : public CreatureScript
                             {
                                 // Find boss and check for melee distance to victim + unscheduled boss action.
 				                if (Creature* Megaera = me->FindNearestCreature(BOSS_MEGAERA, 200.0f, true))
-                                {
                                     if (!me->IsWithinDistInMap(me->getVictim(), me->GetAttackDistance(me->getVictim())))
-                                    {
-                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled == false)
+                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->isRaging == false)
                                             Megaera->AI()->DoAction(ACTION_MEGAERAS_RAGE);
-                                    }
-                                    else CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled = false;
-                                }
 
-                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 2000);
+                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 4000);
                             }
                             break;
 
@@ -1151,10 +1188,14 @@ class npc_venomous_head_megaera : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void EnterCombat(Unit* /*who*/)
+            void Reset()
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 18000);
+            }
+
+            void EnterCombat(Unit* /*who*/)
+            {
+                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 19800);
                 events.ScheduleEvent(EVENT_ACID_RAIN, urand(12000, 17000));
                 events.ScheduleEvent(EVENT_ROT_ARMOR, urand(10000, 15000));
 
@@ -1180,16 +1221,11 @@ class npc_venomous_head_megaera : public CreatureScript
                             {
                                 // Find boss and check for melee distance to victim + unscheduled boss action.
 				                if (Creature* Megaera = me->FindNearestCreature(BOSS_MEGAERA, 200.0f, true))
-                                {
                                     if (!me->IsWithinDistInMap(me->getVictim(), me->GetAttackDistance(me->getVictim())))
-                                    {
-                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled == false)
+                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->isRaging == false)
                                             Megaera->AI()->DoAction(ACTION_MEGAERAS_RAGE);
-                                    }
-                                    else CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled = false;
-                                }
 
-                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 2000);
+                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 4000);
                             }
                             break;
 
@@ -1251,10 +1287,14 @@ class npc_arcane_head_megaera : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void EnterCombat(Unit* /*who*/)
+            void Reset()
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 18000);
+            }
+
+            void EnterCombat(Unit* /*who*/)
+            {
+                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 20600);
                 events.ScheduleEvent(EVENT_NETHER_TEAR, urand(12000, 17000));
                 events.ScheduleEvent(EVENT_SUPPRESSION, urand(7000, 12000));
 
@@ -1280,16 +1320,11 @@ class npc_arcane_head_megaera : public CreatureScript
                             {
                                 // Find boss and check for melee distance to victim + unscheduled boss action.
 				                if (Creature* Megaera = me->FindNearestCreature(BOSS_MEGAERA, 200.0f, true))
-                                {
                                     if (!me->IsWithinDistInMap(me->getVictim(), me->GetAttackDistance(me->getVictim())))
-                                    {
-                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled == false)
+                                        if (CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->isRaging == false)
                                             Megaera->AI()->DoAction(ACTION_MEGAERAS_RAGE);
-                                    }
-                                    else CAST_AI(boss_megaera::boss_megaeraAI, Megaera->AI())->rageScheduled = false;
-                                }
 
-                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 2000);
+                                events.ScheduleEvent(EVENT_CHECK_MEGAERAS_RAGE, 4000);
                             }
                             break;
 
@@ -1410,7 +1445,6 @@ class npc_icy_ground_megaera : public CreatureScript
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_DISABLE_MOVE);
                 me->SetInCombatWithZone();
                 me->SetReactState(REACT_PASSIVE);
-                // me->DespawnOrUnsummon(60000); - Summon spell already has 1 minute duration.
 
                 events.ScheduleEvent(EVENT_CHECK_ICY_GROUND_AND_CINDERS, 300);
                 if (me->GetMap()->IsHeroic())

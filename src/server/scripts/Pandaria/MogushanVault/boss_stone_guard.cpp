@@ -408,7 +408,7 @@ class boss_generic_guardian : public CreatureScript
                     stoneGuardControler->AI()->Reset();
 
                 summons.DespawnAll();
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
 
                 switch (me->GetEntry())
                 {
@@ -559,7 +559,7 @@ class boss_generic_guardian : public CreatureScript
 
             void JustDied(Unit* killer)
             {
-                me->RemoveAllAreasTrigger();
+                me->RemoveAllAreaTriggers();
 
                 if (Creature* controller = GetController())
                     controller->AI()->DoAction(ACTION_GUARDIAN_DIED);

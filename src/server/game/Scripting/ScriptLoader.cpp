@@ -1685,13 +1685,14 @@ void AddPandariaScripts()
     AddSC_boss_lei_shi();
     AddSC_boss_sha_of_fear();
 
-    AddSC_boss_jin_rokh_breaker();                  // Throne of Thunder
+    AddSC_instance_throne_of_thunder();            // Throne of Thunder
+    AddSC_boss_jin_rokh_breaker();
     AddSC_boss_horridon();
     AddSC_boss_tortos();
     AddSC_boss_council_of_elders();
     AddSC_boss_megaera();
 
-    AddSC_instance_siege_of_orgrimmar();            // Siege of Orgrimmar
+    AddSC_instance_siege_of_orgrimmar();           // Siege of Orgrimmar
     AddSC_siege_of_orgrimmar();
     AddSC_immerseus();
     AddSC_fallen_protectors();
