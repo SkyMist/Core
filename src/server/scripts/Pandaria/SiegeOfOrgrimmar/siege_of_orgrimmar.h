@@ -98,12 +98,13 @@ enum CreatureIds
     BOSS_SUN_TENDERHEART                = 71480,
 
     // Norushen
-    BOSS_NORUSHEN                       = 71965,
+    BOSS_NORUSHEN_AMALGAM               = 71965,
     BOSS_AMALGAM_OF_CORRUPTION          = 72276,
     NPC_ESSENCE_OF_CORRUPTION           = 71977,
     NPC_MANIFESTATION_OF_CORRUPTION     = 71976,
 
     // Sha of Pride
+    BOSS_NORUSHEN_PRIDE                 = 71967,
     BOSS_SHA_OF_PRIDE                   = 71734,
     NPC_REFLECTION                      = 72172,
 

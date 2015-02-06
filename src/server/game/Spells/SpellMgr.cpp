@@ -5333,11 +5333,11 @@ void SpellMgr::LoadSpellCustomAttr()
                         spellInfo->Effects[0].RadiusEntry = radius; //200yards.
                     }
                     break;
-                case 106847:
+                case 106847: // Barrel Toss
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
-                    // Wise Mari Hydrolance damage
-                case 106267:
-                    //spellInfo->Effects[0].TargetB = TARGET_UNIT_TARGET_ENEMY;
+                    break;
+                case 106267: // Wise Mari Hydrolance damage
+                    spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
                     break;
                 case 106334:// Wash Away
                     spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
@@ -5559,10 +5559,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 break;
             // Arest, Sturdy Manacles, Seize the Ambassador
             case 78628:
-                spellInfo->Effects[EFFECT_0].Effect = 0;
-                break;
-            // Vengeful Strikes (Rook Stonetoe)
-            case 144396:
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
             // Flamebreaker, Flameseer's Staff, Flamebreaker quest
@@ -8729,6 +8725,58 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 139866: // Torrent of Ice.
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+
+            // SIEGE OF ORGRIMMAR (RAID).
+
+                // Immerseus.
+
+                case 143412: // Swirl.
+                    spellInfo->Effects[0].Amplitude = 1000;
+                    break;
+
+                // Fallen Protectors.
+
+                case 144396: // Vengeful Strikes (Rook Stonetoe).
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_NONE;
+                    break;
+
+                // Norushen / Amalgam of Corruption.
+
+                case 145212: // Unleashed Anger.
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 145735: // Icy Fear.
+                case 147082: // Burst of Anger.
+                case 145073: // Residual Corruption.
+                    spellInfo->TargetAuraSpell = 0;
+                    break;
+                case 144421: // Corruption.
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_DONE_VERSUS;
+                    spellInfo->Effects[1].MiscValue = (1 << (CREATURE_TYPE_ABBERATION - 1)); // 8192 - mask.
+                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(36);   // No radius.
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(36);
+                    break;
+                case 144724: // Look Within.
+                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_NONE;
+                    break;
+                case 145768: // Unleash Corruption.
+                case 145769:
+                case 144848: // Titanic Corruption.
+                case 144980: // Greater Corruption.
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ANY;
+                    break;
+                case 144448: // Cleanse Corruption.
+                case 144449:
+                case 144450:
+                case 147657:
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    break;
+                case 144849: // Test of Serenity.
+                case 144850: // Test of Reliance.
+                    spellInfo->SetDurationIndex(3); // 1 minute.
                     break;
 
 
