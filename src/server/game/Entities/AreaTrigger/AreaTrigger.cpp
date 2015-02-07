@@ -127,6 +127,11 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
             SetDuration(60000);
             break;
 
+        case 146793: // Bottomless Pit Greater Corruption
+            SetVisualRadius(4.0f);
+            SetDuration(60000);
+            break;
+
         default: break;
     }
 
@@ -614,6 +619,30 @@ void AreaTrigger::Update(uint32 p_time)
             break;
         }
 
+        case 146793: // Bottomless Pit Greater Corruption
+        {
+            std::list<Player*> targetList;
+            radius = 4.0f;
+
+            GetPlayerListInGrid(targetList, 100.0f);
+
+            if (!targetList.empty())
+            {
+                for (auto itr : targetList)
+                {
+                    // Bottomless Pit - Periodic Damage
+                    if (itr->GetDistance(this) > radius)
+                        itr->RemoveAurasDueToSpell(146703);
+                    else
+                    {
+                        if (!itr->HasAura(146703))
+                            caster->AddAura(146703, itr);
+                    }
+                }
+            }
+            break;
+        }
+
         default: break;
     }
 }
@@ -710,6 +739,17 @@ void AreaTrigger::Remove()
                 if (!targetList.empty())
                     for (auto itr : targetList)
                         itr->RemoveAurasDueToSpell(143959);
+                break;
+            }
+
+            case 146793: // Bottomless Pit Greater Corruption
+            {
+                std::list<Player*> targetList;
+                GetPlayerListInGrid(targetList, 100.0f);
+
+                if (!targetList.empty())
+                    for (auto itr : targetList)
+                        itr->RemoveAurasDueToSpell(146703);
                 break;
             }
 

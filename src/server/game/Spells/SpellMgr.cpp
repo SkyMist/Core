@@ -8778,6 +8778,17 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 144850: // Test of Reliance.
                     spellInfo->SetDurationIndex(3); // 1 minute.
                     break;
+                case 145227: // Blind Hatred.
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[0].TargetB = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(36);   // No radius.
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(36);
+                    break;
+                case 144479: // Expel Corruption.
+                case 145064:
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[1].Effect = 0;
+                    break;
 
 
             // CLASS SPELLS

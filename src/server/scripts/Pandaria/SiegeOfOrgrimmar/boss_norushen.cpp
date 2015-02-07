@@ -371,7 +371,7 @@ enum Spells
         A ball of corrupted energy travels outward from the caster, inflicting 97500 to 102500 Shadow damage to the first enemy in its path.
         Every Expelled Corruption that reaches the Amalgam of Corruption will increase the damage the Amalgam inflicts by 5% for 15 sec. 
     */
-    SPELL_EXPEL_CORRUPTION_L     = 144479, // Effect 1 Dummy. Effect 2 creates moving Areatrigger 1080.
+    SPELL_EXPEL_CORRUPTION_L     = 144479, // Effect 0 Dummy. Effect 1 creates moving Areatrigger 1080.
     SPELL_EXPELLED_CORRUPTION_DL = 144480, // Periodic damage each sec. to the target in the Expelled Corruption's path. Same visual and effects as first.
 
     // 2. For NPC_ESSENCE_OF_CORRUPTION_N:
@@ -381,8 +381,8 @@ enum Spells
         A ball of corrupted energy travels outward from the caster, inflicting 97500 to 102500 Shadow damage to the first enemy in its path.
         Every Expelled Corruption that reaches the Amalgam of Corruption will increase the damage the Amalgam inflicts by 5% for 15 sec. 
     */
-    SPELL_EXPEL_CORRUPTION       = 145064, // Effect 1 Dummy. Effect 2 creates moving Areatrigger 1106.
-    SPELL_EXPELLED_CORRUPTION_D  = 145134, // Periodic damage each sec. to the target in the Expelled Corruption's path.
+    SPELL_EXPEL_CORRUPTION       = 145064, // Effect 0 Dummy. Effect 1 creates moving Areatrigger 1106.
+    SPELL_EXPELLED_CORRUPTION_D  = 144547, // Damage to the target in the Expelled Corruption's path.
     SPELL_EXPEL_CORRUPTION_VIS   = 132094, // A ball that can be used as areatrigger movement.
 
     //============================================================================================================================================================================//
@@ -538,6 +538,8 @@ enum Npcs
     NPC_ESSENCE_OF_CORRUPTION_N  = 72263,
 
     NPC_RESIDUAL_CORRUPTION      = 72550, // Spawned by NPC_MANIFEST_OF_CORRUPTION_N when it dies.
+
+    NPC_EXPELLED_CORRUPTION      = 74001, // Spawned by NPC_ESSENCE_OF_CORRUPTION_N / L.
 
     // Greater Corruption fight NPC's.
     NPC_LEVEN_DAWNBLADE_GC       = 71995,
@@ -1260,8 +1262,16 @@ class npc_manifestation_of_corruption : public CreatureScript
             void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
+
                 if (me->GetEntry() == NPC_MANIFEST_OF_CORRUPTION_L)
                     me->AddAura(SPELL_MANIFEST_SPAWN_VIS, me); // Emerge.
+                else // Foul Link handling.
+                {
+                    me->AddAura(SPELL_FOUL_LINK_TRIGGER, me);
+                    if (Creature* amalgam = me->FindNearestCreature(BOSS_AMALGAM_OF_CORRUPTION, 200.0f, true))
+                        amalgam->CastSpell(me, SPELL_FOUL_LINK_ADDS, true);
+                }
+
                 DoZoneInCombat(me, 100.0f);
             }
 
@@ -1362,8 +1372,16 @@ class npc_essence_of_corruption : public CreatureScript
             void IsSummonedBy(Unit* /*summoner*/)
             {
                 Reset();
+
                 if (me->GetEntry() == NPC_ESSENCE_OF_CORRUPTION_L)
                     DoCast(me, SPELL_ESSENCE_OF_CORRUPTION); // Emerge + Bulwark aura.
+                else // Foul Link handling.
+                {
+                    me->AddAura(SPELL_FOUL_LINK_TRIGGER, me);
+                    if (Creature* amalgam = me->FindNearestCreature(BOSS_AMALGAM_OF_CORRUPTION, 200.0f, true))
+                        amalgam->CastSpell(me, SPELL_FOUL_LINK_ADDS, true);
+                }
+
                 DoZoneInCombat(me, 100.0f);
             }
 
@@ -1495,6 +1513,7 @@ class npc_greater_corruption : public CreatureScript
             void EnterEvadeMode()
             {
                 Reset();
+                me->RemoveAllAreaTriggers();
                 me->DeleteThreatList();
                 me->CombatStop(true);
 
@@ -1503,6 +1522,8 @@ class npc_greater_corruption : public CreatureScript
 
             void JustDied(Unit* killer)
             {
+                me->RemoveAllAreaTriggers();
+
                 if (killer)
                     killer->CastSpell(killer, SPELL_CLEANSE_TRIAL, true);
             }
@@ -1814,6 +1835,78 @@ class npc_residual_corruption : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_residual_corruptionAI(creature);
+        }
+};
+
+// Expelled Corruption 74001.
+class npc_expelled_corruption : public CreatureScript
+{
+    public:
+        npc_expelled_corruption() : CreatureScript("npc_expelled_corruption") { }
+
+        struct npc_expelled_corruptionAI : public ScriptedAI
+        {
+            npc_expelled_corruptionAI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+            bool toBuff;
+
+            void Reset()
+            {
+                toBuff = false;
+            }
+
+            void IsSummonedBy(Unit* /*summoner*/)
+            {
+                Reset();
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+                me->SetReactState(REACT_PASSIVE);
+                me->AddAura(SPELL_EXPEL_CORRUPTION_VIS, me);
+                if (Creature* amalgam = me->FindNearestCreature(BOSS_AMALGAM_OF_CORRUPTION, 200.0f, true))
+                    me->GetMotionMaster()->MoveChase(amalgam);
+            }
+
+            void UpdateAI(uint32 const diff)
+            {
+                // Handle Fusion if reaching the boss.
+                if (Creature* amalgam = me->FindNearestCreature(BOSS_AMALGAM_OF_CORRUPTION, 200.0f, true))
+                {
+                    if (me->IsWithinDistInMap(amalgam, 2.0f, true) && !toBuff)
+                    {
+                        me->AddAura(SPELL_FUSION, amalgam);
+                        toBuff = true;
+                        me->DespawnOrUnsummon(200);
+                    }
+                }
+
+                // Handle damaging players in the path. They 'absorb' the Expelled Corruption and it despawns.
+                Map::PlayerList const &PlayerList = me->GetMap()->GetPlayers();
+                if (!PlayerList.isEmpty())
+                {
+                    for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                    {
+                        if (Player* player = i->getSource())
+                        {
+                            if (player->IsWithinDistInMap(me, 1.0f) && me->isInFront(player, M_PI / 3) && !toBuff)
+                            {
+                                DoCast(player, SPELL_EXPELLED_CORRUPTION_D, true);
+                                toBuff = true;
+                                me->DespawnOrUnsummon(200);
+                            }
+                        }
+                    }
+                }
+
+                // No melee.
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_expelled_corruptionAI(creature);
         }
 };
 
@@ -2425,6 +2518,38 @@ class spell_bottomless_pit : public SpellScriptLoader
         }
 };
 
+// Expel Corruption 144479, 145064.
+class spell_expel_corruption : public SpellScriptLoader
+{
+    public:
+        spell_expel_corruption() : SpellScriptLoader("spell_expel_corruption") { }
+
+        class spell_expel_corruption_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_expel_corruption_SpellScript);
+
+            void HandleDummy(SpellEffIndex /*effIndex*/)
+            {
+                Unit* caster = GetCaster();
+
+                if (!caster)
+                    return;
+
+                caster->SummonCreature(NPC_EXPELLED_CORRUPTION, caster->GetPositionX(),caster->GetPositionY(), caster->GetPositionZ() + 1.5f, 0.0f, TEMPSUMMON_MANUAL_DESPAWN);
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_expel_corruption_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_expel_corruption_SpellScript();
+        }
+};
+
 void AddSC_norushen()
 {
     new boss_norushen();
@@ -2437,6 +2562,7 @@ void AddSC_norushen()
 
     new npc_blind_hatred();
     new npc_residual_corruption();
+    new npc_expelled_corruption();
 
     new npc_quarantine_measures();
     new npc_purifying_light_orb();
@@ -2449,4 +2575,5 @@ void AddSC_norushen()
     new spell_amalgam_icy_fear();
     new spell_test_realm_amalgam();
     new spell_bottomless_pit();
+    new spell_expel_corruption();
 }
