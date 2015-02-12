@@ -232,9 +232,22 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    caster->CastSpell(itr, 115464, true); // Healing Sphere heal
-                    SetDuration(0);
-                    return;
+                    if (itr->GetHealthPct() < 100.0f && caster->IsInRaidWith(itr))
+                    {
+                        caster->CastSpell(itr, 115464, true); // Healing Sphere heal
+                        SetDuration(0);
+
+                        // we should remove stack from caster healing sphere counter
+                        if (AuraPtr healingSphereBuff = caster->GetAura(124458, caster->GetGUID()))
+                        {
+                            if (healingSphereBuff->GetStackAmount() >1)
+                                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() - 1);
+                            else
+                                caster->RemoveAura(healingSphereBuff);
+                        }
+
+                        return;
+                    }
                 }
             }
 
@@ -374,9 +387,19 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    if (itr->GetGUID() == caster->GetGUID())
+                    if (itr->GetGUID() == caster->GetGUID() && itr->GetHealthPct() < 100.0f)
                     {
                         caster->CastSpell(itr, 125355, true); // Heal for 15% of life
+
+                        // we should remove stack from caster healing sphere counter
+                        if (AuraPtr healingSphereBuff = caster->GetAura(124458, caster->GetGUID()))
+                        {
+                            if (healingSphereBuff->GetStackAmount() > 1)
+                                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() - 1);
+                            else
+                                caster->RemoveAura(healingSphereBuff);
+                        }
+
                         SetDuration(0);
                         return;
                     }

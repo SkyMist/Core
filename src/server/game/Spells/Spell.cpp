@@ -3475,6 +3475,18 @@ void Spell::prepare(SpellCastTargets const* targets, constAuraEffectPtr triggere
         return;
     }
 
+    // add aura counter for healing sphere
+    if (this->GetSpellInfo()->Id == 115460 && !IsTriggered())
+    {
+        if (AuraPtr healingSphereBuff = m_caster->GetAura(124458, m_caster->GetGUID()))
+        {
+            if (healingSphereBuff->GetStackAmount () < 3)
+                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() + 1);
+        }
+        else
+            m_caster->AddAura(124458, m_caster);
+    }
+
     // Prepare data for triggers
     prepareDataForTriggerSystem(triggeredByAura);
 
