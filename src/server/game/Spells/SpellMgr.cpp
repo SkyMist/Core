@@ -5125,7 +5125,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
                     break;
                 case 113656:// Fists of Fury
-                    spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
+                    spellInfo->PreventionType = 6;
                     break;
                 case 115315:// Summon Black Ox Statue
                     spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
