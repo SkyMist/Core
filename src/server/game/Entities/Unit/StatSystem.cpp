@@ -711,6 +711,10 @@ void Player::UpdateParryPercentage()
             value += 5.0f;
     }
 
+    // Glyph of Fists of Fury
+    if (getClass() == CLASS_MONK && GetSpecializationId(GetActiveSpec()) == SPEC_MONK_WINDWALKER && HasAura (113656) && HasAura (125671))
+        value += 100.0f;
+
     // on 90 lvl dk/warrior/paladin should receive 1% of parry from every 952 strength - http://www.mmo-champion.com/threads/1198733-Str-to-Parry-conversion-rate?p=18501401&viewfull=1#post18501401
     if (getLevel() == 90 && (getClass() == CLASS_DEATH_KNIGHT || getClass() == CLASS_WARRIOR || getClass() == CLASS_PALADIN))
         value += GetTotalStatValue(STAT_STRENGTH) / 952.0f;
