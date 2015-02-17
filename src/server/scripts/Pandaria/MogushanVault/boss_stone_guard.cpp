@@ -158,6 +158,7 @@ class boss_stone_guard_controler : public CreatureScript
                 {
                     case ACTION_ENTER_COMBAT:
                     {
+                        events.Reset();
                         for (uint32 entry: guardiansEntry)
                             if (Creature* guardian = me->GetMap()->GetCreature(pInstance->GetData64(entry)))
                                 if (guardian->isAlive())

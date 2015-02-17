@@ -241,11 +241,12 @@ class boss_elegon : public CreatureScript
 
             void Reset()
             {
-
                 if (Creature* cho = GetClosestCreatureWithEntry(me, NPC_LOREWALKER_CHO, 100.0f, true))
                     cho->AI()->Talk(26);
 
                 _Reset();
+
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
 
                 me->AddAura(SPELL_APPARITION_VISUAL, me);
 
@@ -307,7 +308,7 @@ class boss_elegon : public CreatureScript
                     pInstance->SetBossState(DATA_ELEGON, IN_PROGRESS);
                 }
 
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_UNK_15);
+                //me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_UNK_15);
                 me->RemoveAurasDueToSpell(SPELL_APPARITION_VISUAL);
 
                 Talk(TALK_AGGRO);
