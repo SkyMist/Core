@@ -5389,6 +5389,12 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 118530:
+                    spellInfo->MaxAffectedTargets = 3;
+                    break;
+                case 121224:
+                    spellInfo->MaxAffectedTargets = 8;
+                    break;
                 case 116060:
                 case 115861:
                 case 116008:

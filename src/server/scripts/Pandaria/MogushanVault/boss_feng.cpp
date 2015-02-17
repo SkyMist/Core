@@ -25,7 +25,8 @@
 enum eSpells
 {
     // Shared
-    SPELL_SPIRIT_BOLT                   = 118530,
+    SPELL_SPIRIT_BOLT_10                = 118530,
+    SPELL_SPIRIT_BOLT_25                = 121224,
     SPELL_STRENGHT_OF_SPIRIT            = 116363,
     SPELL_DRAW_ESSENCE                  = 121631,
     SPELL_NULLIFICATION_BARRIER_PLAYERS = 115811,
@@ -180,6 +181,17 @@ Position modPhasePositions[4] =
     {4063.26f, 1362.80f, 466.30f, 0.7772f}, // Phase Shield
 };
 
+Position gobjectStonesPos[2] =
+{
+    {4028.28f, 1352.04f, 468.30f, 5.5014f}, // 211628 - Shroud of reversal
+    {4027.74f, 1330.33f, 466.30f, 5.5014f}, // 211626 - Nullification Barrier
+};
+
+enum gobjectsStones
+{
+    GO_SHROURD_OF_REVERSAL = 211628,
+    GO_NULLIFICATION_BARRIER = 211626,
+};
 
 uint32 statueEntryInOrder[4] = {GOB_FIST_STATUE,   GOB_SPEAR_STATUE,   GOB_STAFF_STATUE,   GOB_SHIELD_STATUE};
 uint32 controlerVisualId[4]  = {SPELL_VISUAL_FIST, SPELL_VISUAL_SPEAR, SPELL_VISUAL_STAFF, SPELL_VISUAL_SHIELD};
@@ -276,11 +288,11 @@ class boss_feng : public CreatureScript
 
                 actualPhase = PHASE_NONE;
 
-                if (GameObject* inversionGob = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_INVERSION)))
-                    inversionGob->Respawn();
+                if (GameObject* reversal = GetClosestGameObjectWithEntry(me, GO_SHROURD_OF_REVERSAL, 100.0F))
+                    reversal->Delete();
 
-                if (GameObject* cancelGob = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_CANCEL)))
-                    cancelGob->Respawn();
+                if (GameObject* barrier = GetClosestGameObjectWithEntry(me, GO_NULLIFICATION_BARRIER, 100.0F))
+                    barrier->Delete();
             }
 
             void JustDied(Unit* attacker)
@@ -322,8 +334,12 @@ class boss_feng : public CreatureScript
                     return;
                 }
 
+                attacker->SummonGameObject(GO_SHROURD_OF_REVERSAL, gobjectStonesPos[0].GetPositionX(), gobjectStonesPos[0].GetPositionY(), gobjectStonesPos[0].GetPositionZ(),0,0,0,0,0,0);
+                attacker->SummonGameObject(GO_NULLIFICATION_BARRIER, gobjectStonesPos[1].GetPositionX(), gobjectStonesPos[1].GetPositionY(), gobjectStonesPos[1].GetPositionZ(),0,0,0,0,0,0);
+
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 pInstance->SetBossState(DATA_FENG, IN_PROGRESS);
+                events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 10000);
                 Talk(TALK_AGGRO);
             }
 
@@ -644,24 +660,9 @@ class boss_feng : public CreatureScript
                     }
                     case EVENT_SPIRIT_BOLTS:
                     {
-                        std::list<Player*> potenTargets;
-                        GetPlayerListInGrid(potenTargets, me, 100.0f);
-
-                        int count = 0;
-                        int max = IsHeroic() ? 8 : 3;
-
-                        while (count < max)
-                        {
-                            for (auto target : potenTargets)
-                            {
-                                if (urand(0, 1))
-                                {
-                                    me->CastSpell(me, SPELL_SPIRIT_BOLT, true);
-                                    if (++count == max)
-                                        break;
-                                }
-                            }
-                        }
+                        if (!me->HasUnitState(UNIT_STATE_CASTING))
+                            DoCast(Is25ManRaid() ? SPELL_SPIRIT_BOLT_25 : SPELL_SPIRIT_BOLT_10);
+                        events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 8000);
                         break;
                     }
                     // Shield Phase
@@ -1279,8 +1280,8 @@ class spell_mogu_arcane_velocity : public SpellScriptLoader
                 float distance = caster->GetExactDist2d(target);
 
                 uint8 mode = GetCaster()->GetInstanceScript()->instance->GetSpawnMode();
-                uint32 mindmg  = (mode == RAID_DIFFICULTY_10MAN_NORMAL ? 39000 : (mode == RAID_DIFFICULTY_25MAN_NORMAL ? 44850 : (mode == RAID_DIFFICULTY_10MAN_HEROIC ? 58500 : (mode == RAID_DIFFICULTY_25MAN_HEROIC ? 67275 : 16770))));
-                uint32 range   = (mode == RAID_DIFFICULTY_10MAN_NORMAL ?  2000 : (mode == RAID_DIFFICULTY_25MAN_NORMAL ?  2300 : (mode == RAID_DIFFICULTY_10MAN_HEROIC ?  3000 : (mode == RAID_DIFFICULTY_25MAN_HEROIC ?  3450 :   860))));
+                uint32 mindmg  = (mode == MAN10_DIFFICULTY ? 39000 : (mode == MAN25_DIFFICULTY ? 44850 : (mode == MAN10_HEROIC_DIFFICULTY ? 58500 : (mode == MAN25_HEROIC_DIFFICULTY ? 67275 : 16770))));
+                uint32 range   = (mode == MAN10_DIFFICULTY ?  2000 : (mode == MAN25_DIFFICULTY ?  2300 : (mode == MAN10_HEROIC_DIFFICULTY ?  3000 : (mode == MAN25_HEROIC_DIFFICULTY ?  3450 :   860))));
 
                 if (distance >= 0 && distance <= 60)
                     SetHitDamage(mindmg + range * (distance / MAX_DIST));
