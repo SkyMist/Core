@@ -4399,7 +4399,7 @@ void AuraEffect::HandleModStateImmunityMask(AuraApplication const* aurApp, uint8
         case 679:
         case 1921:
         {
-            if (GetId() == 57742 || GetId() == 115018)
+            if (GetId() == 57742)
             {
                 mechanic_immunity_list = (1 << MECHANIC_SNARE) | (1 << MECHANIC_ROOT)
                     | (1 << MECHANIC_FEAR) | (1 << MECHANIC_STUN)
@@ -4423,6 +4423,30 @@ void AuraEffect::HandleModStateImmunityMask(AuraApplication const* aurApp, uint8
                 aura_immunity_list.push_back(SPELL_AURA_MOD_STUN);
                 aura_immunity_list.push_back(SPELL_AURA_MOD_DECREASE_SPEED);
                 aura_immunity_list.push_back(SPELL_AURA_MOD_ROOT);
+                aura_immunity_list.push_back(SPELL_AURA_MOD_CONFUSE);
+                aura_immunity_list.push_back(SPELL_AURA_MOD_FEAR);
+                aura_immunity_list.push_back(SPELL_AURA_MOD_FEAR_2);
+            }
+            else if (GetId() == 108201 || GetId() == 115018)
+            {
+                mechanic_immunity_list = (1 << MECHANIC_FEAR) | (1 << MECHANIC_STUN)
+                    | (1 << MECHANIC_SLEEP) | (1 << MECHANIC_CHARM)
+                    | (1 << MECHANIC_SAPPED) | (1 << MECHANIC_HORROR)
+                    | (1 << MECHANIC_POLYMORPH) | (1 << MECHANIC_DISORIENTED)
+                    | (1 << MECHANIC_FREEZE) | (1 << MECHANIC_TURN);
+
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_FEAR, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_STUN, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_SLEEP, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_CHARM, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_SAPPED, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_HORROR, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_POLYMORPH, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_DISORIENTED, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_FREEZE, apply);
+                target->ApplySpellImmune(GetId(), IMMUNITY_MECHANIC, MECHANIC_TURN, apply);
+                aura_immunity_list.push_back(SPELL_AURA_MOD_STUN);
+                aura_immunity_list.push_back(SPELL_AURA_MOD_DECREASE_SPEED);
                 aura_immunity_list.push_back(SPELL_AURA_MOD_CONFUSE);
                 aura_immunity_list.push_back(SPELL_AURA_MOD_FEAR);
                 aura_immunity_list.push_back(SPELL_AURA_MOD_FEAR_2);
