@@ -146,7 +146,7 @@ class boss_stone_guard_controler : public CreatureScript
                 if (pInstance->GetBossState(DATA_STONE_GUARD) != DONE)
                     pInstance->SetBossState(DATA_STONE_GUARD, NOT_STARTED);
                 
-                events.ScheduleEvent(EVENT_PETRIFICATION, 15000);
+                //events.ScheduleEvent(EVENT_PETRIFICATION, 15000);
 
                 if (IsHeroic())
                     powDownCount = 2;
@@ -262,19 +262,16 @@ class boss_stone_guard_controler : public CreatureScript
                 {
                     case EVENT_PETRIFICATION:
                     {
-                        if (fightInProgress)
-                        {
-                            bool alreadyOnePetrificationInProgress = false;
+                        bool alreadyOnePetrificationInProgress = false;
 
-                            for (uint8 i = 0; i < 4; ++i)
-                                if (uint64 stoneGuardGuid = pInstance->GetData64(guardiansEntry[i]))
-                                    if (Creature* stoneGuard = pInstance->instance->GetCreature(stoneGuardGuid))
-                                        if (stoneGuard->HasAura(SPELL_JASPER_PETRIFICATION)   || stoneGuard->HasAura(SPELL_JADE_PETRIFICATION) ||
-                                            stoneGuard->HasAura(SPELL_AMETHYST_PETRIFICATION) || stoneGuard->HasAura(SPELL_COBALT_PETRIFICATION))
-                                        {
-                                            alreadyOnePetrificationInProgress = true;
-                                            break;
-                                        }
+                        for (uint8 i = 0; i < 4; ++i)
+                            if (uint64 stoneGuardGuid = pInstance->GetData64(guardiansEntry[i]))
+                                if (Creature* stoneGuard = pInstance->instance->GetCreature(stoneGuardGuid))
+                                    if (stoneGuard->HasAura(SPELL_JASPER_PETRIFICATION)   || stoneGuard->HasAura(SPELL_JADE_PETRIFICATION) ||
+                                        stoneGuard->HasAura(SPELL_AMETHYST_PETRIFICATION) || stoneGuard->HasAura(SPELL_COBALT_PETRIFICATION))
+                                    {
+                                        alreadyOnePetrificationInProgress = true;
+                                        break;
 
                             if (alreadyOnePetrificationInProgress)
                             {
@@ -308,6 +305,8 @@ class boss_stone_guard_controler : public CreatureScript
                             else
                                 events.ScheduleEvent(EVENT_PETRIFICATION, 2000);
                         }
+                        else
+                            events.ScheduleEvent(EVENT_PETRIFICATION, 2000);
                         break;
                     }
                     case EVENT_CRYSTALS:
@@ -370,6 +369,7 @@ class boss_generic_guardian : public CreatureScript
             {
                 pInstance = creature->GetInstanceScript();
                 creature->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+                creature->SetHomePosition(creature->GetPositionX(), creature->GetPositionY(), creature->GetPositionZ(), creature->GetOrientation());
             }
 
             InstanceScript* pInstance;
@@ -408,7 +408,7 @@ class boss_generic_guardian : public CreatureScript
                     stoneGuardControler->AI()->Reset();
 
                 summons.DespawnAll();
-                me->RemoveAllAreaTriggers();
+                me->RemoveAllAreasTrigger();
 
                 switch (me->GetEntry())
                 {
@@ -452,47 +452,13 @@ class boss_generic_guardian : public CreatureScript
                 if (pInstance)
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(spellPetrificationBarId);
 
-                events.Reset();
-                events.ScheduleEvent(EVENT_CHECK_NEAR_GUARDIANS,    2500);
-                events.ScheduleEvent(EVENT_CHECK_ENERGY,            1000);
-                events.ScheduleEvent(EVENT_REND_FLESH,              5000);
-                events.ScheduleEvent(EVENT_MAIN_ATTACK,             10000);
-                events.ScheduleEvent(EVENT_ENRAGE,                  360000);
-            }
-
-            void EnterCombat(Unit* attacker)
-            {
-                if (pInstance)
-                    pInstance->SetBossState(DATA_STONE_GUARD, IN_PROGRESS);
-                
-                me->RemoveAurasDueToSpell(SPELL_SOLID_STONE);
-                me->RemoveAurasDueToSpell(SPELL_ANIM_SIT);
-            }
-
-            void JustReachedHome()
-            {
-                _JustReachedHome();
-                if (pInstance)
-                    pInstance->SetBossState(DATA_STONE_GUARD, FAIL);
                 me->RemoveAurasDueToSpell(SPELL_AMETHYST_PETRIFICATION);
                 me->RemoveAurasDueToSpell(SPELL_JADE_PETRIFICATION);
                 me->RemoveAurasDueToSpell(SPELL_COBALT_PETRIFICATION);
                 me->RemoveAurasDueToSpell(SPELL_JASPER_PETRIFICATION);
 
-                for (uint32 entry: guardiansEntry)
-                {
-                    if (pInstance)
-                    {
-                        if (Creature* gardian = me->GetMap()->GetCreature(pInstance->GetData64(entry)))
-                        {
-                            pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, gardian);
-                            gardian->RemoveAurasDueToSpell(SPELL_AMETHYST_PETRIFICATION);
-                            gardian->RemoveAurasDueToSpell(SPELL_JADE_PETRIFICATION);
-                            gardian->RemoveAurasDueToSpell(SPELL_COBALT_PETRIFICATION);
-                            gardian->RemoveAurasDueToSpell(SPELL_JASPER_PETRIFICATION);
-                        }
-                    }
-                }
+                if (pInstance)
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
                 if (pInstance)
                 {
@@ -503,6 +469,23 @@ class boss_generic_guardian : public CreatureScript
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_JADE_PETRIFICATION_BAR);
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_AMETHYST_PETRIFICATION_BAR);
                 }
+
+                events.Reset();
+            }
+
+            void EnterCombat(Unit* attacker)
+            {
+                if (pInstance)
+                    pInstance->SetBossState(DATA_STONE_GUARD, IN_PROGRESS);
+                
+                events.ScheduleEvent(EVENT_CHECK_NEAR_GUARDIANS,    2500);
+                events.ScheduleEvent(EVENT_CHECK_ENERGY,            1000);
+                events.ScheduleEvent(EVENT_REND_FLESH,              5000);
+                events.ScheduleEvent(EVENT_MAIN_ATTACK,             10000);
+                events.ScheduleEvent(EVENT_ENRAGE,                  360000);
+
+                me->RemoveAurasDueToSpell(SPELL_SOLID_STONE);
+                me->RemoveAurasDueToSpell(SPELL_ANIM_SIT);
             }
 
             void JustSummoned(Creature* summon)
@@ -559,7 +542,7 @@ class boss_generic_guardian : public CreatureScript
 
             void JustDied(Unit* killer)
             {
-                me->RemoveAllAreaTriggers();
+                me->RemoveAllAreasTrigger();
 
                 if (Creature* controller = GetController())
                     controller->AI()->DoAction(ACTION_GUARDIAN_DIED);
@@ -585,6 +568,7 @@ class boss_generic_guardian : public CreatureScript
                         break;
                     }
                     case ACTION_FAIL:
+                        events.Reset();
                         EnterEvadeMode();
                         break;
                     default:
@@ -691,7 +675,7 @@ class boss_generic_guardian : public CreatureScript
                                 }
                                 case NPC_JASPER:
                                 {
-                                    for (uint8 i = 0; i < 2; ++i)
+                                    for (uint8 i = 0; i < (Is25ManRaid() ? 2 : 1); ++i)
                                     {
                                         std::list<Player*> playerList;
                                         std::list<Player*> tempPlayerList;
@@ -723,7 +707,7 @@ class boss_generic_guardian : public CreatureScript
                                             aura->SetScriptGuid(0, firstPlayer->GetGUID());
                                     }
 
-                                    events.ScheduleEvent(EVENT_MAIN_ATTACK, 10000);
+                                    events.ScheduleEvent(EVENT_MAIN_ATTACK, 30000);
                                     break;
                                 }
                             }
@@ -1183,7 +1167,7 @@ class spell_jasper_chains_damage : public SpellScriptLoader
                         int32 damage = GetHitDamage();
 
                         if (damage && stacks)
-                            SetHitDamage(damage * stacks);
+                            SetHitDamage(damage + damage * (stacks * 0.15)); // every stack got increased 15% damage
                     }
                 }
             }

@@ -5389,6 +5389,14 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 116060:
+                case 115861:
+                case 116008:
+                case 116038:
+                case 116044:
+                    spellInfo->Attributes &= ~SPELL_ATTR0_HIDE_IN_COMBAT_LOG;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR;
+                    break;
                 case 116000:// Voodoo Dolls
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
