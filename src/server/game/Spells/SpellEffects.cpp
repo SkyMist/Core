@@ -2581,10 +2581,6 @@ void Spell::EffectHealPct(SpellEffIndex /*effIndex*/)
             if (m_caster->HasAura(56224)) // Glyph of Healthstone
                 return;
             break;
-        case 114635:// Ember Tap
-            if (m_caster->HasAura(63304))
-                return;
-            break;
         case 59754: // Rune Tap - Party
             if (unitTarget == m_caster)
                 return;
@@ -4104,7 +4100,7 @@ void Spell::EffectPickPocket(SpellEffIndex /*effIndex*/)
         return;
 
     // victim have to be alive and humanoid or undead
-    if (unitTarget->isAlive() && (unitTarget->GetCreatureTypeMask() & CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD) != 0)
+    if (unitTarget->isAlive() && (unitTarget->GetCreatureTypeMask() & CREATURE_TYPE_HUMANOID) != 0)
     {
         if (m_caster->HasAura(63268)) // Glyph of Disguise
             unitTarget->AddAura(121308, m_caster);

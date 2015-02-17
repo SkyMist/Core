@@ -4138,7 +4138,11 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].BasePoints = 3500;
                     break;
                 case 112071:// Celestial Alignment
-                    spellInfo->Effects[0].Effect = 0;
+                    spellInfo->Effects[0].BasePoints = 0;
+                    break;
+                case 116:
+                    spellInfo->PreventionType = 1;
+                    spellInfo->SchoolMask = SPELL_SCHOOL_MASK_FROST;
                     break;
                 case 24378: // Berserking
                 case 23505: // Berserking
