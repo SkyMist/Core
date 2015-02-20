@@ -5393,6 +5393,10 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 115911:
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->AuraInterruptFlags = 0x0;
+                    break;
                 case 118530:
                     spellInfo->MaxAffectedTargets = 3;
                     break;

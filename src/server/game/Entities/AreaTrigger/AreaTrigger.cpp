@@ -256,7 +256,7 @@ void AreaTrigger::Update(uint32 p_time)
         case 115817: // Cancel Barrier
         {
             std::list<Unit*> targetList;
-            radius = 6.0f;
+            radius = 100.0f;
 
             JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
             JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
@@ -264,7 +264,12 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
                 for (auto itr : targetList)
-                    itr->CastSpell(itr, 115856, true);
+                {
+                    if (itr->GetDistance(caster) > 6.0f)
+                        itr->RemoveAurasDueToSpell(115856);
+                    else
+                        itr->AddAura(115856, itr);
+                }
 
             break;
         }
@@ -684,6 +689,16 @@ void AreaTrigger::Remove()
                 if (m_caster && m_caster->HasAura(116014))
                     m_caster->RemoveAura(116014);
                 break;
+            case 115817:// Cancel Barrier
+                {
+                    std::list<Player*> targetList;
+                    GetPlayerListInGrid(targetList, 100.0f);
+
+                    if (!targetList.empty())
+                        for (auto itr : targetList)
+                            itr->RemoveAurasDueToSpell(115856);
+                    break;
+                }
             case 144692: // Pool of Fire Ordos
             {
                 std::list<Player*> targetList;
