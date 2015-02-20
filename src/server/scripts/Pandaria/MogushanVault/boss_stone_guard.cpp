@@ -145,8 +145,6 @@ class boss_stone_guard_controler : public CreatureScript
 
                 if (pInstance->GetBossState(DATA_STONE_GUARD) != DONE)
                     pInstance->SetBossState(DATA_STONE_GUARD, NOT_STARTED);
-                
-                //events.ScheduleEvent(EVENT_PETRIFICATION, 15000);
 
                 if (IsHeroic())
                     powDownCount = 2;
@@ -273,32 +271,30 @@ class boss_stone_guard_controler : public CreatureScript
                                     {
                                         alreadyOnePetrificationInProgress = true;
                                         break;
-
-                            if (alreadyOnePetrificationInProgress)
-                            {
-                                events.ScheduleEvent(EVENT_PETRIFICATION, 20000);
-                                break;
-                            }
-
-                            uint32 nextPetrifierEntry = 0;
-                            do
-                            {
-                                nextPetrifierEntry = guardiansEntry[rand() % 4];
-                            }
-                            while (nextPetrifierEntry == lastPetrifierEntry);
-
-                            if (uint64 stoneGuardGuid = pInstance->GetData64(nextPetrifierEntry))
-                            {
-                                if (Creature* stoneGuard = pInstance->instance->GetCreature(stoneGuardGuid))
-                                {
-                                    if (stoneGuard->isAlive() && stoneGuard->isInCombat())
-                                    {
-                                        stoneGuard->AI()->DoAction(ACTION_PETRIFICATION);
-                                        lastPetrifierEntry = nextPetrifierEntry;
-                                        events.ScheduleEvent(EVENT_PETRIFICATION, 90000);
                                     }
-                                    else
-                                        events.ScheduleEvent(EVENT_PETRIFICATION, 2000);
+
+                        if (alreadyOnePetrificationInProgress)
+                        {
+                            events.ScheduleEvent(EVENT_PETRIFICATION, 20000);
+                            break;
+                        }
+
+                        uint32 nextPetrifierEntry = 0;
+                        do
+                        {
+                            nextPetrifierEntry = guardiansEntry[rand() % 4];
+                        }
+                        while (nextPetrifierEntry == lastPetrifierEntry);
+
+                        if (uint64 stoneGuardGuid = pInstance->GetData64(nextPetrifierEntry))
+                        {
+                            if (Creature* stoneGuard = pInstance->instance->GetCreature(stoneGuardGuid))
+                            {
+                                if (stoneGuard->isAlive() && stoneGuard->isInCombat())
+                                {
+                                    stoneGuard->AI()->DoAction(ACTION_PETRIFICATION);
+                                    lastPetrifierEntry = nextPetrifierEntry;
+                                    events.ScheduleEvent(EVENT_PETRIFICATION, 90000);
                                 }
                                 else
                                     events.ScheduleEvent(EVENT_PETRIFICATION, 2000);
@@ -308,7 +304,7 @@ class boss_stone_guard_controler : public CreatureScript
                         }
                         else
                             events.ScheduleEvent(EVENT_PETRIFICATION, 2000);
-                        break;
+                    break;
                     }
                     case EVENT_CRYSTALS:
                     {
@@ -401,7 +397,9 @@ class boss_generic_guardian : public CreatureScript
                 me->SetPower(POWER_ENERGY, 0);
                 me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
                 
-                me->CastSpell(me, SPELL_SOLID_STONE, true);
+                if (IsHeroic())
+                    me->CastSpell(me, SPELL_SOLID_STONE, true);
+
                 me->CastSpell(me, SPELL_ANIM_SIT,    true);
                 me->CastSpell(me, SPELL_ZERO_ENERGY, true);
 
@@ -481,9 +479,11 @@ class boss_generic_guardian : public CreatureScript
                 
                 events.ScheduleEvent(EVENT_CHECK_NEAR_GUARDIANS,    2500);
                 events.ScheduleEvent(EVENT_CHECK_ENERGY,            1000);
-                events.ScheduleEvent(EVENT_REND_FLESH,              5000);
                 events.ScheduleEvent(EVENT_MAIN_ATTACK,             10000);
                 events.ScheduleEvent(EVENT_ENRAGE,                  360000);
+
+                if (IsHeroic())
+                    events.ScheduleEvent(EVENT_REND_FLESH, 5000);
 
                 me->RemoveAurasDueToSpell(SPELL_SOLID_STONE);
                 me->RemoveAurasDueToSpell(SPELL_ANIM_SIT);
@@ -543,6 +543,8 @@ class boss_generic_guardian : public CreatureScript
 
             void JustDied(Unit* killer)
             {
+                pInstance->SetBossState(DATA_STONE_GUARD, DONE);
+                _JustDied();
                 me->RemoveAllAreasTrigger();
 
                 if (Creature* controller = GetController())
@@ -554,9 +556,7 @@ class boss_generic_guardian : public CreatureScript
                 switch (action)
                 {
                     case ACTION_ENTER_COMBAT:
-                        if (!me->isInCombat())
-                            if (Player* victim = me->SelectNearestPlayerNotGM(100.0f))
-                                AttackStart(victim);
+                        DoZoneInCombat();
                         break;
                     case ACTION_PETRIFICATION:
                     {
@@ -597,6 +597,9 @@ class boss_generic_guardian : public CreatureScript
                     return;
                 }
 
+                if (me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
                 events.Update(diff);
 
                 switch(events.ExecuteEvent())
@@ -613,7 +616,8 @@ class boss_generic_guardian : public CreatureScript
                         }
                         else if (isInTrueForm && !hasNearGardian)
                         {
-                            me->CastSpell(me, SPELL_SOLID_STONE, true);
+                            if (IsHeroic())
+                                me->CastSpell(me, SPELL_SOLID_STONE, true);
                             me->RemoveAurasDueToSpell(spellTrueFormId);
                             isInTrueForm = false;
                         }
@@ -676,39 +680,11 @@ class boss_generic_guardian : public CreatureScript
                                 }
                                 case NPC_JASPER:
                                 {
-                                    for (uint8 i = 0; i < (Is25ManRaid() ? 2 : 1); ++i)
-                                    {
-                                        std::list<Player*> playerList;
-                                        std::list<Player*> tempPlayerList;
-                                        GetPlayerListInGrid(playerList, me, 100.0f);
+                                    me->StopMoving();
+                                    if (Unit* victim = SelectTarget(SELECT_TARGET_RANDOM))
+                                        me->CastSpell(victim, spellMainAttack, false);
 
-                                        uint64 victimGuid = 0;
-                                        if (me->getVictim())
-                                            victimGuid = me->getVictim()->GetGUID();
-
-                                        for (auto player: playerList)
-                                            if (player->isAlive() && !player->HasAura(SPELL_JASPER_CHAINS) && !player->HasAura(SPELL_TOTALY_PETRIFIED) && player->GetGUID() != victimGuid)
-                                                tempPlayerList.push_back(player);
-
-                                        if (tempPlayerList.size() < 2)
-                                            break;
-
-                                        JadeCore::Containers::RandomResizeList(tempPlayerList, 2);
-                                    
-                                        Player* firstPlayer  = *tempPlayerList.begin();
-                                        Player* SecondPlayer = *(++(tempPlayerList.begin()));
-
-                                        if (!firstPlayer || !SecondPlayer)
-                                            break;
-
-                                        if (AuraPtr aura = me->AddAura(SPELL_JASPER_CHAINS, firstPlayer))
-                                            aura->SetScriptGuid(0, SecondPlayer->GetGUID());
-
-                                        if (AuraPtr aura = me->AddAura(SPELL_JASPER_CHAINS, SecondPlayer))
-                                            aura->SetScriptGuid(0, firstPlayer->GetGUID());
-                                    }
-
-                                    events.ScheduleEvent(EVENT_MAIN_ATTACK, 30000);
+                                    events.ScheduleEvent(EVENT_MAIN_ATTACK, Is25ManRaid() ? 10000 : 30000);
                                     break;
                                 }
                             }
@@ -1088,6 +1064,53 @@ class spell_jasper_chains : public SpellScriptLoader
     public:
         spell_jasper_chains() : SpellScriptLoader("spell_jasper_chains") { }
 
+        class spell_jasper_chains_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_jasper_chains_SpellScript);
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                Unit * caster = GetCaster();
+                if (!caster || targets.empty())
+                    return;
+
+                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_JASPER_CHAINS));
+                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_TOTALY_PETRIFIED));
+               // targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_REND_FLESH)); // dont cast chases on defence player
+
+                if (targets.size() < 2)
+                    return;
+
+                if (!targets.empty())
+                    if (WorldObject* FirstPlayer = JadeCore::Containers::SelectRandomContainerElement(targets))
+                    {
+                        targets.remove(FirstPlayer);
+                        if (!targets.empty())
+                            if (WorldObject* SecondPlayer = JadeCore::Containers::SelectRandomContainerElement(targets))
+                            {
+                                if (AuraPtr aura = caster->AddAura(SPELL_JASPER_CHAINS, FirstPlayer->ToUnit()))
+                                    aura->SetScriptGuid(0, SecondPlayer->GetGUID());
+                                if (AuraPtr aura = caster->AddAura(SPELL_JASPER_CHAINS, SecondPlayer->ToUnit()))
+                                    aura->SetScriptGuid(0, FirstPlayer->GetGUID());
+                            }
+                    }
+
+                targets.clear();
+            }
+
+            void CkearTargets(std::list<WorldObject*>& targets)
+            {
+                targets.clear();
+            }
+
+            void Register()
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_jasper_chains_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_jasper_chains_SpellScript::CkearTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_jasper_chains_SpellScript::CkearTargets, EFFECT_2, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
         class spell_jasper_chains_AuraScript : public AuraScript
         {
             PrepareAuraScript(spell_jasper_chains_AuraScript);
@@ -1128,7 +1151,7 @@ class spell_jasper_chains : public SpellScriptLoader
                             return;
                         }
                     }
-                    
+
                     caster->AddAura(spell->Id, target);
                     target->CastSpell(linkedPlayer, SPELL_JASPER_CHAINS_DAMAGE, true);
                 }
@@ -1146,6 +1169,11 @@ class spell_jasper_chains : public SpellScriptLoader
         {
             return new spell_jasper_chains_AuraScript();
         }
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_jasper_chains_SpellScript();
+        }
 };
 
 // Jasper Chains (damage) - 130404
@@ -1161,16 +1189,8 @@ class spell_jasper_chains_damage : public SpellScriptLoader
             void DealDamage()
             {
                 if (Unit* target = GetHitUnit())
-                {
                     if (AuraPtr aura = target->GetAura(SPELL_JASPER_CHAINS))
-                    {
-                        uint8 stacks = aura->GetStackAmount();
-                        int32 damage = GetHitDamage();
-
-                        if (damage && stacks)
-                            SetHitDamage(damage + damage * (stacks * 0.15)); // every stack got increased 15% damage
-                    }
-                }
+                        SetHitDamage(GetHitDamage() + GetHitDamage() * (aura->GetStackAmount() * 0.15)); // every stack got increased 15% damage
             }
 
             void Register()
