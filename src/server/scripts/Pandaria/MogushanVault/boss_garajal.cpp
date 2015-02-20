@@ -56,6 +56,7 @@ enum eSpells
     SPELL_SPIRITUAL_GRASP       = 118421,
 
     // Misc
+    SPELL_ANIM_VISUAL           = 121475,
     SPELL_CLONE                 = 119051,
     SPELL_CLONE_VISUAL          = 119053,
     SPELL_LIFE_FRAGILE_THREAD   = 116227,
@@ -88,16 +89,18 @@ enum eEvents
     // Shadowy Minion
     EVENT_SHADOW_BOLT           = 6,
     EVENT_SPIRITUAL_GRASP       = 7,
+    EVENT_CHECK_PLAYER          = 8,
+    EVENT_CLONE_TAKEOFF         = 9,
 
     // Gara'Jal Ghost
-    EVENT_GROWTH                = 8,
-    EVENT_TALK_DEATH            = 9,
-    EVENT_SUMMON_PORTAL         = 10,
-    EVENT_DISAPPEAR             = 11,
+    EVENT_GROWTH                = 10,
+    EVENT_TALK_DEATH            = 11,
+    EVENT_SUMMON_PORTAL         = 12,
+    EVENT_DISAPPEAR             = 13,
 
     // Enrage
-    EVENT_FINAL_DESTINATION     = 12,
-    EVENT_SOUL_EXPLOSION        = 13,
+    EVENT_FINAL_DESTINATION     = 14,
+    EVENT_SOUL_EXPLOSION        = 15,
 };
 
 enum GarajalTalk
@@ -232,6 +235,7 @@ class boss_garajal : public CreatureScript
                 {
                     if (me->HealthBelowPctDamaged(20, damage))
                     {
+                        events.CancelEvent(EVENT_SUMMON_TOTEM);
                         me->CastSpell(me, SPELL_FRENESIE, true);
                         me->MonsterTextEmote("Gara'jal casts |cffba2200|Hspell:117752|h[Frenzy]|h|r !", 0, true);
                     }
@@ -472,22 +476,19 @@ class mob_spirit_totem : public CreatureScript
                     if (player->HasAura(SPELL_VOODOO_DOLL_VISUAL) || player->HasAura(SPELL_FRAIL_SOUL))
                         continue;
 
-                    if (++count > 3)
+                    ++count;
+                    if (count > 3)
                         break;
 
-                    if (Creature* clone = me->SummonCreature(56405, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation()))
+                    if (Creature* clone = player->SummonCreature(56405, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(),TEMPSUMMON_TIMED_DESPAWN,30000))
                     {
                         player->SetHealth(player->GetHealth() * 0.3);
 
                         player->CastSpell(player, SPELL_CLONE_VISUAL, true);
-                        player->CastSpell(player, SPELL_CROSSED_OVER, true);
 
                         player->CastSpell(clone,  SPELL_CLONE, true);
-
-                        clone->CastSpell(clone, SPELL_LIFE_FRAGILE_THREAD, true);
-                        clone->GetMotionMaster()->MoveTakeoff(1, clone->GetPositionX(), clone->GetPositionY(), clone->GetPositionZ() + 10.0f);
-
-                        player->AddAura(SPELL_LIFE_FRAGILE_THREAD, player);
+                        player->CastSpell(player, SPELL_LIFE_FRAGILE_THREAD, true);
+                        player->CastSpell(player, SPELL_CROSSED_OVER, true);
 
                         if (player->GetRoleForGroup(player->GetSpecializationId(player->GetActiveSpec())) == ROLES_HEALER)
                             player->AddAura(SPIRIT_INNERVATION_HEALER, player);
@@ -508,6 +509,56 @@ class mob_spirit_totem : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new mob_spirit_totemAI(creature);
+        }
+};
+
+// 60240 - Clone player
+class mob_clone_player : public CreatureScript
+{
+    public:
+        mob_clone_player() : CreatureScript("mob_clone_player") {}
+
+        struct mob_clone_playerAI : public ScriptedAI
+        {
+            mob_clone_playerAI(Creature* creature) : ScriptedAI(creature)
+            {
+            }
+            
+            void IsSummonedBy(Unit* summoner)
+            {
+               me->AddAura(SPELL_ANIM_VISUAL,me);
+               me->SetCanFly(true);
+               me->SetDisableGravity(true);
+               me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_NOT_SELECTABLE);
+               events.ScheduleEvent(EVENT_CHECK_PLAYER, 5000);
+               events.ScheduleEvent(EVENT_CLONE_TAKEOFF, 3000);
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                while (uint32 eventId = events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        // Spirit World
+                        case EVENT_CHECK_PLAYER:
+                            if (me->ToTempSummon())
+                                if (Unit * Summoner = me->ToTempSummon()->GetSummoner())
+                                    if (!Summoner->HasAura(SPELL_CROSSED_OVER))
+                                        me->DespawnOrUnsummon();
+                            events.ScheduleEvent(EVENT_CHECK_PLAYER, 1000);
+                            break;
+                        case EVENT_CLONE_TAKEOFF:
+                            me->GetMotionMaster()->MoveTakeoff(1, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 9.0f);
+                            break;
+                    }
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new mob_clone_playerAI(creature);
         }
 };
 
@@ -535,9 +586,10 @@ class mob_shadowy_minion : public CreatureScript
                 events.Reset();
                 spiritGuid = 0;
 
+                me->setFaction(summoner->getFaction());
                 if (me->GetEntry() == NPC_SHADOWY_MINION_REAL)
                 {
-                    me->SetDisplayId(11686);
+                    me->CastSpell(me,SPELL_CLONE_VISUAL,true);
 
                     if (Creature* spirit = me->SummonCreature(NPC_SHADOWY_MINION_SPIRIT, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN))
                     {
@@ -551,7 +603,6 @@ class mob_shadowy_minion : public CreatureScript
                 else
                     events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(2000, 5000));
 
-                me->setFaction(summoner->getFaction());
                 me->AddAura(SPELL_COSMETIC_SUMMON, me);
 
                 DoZoneInCombat();
@@ -591,9 +642,9 @@ class mob_shadowy_minion : public CreatureScript
                         case EVENT_SHADOW_BOLT:
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, SPELL_CROSSED_OVER))
-                                me->CastSpell(target, SPELL_SHADOW_BOLT, false);
+                                me->CastSpell(target, SPELL_SHADOW_BOLT, true);
                             else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, SPELL_SOUL_CUT_SUICIDE))
-                                me->CastSpell(target, SPELL_SHADOW_BOLT, false);
+                                me->CastSpell(target, SPELL_SHADOW_BOLT, true);
 
                             events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(2000, 3000));
                             break;
@@ -602,9 +653,9 @@ class mob_shadowy_minion : public CreatureScript
                         case EVENT_SPIRITUAL_GRASP:
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, -SPELL_SOUL_CUT_SUICIDE))
-                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, false);
+                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, true);
                             else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, -SPELL_CROSSED_OVER))
-                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, false);
+                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, true);
 
                             events.ScheduleEvent(EVENT_SPIRITUAL_GRASP, urand(5000, 8000));
                             break;
@@ -874,16 +925,16 @@ class spell_spirit_intervation : public SpellScriptLoader
                 if (!_player)
                     return;
 
-                if (!(eventInfo.GetHealInfo()->GetHeal()))
+                if (!eventInfo.GetHealInfo() || !eventInfo.GetHealInfo()->GetHeal())
                     return;
 
                 if (AuraPtr Intervation = _player->GetAura(_player->GetRoleForGroup(_player->GetSpecializationId(_player->GetActiveSpec())) == ROLES_HEALER ? SPIRIT_INNERVATION_HEALER : SPIRIT_INNERVATION_DPS))
                 {
                     uint32 gotHeal = eventInfo.GetHealInfo()->GetHeal();
                     int32 amount = ((gotHeal / _player->GetMaxHealth()) * 100) / 5; // every 5% healed by spells is 1% of intervation buff
-                    if (Intervation->GetEffect(EFFECT_0)->GetAmount() < 25)
+                    if (Intervation->GetEffect(EFFECT_1)->GetAmount() < 25)
                     {
-                        Intervation->GetEffect(EFFECT_0)->ChangeAmount(Intervation->GetEffect(EFFECT_0)->GetAmount()+amount);
+                        Intervation->GetEffect(EFFECT_0)->ChangeAmount(Intervation->GetEffect(EFFECT_0)->GetAmount()+(amount/100.0f)*_player->GetMaxPower(POWER_MANA));
                         Intervation->GetEffect(EFFECT_1)->ChangeAmount(Intervation->GetEffect(EFFECT_1)->GetAmount()+amount);
                     
                         if (Intervation->GetId() == SPIRIT_INNERVATION_DPS)
@@ -918,6 +969,7 @@ void AddSC_boss_garajal()
     new boss_garajal();
     new mob_garajal_ghost();
     new mob_spirit_totem();
+    new mob_clone_player();
     new mob_shadowy_minion();
     new mob_soul_cutter();
     new mob_spirit_totem_intro();

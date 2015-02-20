@@ -5393,6 +5393,9 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 116227:
+                    spellInfo->Effects[EFFECT_0].Effect    = 0;
+                    break;
                 case 115911:
                     spellInfo->ChannelInterruptFlags = 0x0;
                     spellInfo->AuraInterruptFlags = 0x0;
