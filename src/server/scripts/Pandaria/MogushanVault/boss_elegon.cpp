@@ -815,7 +815,7 @@ class mob_empyreal_focus : public CreatureScript
 
                         me->Respawn();
                         me->SetHealth(me->GetMaxHealth());
-                        me->RemoveAllAreasTrigger();
+                        me->RemoveAllAreaTriggers();
 
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                         activationDone = false;
@@ -839,7 +839,7 @@ class mob_empyreal_focus : public CreatureScript
                     me->RemoveAurasDueToSpell(SPELL_FOCUS_LIGHT_CASTBAR);
                     me->RemoveAurasDueToSpell(SPELL_CORE_BEAM);
                     me->SetHealth(me->GetMaxHealth());
-                    me->RemoveAllAreasTrigger();
+                    me->RemoveAllAreaTriggers();
 
                     if (pInstance)
                         if (Creature* elegon = pInstance->instance->GetCreature(pInstance->GetData64(NPC_ELEGON)))
@@ -1750,7 +1750,7 @@ class spell_total_annihilation : public SpellScriptLoader
 
                     uint8 diffic = caster->GetMap()->GetDifficulty();
 
-                    if ((!targetCount &&  diffic == MAN10_DIFFICULTY) || (targetCount < 3 && diffic == MAN25_DIFFICULTY))
+                    if ((!targetCount &&  diffic == RAID_DIFFICULTY_10MAN_NORMAL) || (targetCount < 3 && diffic == RAID_DIFFICULTY_25MAN_NORMAL))
                         caster->CastSpell(caster, SPELL_CATASTROPHIC_ANOMALY, false);
                 }
             }
