@@ -3810,10 +3810,19 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetB = 0;
                     break;
                 // ELEGON
+				case 116994:
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DAMAGE_IMMUNITY;
+                    spellInfo->Effects[1].MiscValue = 127;
+                    break;
                 case 116989:// Overloaded Missile
                 case 117220:// Overloaded Triggered
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
                 case 118430:// Core Beam
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
                     break;
                 case 129724:// Grasping Energy Tendrils
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_DUMMY;
@@ -3828,9 +3837,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[4].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[5].TargetA = TARGET_UNIT_CASTER;
-                    break;
-                case 116661:// Draw Power (lightning damage for activated focus)
-                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     break;
                 // SPIRIT KINGS
                 case 117558:

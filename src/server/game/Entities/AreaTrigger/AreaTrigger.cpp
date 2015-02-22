@@ -367,7 +367,7 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    if (itr->IsInAxe(caster, this, 2.0f))
+                    if (GetCaster()->isInFront(itr, M_PI / 8))
                     {
                         if (!itr->HasAura(116663))
                             caster->AddAura(116663, itr);
