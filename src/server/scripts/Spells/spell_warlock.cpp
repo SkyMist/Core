@@ -3593,32 +3593,34 @@ class spell_warl_reduce_heal : public SpellScriptLoader
     public:
         spell_warl_reduce_heal() : SpellScriptLoader("spell_warl_reduce_heal") { }
 
-        class spell_warl_reduce_heal_AuraScript : public AuraScript
+        class spell_warl_reduce_heal_SpellScript : public SpellScript
         {
-            PrepareAuraScript(spell_warl_reduce_heal_AuraScript);
+            PrepareSpellScript(spell_warl_reduce_heal_SpellScript);
 
-            void CalculateAbsorb(constAuraEffectPtr /*aurEff*/, int32 & amount, bool & /*canBeRecalculated*/)
+            void HandleAfterHit()
             {
-                if (Unit* caster = GetCaster())
+                if (Unit* target = GetHitUnit())
                 {
-                    if (Player* _player = GetTarget()->ToPlayer())
+                    if (target->HasAura(82654) || target->HasAura(54680) || target->HasAura(115804) || target->HasAura(8680))
                     {
-                        if (_player->HasAura(82654) || _player->HasAura(54680) ||
-                            _player->HasAura(115804) || _player->HasAura(8680))
-                            amount = 0;
+                        if (AuraPtr reduceHealAura = target->GetAura(GetSpellInfo()->Id))
+                        {
+                            if (AuraEffectPtr reduceHealEffect = reduceHealAura->GetEffect(3))
+                                reduceHealEffect->SetAmount(0);
+                        }
                     }
                 }
             }
 
             void Register()
             {
-                DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warl_reduce_heal_AuraScript::CalculateAbsorb, EFFECT_3, SPELL_AURA_MOD_HEALING_PCT);
+                AfterHit += SpellHitFn(spell_warl_reduce_heal_SpellScript::HandleAfterHit);
             }
         };
 
-        AuraScript* GetAuraScript() const
+        SpellScript* GetSpellScript() const
         {
-            return new spell_warl_reduce_heal_AuraScript();
+            return new spell_warl_reduce_heal_SpellScript();
         }
 };
 
