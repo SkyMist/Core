@@ -4472,41 +4472,6 @@ class spell_dru_treants_spells_calculation : public SpellScriptLoader
         }
 };
 
-// Called by Natures Grace - 16886
-class spell_druid_natures_grace : public SpellScriptLoader
-{
-    public:
-        spell_druid_natures_grace() : SpellScriptLoader("spell_druid_natures_grace") { }
-
-        class spell_druid_natures_grace_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_druid_natures_grace_AuraScript);
-
-            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (Player* _player = GetTarget()->ToPlayer())
-                {
-                    if (_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) && _player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
-                    {
-                        _player->RemoveAura(SPELL_DRUID_SOLAR_ECLIPSE);
-                        _player->RemoveAura(SPELL_DRUID_LUNAR_ECLIPSE);
-                        _player->SetPower(POWER_ECLIPSE, 0);
-                    }
-                }
-            }
-
-            void Register()
-            {
-                OnEffectRemove += AuraEffectRemoveFn(spell_druid_natures_grace_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_druid_natures_grace_AuraScript();
-        }
-};
-
 void AddSC_druid_spell_scripts()
 {
     new spell_dru_tooth_and_claw_absorb();
@@ -4588,5 +4553,4 @@ void AddSC_druid_spell_scripts()
     new spell_dru_force_of_nature();
     new spell_dru_pet_force_of_nature_heal();
     new spell_dru_treants_spells_calculation();
-    new spell_druid_natures_grace();
 }

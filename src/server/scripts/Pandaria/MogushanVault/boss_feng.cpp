@@ -25,7 +25,8 @@
 enum eSpells
 {
     // Shared
-    SPELL_SPIRIT_BOLT                   = 118530,
+    SPELL_SPIRIT_BOLT_10                = 118530,
+    SPELL_SPIRIT_BOLT_25                = 121224,
     SPELL_STRENGHT_OF_SPIRIT            = 116363,
     SPELL_DRAW_ESSENCE                  = 121631,
     SPELL_NULLIFICATION_BARRIER_PLAYERS = 115811,
@@ -55,7 +56,7 @@ enum eSpells
     SPELL_ARCANE_RESONANCE              = 116417,
 
     // Spirit of the Shield ( Heroic )
-    SPELL_SHADOWBURN                    = 17877,
+    SPELL_SHADOWBURN                    = 131792,
     SPELL_SIPHONING_SHIELD              = 118071,
     SPELL_CHAINS_OF_SHADOW              = 118783,
 
@@ -107,22 +108,24 @@ enum eEvents
     EVENT_EPICENTER             = 4,
 
     EVENT_WILDFIRE_SPARK        = 5,
-    EVENT_DRAW_FLAME            = 6,
+    EVENT_SPARK_MOVE            = 6,
+    EVENT_SPARK_TO_FENG         = 7,
+    EVENT_DRAW_FLAME            = 8,
 
-    EVENT_ARCANE_VELOCITY       = 7,
-    EVENT_ARCANE_VELOCITY_END   = 8,
-    EVENT_ARCANE_RESONANCE      = 9,
-    EVENT_SPIRIT_BOLTS          = 10,
+    EVENT_ARCANE_VELOCITY       = 9,
+    EVENT_ARCANE_VELOCITY_END   = 10,
+    EVENT_ARCANE_RESONANCE      = 11,
+    EVENT_SPIRIT_BOLTS          = 12,
 
-    EVENT_SIPHONING_SHIELD      = 11,
-    EVENT_CHAINS_OF_SHADOW      = 12,
+    EVENT_SIPHONING_SHIELD      = 13,
+    EVENT_CHAINS_OF_SHADOW      = 14,
 
-    EVENT_SHIELD_CASTSOULS      = 13,
-    EVENT_SHIELD_CHECKSOULS     = 14,
-    EVENT_SHIELD_BACK           = 15,
-    EVENT_SHIELD_DESTROY        = 16,
-    EVENT_SOUL_WALK             = 17,
-    EVENT_SOUL_GROW             = 18,
+    EVENT_SHIELD_CASTSOULS      = 15,
+    EVENT_SHIELD_CHECKSOULS     = 16,
+    EVENT_SHIELD_BACK           = 17,
+    EVENT_SHIELD_DESTROY        = 18,
+    EVENT_SOUL_WALK             = 19,
+    EVENT_SOUL_GROW             = 20,
 };
 
 enum eFengPhases
@@ -180,6 +183,19 @@ Position modPhasePositions[4] =
     {4063.26f, 1362.80f, 466.30f, 0.7772f}, // Phase Shield
 };
 
+Position CenterFengRoom = {4042.39f, 1349.88f, 466.30f, 5.5014f};
+
+Position gobjectStonesPos[2] =
+{
+    {4028.28f, 1352.04f, 468.30f, 5.5014f}, // 211628 - Shroud of reversal
+    {4027.74f, 1330.33f, 466.30f, 5.5014f}, // 211626 - Nullification Barrier
+};
+
+enum gobjectsStones
+{
+    GO_SHROURD_OF_REVERSAL = 211628,
+    GO_NULLIFICATION_BARRIER = 211626,
+};
 
 uint32 statueEntryInOrder[4] = {GOB_FIST_STATUE,   GOB_SPEAR_STATUE,   GOB_STAFF_STATUE,   GOB_SHIELD_STATUE};
 uint32 controlerVisualId[4]  = {SPELL_VISUAL_FIST, SPELL_VISUAL_SPEAR, SPELL_VISUAL_STAFF, SPELL_VISUAL_SHIELD};
@@ -188,8 +204,8 @@ uint32 fengVisualId[4]       = {SPELL_SPIRIT_FIST, SPELL_SPIRIT_SPEAR, SPELL_SPI
 #define MAX_INVERSION_SPELLS    9
 uint32 inversionMatching[MAX_INVERSION_SPELLS][2] =
 {
-    {SPELL_EPICENTER,        SPELL_EPICENTER_INVERSION},
-    {SPELL_LIGHTNING_FISTS,  SPELL_LIGHTNING_FISTS_INVERSION},
+    {116040,        SPELL_EPICENTER_INVERSION}, 
+    {116374,  SPELL_LIGHTNING_FISTS_INVERSION},
     {SPELL_ARCANE_RESONANCE, SPELL_ARCANE_RESONANCE_INVERSION},
     {SPELL_ARCANE_VELOCITY,  SPELL_ARCANE_VELOCITY_INVERSION},
     {SPELL_WILDFIRE_SPARK,   SPELL_WILDFIRE_SPARK_INVERSION},
@@ -276,11 +292,11 @@ class boss_feng : public CreatureScript
 
                 actualPhase = PHASE_NONE;
 
-                if (GameObject* inversionGob = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_INVERSION)))
-                    inversionGob->Respawn();
+                if (GameObject* reversal = GetClosestGameObjectWithEntry(me, GO_SHROURD_OF_REVERSAL, 100.0F))
+                    reversal->Delete();
 
-                if (GameObject* cancelGob = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_CANCEL)))
-                    cancelGob->Respawn();
+                if (GameObject* barrier = GetClosestGameObjectWithEntry(me, GO_NULLIFICATION_BARRIER, 100.0F))
+                    barrier->Delete();
             }
 
             void JustDied(Unit* attacker)
@@ -322,8 +338,12 @@ class boss_feng : public CreatureScript
                     return;
                 }
 
+                attacker->SummonGameObject(GO_SHROURD_OF_REVERSAL, gobjectStonesPos[0].GetPositionX(), gobjectStonesPos[0].GetPositionY(), gobjectStonesPos[0].GetPositionZ(),0,0,0,0,0,0);
+                attacker->SummonGameObject(GO_NULLIFICATION_BARRIER, gobjectStonesPos[1].GetPositionX(), gobjectStonesPos[1].GetPositionY(), gobjectStonesPos[1].GetPositionZ(),0,0,0,0,0,0);
+
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 pInstance->SetBossState(DATA_FENG, IN_PROGRESS);
+                events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 10000);
                 Talk(TALK_AGGRO);
             }
 
@@ -350,6 +370,7 @@ class boss_feng : public CreatureScript
                 events.Reset();
                 events.ScheduleEvent(EVENT_DOT_ATTACK, 15000);
                 events.ScheduleEvent(EVENT_RE_ATTACK,  500);
+                events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 10000);
 
                 me->SetReactState(REACT_PASSIVE);
                 me->GetMotionMaster()->Clear();
@@ -443,35 +464,6 @@ class boss_feng : public CreatureScript
                 summons.Despawn(summon);
 
                 sparkList.remove(summon->GetGUID());
-            }
-
-            void SpellHitTarget(Unit* target, SpellInfo const* spell)
-            {
-                if (AuraPtr inversion = target->GetAura(115911))
-                {
-                    if (Unit* caster = inversion->GetCaster())
-                    {
-                        for (uint8 i = 0; i < MAX_INVERSION_SPELLS; ++i)
-                        {
-                            if (spell->Id == inversionMatching[i][0])
-                            {
-                                bool alreadyHaveAnInversion = false;
-
-                                for (uint8 j = 0; j < MAX_INVERSION_SPELLS; ++j)
-                                    if (caster->HasAura(inversionMatching[j][1]))
-                                    {
-                                        alreadyHaveAnInversion = true;
-                                        break;
-                                    }
-
-                                if (!alreadyHaveAnInversion)
-                                    caster->CastSpell(caster, inversionMatching[i][1], true);
-
-                                break;
-                            }
-                        }
-                    }
-                }
             }
 
             void KilledUnit(Unit* who)
@@ -570,14 +562,12 @@ class boss_feng : public CreatureScript
                     // All Phases
                     case EVENT_DOT_ATTACK:
                     {
-                        if (dotSpellId == SPELL_SHADOWBURN)
-                            if (Unit* target = me->getVictim())
-                                me->CastSpell(target, dotSpellId, false);
-
+                        if (Unit* target = me->getVictim())
+                            me->CastSpell(target, dotSpellId, false);
                         else if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO))
                             me->CastSpell(target, dotSpellId, false);
 
-                        events.ScheduleEvent(EVENT_DOT_ATTACK, 12500);
+                        events.ScheduleEvent(EVENT_DOT_ATTACK, 30000);
                         break;
                     }
                     case EVENT_RE_ATTACK:
@@ -592,14 +582,14 @@ class boss_feng : public CreatureScript
                     case EVENT_LIGHTNING_FISTS:
                     {
                         me->CastSpell(me, SPELL_LIGHTNING_FISTS, false);
-                        events.ScheduleEvent(EVENT_LIGHTNING_FISTS, 20000);
+                        events.ScheduleEvent(EVENT_LIGHTNING_FISTS, 17000);
                         break;
                     }
                     case EVENT_EPICENTER:
                     {
                         me->MonsterTextEmote("Feng the Accursed begins to channel a violent |cffba2200|Hspell:116018|h[Epicenter]|h|r !", 0, true);
                         me->CastSpell(me, SPELL_EPICENTER, false);
-                        events.ScheduleEvent(EVENT_EPICENTER, 35000);
+                        events.ScheduleEvent(EVENT_EPICENTER, 32000);
                         break;
                     }
                     // Spear Phase
@@ -608,7 +598,7 @@ class boss_feng : public CreatureScript
                         if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                         {
                             me->MonsterTextEmote("You have been affected by |cffba2200|Hspell:116784|h[Wildfire Spark]|h|r !", target->GetGUID(), true);
-                            me->CastSpell(target, SPELL_WILDFIRE_SPARK, false);
+                            me->AddAura(SPELL_WILDFIRE_SPARK,target);
                         }
                         events.ScheduleEvent(EVENT_WILDFIRE_SPARK, urand(25000, 35000));
                         break;
@@ -618,7 +608,7 @@ class boss_feng : public CreatureScript
                         me->MonsterTextEmote("Feng the Accursed begins to |cffba2200|Hspell:116711|h[Draw Flame]|h|r to his weapon !", 0, true);
                         me->CastSpell(me, SPELL_DRAW_FLAME, false);
 
-                        events.ScheduleEvent(EVENT_DRAW_FLAME, 60000);
+                        events.ScheduleEvent(EVENT_DRAW_FLAME, 50000);
                         break;
                     }
                     // Staff Phase
@@ -644,24 +634,8 @@ class boss_feng : public CreatureScript
                     }
                     case EVENT_SPIRIT_BOLTS:
                     {
-                        std::list<Player*> potenTargets;
-                        GetPlayerListInGrid(potenTargets, me, 100.0f);
-
-                        int count = 0;
-                        int max = IsHeroic() ? 8 : 3;
-
-                        while (count < max)
-                        {
-                            for (auto target : potenTargets)
-                            {
-                                if (urand(0, 1))
-                                {
-                                    me->CastSpell(me, SPELL_SPIRIT_BOLT, true);
-                                    if (++count == max)
-                                        break;
-                                }
-                            }
-                        }
+                        DoCast(Is25ManRaid() ? SPELL_SPIRIT_BOLT_25 : SPELL_SPIRIT_BOLT_10);
+                        events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 8000);
                         break;
                     }
                     // Shield Phase
@@ -1035,38 +1009,27 @@ class mob_wild_spark : public CreatureScript
             uint32 checkNearPlayerTimer;
             InstanceScript* pInstance;
 
-            void Reset()
+            void IsSummonedBy(Unit * summoner)
             {
+                me->SetWalk(true);
+                me->setFaction(summoner->getFaction());
                 me->SetReactState(REACT_PASSIVE);
+                me->SetSpeed(MOVE_RUN, 0.8f);
+                me->SetSpeed(MOVE_WALK, 0.8f);
                 me->CastSpell(me, 116717, true); // Fire aura
                 me->CastSpell(me, SPELL_ARCHIMONDES_FIRE, true); // Fire visual
-                me->GetMotionMaster()->Clear();
-                me->GetMotionMaster()->MoveRandom(5.0f);
+                events.ScheduleEvent(EVENT_SPARK_MOVE, 3000);
             }
     
             void SpellHit(Unit* caster, SpellInfo const* spell)
             {
                 if (spell->Id == SPELL_DRAW_FLAME)
                 {
-                    me->GetMotionMaster()->Clear();
-                    me->SetSpeed(MOVE_RUN, 5.0f);
-                    me->SetSpeed(MOVE_WALK, 5.0f);
-                    me->GetMotionMaster()->MovePoint(1, caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ());
+                    me->SetSpeed(MOVE_RUN, 3.0f);
+                    me->SetSpeed(MOVE_WALK, 3.0f);
+                    events.CancelEvent(EVENT_SPARK_MOVE);
+                    events.ScheduleEvent(EVENT_SPARK_TO_FENG, 100);
                 }
-            }
-
-            void MovementInform(uint32 type, uint32 id)
-            {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                if (id == 1)
-                    if (InstanceScript* pInstance = me->GetInstanceScript())
-                        if (Creature* feng = pInstance->instance->GetCreature(pInstance->GetData64(NPC_FENG)))
-                        {
-                            feng->AI()->DoAction(ACTION_SPARK);
-                            me->DespawnOrUnsummon(500);
-                        }
             }
 
             void UpdateAI(const uint32 diff)
@@ -1074,6 +1037,40 @@ class mob_wild_spark : public CreatureScript
                 if (pInstance)
                     if (pInstance->GetBossState(DATA_FENG) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
+
+                events.Update(diff);
+
+                while (uint32 eventID = events.ExecuteEvent())
+                {
+                    switch (eventID)
+                    {
+                        case EVENT_SPARK_MOVE:
+                            Position position;
+                            me->GetRandomPoint(CenterFengRoom,20.0f,position);
+                            me->GetMotionMaster()->Clear();
+                            me->GetMotionMaster()->MovePoint(0, position.GetPositionX(), position.GetPositionY(), position.GetPositionZ());
+                            events.ScheduleEvent(EVENT_SPARK_MOVE, urand(5000,12000));
+                            break;
+                        case EVENT_SPARK_TO_FENG:
+                            if (InstanceScript* pInstance = me->GetInstanceScript())
+                                if (Creature* feng = pInstance->instance->GetCreature(pInstance->GetData64(NPC_FENG)))
+                                {
+                                    if (me->GetDistance(feng) < 2.0f)
+                                    {
+                                        feng->AI()->DoAction(ACTION_SPARK);
+                                        me->DespawnOrUnsummon(500);
+                                    }
+                                    else
+                                    {
+                                        me->GetMotionMaster()->Clear();
+                                        me->GetMotionMaster()->MovePoint(1, feng->GetPositionX(), feng->GetPositionY(), feng->GetPositionZ());
+                                        events.ScheduleEvent(EVENT_SPARK_TO_FENG, 1000);
+                                    }
+                                }
+                            break;
+                    }
+                }
+
             }
         };
 
@@ -1138,12 +1135,14 @@ class spell_mogu_wildfire_spark : public SpellScriptLoader
                 if (!caster)
                     return;
 
-                for (uint8 i = 0; i < maxSpark; ++i)
-                {
-                    float position_x = caster->GetPositionX() + frand(-3.0f, 3.0f);
-                    float position_y = caster->GetPositionY() + frand(-3.0f, 3.0f);
-                    caster->CastSpell(position_x, position_y, caster->GetPositionZ(), 116586, true);
-                }
+                if (InstanceScript* pInstance = caster->GetInstanceScript())
+                    if (Creature* feng = pInstance->instance->GetCreature(pInstance->GetData64(NPC_FENG)))
+                        for (uint8 i = 0; i < maxSpark; ++i)
+                        {
+                            float position_x = caster->GetPositionX() + frand(-3.0f, 3.0f);
+                            float position_y = caster->GetPositionY() + frand(-3.0f, 3.0f);
+                            feng->SummonCreature(60438, position_x, position_y, caster->GetPositionZ());
+                        }
             }
 
             void Register()
@@ -1280,10 +1279,9 @@ class spell_mogu_arcane_velocity : public SpellScriptLoader
 
                 uint8 mode = GetCaster()->GetInstanceScript()->instance->GetSpawnMode();
                 uint32 mindmg  = (mode == RAID_DIFFICULTY_10MAN_NORMAL ? 39000 : (mode == RAID_DIFFICULTY_25MAN_NORMAL ? 44850 : (mode == RAID_DIFFICULTY_10MAN_HEROIC ? 58500 : (mode == RAID_DIFFICULTY_25MAN_HEROIC ? 67275 : 16770))));
-                uint32 range   = (mode == RAID_DIFFICULTY_10MAN_NORMAL ?  2000 : (mode == RAID_DIFFICULTY_25MAN_NORMAL ?  2300 : (mode == RAID_DIFFICULTY_10MAN_HEROIC ?  3000 : (mode == RAID_DIFFICULTY_25MAN_HEROIC ?  3450 :   860))));
 
                 if (distance >= 0 && distance <= 60)
-                    SetHitDamage(mindmg + range * (distance / MAX_DIST));
+                    SetHitDamage(mindmg + mindmg / 1.4 * (distance / MAX_DIST));
             }
 
             void Register()
@@ -1371,6 +1369,51 @@ class spell_mogu_inversion : public SpellScriptLoader
         }
 };
 
+// Shroud of reversal - 115911
+class spell_shroud_of_reversal : public SpellScriptLoader
+{
+    public:
+        spell_shroud_of_reversal() : SpellScriptLoader("spell_shroud_of_reversal") { }
+
+        class spell_shroud_of_reversal_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_shroud_of_reversal_AuraScript);
+
+            void OnPeriodic(constAuraEffectPtr /*aurEff*/)
+            {
+                if (!GetCaster() || !GetTarget())
+                    return;
+
+                bool alreadyHaveAnInversion = false;
+                for (uint8 i = 0; i < MAX_INVERSION_SPELLS; ++i)
+                    if (GetCaster()->HasAura(inversionMatching[i][1]))
+                    {
+                        alreadyHaveAnInversion = true;
+                        break;
+                    }
+
+                if (!alreadyHaveAnInversion)
+                    for (uint8 i = 0; i < MAX_INVERSION_SPELLS; ++i)
+                        if (GetTarget()->HasAura(inversionMatching[i][0]))
+                        {
+                            GetCaster()->CastSpell(GetCaster(), inversionMatching[i][1], true);
+                            break;
+                        }
+            }
+
+
+            void Register()
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_shroud_of_reversal_AuraScript::OnPeriodic, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_shroud_of_reversal_AuraScript();
+        }
+};
+
 // GameObject - 211628 - Shroud of reversal
 class go_inversion : public GameObjectScript
 {
@@ -1442,6 +1485,7 @@ void AddSC_boss_feng()
     new spell_mogu_arcane_velocity();
     new spell_mogu_arcane_resonance();
     new spell_mogu_inversion();
+    new spell_shroud_of_reversal();
     new go_inversion;
     new go_cancel;
 }

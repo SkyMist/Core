@@ -3810,10 +3810,19 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetB = 0;
                     break;
                 // ELEGON
+				case 116994:
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DAMAGE_IMMUNITY;
+                    spellInfo->Effects[1].MiscValue = 127;
+                    break;
                 case 116989:// Overloaded Missile
                 case 117220:// Overloaded Triggered
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
                 case 118430:// Core Beam
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
                     break;
                 case 129724:// Grasping Energy Tendrils
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_DUMMY;
@@ -3828,9 +3837,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[4].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[5].TargetA = TARGET_UNIT_CASTER;
-                    break;
-                case 116661:// Draw Power (lightning damage for activated focus)
-                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     break;
                 // SPIRIT KINGS
                 case 117558:
@@ -4138,7 +4144,11 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].BasePoints = 3500;
                     break;
                 case 112071:// Celestial Alignment
-                    spellInfo->Effects[0].Effect = 0;
+                    spellInfo->Effects[0].BasePoints = 0;
+                    break;
+                case 116:
+                    spellInfo->PreventionType = 1;
+                    spellInfo->SchoolMask = SPELL_SCHOOL_MASK_FROST;
                     break;
                 case 24378: // Berserking
                 case 23505: // Berserking
@@ -5125,7 +5135,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
                     break;
                 case 113656:// Fists of Fury
-                    spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
+                    spellInfo->PreventionType = 6;
                     break;
                 case 115315:// Summon Black Ox Statue
                     spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
@@ -5333,11 +5343,11 @@ void SpellMgr::LoadSpellCustomAttr()
                         spellInfo->Effects[0].RadiusEntry = radius; //200yards.
                     }
                     break;
-                case 106847:
+                case 106847: // Barrel Toss
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
-                    // Wise Mari Hydrolance damage
-                case 106267:
-                    //spellInfo->Effects[0].TargetB = TARGET_UNIT_TARGET_ENEMY;
+                    break;
+                case 106267: // Wise Mari Hydrolance damage
+                    spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
                     break;
                 case 106334:// Wash Away
                     spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
@@ -5389,6 +5399,27 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 116227:
+                    spellInfo->Effects[EFFECT_0].Effect    = 0;
+                    break;
+                case 115911:
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->AuraInterruptFlags = 0x0;
+                    break;
+                case 118530:
+                    spellInfo->MaxAffectedTargets = 3;
+                    break;
+                case 121224:
+                    spellInfo->MaxAffectedTargets = 8;
+                    break;
+                case 116060:
+                case 115861:
+                case 116008:
+                case 116038:
+                case 116044:
+                    spellInfo->Attributes &= ~SPELL_ATTR0_HIDE_IN_COMBAT_LOG;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR;
+                    break;
                 case 116000:// Voodoo Dolls
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
@@ -5559,10 +5590,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 break;
             // Arest, Sturdy Manacles, Seize the Ambassador
             case 78628:
-                spellInfo->Effects[EFFECT_0].Effect = 0;
-                break;
-            // Vengeful Strikes (Rook Stonetoe)
-            case 144396:
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
             // Flamebreaker, Flameseer's Staff, Flamebreaker quest
@@ -8729,6 +8756,69 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 139866: // Torrent of Ice.
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+
+            // SIEGE OF ORGRIMMAR (RAID).
+
+                // Immerseus.
+
+                case 143412: // Swirl.
+                    spellInfo->Effects[0].Amplitude = 1000;
+                    break;
+
+                // Fallen Protectors.
+
+                case 144396: // Vengeful Strikes (Rook Stonetoe).
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_NONE;
+                    break;
+
+                // Norushen / Amalgam of Corruption.
+
+                case 145212: // Unleashed Anger.
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 145735: // Icy Fear.
+                case 147082: // Burst of Anger.
+                case 145073: // Residual Corruption.
+                    spellInfo->TargetAuraSpell = 0;
+                    break;
+                case 144421: // Corruption.
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_MOD_DAMAGE_DONE_VERSUS;
+                    spellInfo->Effects[1].MiscValue = (1 << (CREATURE_TYPE_ABBERATION - 1)); // 8192 - mask.
+                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(36);   // No radius.
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(36);
+                    break;
+                case 144724: // Look Within.
+                    spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_NONE;
+                    break;
+                case 145768: // Unleash Corruption.
+                case 145769:
+                case 144848: // Titanic Corruption.
+                case 144980: // Greater Corruption.
+                    spellInfo->Effects[0].TargetA = TARGET_DEST_TARGET_ANY;
+                    break;
+                case 144448: // Cleanse Corruption.
+                case 144449:
+                case 144450:
+                case 147657:
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    break;
+                case 144849: // Test of Serenity.
+                case 144850: // Test of Reliance.
+                    spellInfo->SetDurationIndex(3); // 1 minute.
+                    break;
+                case 145227: // Blind Hatred.
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[0].TargetB = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(36);   // No radius.
+                    spellInfo->Effects[1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(36);
+                    break;
+                case 144479: // Expel Corruption.
+                case 145064:
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[1].Effect = 0;
                     break;
 
 

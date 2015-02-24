@@ -1,0 +1,2 @@
+INSERT INTO `gameobject` SET `guid`='529537',`id`='211584',`map`='1008',`zoneId`='6125',`areaId`='6125',`spawnMask`='8',`phaseMask`='1',`position_x`='3944.38',
+`position_y`='1550.06',`position_z`='369,563',`orientation`='6.28192',`rotation2`='0.000632675',`rotation3`='-1',`spawntimesecs`='300',`state`='1';

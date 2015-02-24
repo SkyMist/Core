@@ -1933,6 +1933,21 @@ public:
             if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                 return;
 
+            if (Unit* owner = me->GetOwner())
+            {
+                if (Unit* target = owner->getAttackerForHelper())
+                {
+                    if (target != me->getVictim())
+                    {
+                        uint64 victimGuid = target->GetGUID();
+                        Unit* victim = victimGuid ? ObjectAccessor::GetUnit(*me, victimGuid) : NULL;
+
+                        if (victim)
+                            me->Attack(victim, false);
+                    }
+                }
+            }
+
             DoCastVictim(spell_id);
         }
 
@@ -4661,9 +4676,10 @@ enum PastSelfSpells
 
 struct auraData
 {
-    auraData(uint32 id, int32 duration) : m_id(id), m_duration(duration) {}
+    auraData(uint32 id, int32 duration, uint8 stacks) : m_id(id), m_duration(duration), m_stacks(stacks) {}
     uint32 m_id;
     int32 m_duration;
+    uint8 m_stacks;
 };
 
 #define ACTION_ALTER_TIME   1
@@ -4718,7 +4734,7 @@ class npc_past_self : public CreatureScript
                             if (auraInfo->Id == 23333 || auraInfo->Id == 23335)
                                 continue;
 
-                            auras.insert(new auraData(auraInfo->Id, aura->GetDuration()));
+                            auras.insert(new auraData(auraInfo->Id, aura->GetDuration(), aura->GetStackAmount()));
                         }
                     }
 
@@ -4753,6 +4769,7 @@ class npc_past_self : public CreatureScript
                                     if (aura)
                                     {
                                         aura->SetDuration((*itr)->m_duration);
+                                        aura->SetStackAmount((*itr)->m_stacks);
                                         aura->SetNeedClientUpdateForTargets();
                                     }
 
@@ -5836,6 +5853,59 @@ class npc_grimuar_minion : public CreatureScript
         }
 };
 
+#define SPELL_PET_DOOM_BOLT 85692
+
+class npc_terror_and_doom_guard : public CreatureScript
+{
+public:
+    npc_terror_and_doom_guard() : CreatureScript("npc_terror_and_doom_guard") { }
+
+    struct npc_terror_and_doom_guardAI : CasterAI
+    {
+        npc_terror_and_doom_guardAI(Creature* creature) : CasterAI(creature) {}
+
+        uint32 spell_id;
+
+        void InitializeAI()
+        {
+            spell_id = SPELL_PET_DOOM_BOLT;
+
+            CasterAI::InitializeAI();
+            Unit* owner = me->GetOwner();
+            if (!owner)
+                return;
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            DoCastVictim(spell_id);
+        }
+
+        void EnterEvadeMode()
+        {
+            if (me->IsInEvadeMode() || !me->isAlive())
+                return;
+
+            Unit* owner = me->GetCharmerOrOwner();
+
+            me->CombatStop(true);
+            if (owner && !me->HasUnitState(UNIT_STATE_FOLLOW))
+            {
+                me->GetMotionMaster()->Clear(false);
+                me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle(), MOTION_SLOT_ACTIVE);
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_terror_and_doom_guardAI(creature);
+    }
+};
+
 void AddSC_npcs_special()
 {
     new npc_air_force_bots();
@@ -5905,4 +5975,5 @@ void AddSC_npcs_special()
     new npc_monk_spirit();
     new npc_army_of_the_dead();
     new npc_grimuar_minion();
+    new npc_terror_and_doom_guard();
 }

@@ -1488,6 +1488,9 @@ class spell_mage_alter_time : public SpellScriptLoader
                                 if (pastSelf->isAlive() && pastSelf->IsInWorld())
                                     if (pastSelf->GetSummoner() && pastSelf->GetSummoner()->GetGUID() == _player->GetGUID())
                                         pastSelf->AI()->DoAction(1);
+                    // Hackfix to prevent usebug
+                    if (_player->HasAura(120676))
+                        _player->RemoveAura(120676);
                 }
             }
 

@@ -20552,6 +20552,10 @@ void Unit::ApplyResilience(Unit const* victim, int32* damage) const
     if (!target)
         return;
 
+    // Do not apply resilience for unit / own - cast spells.
+    if (GetTypeId() != TYPEID_PLAYER || this == target)
+        return;
+
     *damage -= target->GetDamageReduction(*damage);
 }
 

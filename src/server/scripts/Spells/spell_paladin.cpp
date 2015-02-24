@@ -2018,7 +2018,7 @@ class spell_pal_beacon_of_light : public SpellScriptLoader
 
                                 if (itr->HasAura(PALADIN_SPELL_BEACON_OF_LIGHT))
                                 {
-                                    // check if it was heal by paladin which casted this beacon of light
+                                    // Check if it was heal by paladin which casted this beacon of light
                                     if (itr->GetAura(PALADIN_SPELL_BEACON_OF_LIGHT, _player->GetGUID()))
                                     {
                                         int32 basepoints;
