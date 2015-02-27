@@ -208,6 +208,7 @@ enum eGameObjects
     GOB_ENERGY_TITAN_CIRCLE_2       = 213527,
     GOB_ENERGY_TITAN_CIRCLE_3       = 213529,
     GOB_CELESTIAL_COMMAND           = 211650,
+    GOB_ANCIENT_CONTROL_PANEL       = 211584,
 
     GOB_MOGU_RUNE_FIRST             = 213937,
     GOB_MOGU_RUNE_END               = 213955,

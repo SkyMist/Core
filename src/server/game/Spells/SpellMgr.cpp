@@ -5399,6 +5399,12 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 116778:
+                case 116525:
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_0].TargetB = 0;
+                    break;
                 case 116227:
                     spellInfo->Effects[EFFECT_0].Effect    = 0;
                     break;
