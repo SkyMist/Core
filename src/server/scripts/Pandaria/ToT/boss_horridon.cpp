@@ -2196,7 +2196,7 @@ class spell_venom_bolt_volley_horridon : public SpellScriptLoader
                 if (!caster->ToCreature())
                     return;
 
-                if (!caster->ToCreature()->GetEntry() != NPC_GURUBASHI_VENOM_PRIEST)
+                if (caster->ToCreature()->GetEntry() != NPC_GURUBASHI_VENOM_PRIEST)
                     return;
 
                 // Only on removal by interrupt.

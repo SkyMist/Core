@@ -2523,6 +2523,14 @@ bool Aura::CanStackWith(constAuraPtr existingAura) const
         if (m_spellInfo->Id == 84617)
             return true;
 
+        // Sha Residue (Immerseus)
+        if (m_spellInfo->Id == 143459)
+            return true;
+
+        // Bubble Shield (Tormented Initiate)
+        if (m_spellInfo->Id == 147333)
+            return true;
+
         if (GetCastItemGUID() && existingAura->GetCastItemGUID())
             if (GetCastItemGUID() != existingAura->GetCastItemGUID() && m_spellInfo->HasCustomAttribute(SPELL_ATTR0_CU_ENCHANT_STACK))
                 return true;

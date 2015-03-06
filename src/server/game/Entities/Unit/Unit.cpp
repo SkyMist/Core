@@ -12036,6 +12036,10 @@ bool Unit::HasAuraState(AuraStateType flag, SpellInfo const* spellProto, Unit co
         // Fix Fingers of Frost (44544) - Ice Lance (30455) and Deep Freeze (44572) act as if target has aurastate frozen
         if (spellProto && (spellProto->Id == 30455 || spellProto->Id == 44572) && Caster->HasAura(44544))
             return true;
+        // Fix Sha Puddles (Immerseus)
+        if (spellProto && spellProto->Id == 143459 && Caster->ToCreature())
+            if (Caster->ToCreature()->GetEntry() == 71603)
+                return true;
         // Check per caster aura state
         // If aura with aurastate by caster not found return false
         if ((1<<(flag-1)) & PER_CASTER_AURA_STATE_MASK)
