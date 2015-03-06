@@ -2743,6 +2743,11 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (getClass() == CLASS_DRUID && getLevel() > 20 && GetSpecializationId(GetActiveSpec()) == SPEC_DRUID_BALANCE)
         RemoveLastEclipsePower();
 
+    // On teleport monks healing sphere's dissapear, so we should remove aura counter
+    if (getClass() == CLASS_MONK && GetSpecializationId(GetActiveSpec()) == SPEC_MONK_MISTWEAVER && HasAura(124458))
+        RemoveAura(124458);
+
+
     if (GetMapId() == mapid)
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
@@ -5787,6 +5792,14 @@ void Player::ResetSpec()
     InitSpellForLevel();
     UpdateMasteryPercentage();
     SendTalentsInfoData(false);
+
+    // Remove offhand for monks who have dual weapons
+    if (getClass() == CLASS_MONK)
+    {
+        if (Item* offHand = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+            AutoUnequipOffhandIfNeed();
+    }
+
 
     ModifyMoney(-(int64)cost);
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_FOR_TALENTS, cost);

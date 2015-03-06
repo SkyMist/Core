@@ -354,13 +354,14 @@ bool Group::AddLeaderInvite(Player* player)
 
 void Group::RemoveInvite(Player* player)
 {
-    // Check if the player exists and is invited and remove the invite.
-    if (player)
-    {
-        if (!m_invitees.empty() && GetInvitedByGuid(player->GetGUID()))
-            m_invitees.erase(player);
-        player->SetGroupInvite(NULL);
-    }
+   if (player)
+       for (auto invite : m_invitees)
+            if (invite->GetGUID() == player->GetGUID())
+            {
+                 m_invitees.erase(invite);
+                 player->SetGroupInvite(NULL);
+                 break;
+            }
 }
 
 void Group::RemoveAllInvites()

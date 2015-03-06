@@ -3810,10 +3810,19 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetB = 0;
                     break;
                 // ELEGON
+				case 116994:
+                    spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
+                    spellInfo->Effects[1].TargetA = TARGET_UNIT_CASTER;
+                    spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DAMAGE_IMMUNITY;
+                    spellInfo->Effects[1].MiscValue = 127;
+                    break;
                 case 116989:// Overloaded Missile
                 case 117220:// Overloaded Triggered
+                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
                 case 118430:// Core Beam
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
                     break;
                 case 129724:// Grasping Energy Tendrils
                     spellInfo->Effects[0].Effect = SPELL_EFFECT_DUMMY;
@@ -3828,9 +3837,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[4].TargetA = TARGET_UNIT_CASTER;
                     spellInfo->Effects[5].TargetA = TARGET_UNIT_CASTER;
-                    break;
-                case 116661:// Draw Power (lightning damage for activated focus)
-                    spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
                     break;
                 // SPIRIT KINGS
                 case 117558:
@@ -4138,7 +4144,11 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[3].BasePoints = 3500;
                     break;
                 case 112071:// Celestial Alignment
-                    spellInfo->Effects[0].Effect = 0;
+                    spellInfo->Effects[0].BasePoints = 0;
+                    break;
+                case 116:
+                    spellInfo->PreventionType = 1;
+                    spellInfo->SchoolMask = SPELL_SCHOOL_MASK_FROST;
                     break;
                 case 24378: // Berserking
                 case 23505: // Berserking
@@ -5125,7 +5135,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
                     break;
                 case 113656:// Fists of Fury
-                    spellInfo->PreventionType = SPELL_PREVENTION_TYPE_SILENCE;
+                    spellInfo->PreventionType = 6;
                     break;
                 case 115315:// Summon Black Ox Statue
                     spellInfo->Effects[1].Effect = SPELL_EFFECT_APPLY_AURA;
@@ -5389,6 +5399,33 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 }
                 // Mogu'shan Vault
+                case 116778:
+                case 116525:
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_0].TargetB = 0;
+                    break;
+                case 116227:
+                    spellInfo->Effects[EFFECT_0].Effect    = 0;
+                    break;
+                case 115911:
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->AuraInterruptFlags = 0x0;
+                    break;
+                case 118530:
+                    spellInfo->MaxAffectedTargets = 3;
+                    break;
+                case 121224:
+                    spellInfo->MaxAffectedTargets = 8;
+                    break;
+                case 116060:
+                case 115861:
+                case 116008:
+                case 116038:
+                case 116044:
+                    spellInfo->Attributes &= ~SPELL_ATTR0_HIDE_IN_COMBAT_LOG;
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR;
+                    break;
                 case 116000:// Voodoo Dolls
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;

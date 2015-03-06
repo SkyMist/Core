@@ -3475,6 +3475,18 @@ void Spell::prepare(SpellCastTargets const* targets, constAuraEffectPtr triggere
         return;
     }
 
+    // add aura counter for healing sphere
+    if (this->GetSpellInfo()->Id == 115460 && !IsTriggered())
+    {
+        if (AuraPtr healingSphereBuff = m_caster->GetAura(124458, m_caster->GetGUID()))
+        {
+            if (healingSphereBuff->GetStackAmount () < 3)
+                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() + 1);
+        }
+        else
+            m_caster->AddAura(124458, m_caster);
+    }
+
     // Prepare data for triggers
     prepareDataForTriggerSystem(triggeredByAura);
 
@@ -7684,6 +7696,10 @@ SpellCastResult Spell::CheckCasterAuras() const
         if (m_spellInfo->IsRemoveLossControlEffects())
             mechanic_immune = IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK;
     }
+
+    // Hack fix for Desecrated Ground
+    if (m_spellInfo->Id == 108201 || m_spellInfo->Id == 115018)
+        mechanic_immune &= ~((1<<MECHANIC_ROOT)|(1<<MECHANIC_SNARE)|(1<<MECHANIC_SILENCE)|(1<<MECHANIC_DISARM));
 
     bool usableInStun = m_spellInfo->AttributesEx5 & SPELL_ATTR5_USABLE_WHILE_STUNNED;
 

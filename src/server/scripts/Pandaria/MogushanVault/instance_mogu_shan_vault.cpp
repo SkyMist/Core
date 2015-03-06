@@ -120,6 +120,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
             uint64 ancientMoguDoorGuid;
             uint64 emperorsDoorGuid;
             uint64 celestialCommandGuid;
+            uint64 ancientControlPanelGuid;
 
             uint64 energyPlatformGuid;
             uint64 titanDiskGuid;
@@ -149,6 +150,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
                 ancientMoguDoorGuid             = 0;
                 emperorsDoorGuid                = 0;
                 celestialCommandGuid            = 0;
+                ancientControlPanelGuid         = 0;
                 energyPlatformGuid              = 0;
                 titanDiskGuid                   = 0;
                 woeIsGasPhaseActive             = false;
@@ -313,6 +315,11 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         break;
                     case GOB_CELESTIAL_COMMAND:
                         celestialCommandGuid = go->GetGUID();
+                        go->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        break;
+                    case GOB_ANCIENT_CONTROL_PANEL:
+                        ancientControlPanelGuid = go->GetGUID();
+                        go->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
                         break;
                 }
             }
@@ -355,11 +362,15 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         switch (state)
                         {
                             case IN_PROGRESS:
-                            {
                                 if (Creature* spiritKingsControler = instance->GetCreature(spiritKingsControlerGuid))
                                     spiritKingsControler->AI()->DoAction(ACTION_ENTER_COMBAT);
                                 break;
-                            }
+                            case DONE:
+                                if (GameObject* celestical = instance->GetGameObject(celestialCommandGuid))
+                                    celestical->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                                if (GameObject* ancientPanel = instance->GetGameObject(ancientControlPanelGuid))
+                                    ancientPanel->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                                break;
                             default:
                                 break;
                         }
@@ -531,6 +542,8 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         return emperorsDoorGuid;
                     case GOB_CELESTIAL_COMMAND:
                         return celestialCommandGuid;
+                    case GOB_ANCIENT_CONTROL_PANEL:
+                        return ancientControlPanelGuid;
                     default:
                         break;
                 }

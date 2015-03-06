@@ -250,6 +250,8 @@ class boss_spirit_kings_controler : public CreatureScript
 
                 for (uint8 i = 0; i < 4; i++)
                     spiritKingsEntry[i] = spiritsOrder[i];
+
+            //    Reset();
             }
 
             InstanceScript* pInstance;
@@ -289,6 +291,14 @@ class boss_spirit_kings_controler : public CreatureScript
 
             void spawnSpiritKings()
             {
+                std::list<Creature*> Kings;
+                GetCreatureListWithEntryInGrid(Kings, me, NPC_QIANG, 300.0f);
+                GetCreatureListWithEntryInGrid(Kings, me, NPC_SUBETAI, 300.0f);
+                GetCreatureListWithEntryInGrid(Kings, me, NPC_ZIAN, 300.0f);
+                GetCreatureListWithEntryInGrid(Kings, me, NPC_MENG, 300.0f);
+                for (auto king : Kings)
+                    king->DespawnOrUnsummon();
+
                 if (Creature* Qiang = me->SummonCreature(NPC_QIANG, QiangTheMerciless.GetPositionX(), QiangTheMerciless.GetPositionY(), QiangTheMerciless.GetPositionZ(), QiangTheMerciless.GetOrientation()))
                     Qiang->AI()->DoAction(ACTION_FIRST_FIGHT);
 

@@ -116,15 +116,12 @@ enum eEvents
     EVENT_TOUCH_OF_THE_TITANS       = 6,
     EVENT_KILLED                    = 7,
 
-    // Cosmic Spark
-    EVENT_ICE_TRAP                  = 8,
-
-    EVENT_ENRAGE_HARD               = 9,
-    EVENT_DESPAWN_PLATFORM          = 10,
-    EVENT_AFTER_DESPAWN_PLATFORM    = 11,
-    EVENT_END_OF_PHASE_3            = 12,
-    EVENT_RADIATING_ENERGIES        = 13,
-    EVENT_LAUNCH_COSMIC_SPARK       = 14,
+    EVENT_ENRAGE_HARD               = 8,
+    EVENT_DESPAWN_PLATFORM          = 9,
+    EVENT_AFTER_DESPAWN_PLATFORM    = 10,
+    EVENT_END_OF_PHASE_3            = 11,
+    EVENT_RADIATING_ENERGIES        = 12,
+    EVENT_LAUNCH_COSMIC_SPARK       = 13,
 };
 
 enum elegonActions
@@ -241,11 +238,13 @@ class boss_elegon : public CreatureScript
 
             void Reset()
             {
-
                 if (Creature* cho = GetClosestCreatureWithEntry(me, NPC_LOREWALKER_CHO, 100.0f, true))
                     cho->AI()->Talk(26);
 
+                events.Reset();
                 _Reset();
+
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
 
                 me->AddAura(SPELL_APPARITION_VISUAL, me);
 
@@ -260,11 +259,6 @@ class boss_elegon : public CreatureScript
                 successfulDrawingPower    = 0;
                 energyChargeCounter       = 0;
                 empyrealFocusKilled       = 0;
-
-                events.ScheduleEvent(EVENT_CHECK_MELEE,             2500);
-                events.ScheduleEvent(EVENT_CELESTIAL_BREATH,        10000);
-                events.ScheduleEvent(EVENT_MATERIALIZE_PROTECTOR,   urand(35000, 40000));
-                events.ScheduleEvent(EVENT_ENRAGE_HARD,             570000); // 9min30
 
                 summons.DespawnAll();
 
@@ -307,8 +301,12 @@ class boss_elegon : public CreatureScript
                     pInstance->SetBossState(DATA_ELEGON, IN_PROGRESS);
                 }
 
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_UNK_15);
                 me->RemoveAurasDueToSpell(SPELL_APPARITION_VISUAL);
+
+                events.ScheduleEvent(EVENT_CHECK_MELEE,             2500);
+                events.ScheduleEvent(EVENT_CELESTIAL_BREATH,        10000);
+                events.ScheduleEvent(EVENT_MATERIALIZE_PROTECTOR,   15000);
+                events.ScheduleEvent(EVENT_ENRAGE_HARD,             570000); // 9min30
 
                 Talk(TALK_AGGRO);
             }
@@ -334,86 +332,19 @@ class boss_elegon : public CreatureScript
                     case ACTION_SPAWN_ENERGY_CHARGES:
                     {
                         for (int i = 0; i < 6; i++)
-                        {
                             if (Creature* energyCharge = me->SummonCreature(NPC_ENERGY_CHARGE, energyChargePos[i], TEMPSUMMON_CORPSE_DESPAWN))
                             {
                                 // Increase speed by 20% for each successful draw power
                                 for (int j = 0; j < (successfulDrawingPower - 1); j++)
                                     me->AddAura(SPELL_HIGH_ENERGY, energyCharge);
 
-                                switch (i)
+                                if (Creature* Empyreal = pInstance->instance->GetCreature(empyrealFocus[i]))
                                 {
-                                    case 0:
-                                    {
-                                        if (Creature* northWest = pInstance->instance->GetCreature(empyrealFocus[1]))
-                                        {
-                                            energyCharge->CastSpell(northWest, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(northWest->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    case 1:
-                                    {
-                                        if (Creature* north = pInstance->instance->GetCreature(empyrealFocus[3]))
-                                        {
-                                            energyCharge->CastSpell(north, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(north->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    case 2:
-                                    {
-                                        if (Creature* northEast = pInstance->instance->GetCreature(empyrealFocus[5]))
-                                        {
-                                            energyCharge->CastSpell(northEast, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(northEast->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    case 3:
-                                    {
-                                        if (Creature* southEast = pInstance->instance->GetCreature(empyrealFocus[4]))
-                                        {
-                                            energyCharge->CastSpell(southEast, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(southEast->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    case 4:
-                                    {
-                                        if (Creature* south = pInstance->instance->GetCreature(empyrealFocus[2]))
-                                        {
-                                            energyCharge->CastSpell(south, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(south->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    case 5:
-                                    {
-                                        if (Creature* southWest = pInstance->instance->GetCreature(empyrealFocus[0]))
-                                        {
-                                            energyCharge->CastSpell(southWest, SPELL_CORE_BEAM, true);
-                                            energyCharge->SetTarget(southWest->GetGUID());
-                                            energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
-                                        }
-
-                                        break;
-                                    }
-                                    default:
-                                        break;
+                                    energyCharge->CastSpell(Empyreal, SPELL_CORE_BEAM, true);
+                                    energyCharge->SetTarget(Empyreal->GetGUID());
+                                    energyCharge->GetMotionMaster()->MovePoint(POINT_EMPYEREAN_FOCUS, empyrealFocusPosition[i]);
                                 }
                             }
-                        }
 
                         break;
                     }
@@ -524,9 +455,7 @@ class boss_elegon : public CreatureScript
 
                     Map::PlayerList const& playerList = pInstance->instance->GetPlayers();
                     if (!playerList.isEmpty())
-                    {
                         for (Map::PlayerList::const_iterator itr = playerList.begin(); itr != playerList.end(); ++itr)
-                        {
                             if (Player* player = itr->getSource())
                             {
                                 if (player->isGameMaster())
@@ -538,8 +467,6 @@ class boss_elegon : public CreatureScript
                                     player->CombatStopWithPets(true);
                                 }
                             }
-                        }
-                    }
                 }
 
                 me->GetMotionMaster()->Clear();
@@ -593,6 +520,12 @@ class boss_elegon : public CreatureScript
 
             void UpdateAI(const uint32 diff)
             {
+                std::list<Player*> playerList;
+                GetPlayerListInGrid(playerList, me, 50.0f);
+                for (auto player : playerList)
+                    if ((me->GetPositionZ() - player->GetPositionZ() > 30.0f) && player->IsFalling())
+                        me->Kill(player);
+
                 if (!UpdateVictim())
                     return;
 
@@ -619,7 +552,10 @@ class boss_elegon : public CreatureScript
                     {
                         if (phase == PHASE_1)
                             if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO))
-                                me->CastSpell(target, SPELL_CELESTIAL_BREATH, false);
+                            {
+                                me->SetFacingToObject(target);
+                                DoCast(SPELL_CELESTIAL_BREATH);
+                            }
 
                         events.ScheduleEvent(EVENT_CELESTIAL_BREATH, 10000);
                         break;
@@ -819,6 +755,13 @@ class mob_empyreal_focus : public CreatureScript
             mob_empyreal_focusAI(Creature* creature) : ScriptedAI(creature)
             {
                 pInstance = creature->GetInstanceScript();
+
+                for (int i = 0; i < 6; i++)
+                    if (empyrealFocusPosition[i].GetPositionX() == me->GetPositionX() && empyrealFocusPosition[i].GetPositionY() == me->GetPositionY())
+                    {
+                        empyrealFocus[i] = me->GetGUID();
+                        break;
+                    }
             }
 
             EventMap events;
@@ -835,41 +778,6 @@ class mob_empyreal_focus : public CreatureScript
                 me->AddAura(SPELL_FOCUS_INACTIVE, me);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
 
-                Position pos;
-                me->GetPosition(&pos);
-
-                for (int i = 0; i < 6; i++)
-                {
-                    if (pos.GetPositionX() - empyrealFocusPosition[i].GetPositionX() <= 4.0f &&
-                        pos.GetPositionX() - empyrealFocusPosition[i].GetPositionX() >= -4.0f &&
-                        pos.GetPositionY() - empyrealFocusPosition[i].GetPositionY() <= 4.0f &&
-                        pos.GetPositionY() - empyrealFocusPosition[i].GetPositionY() >= -4.0f)
-                    {
-                        switch (i)
-                        {
-                            case 0:
-                                empyrealFocus[1] = me->GetGUID();
-                                break;
-                            case 1:
-                                empyrealFocus[3] = me->GetGUID();
-                                break;
-                            case 2:
-                                empyrealFocus[5] = me->GetGUID();
-                                break;
-                            case 3:
-                                empyrealFocus[4] = me->GetGUID();
-                                break;
-                            case 4:
-                                empyrealFocus[2] = me->GetGUID();
-                                break;
-                            case 5:
-                                empyrealFocus[0] = me->GetGUID();
-                                break;
-                        }
-
-                        break;
-                    }
-                }
             }
 
             void DoAction(const int32 action)
@@ -892,11 +800,9 @@ class mob_empyreal_focus : public CreatureScript
                         activationDone = true;
 
                         for (int i = 0; i < 6; i++)
-                        {
                             if (Unit* focus = ObjectAccessor::FindUnit(empyrealFocus[i]))
                                 if (focus->GetAI())
                                     focus->GetAI()->DoAction(ACTION_ACTIVATE_EMPYREAL_FOCUS);
-                        }
 
                         break;
                     }
@@ -905,11 +811,11 @@ class mob_empyreal_focus : public CreatureScript
                         me->RemoveAurasDueToSpell(SPELL_FOCUS_ACTIVATE_STATE);
                         me->RemoveAurasDueToSpell(SPELL_FOCUS_LIGHT_WALL_VISUAL);
                         me->RemoveAurasDueToSpell(SPELL_FOCUS_LIGHT_CASTBAR);
+                        me->RemoveAurasDueToSpell(SPELL_CORE_BEAM);
 
+                        me->Respawn();
                         me->SetHealth(me->GetMaxHealth());
-
-                        if (AreaTrigger* lightningWall = me->GetAreaTrigger(SPELL_FOCUS_LIGHT_AREATRIGGER))
-                            lightningWall->SetDuration(0);
+                        me->RemoveAllAreaTriggers();
 
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                         activationDone = false;
@@ -931,20 +837,16 @@ class mob_empyreal_focus : public CreatureScript
                     me->RemoveAurasDueToSpell(SPELL_FOCUS_ACTIVATE_STATE);
                     me->RemoveAurasDueToSpell(SPELL_FOCUS_LIGHT_WALL_VISUAL);
                     me->RemoveAurasDueToSpell(SPELL_FOCUS_LIGHT_CASTBAR);
-
+                    me->RemoveAurasDueToSpell(SPELL_CORE_BEAM);
                     me->SetHealth(me->GetMaxHealth());
-
-                    if (AreaTrigger* lightningWall = me->GetAreaTrigger(SPELL_FOCUS_LIGHT_AREATRIGGER))
-                        lightningWall->SetDuration(0);
+                    me->RemoveAllAreaTriggers();
 
                     if (pInstance)
-                    {
                         if (Creature* elegon = pInstance->instance->GetCreature(pInstance->GetData64(NPC_ELEGON)))
                         {
                             me->CastSpell(elegon, SPELL_OVERLOADED_MISSILE, false);
                             elegon->AI()->DoAction(ACTION_EMPYREAL_FOCUS_KILLED);
                         }
-                    }
                 }
             }
 
@@ -959,6 +861,8 @@ class mob_empyreal_focus : public CreatureScript
                         events.ScheduleEvent(EVENT_APPEAR_WALL_OF_LIGHTNING, 3000);
                         break;
                     case EVENT_APPEAR_WALL_OF_LIGHTNING:
+                        if (Creature* elegon = pInstance->instance->GetCreature(pInstance->GetData64(NPC_ELEGON)))
+                            elegon->CastSpell(me, SPELL_CORE_BEAM);
                         me->CastSpell(me, SPELL_FOCUS_LIGHT_AREATRIGGER, true);
                         me->CastSpell(me, SPELL_FOCUS_LIGHT_CASTBAR, true);
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
@@ -993,7 +897,7 @@ class mob_celestial_protector : public CreatureScript
             bool totalAnnihilationCasted;
             InstanceScript* pInstance;
 
-            void Reset()
+            void IsSummonedBy(Unit * summoner)
             {
                 events.Reset();
 
@@ -1002,9 +906,6 @@ class mob_celestial_protector : public CreatureScript
 
                 stabilityFluxCasted     = false;
                 totalAnnihilationCasted = false;
-
-                if (Player* player = me->SelectNearestPlayerNotGM())
-                    AttackStart(player);
             }
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage)
@@ -1036,7 +937,12 @@ class mob_celestial_protector : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
+                {
+                    DoZoneInCombat();
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
+                        AttackStart(target);
                     return;
+                }
                 
                 events.Update(diff);
                 
@@ -1114,26 +1020,27 @@ class mob_cosmic_spark : public CreatureScript
         {
             mob_cosmic_sparkAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->SetReactState(REACT_AGGRESSIVE);
             }
 
             EventMap events;
 
-            void Reset()
+            void IsSummonedBy(Unit * summoner)
             {
                 events.Reset();
                 
+                me->SetReactState(REACT_AGGRESSIVE);
                 events.ScheduleEvent(EVENT_CHECK_UNIT_ON_PLATFORM, 1000);
-                events.ScheduleEvent(EVENT_ICE_TRAP, 10000);
-
-                if (Player* player = me->SelectNearestPlayerNotGM())
-                    AttackStart(player);
             }
 
             void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
+                {
+                    DoZoneInCombat();
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
+                        AttackStart(target);
                     return;
+                }
                 
                 events.Update(diff);
                 
@@ -1147,11 +1054,6 @@ class mob_cosmic_spark : public CreatureScript
                             else
                                 me->RemoveAurasDueToSpell(SPELL_TOUCH_OF_THE_TITANS);
                             events.ScheduleEvent(EVENT_CHECK_UNIT_ON_PLATFORM, 1000);
-                            break;
-                        case EVENT_ICE_TRAP:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
-                                me->CastSpell(target, SPELL_ICE_TRAP, false);
-                            events.ScheduleEvent(EVENT_ICE_TRAP,      60000);
                             break;
                         default:
                             break;
@@ -1646,12 +1548,10 @@ class spell_radiating_energies : public SpellScriptLoader
                 float MinDist = GetSpellInfo()->Id == SPELL_RADIATING_OUTSIDE_VORTEX ? 36.0f : 0.0f;
 
                 Map::PlayerList const& players = GetCaster()->GetMap()->GetPlayers();
-                if (!players.isEmpty())
-                    for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                        if (Player* player = itr->getSource())
-                            if (player->GetExactDist2d(GetCaster()->GetPositionX(), GetCaster()->GetPositionY()) <= MaxDist &&
-                                player->GetExactDist2d(GetCaster()->GetPositionX(), GetCaster()->GetPositionY()) >= MinDist)
-                                targets.push_back(player);
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->getSource())
+                        if (player->GetDistance(GetCaster()) <= MaxDist && player->GetDistance(GetCaster()) >= MinDist)
+                            targets.push_back(player);
             }
 
             void Register()

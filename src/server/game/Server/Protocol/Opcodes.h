@@ -932,7 +932,7 @@ enum Opcodes
     SMSG_LOOT_ALL_PASSED                              = 0x0126, // 5.4.7 18019
     SMSG_LOOT_CONTENTS                                = 0x0000,
     SMSG_LOOT_LIST                                    = 0x0000,
-    SMSG_LOOT_MASTER_CANDIDATE_LIST                   = 0x1D5B, // 5.4.7 18019 - CHECK! (Doesn't send group member names to give item, LUA error).
+    SMSG_LOOT_MASTER_CANDIDATE_LIST                   = 0x1D5B, // 5.4.7 18019
     SMSG_LOOT_MONEY_NOTIFY                            = 0x1F49, // 5.4.7 18019
     SMSG_LOOT_RELEASE_RESPONSE                        = 0x14A2, // 5.4.7 18019
     SMSG_LOOT_REMOVED                                 = 0x0D00, // 5.4.7 18019

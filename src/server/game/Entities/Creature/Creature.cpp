@@ -2242,6 +2242,12 @@ bool Creature::_IsTargetAcceptable(const Unit* target) const
         || !target->isTargetableForAttack(false)
         || (m_vehicle && (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))))
         return false;
+    // can't attack invisible target - Mirror Image (55342)
+    if (this->isGuardian() && this->GetEntry() == 31216 && (target->HasBreakableByDamageCrowdControlAura()
+        || target->HasAuraType(SPELL_AURA_MOD_STEALTH)
+        || target->HasAuraType(SPELL_AURA_MOD_INVISIBILITY)))
+        return false;
+
 
     if (target->HasUnitState(UNIT_STATE_DIED))
     {

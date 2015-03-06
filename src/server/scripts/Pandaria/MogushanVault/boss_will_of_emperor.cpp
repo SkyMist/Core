@@ -38,6 +38,7 @@ enum eSpells
     SPELL_FREEZE_ANIM           = 16245,
     SPELL_OPPORTUNISTIC_STRIKE  = 116808,
     SPELL_GROWING_OPPORTUNITY   = 117854,
+    SPELL_CHAIN_RIP             = 142506,
 
     // Ancient Mogu Machine
     SPELL_TITAN_GAS             = 116779,
@@ -121,7 +122,7 @@ enum eAddActions
     // Adds actions
     ACTION_LAND                 = 2,
     ACTION_COSMECTIC            = 3,
-    ACTION_MOGU_ACTIVATE        = 4,
+    ACTION_MOGU_ACTIVATE        = 7,
 };
 
 enum eDisplayID
@@ -226,9 +227,6 @@ class boss_jin_qin_xi : public CreatureScript
             {
                 pInstance = creature->GetInstanceScript();
                 isActive = false;
-                me->SetDisplayId(DISPLAY_BOSS_INVISIBLE);
-                me->setFaction(35);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                 sumCourage = 0;
             }
 
@@ -266,8 +264,17 @@ class boss_jin_qin_xi : public CreatureScript
                 moveTurn = me->GetSpeed(MOVE_TURN_RATE);
                 moveWalk = me->GetSpeed(MOVE_WALK);
                 moveRun  = me->GetSpeed(MOVE_RUN);
+                me->SetSpeed(MOVE_TURN_RATE, 1.0f, true);
+                me->SetSpeed(MOVE_WALK, 1.0f, true);
+                me->SetSpeed(MOVE_RUN, 1.0f, true);
                 homePos  = me->GetHomePosition();
                 
+                me->SetDisplayId(DISPLAY_BOSS_INVISIBLE);
+                me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 0);
+                me->SetReactState(REACT_PASSIVE);
+                me->setFaction(35);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+
                 victimWithMagneticArmor = 0;
 
                 if (pInstance)
@@ -279,25 +286,9 @@ class boss_jin_qin_xi : public CreatureScript
                 playerList.clear();
 
                 achievement = false;
+                isActive    = false;
                 janHitCount = 0;
                 qinHitCount = 0;
-
-            }
-
-            void JustReachedHome()
-            {
-                _JustReachedHome();
-
-                me->SetDisplayId(DISPLAY_BOSS_INVISIBLE);
-                me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 0);
-                events.Reset();
-                summons.DespawnAll();
-
-                if (Creature* otherBoss = getOtherBoss())
-                    otherBoss->AI()->DoAction(ACTION_REACHHOME);
-
-                if (pInstance)
-                    pInstance->SetBossState(DATA_WILL_OF_EMPEROR, FAIL);
             }
 
             void SpellHit(Unit* /*caster*/, SpellInfo const* spell)
@@ -331,13 +322,16 @@ class boss_jin_qin_xi : public CreatureScript
 
             void MovementInform(uint32 uiType, uint32 id)
             {
-                if (uiType != POINT_MOTION_TYPE && uiType != EFFECT_MOTION_TYPE)
-                    return;
-
                 if (id == 2)
                 {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
-                    me->HandleEmote(EMOTE_ONESHOT_BOW);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                    me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                    DoZoneInCombat(me,200.0f);
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
+                    {
+                        AttackStart(target);
+                        me->SetInCombatWith(target);
+                    }
                     events.ScheduleEvent(EVENT_BOSS_EMOTE, 2000);
                 }
             }
@@ -348,19 +342,17 @@ class boss_jin_qin_xi : public CreatureScript
                 summons.DespawnAll();
 
                 if (Creature* cho = GetClosestCreatureWithEntry(me, NPC_LOREWALKER_CHO, 60.0f, true))
-                        cho->AI()->DoAction(ACTION_EMPERORS_DEATH);
+                    cho->AI()->DoAction(ACTION_EMPERORS_DEATH);
 
                 if (pInstance)
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
                 if (me->GetEntry() == NPC_QIN_XI)
-                {
                     if (Creature* anc_mogu_machine = GetClosestCreatureWithEntry(me, NPC_ANCIENT_MOGU_MACHINE, 200.0f))
                     {
                         anc_mogu_machine->AI()->DoAction(TALK_DEFEATED);
                         me->Kill(anc_mogu_machine->ToUnit());
                     }
-                }
 
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_STOMP);
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEVAST_ARC);
@@ -398,7 +390,7 @@ class boss_jin_qin_xi : public CreatureScript
                         devastatingComboPhase = 0;
                         
                         // --- Summoning adds ---
-                        events.ScheduleEvent(EVENT_SUMMON_RAGE, 11000);
+                        events.ScheduleEvent(EVENT_SUMMON_RAGE, 15000);
 
                         // --- Attacks ---
                         events.ScheduleEvent(EVENT_DEVASTATING_COMBO, 115000);
@@ -491,10 +483,9 @@ class boss_jin_qin_xi : public CreatureScript
                         me->SetDisplayId(me->GetEntry() - DISPLAY_VISIBLE);
                         // Only Qin-Xi makes the machine talk, to avoid "double voices"
                         if (me->GetEntry() == NPC_QIN_XI)
-                        {
                             if (Creature* anc_mogu_machine = GetClosestCreatureWithEntry(me, NPC_ANCIENT_MOGU_MACHINE, 200.0f))
                                 anc_mogu_machine->AI()->DoAction(TALK_JAN_QIN_XI);
-                        }
+
                         events.ScheduleEvent(EVENT_BOSS_WAIT_VISIBLE, 2000);
                         break;
                     }
@@ -506,7 +497,7 @@ class boss_jin_qin_xi : public CreatureScript
                         float x = me->GetPositionX() + (15 * cos(me->GetOrientation()));
                         float y = me->GetPositionY() + (15 * sin(me->GetOrientation()));
                         // Jump
-                        me->GetMotionMaster()->MoveJump(x, y, 362.19f, 20.0f, 20.0f, 2);
+                        me->GetMotionMaster()->MoveJump(x, y, 362.19f, 20.0f, 20.0f, me->GetOrientation(), 2);
                         break;
                     }
                     case EVENT_BOSS_EMOTE:
@@ -601,7 +592,7 @@ class boss_jin_qin_xi : public CreatureScript
                         if (!(devastatingComboPhase % 2))
                         {
                             // Cancel previous emote in order to properly play a new one
-                            me->ClearEmotes();
+                            me->HandleEmoteCommand(EMOTE_ONESHOT_NONE);
                             // Pick a random new orientation
                             float angle = me->GetOrientation() + frand(-0.75f, 0.75f);
                             // angle corrections
@@ -610,7 +601,7 @@ class boss_jin_qin_xi : public CreatureScript
                             if (comboArc = urand(0, 1))
                             {
                                 // Emote for arc attack
-                                me->HandleEmote(EMOTE_ONESHOT_ATTACK2HLOOSE);
+                                me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK2HLOOSE);
                                 // Set new orientation (after emote)
                                 me->SetFacingTo(angle);
                                 // Wait a bit the anim starts to play before freezing it
@@ -619,7 +610,7 @@ class boss_jin_qin_xi : public CreatureScript
                             else
                             {
                                 // Emote for stomp
-                                me->HandleEmote(EMOTE_ONESHOT_STOMP);
+                                me->HandleEmoteCommand(EMOTE_ONESHOT_STOMP);
                                 // Set orientation (after emote)
                                 me->SetFacingTo(angle);
                                 // Freezing right now
@@ -642,7 +633,7 @@ class boss_jin_qin_xi : public CreatureScript
                             me->RemoveAura(SPELL_FREEZE_ANIM);
                             // Resetting weapons (removed by emote)
                             me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + 0, (me->GetEntry() == NPC_JAN_XI ? WEAPON_JAN_XI : WEAPON_QIN_XI));
-                            me->CastSpell(me, SPELL_DEVAST_ARC_2, true);
+                           // me->CastSpell(me, SPELL_DEVAST_ARC_2, true);
                             // Ending the attack by reaching a pair number
                             ++devastatingComboPhase;
 
@@ -668,14 +659,6 @@ class boss_jin_qin_xi : public CreatureScript
                             }
                             else
                             {
-                                if (aliveList.empty())
-                                {
-                                    devastatingComboPhase = 0;
-                                    pInstance->SetBossState(DATA_WILL_OF_EMPEROR, FAIL);
-                                    DoAction(ACTION_REACHHOME);
-                                    if (Creature* otherBoss = getOtherBoss())
-                                        otherBoss->AI()->DoAction(ACTION_REACHHOME);
-                                }
                                 // All combo have been done, and each player who has been hit is away from playerList
                                 // If players remains in playerList, they gain Opportunistic Strike
                                 for (auto guid: playerList)
@@ -723,8 +706,10 @@ class boss_jin_qin_xi : public CreatureScript
                                 me->AddAura(isJan ? SPELL_MAGNETIC_ARMOR_JAN : SPELL_MAGNETIC_ARMOR_QIN, victim);
                                 victimWithMagneticArmor = victim->GetGUID();
                             }
+                            if (victim->GetDistance(me) > 16.0f)
+                                victim->CastSpell(me, SPELL_CHAIN_RIP, false);
                         }
-                        events.ScheduleEvent(EVENT_CHECK_MAGNETIC_ARMOR, 1000);
+                        events.ScheduleEvent(EVENT_CHECK_MAGNETIC_ARMOR, 2000);
                         break;
                     }
                     default:
@@ -761,14 +746,13 @@ class mob_woe_add_generic : public CreatureScript
             EventMap events;
             InstanceScript* pInstance;
 
-            void Reset()
+            void IsSummonedBy(Unit * summoner)
             {
                 events.Reset();
 
                 if (!pInstance)
                     return;
-                // Won't attack
-                me->setFaction(35);
+                me->SetReactState(REACT_PASSIVE);
                 // Invisible
                 me->SetDisplayId(DISPLAY_ADD_INVISIBLE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
@@ -786,9 +770,6 @@ class mob_woe_add_generic : public CreatureScript
 
             void MovementInform(uint32 uiType, uint32 id)
             {
-                if (uiType != POINT_MOTION_TYPE && uiType != EFFECT_MOTION_TYPE)
-                    return;
-
                 if (id == 1)
                 {
                     targetGuid = 0;
@@ -802,13 +783,13 @@ class mob_woe_add_generic : public CreatureScript
                         case NPC_EMPEROR_RAGE:
                         {
                             me->AddAura(SPELL_WITHOUT_ARMOR, me);
-                            me->HandleEmote(EMOTE_ONESHOT_POINT);
+                            me->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
                             events.ScheduleEvent(EVENT_RAGE_FIRST_ATTACK, 2000);
                             break;
                         }
                         case NPC_EMPEROR_COURAGE:
                         {
-                            me->HandleEmote(EMOTE_ONESHOT_SALUTE);
+                            me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
                             me->AddAura(SPELL_HALF_PLATE, me);
 
                             events.ScheduleEvent(EVENT_IMPEDING_THRUST, 5000);
@@ -897,13 +878,10 @@ class mob_woe_add_generic : public CreatureScript
                                 text << "The " << (me->GetEntry() == NPC_EMPEROR_STRENGHT ? "Emperor's Strength" : "Emperor's Courage") << " appears in the alcoves!";
                                 std::list<Player*> playerList;
                                 GetPlayerListInGrid(playerList, me, 300.0f);
-                                if (!playerList.empty())
+                                for (auto plr : playerList)
                                 {
-                                    for (auto plr : playerList)
-                                    {
-                                        plr->MonsterTextEmote(text.str().c_str(), 0, true);
-                                        break;
-                                    }
+                                    plr->MonsterTextEmote(text.str().c_str(), 0, true);
+                                    break;
                                 }
                             }
                             // Wait invisible
@@ -949,7 +927,7 @@ class mob_woe_add_generic : public CreatureScript
                             float x = me->GetPositionX() + (15 * cos(me->GetOrientation()));
                             float y = me->GetPositionY() + (15 * sin(me->GetOrientation()));
                             // Jump
-                            me->GetMotionMaster()->MoveJump(x, y, 362.19f, 20.0f, 20.0f, 1);
+                            me->GetMotionMaster()->MoveJump(x, y, 362.19f, 20.0f, 20.0f,me->GetOrientation(), 1);
                             break;
                         }
                         // Rage
@@ -1033,10 +1011,12 @@ class mob_woe_add_generic : public CreatureScript
 
                                     // Checking distance : Courage will go on the further tank
                                     if (tankj && tankq)
+                                    {
                                         if (me->GetDistance(tankj) > me->GetDistance(tankq))
                                             target = tankj;
                                         else
                                             target = tankq;
+                                    }
                                     // Not 2 tanks : check if there's 1 at least and go on him
                                     else if (tankj)
                                         target = tankj;
@@ -1051,17 +1031,14 @@ class mob_woe_add_generic : public CreatureScript
                                         for (auto ply : playerList)
                                             me->getThreatManager().addThreat(ply, 150.0f);
                                     
-                                        if (target = SelectTarget(SELECT_TARGET_TOPAGGRO))
-                                        {
-                                            targetGuid = target->GetGUID();
-                                            AttackStart(target);
-                                            me->Attack(target, true);
-                                            me->SetInCombatWith(target);
-
-                                            me->CastSpell(target, SPELL_FOCALISED_DEFENSE, false);
-                                            me->SetUInt32Value(UNIT_CHANNEL_SPELL, SPELL_FOCALISED_DEFENSE);
-                                        }
+                                        target = SelectTarget(SELECT_TARGET_TOPAGGRO);
                                     }
+                                    targetGuid = target->GetGUID();
+                                    AttackStart(target);
+                                    me->Attack(target, true);
+                                    me->SetInCombatWith(target);
+
+                                    me->CastSpell(target, SPELL_FOCALISED_DEFENSE, false);
                                 }
                             }
                             events.ScheduleEvent(EVENT_CHECK_FOCDEF, 2000);
@@ -1175,23 +1152,39 @@ class mob_ancient_mogu_machine : public CreatureScript
     
         struct mob_ancient_mogu_machineAI : public ScriptedAI
         {
-
             mob_ancient_mogu_machineAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                me->SetReactState(REACT_PASSIVE);
+                me->SetDisplayId(DISPLAY_BOSS_INVISIBLE);
             }
 
             void Reset()
             {
                 events.Reset();
-            }
 
+                if (InstanceScript* pInstance = me->GetInstanceScript())
+                {
+                    if (GameObject* ancientPanel = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_ANCIENT_CONTROL_PANEL)))
+                        ancientPanel->ResetDoorOrButton();
+
+                    if (Creature* jan_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_JAN_XI)))
+                        jan_xi->AI()->Reset();
+
+                    if (Creature* qin_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_QIN_XI)))
+                        qin_xi->AI()->Reset();
+                }
+            }
 
             // Talk
             void DoAction(const int32 action)
             {
                 if (action == ACTION_MOGU_ACTIVATE)
-                    events.ScheduleEvent(EVENT_TITAN_GAS, 225000);
+                {
+                    events.ScheduleEvent(EVENT_WAIT, 8000);
+                    events.ScheduleEvent(EVENT_CHECK_TARGET, 5000);
+                    events.ScheduleEvent(EVENT_TITAN_GAS, 50000);
+                }
                 else
                     Talk(action);
             }
@@ -1202,17 +1195,36 @@ class mob_ancient_mogu_machine : public CreatureScript
 
                 switch (events.ExecuteEvent())
                 {
+                    case EVENT_WAIT:
+                    {
+                        me->CastSpell(me, SPELL_COSMETIC_LIGHTNING, false);
+                        break;
+                    }
+                    case EVENT_CHECK_TARGET:
+                    {
+                        uint8 count = 0;
+                        std::list<Player*> players;
+                        GetPlayerListInGrid(players, me, 100.0f);
+                        for (auto target : players)
+                            if (target->isAlive() && !target->isGameMaster())
+                                ++count;
+
+                        if (count == 0)
+                            Reset();
+                        else
+                            events.ScheduleEvent(EVENT_CHECK_TARGET, 5000);
+                        break;
+                    }
                     // Boss emote for the end of Titan Gas. Done by a player as Mogu Machine is invisible.
                     case EVENT_TITAN_GAS:
                     {
                         if (!me->GetMap()->GetPlayers().isEmpty())
-                        {
                             if (Player* plr = me->GetMap()->GetPlayers().begin()->getSource())
                             {
                                 //|cffffd000|Hspell:spell_id|h[name]|h|r
                                 plr->MonsterTextEmote("The Ancient Mogu Machine breaks down! |cffBA0022|Hspell:116779|h[Titan Gas]|h|r floods the room!", 0, true);
                             }
-                        }
+
                         me->CastSpell(CENTER_X, CENTER_Y, CENTER_Z, SPELL_TITAN_GAS, false);
                         // Talk
                         DoAction(TALK_TITAN_GAS_START);
@@ -1247,43 +1259,15 @@ class mob_general_purpose_bunnyJMF : public CreatureScript
     
         struct mob_general_purpose_bunnyJMFAI : public ScriptedAI
         {
-            bool hasCast;
-            bool isCentralMob;
-
             mob_general_purpose_bunnyJMFAI(Creature* creature) : ScriptedAI(creature)
             {
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
-                hasCast = false;
-                isCentralMob = false;
             }
 
             void Reset()
             {
                 me->RemoveAllAuras();
-                // Retreiving central mob
-                if ((me->GetPositionX() >= (CENTER_X - 2.0f)) && (me->GetPositionX() <= (CENTER_X + 2.0f)) &&
-                    (me->GetPositionY() >= (CENTER_Y - 2.0f)) && (me->GetPositionY() <= (CENTER_Y + 2.0f)) &&
-                    (me->GetPositionZ() >= (CENTER_Z - 2.0f)) && (me->GetPositionZ() <= (CENTER_Z + 2.0f)))
-                    isCentralMob = true;
-
             }
-
-            void DoAction(const int32 action)
-            {
-                if (action == ACTION_COSMECTIC)
-                {
-                    if (!isCentralMob)
-                        return;
-
-                    // Central mob casts cosmetic lightning once
-                    if (!hasCast)
-                    {
-                        me->CastSpell(me, SPELL_COSMETIC_LIGHTNING, false);
-                        hasCast = true;
-                    }
-                }
-            }
-
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -1334,7 +1318,7 @@ class spell_cosmetic_lightning : public SpellScriptLoader
         }
 };
 
-//  Terracotta spawn visual spawn-in - 118165
+// Terracotta spawn visual spawn-in - 118165
 class spell_terracota_spawn : public SpellScriptLoader
 {
     public:
@@ -1531,25 +1515,38 @@ class spell_titan_gas : public SpellScriptLoader
     public:
         spell_titan_gas() : SpellScriptLoader("spell_titan_gas") { }
 
-        class spell_titan_gas_AuraScript : public AuraScript
+        class spell_titan_gas_SpellScript : public SpellScript
         {
-            PrepareAuraScript(spell_titan_gas_AuraScript);
+            PrepareSpellScript(spell_titan_gas_SpellScript);
 
-            void Apply(constAuraEffectPtr /*aurAff*/, AuraEffectHandleModes /*mode*/)
+            void SelectTargets(std::list<WorldObject*>& targets)
             {
-                if (Unit* target = GetTarget())
-                    target->AddAura(SPELL_TITAN_GAS_AURA, target);
+                if (Unit* caster = GetCaster())
+                {
+                    targets.clear();
+
+                    std::list<Creature*> focus;
+                    GetCreatureListWithEntryInGrid(focus, caster, NPC_EMPEROR_RAGE, 500.0f);
+                    GetCreatureListWithEntryInGrid(focus, caster, NPC_EMPEROR_COURAGE, 500.0f);
+                    GetCreatureListWithEntryInGrid(focus, caster, NPC_EMPEROR_STRENGHT, 500.0f);
+                    GetCreatureListWithEntryInGrid(focus, caster, NPC_JAN_XI, 500.0f);
+                    GetCreatureListWithEntryInGrid(focus, caster, NPC_QIN_XI, 500.0f);
+
+                    for (auto cible: focus)
+                        targets.push_back(cible);
+                }
             }
 
             void Register()
             {
-                OnEffectApply += AuraEffectApplyFn(spell_titan_gas_AuraScript::Apply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_gas_SpellScript::SelectTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_gas_SpellScript::SelectTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 
-        AuraScript* GetAuraScript() const
+        SpellScript* GetSpellScript() const
         {
-            return new spell_titan_gas_AuraScript();
+            return new spell_titan_gas_SpellScript();
         }
 };
 
@@ -1685,39 +1682,33 @@ class go_ancien_control_console : public GameObjectScript
     public:
         go_ancien_control_console() : GameObjectScript("go_ancien_control_console")
         {
-            activated = false;
         }
-
-        bool activated;
 
         bool OnGossipHello(Player* player, GameObject* go)
         {
             if (InstanceScript* pInstance = player->GetInstanceScript())
-                if (!activated && pInstance->CheckRequiredBosses(DATA_WILL_OF_EMPEROR))
-                {
-                    // Activate central mob
-                    std::list<Creature*> bunny;
-                    GetCreatureListWithEntryInGrid(bunny, go, NPC_GENERAL_PURPOSE_BUNNY_JMF, 100.0f);
+            {
+                // Activate central mob
+                std::list<Creature*> bunny;
+                GetCreatureListWithEntryInGrid(bunny, go, NPC_GENERAL_PURPOSE_BUNNY_JMF, 200.0f);
 
-                    for (auto mob : bunny)
-                        mob->AI()->DoAction(ACTION_COSMECTIC);
+                for (auto mob : bunny)
+                    mob->AI()->DoAction(ACTION_COSMECTIC);
 
-                    if (Creature* jan_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_JAN_XI)))
-                        jan_xi->AI()->DoAction(ACTION_ACTIVATE);
+                if (Creature* jan_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_JAN_XI)))
+                    jan_xi->AI()->DoAction(ACTION_ACTIVATE);
 
-                    if (Creature* qin_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_QIN_XI)))
-                        qin_xi->AI()->DoAction(ACTION_ACTIVATE);
+                if (Creature* qin_xi = pInstance->instance->GetCreature(pInstance->GetData64(NPC_QIN_XI)))
+                    qin_xi->AI()->DoAction(ACTION_ACTIVATE);
 
-                    if (Creature* console = GetClosestCreatureWithEntry(go, NPC_ANCIENT_MOGU_MACHINE, 200.0f))
-                        console->AI()->DoAction(ACTION_MOGU_ACTIVATE);
+                if (Creature* console = GetClosestCreatureWithEntry(go, NPC_ANCIENT_MOGU_MACHINE, 200.0f))
+                    console->AI()->DoAction(ACTION_MOGU_ACTIVATE);
 
-                    player->MonsterTextEmote("The machine hums to life! Get to the lower level!", 0, true); 
+                player->MonsterTextEmote("The machine hums to life! Get to the lower level!", 0, true); 
 
-                    go->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
-
-                    if (Creature* cho = GetClosestCreatureWithEntry(go, NPC_LOREWALKER_CHO, 20.0f, true))
-                        cho->AI()->DoAction(ACTION_TALK_WILL_OF_EMPEROR);
-                }
+                if (Creature* cho = GetClosestCreatureWithEntry(go, NPC_LOREWALKER_CHO, 20.0f, true))
+                    cho->AI()->DoAction(ACTION_TALK_WILL_OF_EMPEROR);
+            }
             return false;
         }
 };
@@ -1752,7 +1743,7 @@ void AddSC_boss_will_of_emperor()
     new spell_magnetized_jan();
     new spell_magnetized_qin();
     new spell_titan_gas();
-    new spell_titan_gas2();
+  //  new spell_titan_gas2();
     new spell_energizing_smash();
     new spell_energizing_visual();
     new spell_energized();

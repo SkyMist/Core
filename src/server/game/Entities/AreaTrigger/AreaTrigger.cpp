@@ -232,9 +232,22 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    caster->CastSpell(itr, 115464, true); // Healing Sphere heal
-                    SetDuration(0);
-                    return;
+                    if (itr->GetHealthPct() < 100.0f && caster->IsInRaidWith(itr))
+                    {
+                        caster->CastSpell(itr, 115464, true); // Healing Sphere heal
+                        SetDuration(0);
+
+                        // we should remove stack from caster healing sphere counter
+                        if (AuraPtr healingSphereBuff = caster->GetAura(124458, caster->GetGUID()))
+                        {
+                            if (healingSphereBuff->GetStackAmount() >1)
+                                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() - 1);
+                            else
+                                caster->RemoveAura(healingSphereBuff);
+                        }
+
+                        return;
+                    }
                 }
             }
 
@@ -243,7 +256,7 @@ void AreaTrigger::Update(uint32 p_time)
         case 115817: // Cancel Barrier
         {
             std::list<Unit*> targetList;
-            radius = 6.0f;
+            radius = 100.0f;
 
             JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
             JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
@@ -251,7 +264,12 @@ void AreaTrigger::Update(uint32 p_time)
 
             if (!targetList.empty())
                 for (auto itr : targetList)
-                    itr->CastSpell(itr, 115856, true);
+                {
+                    if (itr->GetDistance(caster) > 6.0f)
+                        itr->RemoveAurasDueToSpell(115856);
+                    else
+                        itr->AddAura(115856, itr);
+                }
 
             break;
         }
@@ -349,7 +367,7 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    if (itr->IsInAxe(caster, this, 2.0f))
+                    if (GetCaster()->isInFront(itr, M_PI / 8))
                     {
                         if (!itr->HasAura(116663))
                             caster->AddAura(116663, itr);
@@ -374,9 +392,19 @@ void AreaTrigger::Update(uint32 p_time)
             {
                 for (auto itr : targetList)
                 {
-                    if (itr->GetGUID() == caster->GetGUID())
+                    if (itr->GetGUID() == caster->GetGUID() && itr->GetHealthPct() < 100.0f)
                     {
                         caster->CastSpell(itr, 125355, true); // Heal for 15% of life
+
+                        // we should remove stack from caster healing sphere counter
+                        if (AuraPtr healingSphereBuff = caster->GetAura(124458, caster->GetGUID()))
+                        {
+                            if (healingSphereBuff->GetStackAmount() > 1)
+                                healingSphereBuff->SetStackAmount(healingSphereBuff->GetStackAmount() - 1);
+                            else
+                                caster->RemoveAura(healingSphereBuff);
+                        }
+
                         SetDuration(0);
                         return;
                     }
@@ -661,6 +689,16 @@ void AreaTrigger::Remove()
                 if (m_caster && m_caster->HasAura(116014))
                     m_caster->RemoveAura(116014);
                 break;
+            case 115817:// Cancel Barrier
+                {
+                    std::list<Player*> targetList;
+                    GetPlayerListInGrid(targetList, 100.0f);
+
+                    if (!targetList.empty())
+                        for (auto itr : targetList)
+                            itr->RemoveAurasDueToSpell(115856);
+                    break;
+                }
             case 144692: // Pool of Fire Ordos
             {
                 std::list<Player*> targetList;

@@ -38,6 +38,11 @@ enum eSpells
     SPELL_SOUL_CUTTER_COSMETIC  = 120677, // Only cosmetic - Tiki mask too
     SPELL_SUMMON_MINION         = 118087,
 
+    // Spiritual Innervation
+    SPIRIT_INNERVATION_DPS      = 117549,
+    SPIRIT_INNERVATION_HEALER   = 117543,
+    SPELL_SAVE_SOUL             = 120717,
+
     // attaques ombreuses
     SPELL_RIGHT_CROSS           = 117215,
     SPELL_LEFT_HOOK             = 117218,
@@ -51,6 +56,7 @@ enum eSpells
     SPELL_SPIRITUAL_GRASP       = 118421,
 
     // Misc
+    SPELL_ANIM_VISUAL           = 121475,
     SPELL_CLONE                 = 119051,
     SPELL_CLONE_VISUAL          = 119053,
     SPELL_LIFE_FRAGILE_THREAD   = 116227,
@@ -83,16 +89,18 @@ enum eEvents
     // Shadowy Minion
     EVENT_SHADOW_BOLT           = 6,
     EVENT_SPIRITUAL_GRASP       = 7,
+    EVENT_CHECK_PLAYER          = 8,
+    EVENT_CLONE_TAKEOFF         = 9,
 
     // Gara'Jal Ghost
-    EVENT_GROWTH                = 8,
-    EVENT_TALK_DEATH            = 9,
-    EVENT_SUMMON_PORTAL         = 10,
-    EVENT_DISAPPEAR             = 11,
+    EVENT_GROWTH                = 10,
+    EVENT_TALK_DEATH            = 11,
+    EVENT_SUMMON_PORTAL         = 12,
+    EVENT_DISAPPEAR             = 13,
 
     // Enrage
-    EVENT_FINAL_DESTINATION     = 12,
-    EVENT_SOUL_EXPLOSION        = 13,
+    EVENT_FINAL_DESTINATION     = 14,
+    EVENT_SOUL_EXPLOSION        = 15,
 };
 
 enum GarajalTalk
@@ -141,12 +149,7 @@ class boss_garajal : public CreatureScript
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SOUL_CUT_SUICIDE);
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_BANISHMENT);
 
-                events.ScheduleEvent(EVENT_SECONDARY_ATTACK,        urand(5000, 10000));
-                events.ScheduleEvent(EVENT_SUMMON_TOTEM,            urand(27500, 32500));
-                events.ScheduleEvent(EVENT_SUMMON_SHADOWY_MINION,   urand(10000, 15000));
-                events.ScheduleEvent(EVENT_BANISHMENT,              90000);
-                events.ScheduleEvent(EVENT_VOODOO_DOLL,             2500);
-                events.ScheduleEvent(EVENT_FINAL_DESTINATION,       361000); // 6 min & 10s
+                events.Reset();
 
                 me->AddAura(SPELL_STRONG_MOJO, me);
                 me->CastSpell(me, SPELL_TAP_THE_SPIRIT_WORLD, true);
@@ -190,6 +193,13 @@ class boss_garajal : public CreatureScript
                     return;
                 }
 
+                events.ScheduleEvent(EVENT_SECONDARY_ATTACK,        urand(5000, 10000));
+                events.ScheduleEvent(EVENT_SUMMON_TOTEM,            urand(27500, 32500));
+                events.ScheduleEvent(EVENT_SUMMON_SHADOWY_MINION,   urand(10000, 15000));
+                events.ScheduleEvent(EVENT_BANISHMENT,              90000);
+                events.ScheduleEvent(EVENT_VOODOO_DOLL,             2500);
+                events.ScheduleEvent(EVENT_FINAL_DESTINATION,       361000); // 6 min & 10s
+
                 pInstance->SetBossState(DATA_GARAJAL, IN_PROGRESS);
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 Talk(TALK_AGGRO);
@@ -225,6 +235,7 @@ class boss_garajal : public CreatureScript
                 {
                     if (me->HealthBelowPctDamaged(20, damage))
                     {
+                        events.CancelEvent(EVENT_SUMMON_TOTEM);
                         me->CastSpell(me, SPELL_FRENESIE, true);
                         me->MonsterTextEmote("Gara'jal casts |cffba2200|Hspell:117752|h[Frenzy]|h|r !", 0, true);
                     }
@@ -278,7 +289,7 @@ class boss_garajal : public CreatureScript
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_VOODOO_DOLL_SHARE);
                             me->MonsterTextEmote("Gara'jal selects random players to become |cffba2200|Hspell:116000|h[Voodoo Dolls]|h|r !", 0, true);
 
-                            int32 mobCount = Is25ManRaid() ? 4 : 3;
+                            int32 mobCount = Is25ManRaid() ? 4 : 2;
 
                             for (int32 i = 0; i < mobCount; ++i)
                             {
@@ -305,7 +316,7 @@ class boss_garajal : public CreatureScript
 
                                 Difficulty difficulty = me->GetMap()->GetDifficulty();
                                 uint64 viewerGuid = target->GetGUID();
-                                uint8  mobCount   = IsHeroic() ? 3: 1;
+                                uint8  mobCount   = IsHeroic() ? 3 : 1;
 
                                 for (uint8 i = 0; i < mobCount; ++i)
                                     if (Creature* soulCutter = me->SummonCreature(NPC_SOUL_CUTTER, target->GetPositionX() + 2.0f, target->GetPositionY() + 2.0f, target->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30000, i == 0 ? viewerGuid: 0))
@@ -446,8 +457,8 @@ class mob_spirit_totem : public CreatureScript
             }
 
             InstanceScript* pInstance;
-
-            void Reset()
+            
+            void IsSummonedBy(Unit* summoner)
             {
                 me->AddAura(116827, me);
                 me->AddAura(SPELL_ROOT_FOR_EVER, me);
@@ -465,23 +476,24 @@ class mob_spirit_totem : public CreatureScript
                     if (player->HasAura(SPELL_VOODOO_DOLL_VISUAL) || player->HasAura(SPELL_FRAIL_SOUL))
                         continue;
 
-                    if (++count > 3)
+                    ++count;
+                    if (count > 3)
                         break;
 
-                    if (Creature* clone = me->SummonCreature(56405, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation()))
+                    if (Creature* clone = player->SummonCreature(56405, player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(),TEMPSUMMON_TIMED_DESPAWN,30000))
                     {
-                        if (player->GetHealthPct() >= 10.0f)
-                            player->SetHealth(player->GetMaxHealth() / 10);
+                        player->SetHealth(player->GetHealth() * 0.3);
 
                         player->CastSpell(player, SPELL_CLONE_VISUAL, true);
-                        player->CastSpell(player, SPELL_CROSSED_OVER, true);
 
                         player->CastSpell(clone,  SPELL_CLONE, true);
+                        player->CastSpell(player, SPELL_LIFE_FRAGILE_THREAD, true);
+                        player->CastSpell(player, SPELL_CROSSED_OVER, true);
 
-                        clone->CastSpell(clone, SPELL_LIFE_FRAGILE_THREAD, true);
-                        clone->GetMotionMaster()->MoveTakeoff(1, clone->GetPositionX(), clone->GetPositionY(), clone->GetPositionZ() + 10.0f);
-
-                        player->AddAura(SPELL_LIFE_FRAGILE_THREAD, player);
+                        if (player->GetRoleForGroup(player->GetSpecializationId(player->GetActiveSpec())) == ROLES_HEALER)
+                            player->AddAura(SPIRIT_INNERVATION_HEALER, player);
+                        else
+                            player->AddAura(SPIRIT_INNERVATION_DPS, player);
                     }
                 }
             }
@@ -497,6 +509,56 @@ class mob_spirit_totem : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new mob_spirit_totemAI(creature);
+        }
+};
+
+// 60240 - Clone player
+class mob_clone_player : public CreatureScript
+{
+    public:
+        mob_clone_player() : CreatureScript("mob_clone_player") {}
+
+        struct mob_clone_playerAI : public ScriptedAI
+        {
+            mob_clone_playerAI(Creature* creature) : ScriptedAI(creature)
+            {
+            }
+            
+            void IsSummonedBy(Unit* summoner)
+            {
+               me->AddAura(SPELL_ANIM_VISUAL,me);
+               me->SetCanFly(true);
+               me->SetDisableGravity(true);
+               me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_NOT_SELECTABLE);
+               events.ScheduleEvent(EVENT_CHECK_PLAYER, 5000);
+               events.ScheduleEvent(EVENT_CLONE_TAKEOFF, 3000);
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                while (uint32 eventId = events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        // Spirit World
+                        case EVENT_CHECK_PLAYER:
+                            if (me->ToTempSummon())
+                                if (Unit * Summoner = me->ToTempSummon()->GetSummoner())
+                                    if (!Summoner->HasAura(SPELL_CROSSED_OVER))
+                                        me->DespawnOrUnsummon();
+                            events.ScheduleEvent(EVENT_CHECK_PLAYER, 1000);
+                            break;
+                        case EVENT_CLONE_TAKEOFF:
+                            me->GetMotionMaster()->MoveTakeoff(1, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ() + 9.0f);
+                            break;
+                    }
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new mob_clone_playerAI(creature);
         }
 };
 
@@ -519,14 +581,15 @@ class mob_shadowy_minion : public CreatureScript
             uint64 spiritGuid;
             EventMap events;
 
-            void Reset()
+            void IsSummonedBy(Unit* summoner)
             {
                 events.Reset();
                 spiritGuid = 0;
 
+                me->setFaction(summoner->getFaction());
                 if (me->GetEntry() == NPC_SHADOWY_MINION_REAL)
                 {
-                    me->SetDisplayId(11686);
+                    me->CastSpell(me,SPELL_CLONE_VISUAL,true);
 
                     if (Creature* spirit = me->SummonCreature(NPC_SHADOWY_MINION_SPIRIT, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN))
                     {
@@ -578,10 +641,10 @@ class mob_shadowy_minion : public CreatureScript
                         // Spirit World
                         case EVENT_SHADOW_BOLT:
                         {
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0, false, SPELL_CROSSED_OVER))
-                                me->CastSpell(target, SPELL_SHADOW_BOLT, false);
-                            else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0, false, SPELL_SOUL_CUT_SUICIDE))
-                                me->CastSpell(target, SPELL_SHADOW_BOLT, false);
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, SPELL_CROSSED_OVER))
+                                me->CastSpell(target, SPELL_SHADOW_BOLT, true);
+                            else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, SPELL_SOUL_CUT_SUICIDE))
+                                me->CastSpell(target, SPELL_SHADOW_BOLT, true);
 
                             events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(2000, 3000));
                             break;
@@ -589,10 +652,10 @@ class mob_shadowy_minion : public CreatureScript
                         // Real World
                         case EVENT_SPIRITUAL_GRASP:
                         {
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0, false, -SPELL_SOUL_CUT_SUICIDE))
-                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, false);
-                            else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0, false, -SPELL_CROSSED_OVER))
-                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, false);
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, -SPELL_SOUL_CUT_SUICIDE))
+                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, true);
+                            else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true, -SPELL_CROSSED_OVER))
+                                me->CastSpell(target, SPELL_SPIRITUAL_GRASP, true);
 
                             events.ScheduleEvent(EVENT_SPIRITUAL_GRASP, urand(5000, 8000));
                             break;
@@ -811,14 +874,107 @@ class spell_final_destination : public SpellScriptLoader
         }
 };
 
+// Soul suicide - 116278
+class spell_soul_death : public SpellScriptLoader
+{
+    public:
+        spell_soul_death() : SpellScriptLoader("spell_soul_death") { }
+
+        class spell_soul_death_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_soul_death_AuraScript);
+
+            void OnRemove(constAuraEffectPtr aurEff, AuraEffectHandleModes /*mode*/)
+            {
+                Unit* caster = GetCaster();
+                if (caster && caster->isAlive() && GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE)
+                    caster->CastSpell(caster,116325,true); // suicide
+
+            }
+
+            void Register()
+            {
+                AfterEffectRemove += AuraEffectRemoveFn(spell_soul_death_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_soul_death_AuraScript();
+        }
+};
+
+// Life fragile - 116227
+class spell_spirit_intervation : public SpellScriptLoader
+{
+    public:
+        spell_spirit_intervation() : SpellScriptLoader("spell_spirit_intervation") { }
+
+        class spell_spirit_intervation_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_spirit_intervation_AuraScript);
+
+            void OnProc(constAuraEffectPtr aurEff, ProcEventInfo& eventInfo)
+            {
+                PreventDefaultAction();
+
+                if (!GetCaster())
+                    return;
+
+                Player* _player = GetCaster()->ToPlayer();
+                if (!_player)
+                    return;
+
+                if (!eventInfo.GetHealInfo() || !eventInfo.GetHealInfo()->GetHeal())
+                    return;
+
+                if (AuraPtr Intervation = _player->GetAura(_player->GetRoleForGroup(_player->GetSpecializationId(_player->GetActiveSpec())) == ROLES_HEALER ? SPIRIT_INNERVATION_HEALER : SPIRIT_INNERVATION_DPS))
+                {
+                    uint32 gotHeal = eventInfo.GetHealInfo()->GetHeal();
+                    int32 amount = ((gotHeal / _player->GetMaxHealth()) * 100) / 5; // every 5% healed by spells is 1% of intervation buff
+                    if (Intervation->GetEffect(EFFECT_1)->GetAmount() < 25)
+                    {
+                        Intervation->GetEffect(EFFECT_0)->ChangeAmount(Intervation->GetEffect(EFFECT_0)->GetAmount()+(amount/100.0f)*_player->GetMaxPower(POWER_MANA));
+                        Intervation->GetEffect(EFFECT_1)->ChangeAmount(Intervation->GetEffect(EFFECT_1)->GetAmount()+amount);
+                    
+                        if (Intervation->GetId() == SPIRIT_INNERVATION_DPS)
+                        {
+                            Intervation->GetEffect(EFFECT_2)->ChangeAmount(Intervation->GetEffect(EFFECT_2)->GetAmount()+amount);
+                            Intervation->GetEffect(EFFECT_3)->ChangeAmount(Intervation->GetEffect(EFFECT_3)->GetAmount()+amount);
+                            Intervation->GetEffect(EFFECT_4)->ChangeAmount(Intervation->GetEffect(EFFECT_4)->GetAmount()+amount);
+                            Intervation->GetEffect(EFFECT_5)->ChangeAmount(Intervation->GetEffect(EFFECT_5)->GetAmount()+amount);
+                        }
+                    }
+
+                    if (_player->GetHealth() == _player->GetMaxHealth())
+                        if (!_player->HasAura(SPELL_SAVE_SOUL))
+                            _player->CastSpell(_player, SPELL_SAVE_SOUL, true);
+                }
+            }
+
+            void Register()
+            {
+                OnEffectProc += AuraEffectProcFn(spell_spirit_intervation_AuraScript::OnProc, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_spirit_intervation_AuraScript();
+        }
+};
+
 void AddSC_boss_garajal()
 {
     new boss_garajal();
     new mob_garajal_ghost();
     new mob_spirit_totem();
+    new mob_clone_player();
     new mob_shadowy_minion();
     new mob_soul_cutter();
     new mob_spirit_totem_intro();
     new spell_soul_back();
     new spell_final_destination();
+    new spell_soul_death();
+    new spell_spirit_intervation();
 }

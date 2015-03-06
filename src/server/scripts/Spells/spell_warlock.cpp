@@ -1523,7 +1523,7 @@ class spell_warl_decimate : public SpellScriptLoader
         }
 };
 
-// Called by Shadow Bolt - 686, Soul Fire - 6353, Touch of Chaos - 103964 and Demonic Slash - 114175
+// Called by Shadow Bolt - 686, Shadow Bolt (with glyph) - 112092, Soul Fire - 6353, Touch of Chaos - 103964 and Demonic Slash - 114175
 // Soul Fire (metamorphosis) - 104027
 // Demonic Call - 114925
 class spell_warl_demonic_call : public SpellScriptLoader
@@ -2472,6 +2472,9 @@ class spell_warl_ember_tap : public SpellScriptLoader
 
                         float PvPPower = 1 + (_player->GetFloatValue(PLAYER_FIELD_PVP_POWER_HEALING) / 100);
                         healAmount *= PvPPower;
+
+                        if (_player->HasAura(63304))
+                            healAmount = 0;
 
                         SetHitHeal(healAmount);
                     }
@@ -3584,6 +3587,43 @@ class spell_warl_incinerate : public SpellScriptLoader
         }
 };
 
+// Called by Legion Strike - 30213, Mortal Cleave - 115625
+class spell_warl_reduce_heal : public SpellScriptLoader
+{
+    public:
+        spell_warl_reduce_heal() : SpellScriptLoader("spell_warl_reduce_heal") { }
+
+        class spell_warl_reduce_heal_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_warl_reduce_heal_SpellScript);
+
+            void HandleAfterHit()
+            {
+                if (Unit* target = GetHitUnit())
+                {
+                    if (target->HasAura(82654) || target->HasAura(54680) || target->HasAura(115804) || target->HasAura(8680))
+                    {
+                        if (AuraPtr reduceHealAura = target->GetAura(GetSpellInfo()->Id))
+                        {
+                            if (AuraEffectPtr reduceHealEffect = reduceHealAura->GetEffect(3))
+                                reduceHealEffect->SetAmount(0);
+                        }
+                    }
+                }
+            }
+
+            void Register()
+            {
+                AfterHit += SpellHitFn(spell_warl_reduce_heal_SpellScript::HandleAfterHit);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_warl_reduce_heal_SpellScript();
+        }
+};
+
 void AddSC_warlock_spell_scripts()
 {
     new spell_warl_demonic_slash();
@@ -3661,4 +3701,5 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_haunt();
     new spell_warl_glyph_of_soul_consumption();
     new spell_warl_incinerate();
+    new spell_warl_reduce_heal();
 }
