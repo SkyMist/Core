@@ -1,5 +1,5 @@
 /*
-* FUCK CREDITS! (SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sew your ass).
+* FUCK CREDITS! (SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sue your ass).
 *
 * Raid: Siege of Orgrimmar.
 * Boss: Immerseus.

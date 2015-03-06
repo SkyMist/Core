@@ -1,6 +1,6 @@
 /*
 *
-* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sew your ass.
+* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sue your ass.
 *
 * Raid: Throne of Thunder.
 * Boss: Horridon.
@@ -2191,6 +2191,12 @@ class spell_venom_bolt_volley_horridon : public SpellScriptLoader
                 Unit* caster = GetCaster();
 
                 if (!caster || !GetTargetApplication())
+                    return;
+
+                if (!caster->ToCreature())
+                    return;
+
+                if (!caster->ToCreature()->GetEntry() != NPC_GURUBASHI_VENOM_PRIEST)
                     return;
 
                 // Only on removal by interrupt.
