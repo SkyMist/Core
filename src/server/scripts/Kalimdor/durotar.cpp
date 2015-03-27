@@ -32,7 +32,9 @@
 
 enum LazyPeonYells
 {
-    SAY_SPELL_HIT = 0 // Ow! OK, I''ll get back to work, $N!'
+    SAY_SPELL_HIT1      = 0, // Ow! OK, I'll get back to work, $n!
+    SAY_SPELL_HIT2,          // Ok boss, I get back to tree-hitting.
+    SAY_SPELL_HIT3           // Just was resting eyes! Back to work now!
 };
 
 enum LazyPeon
@@ -43,27 +45,25 @@ enum LazyPeon
     SPELL_AWAKEN_PEON   = 19938
 };
 
+// Lazy Peon - 10556.
 class npc_lazy_peon : public CreatureScript
 {
 public:
     npc_lazy_peon() : CreatureScript("npc_lazy_peon") { }
 
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_lazy_peonAI(creature);
-    }
-
     struct npc_lazy_peonAI : public ScriptedAI
     {
         npc_lazy_peonAI(Creature* creature) : ScriptedAI(creature) { }
 
-        bool work, hit;
+        bool work, hit, done;
 
         void Reset()
         {
             work = false;
             hit = false;
-            if (!me->HasAura(SPELL_BUFF_SLEEP)) DoCast(me, SPELL_BUFF_SLEEP);
+            done = false;
+
+            DoCast(me, SPELL_BUFF_SLEEP);
         }
 
         void MovementInform(uint32 /*type*/, uint32 id)
@@ -76,9 +76,12 @@ public:
         {
             if (!hit && spell->Id == SPELL_AWAKEN_PEON && caster->GetTypeId() == TYPEID_PLAYER && caster->ToPlayer()->GetQuestStatus(QUEST_LAZY_PEONS) == QUEST_STATUS_INCOMPLETE)
             {
-                Talk(SAY_SPELL_HIT, caster->GetGUID());
-                me->RemoveAllAuras();
+                if (urand(0, 1) == 0)
+                    Talk(SAY_SPELL_HIT1, caster->GetGUID());
+                else
+                    Talk(RAND(SAY_SPELL_HIT2, SAY_SPELL_HIT3));
 
+                me->RemoveAllAuras();
                 caster->ToPlayer()->KilledMonsterCredit(me->GetEntry(), me->GetGUID());
 
                 if (GameObject* Lumberpile = me->FindNearestGameObject(GO_LUMBERPILE, 20))
@@ -90,10 +93,14 @@ public:
 
         void UpdateAI(uint32 const diff)
         {
-            if (work)
+            if (!hit && !me->HasAura(SPELL_BUFF_SLEEP))
+                me->AddAura(SPELL_BUFF_SLEEP, me);
+
+            if (work && !done)
             {
-                me->HandleEmote(EMOTE_ONESHOT_WORK_CHOPWOOD);
+                me->HandleEmote(EMOTE_STATE_WORK_CHOPWOOD);
                 me->DespawnOrUnsummon(15000);
+                done = true;
             }
 
             if (!UpdateVictim())
@@ -102,6 +109,11 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_lazy_peonAI(creature);
+    }
 };
 
 enum VoodooSpells
@@ -115,7 +127,7 @@ enum VoodooSpells
     SPELL_LAUNCH    = 16716, // Launch (Whee!)
 };
 
-// 17009
+// Voodoo - 17009.
 class spell_voodoo : public SpellScriptLoader
 {
     public:
@@ -166,15 +178,11 @@ enum BbladeCultist
     SAY_FLEE       = 0 // 15%
 };
 
+// Burning Blade Cultist - 3199.
 class npc_bblade_cultist : public CreatureScript
 {
 public:
     npc_bblade_cultist() : CreatureScript("npc_bblade_cultist") { }
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_bblade_cultistAI(creature);
-    }
 
     struct npc_bblade_cultistAI : public ScriptedAI
     {
@@ -236,20 +244,23 @@ public:
                 DoCast(me->getVictim(), SPELL_INCINER);
                 IncinerateTimer = urand(3000, 6000);
             }
-            else
-                IncinerateTimer -= diff;
+            else IncinerateTimer -= diff;
 
             if (ImmolateTimer <= diff)
             {
                 DoCast(me->getVictim(), SPELL_IMMOL);
                 ImmolateTimer = urand(17000, 21000);
             }
-            else
-                ImmolateTimer -= diff;
+            else ImmolateTimer -= diff;
 
             DoMeleeAttackIfReady();
         }
     };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_bblade_cultistAI(creature);
+    }
 };
 
 enum Watershed // quest 25187 item 52514 spell 73817 http://www.youtube.com/watch?v=J501FKs1CgE
