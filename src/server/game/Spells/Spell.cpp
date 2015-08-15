@@ -9164,7 +9164,7 @@ void Spell::CallScriptBeforeCastHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptOnCastHandlers()
@@ -9182,7 +9182,7 @@ void Spell::CallScriptOnCastHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptAfterCastHandlers()
@@ -9200,7 +9200,7 @@ void Spell::CallScriptAfterCastHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 SpellCastResult Spell::CallScriptCheckCastHandlers()
@@ -9223,7 +9223,7 @@ SpellCastResult Spell::CallScriptCheckCastHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
     return retVal;
 }
 
@@ -9236,7 +9236,7 @@ void Spell::PrepareScriptHitHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 bool Spell::CallScriptEffectHandlers(SpellEffIndex effIndex, SpellEffectHandleMode mode)
@@ -9289,7 +9289,7 @@ bool Spell::CallScriptEffectHandlers(SpellEffIndex effIndex, SpellEffectHandleMo
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 
     return preventDefault;
 }
@@ -9308,7 +9308,7 @@ void Spell::CallScriptBeforeHitHandlers()
     }
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptOnHitHandlers()
@@ -9326,7 +9326,7 @@ void Spell::CallScriptOnHitHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptAfterHitHandlers()
@@ -9344,7 +9344,7 @@ void Spell::CallScriptAfterHitHandlers()
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptObjectAreaTargetSelectHandlers(std::list<WorldObject*>& targets, SpellEffIndex effIndex)
@@ -9363,7 +9363,7 @@ void Spell::CallScriptObjectAreaTargetSelectHandlers(std::list<WorldObject*>& ta
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 void Spell::CallScriptObjectTargetSelectHandlers(WorldObject*& target, SpellEffIndex effIndex)
@@ -9382,7 +9382,7 @@ void Spell::CallScriptObjectTargetSelectHandlers(WorldObject*& target, SpellEffI
 
     scriptExecuteTime = getMSTime() - scriptExecuteTime;
     if (scriptExecuteTime > 15)
-        sLog->OutPandashan("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
+        sLog->OutSpecialLog("SpellScript [%u] take more than 15 ms to execute (%u ms)", m_spellInfo->Id, scriptExecuteTime);
 }
 
 bool Spell::CanExecuteTriggersOnHit(uint32 effMask, SpellInfo const* triggeredByAura) const

@@ -481,7 +481,7 @@ void SmartAI::EnterEvadeMode()
         me->GetMotionMaster()->MoveTargetedHome();
     }
 
-    //sLog->OutPandashan("SmartAI::EnterEvadeMode Entry %u" , me->GetEntry());
+    //sLog->OutSpecialLog("SmartAI::EnterEvadeMode Entry %u" , me->GetEntry());
 
     if (!HasEscortState(SMART_ESCORT_ESCORTING)) // Don't mess up escort movement after combat.
         SetRun(mRun);
