@@ -25,50 +25,51 @@
 #include "CreatureAI.h"
 #include "MoveSplineInit.h"
 
-enum eSpells
+enum Spells
 {
-    SPELL_STONE_FORM                = 117838, // Better 128886
-    SPELL_SPIRIT_BOLT               = 121224,
-    SPELL_GROUND_SLAM               = 121087,
-    SPELL_PETRIFICATION             = 125090,
-    SPELL_PETRIFIED                 = 125092,
-    SPELL_FULLY_PETRIFIED           = 115877,
-    SPELL_MONSTROUS_BITE            = 125096,
-    SPELL_SUNDERING_BITE            = 116970,
-    SPELL_PROTECTIVE_FENZY          = 116982,
-    SPELL_SHATTERING_STONE          = 116977,
-    SPELL_FOCUSED_ASSAULT           = 116990,
-    SPELL_POSE_1                    = 120650,
-    SPELL_POSE_2                    = 120613,
-    SPELL_STONE                     = 120663,
-    SPELL_BRONZE                    = 120661,
-    SPELL_GHOST_ESSENCE             = 120764,
-    SPELL_INACTIVE                  = 118205,
-    SPELL_ACTIVATION_VISUAL         = 118212,
-    SPELL_CHARGED_SHADOWS           = 117685,
-    SPELL_SHADOW_BLAST              = 119365,
-    SPELL_ANNIHILATE                = 119521,
-    SPELL_COWARDICE                 = 119635,
-    SPELL_VOLLEY                    = 119554,
-    SPELL_TROLL_RUSH                = 116006,
-    SPELL_CRUSHING_ATTACKS          = 119514,
-    SPELL_SHOOT                     = 119524,
-    SPELL_ENRAGE                    = 119629,
-    SPELL_REFLECTIVE_SHIELDS        = 119630,
-    SPELL_FLESH_TO_STONE            = 118552,
-    SPELL_STONE_BLOCK               = 118529,
-    SPELL_FORCEFUL_SWING            = 126955,
-    SPELL_TOUCH_OF_NALAK_SHA        = 126958,
-    SPELL_WARDEN_S_FURY             = 126970,
-    SPELL_ENHANCED_RECONSTRUCTION   = 126980,
-    SPELL_RECONSTRUCTING            = 126985
+    SPELL_STONE_FORM                 = 117838, // Better 128886
+    SPELL_SPIRIT_BOLT                = 121224,
+    SPELL_GROUND_SLAM                = 121087,
+    SPELL_PETRIFICATION              = 125090,
+    SPELL_PETRIFIED                  = 125092,
+    SPELL_FULLY_PETRIFIED            = 115877,
+    SPELL_MONSTROUS_BITE             = 125096,
+    SPELL_SUNDERING_BITE             = 116970,
+    SPELL_PROTECTIVE_FENZY           = 116982,
+    SPELL_SHATTERING_STONE           = 116977,
+    SPELL_FOCUSED_ASSAULT            = 116990,
+    SPELL_POSE_1                     = 120650,
+    SPELL_POSE_2                     = 120613,
+    SPELL_STONE                      = 120663,
+    SPELL_BRONZE                     = 120661,
+    SPELL_GHOST_ESSENCE              = 120764,
+    SPELL_INACTIVE                   = 118205,
+    SPELL_ACTIVATION_VISUAL          = 118212,
+    SPELL_CHARGED_SHADOWS            = 117685,
+    SPELL_SHADOW_BLAST               = 119365,
+    SPELL_ANNIHILATE                 = 119521,
+    SPELL_COWARDICE                  = 119635,
+    SPELL_VOLLEY                     = 119554,
+    SPELL_TROLL_RUSH                 = 116006,
+    SPELL_CRUSHING_ATTACKS           = 119514,
+    SPELL_SHOOT                      = 119524,
+    SPELL_ENRAGE                     = 119629,
+    SPELL_REFLECTIVE_SHIELDS         = 119630,
+    SPELL_FLESH_TO_STONE             = 118552,
+    SPELL_STONE_BLOCK                = 118529,
+    SPELL_FORCEFUL_SWING             = 126955,
+    SPELL_TOUCH_OF_NALAK_SHA         = 126958,
+    SPELL_WARDEN_S_FURY              = 126970,
+    SPELL_ENHANCED_RECONSTRUCTION    = 126980,
+    SPELL_RECONSTRUCTING             = 126985
 };
 
-enum eEvents
+enum Events
 {
-    EVENT_CURSED_MOGU_SPIRIT_BOLT,
+    EVENT_CURSED_MOGU_SPIRIT_BOLT    = 1,
     EVENT_CURSED_MOGU_GROUND_SLAM,
     EVENT_ENORMOUS_QUILEN_BITE,
+    EVENT_ENORMOUS_QUILEN_PETRIFY,
     EVENT_QUILEN_SUNDERING_BITE,
     EVENT_QUILEN_SHATTERING_STONE,
     EVENT_QUILEN_FOCUSED_ASSAULT,
@@ -94,16 +95,16 @@ enum eEvents
     EVENT_KEEPER_RECONSTRUCTING
 };
 
-enum eEquipIds
+enum EquipIds
 {
-    EQUIP_ZIAN_STAFF            = 76369,
-    EQUIP_QIANG_POLEARM         = 86777,
-    EQUIP_MOUNTED_MOGU_WEAPON   = 80132,
-    EQUIP_SUBETAI_SWORD         = 80283,
-    EQUIP_SUBETAI_BOW           = 60790
+    EQUIP_ZIAN_STAFF                 = 76369,
+    EQUIP_QIANG_POLEARM              = 86777,
+    EQUIP_MOUNTED_MOGU_WEAPON        = 80132,
+    EQUIP_SUBETAI_SWORD              = 80283,
+    EQUIP_SUBETAI_BOW                = 60790
 };
 
-enum eTrashsActions
+enum TrashsActions
 {
     ACTION_CURSED_MOGU_ATTACK_PLAYER = 1
 };
@@ -336,7 +337,7 @@ class mob_enormous_stone_quilen : public CreatureScript
         {
             mob_enormous_stone_quilenAI(Creature* creature) : ScriptedAI(creature)
             {
-                pInstance = creature->GetInstanceScript();
+                instance = creature->GetInstanceScript();
                 prevPosition = 1;
 
                 if (me->GetPositionX() > 3900)
@@ -347,7 +348,7 @@ class mob_enormous_stone_quilen : public CreatureScript
                 me->GetMotionMaster()->MovePoint(prevPosition, me->GetPositionX(), quilenNewY[prevPosition - 1], me->GetPositionZ());
             }
 
-            InstanceScript* pInstance;
+            InstanceScript* instance;
             EventMap events;
             uint32 nextMovementTimer;
             uint8 prevPosition;
