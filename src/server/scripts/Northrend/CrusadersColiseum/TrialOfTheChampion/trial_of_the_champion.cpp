@@ -274,7 +274,7 @@ public:
                     {
                         if (!announceID.empty())
                         {
-                            int32 announce = JadeCore::Containers::SelectRandomContainerElement(announceID);
+                            int32 announce = SkyMistCore::Containers::SelectRandomContainerElement(announceID);
                             DoScriptText(announce, me, player);
                             announceID.erase(announce);
                         }

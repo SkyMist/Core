@@ -407,7 +407,7 @@ class boss_lord_rhyolith : public CreatureScript
                                     if (me->HasInArc(M_PI / 2, (*itr)))
                                         volcanos_1.push_back((*itr));
                                 }
-                                pTarget = JadeCore::Containers::SelectRandomContainerElement((volcanos_1.empty() ? volcanos : volcanos_1));
+                                pTarget = SkyMistCore::Containers::SelectRandomContainerElement((volcanos_1.empty() ? volcanos : volcanos_1));
                             }
                             if (pTarget)
                             {
@@ -1379,7 +1379,7 @@ class spell_lord_rhyolith_lava_strike : public SpellScriptLoader
 
                 uint32 max_size = (GetCaster()->GetMap()->Is25ManRaid() ? 6 : 3);
                 if (!targets.empty())
-                    JadeCore::Containers::RandomResizeList(targets, max_size);
+                    SkyMistCore::Containers::RandomResizeList(targets, max_size);
             }
 
             void HandleDummy(SpellEffIndex effIndex)

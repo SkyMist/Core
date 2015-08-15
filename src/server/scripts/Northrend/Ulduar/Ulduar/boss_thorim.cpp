@@ -337,8 +337,8 @@ class npc_thorim_controller : public CreatureScript
                             if (!_gotActivated)
                             {
                                 Player* player = 0;
-                                JadeCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                JadeCore::PlayerSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(50.0f, searcher);
                                 if (player)
                                     if (!player->isGameMaster())
@@ -359,8 +359,8 @@ class npc_thorim_controller : public CreatureScript
                         case EVENT_CHECK_WIPE:
                             {
                                 Player* player = NULL;
-                                JadeCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                JadeCore::PlayerSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(50.0f, searcher);
                                 if (player)
                                     _events.ScheduleEvent(EVENT_CHECK_WIPE, 3*IN_MILLISECONDS);
@@ -976,8 +976,8 @@ class npc_thorim_pre_phase_add : public CreatureScript
                             if (!me->isInCombat())
                             {
                                 Player* player = 0;
-                                JadeCore::AnyPlayerInObjectRangeCheck u_check(me, 70.0f, true);
-                                JadeCore::PlayerSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 70.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(30.0f, searcher);
                                 if (player)
                                     if (!player->isGameMaster())
@@ -1774,7 +1774,7 @@ class spell_stormhammer_targeting : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 SetTarget(targets);
             }
 
@@ -1820,7 +1820,7 @@ class spell_thorim_charge_orb_targeting : public SpellScriptLoader
                     return;
 
                 // Charge Orb should be cast always only on 1 orb
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 SetTarget(targets);
             }
 

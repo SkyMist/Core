@@ -533,7 +533,7 @@ class spell_jindo_summon_spirit_target : public SpellScriptLoader
             { 
                 targets.remove_if(SpiritPortalCheck(NPC_SPIRIT_PORTAL));
                 if (targets.size() > 1)
-                    JadeCore::RandomResizeList(targets, 1);
+                    SkyMistCore::RandomResizeList(targets, 1);
             }
 
             void HandleDummy(SpellEffIndex effIndex)

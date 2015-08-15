@@ -603,7 +603,7 @@ class spell_gothik_shadow_bolt_volley : public SpellScriptLoader
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(false, SPELL_SHADOW_MARK));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(false, SPELL_SHADOW_MARK));
             }
 
             void Register()

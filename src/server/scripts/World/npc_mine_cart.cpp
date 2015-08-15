@@ -306,8 +306,8 @@ public:
                 std::list<Unit*> targetList;
                 float radius = 20.0f;
 
-                JadeCore::AnyUnitInObjectRangeCheck u_check(me, radius);
-                JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck> searcher(me, targetList, u_check);
+                SkyMistCore::AnyUnitInObjectRangeCheck u_check(me, radius);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck> searcher(me, targetList, u_check);
                 me->VisitNearbyObject(radius, searcher);
                 
                 uint8 alliance_count = 0;

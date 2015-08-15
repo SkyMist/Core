@@ -423,7 +423,7 @@ public:
             if (playerList.empty())
                 return NULL;
 
-            JadeCore::Containers::RandomResizeList(playerList, 1);
+            SkyMistCore::Containers::RandomResizeList(playerList, 1);
 
             return *playerList.begin();
         }

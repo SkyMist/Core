@@ -954,7 +954,7 @@ class boss_ragnaros_firelands : public CreatureScript
                                 t_pos.push_back(floorPos[i]);
 
                             if (t_pos.size() > max)
-                                JadeCore::Containers::RandomResizeList(t_pos, max);
+                                SkyMistCore::Containers::RandomResizeList(t_pos, max);
 
                             if (!t_pos.empty())
                                 for (std::list<Position>::const_iterator itr = t_pos.begin(); itr != t_pos.end(); ++itr)
@@ -2063,7 +2063,7 @@ class npc_ragnaros_firelands_dreadflame_spawn : public CreatureScript
                         {
                             UnitList targets;
                             CloudburstCheck check(me);
-                            JadeCore::UnitListSearcher<CloudburstCheck> searcher(me, targets, check);
+                            SkyMistCore::UnitListSearcher<CloudburstCheck> searcher(me, targets, check);
                             me->VisitNearbyObject(3.0f, searcher);
                             if (!targets.empty())
                             {
@@ -2143,8 +2143,8 @@ class npc_ragnaros_firelands_dreadflame : public CreatureScript
                         case EVENT_CHECK_TARGET:
                         {
                             std::list<Player*> targets;
-                            JadeCore::AnyPlayerInObjectRangeCheck check(me, 3.0f, true);
-                            JadeCore::PlayerListSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, targets, check);
+                            SkyMistCore::AnyPlayerInObjectRangeCheck check(me, 3.0f, true);
+                            SkyMistCore::PlayerListSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, targets, check);
                             me->VisitNearbyObject(3.0f, searcher);
                             if (!targets.empty())
                             {
@@ -2161,7 +2161,7 @@ class npc_ragnaros_firelands_dreadflame : public CreatureScript
                         {
                             UnitList targets;
                             CloudburstCheck check(me);
-                            JadeCore::UnitListSearcher<CloudburstCheck> searcher(me, targets, check);
+                            SkyMistCore::UnitListSearcher<CloudburstCheck> searcher(me, targets, check);
                             me->VisitNearbyObject(3.0f, searcher);
                             if (!targets.empty())
                             {
@@ -2267,7 +2267,7 @@ class spell_ragnaros_firelands_wrath_of_ragnaros_aoe : public SpellScriptLoader
                 if (!targets.empty())
                 {
                     uint32 max_size = (GetCaster()->GetMap()->Is25ManRaid() ? 3 : 1);
-                    JadeCore::Containers::RandomResizeList(targets, max_size);
+                    SkyMistCore::Containers::RandomResizeList(targets, max_size);
                 }
             }
 
@@ -2329,10 +2329,10 @@ class spell_ragnaros_firelands_magma_trap_aoe : public SpellScriptLoader
                 if (!tempList.empty())
                 {
                     targets.clear();
-                    targets.push_back(JadeCore::Containers::SelectRandomContainerElement(tempList));
+                    targets.push_back(SkyMistCore::Containers::SelectRandomContainerElement(tempList));
                 }
                 else
-                    JadeCore::Containers::RandomResizeList(targets, 1);
+                    SkyMistCore::Containers::RandomResizeList(targets, 1);
             }
 
             void HandleDummy(SpellEffIndex effIndex)
@@ -2379,10 +2379,10 @@ class spell_ragnaros_firelands_sulfuras_smash_aoe : public SpellScriptLoader
                 if (!tempList.empty())
                 {
                     targets.clear();
-                    targets.push_back(JadeCore::Containers::SelectRandomContainerElement(tempList));
+                    targets.push_back(SkyMistCore::Containers::SelectRandomContainerElement(tempList));
                 }
                 else
-                    JadeCore::Containers::RandomResizeList(targets, 1);
+                    SkyMistCore::Containers::RandomResizeList(targets, 1);
             }
 
             void Register()

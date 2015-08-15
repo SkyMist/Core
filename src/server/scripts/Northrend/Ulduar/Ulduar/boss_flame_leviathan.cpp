@@ -1758,7 +1758,7 @@ class spell_pursue : public SpellScriptLoader
                 }
 
                 //! In the end, only one target should be selected
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 FilterTargetsSubsequently(targets);
             }
 
@@ -1822,8 +1822,8 @@ class spell_vehicle_throw_passenger : public SpellScriptLoader
                         {
                             // use 99 because it is 3d search
                             std::list<WorldObject*> targetList;
-                            JadeCore::WorldObjectSpellAreaTargetCheck check(99, GetExplTargetDest(), GetCaster(), GetCaster(), GetSpellInfo(), TARGET_CHECK_DEFAULT, NULL);
-                            JadeCore::WorldObjectListSearcher<JadeCore::WorldObjectSpellAreaTargetCheck> searcher(GetCaster(), targetList, check);
+                            SkyMistCore::WorldObjectSpellAreaTargetCheck check(99, GetExplTargetDest(), GetCaster(), GetCaster(), GetSpellInfo(), TARGET_CHECK_DEFAULT, NULL);
+                            SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellAreaTargetCheck> searcher(GetCaster(), targetList, check);
                             GetCaster()->GetMap()->VisitAll(GetCaster()->m_positionX, GetCaster()->m_positionY, 99, searcher);
                             float minDist = 99 * 99;
                             Unit* target = NULL;

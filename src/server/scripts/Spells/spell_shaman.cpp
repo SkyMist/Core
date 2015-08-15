@@ -577,11 +577,11 @@ public:
             targets.clear();
             std::list<Unit*> GetTargets;
 
-            JadeCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
-            JadeCore::UnitListSearcher<JadeCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+            SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
             GetCaster()->VisitNearbyObject(40.0f, searcher);
 
-            GetTargets.sort(JadeCore::HealthPctOrderPred());
+            GetTargets.sort(SkyMistCore::HealthPctOrderPred());
             GetTargets.resize(3);
 
             for (auto itr : GetTargets)
@@ -1017,8 +1017,8 @@ class spell_sha_fire_nova : public SpellScriptLoader
             SpellCastResult HandleCheckCast()
             {
                 UnitList targets;
-                JadeCore::AnyUnitHavingBuffInObjectRangeCheck u_check(GetCaster(), GetCaster(), 100, SPELL_SHA_FLAME_SHOCK, false);
-                JadeCore::UnitListSearcher<JadeCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
+                SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(GetCaster(), GetCaster(), 100, SPELL_SHA_FLAME_SHOCK, false);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
                 GetCaster()->VisitNearbyObject(100, searcher);
                 
                 return targets.size() == 0 ? SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW : SPELL_CAST_OK;
@@ -1352,11 +1352,11 @@ class spell_sha_healing_stream : public SpellScriptLoader
                 targets.clear();
                 std::list<Unit*> GetTargets;
 
-                JadeCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
-                JadeCore::UnitListSearcher<JadeCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+                SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
                 GetCaster()->VisitNearbyObject(40.0f, searcher);
 
-                GetTargets.sort(JadeCore::HealthPctOrderPred());
+                GetTargets.sort(SkyMistCore::HealthPctOrderPred());
                 GetTargets.resize(GetCaster()->HasAura(147074) ? 2 : 1);
 
                 for (auto itr : GetTargets)
@@ -1757,9 +1757,9 @@ class spell_sha_bloodlust : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SHAMAN_SPELL_SATED));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SHAMAN_SPELL_SATED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()
@@ -1801,9 +1801,9 @@ class spell_sha_heroism : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SHAMAN_SPELL_EXHAUSTION));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SHAMAN_SPELL_EXHAUSTION));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()

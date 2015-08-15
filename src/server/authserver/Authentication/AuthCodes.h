@@ -65,7 +65,7 @@ enum LoginResult
     LOGIN_LOCKED_ENFORCED                        = 0x10
 };
 
-#define JADECORE_ACCEPTED_CLIENT_BUILD        {18019, 17898, 17399, 17371, 16135, 12340, 0}  // accept one Mists of Pandaria, one Cataclysm and one Wrath of the Lich King build
+#define SKYMISTCORE_ACCEPTED_CLIENT_BUILD        {18019, 17898, 17399, 17371, 16135, 12340, 0}  // accept one Mists of Pandaria, one Cataclysm and one Wrath of the Lich King build.
 
 namespace AuthHelper
 {

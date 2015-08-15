@@ -53,8 +53,8 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
     destY = respY + distanceY;
 
     // prevent invalid coordinates generation
-    JadeCore::NormalizeMapCoord(destX);
-    JadeCore::NormalizeMapCoord(destY);
+    SkyMistCore::NormalizeMapCoord(destX);
+    SkyMistCore::NormalizeMapCoord(destY);
 
     travelDistZ = range; // sin^2 + cos^2 = 1, so travelDistZ = range^2; no need for sqrt below
 

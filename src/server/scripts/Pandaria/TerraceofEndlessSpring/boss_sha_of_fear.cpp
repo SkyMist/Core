@@ -664,7 +664,7 @@ class spell_penetrating_bolt : public SpellScriptLoader
                 targetGuid = 0;
 
                 if (!targets.empty())
-                    JadeCore::Containers::RandomResizeList(targets, 1);
+                    SkyMistCore::Containers::RandomResizeList(targets, 1);
 
                 for (auto itr : targets)
                     if (itr->GetGUID())

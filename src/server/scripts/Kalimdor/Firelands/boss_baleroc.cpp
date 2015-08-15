@@ -354,13 +354,13 @@ class spell_baleroc_shards_of_torment_aoe : public SpellScriptLoader
                                 meleetargets.remove_if(AuraCheck(SPELL_BLAZE_OF_GLORY));
                             
                             if (meleetargets.size() > 1)
-                                JadeCore::Containers::RandomResizeList(meleetargets, 1);
+                                SkyMistCore::Containers::RandomResizeList(meleetargets, 1);
 
                             targets.clear();
                             targets.push_back(meleetargets.front());
                         }
                         else
-                            JadeCore::Containers::RandomResizeList(targets, 1);
+                            SkyMistCore::Containers::RandomResizeList(targets, 1);
 
                         break;
                     }
@@ -387,7 +387,7 @@ class spell_baleroc_shards_of_torment_aoe : public SpellScriptLoader
                                 targets.remove_if(AuraCheck(SPELL_BLAZE_OF_GLORY));
                             
                             if (targets.size() > 2)
-                                JadeCore::Containers::RandomResizeList(targets, 2);
+                                SkyMistCore::Containers::RandomResizeList(targets, 2);
                         }
                         else if (!meleetargets.empty() && !rangetargets.empty())
                         {
@@ -395,13 +395,13 @@ class spell_baleroc_shards_of_torment_aoe : public SpellScriptLoader
                                 meleetargets.remove_if(AuraCheck(SPELL_BLAZE_OF_GLORY));
                             
                             if (meleetargets.size() > 1)
-                                JadeCore::Containers::RandomResizeList(meleetargets, 1);
+                                SkyMistCore::Containers::RandomResizeList(meleetargets, 1);
 
                             if (GetMembersWithoutAura(rangetargets, SPELL_BLAZE_OF_GLORY) >= 1)
                                 rangetargets.remove_if(AuraCheck(SPELL_BLAZE_OF_GLORY));
                             
                             if (rangetargets.size() > 1)
-                                JadeCore::Containers::RandomResizeList(rangetargets, 1);
+                                SkyMistCore::Containers::RandomResizeList(rangetargets, 1);
 
                             targets.clear();;
                             targets.push_back(meleetargets.front());

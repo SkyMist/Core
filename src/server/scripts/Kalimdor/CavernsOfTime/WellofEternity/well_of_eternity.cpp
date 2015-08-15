@@ -967,7 +967,7 @@ class TrashRespawnWorker
 static void TrashEvaded(Creature* creature)
 {
     TrashRespawnWorker check;
-    JadeCore::CreatureWorker<TrashRespawnWorker> worker(creature, check);
+    SkyMistCore::CreatureWorker<TrashRespawnWorker> worker(creature, check);
     creature->VisitNearbyGridObject(SIZE_OF_GRIDS, worker);
 }
 

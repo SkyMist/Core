@@ -578,7 +578,7 @@ class spell_mistress_kiss_area : public SpellScriptLoader
                     return;
 
                 // pick a random target and kiss him
-                if (WorldObject* _target = JadeCore::Containers::SelectRandomContainerElement(_targets))
+                if (WorldObject* _target = SkyMistCore::Containers::SelectRandomContainerElement(_targets))
                 {
                     // correctly fill "targets" for the visual effect
                     targets.clear();

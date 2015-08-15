@@ -10,7 +10,7 @@ const static int q_patt[2][2] = { {0,1}, {3,2} };
 
 
 
-namespace JadeCore
+namespace SkyMistCore
 {
     bool IsPointInZone(const ResearchPOIPoint &test, const ResearchPOIPoints &polygon)
     {
@@ -192,7 +192,7 @@ uint16 ArchaeologyMgr::GetResearchSiteID()
     {
         if ((*itr).second.map == _player->GetMapId() && (*itr).second.zone == _player->GetZoneId())
         {
-            if (JadeCore::IsPointInZone(ResearchPOIPoint(_player->GetPositionX(), _player->GetPositionY()), itr->second.coords))
+            if (SkyMistCore::IsPointInZone(ResearchPOIPoint(_player->GetPositionX(), _player->GetPositionY()), itr->second.coords))
                 return (*itr).first;
         }
     }
@@ -331,7 +331,7 @@ void ArchaeologyMgr::GenerateResearchSiteInMap(uint32 mapId, uint32 map)
     if (tempSites.empty())
         return;
 
-    _researchSites[map].insert(JadeCore::Containers::SelectRandomContainerElement(tempSites));
+    _researchSites[map].insert(SkyMistCore::Containers::SelectRandomContainerElement(tempSites));
     _archaeologyChanged = true;
 
     ShowResearchSites();
@@ -360,7 +360,7 @@ void ArchaeologyMgr::GenerateResearchSites()
         }
 
     for (uint8 i = 0; i < 4; ++i)
-        JadeCore::Containers::RandomResizeSet(_researchSites[i], RESEARCH_SITES_PER_MAP);
+        SkyMistCore::Containers::RandomResizeSet(_researchSites[i], RESEARCH_SITES_PER_MAP);
 
     _archaeologyChanged = true;
 
@@ -465,7 +465,7 @@ bool ArchaeologyMgr::SolveResearchProject(uint32 projectId)
         }
     }
 
-    _researchProjects.insert(JadeCore::Containers::SelectRandomContainerElement(tempProjects));
+    _researchProjects.insert(SkyMistCore::Containers::SelectRandomContainerElement(tempProjects));
     _archaeologyChanged = true;
 
     ShowResearchProjects();

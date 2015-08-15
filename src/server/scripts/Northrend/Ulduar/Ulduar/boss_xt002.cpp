@@ -978,7 +978,7 @@ class spell_xt002_gravity_bomb_aura_target : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 targets.clear();
                 targets.push_back(_target);
             }

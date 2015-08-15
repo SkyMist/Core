@@ -3479,7 +3479,7 @@ class Player : public Unit, public GridObject<Player>
         PreparedQueryResultFuture _petPreloadCallback;
         QueryResultHolderFuture _petLoginCallback;
 
-        JadeCore::SpellChargesTracker spellChargesTracker_;
+        SkyMistCore::SpellChargesTracker spellChargesTracker_;
 
         uint8 m_bgRoles;
 

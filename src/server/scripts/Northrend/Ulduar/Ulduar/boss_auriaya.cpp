@@ -435,7 +435,7 @@ class npc_sanctum_sentry : public CreatureScript
                         {
                             std::list<Creature*> sanctumSentrys;
                             SanctumSentrySearcher check(me, 10.0f);
-                            JadeCore::CreatureListSearcher<SanctumSentrySearcher> searcher(me, sanctumSentrys, check);
+                            SkyMistCore::CreatureListSearcher<SanctumSentrySearcher> searcher(me, sanctumSentrys, check);
                             me->VisitNearbyGridObject(10.0f, searcher);
                             for (std::list<Creature*>::iterator itr = sanctumSentrys.begin(); itr != sanctumSentrys.end(); ++itr)
                             {

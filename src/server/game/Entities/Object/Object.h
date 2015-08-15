@@ -1124,7 +1124,7 @@ class WorldObject : public Object, public WorldLocation
         bool CanDetectStealthOf(WorldObject const* obj) const;
 };
 
-namespace JadeCore
+namespace SkyMistCore
 {
     template<class T>
     void RandomResizeList(std::list<T> &_list, uint32 _size)

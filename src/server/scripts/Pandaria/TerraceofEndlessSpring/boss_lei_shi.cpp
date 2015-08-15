@@ -451,7 +451,7 @@ class boss_lei_shi : public CreatureScript
                     std::list<Creature*> protectors;
                     me->GetCreatureListWithEntryInGrid(protectors, NPC_ANIMATED_PROTECTOR, 100.0f);
 
-                    protectors.remove_if(JadeCore::UnitAuraCheck(true, SPELL_PROTECT_RESPAWN));
+                    protectors.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_PROTECT_RESPAWN));
 
                     for (auto itr : protectors)
                     {

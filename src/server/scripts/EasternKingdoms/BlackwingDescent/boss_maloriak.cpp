@@ -982,7 +982,7 @@ class spell_maloriak_release_aberrations : public SpellScriptLoader
                     targets.remove_if(GoCheck());
                     uint32 count = pInstance->GetData(DATA_MALORIAK_ABERRATIONS);
                     if (!targets.empty() && count > 0)
-                        JadeCore::Containers::RandomResizeList(targets, count > 3? 3: count);
+                        SkyMistCore::Containers::RandomResizeList(targets, count > 3? 3: count);
                     else
                         targets.clear();
                 }
@@ -1050,7 +1050,7 @@ class spell_maloriak_release_all_minions : public SpellScriptLoader
 
                     uint32 count = pInstance->GetData(DATA_MALORIAK_ABERRATIONS);
                     if (count > 0)
-                        JadeCore::Containers::RandomResizeList(targets, count);
+                        SkyMistCore::Containers::RandomResizeList(targets, count);
                     else
                         targets.clear();
                     

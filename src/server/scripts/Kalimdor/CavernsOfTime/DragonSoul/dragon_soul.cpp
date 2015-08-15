@@ -1268,10 +1268,10 @@ class spell_dragon_soul_trigger_spell_from_aoe : public SpellScriptLoader
                 if (!tempList.empty())
                 {
                     targets.clear();
-                    targets.push_back(JadeCore::Containers::SelectRandomContainerElement(tempList));
+                    targets.push_back(SkyMistCore::Containers::SelectRandomContainerElement(tempList));
                 }
                 else
-                    JadeCore::Containers::RandomResizeList(targets, 1);
+                    SkyMistCore::Containers::RandomResizeList(targets, 1);
             }
 
             void HandleDummy()
