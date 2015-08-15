@@ -780,8 +780,8 @@ void AddSC_boss_commander_vojak();
 void AddSC_boss_general_pavalak();
 void AddSC_boss_wing_leader_neronok();
 
-void AddSC_instance_mogu_shan_vault();              // Mogu'Shan Vault
-void AddSC_mogu_shan_vault();
+void AddSC_instance_mogu_shan_vaults();             // Mogu'Shan Vaults
+void AddSC_mogu_shan_vaults();
 void AddSC_boss_stone_guard();
 void AddSC_boss_feng();
 void AddSC_boss_garajal();
@@ -1660,8 +1660,8 @@ void AddPandariaScripts()
     AddSC_boss_general_pavalak();
     AddSC_boss_wing_leader_neronok();
 
-    AddSC_instance_mogu_shan_vault();               // Mogu'Shan Vault
-    AddSC_mogu_shan_vault();
+    AddSC_instance_mogu_shan_vaults();              // Mogu'Shan Vaults
+    AddSC_mogu_shan_vaults();
     AddSC_boss_stone_guard();
     AddSC_boss_feng();
     AddSC_boss_garajal();

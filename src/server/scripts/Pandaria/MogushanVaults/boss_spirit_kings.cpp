@@ -25,7 +25,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eSpells
 {
@@ -242,7 +242,7 @@ class boss_spirit_kings_controler : public CreatureScript
 
         struct boss_spirit_kings_controlerAI : public BossAI
         {
-            boss_spirit_kings_controlerAI(Creature* creature) : BossAI(creature, DATA_SPIRIT_KINGS)
+            boss_spirit_kings_controlerAI(Creature* creature) : BossAI(creature, DATA_SPIRIT_KINGS_EVENT)
             {
                 pInstance = creature->GetInstanceScript();
 
@@ -410,7 +410,7 @@ class boss_spirit_kings_controler : public CreatureScript
 
                         if (nextSpirit >= 4)
                         {
-                            pInstance->SetBossState(DATA_SPIRIT_KINGS, DONE);
+                            pInstance->SetBossState(DATA_SPIRIT_KINGS_EVENT, DONE);
                             summons.DespawnEntry(NPC_FLANKING_MOGU);
 
                             for (auto entry: spiritKingsEntry)
@@ -523,7 +523,7 @@ class boss_spirit_kings_controler : public CreatureScript
                         {
                             if (pInstance->IsWipe())
                             {
-                                pInstance->SetBossState(DATA_SPIRIT_KINGS, FAIL);
+                                pInstance->SetBossState(DATA_SPIRIT_KINGS_EVENT, FAIL);
                                 Reset();
                             }
                             else
@@ -612,7 +612,7 @@ class boss_spirit_kings : public CreatureScript
             void JustReachedHome()
             {
                 if (pInstance)
-                    pInstance->SetBossState(DATA_SPIRIT_KINGS, FAIL);
+                    pInstance->SetBossState(DATA_SPIRIT_KINGS_EVENT, FAIL);
             }
 
             Creature* GetControler()
@@ -642,7 +642,7 @@ class boss_spirit_kings : public CreatureScript
 
             void EnterCombat(Unit* attacker)
             {
-                if (!pInstance->CheckRequiredBosses(DATA_SPIRIT_KINGS))
+                if (!pInstance->CheckRequiredBosses(DATA_SPIRIT_KINGS_EVENT))
                 {
                     EnterEvadeMode();
                     return;
@@ -651,9 +651,9 @@ class boss_spirit_kings : public CreatureScript
                 if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
-                    pInstance->SetBossState(DATA_SPIRIT_KINGS, IN_PROGRESS);
+                    pInstance->SetBossState(DATA_SPIRIT_KINGS_EVENT, IN_PROGRESS);
 
-                    if (!pInstance->CheckRequiredBosses(DATA_SPIRIT_KINGS))
+                    if (!pInstance->CheckRequiredBosses(DATA_SPIRIT_KINGS_EVENT))
                         pInstance->DoCastSpellOnPlayers(7); // Suicide
                 }
 

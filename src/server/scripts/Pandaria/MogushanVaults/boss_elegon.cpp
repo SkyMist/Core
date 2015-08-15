@@ -19,7 +19,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eElegonPhase
 {
@@ -220,7 +220,7 @@ class boss_elegon : public CreatureScript
 
         struct boss_elegonAI : public BossAI
         {
-            boss_elegonAI(Creature* creature) : BossAI(creature, DATA_ELEGON)
+            boss_elegonAI(Creature* creature) : BossAI(creature, DATA_ELEGON_EVENT)
             {
                 pInstance = creature->GetInstanceScript();
                 creature->SetDisplayId(11686);
@@ -284,7 +284,7 @@ class boss_elegon : public CreatureScript
                 _JustReachedHome();
 
                 if (pInstance)
-                    pInstance->SetBossState(DATA_ELEGON, FAIL);
+                    pInstance->SetBossState(DATA_ELEGON_EVENT, FAIL);
             }
 
             void EnterCombat(Unit* attacker)
@@ -298,7 +298,7 @@ class boss_elegon : public CreatureScript
                 if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
-                    pInstance->SetBossState(DATA_ELEGON, IN_PROGRESS);
+                    pInstance->SetBossState(DATA_ELEGON_EVENT, IN_PROGRESS);
                 }
 
                 me->RemoveAurasDueToSpell(SPELL_APPARITION_VISUAL);
@@ -439,7 +439,7 @@ class boss_elegon : public CreatureScript
             void JustDied(Unit* killer)
             {
                 if (pInstance)
-                    pInstance->SetBossState(DATA_ELEGON, DONE);
+                    pInstance->SetBossState(DATA_ELEGON_EVENT, DONE);
 
                 _JustDied();
 

@@ -20,7 +20,7 @@
 #include "ScriptMgr.h"
 #include "CreatureTextMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eSpells
 {
@@ -123,7 +123,7 @@ class boss_garajal : public CreatureScript
 
         struct boss_garajalAI : public BossAI
         {
-            boss_garajalAI(Creature* creature) : BossAI(creature, DATA_GARAJAL)
+            boss_garajalAI(Creature* creature) : BossAI(creature, DATA_GARAJAL_EVENT)
             {
                 pInstance = creature->GetInstanceScript();
             }
@@ -135,8 +135,8 @@ class boss_garajal : public CreatureScript
             {
                 _Reset();
 
-                if (pInstance->GetBossState(DATA_GARAJAL) != DONE)
-                    pInstance->SetBossState(DATA_GARAJAL, NOT_STARTED);
+                if (pInstance->GetBossState(DATA_GARAJAL_EVENT) != DONE)
+                    pInstance->SetBossState(DATA_GARAJAL_EVENT, NOT_STARTED);
 
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
@@ -157,12 +157,12 @@ class boss_garajal : public CreatureScript
 
             void JustDied(Unit* attacker)
             {
-                pInstance->SetBossState(DATA_GARAJAL, DONE);
+                pInstance->SetBossState(DATA_GARAJAL_EVENT, DONE);
                 _JustDied();
                 me->CastSpell(me, SPELL_RELEASE_SPIRIT, false);
 
                 events.Reset();
-                pInstance->SetBossState(DATA_GARAJAL, DONE);
+                pInstance->SetBossState(DATA_GARAJAL_EVENT, DONE);
                 pInstance->SaveToDB();
 
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
@@ -187,7 +187,7 @@ class boss_garajal : public CreatureScript
 
             void EnterCombat(Unit* attacker)
             {
-                if (!pInstance->CheckRequiredBosses(DATA_GARAJAL))
+                if (!pInstance->CheckRequiredBosses(DATA_GARAJAL_EVENT))
                 {
                     EnterEvadeMode();
                     return;
@@ -200,7 +200,7 @@ class boss_garajal : public CreatureScript
                 events.ScheduleEvent(EVENT_VOODOO_DOLL,             2500);
                 events.ScheduleEvent(EVENT_FINAL_DESTINATION,       361000); // 6 min & 10s
 
-                pInstance->SetBossState(DATA_GARAJAL, IN_PROGRESS);
+                pInstance->SetBossState(DATA_GARAJAL_EVENT, IN_PROGRESS);
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                 Talk(TALK_AGGRO);
 
@@ -403,7 +403,7 @@ class mob_garajal_ghost : public CreatureScript
 
             void UpdateAI(const uint32 diff)
             {
-                if (pInstance->GetBossState(DATA_GARAJAL) != DONE)
+                if (pInstance->GetBossState(DATA_GARAJAL_EVENT) != DONE)
                     return;
 
                 events.Update(diff);
@@ -501,7 +501,7 @@ class mob_spirit_totem : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (pInstance)
-                    if (pInstance->GetBossState(DATA_GARAJAL) != IN_PROGRESS)
+                    if (pInstance->GetBossState(DATA_GARAJAL_EVENT) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
             }
         };
@@ -626,7 +626,7 @@ class mob_shadowy_minion : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (pInstance)
-                    if (pInstance->GetBossState(DATA_GARAJAL) != IN_PROGRESS)
+                    if (pInstance->GetBossState(DATA_GARAJAL_EVENT) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
 
                 events.Update(diff);
@@ -711,7 +711,7 @@ class mob_soul_cutter : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (pInstance)
-                    if (pInstance->GetBossState(DATA_GARAJAL) != IN_PROGRESS)
+                    if (pInstance->GetBossState(DATA_GARAJAL_EVENT) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
 
                 events.Update(diff);

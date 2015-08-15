@@ -18,7 +18,7 @@
  */
 
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
@@ -27,6 +27,7 @@
 
 enum eSpells
 {
+    SPELL_STONE_FORM                = 117838, // Better 128886
     SPELL_SPIRIT_BOLT               = 121224,
     SPELL_GROUND_SLAM               = 121087,
     SPELL_PETRIFICATION             = 125090,
@@ -986,7 +987,7 @@ class npc_lorewalker_cho : public CreatureScript
                             break;
                     case ACTION_ELEGON_GOB_ACTIVATION:
                     {
-                        if (!pInstance->CheckRequiredBosses(DATA_ELEGON))
+                        if (!pInstance->CheckRequiredBosses(DATA_ELEGON_EVENT))
                             break;
 
                         Talk(25);
@@ -2077,7 +2078,7 @@ class mob_mogu_engine_keeper : public CreatureScript
         }
 };
 
-void AddSC_mogu_shan_vault()
+void AddSC_mogu_shan_vaults()
 {
     new mob_cursed_mogu_sculpture();
     new spell_ghost_essence();

@@ -20,7 +20,7 @@
 #include "GameObjectAI.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eSpells
 {
@@ -223,7 +223,7 @@ class boss_jin_qin_xi : public CreatureScript
 
         struct boss_jin_qin_xiAI : public BossAI
         {
-            boss_jin_qin_xiAI(Creature* creature) : BossAI(creature, DATA_WILL_OF_EMPEROR), summons(creature)
+            boss_jin_qin_xiAI(Creature* creature) : BossAI(creature, DATA_WILL_OF_EMPEROR_EVENT), summons(creature)
             {
                 pInstance = creature->GetInstanceScript();
                 isActive = false;
@@ -365,7 +365,7 @@ class boss_jin_qin_xi : public CreatureScript
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MAGNETIZED_JAN);
                 pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_MAGNETIZED_QIN);
 
-                pInstance->SetBossState(DATA_WILL_OF_EMPEROR, DONE);
+                pInstance->SetBossState(DATA_WILL_OF_EMPEROR_EVENT, DONE);
             }
 
             void JustSummoned(Creature* summon)

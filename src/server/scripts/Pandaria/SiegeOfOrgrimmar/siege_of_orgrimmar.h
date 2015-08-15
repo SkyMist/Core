@@ -196,7 +196,7 @@ enum FallenProtectors
 #define MAX_FALLEN_PROTECTORS 3
 
 // 2 Dark Shamans.
-enum eKorkronDarkShamans
+enum KorkronDarkShamans
 {
     EARTHBREAKER_HAROMM                 = 0,
     WAVEBINDER_KARDIS
@@ -205,7 +205,7 @@ enum eKorkronDarkShamans
 #define MAX_KORKRON_DARK_SHAMANS 2
 
 // 9 Paragons of The Klaxxi.
-enum eParagonsOfTheKlaaxi
+enum ParagonsOfTheKlaaxi
 {
     KILRUK_THE_WIND_REAVER              = 0,
     XARIL_THE_POISONED_MIND,

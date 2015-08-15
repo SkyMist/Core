@@ -20,7 +20,7 @@
 #include "GameObjectAI.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eSpells
 {
@@ -236,7 +236,7 @@ class boss_feng : public CreatureScript
 
         struct boss_fengAI : public BossAI
         {
-            boss_fengAI(Creature* creature) : BossAI(creature, DATA_FENG)
+            boss_fengAI(Creature* creature) : BossAI(creature, DATA_FENG_EVENT)
             {
                 pInstance = creature->GetInstanceScript();
             }
@@ -266,8 +266,8 @@ class boss_feng : public CreatureScript
 
                 SetEquipmentSlots(false, 0, 0, EQUIP_NO_CHANGE);
 
-                if (pInstance->GetBossState(DATA_FENG) != DONE)
-                    pInstance->SetBossState(DATA_FENG, NOT_STARTED);
+                if (pInstance->GetBossState(DATA_FENG_EVENT) != DONE)
+                    pInstance->SetBossState(DATA_FENG_EVENT, NOT_STARTED);
 
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
 
@@ -302,7 +302,7 @@ class boss_feng : public CreatureScript
             void JustDied(Unit* attacker)
             {
                 Talk(TALK_DEATH);
-                pInstance->SetBossState(DATA_FENG, DONE);
+                pInstance->SetBossState(DATA_FENG_EVENT, DONE);
                 _JustDied();
 
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
@@ -332,7 +332,7 @@ class boss_feng : public CreatureScript
 
             void EnterCombat(Unit* attacker)
             {
-                if (!pInstance->CheckRequiredBosses(DATA_FENG))
+                if (!pInstance->CheckRequiredBosses(DATA_FENG_EVENT))
                 {
                     EnterEvadeMode();
                     return;
@@ -342,7 +342,7 @@ class boss_feng : public CreatureScript
                 attacker->SummonGameObject(GO_NULLIFICATION_BARRIER, gobjectStonesPos[1].GetPositionX(), gobjectStonesPos[1].GetPositionY(), gobjectStonesPos[1].GetPositionZ(),0,0,0,0,0,0);
 
                 pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
-                pInstance->SetBossState(DATA_FENG, IN_PROGRESS);
+                pInstance->SetBossState(DATA_FENG_EVENT, IN_PROGRESS);
                 events.ScheduleEvent(EVENT_SPIRIT_BOLTS, 10000);
                 Talk(TALK_AGGRO);
             }
@@ -1035,7 +1035,7 @@ class mob_wild_spark : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (pInstance)
-                    if (pInstance->GetBossState(DATA_FENG) != IN_PROGRESS)
+                    if (pInstance->GetBossState(DATA_FENG_EVENT) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
 
                 events.Update(diff);

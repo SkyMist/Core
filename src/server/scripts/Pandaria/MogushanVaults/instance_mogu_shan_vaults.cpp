@@ -1,46 +1,41 @@
 /*
- * Copyright (C) 2008-20XX JadeCore <http://www.pandashan.com>
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+*
+* FUCK CREDITS! (SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sue your ass).
+*
+* Raid: Mogu'shan Vaults.
+*/
 
+#include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
+#include "ScriptedCreature.h"
+#include "ObjectAccessor.h"
+#include "Group.h"
+#include "Unit.h"
+#include "Player.h"
+#include "Map.h"
+#include "PoolMgr.h"
 #include "VMapFactory.h"
-#include "mogu_shan_vault.h"
+#include "AccountMgr.h"
+
+#include "mogu_shan_vaults.h"
 
 DoorData const doorData[] =
 {
-    {GOB_STONE_GUARD_DOOR_ENTRANCE,          DATA_STONE_GUARD,          DOOR_TYPE_ROOM,       BOUNDARY_E   },
-    {GOB_STONE_GUARD_DOOR_EXIT,              DATA_STONE_GUARD,          DOOR_TYPE_PASSAGE,    BOUNDARY_W   },
-    {GOB_FENG_DOOR_FENCE,                    DATA_FENG,                 DOOR_TYPE_ROOM,       BOUNDARY_NONE},
-    {GOB_FENG_DOOR_EXIT,                     DATA_FENG,                 DOOR_TYPE_PASSAGE,    BOUNDARY_N   },
-    {GOB_GARAJAL_FENCE,                      DATA_GARAJAL,              DOOR_TYPE_ROOM,       BOUNDARY_NONE},
-    {GOB_GARAJAL_EXIT,                       DATA_GARAJAL,              DOOR_TYPE_PASSAGE,    BOUNDARY_W   },
-    {GOB_SPIRIT_KINGS_WIND_WALL,             DATA_SPIRIT_KINGS,         DOOR_TYPE_ROOM,       BOUNDARY_NONE},
-    {GOB_SPIRIT_KINGS_EXIT,                  DATA_SPIRIT_KINGS,         DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
-    {GOB_CELESTIAL_DOOR,                     DATA_ELEGON,               DOOR_TYPE_ROOM,       BOUNDARY_E   },
-    {GOB_ELEGON_DOOR_ENTRANCE,               DATA_SPIRIT_KINGS,         DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
-    {GOB_ELEGON_CELESTIAL_DOOR,              DATA_ELEGON,               DOOR_TYPE_ROOM,       BOUNDARY_E   },
-    {GOB_WILL_OF_EMPEROR_ENTRANCE,           DATA_ELEGON,               DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
-    {0,                                      0,                         DOOR_TYPE_ROOM,       BOUNDARY_NONE},// END
+    {GOB_STONE_GUARD_DOOR_ENTRANCE,          DATA_STONE_GUARD_EVENT,          DOOR_TYPE_ROOM,       BOUNDARY_E   },
+    {GOB_STONE_GUARD_DOOR_EXIT,              DATA_STONE_GUARD_EVENT,          DOOR_TYPE_PASSAGE,    BOUNDARY_W   },
+    {GOB_FENG_DOOR_FENCE,                    DATA_FENG_EVENT,                 DOOR_TYPE_ROOM,       BOUNDARY_NONE},
+    {GOB_FENG_DOOR_EXIT,                     DATA_FENG_EVENT,                 DOOR_TYPE_PASSAGE,    BOUNDARY_N   },
+    {GOB_GARAJAL_FENCE,                      DATA_GARAJAL_EVENT,              DOOR_TYPE_ROOM,       BOUNDARY_NONE},
+    {GOB_GARAJAL_EXIT,                       DATA_GARAJAL_EVENT,              DOOR_TYPE_PASSAGE,    BOUNDARY_W   },
+    {GOB_SPIRIT_KINGS_WIND_WALL,             DATA_SPIRIT_KINGS_EVENT,         DOOR_TYPE_ROOM,       BOUNDARY_NONE},
+    {GOB_SPIRIT_KINGS_EXIT,                  DATA_SPIRIT_KINGS_EVENT,         DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
+    {GOB_CELESTIAL_DOOR,                     DATA_ELEGON_EVENT,               DOOR_TYPE_ROOM,       BOUNDARY_E   },
+    {GOB_ELEGON_DOOR_ENTRANCE,               DATA_SPIRIT_KINGS_EVENT,         DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
+    {GOB_ELEGON_CELESTIAL_DOOR,              DATA_ELEGON_EVENT,               DOOR_TYPE_ROOM,       BOUNDARY_E   },
+    {GOB_WILL_OF_EMPEROR_ENTRANCE,           DATA_ELEGON_EVENT,               DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
+    {0,                                      0,                               DOOR_TYPE_ROOM,       BOUNDARY_NONE},// END
 };
-
-#define DIST_BETWEEN_TWO_Z      32.39f
-#define ACHIEVEMENT_SHOWMOVES   6455
 
 Position woeSpawnPos[8] =
 {
@@ -75,26 +70,27 @@ Position woeMiddleSpawnPos[1] =
     {3812.60f, 1536.72f, 367.64f, 0.16f}
 };
 
-class instance_mogu_shan_vault : public InstanceMapScript
+#define DIST_BETWEEN_TWO_Z        32.39f
+#define ACHIEVEMENT_SHOWMOVES     6455
+#define MAX_STONE_GUARDS_TURNOVER 3
+
+class instance_mogu_shan_vaults : public InstanceMapScript
 {
     public:
-        instance_mogu_shan_vault() : InstanceMapScript("instance_mogu_shan_vault", 1008) { }
+        instance_mogu_shan_vaults() : InstanceMapScript("instance_mogu_shan_vaults", 1008) { }
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        struct instance_mogu_shan_vaults_InstanceMapScript : public InstanceScript
         {
-            return new instance_mogu_shan_vault_InstanceMapScript(map);
-        }
-
-        struct instance_mogu_shan_vault_InstanceMapScript : public InstanceScript
-        {
-            instance_mogu_shan_vault_InstanceMapScript(Map* map) : InstanceScript(map) {}
+            instance_mogu_shan_vaults_InstanceMapScript(Map* map) : InstanceScript(map)
+            {
+                Initialize();
+            }
 
             uint32 actualPetrifierEntry;
             uint8  guardianCount;
             uint8  guardianAliveCount;
             bool   woeIsGasPhaseActive;
 
-            int8   randomDespawnStoneGuardian;
             uint8  nextWillOfEmperorPhase;
             uint8  willOfEmperirLastBigAddSpawned;
 
@@ -135,7 +131,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
 
             void Initialize()
             {
-                SetBossNumber(DATA_MAX_BOSS_DATA);
+                SetBossNumber(MAX_ENCOUNTERS);
                 LoadDoorData(doorData);
 
                 guardianCount                   = 0;
@@ -155,7 +151,6 @@ class instance_mogu_shan_vault : public InstanceMapScript
                 titanDiskGuid                   = 0;
                 woeIsGasPhaseActive             = false;
 
-                randomDespawnStoneGuardian      = urand(1,4);
                 nextWillOfEmperorPhase          = 0;
                 willOfEmperirLastBigAddSpawned  = 0;
 
@@ -195,13 +190,12 @@ class instance_mogu_shan_vault : public InstanceMapScript
                     case NPC_COBALT:
                     {
                         stoneGuardGUIDs.push_back(creature->GetGUID());
-                        guardianAliveCount++;
+                        guardianAliveCount += 1;
 
                         uint32 difficulty = instance->GetSpawnMode();
                         bool turnOver = (difficulty == RAID_DIFFICULTY_10MAN_NORMAL || difficulty == RAID_DIFFICULTY_10MAN_HEROIC || difficulty == RAID_DIFFICULTY_25MAN_LFR);
 
-                        // if (guardianAliveCount >= 4 && GetBossState(DATA_STONE_GUARD) != DONE && instance->GetSpawnMode() <= MAN10_DIFFICULTY)
-                        if (guardianAliveCount >= 4 && GetBossState(DATA_STONE_GUARD) != DONE && instance->GetSpawnMode() && turnOver)
+                        if (guardianAliveCount > MAX_STONE_GUARDS_TURNOVER && GetBossState(DATA_STONE_GUARD_EVENT) != DONE && turnOver)
                         {
                             std::vector<uint64> stoneGuards;
 
@@ -212,6 +206,8 @@ class instance_mogu_shan_vault : public InstanceMapScript
 
                             if (Creature* stoneGuard = instance->GetCreature((*stoneGuards.begin())))
                                 stoneGuard->DespawnOrUnsummon();
+
+                            guardianAliveCount = MAX_STONE_GUARDS_TURNOVER;
                         }
                         break;
                     }
@@ -331,7 +327,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
 
                 switch (id)
                 {
-                    case DATA_STONE_GUARD:
+                    case DATA_STONE_GUARD_EVENT:
                     {
                         switch (state)
                         {
@@ -357,7 +353,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         }
                         break;
                     }
-                    case DATA_SPIRIT_KINGS:
+                    case DATA_SPIRIT_KINGS_EVENT:
                     {
                         switch (state)
                         {
@@ -376,7 +372,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         }
                         break;
                     }
-                    case DATA_ELEGON:
+                    case DATA_ELEGON_EVENT:
                     {
                         switch (state)
                         {
@@ -413,7 +409,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
                         }
                         break;
                     }
-                    case DATA_WILL_OF_EMPEROR:
+                    case DATA_WILL_OF_EMPEROR_EVENT:
                     {
                         switch (state)
                         {
@@ -574,7 +570,7 @@ class instance_mogu_shan_vault : public InstanceMapScript
 
             void Update(uint32 diff)
             {
-                if (GetBossState(DATA_WILL_OF_EMPEROR) != IN_PROGRESS)
+                if (GetBossState(DATA_WILL_OF_EMPEROR_EVENT) != IN_PROGRESS)
                     return;
 
                 if (willOfEmperorTimer && !woeIsGasPhaseActive)
@@ -671,11 +667,11 @@ class instance_mogu_shan_vault : public InstanceMapScript
 
                 switch (bossId)
                 {
-                    case DATA_WILL_OF_EMPEROR:
-                    case DATA_ELEGON:
-                    case DATA_SPIRIT_KINGS:
-                    case DATA_GARAJAL:
-                    case DATA_FENG:
+                    case DATA_WILL_OF_EMPEROR_EVENT:
+                    case DATA_ELEGON_EVENT:
+                    case DATA_SPIRIT_KINGS_EVENT:
+                    case DATA_GARAJAL_EVENT:
+                    case DATA_FENG_EVENT:
                         if (GetBossState(bossId - 1) != DONE)
                             return false;
                     default:
@@ -701,10 +697,59 @@ class instance_mogu_shan_vault : public InstanceMapScript
                 achievementGuids.push_back(id);
                 return;
             }
+
+            std::string GetSaveData()
+            {
+                OUT_SAVE_INST_DATA;
+
+                std::ostringstream saveStream;
+                saveStream << "M V " << GetBossSaveData();
+
+                OUT_SAVE_INST_DATA_COMPLETE;
+                return saveStream.str();
+            }
+
+            void Load(const char* in)
+            {
+                if (!in)
+                {
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
+                }
+
+                OUT_LOAD_INST_DATA(in);
+
+                char dataHead1, dataHead2;
+
+                std::istringstream loadStream(in);
+                loadStream >> dataHead1 >> dataHead2;
+
+                if (dataHead1 == 'M' && dataHead2 == 'V')
+                {
+                    for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
+                    {
+                        uint32 tmpState;
+                        loadStream >> tmpState;
+
+                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                            tmpState = NOT_STARTED;
+
+                        SetBossState(i, EncounterState(tmpState));
+                    }
+
+                } else OUT_LOAD_INST_DATA_FAIL;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
+            }
         };
+
+        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        {
+            return new instance_mogu_shan_vaults_InstanceMapScript(map);
+        }
 };
 
-void AddSC_instance_mogu_shan_vault()
+void AddSC_instance_mogu_shan_vaults()
 {
-    new instance_mogu_shan_vault();
+    new instance_mogu_shan_vaults();
 }

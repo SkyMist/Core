@@ -58,15 +58,15 @@ set(scripts_STAT_SRCS
   Pandaria/SiegeOfNiuzaoTemple/boss_commander_vojak.cpp
   Pandaria/SiegeOfNiuzaoTemple/boss_wing_leader_neronok.cpp
 
-  Pandaria/MogushanVault/instance_mogu_shan_vault.cpp
-  Pandaria/MogushanVault/mogu_shan_vault.cpp
-  Pandaria/MogushanVault/mogu_shan_vault.h
-  Pandaria/MogushanVault/boss_stone_guard.cpp
-  Pandaria/MogushanVault/boss_feng.cpp
-  Pandaria/MogushanVault/boss_garajal.cpp
-  Pandaria/MogushanVault/boss_spirit_kings.cpp
-  Pandaria/MogushanVault/boss_elegon.cpp
-  Pandaria/MogushanVault/boss_will_of_emperor.cpp
+  Pandaria/MogushanVaults/instance_mogu_shan_vaults.cpp
+  Pandaria/MogushanVaults/mogu_shan_vaults.cpp
+  Pandaria/MogushanVaults/mogu_shan_vaults.h
+  Pandaria/MogushanVaults/boss_stone_guard.cpp
+  Pandaria/MogushanVaults/boss_feng.cpp
+  Pandaria/MogushanVaults/boss_garajal.cpp
+  Pandaria/MogushanVaults/boss_spirit_kings.cpp
+  Pandaria/MogushanVaults/boss_elegon.cpp
+  Pandaria/MogushanVaults/boss_will_of_emperor.cpp
 
   Pandaria/HeartOfFear/instance_heart_of_fear.cpp
   Pandaria/HeartOfFear/heart_of_fear.cpp

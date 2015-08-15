@@ -19,7 +19,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "mogu_shan_vault.h"
+#include "mogu_shan_vaults.h"
 
 enum eSpells
 {
@@ -67,7 +67,7 @@ enum eSpells
     SPELL_LIVING_AMETHYST               = 116322,
     SPELL_LIVING_COBALT                 = 116199,
     SPELL_LIVING_JADE                   = 116301,
-    SPELL_LIVING_JASPER                 = 116304,
+    SPELL_LIVING_JASPER                 = 116304
 };
 
 enum eEvents
@@ -143,8 +143,8 @@ class boss_stone_guard_controler : public CreatureScript
                 fightInProgress = false;
                 lastPetrifierEntry = 0;
 
-                if (pInstance->GetBossState(DATA_STONE_GUARD) != DONE)
-                    pInstance->SetBossState(DATA_STONE_GUARD, NOT_STARTED);
+                if (pInstance->GetBossState(DATA_STONE_GUARD_EVENT) != DONE)
+                    pInstance->SetBossState(DATA_STONE_GUARD_EVENT, NOT_STARTED);
 
                 if (IsHeroic())
                     powDownCount = 2;
@@ -195,7 +195,7 @@ class boss_stone_guard_controler : public CreatureScript
                         pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_COBALT_PETRIFICATION_BAR);
                         pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TILES_AURA_EFFECT);
 
-                        pInstance->SetBossState(DATA_STONE_GUARD, DONE);
+                        pInstance->SetBossState(DATA_STONE_GUARD_EVENT, DONE);
 
                         fightInProgress = false;
 
@@ -362,7 +362,7 @@ class boss_generic_guardian : public CreatureScript
 
         struct boss_generic_guardianAI : public BossAI
         {
-            boss_generic_guardianAI(Creature* creature) : BossAI(creature, DATA_STONE_GUARD), summons(creature)
+            boss_generic_guardianAI(Creature* creature) : BossAI(creature, DATA_STONE_GUARD_EVENT), summons(creature)
             {
                 pInstance = creature->GetInstanceScript();
                 creature->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
@@ -475,7 +475,7 @@ class boss_generic_guardian : public CreatureScript
             void EnterCombat(Unit* attacker)
             {
                 if (pInstance)
-                    pInstance->SetBossState(DATA_STONE_GUARD, IN_PROGRESS);
+                    pInstance->SetBossState(DATA_STONE_GUARD_EVENT, IN_PROGRESS);
                 
                 events.ScheduleEvent(EVENT_CHECK_NEAR_GUARDIANS,    2500);
                 events.ScheduleEvent(EVENT_CHECK_ENERGY,            1000);
@@ -543,7 +543,7 @@ class boss_generic_guardian : public CreatureScript
 
             void JustDied(Unit* killer)
             {
-                pInstance->SetBossState(DATA_STONE_GUARD, DONE);
+                pInstance->SetBossState(DATA_STONE_GUARD_EVENT, DONE);
                 _JustDied();
                 me->RemoveAllAreaTriggers();
 
@@ -744,7 +744,7 @@ class mob_cobalt_mine : public CreatureScript
             void UpdateAI(const uint32 diff)
             {
                 if (pInstance)
-                    if (pInstance->GetBossState(DATA_STONE_GUARD) != IN_PROGRESS)
+                    if (pInstance->GetBossState(DATA_STONE_GUARD_EVENT) != IN_PROGRESS)
                         me->DespawnOrUnsummon();
 
                 if (preparationTimer)
