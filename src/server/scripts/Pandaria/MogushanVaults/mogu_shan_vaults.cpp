@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2012-2013 JadeCore <http://www.pandashan.com/>
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,15 +13,38 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Raid: Mogu'shan Vaults.
+ * Description: Mob scripts.
  */
 
-#include "ScriptedCreature.h"
-#include "mogu_shan_vaults.h"
+#include "ObjectMgr.h"
 #include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
+#include "MapManager.h"
+#include "Spell.h"
+#include "Vehicle.h"
+#include "Cell.h"
+#include "CellImpl.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CreatureTextMgr.h"
+#include "Unit.h"
+#include "Player.h"
+#include "Creature.h"
+#include "CreatureAI.h"
 #include "ScriptedGossip.h"
 #include "ScriptedEscortAI.h"
-#include "CreatureAI.h"
+#include "InstanceScript.h"
+#include "Map.h"
 #include "MoveSplineInit.h"
+#include "VehicleDefines.h"
+#include "SpellInfo.h"
+
+#include "mogu_shan_vaults.h"
 
 enum Spells
 {

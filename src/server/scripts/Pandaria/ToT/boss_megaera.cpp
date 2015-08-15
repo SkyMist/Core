@@ -1,19 +1,31 @@
 /*
-*
-* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sue your ass.
-*
-* Raid: Throne of Thunder.
-* Boss: Megaera.
-*
-* Wowpedia boss history:
-*
-* "Even the most callous among the mogu quaver at the thought of the dark experiments performed at the Thunder King's behest.
-*  Long ago, a young cloud serpent was twisted into a multi-headed hydra and left to languish beneath Lei Shen's throne.
-*  Now the twisted creature lurks deep in the Forgotten Depths, awaiting the moment it may finally inflict its terrible agony upon others."
-*
-* ! 3 heads visible, 2 front + 1 back. 7 heads to kill -> win, 15% hp loss per head.
-* ! TODO: Diffusion dummy for 10% healing redirection.
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Raid: Throne of Thunder.
+ * Boss: Megaera.
+ *
+ * Wowpedia boss history:
+ *
+ * "Even the most callous among the mogu quaver at the thought of the dark experiments performed at the Thunder King's behest.
+ *  Long ago, a young cloud serpent was twisted into a multi-headed hydra and left to languish beneath Lei Shen's throne.
+ *  Now the twisted creature lurks deep in the Forgotten Depths, awaiting the moment it may finally inflict its terrible agony upon others."
+ *
+ * ! 3 heads visible, 2 front + 1 back. 7 heads to kill -> win, 15% hp loss per head.
+ * ! TODO: Diffusion dummy for 10% healing redirection.
+ */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"

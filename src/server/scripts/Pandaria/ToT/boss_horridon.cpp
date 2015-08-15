@@ -1,16 +1,28 @@
 /*
-*
-* SkyMist Gaming © says just enjoy the script. It is not free to use and under copyright law so if you are an unauthorised third party we'll just sue your ass.
-*
-* Raid: Throne of Thunder.
-* Boss: Horridon.
-*
-* Wowpedia boss history:
-*
-* "The Zandalari brought powerful creatures with them to the Isle of Thunder to use as engines of war. 
-*  Led by the War-God Jalak, the dinomancers of the Zandalari Beast Ward use ancient tribal magics to strengthen the great beasts and command obedience. 
-*  The horns of Horridon, the fabled mount of Jalak himself, can tear through the stone walls of a keep as a blade cuts silk."
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Raid: Throne of Thunder.
+ * Boss: Horridon.
+ *
+ * Wowpedia boss history:
+ *
+ * "The Zandalari brought powerful creatures with them to the Isle of Thunder to use as engines of war. 
+ *  Led by the War-God Jalak, the dinomancers of the Zandalari Beast Ward use ancient tribal magics to strengthen the great beasts and command obedience. 
+ *  The horns of Horridon, the fabled mount of Jalak himself, can tear through the stone walls of a keep as a blade cuts silk."
+ */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
