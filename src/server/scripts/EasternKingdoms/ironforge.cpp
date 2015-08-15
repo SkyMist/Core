@@ -36,7 +36,8 @@ EndScriptData */
 
 enum Coldridge
 {
-    SPELL_SHOOT             = 6660,
+    SPELL_SHOOT             = 3018,
+    SPELL_CLUB              = 69851,
     SPELL_CONSTRICTION_AURA = 77311,
     SPELL_THROW             = 38557,
     SPELL_GEARS             = 75775,
@@ -192,13 +193,16 @@ public:
 
         uint32 DamageCount;
         uint32 AttackTimer;
-        bool isMovingHome;
+        uint32 ClubTimer;
+        bool isMovingHome, said;
 
         void Reset()
         {
             DamageCount = 0;
             AttackTimer = 1000;
+            ClubTimer = -1;
             isMovingHome = false;
+            said = false;
         }
 
         void EnterEvadeMode()
@@ -238,7 +242,7 @@ public:
                 me->AI()->AttackStart(who);
                 DamageCount = 0;
 
-                if (me->GetEntry() == NPC_ROCKJAW_GOON)
+                if (me->GetEntry() == NPC_ROCKJAW_GOON && !said)
                 {
                     switch(urand(0, 2))
                     {
@@ -247,6 +251,8 @@ public:
                         case 2: me->MonsterSay("You break our cave, I break your skull!", LANG_UNIVERSAL, 0); break;
                         default: break;
                     }
+                    ClubTimer = 3000;
+                    said = true;
                 }
             }
         }
@@ -260,6 +266,13 @@ public:
                     me->AI()->AttackStart(defender);
                 AttackTimer = 2000;
             } else AttackTimer -= diff;
+
+            if (ClubTimer <= diff)
+            {
+                if (Unit* target = me->getVictim())
+                    DoCast(target, SPELL_CLUB);
+                ClubTimer = urand (5000, 8000);
+            } else ClubTimer -= diff;
 
             if (!UpdateVictim())
                 return;

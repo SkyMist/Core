@@ -353,6 +353,9 @@ enum Npcs
 
     // Sha of Pride.
 
+    NPC_LOREWALKER_CHO_NORUSHEN    = 72872,
+    NPC_THARAN_ZHU_PRIDE           = 72779,
+
     NPC_MANIFESTATION_OF_PRIDE     = 72280, // From Banishment.
     NPC_SELF_REFLECTION            = 72172, // From Self Reflection.
     NPC_RIFT_OF_CORRUPTION         = 72846, // From Unstable Corruption.
@@ -413,8 +416,53 @@ enum PrisonsCount
     SP_PRISONS_COUNT_25MAN         = 4
 };
 
+// Corrupted Prisons id.
+enum Prisons
+{
+    PRISON_NORTH                   = 1,
+    PRISON_SOUTH,
+    PRISON_WEST,
+    PRISON_EAST
+};
+
+enum MovementPoints
+{
+    POINT_NORUSHEN_MOVE_1          = 1,
+    POINT_NORUSHEN_MOVE_2          = 2,
+    POINT_NORUSHEN_MOVE_3          = 3,
+    POINT_NORUSHEN_MOVE_4          = 4,  // Chamber entrance.
+    POINT_NORUSHEN_MOVE_5          = 5,  // Encounter.
+
+    POINT_ZHU_MOVE_6               = 6,  // Spawn.
+    POINT_ZHU_MOVE_7               = 7,  // Despawn.
+
+    POINT_CHO_MOVE_8               = 8,  // Chamber entrance.
+    POINT_CHO_MOVE_9               = 9,  // Zhu.
+    POINT_CHO_MOVE_10              = 10, // Despawn.
+    POINT_CHO_MOVE_11              = 11, // Outro.
+
+    POINT_JL_MOVE_10               = 12, // Jaina / Lor'themar outro 1.
+    POINT_JL_MOVE_11               = 13, // Jaina / Lor'themar outro 2.
+    POINT_JL_MOVE_12               = 14, // Jaina / Lor'themar outro 3.
+    POINT_JL_MOVE_13               = 15, // Jaina / Lor'themar outro 4.
+    POINT_JL_MOVE_14               = 16, // Jaina / Lor'themar outro 5.
+};
+
+// Tharan Zhu spawn position.
+Position const tharanZhuSpawnPos   = { 780.412f, 1017.587f, 356.062f };
+
 // Sha of Pride spawn position.
 Position const shaPrideSpawnPos    = { 749.194f, 1112.641f, 357.314f };
+
+// Norushen movement positions.
+Position const NorushenMove[5]     =
+{
+    { 768.722f, 1015.379f, 356.073f }, // Stair before door.
+    { 767.805f, 1019.000f, 357.101f }, // Up the stair.
+    { 761.164f, 1049.889f, 357.151f }, // Front of entrance.
+    { 760.357f, 1051.784f, 356.072f }, // Entrance.
+    { 759.110f, 1060.828f, 356.072f }, // Encounter.
+};
 
 /*** Bosses ***/
 
@@ -433,10 +481,13 @@ class boss_norushen_pride : public CreatureScript
 
             InstanceScript* instance;
             EventMap events;
+            Creature* lorewalkerChoIntro;
+            Creature* tharanZhuIntro;
 
             void Reset()
             {
                 events.Reset();
+                lorewalkerChoIntro = NULL;
                 DoAction(ACTION_START_SHA_PRIDE_INTRO);
             }
 
@@ -449,6 +500,35 @@ class boss_norushen_pride : public CreatureScript
                         break;
 
                     default: break;
+                }
+            }
+
+            void UpdateAI(uint32 const diff)
+            {
+                events.Update(diff);
+            
+                while(uint32 eventId = events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        // Intro.
+
+                        case EVENT_INTRO_1:
+
+                            // Define the actors.
+                            if (Creature* loreWalker = me->FindNearestCreature(NPC_LOREWALKER_CHO_NORUSHEN, 100.0f, true))
+                                lorewalkerChoIntro = loreWalker;
+                            if (Creature* tharanZhu = me->SummonCreature(NPC_THARAN_ZHU_PRIDE, tharanZhuSpawnPos, TEMPSUMMON_MANUAL_DESPAWN))
+                                tharanZhuIntro = tharanZhu;
+
+                            // Go to the entrance.
+                            me->GetMotionMaster()->MovePoint(POINT_NORUSHEN_MOVE_1, NorushenMove[0]);
+
+                            events.ScheduleEvent(EVENT_INTRO_2, 8000);
+                            break;
+
+                        default: break;
+                    }
                 }
             }
         };
@@ -476,6 +556,499 @@ class boss_sha_of_pride : public CreatureScript
             EventMap events;
             bool prisonActivated[4];
 
+            /*** Special AI Functions ***/
+
+            // Used to retrieve a single part (1 / 3) of a Prison.
+            GameObject* GetPrisonTile(uint32 prisonGOId)
+            {
+                std::list<GameObject*> wallsList;
+
+                GetGameObjectListWithEntryInGrid(wallsList, me, prisonGOId, 300.0f);
+
+                if (!wallsList.empty())
+                    return wallsList.front();
+            }
+
+            // Retrieve the player put in a certain Prison.
+            Player* GetImprisonedPlayer(uint32 prisonId)
+            {
+                Player* neededPlayer = NULL;
+                uint32 spellId = 0;
+
+                switch (prisonId)
+                {
+                    case PRISON_NORTH:
+                        spellId = SPELL_CORRUPTED_PRISON_1;
+                        break;
+
+                    case PRISON_SOUTH:
+                        spellId = SPELL_CORRUPTED_PRISON_2;
+                        break;
+
+                    case PRISON_WEST:
+                        spellId = SPELL_CORRUPTED_PRISON_3;
+                        break;
+
+                    case PRISON_EAST:
+                        spellId = SPELL_CORRUPTED_PRISON_4;
+                        break;
+
+                    default: break;
+                }
+
+                // Check for errors / wrong calls and return NULL.
+                if (spellId == 0)
+                    return neededPlayer;
+
+                // Now check and retrieve the player having the specific prison aura.
+                Map::PlayerList const &PlayerList = me->GetMap()->GetPlayers();
+                if (!PlayerList.isEmpty())
+                    for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                        if (Player* player = i->getSource())
+                            if (player->HasAura(spellId))
+                                neededPlayer = player;
+
+                // Return what we found.
+                return neededPlayer;
+            }
+
+            // Used to set the state of a single part (1 / 3) of a Prison.
+            void ActivatePrisonTile(bool active, uint32 prisonGOId)
+            {
+                std::list<GameObject*> wallsList;
+
+                GetGameObjectListWithEntryInGrid(wallsList, me, prisonGOId, 300.0f);
+
+                if (!wallsList.empty())
+                    for (std::list<GameObject*>::iterator walls = wallsList.begin(); walls != wallsList.end(); walls++)
+                        (*walls)->SetGoState(active ? GO_STATE_READY : GO_STATE_ACTIVE);
+            }
+
+            // Used to set the state of a whole Prison.
+            void ActivatePrison(uint32 prisonId)
+            {
+                switch (prisonId)
+                {
+                    case PRISON_NORTH:
+                        ActivatePrisonTile(true, GO_N_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_A);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_B);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_C);
+                        break;
+
+                    case PRISON_SOUTH:
+                        ActivatePrisonTile(true, GO_S_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_A);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_B);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_C);
+                        break;
+
+                    case PRISON_WEST:
+                        ActivatePrisonTile(true, GO_W_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_A);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_B);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_C);
+                        break;
+
+                    case PRISON_EAST:
+                        ActivatePrisonTile(true, GO_E_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_A);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_B);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_C);
+                        break;
+
+                    default: break;
+                }
+
+                prisonActivated[prisonId - 1] = true;
+            }
+
+            void DeactivatePrison(uint32 prisonId)
+            {
+                switch (prisonId)
+                {
+                    case PRISON_NORTH:
+                        ActivatePrisonTile(false, GO_N_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_A);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_B);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_C);
+                        break;
+
+                    case PRISON_SOUTH:
+                        ActivatePrisonTile(false, GO_S_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_A);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_B);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_C);
+                        break;
+
+                    case PRISON_WEST:
+                        ActivatePrisonTile(false, GO_W_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_A);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_B);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_C);
+                        break;
+
+                    case PRISON_EAST:
+                        ActivatePrisonTile(false, GO_E_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_A);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_B);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_C);
+                        break;
+
+                    default: break;
+                }
+
+                prisonActivated[prisonId - 1] = false;
+            }
+
+            // UpdateAI method for automatic updating of Prisons & their parts.
+            void CheckAndSetPrisonTiles()
+            {
+                // Check active prisons.
+
+                bool canCheckNorth = false;
+                bool canCheckSouth = false;
+                bool canCheckWest  = false;
+                bool canCheckEast  = false;
+
+                if (prisonActivated[PRISON_NORTH - 1] == true)
+                    canCheckNorth = true;
+
+                if (prisonActivated[PRISON_SOUTH - 1] == true)
+                    canCheckSouth = true;
+
+                if (prisonActivated[PRISON_WEST - 1]  == true)
+                    canCheckWest = true;
+
+                if (prisonActivated[PRISON_EAST - 1]  == true)
+                    canCheckEast = true;
+
+                // North Prison.
+                if (canCheckNorth)
+                {
+                    bool mustDisableNorth = false;
+
+                    bool NorthATileActive = (GetPrisonTile(GO_NORTH_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool NorthBTileActive = (GetPrisonTile(GO_NORTH_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool NorthCTileActive = (GetPrisonTile(GO_NORTH_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (NorthATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_NORTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_A);
+                            NorthATileActive = false;
+                        }
+                    }
+                    else if (!NorthATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_NORTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_A);
+                            NorthATileActive = true;
+                        }
+                    }
+
+                    // B Tile.
+                    if (NorthBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_NORTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_B);
+                            NorthBTileActive = false;
+                        }
+                    }
+                    else if (!NorthBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_NORTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_B);
+                            NorthBTileActive = true;
+                        }
+                    }
+
+                    // C Tile.
+                    if (NorthCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_NORTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_C);
+                            NorthCTileActive = false;
+                        }
+                    }
+                    else if (!NorthCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_NORTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_C);
+                            NorthCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (NorthATileActive && NorthBTileActive && NorthCTileActive)
+                        mustDisableNorth = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableNorth)
+                    {
+                        DeactivatePrison(PRISON_NORTH);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_NORTH))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_1);
+                    }
+                }
+
+                // South Prison.
+                if (canCheckSouth)
+                {
+                    bool mustDisableSouth = false;
+
+                    bool SouthATileActive = (GetPrisonTile(GO_SOUTH_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool SouthBTileActive = (GetPrisonTile(GO_SOUTH_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool SouthCTileActive = (GetPrisonTile(GO_SOUTH_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (SouthATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_A);
+                            SouthATileActive = false;
+                        }
+                    }
+                    else if (!SouthATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_A);
+                            SouthATileActive = true;
+                        }
+                    }
+
+                    // B Tile.
+                    if (SouthBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_B);
+                            SouthBTileActive = false;
+                        }
+                    }
+                    else if (!SouthBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_B);
+                            SouthBTileActive = true;
+                        }
+                    }
+
+                    // C Tile.
+                    if (SouthCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_C);
+                            SouthCTileActive = false;
+                        }
+                    }
+                    else if (!SouthCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_C);
+                            SouthCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (SouthATileActive && SouthBTileActive && SouthCTileActive)
+                        mustDisableSouth = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableSouth)
+                    {
+                        DeactivatePrison(PRISON_SOUTH);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_SOUTH))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_2);
+                    }
+                }
+
+                // West Prison.
+                if (canCheckWest)
+                {
+                    bool mustDisableWest = false;
+
+                    bool WestATileActive = (GetPrisonTile(GO_WEST_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool WestBTileActive = (GetPrisonTile(GO_WEST_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool WestCTileActive = (GetPrisonTile(GO_WEST_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (WestATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_A);
+                            WestATileActive = false;
+                        }
+                    }
+                    else if (!WestATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_A);
+                            WestATileActive = true;
+                        }
+                    }
+
+                    // B Tile.
+                    if (WestBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_B);
+                            WestBTileActive = false;
+                        }
+                    }
+                    else if (!WestBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_B);
+                            WestBTileActive = true;
+                        }
+                    }
+
+                    // C Tile.
+                    if (WestCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_C);
+                            WestCTileActive = false;
+                        }
+                    }
+                    else if (!WestCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_C);
+                            WestCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (WestATileActive && WestBTileActive && WestCTileActive)
+                        mustDisableWest = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableWest)
+                    {
+                        DeactivatePrison(PRISON_WEST);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_WEST))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_3);
+                    }
+                }
+
+                // East Prison.
+                if (canCheckEast)
+                {
+                    bool mustDisableEast = false;
+
+                    bool EastATileActive = (GetPrisonTile(GO_EAST_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool EastBTileActive = (GetPrisonTile(GO_EAST_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool EastCTileActive = (GetPrisonTile(GO_EAST_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (EastATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_A);
+                            EastATileActive = false;
+                        }
+                    }
+                    else if (!EastATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_A);
+                            EastATileActive = true;
+                        }
+                    }
+
+                    // B Tile.
+                    if (EastBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_B);
+                            EastBTileActive = false;
+                        }
+                    }
+                    else if (!EastBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_B);
+                            EastBTileActive = true;
+                        }
+                    }
+
+                    // C Tile.
+                    if (EastCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_C);
+                            EastCTileActive = false;
+                        }
+                    }
+                    else if (!EastCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_C);
+                            EastCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (EastATileActive && EastBTileActive && EastCTileActive)
+                        mustDisableEast = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableEast)
+                    {
+                        DeactivatePrison(PRISON_EAST);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_EAST))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_4);
+                    }
+                }
+            }
+
+            /*** General AI Functions ***/
+
+            void Reset()
+            {
+                events.Reset();
+
+                for (uint8 i = 0; i < 4; i++)
+                    prisonActivated[i] = false;
+            }
+
+            void DoAction(int32 const action)
+            {
+                switch (action)
+                {
+                    case ACTION_START_SHA_PRIDE_INTRO:
+                        events.ScheduleEvent(EVENT_INTRO_1, 100);
+                        break;
+
+                    default: break;
+                }
+            }
         };
 
         CreatureAI* GetAI(Creature* creature) const

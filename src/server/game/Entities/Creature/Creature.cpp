@@ -690,7 +690,7 @@ void Creature::RegenerateMana()
     {
         float ManaIncreaseRate = sWorld->getRate(RATE_POWER_MANA);
         float Spirit = GetStat(STAT_SPIRIT);
-        addvalue = (CalculatePct(GetMaxPower(POWER_MANA), 0.4) + uint32((Spirit / 5.0f + 17.0f))) * ManaIncreaseRate;
+        addvalue = (CalculatePct(GetMaxPower(POWER_MANA), 0.04) + uint32((Spirit / 5.0f + 17.0f))) * ManaIncreaseRate;
     }
     else if (GetCharmerOrOwnerGUID())
         addvalue = CalculatePct(GetMaxPower(POWER_MANA), 5);

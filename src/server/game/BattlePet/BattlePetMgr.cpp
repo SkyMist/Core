@@ -100,23 +100,23 @@ void BattlePetMgr::BuildBattlePetJournal(WorldPacket *data)
         ObjectGuid petGuid = uint64(pet.m_summonSpellID);
 
         data->WriteBits(0, 7);                  // name length
-        data->WriteBit(true);                   // hasQuality, inverse
+        data->WriteBit(true);                   // hasQuality, inversed
         data->WriteBit(petGuid[3]);
-        data->WriteBit(true);                   // hasBreed, inverse
+        data->WriteBit(true);                   // hasBreed, inversed
         data->WriteBit(petGuid[5]);
         data->WriteBit(petGuid[0]);
-        data->WriteBit(true);                   // hasUnk, inverse
+        data->WriteBit(true);                   // hasFlags, inversed
         data->WriteBit(false);                  // hasFirstOwnerGuid
         data->WriteBit(petGuid[2]);
         // if hasfirstownerguid bits 7 1 6 2 4 3 0 5
-        data->WriteBit(false);                  // unk bit
+        data->WriteBit(false);                  // BATTLE_PET_FLAG_NOT_ACCOUNT_BOUND
         data->WriteBit(petGuid[7]);
         data->WriteBit(petGuid[4]);
         data->WriteBit(petGuid[6]);
         data->WriteBit(petGuid[1]);
 
         if (false)
-            dataBuffer << uint16(0); // hasUnk
+            dataBuffer << uint16(0); // hasFlags
 
         dataBuffer << uint32(1);                // Health or MaxHealth
         dataBuffer << uint32(1);                // Speed
@@ -128,7 +128,7 @@ void BattlePetMgr::BuildBattlePetJournal(WorldPacket *data)
             dataBuffer << uint16(0); // hasQuality
 
         dataBuffer.WriteByteSeq(petGuid[5]);
-        dataBuffer << uint16(0);                // Expirience
+        dataBuffer << uint16(0);                // Experience
         dataBuffer.WriteByteSeq(petGuid[2]);
         dataBuffer.WriteByteSeq(petGuid[1]);
         dataBuffer.WriteByteSeq(petGuid[6]);
@@ -144,7 +144,7 @@ void BattlePetMgr::BuildBattlePetJournal(WorldPacket *data)
         dataBuffer.WriteByteSeq(petGuid[7]);
     }
 
-    data->WriteBit(1);                          // Unk
+    data->WriteBit(1);                          // Slots enabled
     data->FlushBits();
 
     if (dataBuffer.size())
@@ -165,8 +165,30 @@ void WorldSession::HandleSummonBattlePet(WorldPacket& recvData)
     uint8 bytesOrder[8] = { 3, 1, 5, 4, 2, 6, 0, 7 };
     recvData.ReadBytesSeq(battlePetGuid, bytesOrder);
 
-    if (!_player->HasSpell(uint32(battlePetGuid)))
+    uint32 summonSpellId = uint32(battlePetGuid);
+
+    if (!_player->HasSpell(summonSpellId))
         return;
 
-    _player->CastSpell(_player, uint32(battlePetGuid), true);
+    _player->CastSpell(_player, summonSpellId, true);
+
+    // SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(summonSpellId);
+    // 
+    // // Fix Summoning / Despawning of Companion.
+    // if (!_player->GetUInt64Value(UNIT_FIELD_BATTLE_PET_COMPANION_GUID))
+    // {
+    //     // Cast Spell and add Companion Guid.
+    //     _player->CastSpell(_player, summonSpellId, true);
+	// 	if (Unit* charm = _player->GetCharm())
+    //         if (charm->GetUInt32Value(UNIT_CREATED_BY_SPELL) == summonSpellId)
+    //             _player->SetUInt64Value(UNIT_FIELD_BATTLE_PET_COMPANION_GUID, charm->GetGUID());
+    // }
+    // else
+    // {
+    //     // Remove Companion and Guid.
+	// 	if (Unit* charm = _player->GetCharm())
+    //         if (charm->GetUInt32Value(UNIT_CREATED_BY_SPELL) == summonSpellId)
+    //             charm->ToCreature()->DespawnOrUnsummon();
+    //     _player->SetUInt64Value(UNIT_FIELD_BATTLE_PET_COMPANION_GUID, 0);
+    // }
 }

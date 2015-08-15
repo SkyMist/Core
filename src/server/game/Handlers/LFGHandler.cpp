@@ -326,8 +326,13 @@ void WorldSession::HandleLfgLockInfoRequestOpcode(WorldPacket& recvData)
                     if (!qRew->RewardCurrencyId[i])
                         continue;
 
+                    CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(qRew->RewardCurrencyId[i]);
+                    uint32 countCurrency = qRew->RewardCurrencyCount[i] ? qRew->RewardCurrencyCount[i] : 0;
+                    if (currency->Flags & CURRENCY_FLAG_HIGH_PRECISION)
+                        countCurrency *= 100;
+
                     data << uint32(qRew->RewardCurrencyId[i]);
-                    data << uint32(qRew->RewardCurrencyCount[i]);
+                    data << uint32(countCurrency);
                 }
             }
 
@@ -711,7 +716,7 @@ void WorldSession::SendLfgJoinResult(uint64 guid_, const LfgJoinResultData& join
 
     WorldPacket data(SMSG_LFG_JOIN_RESULT, 4 + 4 + size);
 
-    data << uint32(3);                                    // Unk
+    data << uint32(3);                                    // Some Flags
     data << uint8(joinData.result);                       // Check Result
     data << uint8(joinData.state);                        // Check Value
     data << uint32(getMSTime());                          // Time
@@ -784,7 +789,7 @@ void WorldSession::SendLfgQueueStatus(uint32 dungeon, int32 waitTime, int32 avgW
 
     WorldPacket data(SMSG_LFG_QUEUE_STATUS, 4 + 4 + 4 + 4 + 4 +4 + 1 + 1 + 1 + 4);
     data << uint32(info->joinTime);
-    data << uint32(0);                                      // queue id
+    data << uint32(0);                                     // Queue id
     data << int32(waitTime);
     data << uint32(dungeon);
     data << uint8(tanks);                                  // Tanks needed
@@ -796,13 +801,13 @@ void WorldSession::SendLfgQueueStatus(uint32 dungeon, int32 waitTime, int32 avgW
     data << uint32(3);                                     // Some Flags
     data << int32(queuedTime);
     data << uint32(avgWaitTime);
-   
+
     uint8 bitOrder[8] = { 2, 0, 6, 5, 1, 4, 7, 3 };
     data.WriteBitInOrder(guid, bitOrder);
 
     uint8 byteOrder[8] = { 6, 1, 2, 4, 7, 3, 5, 0 };
     data.WriteBytesSeq(guid, byteOrder);
-    
+
     SendPacket(&data);
 }
 
@@ -820,47 +825,60 @@ void WorldSession::SendLfgPlayerReward(uint32 rdungeonEntry, uint32 sdungeonEntr
     
     data.WriteBits(itemNum, 20);
 
-    if (qRew && qRew->GetRewItemsCount())
+    if (qRew)
     {
-        ItemTemplate const* iProto = NULL;
-        for (uint8 i = 0; i < QUEST_REWARDS_COUNT; ++i)
+        bool rewardIsCurrency = false; // Check if the reward is an item or a currency.
+
+        if (qRew->GetRewItemsCount())
         {
-            if (!qRew->RewardItemId[i])
-                continue;
+            ItemTemplate const* iProto = NULL;
+            for (uint8 i = 0; i < QUEST_REWARDS_COUNT; ++i)
+            {
+                if (!qRew->RewardItemId[i])
+                    continue;
 
-            data.WriteBit(0);
+                data.WriteBit(rewardIsCurrency);
 
-            iProto = sObjectMgr->GetItemTemplate(qRew->RewardItemId[i]);
+                iProto = sObjectMgr->GetItemTemplate(qRew->RewardItemId[i]);
 
-            bytereward << uint32(iProto ? iProto->DisplayInfoID : 0);
-            bytereward << uint32(qRew->RewardItemIdCount[i]);
-            bytereward << uint32(0);
-            bytereward << uint32(qRew->RewardItemId[i]);
+                bytereward << uint32(iProto ? iProto->DisplayInfoID : 0);
+                bytereward << uint32(qRew->RewardItemIdCount[i]);
+                bytereward << uint32(0); // Currency flags here (0 for items)?
+                bytereward << uint32(qRew->RewardItemId[i]);
+            }
         }
-    }
-    if (qRew && qRew->GetRewCurrencyCount())
-    {
-        for (uint8 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
+
+        if (qRew->GetRewCurrencyCount())
         {
-            if (!qRew->RewardCurrencyId[i])
-                continue;
+            rewardIsCurrency = true;
 
-            data.WriteBit(1);
+            for (uint8 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
+            {
+                if (!qRew->RewardCurrencyId[i])
+                    continue;
 
-            bytereward << uint32(0);
-            bytereward << uint32(qRew->RewardCurrencyCount[i]);
-            bytereward << uint32(0);
-            bytereward << uint32(qRew->RewardCurrencyId[i]);
+                data.WriteBit(rewardIsCurrency);
+
+                CurrencyTypesEntry const* currency = sCurrencyTypesStore.LookupEntry(qRew->RewardCurrencyId[i]);
+                uint32 countCurrency = qRew->RewardCurrencyCount[i] ? qRew->RewardCurrencyCount[i] : 0;
+                if (currency->Flags & CURRENCY_FLAG_HIGH_PRECISION)
+                    countCurrency *= 100;
+
+                bytereward << uint32(0); // Display ID (0 for currency)
+                bytereward << uint32(countCurrency);
+                bytereward << uint32(0); // Currency flags here?
+                bytereward << uint32(qRew->RewardCurrencyId[i]);
+            }
         }
     }
 
     data.FlushBits();
 
     data.append(bytereward);
-    data << uint32(qRew->XPValue(GetPlayer()));
+    data << uint32(qRew ? qRew->XPValue(GetPlayer()) : 0);
     data << uint32(rdungeonEntry);                         // Random Dungeon Finished
     data << uint32(sdungeonEntry);                         // Dungeon Finished
-    data << uint32(qRew->GetRewOrReqMoney());
+    data << uint32(qRew ? qRew->GetRewOrReqMoney() : 0);
 
     SendPacket(&data);
 }
