@@ -5351,7 +5351,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 106334:// Wash Away
                 case 138391:// Alpha Male Oondasta
-                    spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                    spellInfo->AttributesEx3 &= ~SPELL_ATTR3_ONLY_TARGET_PLAYERS;
                     break;
                 case 120552:// Mantid Munition Explosion
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);

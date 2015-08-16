@@ -15,6 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * World Boss: Oondasta.
+ *
+ * !ToDo: Test Spiritfire Beam.
 */
 
 #include "ObjectMgr.h"
@@ -109,6 +111,7 @@ class boss_oondasta : public CreatureScript
             {
                 if (!introDone)
                 {
+                    me->AddUnitState(UNIT_STATE_ROOT);
                     me->SetReactState(REACT_PASSIVE);
                     if (Creature* Dohaman = me->FindNearestCreature(NPC_DOHAMAN_BEAST_LORD, 50.0f, true))
                     {
@@ -186,12 +189,14 @@ class boss_oondasta : public CreatureScript
                             if (Creature* Dohaman = me->FindNearestCreature(NPC_DOHAMAN_BEAST_LORD, 50.0f, true))
                             {
                                 Dohaman->AI()->Talk(SAY_INTRO_DONE);
+                                me->SetFacingToObject(Dohaman);
                                 DoCast(Dohaman, SPELL_KILL_DOHAMAN, true);
-					        }
+                            }
 
                             // Intro done, add the aura and schedule the events.
                             introDone = true;
                             me->AddAura(SPELL_ALPHA_MALE, me);
+                            me->ClearUnitState(UNIT_STATE_ROOT);
                             me->SetReactState(REACT_AGGRESSIVE);
 
                             events.ScheduleEvent(EVENT_CRUSH, 60000);
@@ -242,67 +247,7 @@ class boss_oondasta : public CreatureScript
         }
 };
 
-// Kill Dohaman target check for Dohaman the Beast Lord.
-class DohamanCheck : public std::unary_function<Unit*, bool>
-{
-    public:
-        explicit DohamanCheck(Unit* _caster) : caster(_caster) { }
-
-        bool operator()(WorldObject* object)
-        {
-            return object->GetEntry() != NPC_DOHAMAN_BEAST_LORD;
-        }
-
-    private:
-        Unit* caster;
-};
-
-// Kill Dohaman: 138859.
-class spell_oondasta_kill_dohaman : public SpellScriptLoader
-{
-    public:
-        spell_oondasta_kill_dohaman() : SpellScriptLoader("spell_oondasta_kill_dohaman") { }
-
-        class spell_oondasta_kill_dohaman_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_oondasta_kill_dohaman_SpellScript);
-
-            bool Validate(SpellEntry const * spellEntry)
-            {
-                if (!sSpellStore.LookupEntry(spellEntry->Id))
-                    return false;
-
-                return true;
-            }
-
-            bool Load()
-            {
-                return true;
-            }
-
-            void FilterTargets(std::list<WorldObject*>& targets)
-            {
-                if (targets.empty())
-                    return;
-
-                // Only casted by the boss on Dohaman the Beast Lord.
-                targets.remove_if(DohamanCheck(GetCaster()));
-            }
-
-            void Register()
-            {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_oondasta_kill_dohaman_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_oondasta_kill_dohaman_SpellScript();
-        }
-};
-
 void AddSC_boss_oondasta()
 {
     new boss_oondasta();
-    new spell_oondasta_kill_dohaman();
 }
