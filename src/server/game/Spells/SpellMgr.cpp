@@ -5350,6 +5350,7 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
                     break;
                 case 106334:// Wash Away
+                case 138391:// Alpha Male Oondasta
                     spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
                     break;
                 case 120552:// Mantid Munition Explosion

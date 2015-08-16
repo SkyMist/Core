@@ -135,6 +135,7 @@ class boss_oondasta : public CreatureScript
 
             void EnterEvadeMode()
             {
+                me->RemoveAllAuras();
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -241,7 +242,67 @@ class boss_oondasta : public CreatureScript
         }
 };
 
+// Kill Dohaman target check for Dohaman the Beast Lord.
+class DohamanCheck : public std::unary_function<Unit*, bool>
+{
+    public:
+        explicit DohamanCheck(Unit* _caster) : caster(_caster) { }
+
+        bool operator()(WorldObject* object)
+        {
+            return object->GetEntry() != NPC_DOHAMAN_BEAST_LORD;
+        }
+
+    private:
+        Unit* caster;
+};
+
+// Kill Dohaman: 138859.
+class spell_oondasta_kill_dohaman : public SpellScriptLoader
+{
+    public:
+        spell_oondasta_kill_dohaman() : SpellScriptLoader("spell_oondasta_kill_dohaman") { }
+
+        class spell_oondasta_kill_dohaman_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_oondasta_kill_dohaman_SpellScript);
+
+            bool Validate(SpellEntry const * spellEntry)
+            {
+                if (!sSpellStore.LookupEntry(spellEntry->Id))
+                    return false;
+
+                return true;
+            }
+
+            bool Load()
+            {
+                return true;
+            }
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                if (targets.empty())
+                    return;
+
+                // Only casted by the boss on Dohaman the Beast Lord.
+                targets.remove_if(DohamanCheck(GetCaster()));
+            }
+
+            void Register()
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_oondasta_kill_dohaman_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_NEARBY_ENTRY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_oondasta_kill_dohaman_SpellScript();
+        }
+};
+
 void AddSC_boss_oondasta()
 {
     new boss_oondasta();
+    new spell_oondasta_kill_dohaman();
 }
