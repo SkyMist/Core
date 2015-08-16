@@ -1,47 +1,66 @@
 /*
-    World Boss: Chi-Ji <The Red Crane>
-
-    ======= QUEST =======
-    [90] Celestial Blessings
-
-    Wrathion says: Great Red Crane! Hear our plea.
-    Wrathion says: My champion and I seek your blessing of Hope.
-    Chi-Ji says: My my, the child of the Worldbreaker, proof that none are beyond redemption. I am honored by your visit.
-    Chi-Ji says: Tell me, Son of the Earth-Warder: What is the nature of hope?
-    Wrathion says: Hope is...a belief of a better tomorrow.
-    Chi-Ji says: You speak, but doubt your own words.
-    // Wrathion kneels
-    Wrathion says: ...Great Crane. You have not seen what I have seen.
-    Chi-Ji says: You underestimate me.
-    Wrathion says: ...the fire that once burned the sky will return. It is inevitable. The Burning Legion WILL find Azeroth.
-    Wrathion says: Seas of blood, cities in ruins! Who are we - one divided world - to stand against a legion?
-    Wrathion says: You speak of hope. Believe me, the thinnest silver of belief that we might somehow survive the coming devastation is all that sustains me.
-    Chi-Ji says: Rise, son of Deathwing. I will give you my blessing, for you need it more than any I have ever met.
-    // Wrathion stands
-    Chi-Ji says: I challenge you not to think of hope as a vague and unimaginable future.
-    Chi-Ji says: Live EVERY day with hope in your heart. In doing so, you CREATE the future you dream of.
-    Wrathion says: ...thank you, Great Crane.
-
-    Intro
-    Emperor Shaohao yells: The Red Crane saw hope in me, and instructed me to look inward. Despite my visage of despair, I found this hope, and the despair was vanquished.
-
-    Death
-    Emperor Shaohao yells: You have walked the trial of hope, and learned of the path of the red crane. May it guide your footsteps through time.
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * World Boss: Chi-Ji <The Red Crane>.
+ *
+ * ======= QUEST =======
+ * [90] Celestial Blessings
+ *
+ * Wrathion says: Great Red Crane! Hear our plea.
+ * Wrathion says: My champion and I seek your blessing of Hope.
+ * Chi-Ji says: My my, the child of the Worldbreaker, proof that none are beyond redemption. I am honored by your visit.
+ * Chi-Ji says: Tell me, Son of the Earth-Warder: What is the nature of hope?
+ * Wrathion says: Hope is...a belief of a better tomorrow.
+ * Chi-Ji says: You speak, but doubt your own words.
+ * // Wrathion kneels
+ * Wrathion says: ...Great Crane. You have not seen what I have seen.
+ * Chi-Ji says: You underestimate me.
+ * Wrathion says: ...the fire that once burned the sky will return. It is inevitable. The Burning Legion WILL find Azeroth.
+ * Wrathion says: Seas of blood, cities in ruins! Who are we - one divided world - to stand against a legion?
+ * Wrathion says: You speak of hope. Believe me, the thinnest silver of belief that we might somehow survive the coming devastation is all that sustains me.
+ * Chi-Ji says: Rise, son of Deathwing. I will give you my blessing, for you need it more than any I have ever met.
+ * // Wrathion stands
+ * Chi-Ji says: I challenge you not to think of hope as a vague and unimaginable future.
+ * Chi-Ji says: Live EVERY day with hope in your heart. In doing so, you CREATE the future you dream of.
+ * Wrathion says: ...thank you, Great Crane.
+ *
+ * Intro
+ * Emperor Shaohao yells: The Red Crane saw hope in me, and instructed me to look inward. Despite my visage of despair, I found this hope, and the despair was vanquished.
+ *
+ * Death
+ * Emperor Shaohao yells: You have walked the trial of hope, and learned of the path of the red crane. May it guide your footsteps through time.
 */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "CreatureTextMgr.h"
+#include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
 enum Texts
 {
-    SAY_INTRO         = 0, // When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
-    SAY_AGGRO         = 1, // Then let us begin!
-    SAY_DEATH         = 2, // Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
-    SAY_SLAY          = 3, // Do not give up on yourself!
-    SAY_BEACON_HOPE   = 4, // Believe in one another, and let others carry hope for you.
-    SAY_CRANE_RUSH    = 5  // 0 - Without hope, there is no brightness in the future. ; 1 - Create the destiny you seek.
+    SAY_INTRO               = 0, // When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
+    SAY_AGGRO               = 1, // Then let us begin!
+    SAY_DEATH               = 2, // Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
+    SAY_SLAY                = 3, // Do not give up on yourself!
+    SAY_BEACON_HOPE         = 4, // Believe in one another, and let others carry hope for you.
+    SAY_CRANE_RUSH          = 5  // 0 - Without hope, there is no brightness in the future. ; 1 - Create the destiny you seek.
 };
 
 enum Spells
@@ -61,25 +80,25 @@ enum Spells
 
 enum Events
 {
-    EVENT_INSPIRING_SONG   = 1, // 20s from aggro, 30s after.
-    EVENT_FIRESTORM        = 2, // 12s from aggro, 45s after.
-    EVENT_BEACON_OF_HOPE   = 3, // 45s from aggro, 65s after.
-    EVENT_BLAZING_SONG     = 4, // 9s after beacon of hope.
-    EVENT_CRANE_RUSH       = 5  // 66 and 33%.
+    EVENT_INSPIRING_SONG    = 1, // 20s from aggro, 30s after.
+    EVENT_FIRESTORM         = 2, // 12s from aggro, 45s after.
+    EVENT_BEACON_OF_HOPE    = 3, // 45s from aggro, 65s after.
+    EVENT_BLAZING_SONG      = 4, // 9s after beacon of hope.
+    EVENT_CRANE_RUSH        = 5  // 66 and 33%.
 };
 
 enum Npcs
 {
-    NPC_FIRESTORM          = 71971,
-    NPC_BEACON_OF_HOPE     = 71978,
-    NPC_CHILD_OF_CHIJI     = 71990
+    NPC_FIRESTORM           = 71971,
+    NPC_BEACON_OF_HOPE      = 71978,
+    NPC_CHILD_OF_CHIJI      = 71990
 };
 
 enum CraneRushStates
 {
-    DONE_NONE              = 0, // No casts done.
-    DONE_66                = 1, // First cast done.
-    DONE_33                = 2  // Both casts done.
+    DONE_NONE               = 0, // No casts done.
+    DONE_66                 = 1, // First cast done.
+    DONE_33                 = 2  // Both casts done.
 };
 
 class boss_chi_ji : public CreatureScript

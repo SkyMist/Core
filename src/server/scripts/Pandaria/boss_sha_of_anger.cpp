@@ -1,55 +1,68 @@
 /*
-Pandaria
-World boss
-Antoine Vallee for Pandashan Servers
-
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * World Boss: Sha of Anger.
 */
+
+#include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "CreatureTextMgr.h"
 #include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
-enum eBosses
+enum Yells
 {
-    BOSS_SHA_OF_ANGER,
+    TALK_INTRO                   = 0,
+    TALK_ANGER,
+    TALK_SPAWN,
+    TALK_RESET,
+    TALK_SLAY,
+    TALK_AGGRO
 };
 
-enum eSpells
+enum Spells
 {
-    SPELL_SHADOW_BOLT_ANGER     = 119487,
-    SPELL_OVERCOME_BY_ANGER     = 129356,
-    SPELL_ENDLESS_RAGE          = 119446,
-    SPELL_BITTER_THOUGHTS       = 119601,
-    SPELL_BERSERK               = 47008,
-    SPELL_DOMINATE_MIND_WARNING = 119622,
-    SPELL_DOMINATE_MIND         = 119626,
-    SPELL_SEETHE_AURA           = 119487,
+    SPELL_SHADOW_BOLT_ANGER      = 119487,
+    SPELL_OVERCOME_BY_ANGER      = 129356,
+    SPELL_ENDLESS_RAGE           = 119446,
+    SPELL_BITTER_THOUGHTS        = 119601,
+    SPELL_BERSERK                = 47008,
+    SPELL_DOMINATE_MIND_WARNING  = 119622,
+    SPELL_DOMINATE_MIND          = 119626,
+    SPELL_SEETHE_AURA            = 119487
 };
 
-enum eEvents
+enum Events
 {
-    EVENT_GROWING_ANGER_WARNING = 1,
-    EVENT_GROWING_ANGER         = 2,
-    EVENT_UNLEASHED_WRATH       = 3,
-    EVENT_BERSERK               = 4,
-    EVENT_DESPAWN               = 5,
-    EVENT_SPAWN                 = 6,
-    EVENT_UPDATE_RAGE           = 7,
-    EVENT_RANGE_ATTACK          = 8,
+    EVENT_GROWING_ANGER_WARNING  = 1,
+    EVENT_GROWING_ANGER          = 2,
+    EVENT_UNLEASHED_WRATH        = 3,
+    EVENT_BERSERK                = 4,
+    EVENT_DESPAWN                = 5,
+    EVENT_SPAWN                  = 6,
+    EVENT_UPDATE_RAGE            = 7,
+    EVENT_RANGE_ATTACK           = 8
 };
 
-enum eCreatures
+enum Creatures
 {
-    CREATURE_SHA_OF_ANGER           = 56439,
-};
-
-enum eTalk
-{
-    TALK_INTRO = 0,
-    TALK_ANGER = 1,
-    TALK_SPAWN = 2,
-    TALK_RESET = 3,
-    TALK_SLAY  = 4,
-    TALK_AGGRO = 5,
+    NPC_SHA_OF_DOUBT             = 56439
 };
 
 class boss_sha_of_anger : public CreatureScript
@@ -111,13 +124,13 @@ class boss_sha_of_anger : public CreatureScript
                     itr->RemoveAura(SPELL_DOMINATE_MIND);
             }
 
-            void KilledUnit(Unit* u)
+            void KilledUnit(Unit* victim)
             {
-                if (u->GetTypeId() == TYPEID_PLAYER)
+                if (victim->GetTypeId() == TYPEID_PLAYER)
                     Talk(TALK_SLAY);
             }
 
-            void EnterCombat(Unit* unit)
+            void EnterCombat(Unit* /*who*/)
             {
                 Talk(TALK_AGGRO);
             }
@@ -154,7 +167,6 @@ class boss_sha_of_anger : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_UNLEASHED_WRATH:
-                        {
                             phase1 = false;
 
                             for (uint8 i = 0; i < 5; i++)
@@ -183,74 +195,58 @@ class boss_sha_of_anger : public CreatureScript
                                 phase1 = true;
                                 _targetCount = 0;
                             }
-
                             break;
-                        }
-                        case EVENT_GROWING_ANGER_WARNING:
-                        {
-                            Talk(TALK_ANGER);
 
+                        case EVENT_GROWING_ANGER_WARNING:
+                            Talk(TALK_ANGER);
                             for (uint8 i = 0; i < _dominateMindCount; ++i)
+                            {
                                 if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
                                 {
                                     targetedDominationPlayerGuids.push_back(target->GetGUID());
                                     me->CastSpell(target, SPELL_DOMINATE_MIND_WARNING, true);
                                 }
-
+                            }
                             events.ScheduleEvent(EVENT_GROWING_ANGER, 6000);
                             break;
-                        }
+
                         case EVENT_GROWING_ANGER:
-                        {
                             if (!targetedDominationPlayerGuids.empty())
                                 for (auto guid : targetedDominationPlayerGuids)
                                     if (Player* target = ObjectAccessor::GetPlayer(*me, guid))
                                         if (!me->getVictim() || target != me->getVictim())
-                                            me->CastSpell(target, SPELL_DOMINATE_MIND, false);
-
+                                            DoCast(target, SPELL_DOMINATE_MIND);
                             events.ScheduleEvent(EVENT_GROWING_ANGER_WARNING, 19000);
                             break;
-                        }
-                        case EVENT_SPAWN:
-                        {
-                            Talk(TALK_SPAWN);
 
+                        case EVENT_SPAWN:
+                            Talk(TALK_SPAWN);
                             for (uint8 i = 0; i < _cloudCount; ++i)
                                 if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
-                                    me->CastSpell(target, SPELL_ENDLESS_RAGE, false);
-
+                                    DoCast(target, SPELL_ENDLESS_RAGE);
                             events.ScheduleEvent(EVENT_SPAWN, 15000);
                             break;
-                        }
-                        case EVENT_UPDATE_RAGE:
-                        {
-                            if (phase1)
-                                timer = timer + 20;
-                            else
-                                timer = timer - 20;
 
+                        case EVENT_UPDATE_RAGE:
+                            timer = phase1 ? (timer + 20) : (timer - 20);
                             me->SetPower(POWER_RAGE, timer);
                             events.ScheduleEvent(EVENT_UPDATE_RAGE, 1000);
                             break;
-                        }
+
                         case EVENT_BERSERK:
-                        {
-                            me->CastSpell(me, SPELL_BERSERK, false);
+                            DoCast(me, SPELL_BERSERK);
                             break;
-                        }
+
                         case EVENT_RANGE_ATTACK:
-                        {
                             if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO))
                             {
-                                me->CastSpell(target, SPELL_SHADOW_BOLT_ANGER, false);
+                                DoCast(target, SPELL_SHADOW_BOLT_ANGER);
                                 me->AddAura(SPELL_SEETHE_AURA, target);
                             }
-
                             range = false;
                             break;
-                        }
-                        default:
-                            break;
+
+                        default: break;
                     }
                 }
 
@@ -260,7 +256,8 @@ class boss_sha_of_anger : public CreatureScript
                     events.ScheduleEvent(EVENT_RANGE_ATTACK, 2000);
                 }
 
-                DoMeleeAttackIfReady();
+                if (!range)
+                    DoMeleeAttackIfReady();
             }
         };
 };
