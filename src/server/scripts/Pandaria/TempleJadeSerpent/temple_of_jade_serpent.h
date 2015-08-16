@@ -31,16 +31,16 @@
 enum DataTypes // Events / Encounters.
 {
 	DATA_WISE_MARI_EVENT             = 0,
-    DATA_LOREWALKER_STONESTEP_EVENT  = 1,
-    DATA_LIU_FLAMEHEART_EVENT        = 2,    
+	DATA_LOREWALKER_STONESTEP_EVENT  = 1,
+	DATA_LIU_FLAMEHEART_EVENT        = 2,    
 	DATA_SHA_OF_DOUBT_EVENT          = 3
 };
 
 enum Data     // GUID handling.
 {
 	DATA_WISE_MARI                   = 0,
-    DATA_LOREWALKER_STONESTEP        = 1,
-    DATA_LIU_FLAMEHEART              = 2,    
+	DATA_LOREWALKER_STONESTEP        = 1,
+	DATA_LIU_FLAMEHEART              = 2,    
 	DATA_SHA_OF_DOUBT                = 3
 };
 
