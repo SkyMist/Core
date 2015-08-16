@@ -10,13 +10,6 @@
 
 #define SPELL_GUARDIAN_GRUNT 85667
 
-enum eBosses
-{
-    BOSS_MING_THE_CUNNING,
-    BOSS_KUAI_THE_BRUTE,
-    BOSS_HAIYAN_THE_UNSTOPPABLE,
-};
-
 class mob_xian_the_weaponmaster_trigger : public CreatureScript
 {
     public:
@@ -37,6 +30,8 @@ class mob_xian_the_weaponmaster_trigger : public CreatureScript
 
         enum eSpells
         {
+            // Xin trigger
+            SPELL_PING                      = 120510,
             SPELL_MOGU_JUMP                 = 120444,
         };
 
@@ -132,6 +127,7 @@ class boss_ming_the_cunning : public CreatureScript
 
         enum eSpells
         {
+            //Ming the cunning
             SPELL_LIGHTNING_BOLT            = 123654,
             SPELL_WHIRLING_DERVISH          = 119981,
             SPELL_MAGNETIC_FIELD            = 120100,
@@ -307,6 +303,7 @@ class mob_whirling_dervish : public CreatureScript
 
         enum eSpells
         {
+            // Whirling dervish trigger
             SPELL_WIRHLING_DERVISH_2        = 119982,
             SPELL_WHIRLING_DERVISH_3        = 119994,
             SPELL_THROW                     = 120087,
@@ -508,6 +505,8 @@ class boss_kuai_the_brute : public CreatureScript
 
         enum eSpells
         {
+            // Kuai the brute
+            SPELL_COMBAT_SOUND_LOOP         = 126252,
             SPELL_SHOCKWAVE                 = 119922,
             SPELL_PICK_SHOCKWAVE_TARGET     = 120499,
             SPELL_SHOCKWAVE_2               = 119929,
@@ -764,6 +763,7 @@ class boss_haiyan_the_unstoppable : public CreatureScript
 
         enum eSpells
         {
+            // Haiyan the unstoppable
             SPELL_TRAUMATIC_BLOW            = 123655,
             SPELL_CONFLAGRATE               = 120160,
             SPELL_CONFLAGRATE_2             = 120167,

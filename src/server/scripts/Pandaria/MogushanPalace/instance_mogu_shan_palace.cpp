@@ -1,12 +1,26 @@
 /*
-    Dungeon : Template of Mogu'shan Palace 87-89
-    Instance General Script
-    Jade servers
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Dungeon: Mogu'shan Palace.
+ * Description: Instance Script.
+ */
 
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
-#include "VMapFactory.h"
+
 #include "mogu_shan_palace.h"
 
 class instance_mogu_shan_palace : public InstanceMapScript
@@ -14,13 +28,13 @@ class instance_mogu_shan_palace : public InstanceMapScript
 public:
     instance_mogu_shan_palace() : InstanceMapScript("instance_mogu_shan_palace", 994) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const
-    {
-        return new instance_mogu_shan_palace_InstanceMapScript(map);
-    }
-
     struct instance_mogu_shan_palace_InstanceMapScript : public InstanceScript
     {
+        instance_mogu_shan_palace_InstanceMapScript(Map* map) : InstanceScript(map)
+        {
+            Initialize();
+        }
+
         /*
         ** Trial of the king.
         */
@@ -60,10 +74,10 @@ public:
         uint64 doorAfterTrialGuid;
         uint64 doorBeforeKingGuid;
 
-        instance_mogu_shan_palace_InstanceMapScript(Map* map) : InstanceScript(map) {}
-
         void Initialize()
         {
+            SetBossNumber(MAX_ENCOUNTERS);
+
             xin_guid = 0;
             kuai_guid = 0;
             ming_guid = 0;
@@ -79,6 +93,18 @@ public:
             glintrok_skulker = 0;
             glintrok_oracle = 0;
             glintrok_hexxer = 0;
+
+            for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
+                SetBossState(i, NOT_STARTED);
+        }
+
+        bool IsEncounterInProgress() const
+        {
+            for (uint32 i = 0; i < MAX_ENCOUNTERS; ++i)
+                if (GetBossState(i) == IN_PROGRESS)
+                    return true;
+
+            return false;
         }
 
         bool SetBossState(uint32 id, EncounterState state)
@@ -319,7 +345,7 @@ public:
         {
             switch (creature->GetEntry())
             {
-                case CREATURE_GEKKAN:
+                case BOSS_GEKKAN:
                     gekkan = creature->GetGUID();
                     break;
                 case CREATURE_GLINTROK_IRONHIDE:
@@ -580,15 +606,15 @@ public:
             case CREATURE_KARGESH_GRUNT:
                 grunts.push_back(creature->GetGUID());
                 break;
-            case CREATURE_KUAI_THE_BRUTE:
+            case BOSS_KUAI_THE_BRUTE:
                 kuai_guid = creature->GetGUID();
                 creature->SetReactState(REACT_PASSIVE);
                 break;
-            case CREATURE_MING_THE_CUNNING:
+            case BOSS_MING_THE_CUNNING:
                 ming_guid = creature->GetGUID();
                 creature->SetReactState(REACT_PASSIVE);
                 break;
-            case CREATURE_HAIYAN_THE_UNSTOPPABLE:
+            case BOSS_HAIYAN_THE_UNSTOPPABLE:
                 haiyan_guid = creature->GetGUID();
                 creature->SetReactState(REACT_PASSIVE);
                 break;
@@ -602,6 +628,10 @@ public:
         }
     };
 
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
+    {
+        return new instance_mogu_shan_palace_InstanceMapScript(map);
+    }
 };
 
 class go_mogushan_palace_temp_portal : public GameObjectScript

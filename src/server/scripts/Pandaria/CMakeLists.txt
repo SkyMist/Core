@@ -18,22 +18,24 @@ set(scripts_STAT_SRCS
   Pandaria/boss_oondasta.cpp
 
   Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
+  Pandaria/MogushanPalace/mogu_shan_palace.h
   Pandaria/MogushanPalace/boss_trial_of_the_king.cpp
   Pandaria/MogushanPalace/boss_gekkan.cpp
   Pandaria/MogushanPalace/boss_xin_the_weaponmaster.cpp
 
   Pandaria/TempleJadeSerpent/instance_temple_of_jade_serpent.cpp
+  Pandaria/TempleJadeSerpent/temple_of_jade_serpent.h
   Pandaria/TempleJadeSerpent/boss_wise_mari.cpp
   Pandaria/TempleJadeSerpent/boss_lorewalker_stonestep.cpp
   Pandaria/TempleJadeSerpent/boss_liu_flameheart.cpp
   Pandaria/TempleJadeSerpent/boss_sha_of_doubt.cpp
 
-  Pandaria/StormstoutBrewery/boss_hoptallus.cpp
-  Pandaria/StormstoutBrewery/boss_ook_ook.cpp
-  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
   Pandaria/StormstoutBrewery/instance_stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.h
+  Pandaria/StormstoutBrewery/boss_hoptallus.cpp
+  Pandaria/StormstoutBrewery/boss_ook_ook.cpp
+  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
 
   Pandaria/GateSettingSun/instance_gate_setting_sun.cpp
   Pandaria/GateSettingSun/gate_setting_sun.cpp
@@ -50,7 +52,7 @@ set(scripts_STAT_SRCS
   Pandaria/ShadopanMonastery/boss_master_snowdrift.cpp
   Pandaria/ShadopanMonastery/boss_sha_of_violence.cpp
   Pandaria/ShadopanMonastery/boss_taran_zhu.cpp
-  
+
   Pandaria/SiegeOfNiuzaoTemple/instance_siege_of_niuzao_temple.cpp
   Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.cpp
   Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.h

@@ -1,17 +1,32 @@
 /*
-    Dungeon : Template of the Jade Serpent 85-87
-    Instance General Script
-    Jade servers
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Dungeon: Temple of the Jade Serpent.
+ * Description: Instance Script.
+ */
 
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
-#include "ScriptedCreature.h"
+
+#include "temple_of_jade_serpent.h"
 
 #define EVENT_LOREWALKER_STONESTEP_SUNS 0
 #define EVENT_LOREWALKER_STONESTEP_TRIAL 1
 
-enum eSpells
+enum SharedSpells
 {
     SPELL_CORRUPTED_WATERS      = 106778,
     //Spells for Lorewalker Stonestep event.
@@ -75,38 +90,7 @@ enum eSpells
     SPELL_BOUNDS_OF_REALITY_2   = 117665,
 };
 
-enum eCreatures
-{
-    CREATURE_WISE_MARI              = 56448,
-
-    CREATURE_SCROLL                 = 57080,
-    CREATURE_ZAO_SUNSEEKER          = 58826,
-    CREATURE_LOREWALKTER_STONESTEP  = 56843,
-    CREATURE_SUN                    = 56915,
-    CREATURE_SUN_TRIGGER            = 56861,
-    CREATURE_HAUNTING_SHA_2         = 58856,
-
-    CREATURE_STRIFE                 = 59726,
-    CREATURE_PERIL                  = 59051,
-
-    CREATURE_MINION_OF_DOUBTS       = 57109,
-    CREATURE_LIU_FLAMEHEART         = 56732,
-    CREATURE_YU_LON                 = 56762,
-    CREATURE_JADE_FIRE              = 56893,
-
-    CREATURE_FIGMENT_OF_DOUBT       = 56792,
-    CREATURE_SHA_OF_DOUBT           = 56439,
-};
-
-enum eGameObjects
-{
-    GAMEOBJECT_DOOR_WISE_MARI           = 213550,
-    GAMEOBJECT_DOOR_LOREWALKER_STONSTEP = 213549,
-    GAMEOBJECT_DOOR_LIU_FLAMEHEART      = 213548,
-    GAMEOBJECT_DOOR_LIU_FLAMEHEART_2    = 213544,
-};
-
-enum eTypes
+enum Types
 {
     TYPE_LOREWALKTER_STONESTEP = 0,
     TYPE_NUMBER_SUN_DEFEATED = 1,
@@ -120,7 +104,7 @@ enum eTypes
     TYPE_CLASS_FIGMENT_DIE = 9,
 };
 
-enum eStatus
+enum Status
 {
     STATUS_LOREWALKER_STONESTEP_NONE        = 1,
     STATUS_LOREWALKER_STONESTEP_INTRO       = 2,
@@ -135,13 +119,13 @@ class instance_temple_of_jade_serpent : public InstanceMapScript
 public:
     instance_temple_of_jade_serpent() : InstanceMapScript("instance_temple_of_jade_serpent", 960) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const
-    {
-        return new instance_temple_of_jade_serpent_InstanceMapScript(map);
-    }
-
     struct instance_temple_of_jade_serpent_InstanceMapScript : public InstanceScript
     {
+        instance_temple_of_jade_serpent_InstanceMapScript(Map* map) : InstanceScript(map)
+        {
+            Initialize();
+        }
+
         /*
         ** Wise Mari script.
         */
@@ -199,8 +183,10 @@ public:
         ** End of Sha of Doubt script.
         */
 
-        instance_temple_of_jade_serpent_InstanceMapScript(Map* map) : InstanceScript(map)
+        void Initialize()
         {
+            SetBossNumber(MAX_ENCOUNTERS);
+
             // Wise Mari script
             doorWiseMari = 0;
             roomCenter.m_positionX = 1046.941f;
@@ -235,29 +221,24 @@ public:
             countFigments = 0;
         }
 
-        void Initialize()
-        {
-        }
-
         void OnGameObjectCreate(GameObject* go)
         {
             switch (go->GetEntry())
             {
-                case GAMEOBJECT_DOOR_WISE_MARI:
+                case GO_DOOR_WISE_MARI:
                     doorWiseMari = go->GetGUID();
                     break;
-                case GAMEOBJECT_DOOR_LIU_FLAMEHEART_2:
+				case GO_DOOR_LIU_FLAMEHEART_2:
                     doorLiu_2 = go->GetGUID();
                     break;
-                case GAMEOBJECT_DOOR_LOREWALKER_STONSTEP:
+				case GO_DOOR_LOREWALKER_STONSTEP:
                     door_lorewalker = go->GetGUID();
                     break;
-                case GAMEOBJECT_DOOR_LIU_FLAMEHEART:
+				case GO_DOOR_LIU_FLAMEHEART:
                     doorLiu = go->GetGUID();
                     break;
             }
         }
-
         
         void OnCreatureCreate(Creature* creature)
         {
@@ -382,9 +363,9 @@ public:
         {
             switch (type)
             {
-            case CREATURE_ZAO_SUNSEEKER:
+            case NPC_ZAO_SUNSEEKER:
                 return zao_sunseeker;
-            case CREATURE_SHA_OF_DOUBT:
+            case BOSS_SHA_OF_DOUBT:
                 return sha_of_doubt_guid;
             }
             return 0;
@@ -392,7 +373,7 @@ public:
 
         void OnUnitDeath_wise_mari(Unit* unit)
         {
-            if (unit->GetEntry() == CREATURE_WISE_MARI)
+            if (unit->GetEntry() == BOSS_WISE_MARI)
             {
                 GameObject* go = instance->GetGameObject(doorWiseMari);
                 if (go != nullptr)
@@ -432,10 +413,10 @@ public:
         {
             switch (creature->GetEntry())
             {
-            case CREATURE_SHA_OF_DOUBT:
+            case BOSS_SHA_OF_DOUBT:
                 sha_of_doubt_guid = creature->GetGUID();
                 break;
-            case CREATURE_FIGMENT_OF_DOUBT:
+            case NPC_FIGMENT_OF_DOUBT:
                 if (creature->ToTempSummon())
                 {
                     ++countFigments;
@@ -492,21 +473,21 @@ public:
         {
             switch (creature->GetEntry())
             {
-            case CREATURE_JADE_FIRE:
+            case NPC_JADE_FIRE:
                 creature->setFaction(14);
                 creature->SetDisplayId(11686);
                 creature->SetReactState(REACT_PASSIVE);
                 creature->CastSpell(creature, 107108, true);
                 creature->ForcedDespawn(5000);
                 break;
-            case CREATURE_LIU_FLAMEHEART:
+            case BOSS_LIU_FLAMEHEART:
                 liuGuid = creature->GetGUID();
                 break;
             }
         }
         void OnUnitDeath_liu_flameheat(Unit* unit)
         {
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_MINION_OF_DOUBTS)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_MINION_OF_DOUBT)
             {
                 if (unit->GetAreaId() == 6119) //AreaId of Liu Flameheart.
                 {
@@ -514,10 +495,10 @@ public:
 
                     //Spawn Liu Flameheart.
                     if (countMinionDeads == 3)
-                        unit->SummonCreature(CREATURE_LIU_FLAMEHEART, 929.787f, -2561.016f, 180.070f + 5);
+                        unit->SummonCreature(BOSS_LIU_FLAMEHEART, 929.787f, -2561.016f, 180.070f + 5);
                 }
             }
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_YU_LON)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_YU_LON)
             {
                 Creature* creature = instance->GetCreature(liuGuid);
                 if (!creature)
@@ -651,33 +632,33 @@ public:
         {
             switch (creature->GetEntry())
             {
-            case CREATURE_STRIFE:
+            case NPC_STRIFE:
                 guidStrife = creature->GetGUID();
                 break;
-            case CREATURE_PERIL:
+            case NPC_PERIL:
                 guidPeril = creature->GetGUID();
                 break;
-            case CREATURE_HAUNTING_SHA_2:
+            case NPC_HAUNTING_SHA_2:
                 sha_summoned.push_back(creature->GetGUID());
                 break;
-            case CREATURE_SUN_TRIGGER:
+            case NPC_SUN_TRIGGER:
                 creature->setFaction(14);
                 creature->SetDisplayId(11686);
                 creature->SetReactState(REACT_PASSIVE);
                 sun_triggers.push_back(creature->GetGUID());
                 break;
-            case CREATURE_SUN:
+            case NPC_SUN:
                 creature->SetFlag(UNIT_NPC_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 suns.push_back(creature->GetGUID());
                 break;
-            case CREATURE_ZAO_SUNSEEKER:
+            case NPC_ZAO_SUNSEEKER:
                 zao_sunseeker = creature->GetGUID();
                 break;
-            case CREATURE_LOREWALKTER_STONESTEP:
+            case BOSS_LOREWALKER_STONESTEP:
                 lorewalkter_stonestep = creature->GetGUID();
                 creature->CastSpell(creature, SPELL_ROOT_SELF, true);
                 break;
-            case CREATURE_SCROLL:
+            case NPC_SCROLL:
                 scroll = creature->GetGUID();
                 creature->SetFlag(UNIT_NPC_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 creature->CastSpell(creature, SPELL_SCROLL_FLOOR, false);
@@ -735,7 +716,7 @@ public:
         }
         void OnUnitDeath_lorewalker_stonestep(Unit* unit)
         {
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_STRIFE)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_STRIFE)
             {
                 if (Creature* peril = instance->GetCreature(guidPeril))
                 {
@@ -762,7 +743,7 @@ public:
                 }
             }
             
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_PERIL)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_PERIL)
             {
                 if (Creature* strife = instance->GetCreature(guidStrife))
                 {
@@ -789,7 +770,7 @@ public:
                 }
             }
             
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_ZAO_SUNSEEKER)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_ZAO_SUNSEEKER)
             {
                 GameObject* go = instance->GetGameObject(door_lorewalker);
                 if (go != nullptr)
@@ -810,7 +791,7 @@ public:
                 }
             }
             
-            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == CREATURE_SUN)
+            if (unit->ToCreature() && unit->ToCreature()->GetEntry() == NPC_SUN)
             {
                 //OnDied, summon two haunting sha.
                 unit->CastSpell(unit, SPELL_EXTRACT_SHA_4, false);
@@ -857,20 +838,20 @@ public:
 
                     TempSummon* sum = nullptr;
                     //Suns
-                    sum = unit->SummonCreature(CREATURE_SUN, 830.067f, -2466.660f, 179.240f);
-                    sum = unit->SummonCreature(CREATURE_SUN, 836.632f, -2467.159f, 178.139f);
-                    sum = unit->SummonCreature(CREATURE_SUN, 839.659f, -2469.159f, 182.496f);
-                    sum = unit->SummonCreature(CREATURE_SUN, 845.263f, -2469.179f, 178.209f);
-                    sum = unit->SummonCreature(CREATURE_SUN, 850.361f, -2474.320f, 178.196f);
+                    sum = unit->SummonCreature(NPC_SUN, 830.067f, -2466.660f, 179.240f);
+                    sum = unit->SummonCreature(NPC_SUN, 836.632f, -2467.159f, 178.139f);
+                    sum = unit->SummonCreature(NPC_SUN, 839.659f, -2469.159f, 182.496f);
+                    sum = unit->SummonCreature(NPC_SUN, 845.263f, -2469.179f, 178.209f);
+                    sum = unit->SummonCreature(NPC_SUN, 850.361f, -2474.320f, 178.196f);
                     //Trigger of the suns
-                    sum = unit->SummonCreature(CREATURE_SUN_TRIGGER, 830.067f, -2466.660f, 176.320f);
-                    sum = unit->SummonCreature(CREATURE_SUN_TRIGGER, 836.632f, -2467.159f, 176.320f);
-                    sum = unit->SummonCreature(CREATURE_SUN_TRIGGER, 839.659f, -2469.159f, 176.320f);
-                    sum = unit->SummonCreature(CREATURE_SUN_TRIGGER, 845.263f, -2469.179f, 176.320f);
-                    sum = unit->SummonCreature(CREATURE_SUN_TRIGGER, 850.361f, -2474.320f, 176.320f);
+                    sum = unit->SummonCreature(NPC_SUN_TRIGGER, 830.067f, -2466.660f, 176.320f);
+                    sum = unit->SummonCreature(NPC_SUN_TRIGGER, 836.632f, -2467.159f, 176.320f);
+                    sum = unit->SummonCreature(NPC_SUN_TRIGGER, 839.659f, -2469.159f, 176.320f);
+                    sum = unit->SummonCreature(NPC_SUN_TRIGGER, 845.263f, -2469.179f, 176.320f);
+                    sum = unit->SummonCreature(NPC_SUN_TRIGGER, 850.361f, -2474.320f, 176.320f);
 
                     //Summon Zao.
-                    sum = unit->SummonCreature(CREATURE_ZAO_SUNSEEKER, 846.877f, -2449.110f, 175.044f);
+                    sum = unit->SummonCreature(NPC_ZAO_SUNSEEKER, 846.877f, -2449.110f, 175.044f);
                     if (!sum)
                         return;
                     sum->SetFacingTo(4.450f);
@@ -890,10 +871,10 @@ public:
                         lorewalker->GetAI()->DoAction(TYPE_GET_EVENT_LOREWALKER_STONESTEP);
 
                     TempSummon* sum = nullptr;
-                    sum = unit->SummonCreature(CREATURE_STRIFE, 847.530f, -2469.184f, 174.960f);
+                    sum = unit->SummonCreature(NPC_STRIFE, 847.530f, -2469.184f, 174.960f);
                     if (sum != nullptr)
                         sum->SetFacingTo(1.525f);
-                    sum = unit->SummonCreature(CREATURE_PERIL, 836.906f, -2465.859f, 174.960f);
+                    sum = unit->SummonCreature(NPC_PERIL, 836.906f, -2465.859f, 174.960f);
                     if (sum != nullptr)
                         sum->SetFacingTo(1.014f);
                 }
@@ -971,6 +952,10 @@ public:
         }
     };
 
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
+    {
+        return new instance_temple_of_jade_serpent_InstanceMapScript(map);
+    }
 };
 
 void AddSC_instance_temple_of_jade_serpent()
