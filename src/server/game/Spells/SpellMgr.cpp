@@ -3742,6 +3742,7 @@ void SpellMgr::LoadSpellCustomAttr()
             case 108862: // Twilight Onslaught
             case 109226: // Twilight Onslaught
             case 109227: // Twilight Onslaught
+            case 144688: // Magma Crush Ordos
                     // ONLY SPELLS WITH SPELLFAMILY_GENERIC and EFFECT_SCHOOL_DAMAGE
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_SHARE_DAMAGE;
                     break;
@@ -5352,6 +5353,9 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 106334:// Wash Away
                 case 138391:// Alpha Male Oondasta
                     spellInfo->AttributesEx3 &= ~SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                    break;
+                case 144699:// Ancient Flame Ordos
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
                 case 120552:// Mantid Munition Explosion
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);

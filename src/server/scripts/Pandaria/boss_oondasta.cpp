@@ -15,8 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * World Boss: Oondasta.
- *
- * !ToDo: Test Spiritfire Beam.
 */
 
 #include "ObjectMgr.h"
@@ -40,20 +38,21 @@ enum Texts
 
 enum Spells
 {
-    // Boss
+    // Oondasta.
     SPELL_CRUSH            = 137504, // Damage + Armor reduce.
     SPELL_ALPHA_MALE       = 138391, // Immune to Taunts, Threat multiplier trigger.
     SPELL_ALPHA_MALE_TM    = 138390, // Threat multiplier.
     SPELL_FRILL_BLAST      = 137505, // Damage, frontal cone.
     SPELL_GROWING_FURY     = 137502, // Damage done increase.
     SPELL_PIERCING_ROAR    = 137457, // Interrupt + damage.
-    SPELL_SPIRITFIRE_BEAM  = 137508, // Also 137511, damage + jump.
+    SPELL_SPIRITFIRE_BEAM  = 137508, // Also 137511, damage + jump. Second spell id does exactly the same thing.
 
     SPELL_KILL_DOHAMAN     = 138859, // "Eat" instakill.
 };
 
 enum Events
 {
+    // Oondasta.
     EVENT_CRUSH            = 1, // 60s from aggro, 25-30s after.
     EVENT_PIERCING_ROAR    = 2, // 20s from aggro, 30-50s after.
     EVENT_FRILL_BLAST      = 3, // 40s from aggro, 25-30s after.
@@ -111,12 +110,12 @@ class boss_oondasta : public CreatureScript
             {
                 if (!introDone)
                 {
-                    me->AddUnitState(UNIT_STATE_ROOT);
-                    me->SetReactState(REACT_PASSIVE);
                     if (Creature* Dohaman = me->FindNearestCreature(NPC_DOHAMAN_BEAST_LORD, 50.0f, true))
                     {
                         Dohaman->SetInCombatWithZone();
                         me->SetFacingToObject(Dohaman);
+                        me->AddUnitState(UNIT_STATE_ROOT | UNIT_STATE_CANNOT_TURN);
+                        me->SetReactState(REACT_PASSIVE);
 				    }
 
                     events.ScheduleEvent(EVENT_INTRO_1, 1000);
@@ -196,7 +195,7 @@ class boss_oondasta : public CreatureScript
                             // Intro done, add the aura and schedule the events.
                             introDone = true;
                             me->AddAura(SPELL_ALPHA_MALE, me);
-                            me->ClearUnitState(UNIT_STATE_ROOT);
+                            me->ClearUnitState(UNIT_STATE_ROOT | UNIT_STATE_CANNOT_TURN);
                             me->SetReactState(REACT_AGGRESSIVE);
 
                             events.ScheduleEvent(EVENT_CRUSH, 60000);
@@ -222,7 +221,7 @@ class boss_oondasta : public CreatureScript
                             break;
 
                         case EVENT_SPIRITFIRE_BEAM:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                                 DoCast(target, SPELL_SPIRITFIRE_BEAM);
                             events.ScheduleEvent(EVENT_SPIRITFIRE_BEAM, urand(25000, 30000));
                             break;
