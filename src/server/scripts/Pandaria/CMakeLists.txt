@@ -13,9 +13,13 @@ set(scripts_STAT_SRCS
   Pandaria/boss_sha_of_anger.cpp
   Pandaria/boss_galleon.cpp
   Pandaria/boss_nalak.cpp
-  Pandaria/boss_chi_ji.cpp
   Pandaria/boss_ordos.cpp
   Pandaria/boss_oondasta.cpp
+
+  Pandaria/AugustCelestials/boss_chi_ji.cpp
+  Pandaria/AugustCelestials/boss_niuzao.cpp
+  Pandaria/AugustCelestials/boss_xuen.cpp
+  Pandaria/AugustCelestials/boss_yu_lon.cpp
 
   Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
   Pandaria/MogushanPalace/mogu_shan_palace.h
@@ -89,13 +93,13 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/boss_lei_shi.cpp
   Pandaria/TerraceOfEndlessSpring/boss_sha_of_fear.cpp
 
-  Pandaria/ToT/instance_throne_of_thunder.cpp
-  Pandaria/ToT/throne_of_thunder.h
-  Pandaria/ToT/boss_jin_rokh_breaker.cpp
-  Pandaria/ToT/boss_horridon.cpp
-  Pandaria/ToT/boss_tortos.cpp
-  Pandaria/ToT/boss_council_of_elders.cpp
-  Pandaria/ToT/boss_megaera.cpp
+  Pandaria/ThroneOfThunder/instance_throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.h
+  Pandaria/ThroneOfThunder/boss_jin_rokh_breaker.cpp
+  Pandaria/ThroneOfThunder/boss_horridon.cpp
+  Pandaria/ThroneOfThunder/boss_tortos.cpp
+  Pandaria/ThroneOfThunder/boss_council_of_elders.cpp
+  Pandaria/ThroneOfThunder/boss_megaera.cpp
 
   Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
   Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp

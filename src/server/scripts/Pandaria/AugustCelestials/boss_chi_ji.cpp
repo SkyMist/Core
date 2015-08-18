@@ -16,9 +16,27 @@
  *
  * World Boss: Chi-Ji <The Red Crane>.
  *
- * ======= QUEST =======
+ * ======= QUESTS =======
+ *
  * [90] Celestial Blessings
  *
+ * Quest accept:
+ * 
+ * Wrathion says: I will meet you at each of the four shrines, champion.
+ * Wrathion says: Remember, we must visit all four, but we only need to complete ONE of the four challenges.
+ * Wrathion says: Choose the challenge most appropriate for your unique talents.
+ * // Wrathion transforms into his whelp form.
+ * Wrathion says: Good luck! 
+ *
+ * Quest complete:
+ *
+ * Wrathion says: We have done it, hero! We have the blessings of the celestials, and we have completed their challenge.
+ * Wrathion says: I know our next step. Meet me back atop Mason's folly - you'll be pleasantly surprised at what I have in store for you! 
+ *
+ * Temple of the Red Crane - ! Healer spec challenge.
+ *
+ * Wrathion says: The Red Crane of Hope has inspired the citizens of Pandaria from the very dawn of history. I very much want to speak with him.
+ * // Wrathion runs down the right-hand set of stairs to the basement.
  * Wrathion says: Great Red Crane! Hear our plea.
  * Wrathion says: My champion and I seek your blessing of Hope.
  * Chi-Ji says: My my, the child of the Worldbreaker, proof that none are beyond redemption. I am honored by your visit.
@@ -36,11 +54,67 @@
  * Chi-Ji says: I challenge you not to think of hope as a vague and unimaginable future.
  * Chi-Ji says: Live EVERY day with hope in your heart. In doing so, you CREATE the future you dream of.
  * Wrathion says: ...thank you, Great Crane.
+ * Chi-Ji says: My challenge, should you accept it, tasks you with healing the most grievous of wounds.
+ *
+ * - Healer Challenge -
+ *
+ * Chi-Ji says: Let the challenge begin! Hero, you must keep the Black Prince alive with your skills as a healer.
+ * Wrathion says: I'm a black dragon. I won't need any help.
+ * Chi-Ji says: Are you certain? You are filled with doubts and fears, young Prince.
+ * Chi-Ji says: You have not fully reconciled with your past. Now is the time.
+ * Wrathion says: What - wait - father!?
+ * Vision of Deathwing yells: I shall tear this world apart!
+ * Wrathion says: Please - don't make me do this.
+ * Chi-Ji yells: Your champion will keep you alive. Begin!
+ * Vision of Deathwing yells: Your efforts are insignificant!
+ * 
+ * Chi-Ji yells: Heal the Prince, but don't forget to keep yourself alive!
+ * Chi-Ji yells: Do not miss any opportunity to heal the Black Prince!
+ * Chi-Ji yells: The Vale of shadows has lifted!
+ * Chi-Ji yells: Keep move! Your foe is dangerous, but you are smarter!
+ * Chi-Ji yells: Use the blood of the world to regenerate yourself. You can do this!
+ * Chi-Ji yells: The elements are undying! Make use of their time before they rise again!
+ * Chi-Ji yells: Do not fear his traps, champion! Your healing is more powerful than his magic!
+ * 
+ * Vision of Deathwing yells: Your tenacity is admirable, but pointless!
+ * Vision of Deathwing yells: There's no shelter from my fury!
+ * Vision of Deathwing yells: Your armor means nothing! Your faith - even less!
+ * 
+ * Failure
+ * Wrathion yells: Enough! Make it stop!
+ * Chi-Ji yells: Very well. The test is over.
+ * Chi-Ji says: But do not give in despair. You have the spirit to overcome this. Try again, I believe in you.
+ *
+ * Victory
+ * Chi-Ji yells: Very good! You have done it!
+ * Wrathion says: Such... madness...
+ * Chi-Ji says: Do not despair, young prince. You are not your father.
+ * Chi-Ji says: More importantly, your champion would not let you fall. Do you see, with the support of friends, nothing is impossible.
+ * Wrathion says: I understand. Thank you, Great Crane. 
+ *
+ * ===================================================================================================================
+ *
+ *[90] The Emperor's Way - Actual Boss fight.
  *
  * Intro
  * Emperor Shaohao yells: The Red Crane saw hope in me, and instructed me to look inward. Despite my visage of despair, I found this hope, and the despair was vanquished.
+ * Chi-Ji yells: When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
+ *
+ * Aggro
+ * Chi-Ji yells: Then let us begin!
+ *
+ * Beacon of Hope
+ * Believe in one another, and let others carry hope for you.
+ *
+ * Crane Rush
+ * Without hope, there is no brightness in the future.
+ * Create the destiny you seek.
+ *
+ * Kills player
+ * Do not give up on yourself! 
  *
  * Death
+ * Chi-Ji yells: Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
  * Emperor Shaohao yells: You have walked the trial of hope, and learned of the path of the red crane. May it guide your footsteps through time.
 */
 
@@ -55,6 +129,7 @@
 
 enum Texts
 {
+    // Chi'ji
     SAY_INTRO               = 0, // When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
     SAY_AGGRO               = 1, // Then let us begin!
     SAY_DEATH               = 2, // Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
@@ -65,7 +140,7 @@ enum Texts
 
 enum Spells
 {
-    // Boss
+    // Chi'ji
     SPELL_INSPIRING_SONG    = 144468, // Heal spell.
     SPELL_FIRESTORM_SUMMON  = 144461, // Summons NPC_FIRESTORM in 15y.
     SPELL_BEACON_OF_HOPE_S  = 144473, // Summons NPC_BEACON_OF_HOPE.
@@ -80,6 +155,7 @@ enum Spells
 
 enum Events
 {
+    // Chi'ji
     EVENT_INSPIRING_SONG    = 1, // 20s from aggro, 30s after.
     EVENT_FIRESTORM         = 2, // 12s from aggro, 45s after.
     EVENT_BEACON_OF_HOPE    = 3, // 45s from aggro, 65s after.
@@ -101,6 +177,7 @@ enum CraneRushStates
     DONE_33                 = 2  // Both casts done.
 };
 
+// ToDo: Check and fix script.
 class boss_chi_ji : public CreatureScript
 {
     public:
@@ -145,9 +222,10 @@ class boss_chi_ji : public CreatureScript
 
             void EnterEvadeMode()
             {
+                me->RemoveAllAuras();
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
