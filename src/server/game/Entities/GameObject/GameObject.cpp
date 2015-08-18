@@ -1926,9 +1926,8 @@ void GameObject::ModifyHealth(int32 change, Unit* attackerOrHealer /*= NULL*/, u
 
     Player* player = attackerOrHealer ? attackerOrHealer->GetCharmerOrOwnerPlayerOrPlayerItself(): NULL;
 
-    // dealing damage, send packet
-    // TODO: is there any packet for healing?
-    if (change < 0 && player)
+    // Dealing damage / healing, send packet.
+    if (player)
     {
         WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, 8 + 8 + 8 + 4 + 4);
 
@@ -1960,6 +1959,7 @@ void GameObject::ModifyHealth(int32 change, Unit* attackerOrHealer /*= NULL*/, u
         data.WriteBit(goGuid[0]);
         data.WriteBit(goGuid[5]);
         data.WriteBit(attackerGuid[7]);
+
         data.FlushBits();
 
         data.WriteByteSeq(goGuid[4]);
