@@ -9338,7 +9338,7 @@ void ObjectMgr::RestructCreatureGUID(uint32 nbLigneToRestruct)
 
     WorldDatabase.CommitTransaction(worldTrans);
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u lignes ont ete restructuree.", nbLigneToRestruct);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u guids were reassigned.", nbLigneToRestruct);
 }
 
 void ObjectMgr::RestructGameObjectGUID(uint32 nbLigneToRestruct)
@@ -9408,7 +9408,7 @@ void ObjectMgr::RestructGameObjectGUID(uint32 nbLigneToRestruct)
 
     WorldDatabase.CommitTransaction(worldTrans);
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u lignes ont ete restructuree.", nbLigneToRestruct);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u guids were reassigned.", nbLigneToRestruct);
 }
 
 void ObjectMgr::LoadItemExtendedCost()

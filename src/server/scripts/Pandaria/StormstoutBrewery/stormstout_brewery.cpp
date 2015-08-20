@@ -153,6 +153,8 @@ enum BouncerYells
     SAY_PARTY      = 3  // Get da party started for da new Ook!
 };
 
+#define ANN_ILLUSION "Removing the spirit's illusion damages the hozen's fragile mind!"
+
 enum Spells
 {
     // FRIENDLY
@@ -497,7 +499,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 // Summon the "helper".
                 if (!summonedFirstHelper)
                 {
-                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
                     summonedFirstHelper = true;
                 }
             }
@@ -515,7 +517,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
             void JustReachedHome()
             {
                 if (helperDead)
-                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -545,6 +547,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_AQUATIC_ILLUSION);
                 DoCast(me, SPELL_AQUAT_ILLUSION_R);
+                me->MonsterTextEmote(ANN_ILLUSION, NULL, true);
                 helperDead = true;
             }
 
@@ -597,7 +600,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 // Summon the "helper".
                 if (!summonedFirstHelper)
                 {
-                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
                     summonedFirstHelper = true;
                 }
             }
@@ -615,7 +618,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
             void JustReachedHome()
             {
                 if (helperDead)
-                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -645,6 +648,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_FIERY_ILLUSION);
                 DoCast(me, SPELL_FIERY_ILLUSION_R);
+                me->MonsterTextEmote(ANN_ILLUSION, NULL, true);
                 helperDead = true;
             }
 

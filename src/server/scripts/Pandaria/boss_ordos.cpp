@@ -115,6 +115,7 @@ class boss_ordos : public CreatureScript
             void EnterEvadeMode()
             {
                 me->RemoveAllAuras();
+                me->RemoveAllAreaTriggers();
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -125,6 +126,7 @@ class boss_ordos : public CreatureScript
             {
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
+                me->RemoveAllAreaTriggers();
             }
 
             void JustSummoned(Creature* summon)

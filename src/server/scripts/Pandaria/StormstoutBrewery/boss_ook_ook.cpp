@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * Dungeon: Stormstout Brewery.
- * Boss:    Ook-Ook.
+ * Boss: Ook-Ook.
  */
 
 #include "ObjectMgr.h"
@@ -46,7 +46,7 @@ enum Spells
     // Boss
     SPELL_GROUND_POUND           = 106807, // Aura.
     SPELL_GOING_BANANAS          = 106651, // Aura.
-    SPELL_GOING_BANANAS_DUMMY    = 115978,
+    SPELL_GOING_BANANAS_DUMMY    = 115978, // Throws bananas around :).
 
     // NPCs
     SPELL_BARREL_COSMETIC        = 106647, // Visual spell, triggers 106672 dummy each 300 ms.
@@ -76,6 +76,17 @@ enum GoingBananasStates
     DONE_90                = 1, // First cast done.
     DONE_60                = 2, // Second cast done.
     DONE_30                = 3  // All casts done.
+};
+
+// Barrel summon positions.
+Position const barrelPos[6] = 
+{
+    { -783.203f, 1365.502f, 146.727f },     // South right.
+    { -734.282f, 1378.475f, 146.714f },     // South left.
+    { -779.212f, 1355.871f, 146.773f },     // North right.
+    { -730.420f, 1360.788f, 146.708f },     // North left.
+    { -736.140f, 1337.725f, 146.722f },     // Up right.
+    { -765.841f, 1331.986f, 146.724f },     // Up left.
 };
 
 class boss_ook_ook : public CreatureScript
@@ -231,14 +242,16 @@ class npc_ook_barrel : public CreatureScript
 
         struct npc_ook_barrel_AI : public ScriptedAI
         {
-            npc_ook_barrel_AI(Creature* creature) : ScriptedAI(creature)
+            npc_ook_barrel_AI(Creature* creature) : ScriptedAI(creature), vehicle(creature->GetVehicleKit())
             {
+                ASSERT(vehicle);
                 instance = creature->GetInstanceScript();
             }
 
             InstanceScript* instance;
+            Vehicle* vehicle;
             EventMap events;
-            bool exploded;
+            bool exploded, hasPassenger;
 
             void IsSummonedBy(Unit* /*summoner*/)
             {
@@ -254,9 +267,10 @@ class npc_ook_barrel : public CreatureScript
                 me->SetSpeed(MOVE_RUN, 0.7f);
 
                 exploded = false;
+                hasPassenger = false;
 
                 float x, y, z;
-                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 40.0f);
+                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 50.0f);
                 me->GetMotionMaster()->MovePoint(1, x, y, z);
             }
 
@@ -265,7 +279,21 @@ class npc_ook_barrel : public CreatureScript
                 if (!me->isAlive() || type != POINT_MOTION_TYPE || id != 1)
                     return;
 
+                // We call a move stop and inform once a player boards it, so let's prevent it from exploding.
+                if (hasPassenger)
+                    return;
+
                 events.ScheduleEvent(EVENT_EXPLODE, 500);
+            }
+
+            void OnCharmed(bool apply)
+            {
+                if (apply)
+                {
+                    hasPassenger = true;
+                    me->StopMoving();
+                }
+                else events.ScheduleEvent(EVENT_EXPLODE, 500);
             }
 
             void UpdateAI(const uint32 diff)
@@ -294,17 +322,18 @@ class npc_ook_barrel : public CreatureScript
         private:
             bool CheckIfAgainstWall()
             {
-                float x, y, z;
-                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 5.0f);
-                if (!me->IsWithinLOS(x, y, me->GetPositionZ()))
-                    return true;
+                // ToDo : Fix this.
+                // float x, y, z;
+                // me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 5.0f);
+                // if (!me->IsWithinLOS(x, y, z))
+                //     return true;
 
                 return false;
             }
 
             bool CheckIfAgainstOokOok()
             {
-                if (me->FindNearestCreature(BOSS_OOKOOK, 1.0f, true))
+                if (hasPassenger && me->FindNearestCreature(BOSS_OOKOOK, 1.0f, true))
                     return true;
 
                 return false;
@@ -312,9 +341,10 @@ class npc_ook_barrel : public CreatureScript
 
             bool CheckIfAgainstPlayer()
             {
-                if (Player* nearPlayer = me->FindNearestPlayer(1.0f))
-                    if (nearPlayer->IsWithinDistInMap(me, 1.0f) && me->isInFront(nearPlayer, M_PI / 3))
-                        return true;
+                if (!hasPassenger)
+                    if (Player* nearPlayer = me->FindNearestPlayer(1.0f))
+                        if (nearPlayer->IsWithinDistInMap(me, 1.0f) && me->isInFront(nearPlayer, M_PI / 3))
+                            return true;
 
                 return false;
             }
@@ -333,8 +363,9 @@ class npc_ook_barrel : public CreatureScript
                         DoCast(me, SPELL_BARREL_EXPLOSION_O);
                     }
 
-                    me->DespawnOrUnsummon(200);
                     exploded = true;
+                    hasPassenger = false;
+                    me->DespawnOrUnsummon(200);
                 }
             }
         };
@@ -371,7 +402,7 @@ public :
                 {
                     for (uint8 i = 0; i < 6; i++)
                         if (Creature* OokOok = GetCaster()->ToCreature())
-                            OokOok->SummonCreature(NPC_OOK_BARREL, OokOok->GetPositionX() + frand(-10.0f, 10.0f), OokOok->GetPositionY() + frand(-10.0f, 10.0f), OokOok->GetPositionZ() + 1.0f, frand(0.0f, 6.0f), TEMPSUMMON_MANUAL_DESPAWN);
+                            OokOok->SummonCreature(NPC_OOK_BARREL, barrelPos[i], TEMPSUMMON_MANUAL_DESPAWN);
                     CAST_AI(boss_ook_ook::boss_ook_ook_AI, GetCaster()->ToCreature()->AI())->summonedBarrels = true;
                 }
             }
@@ -389,79 +420,33 @@ public :
     }
 };
 
-class PositionCheck : public std::unary_function<Unit*, bool>
+// Brew Explosion Ook-Ook 106784.
+class spell_brew_explosion : public SpellScriptLoader
 {
     public:
-        explicit PositionCheck(Unit* _caster) : caster(_caster) { }
-        bool operator()(WorldObject* object)
+        spell_brew_explosion() : SpellScriptLoader("spell_brew_explosion") { }
+
+        class spell_brew_explosion_SpellScript : public SpellScript
         {
-            return !caster->HasInArc(M_PI / 6, object);
-        }
+            PrepareSpellScript(spell_brew_explosion_SpellScript);
 
-    private:
-        Unit* caster;
-};
-
-// Ground Pound triggered spell 106808.
-class spell_ook_ook_ground_pound_dmg : public SpellScriptLoader
-{
-public:
-    spell_ook_ook_ground_pound_dmg() : SpellScriptLoader("spell_ook_ook_ground_pound_dmg") { }
-
-    class spell_ook_ook_ground_pound_dmgSpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_ook_ook_ground_pound_dmgSpellScript);
-
-        void FilterTargets(std::list<WorldObject*>& targets)
-        {
-            targets.remove_if(PositionCheck(GetCaster()));
-        }
-
-        void Register()
-        {
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_104);
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CONE_ENEMY_104);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_ook_ook_ground_pound_dmgSpellScript();
-    }
-};
-
-// Barrel ride 106614.
-class spell_ook_ook_barrel_ride : public SpellScriptLoader
-{
-    public:
-        spell_ook_ook_barrel_ride() :  SpellScriptLoader("spell_ook_ook_barrel_ride") { }
-
-        class spell_ook_ook_barrel_ride_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_ook_ook_barrel_ride_AuraScript);
-
-            void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void FilterTargets(std::list<WorldObject*>& targets)
             {
-                if (GetTarget())
-                {
-                    if (Unit* barrelBase = GetTarget())
-                    {
-                        barrelBase->GetMotionMaster()->MovementExpired();
-                        barrelBase->GetMotionMaster()->Clear();
-                        // barrelBase->GetMotionMaster()->MoveIdle();
-                    }
-                }
+                targets.clear();
+                if (Creature* Ook = GetCaster()->FindNearestCreature(BOSS_OOKOOK, 3.0f, true))
+                    targets.push_back(Ook);
             }
 
-            void Register()
+            void Register() override
             {
-                OnEffectApply += AuraEffectApplyFn(spell_ook_ook_barrel_ride_AuraScript::OnApply, EFFECT_0, SPELL_AURA_CONTROL_VEHICLE, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_brew_explosion_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_brew_explosion_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 
-        AuraScript* GetAuraScript() const
+        SpellScript* GetSpellScript() const override
         {
-            return new spell_ook_ook_barrel_ride_AuraScript();
+            return new spell_brew_explosion_SpellScript();
         }
 };
 
@@ -470,6 +455,5 @@ void AddSC_boss_ook_ook()
 	new boss_ook_ook();
     new npc_ook_barrel();
     new spell_ook_ook_going_bananas_summon();
-    new spell_ook_ook_barrel_ride();
-    new spell_ook_ook_ground_pound_dmg();
+    new spell_brew_explosion();
 }

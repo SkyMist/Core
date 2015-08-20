@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * Dungeon: Stormstout Brewery.
- * Boss:    Hoptallus.
+ * Boss: Hoptallus.
  */
 
 #include "ObjectMgr.h"
@@ -114,6 +114,8 @@ class boss_hoptallus : public CreatureScript
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                     me->SetHomePosition(hoptallusMovePosition.GetPositionX(), hoptallusMovePosition.GetPositionY(), hoptallusMovePosition.GetPositionZ(), 1.85f);
                     me->GetMotionMaster()->MovePoint(1, hoptallusMovePosition);
+                    if (GameObject* barrel = me->FindNearestGameObject(GAMEOBJECT_MYSTERIOUS_BARREL, 100.0f))
+                        barrel->UseDoorOrButton(0);
                     introStarted = true;
                 }
             }
@@ -404,7 +406,8 @@ class npc_hoptallus_bopper_hammer : public CreatureScript
 
             void OnSpellClick(Unit* clicker)
             {
-                clicker->AddAura(SPELL_SMASH_AURA, clicker);
+                if (AuraPtr smash = clicker->AddAura(SPELL_SMASH_AURA, clicker))
+                    smash->SetStackAmount(3);
                 me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
                 me->DespawnOrUnsummon();
             }
@@ -414,19 +417,6 @@ class npc_hoptallus_bopper_hammer : public CreatureScript
         {
             return new npc_hoptallus_bopper_hammerAI(creature);
         }
-};
-
-class PositionCheck : public std::unary_function<Unit*, bool>
-{
-    public:
-        explicit PositionCheck(Unit* _caster) : caster(_caster) { }
-        bool operator()(WorldObject* object)
-        {
-            return !caster->HasInArc(M_PI / 3, object);
-        }
-
-    private:
-        Unit* caster;
 };
 
 class PlayerCheck : public std::unary_function<Unit*, bool>
@@ -495,7 +485,20 @@ public:
 
         void FilterTargets(std::list<WorldObject*>& targets)
         {
-            targets.remove_if(PositionCheck(GetCaster()));
+            Map* map = GetCaster()->GetMap();
+            if (map && map->IsDungeon())
+            {
+                targets.clear();
+                std::list<Player*> playerList;
+                Map::PlayerList const& players = map->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->getSource())
+                        if (GetCaster()->isInFront(player, M_PI / 3))
+                            targets.push_back(player);
+
+                if (targets.empty())
+                    return;
+            }
         }
 
         void Register()

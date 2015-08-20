@@ -8706,6 +8706,20 @@ void SpellMgr::LoadSpellCustomAttr()
 
             // DUNGEONS AND RAIDS - CHECKED 18019 !!!!
 
+            // STORMSTOUT BREWERY (DUNGEON).
+
+                case 106807: // Ground Pound.
+                case 112944: // Carrot Breath.
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    break;
+                case 106808: // Ground Pound (Damage).
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                    break;
+                case 112945: // Carrot Breath (Damage).
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    break;
+
             // THRONE OF THUNDER (RAID).
 
                 // Jin'Rokh the Breaker.

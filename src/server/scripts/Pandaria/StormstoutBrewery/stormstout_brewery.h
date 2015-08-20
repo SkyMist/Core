@@ -113,7 +113,8 @@ Position const HoptallusSummonPosition  = { -713.955f, 1254.574f, 164.790f }; //
 enum GameObjects
 {
     GAMEOBJECT_BREWERY_DOOR         = 209938, // Instance doors. 
-    GAMEOBJECT_PART_CHEWED_CARROT   = 210938, // Hoptallus door. 
+    GAMEOBJECT_PART_CHEWED_CARROT   = 211126, // Hoptallus door. 
+    GAMEOBJECT_MYSTERIOUS_BARREL    = 211138  // Hoptallus barrel.
 };
 
 #endif // DEF_STORMSTOUT_BREWERY_H_
