@@ -40,12 +40,16 @@ Ancient Brewmaster yells: Hey... hey YOU! Those are OUR, flying... beer monsters
 The Tasting Room:
 
 // Check Intro in Boss script, each line corresponds to a spawn. //
-Meteor-like shower. Two Bloated Brew Alementals spawn in the mid.
-Meteor-like shower. Nine Bubbling Brew Alementals spawn in the mid.
-Meteor-like shower. Four Sudsy Brew Alementals spawn in the mid.
-Meteor-like shower. Boss Yan-zhu the Uncasked spawn in the mid.
+Meteor-like shower. Two Bloated / Stout Brew Alementals spawn in the mid.
+Meteor-like shower. Nine Bubbling / Yeasty Brew Alementals spawn in the mid.
+Meteor-like shower. Four Sudsy / Fizzy Brew Alementals spawn in the mid.
+Meteor-like shower, all 3 above. Boss Yan-zhu the Uncasked spawn in the mid.
 
 Ancestral Brewmaster:
+Ancestral Brewmaster says(1): Are these guys Alliance or Horde?
+Ancestral Brewmaster says(3): Why does it matter?
+Ancestral Brewmaster says(1): I need to know which side to stop rooting for!
+
 Ancestral Brewmaster says(1): Do you think all of this fighting is educational for this group?
 Ancestral Brewmaster says(2): Yes, it will drive them to read books!
 
@@ -86,7 +90,7 @@ Ancestral Brewmaster says(2): And where is that?
 Ancestral Brewmaster says(1): Outland!
 
 Ancestral Brewmaster says(1): The last paladin offered me eternal salvation!
-Ancestral Brewmaster says(x): What'd you say?
+Ancestral Brewmaster says(2): What'd you say?
 Ancestral Brewmaster says(1): Kings, please.
 
 Ancestral Brewmaster says(1): This group is awful!
@@ -103,7 +107,7 @@ Ancestral Brewmaster says(1): Why didn't that mage put intellect on his weapon?
 Ancestral Brewmaster says(2): Because he didn't want it to be smarter than he was!
 
 Ancestral Brewmaster says(1): You fool, you're sleeping through the fight!
-Ancestral Brewmaster says(x): Who's the fool? You're watching it!
+Ancestral Brewmaster says(2): Who's the fool? You're watching it!
 
 Ancestral Brewmaster says(1): You know what's the best thing about this group?
 Ancestral Brewmaster says(2): What?
@@ -124,6 +128,9 @@ Ancestral Brewmaster says(1): No, my eyesight will get worse!
 Ancestral Brewmaster says(1): I think I'm going to need another drink!
 Ancestral Brewmaster says(2): Why do you say that?
 Ancestral Brewmaster says(1): I'm beginning to like these guys!
+
+Ancestral Brewmaster says(1): Pay up, they made it through those alementals!
+Ancestral Brewmaster says(3): Double or nothing on the next group?
 */
 
 // Chen Stormstout / Auntie Stormstout intro yells.
@@ -159,10 +166,10 @@ enum Spells
 {
     // FRIENDLY
     SPELL_AUNTIE_VISUAL     = 115618, // Auntie Stormstout visual.
-
     SPELL_GUSHING_BREW_BVIS = 114379, // Gushing Brew beam visual (The Great Wheel).
     SPELL_GUSHING_BREW_A    = 114380, // Gushing Brew aura (NPC that has beam cast on).
     SPELL_LEAKING_BEER_B_A  = 146604, // Dummy for NPC on Keg.
+    SPELL_BEER_PUDDLE_VIS   = 112960, // Beer on ground visual.
 
     // HOSTILE
 
@@ -219,10 +226,19 @@ enum Spells
 
     // Bloated Brew Alemental
     // Uses SPELL_BREW_BOLT.
-    SPELL_BLOAT             = 106546
+    SPELL_BLOAT             = 106546,
 
     // Yeasty Brew Alemental
     // Uses SPELL_BREW_BOLT4.
+    // Uses Ferment in boss script.
+
+    // Yan-zhu the Uncasked intro (Uncle Gao).
+    SPELL_BREW_FINALE_DARK  = 128257, // First wave of spawns, Bloated / Stout Alementals. From Left cauldron (first).
+    SPELL_DARK_SPAWN_EFF    = 128244, // Visual for first wave spawn.
+    SPELL_BREW_FINALE_MED   = 128255, // Second wave of spawns, Yeasty / Bubbling Alementals. From Middle cauldron.
+    SPELL_MED_SPAWN_EFF     = 128243, // Visual for second wave spawn.
+    SPELL_BREW_FINALE_WHEAT = 128253, // Third wave of spawns, Fizzy / Sudsy Alementals. From Right cauldron (last).
+    SPELL_WHEAT_SPAWN_EFF   = 128242  // Visual for third wave spawn.
 };
 
 enum Events
@@ -252,7 +268,7 @@ enum Events
     EVENT_RUN_AND_CRASH,
     EVENT_BOUNCER_DIE,
 
-    // Chen Stormstout / Auntie Stormstout intro event.
+    // Chen Stormstout / Auntie Stormstout intro event
     EVENT_AUNTIE_ENTRANCE_SAY_1,
     EVENT_CHEN_ENTRANCE_SAY_1,
     EVENT_AUNTIE_ENTRANCE_SAY_2,
@@ -265,7 +281,11 @@ enum Events
     EVENT_CHEN_ENTRANCE_SAY_5,
     EVENT_AUNTIE_ENTRANCE_SAY_6,
     EVENT_CHEN_ENTRANCE_SAY_6,
-    EVENT_CHEN_ENTRANCE_SAY_7
+    EVENT_CHEN_ENTRANCE_SAY_7,
+
+    // Ancestral Brewmaster
+    EVENT_SPEAK_HOPTALLUS,
+    EVENT_SPEAK_RANDOM
 };
 
 enum Actions
@@ -289,7 +309,7 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
             if (!instance)
                 return true;
 
-            if (instance->GetData(DATA_HOZEN_KILLED) < HOZEN_KILLS_NEEDED && instance->GetData(DATA_OOKOOK_EVENT) != DONE)
+            if (instance->GetData(DATA_HOZEN_KILLED) < HOZEN_KILLS_NEEDED && instance->GetData(DATA_OOK_SUMMONED) == false && instance->GetData(DATA_OOKOOK_EVENT) != DONE)
             {
                 // Add the Hozen Counter aura.
                 if (player->GetGroup())
@@ -389,66 +409,79 @@ class npc_chen_stormstout_entrance : public CreatureScript
                     {
                         case EVENT_AUNTIE_ENTRANCE_SAY_1:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_1);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_1, 8000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_1:
                             Talk(CHEN_ENTRANCE_SAY_1);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_2, 5000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_2:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_2);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_2, 6000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_2:
                             Talk(CHEN_ENTRANCE_SAY_2);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_3, 5000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_3:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_3);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_3, 5000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_3:
                             Talk(CHEN_ENTRANCE_SAY_3);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_4, 9000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_4:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_4);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_4, 5500);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_4:
                             Talk(CHEN_ENTRANCE_SAY_4);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_5, 6500);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_5:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_5);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_5, 11000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_5:
                             Talk(CHEN_ENTRANCE_SAY_5);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_6, 4500);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_6:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_6);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_POINT);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_6, 4500);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_6:
                             Talk(CHEN_ENTRANCE_SAY_6);
-                            events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_7, 30000);
+                            me->HandleEmote(EMOTE_ONESHOT_NO);
+                            events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_7, 15000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_7:
                             Talk(CHEN_ENTRANCE_SAY_7);
+                            me->HandleEmote(EMOTE_ONESHOT_EAT);
                             break;
 
                         default: break;
@@ -460,6 +493,63 @@ class npc_chen_stormstout_entrance : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_chen_stormstout_entrance_AI(creature);
+        }
+};
+
+// Ancient Brewmaster 59075.
+class npc_ancient_brewmaster : public CreatureScript
+{
+    public :
+        npc_ancient_brewmaster() : CreatureScript("npc_ancient_brewmaster") { }
+
+        struct npc_ancient_brewmaster_AI : public ScriptedAI
+        {
+            npc_ancient_brewmaster_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+            EventMap events;
+            bool said;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                events.Reset();
+                me->SetReactState(REACT_PASSIVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                said = false;
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                events.Update(diff);
+
+                while(uint32 eventId = events.ExecuteEvent())
+                {
+                    switch(eventId)
+                    {
+                        case EVENT_SPEAK_HOPTALLUS:
+                            break;
+
+                        case EVENT_SPEAK_RANDOM:
+                            break;
+
+                        default: break;
+                    }
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_ancient_brewmaster_AI(creature);
         }
 };
 
@@ -1606,6 +1696,7 @@ void AddSC_stormstout_brewery()
 {
     new at_stormstout_brewery_entrance();
     new npc_chen_stormstout_entrance();
+    new npc_ancient_brewmaster();
     new npc_sodden_hozen_brawler();
     new npc_inflamed_hozen_brawler();
     new npc_hozen_bouncer();

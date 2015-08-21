@@ -45,6 +45,8 @@ class instance_stormstout_brewery : public InstanceMapScript
             uint64 uiYanzhuTheUncasked;
             bool OokOokSummoned;
             bool HoptallusSummoned;
+            bool YanzhuSummoned;
+            std::list<Creature*> partyAnimalList;
 
             // Hozen killed for Ook-Ook summon.
             uint32 HozenKilled;
@@ -57,8 +59,13 @@ class instance_stormstout_brewery : public InstanceMapScript
                 uiOokOok = 0;
                 uiHoptallus = 0;
                 uiYanzhuTheUncasked = 0;
+
                 OokOokSummoned = false;
                 HoptallusSummoned = false;
+                YanzhuSummoned = false;
+
+                // Hozen Party Animal list.
+                partyAnimalList.clear();
 
                 // Hozen killed for Ook-Ook summon.
                 HozenKilled = 0;
@@ -89,15 +96,61 @@ class instance_stormstout_brewery : public InstanceMapScript
                         break;
                     case BOSS_YANZHU_THE_UNCASKED:
                         uiYanzhuTheUncasked = creature->GetGUID();
+                        YanzhuSummoned = true;
                         break;
 
                     // NPCs
-                    case NPC_ANCESTRAL_BREWMASTER:
+                    case NPC_ANCESTRAL_BREWMASTER_1:
+                    case NPC_ANCESTRAL_BREWMASTER_2:
+                    case NPC_ANCESTRAL_BREWMASTER_3:
                         creature->AddAura(SPELL_ANCESTRAL_BREWM_V, creature);
+                        break;
+                    case NPC_HOZEN_PARTY_ANIMAL:
+                        partyAnimalList.push_back(creature);
                         break;
 
                     default: break;
                 }
+            }
+
+            // Special function to summon Ook-Ook.
+            void PlayerSummonOokOok(Player* player, bool hasGroup)
+            {
+                if (OokOokSummoned)
+                    return;
+
+                player->SummonCreature(BOSS_OOKOOK, ookOokSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
+
+                // Remove auras.
+                if (hasGroup)
+                {
+                    for (GroupReference* itr = player->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
+                        if (Player* member = itr->getSource())
+                            if (member->HasAura(SPELL_BANANA_BAR))
+                                member->RemoveAurasDueToSpell(SPELL_BANANA_BAR);
+                }
+                else
+                {
+                    if (player->HasAura(SPELL_BANANA_BAR))
+                        player->RemoveAurasDueToSpell(SPELL_BANANA_BAR);
+                }
+
+                // Party Animals leave the room.
+                if (!partyAnimalList.empty())
+                {
+                    for (auto partyAnimal : partyAnimalList)
+                    {
+                        partyAnimal->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                        partyAnimal->SetSpeed(MOVE_WALK, 1.3f);
+                        partyAnimal->SetSpeed(MOVE_RUN, 1.5f);
+                        partyAnimal->SetWalk(false); // Run.
+                        partyAnimal->GetMotionMaster()->MovePoint(1, PartyAnimalDespawnPos);
+                        partyAnimal->DespawnOrUnsummon(((std::floor(uint32(partyAnimal->GetDistance(PartyAnimalDespawnPos))) / 3) * 1000) + 100);
+                        partyAnimalList.remove(partyAnimal); // Remove the creature from the list, it's about to despawn.
+                    }
+                }
+
+                OokOokSummoned = true;
             }
 
             void OnUnitDeath(Unit* killed)
@@ -113,75 +166,67 @@ class instance_stormstout_brewery : public InstanceMapScript
                     case NPC_DRUNKEN_HOZEN_BRAWLER:
                     case NPC_HOZEN_BOUNCER:
                     case NPC_HOZEN_PARTY_ANIMAL:
+                        // Remove Party Animals from the list if they died.
+                        if (killed->ToCreature()->GetEntry() == NPC_HOZEN_PARTY_ANIMAL)
+                            partyAnimalList.remove(killed->ToCreature());
                         // Increase Hozen killed count.
-                        HozenKilled++;
-                        // Increase player powers.
+                        if (HozenKilled < HOZEN_KILLS_NEEDED)
+                            HozenKilled++;
+                        // Check auras and increase player powers / summon Ook-Ook.
                         if (Player* player = killed->FindNearestPlayer(20.0f))
                         {
                             if (player->GetGroup())
                             {
                                 if (Player* Leader = ObjectAccessor::FindPlayer(player->GetGroup()->GetLeaderGUID()))
                                 {
-                                    if (AuraPtr bananas = Leader->GetAura(SPELL_BANANA_BAR))
+                                    if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
                                     {
-                                        if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
-                                        {
-                                            // Update Leader power.
-                                            Leader->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
+                                        // Update Leader power.
+                                        if (!Leader->HasAura(SPELL_BANANA_BAR))
+                                            Leader->AddAura(SPELL_BANANA_BAR, Leader);
+                                        Leader->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
 
-                                            // Update group members.
-                                            for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                                                if (Player* member = itr->getSource())
-                                                    if (member != Leader)
-                                                        member->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
-                                        }
-                                        else
+                                        // Update group member bars.
+                                        for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
                                         {
-                                            if (!OokOokSummoned)
+                                            if (Player* member = itr->getSource())
                                             {
-                                                Leader->SummonCreature(BOSS_OOKOOK, ookOokSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
-
-                                                // Update group members and remove aura.
-                                                for (GroupReference* itr = Leader->GetGroup()->GetFirstMember(); itr != NULL; itr = itr->next())
-                                                    if (Player* member = itr->getSource())
-                                                        member->RemoveAurasDueToSpell(SPELL_BANANA_BAR);
-
-                                                OokOokSummoned = true;
+                                                if (member != Leader)
+                                                {
+                                                    if (!member->HasAura(SPELL_BANANA_BAR))
+                                                        member->AddAura(SPELL_BANANA_BAR, member);
+                                                    member->SetPower(POWER_ALTERNATE_POWER, HozenKilled);
+                                                }
                                             }
                                         }
                                     }
+                                    else
+                                        PlayerSummonOokOok(Leader, true);
                                 }
                             }
                             else // Solo.
                             {
-                                if (AuraPtr bananas = player->GetAura(SPELL_BANANA_BAR))
+                                if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
                                 {
-                                    if (HozenKilled < HOZEN_KILLS_NEEDED) // We check the counter in advance to summon Ook-Ook at right value.
-                                        player->SetPower(POWER_ALTERNATE_POWER, HozenKilled); // // Update player power.
-                                    else
-                                    {
-                                        if (!OokOokSummoned)
-                                        {
-                                            player->SummonCreature(BOSS_OOKOOK, ookOokSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
-                                            player->RemoveAurasDueToSpell(SPELL_BANANA_BAR);
-
-                                            OokOokSummoned = true;
-                                        }
-                                    }
+                                    if (!player->HasAura(SPELL_BANANA_BAR))
+                                        player->AddAura(SPELL_BANANA_BAR, player);
+                                    player->SetPower(POWER_ALTERNATE_POWER, HozenKilled); // // Update player power.
                                 }
+                                else
+                                    PlayerSummonOokOok(player, false);
                             }
                         }
                         break;
 
-                        // Script for summoning Hoptallus.
-                        case NPC_HOPPER:
-                            if (!HoptallusSummoned && killed->GetPositionX() > -707.0f && killed->GetPositionY() < 1280.0f) // Check outside Hopper.
-                            {
-                                if (Player* player = killed->FindNearestPlayer(20.0f))
-                                    player->SummonCreature(BOSS_HOPTALLUS, HoptallusSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
-                                HoptallusSummoned = true;
-                            }
-                            break;
+                    // Script for summoning Hoptallus.
+                    case NPC_HOPPER:
+                        if (!HoptallusSummoned && killed->GetPositionX() > -707.0f && killed->GetPositionY() < 1280.0f) // Check outside Hopper.
+                        {
+                            if (Player* player = killed->FindNearestPlayer(20.0f))
+                                player->SummonCreature(BOSS_HOPTALLUS, HoptallusSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
+                            HoptallusSummoned = true;
+                        }
+                        break;
 
                     default: break;
                 }
@@ -205,6 +250,9 @@ class instance_stormstout_brewery : public InstanceMapScript
 
             void SetData(uint32 type, uint32 data)
             {
+                if (type > DATA_YANZHU_THE_UNCASKED_EVENT)
+                    return;
+
                 SetBossState(type, EncounterState(data));
 
                 if (data == DONE)
@@ -216,6 +264,15 @@ class instance_stormstout_brewery : public InstanceMapScript
                 // First check for type.
                 if (type == DATA_HOZEN_KILLED)
                     return HozenKilled;
+
+                if (type == DATA_OOK_SUMMONED)
+                    return OokOokSummoned;
+
+                if (type == DATA_HOPTALLUS_SUMMONED)
+                    return HoptallusSummoned;
+
+                if (type == DATA_YANZHU_SUMMONED)
+                    return YanzhuSummoned;
 
                 return GetBossState(type);
             }
@@ -246,6 +303,8 @@ class instance_stormstout_brewery : public InstanceMapScript
                         case DATA_HOPTALLUS_EVENT:
                         case DATA_YANZHU_THE_UNCASKED_EVENT:
                         break;
+
+                        default: break;
                     }
                 }
 
@@ -257,7 +316,7 @@ class instance_stormstout_brewery : public InstanceMapScript
                 OUT_SAVE_INST_DATA;
 
                 std::ostringstream saveStream;
-                saveStream << "S B " << GetBossSaveData() << ' ' << HozenKilled;
+                saveStream << "S B " << GetBossSaveData() << ' ' << HozenKilled << ' ' << OokOokSummoned << ' ' << HoptallusSummoned << ' ' << YanzhuSummoned;
 
                 OUT_SAVE_INST_DATA_COMPLETE;
                 return saveStream.str();
@@ -294,9 +353,40 @@ class instance_stormstout_brewery : public InstanceMapScript
                         SetBossState(i, EncounterState(tmpState));
 
                         // Load killed Hozen counter.
-                        uint32 temp = 0;
-                        loadStream >> temp;
-                        HozenKilled = temp;
+                        uint32 hozenDead = 0;
+                        loadStream >> hozenDead;
+                        HozenKilled = hozenDead;
+
+                        // Load boss data and spawn them if needed.
+                        bool OokOokToSummon = false;
+                        loadStream >> OokOokToSummon;
+                        OokOokSummoned = OokOokToSummon;
+
+                        bool HoptallusToSummon = false;
+                        loadStream >> HoptallusToSummon;
+                        HoptallusSummoned = HoptallusToSummon;
+
+                        bool YanzhuToSummon = false;
+                        loadStream >> YanzhuToSummon;
+                        YanzhuSummoned = YanzhuToSummon;
+
+                        if (OokOokToSummon == true && (!uiOokOok || !instance->GetCreature(uiOokOok)) && GetData(DATA_OOKOOK_EVENT) != DONE)
+                        {
+                            instance->SummonCreature(BOSS_OOKOOK, ookOokSummonPosition);
+                            OokOokToSummon = false;
+                        }
+
+                        if (HoptallusToSummon == true && (!uiHoptallus || !instance->GetCreature(uiHoptallus)) && GetData(DATA_HOPTALLUS_EVENT) != DONE)
+                        {
+                            instance->SummonCreature(BOSS_HOPTALLUS, HoptallusSummonPosition);
+                            HoptallusToSummon = false;
+                        }
+
+                        if (YanzhuToSummon == true && (!uiYanzhuTheUncasked || !instance->GetCreature(uiYanzhuTheUncasked)) && GetData(DATA_YANZHU_THE_UNCASKED_EVENT) != DONE)
+                        {
+                            instance->SummonCreature(BOSS_YANZHU_THE_UNCASKED, YanzhuSummonPosition);
+                            YanzhuToSummon = false;
+                        }
                     }
                 }
                 else OUT_LOAD_INST_DATA_FAIL;

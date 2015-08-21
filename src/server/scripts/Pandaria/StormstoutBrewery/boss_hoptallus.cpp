@@ -281,12 +281,12 @@ class npc_hopper : public CreatureScript
 
             void IsSummonedBy(Unit* /*summoner*/)
             {
-                me->AddAura(SPELL_KEG_CARRY, me);
                 Reset();
             }
 
             void Reset()
             {
+                me->AddAura(SPELL_KEG_CARRY, me);
                 events.Reset();
             }
 

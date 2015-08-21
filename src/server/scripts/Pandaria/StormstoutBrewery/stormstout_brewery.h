@@ -37,7 +37,12 @@ enum DataTypes // Events / Encounters.
     DATA_YANZHU_THE_UNCASKED_EVENT  = 2,
 
     // For Ook-Ook Hozen.
-    DATA_HOZEN_KILLED               = 3
+    DATA_HOZEN_KILLED               = 3,
+
+    // For Summoned Bosses.
+    DATA_OOK_SUMMONED               = 4,
+    DATA_HOPTALLUS_SUMMONED         = 5,
+    DATA_YANZHU_SUMMONED            = 6
 };
 
 enum Data     // GUID handling.
@@ -49,8 +54,8 @@ enum Data     // GUID handling.
 
 enum InstanceSpells
 {
-    SPELL_BANANA_BAR        = 107297, // Alt Power bar for Hozen disrupted (summon Ook-Ook bar, 40).
-    SPELL_ANCESTRAL_BREWM_V = 113124  // Ancestral Bewmaster cosmetic.
+    SPELL_BANANA_BAR                = 107297, // Alt Power bar for Hozen disrupted (summon Ook-Ook bar, 40).
+    SPELL_ANCESTRAL_BREWM_V         = 113124  // Ancestral Bewmaster cosmetic.
 };
 
 enum CreaturesIds
@@ -65,7 +70,9 @@ enum CreaturesIds
     NPC_AUNTIE_STORMSTOUT           = 59822,
     NPC_CHEN_STORMSTOUT_ENTRANCE    = 59704,
     NPC_CHEN_STORMSTOUT_YANZHU      = 64361,
-    NPC_ANCESTRAL_BREWMASTER        = 59075, // Friendly.
+    NPC_ANCESTRAL_BREWMASTER_1      = 59075,
+    NPC_ANCESTRAL_BREWMASTER_2      = 65375,
+    NPC_ANCESTRAL_BREWMASTER_3      = 65376,
 
     // - Ook-Ook.
     NPC_OOK_BARREL                  = 56682,
@@ -109,6 +116,8 @@ enum CreaturesIds
 
 Position const ookOokSummonPosition     = { -755.653f, 1351.396f, 146.923f }; // Ook-Ook summon position.
 Position const HoptallusSummonPosition  = { -713.955f, 1254.574f, 164.790f }; // Hoptallus summon position.
+Position const YanzhuSummonPosition     = { -703.178f, 1162.610f, 166.142f }; // Yan-zhu the Uncasked summon position.
+Position const PartyAnimalDespawnPos    = { -767.081f, 1392.731f, 146.747f }; // Hozen Party Animal despawn position.
 
 enum GameObjects
 {
