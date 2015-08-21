@@ -585,6 +585,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 events.Reset();
                 summons.DespawnAll();
                 helperDead = false;
+                me->SetReactState(REACT_DEFENSIVE);
 
                 // Summon the "helper".
                 if (!summonedFirstHelper)
@@ -790,10 +791,14 @@ class npc_hozen_bouncer : public CreatureScript
                 events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* who)
             {
                 isInCombat = true;
                 me->SetReactState(REACT_AGGRESSIVE);
+                me->RemoveAurasDueToSpell(SPELL_HOZEN_DOORGUARD);
+                if (Creature* doorGuard = me->FindNearestCreature(NPC_HOZEN_BOUNCER, 100.0f, true))
+                    if (!doorGuard->isInCombat())
+                        doorGuard->AI()->AttackStart(who);
                 events.CancelEvent(EVENT_CHECK_OOK);
             }
 
@@ -907,6 +912,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             void Reset()
             {
                 events.Reset();
+                me->SetReactState(REACT_DEFENSIVE);
 
                 // Add Sleep cosmetic to the Sleepy Hozen Brawlers.
                 if (me->GetEntry() == NPC_SLEEPY_HOZEN_BRAWLER && !me->HasAura(SPELL_COSMETIC_SLEEP))

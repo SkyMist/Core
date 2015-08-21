@@ -50,7 +50,7 @@ enum Spells
     SPELL_KEG_CARRY              = 131820, // Hopper carry keg.
     SPELL_EXPLOSIVE_BREW         = 114291, // When Hopper reaches target.
 
-    SPELL_HAMMER_VISUAL          = 114530,
+    SPELL_HAMMER_VISUAL          = 114530, // Bopper carry hammer + hammer ground visual.
     SPELL_HAMMER_ARROW           = 114533,
     SPELL_SMASH_AURA             = 111662, // Hammer aura.
     SPELL_SMASH                  = 111666  // Player cast spell on button click.
@@ -299,8 +299,7 @@ class npc_hopper : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
-                me->DespawnOrUnsummon();
+                me->CombatStop(true);
             }
 
             void UpdateAI(const uint32 diff)
@@ -359,14 +358,16 @@ class npc_bopper : public CreatureScript
                 Reset();
             }
 
-            void Reset() { }
+            void Reset()
+            {
+                me->AddAura(SPELL_HAMMER_VISUAL, me);
+            }
 
             void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
-                me->DespawnOrUnsummon();
+                me->CombatStop(true);
             }
 
             void JustDied(Unit* /*killer*/)

@@ -146,8 +146,8 @@ class instance_stormstout_brewery : public InstanceMapScript
                         partyAnimal->SetWalk(false); // Run.
                         partyAnimal->GetMotionMaster()->MovePoint(1, PartyAnimalDespawnPos);
                         partyAnimal->DespawnOrUnsummon(((std::floor(uint32(partyAnimal->GetDistance(PartyAnimalDespawnPos))) / 3) * 1000) + 100);
-                        partyAnimalList.remove(partyAnimal); // Remove the creature from the list, it's about to despawn.
                     }
+                    partyAnimalList.clear();
                 }
 
                 OokOokSummoned = true;
