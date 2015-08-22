@@ -84,6 +84,7 @@ enum CreaturesIds
     NPC_BOPPER_HAMMER               = 59539, // Hammer dropped by Boppers.
 
     // Yan-zhu the Uncasked
+    NPC_BLOATED_STALKER             = 59482, // Bloated NPC, gets in player vehicle and casts damage aura.
     NPC_YEASTY_BREW_ALEMENTAL_Y     = 66413,	
     NPC_FIZZY_BUBBLE                = 59799,
     NPC_WALL_OF_SUDS                = 59512,

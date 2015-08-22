@@ -152,7 +152,7 @@ class boss_ook_ook : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
 
                 if (instance)
@@ -420,6 +420,47 @@ public :
     }
 };
 
+// Ground Pound triggered spell 106808.
+class spell_ook_ook_ground_pound_dmg : public SpellScriptLoader
+{
+public:
+    spell_ook_ook_ground_pound_dmg() : SpellScriptLoader("spell_ook_ook_ground_pound_dmg") { }
+
+    class spell_ook_ook_ground_pound_dmgSpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_ook_ook_ground_pound_dmgSpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            Map* map = GetCaster()->GetMap();
+            if (map && map->IsDungeon())
+            {
+                targets.clear();
+                std::list<Player*> playerList;
+                Map::PlayerList const& players = map->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->getSource())
+                        if (GetCaster()->isInFront(player, M_PI / 3))
+                            targets.push_back(player);
+
+                if (targets.empty())
+                    return;
+            }
+        }
+
+        void Register()
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_CONE_ENEMY_104);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_ook_ook_ground_pound_dmgSpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CONE_ENEMY_104);
+        }
+    };
+
+    SpellScript* GetSpellScript() const
+    {
+        return new spell_ook_ook_ground_pound_dmgSpellScript();
+    }
+};
+
 // Brew Explosion Ook-Ook 106784.
 class spell_brew_explosion : public SpellScriptLoader
 {
@@ -455,5 +496,6 @@ void AddSC_boss_ook_ook()
 	new boss_ook_ook();
     new npc_ook_barrel();
     new spell_ook_ook_going_bananas_summon();
+    new spell_ook_ook_ground_pound_dmg();
     new spell_brew_explosion();
 }

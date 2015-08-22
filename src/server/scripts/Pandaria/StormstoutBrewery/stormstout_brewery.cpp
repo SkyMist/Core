@@ -209,6 +209,7 @@ enum Spells
     SPELL_BREW_BOLT2        = 115650,
     SPELL_SUDS              = 116178, // Creates NPC_POOL_OF_SUDS at target location.
     AURA_SUDS               = 116179, // Periodic dmg trigger aura.
+    SPELL_SUDS_DUMMY_VIS    = 119418, // Tooltip: "Can summon puddles of suds."
 
     // Unruly Alemental
     SPELL_BREW_BOLT3        = 118104,
@@ -601,7 +602,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -702,7 +703,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -773,7 +774,7 @@ class npc_hozen_bouncer : public CreatureScript
 
             InstanceScript* instance;
             EventMap events;
-            bool isInCombat;
+            bool IsInCombat;
 
             void InitializeAI()
             {
@@ -784,8 +785,8 @@ class npc_hozen_bouncer : public CreatureScript
             void Reset()
             {
                 events.Reset();
-                isInCombat = false;
-                me->SetReactState(REACT_PASSIVE);
+                IsInCombat = false;
+                me->SetReactState(REACT_DEFENSIVE);
                 me->AddAura(SPELL_HOZEN_DOORGUARD, me);
 
                 events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
@@ -793,7 +794,7 @@ class npc_hozen_bouncer : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
-                isInCombat = true;
+                IsInCombat = true;
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->RemoveAurasDueToSpell(SPELL_HOZEN_DOORGUARD);
                 if (Creature* doorGuard = me->FindNearestCreature(NPC_HOZEN_BOUNCER, 100.0f, true))
@@ -806,9 +807,8 @@ class npc_hozen_bouncer : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
-                events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
             void MovementInform(uint32 type, uint32 id)
@@ -821,7 +821,7 @@ class npc_hozen_bouncer : public CreatureScript
 
             void UpdateAI(const uint32 diff)
             {
-                if (!UpdateVictim() && isInCombat)
+                if (!UpdateVictim() && IsInCombat)
                     return;
 
                 events.Update(diff);
@@ -834,15 +834,13 @@ class npc_hozen_bouncer : public CreatureScript
                             // Check for Ook-ook killed.
                             if (instance->GetBossState(DATA_OOKOOK_EVENT) == DONE)
                             {
-                                events.CancelEvent(EVENT_CHECK_OOK);
-
                                 // Check on Y position (only one does the talking).
                                 if (me->GetPositionY() > 1303.0f)
                                     events.ScheduleEvent(EVENT_SAY_OOK_KILLED, 2000);
-
                                 events.ScheduleEvent(EVENT_RUN_AND_CRASH, 18000);
                             }
-                            events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
+                            else
+                                events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
                             break;
 
                         case EVENT_SAY_OOK_KILLED:
@@ -876,7 +874,7 @@ class npc_hozen_bouncer : public CreatureScript
                     }
                 }
 
-                if (isInCombat)
+                if (IsInCombat)
                     DoMeleeAttackIfReady();
             }
         };
@@ -938,7 +936,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1019,7 +1017,7 @@ class npc_stout_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1087,6 +1085,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
             void Reset()
             {
                 events.Reset();
+                me->AddAura(SPELL_SUDS_DUMMY_VIS, me);
             }
 
             void EnterCombat(Unit* /*who*/)
@@ -1099,7 +1098,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1217,7 +1216,7 @@ class npc_unruly_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1298,7 +1297,7 @@ class npc_fizzy_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1414,7 +1413,7 @@ class npc_bloated_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1497,7 +1496,7 @@ class npc_bubbling_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1610,7 +1609,7 @@ class npc_yeasty_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 

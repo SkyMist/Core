@@ -155,7 +155,7 @@ class boss_hoptallus : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
 
                 if (instance)

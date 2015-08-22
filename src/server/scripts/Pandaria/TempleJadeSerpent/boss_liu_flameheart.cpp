@@ -352,19 +352,19 @@ class boss_liu_flameheart : public CreatureScript
         };
 };
 
-class boss_yu_lon : public CreatureScript
+class boss_yu_lon_tojs : public CreatureScript
 {
     public:
-        boss_yu_lon() : CreatureScript("boss_yu_lon") { }
+        boss_yu_lon_tojs() : CreatureScript("boss_yu_lon_tojs") { }
 
         CreatureAI* GetAI(Creature* creature) const
         {
-            return new boss_yu_lon_AI(creature);
+            return new boss_yu_lon_tojs_AI(creature);
         }
 
-        struct boss_yu_lon_AI : public BossAI
+        struct boss_yu_lon_tojs_AI : public BossAI
         {
-            boss_yu_lon_AI(Creature* creature) : BossAI(creature, BOSS_YU_LON)
+            boss_yu_lon_tojs_AI(Creature* creature) : BossAI(creature, BOSS_YU_LON)
             {
             }
 
@@ -537,7 +537,7 @@ class mob_lesser_sha: public CreatureScript
 void AddSC_boss_liu_flameheat()
 {
     new boss_liu_flameheart();
-    new boss_yu_lon();
+    new boss_yu_lon_tojs();
     new mob_trigger_liu_flameheart();
     //Trashes
     new mob_minion_of_doubt();
