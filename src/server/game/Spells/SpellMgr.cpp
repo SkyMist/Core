@@ -8719,6 +8719,29 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 112945: // Carrot Breath (Damage).
                     spellInfo->ExcludeTargetAuraSpell = 0;
                     break;
+                case 144466: // Wall of Suds (Damage).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 106859: // Ferment.
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 114451: // Ferment (Damage).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                    break;
+                case 116155: // Brew Bolt.
+                    spellInfo->AttributesEx6 &= ~SPELL_ATTR6_UNK14;
+                    break;
+                case 114468: // Sudsy
+                    spellInfo->ProcFlags = 0;
+                    spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_PERIODIC_TRIGGER_SPELL;
+                    spellInfo->Effects[EFFECT_0].Amplitude = 200;
+                    break;
 
             // THRONE OF THUNDER (RAID).
 

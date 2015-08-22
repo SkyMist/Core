@@ -26,6 +26,7 @@
 #include "SpellAuras.h"
 #include "SpellAuraEffects.h"
 #include "Player.h"
+#include "MoveSplineInit.h"
 
 #include "stormstout_brewery.h"
 
@@ -117,7 +118,9 @@ enum Spells
     SPELL_YEASTY_BREW_BOLT    = 116155, // Yeasty Brew Alementals can cast a less powerful version of Brew Bolt, inflicting 9750 to 10250 Frost damage.
     SPELL_YEASTY_SUMMON_VIS   = 116259, // Yeasty Brew Alemental spawn visual.
     SPELL_FERMENT             = 106859, // Channeled beam, triggers 114451 - 1% Hp / Mana restore on target.
-    SPELL_WALL_OF_SUDS        = 114467  // Triggers 114466 damage and stun.
+    SPELL_FERMENT_HEAL        = 114451, // Heal.
+    SPELL_WALL_OF_SUDS        = 114467, // Triggers 114466 damage and stun.
+    SPELL_WALL_OF_SUDS_DAMAGE = 114466  // Triggered by above.
 };
 
 enum Events
@@ -217,6 +220,24 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                 sudWallsCasts = 0;
 
                 _Reset();
+
+                // Bremastery: Stout.
+                if (RandomStoutAbility == ABILITY_BLOAT)
+                    me->AddAura(SPELL_BLOAT_DUMMY, me);         // Add the visual tooltip.
+                else
+                    me->AddAura(SPELL_BLACKOUT_BREW_DUMMY, me); // Add the visual tooltip.
+
+                // Bremastery: Ale.
+                if (RandomAleAbility == ABILITY_BUBBLE_SHIELD)
+                    me->AddAura(SPELL_BUBBLE_SHIELD_DUMMY, me); // Add the visual tooltip.
+                else
+                    me->AddAura(SPELL_YEASTY_BREW_DUMMY, me);   // Add the visual tooltip.
+
+                // Brewmastery: Wheat.
+                if (RandomWheatAbility == ABILITY_CARBONATION)
+                    me->AddAura(SPELL_CARBONATION_DUMMY, me);   // Add the visual tooltip.
+                else
+                    me->AddAura(SPELL_WALL_OF_SUDS_DUMMY, me);  // Add the visual tooltip.
             }
 
             void EnterCombat(Unit* /*who*/)
@@ -232,39 +253,21 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
 
                 // Bremastery: Stout.
                 if (RandomStoutAbility == ABILITY_BLOAT)
-                {
-                    me->AddAura(SPELL_BLOAT_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_BLOAT, urand(11000, 13000));
-                }
                 else
-                {
-                    me->AddAura(SPELL_BLACKOUT_BREW_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_BLACKOUT_BREW, urand(9000, 11000));
-                }
 
                 // Bremastery: Ale.
                 if (RandomAleAbility == ABILITY_BUBBLE_SHIELD)
-                {
-                    me->AddAura(SPELL_BUBBLE_SHIELD_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_BUBBLE_SHIELD, urand(16000, 19000));
-                }
                 else
-                {
-                    me->AddAura(SPELL_YEASTY_BREW_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_YEASTY_BREW_ELEMENTALS, urand(18000, 20000));
-                }
 
                 // Brewmastery: Wheat.
                 if (RandomWheatAbility == ABILITY_CARBONATION)
-                {
-                    me->AddAura(SPELL_CARBONATION_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_CARBONATION, urand(22500, 24500));
-                }
                 else
-                {
-                    me->AddAura(SPELL_WALL_OF_SUDS_DUMMY, me); // Add the visual tooltip.
                     events.ScheduleEvent(EVENT_WALL_OF_SUDS, urand(25000, 27000));
-                }
 
                 _EnterCombat();
             }
@@ -288,12 +291,12 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     {
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_BLACKOUT_BREW);
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_BLACKOUT_DRUNK);
-				    }
+                    }
                     if (me->HasAura(SPELL_WALL_OF_SUDS_DUMMY))
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
 
-                _EnterEvadeMode();
+                // _EnterEvadeMode();
             }
 
             void JustDied(Unit* /*killer*/)
@@ -311,7 +314,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     {
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_BLACKOUT_BREW);
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_BLACKOUT_DRUNK);
-				    }
+                    }
                     if (me->HasAura(SPELL_WALL_OF_SUDS_DUMMY))
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
@@ -349,7 +352,6 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     summon->SetReactState(REACT_PASSIVE);
                     summon->AddAura(SPELL_WALL_OF_SUDS, summon);
                     summon->SetFlag(UNIT_NPC_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
-                    summon->AddUnitState(UNIT_STATE_CANNOT_TURN);
                     summon->SetSpeed(MOVE_WALK, 1.2f);
                     summon->SetSpeed(MOVE_RUN, 1.2f);
                     summon->DespawnOrUnsummon(8000);
@@ -466,6 +468,15 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
             }
         }
 
+        // Used for moving the Wall of Suds.
+        void SudsMove(Creature* sudsWall, float X, float Y, float Z)
+        {
+            Movement::MoveSplineInit init(*sudsWall);
+            init.MoveTo(X, Y, Z);
+            init.SetOrientationFixed(true);
+            init.Launch();
+        }
+
         // Used for summoning the Wall of Suds.
         void SummonSuds(bool right)
         {
@@ -477,8 +488,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     if (Creature* sudsBottom = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[3], TEMPSUMMON_MANUAL_DESPAWN))
                     if (Creature* sudsRight  = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[1], TEMPSUMMON_MANUAL_DESPAWN))
                     {
-                        sudsBottom->GetMotionMaster()->MovePoint(1, SudsMovePositions[1]);
-                        sudsRight->GetMotionMaster()->MovePoint(1, SudsMovePositions[0]);
+                        SudsMove(sudsBottom, SudsMovePositions[1].GetPositionX(), SudsMovePositions[1].GetPositionY(), SudsMovePositions[1].GetPositionZ());
+                        SudsMove(sudsRight, SudsMovePositions[0].GetPositionX(), SudsMovePositions[0].GetPositionY(), SudsMovePositions[0].GetPositionZ());
                     }
 				}
                 else                  // Top->Bottom.
@@ -487,8 +498,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     if (Creature* sudsTop = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[0], TEMPSUMMON_MANUAL_DESPAWN))
                     if (Creature* sudsRight  = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[1], TEMPSUMMON_MANUAL_DESPAWN))
                     {
-                        sudsTop->GetMotionMaster()->MovePoint(1, SudsMovePositions[0]);
-                        sudsRight->GetMotionMaster()->MovePoint(1, SudsMovePositions[0]);
+                        SudsMove(sudsTop, SudsMovePositions[0].GetPositionX(), SudsMovePositions[0].GetPositionY(), SudsMovePositions[0].GetPositionZ());
+                        SudsMove(sudsRight, SudsMovePositions[0].GetPositionX(), SudsMovePositions[0].GetPositionY(), SudsMovePositions[0].GetPositionZ());
                     }
 				}
 			}
@@ -500,8 +511,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     if (Creature* sudsBottom = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[3], TEMPSUMMON_MANUAL_DESPAWN))
                     if (Creature* sudsLeft  = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[2], TEMPSUMMON_MANUAL_DESPAWN))
                     {
-                        sudsBottom->GetMotionMaster()->MovePoint(1, SudsMovePositions[1]);
-                        sudsLeft->GetMotionMaster()->MovePoint(1, SudsMovePositions[1]);
+                        SudsMove(sudsBottom, SudsMovePositions[1].GetPositionX(), SudsMovePositions[1].GetPositionY(), SudsMovePositions[1].GetPositionZ());
+                        SudsMove(sudsLeft, SudsMovePositions[1].GetPositionX(), SudsMovePositions[1].GetPositionY(), SudsMovePositions[1].GetPositionZ());
                     }
                 }
                 else                  // Top->Bottom.
@@ -510,8 +521,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     if (Creature* sudsTop = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[0], TEMPSUMMON_MANUAL_DESPAWN))
                     if (Creature* sudsLeft  = me->SummonCreature(NPC_WALL_OF_SUDS, SudsPositions[2], TEMPSUMMON_MANUAL_DESPAWN))
                     {
-                        sudsTop->GetMotionMaster()->MovePoint(1, SudsMovePositions[0]);
-                        sudsLeft->GetMotionMaster()->MovePoint(1, SudsMovePositions[1]);
+                        SudsMove(sudsTop, SudsMovePositions[0].GetPositionX(), SudsMovePositions[0].GetPositionY(), SudsMovePositions[0].GetPositionZ());
+                        SudsMove(sudsLeft, SudsMovePositions[1].GetPositionX(), SudsMovePositions[1].GetPositionY(), SudsMovePositions[1].GetPositionZ());
                     }
                 }
 			}
@@ -637,11 +648,7 @@ class npc_yeasty_brew_elemental_yanzhu : public CreatureScript
             void Reset()
             {
                 events.Reset();
-            }
-
-            void EnterCombat(Unit* /*who*/)
-            {
-                events.ScheduleEvent(EVENT_YEASTY_BREW_BOLT, urand(3000, 5500));
+                events.ScheduleEvent(EVENT_YEASTY_BREW_BOLT, urand(2000, 5500));
                 events.ScheduleEvent(EVENT_FERMENT, urand(8000, 19000));
             }
 
@@ -662,18 +669,17 @@ class npc_yeasty_brew_elemental_yanzhu : public CreatureScript
                         case EVENT_YEASTY_BREW_BOLT:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
                                 DoCast(target, SPELL_YEASTY_BREW_BOLT);
-                            events.ScheduleEvent(EVENT_YEASTY_BREW_BOLT, urand(5000, 7500));
+                            events.ScheduleEvent(EVENT_YEASTY_BREW_BOLT, 3000);
                             break;
 
                         case EVENT_FERMENT:
                             if (Creature* yanzhu = me->FindNearestCreature(BOSS_YANZHU_THE_UNCASKED, 100.0f, true))
                                 DoCast(yanzhu, SPELL_FERMENT);
-                            events.ScheduleEvent(EVENT_FERMENT, urand(21000, 29000));
+                            events.ScheduleEvent(EVENT_FERMENT, urand(21000, 32000));
                             break;
                     }
                 }
-
-                DoMeleeAttackIfReady();
+                // No melee.
             }
         };
 
@@ -788,22 +794,17 @@ class spell_yanzhu_blackout_brew : public SpellScriptLoader
 
             void HandleOnHit()
             {
-                if (!GetHitUnit()->HasAura(SPELL_BLACKOUT_BREW))
+                if (!GetHitUnit())
+                    return;
+
+                if (AuraPtr blackoutBrew = GetHitUnit()->GetAura(SPELL_BLACKOUT_BREW)) // Get the aura.
                 {
-                    if (AuraPtr blackoutBrew = GetHitUnit()->AddAura(SPELL_BLACKOUT_BREW, GetHitUnit())) // Add the aura.
-                        blackoutBrew->SetStackAmount(3); // Starts at 3 stacks.
-                }
-                else
-                {
-                    if (AuraPtr blackoutBrew = GetHitUnit()->GetAura(SPELL_BLACKOUT_BREW)) // Get the aura.
+                    if (blackoutBrew->GetStackAmount() < 7) // Adds 3 so must check for 6 or less.
+                        blackoutBrew->SetStackAmount(blackoutBrew->GetStackAmount() + 2); // Add 3 stacks. 1 is already added from the aura so we add 2 more.
+                    else
                     {
-                        if (blackoutBrew->GetStackAmount() < 7) // Adds 3 so must check for 6 or less.
-                            blackoutBrew->SetStackAmount(blackoutBrew->GetStackAmount() + 3); // Add 3 stacks.
-                        else
-                        {
-                            GetHitUnit()->AddAura(SPELL_BLACKOUT_DRUNK, GetHitUnit()); // Stun the player.
-                            GetHitUnit()->RemoveAurasDueToSpell(SPELL_BLACKOUT_BREW); // Remove all the aura stacks.
-						}
+                        GetHitUnit()->AddAura(SPELL_BLACKOUT_DRUNK, GetHitUnit()); // Stun the player.
+                        GetHitUnit()->RemoveAurasDueToSpell(SPELL_BLACKOUT_BREW); // Remove all the aura stacks.
                     }
                 }
             }
@@ -844,49 +845,53 @@ class spell_yanzhu_blackout_brew : public SpellScriptLoader
         }
 };
 
-// Ferment triggered spell 114451.
+// Ferment 106859.
 class spell_yeasty_alemental_ferment : public SpellScriptLoader
 {
     public:
         spell_yeasty_alemental_ferment() : SpellScriptLoader("spell_yeasty_alemental_ferment") { }
 
-        class spell_yeasty_alemental_ferment_SpellScript : public SpellScript
+        class spell_yeasty_alemental_ferment_AuraScript : public AuraScript
         {
-            PrepareSpellScript(spell_yeasty_alemental_ferment_SpellScript);
+            PrepareAuraScript(spell_yeasty_alemental_ferment_AuraScript);
 
-            void FilterTargets(std::list<WorldObject*>& targets)
+            void HandlePeriodicTick(constAuraEffectPtr /*aurEff*/)
             {
-                if (!GetCaster() || targets.empty())
-                    return;
+                PreventDefaultAction();
 
-                Creature* Yanzhu = GetCaster()->FindNearestCreature(BOSS_YANZHU_THE_UNCASKED, 100.0f, true);
-                if (!Yanzhu)
-                    return;
+                if (Unit* caster = GetCaster())
+                {
+	                if (Creature* Yanzhu = caster->FindNearestCreature(BOSS_YANZHU_THE_UNCASKED, 100.0f, true))
+                    {
+                        std::list<Player*> playerTargetsList;
+                        Map::PlayerList const &PlayerList = caster->GetMap()->GetPlayers();
+                        if (!PlayerList.isEmpty())
+                            for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                                if (Player* player = i->getSource())
+                                    if (player->IsInBetween(caster, Yanzhu, 1.5f)) // Check for players between the npc and the boss.
+                                        playerTargetsList.push_back(player);
 
-                // Select only the needed targets.
-                targets.clear();
-                Map::PlayerList const &PlayerList = GetCaster()->GetMap()->GetPlayers();
-                if (!PlayerList.isEmpty())
-                    for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
-                        if (Player* player = i->getSource())
-                            if (player->IsInBetween(GetCaster(), Yanzhu, 1.5f)) // Check for players between the npc and the boss.
-								targets.push_back(player);
-
-                if (targets.empty())
-                    targets.push_back(Yanzhu);
+                        if (!playerTargetsList.empty()) // If the list is not empty select only the nearest player in line with the boss.
+                        {
+                            playerTargetsList.sort(SkyMistCore::ObjectDistanceOrderPred(caster));
+                            playerTargetsList.resize(1);
+                            caster->CastSpell(playerTargetsList.front(), SPELL_FERMENT_HEAL, true);
+                        }
+                        else
+                            caster->CastSpell(Yanzhu, SPELL_FERMENT_HEAL, true);
+                    }
+                }
             }
 
             void Register()
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yeasty_alemental_ferment_SpellScript::FilterTargets, EFFECT_0, TARGET_UNK_130);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yeasty_alemental_ferment_SpellScript::FilterTargets, EFFECT_1, TARGET_UNK_130);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yeasty_alemental_ferment_SpellScript::FilterTargets, EFFECT_2, TARGET_UNK_130);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_yeasty_alemental_ferment_AuraScript::HandlePeriodicTick, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
-        SpellScript* GetSpellScript() const
+        AuraScript* GetAuraScript() const
         {
-            return new spell_yeasty_alemental_ferment_SpellScript();
+            return new spell_yeasty_alemental_ferment_AuraScript();
         }
 };
 
@@ -919,6 +924,43 @@ class spell_yanzhu_carbonation : public SpellScriptLoader
         }
 };
 
+// Wall of Suds 114467.
+class spell_wall_of_suds : public SpellScriptLoader
+{
+    public:
+        spell_wall_of_suds() : SpellScriptLoader("spell_wall_of_suds") { }
+
+        class spell_wall_of_suds_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_wall_of_suds_AuraScript);
+
+            void HandlePeriodicTick(constAuraEffectPtr /*aurEff*/)
+            {
+                PreventDefaultAction();
+
+                if (Unit* caster = GetCaster())
+                {
+                    Map::PlayerList const &PlayerList = caster->GetMap()->GetPlayers();
+                    if (!PlayerList.isEmpty())
+                        for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                            if (Player* player = i->getSource())
+                                if (caster->isInFront(player, M_PI / 5) && !player->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && player->GetPositionZ() <= caster->GetPositionZ() + 0.1f)
+                                    caster->CastSpell(player, SPELL_WALL_OF_SUDS_DAMAGE, true);
+                }
+            }
+
+            void Register()
+            {
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_wall_of_suds_AuraScript::HandlePeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_wall_of_suds_AuraScript();
+        }
+};
+
 // Sudsy 114468 - Player Jump aura script.
 class spell_yanzhu_sudsy : public SpellScriptLoader
 {
@@ -937,11 +979,12 @@ class spell_yanzhu_sudsy : public SpellScriptLoader
                 return true;
             }
 
-            void OnUpdate(uint32 diff)
+            void HandlePeriodicTick(constAuraEffectPtr /*aurEff*/)
             {
+                PreventDefaultAction();
+
                 Unit* caster = GetCaster();
                 Unit* target = GetTarget();
-
                 if (!caster || !target)
                     return;
 
@@ -957,7 +1000,7 @@ class spell_yanzhu_sudsy : public SpellScriptLoader
 
             void Register()
             {
-                OnAuraUpdate += AuraUpdateFn(spell_yanzhu_sudsy_AuraScript::OnUpdate);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_yanzhu_sudsy_AuraScript::HandlePeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
@@ -978,5 +1021,6 @@ void AddSC_boss_yan_zhu_the_uncasked()
     new spell_yanzhu_blackout_brew();
     new spell_yeasty_alemental_ferment();
     new spell_yanzhu_carbonation();
+    new spell_wall_of_suds();
     new spell_yanzhu_sudsy();
 }
