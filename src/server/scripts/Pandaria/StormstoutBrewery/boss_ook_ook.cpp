@@ -104,6 +104,7 @@ class boss_ook_ook : public CreatureScript
             InstanceScript* instance;
             EventMap events;
             SummonList summons;
+            GameObject* OokDoor;
             uint8 goingBananasDone;
             bool summonedBarrels; // For Going Bananas phases.
 
@@ -118,6 +119,7 @@ class boss_ook_ook : public CreatureScript
                 events.Reset();
                 summons.DespawnAll();
                 summonedBarrels = false;
+                OokDoor = NULL;
 
                 if (instance)
                     instance->SetData(DATA_OOKOOK_EVENT, NOT_STARTED);
@@ -137,6 +139,12 @@ class boss_ook_ook : public CreatureScript
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
                 }
 
+                if (GameObject* door = me->SummonGameObject(GAMEOBJECT_OOK_OOK_DOOR, -767.094f, 1392.12f, 146.742f, 0.298132f, 0.0f, 0.0f, 0.148514f, 0.98891f, 0))
+                {
+                    OokDoor = door;
+                    door->SetGoState(GO_STATE_READY);
+                }
+
                 events.ScheduleEvent(EVENT_GROUND_POUND, 10000);
 
                 _EnterCombat();
@@ -150,6 +158,12 @@ class boss_ook_ook : public CreatureScript
 
             void EnterEvadeMode()
             {
+                if (OokDoor)
+                {
+                    OokDoor->RemoveFromWorld();
+                    OokDoor = NULL;
+                }
+
                 Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -168,6 +182,12 @@ class boss_ook_ook : public CreatureScript
             {
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
+
+                if (OokDoor)
+                {
+                    OokDoor->RemoveFromWorld();
+                    OokDoor = NULL;
+                }
 
                 if (instance)
                 {
@@ -442,9 +462,6 @@ public:
                     if (Player* player = itr->getSource())
                         if (GetCaster()->isInFront(player, M_PI / 3))
                             targets.push_back(player);
-
-                if (targets.empty())
-                    return;
             }
         }
 

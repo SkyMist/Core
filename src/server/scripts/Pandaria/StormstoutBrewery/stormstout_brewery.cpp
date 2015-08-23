@@ -128,28 +128,35 @@ Ancestral Brewmaster says(3): Double or nothing on the next group?
 // Chen Stormstout / Auntie Stormstout intro yells.
 enum IntroYells
 {
-    AUNTIE_ENTRANCE_SAY_1 = 0, // Auntie Stormstout says: Oh, hello Zan, it is good of you to visit ol' Auntie Stormstout.
-    CHEN_ENTRANCE_SAY_1   = 0, // Chen Stormstout   says: I am not Zan - I am Chen Stormstout!
-    AUNTIE_ENTRANCE_SAY_2 = 1, // Auntie Stormstout says: Oh, Zan! You remind me so much of your father.
-    CHEN_ENTRANCE_SAY_2   = 1, // Chen Stormstout   says: Tell me, what has happened here?
-    AUNTIE_ENTRANCE_SAY_3 = 2, // Auntie Stormstout says: It is certainly a nice day outside!
-    CHEN_ENTRANCE_SAY_3   = 2, // Chen Stormstout   says: Where are the other Stormstouts? Why are hozen all over the brewery?
-    AUNTIE_ENTRANCE_SAY_4 = 3, // Auntie Stormstout says: Have you seen the size of Esme's turnips?
-    CHEN_ENTRANCE_SAY_4   = 3, // Chen Stormstout   says: Auntie Stormstout... why is the brewery abandoned?
-    AUNTIE_ENTRANCE_SAY_5 = 4, // Auntie Stormstout says: Abandoned? Oh heavens no! Uncle Gao is in charge while the others are beyond the wall. Isn't that exciting?
-    CHEN_ENTRANCE_SAY_5   = 4, // Chen Stormstout   says: I see - and where is Uncle Gao?
-    AUNTIE_ENTRANCE_SAY_6 = 5, // Auntie Stormstout says: I have some cookies for you!
-    CHEN_ENTRANCE_SAY_6   = 5, // Chen Stormstout   says: There is no time for cookies! Well, one cookie. Just one.
-    CHEN_ENTRANCE_SAY_7   = 6  // Chen Stormstout   says: Wait - these are ghost cookies. These aren't filling at all!
+    AUNTIE_ENTRANCE_SAY_1   = 0, // Auntie Stormstout says: Oh, hello Zan, it is good of you to visit ol' Auntie Stormstout.
+    CHEN_ENTRANCE_SAY_1     = 0, // Chen Stormstout   says: I am not Zan - I am Chen Stormstout!
+    AUNTIE_ENTRANCE_SAY_2   = 1, // Auntie Stormstout says: Oh, Zan! You remind me so much of your father.
+    CHEN_ENTRANCE_SAY_2     = 1, // Chen Stormstout   says: Tell me, what has happened here?
+    AUNTIE_ENTRANCE_SAY_3   = 2, // Auntie Stormstout says: It is certainly a nice day outside!
+    CHEN_ENTRANCE_SAY_3     = 2, // Chen Stormstout   says: Where are the other Stormstouts? Why are hozen all over the brewery?
+    AUNTIE_ENTRANCE_SAY_4   = 3, // Auntie Stormstout says: Have you seen the size of Esme's turnips?
+    CHEN_ENTRANCE_SAY_4     = 3, // Chen Stormstout   says: Auntie Stormstout... why is the brewery abandoned?
+    AUNTIE_ENTRANCE_SAY_5   = 4, // Auntie Stormstout says: Abandoned? Oh heavens no! Uncle Gao is in charge while the others are beyond the wall. Isn't that exciting?
+    CHEN_ENTRANCE_SAY_5     = 4, // Chen Stormstout   says: I see - and where is Uncle Gao?
+    AUNTIE_ENTRANCE_SAY_6   = 5, // Auntie Stormstout says: I have some cookies for you!
+    CHEN_ENTRANCE_SAY_6     = 5, // Chen Stormstout   says: There is no time for cookies! Well, one cookie. Just one.
+    CHEN_ENTRANCE_SAY_7     = 6  // Chen Stormstout   says: Wait - these are ghost cookies. These aren't filling at all!
 };
 
 // Hozen Bouncer yells.
 enum BouncerYells
 {
-    SAY_OOK_KILLED = 0, // You take down Ook-Ook...
-    SAY_MEANS      = 1, // You know what dat mean...
-    SAY_NEW_OOK    = 2, // You da new Ook!
-    SAY_PARTY      = 3  // Get da party started for da new Ook!
+    SAY_OOK_KILLED          = 0, // You take down Ook-Ook...
+    SAY_MEANS               = 1, // You know what dat mean...
+    SAY_NEW_OOK             = 2, // You da new Ook!
+    SAY_PARTY               = 3  // Get da party started for da new Ook!
+};
+
+// Ancestral Brewmaster yells.
+enum AncestralBrewmasterYells
+{
+    SAY_ABM_HOPTALLUS_1     = 0, // Whatzit... are they... what are they doin' to our alementals?
+    SAY_ABM_HOPTALLUS_2     = 0, // Hey... hey YOU! Those are OUR flying... beer monsters?
 };
 
 #define ANN_ILLUSION "Removing the spirit's illusion damages the hozen's fragile mind!"
@@ -269,7 +276,8 @@ enum Events
     EVENT_CHEN_ENTRANCE_SAY_7,
 
     // Ancestral Brewmaster
-    EVENT_SPEAK_HOPTALLUS,
+    EVENT_SPEAK_HOPTALLUS_1,
+    EVENT_SPEAK_HOPTALLUS_2,
     EVENT_SPEAK_RANDOM
 };
 
@@ -481,22 +489,22 @@ class npc_chen_stormstout_entrance : public CreatureScript
         }
 };
 
-// Ancient Brewmaster 59075.
-class npc_ancient_brewmaster : public CreatureScript
+// Ancestral Brewmaster 59075.
+class npc_ancestral_brewmaster : public CreatureScript
 {
     public :
-        npc_ancient_brewmaster() : CreatureScript("npc_ancient_brewmaster") { }
+        npc_ancestral_brewmaster() : CreatureScript("npc_ancestral_brewmaster") { }
 
-        struct npc_ancient_brewmaster_AI : public ScriptedAI
+        struct npc_ancestral_brewmaster_AI : public ScriptedAI
         {
-            npc_ancient_brewmaster_AI(Creature* creature) : ScriptedAI(creature)
+            npc_ancestral_brewmaster_AI(Creature* creature) : ScriptedAI(creature)
             {
                 instance = creature->GetInstanceScript();
             }
 
             InstanceScript* instance;
             EventMap events;
-            bool said;
+            bool said, alone, hasTwo, hasThree;
 
             void InitializeAI()
             {
@@ -510,17 +518,47 @@ class npc_ancient_brewmaster : public CreatureScript
                 me->SetReactState(REACT_PASSIVE);
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 said = false;
+                hasTwo = me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_2, 4.0f, true) ? true : false;
+                hasThree = (hasTwo && me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_3, 4.0f, true)) ? true : false;
+                alone = (!hasTwo && !hasThree) ? true : false;
             }
 
             void UpdateAI(const uint32 diff)
             {
+                // Check stuff for the Brewmasters after Hoptallus.
+                if (!said && hasTwo && instance->GetData(DATA_HOPTALLUS_EVENT) == DONE)
+                {
+                    if (me->FindNearestPlayer(20.0f, true))
+                    {
+                        if (Creature* Alemental = me->FindNearestCreature(NPC_BLOATED_BREW_ALEMENTAL, 20.0f, true))
+                        {
+                            if (Alemental->isInCombat())
+                            {
+                                events.ScheduleEvent(EVENT_SPEAK_HOPTALLUS_1, 2000);
+                                said = true;
+                            }
+                        }
+                    }
+                }
+
                 events.Update(diff);
 
                 while(uint32 eventId = events.ExecuteEvent())
                 {
                     switch(eventId)
                     {
-                        case EVENT_SPEAK_HOPTALLUS:
+                        case EVENT_SPEAK_HOPTALLUS_1:
+                            Talk(SAY_ABM_HOPTALLUS_1);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
+                            events.ScheduleEvent(EVENT_SPEAK_HOPTALLUS_2, 8000);
+                            break;
+
+                        case EVENT_SPEAK_HOPTALLUS_2:
+                            if (Creature* brewMaster2 = me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_2, 5.0f, true))
+                            {
+                                brewMaster2->AI()->Talk(SAY_ABM_HOPTALLUS_2);
+                                brewMaster2->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+					        }
                             break;
 
                         case EVENT_SPEAK_RANDOM:
@@ -534,7 +572,7 @@ class npc_ancient_brewmaster : public CreatureScript
 
         CreatureAI* GetAI(Creature* creature) const
         {
-            return new npc_ancient_brewmaster_AI(creature);
+            return new npc_ancestral_brewmaster_AI(creature);
         }
 };
 
@@ -1631,6 +1669,77 @@ class npc_yeasty_brew_alemental : public CreatureScript
         }
 };
 
+// Leaking beer barrel 73186.
+class npc_leaking_beer_barrel : public CreatureScript
+{
+    public :
+        npc_leaking_beer_barrel() : CreatureScript("npc_leaking_beer_barrel") { }
+
+        struct npc_leaking_beer_barrel_AI : public ScriptedAI
+        {
+            npc_leaking_beer_barrel_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                if (Creature* beerBunny = me->FindNearestCreature(NPC_BEER_BARREL_BUNNY, 15.0f, true))
+                    DoCast(beerBunny, SPELL_GUSHING_BREW_BVIS);
+            }
+
+            void UpdateAI(const uint32 diff) { }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_leaking_beer_barrel_AI(creature);
+        }
+};
+
+// Beer barrel bunny 66215.
+class npc_beer_barrel_bunny : public CreatureScript
+{
+    public :
+        npc_beer_barrel_bunny() : CreatureScript("npc_beer_barrel_bunny") { }
+
+        struct npc_beer_barrel_bunny_AI : public ScriptedAI
+        {
+            npc_beer_barrel_bunny_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                me->AddAura(SPELL_GUSHING_BREW_A, me);
+            }
+
+            void UpdateAI(const uint32 diff) { }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_beer_barrel_bunny_AI(creature);
+        }
+};
+
 // Spicy Explosion 107205, triggered by SPELL_PROC_EXPLOSION.
 class spell_stormstout_brewery_habanero_beer : public SpellScriptLoader
 {
@@ -1685,7 +1794,7 @@ void AddSC_stormstout_brewery()
 {
     new at_stormstout_brewery_entrance();
     new npc_chen_stormstout_entrance();
-    new npc_ancient_brewmaster();
+    new npc_ancestral_brewmaster();
     new npc_sodden_hozen_brawler();
     new npc_inflamed_hozen_brawler();
     new npc_hozen_bouncer();
@@ -1699,5 +1808,7 @@ void AddSC_stormstout_brewery()
     new npc_bloated_brew_alemental();
     new npc_bubbling_brew_alemental();
     new npc_yeasty_brew_alemental();
+    new npc_leaking_beer_barrel();
+    new npc_beer_barrel_bunny();
     new spell_stormstout_brewery_habanero_beer();
 }

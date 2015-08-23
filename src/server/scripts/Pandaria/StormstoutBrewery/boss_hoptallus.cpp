@@ -136,6 +136,9 @@ class boss_hoptallus : public CreatureScript
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, IN_PROGRESS);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_READY);
                 }
 
                 // Carrot Breath handled through EVENT_FURLWIND and the other way around.
@@ -162,6 +165,9 @@ class boss_hoptallus : public CreatureScript
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, FAIL);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_ACTIVE);
                 }
 
                 _EnterEvadeMode();
@@ -176,6 +182,12 @@ class boss_hoptallus : public CreatureScript
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, DONE);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_ACTIVE);
+
+                    if (GameObject* carrot = me->FindNearestGameObject(GAMEOBJECT_PART_CHEWED_CARROT, 100.0f))
+                        carrot->RemoveFromWorld();
                 }
 
                 _JustDied();
@@ -496,9 +508,6 @@ public:
                     if (Player* player = itr->getSource())
                         if (GetCaster()->isInFront(player, M_PI / 3))
                             targets.push_back(player);
-
-                if (targets.empty())
-                    return;
             }
         }
 

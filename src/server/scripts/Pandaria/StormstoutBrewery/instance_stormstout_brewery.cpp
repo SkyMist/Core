@@ -43,6 +43,8 @@ class instance_stormstout_brewery : public InstanceMapScript
             uint64 uiOokOok;
             uint64 uiHoptallus;
             uint64 uiYanzhuTheUncasked;
+            uint64 uiHoptallusDoor;
+            uint64 uiYanzhuDoor;
             bool OokOokSummoned;
             bool HoptallusSummoned;
             bool YanzhuSummoned;
@@ -59,6 +61,9 @@ class instance_stormstout_brewery : public InstanceMapScript
                 uiOokOok = 0;
                 uiHoptallus = 0;
                 uiYanzhuTheUncasked = 0;
+
+                uiHoptallusDoor = 0;
+                uiYanzhuDoor = 0;
 
                 OokOokSummoned = false;
                 HoptallusSummoned = false;
@@ -232,14 +237,22 @@ class instance_stormstout_brewery : public InstanceMapScript
                 }
             }
 
-            /*
             void OnGameObjectCreate(GameObject* go)
             {
                 switch (go->GetEntry())
                 {
+                    case GAMEOBJECT_BREWERY_DOOR:
+                        if (go->GetPositionX() > -704.0f && go->GetPositionX() < -702.0f && go->GetPositionY() > 1283.0f && go->GetPositionY() < 1286.0f)
+                            uiHoptallusDoor = go->GetGUID();
+                        if (go->GetPositionX() > -671.0f && go->GetPositionX() < -669.0f && go->GetPositionY() > 1136.0f && go->GetPositionY() < 1139.0f)
+                            uiYanzhuDoor = go->GetGUID();
+                        break;
+
+                    default: break;
                 }
             }
 
+            /*
             void OnGameObjectRemove(GameObject* go)
             {
                 switch (go->GetEntry())
@@ -285,6 +298,9 @@ class instance_stormstout_brewery : public InstanceMapScript
                     case DATA_OOKOOK:               return uiOokOok;             break;
                     case DATA_HOPTALLUS:            return uiHoptallus;          break;
                     case DATA_YANZHU_THE_UNCASKED:  return uiYanzhuTheUncasked;  break;
+
+                    case DATA_HOPTALLUS_DOOR:       return uiHoptallusDoor;      break;
+                    case DATA_YAN_ZHU_DOOR:         return uiYanzhuDoor;         break;
 
                     default:                        return 0;                    break;
                 }

@@ -132,6 +132,7 @@ enum Spells
 
     // Bremastery: Wheat.
     SPELL_CARBONATION         = 115003, // Triggers 114386 damage (1).
+    SPELL_CARBONATION_DAMAGE  = 114386, // Triggered by above.
     SPELL_CARBONATION_DUMMY   = 114934, // Tooltip says "Can use the Carbonation ability."
     // Summons multiple NPC_FIZZY_BUBBLE (if uses Carbonation).
     SPELL_FIZZY_BUBBLE_VISUAL = 114458, // Dummy visual for NPC.
@@ -381,6 +382,8 @@ class npc_uncle_gao : public CreatureScript
                 me->RemoveAllAuras();
                 Reset();
                 me->GetMotionMaster()->MoveTargetedHome();
+                if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                    door->SetGoState(GO_STATE_ACTIVE);
 
                 if (instance)
                     instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, FAIL);
@@ -484,19 +487,19 @@ class npc_uncle_gao : public CreatureScript
                 {
                     events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_3, 1000);
                     FirstWaveAddsDead = 0;
-				}
+                }
 
                 if (SecondWaveAddsDead == 9)
                 {
                     events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_6, 1000);
                     SecondWaveAddsDead = 0;
-				}
+                }
 
                 if (ThirdWaveAddsDead == 4)
                 {
                     events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_9, 1000);
                     ThirdWaveAddsDead = 0;
-				}
+                }
 
                 events.Update(diff);
 
@@ -511,6 +514,8 @@ class npc_uncle_gao : public CreatureScript
                             for (uint8 i = 0; i < 3; i++)
                                 me->SummonCreature(NPC_CAULDRON_BUNNY, CauldronPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
                             me->SummonCreature(NPC_BREW_BUNNY, YanzhuSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
+                            if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                                door->SetGoState(GO_STATE_READY);
                             if (instance)
                                 instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, IN_PROGRESS);
                             events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_1, 6000);
@@ -603,7 +608,7 @@ class npc_uncle_gao : public CreatureScript
                             }
                             events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_INTRO_4, 5000);
                             break;
-					    }
+                        }
 
                         case EVENT_UNCLE_GAO_SAY_INTRO_4:
                             Talk(UNCLE_GAO_SAY_INTRO_4);
@@ -617,6 +622,8 @@ class npc_uncle_gao : public CreatureScript
                         case EVENT_UNCLE_GAO_SAY_OUTRO_1:
                             Talk(UNCLE_GAO_SAY_OUTRO_1);
                             me->HandleEmote(EMOTE_ONESHOT_QUESTION);
+                            if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                                door->SetGoState(GO_STATE_ACTIVE);
                             events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_1, 3000);
                             break;
 
@@ -662,7 +669,7 @@ class npc_uncle_gao : public CreatureScript
                                 Chen->SetFacingTo(2.667f);
                                 Chen->AI()->Talk(CHEN_SAY_OUTRO_1);
                                 Chen->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
-					        }
+                            }
                             events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_4, 7000);
                             break;
 
@@ -677,7 +684,7 @@ class npc_uncle_gao : public CreatureScript
                             {
                                 Chen->AI()->Talk(CHEN_SAY_OUTRO_2);
                                 Chen->HandleEmote(EMOTE_ONESHOT_QUESTION);
-					        }
+                            }
                             events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_5, 6000);
                             break;
 
@@ -692,7 +699,7 @@ class npc_uncle_gao : public CreatureScript
                             {
                                 Chen->AI()->Talk(CHEN_SAY_OUTRO_3);
                                 Chen->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
-					        }
+                            }
                             events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_8, 4000);
                             break;
 
@@ -733,7 +740,7 @@ class npc_uncle_gao : public CreatureScript
                             {
                                 Chen->AI()->Talk(CHEN_SAY_OUTRO_4);
                                 Chen->HandleEmote(EMOTE_ONESHOT_TALK);
-					        }
+                            }
                             events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_7, 4000);
                             break;
 
@@ -1328,9 +1335,6 @@ class spell_yanzhu_gushing_brew : public SpellScriptLoader
                         if (Player* player = itr->getSource())
                             if (GetCaster()->isInFront(player, M_PI / 3))
                                 targets.push_back(player);
-
-                    if (targets.empty())
-                        return;
                 }
             }
 
@@ -1493,6 +1497,47 @@ class spell_yanzhu_carbonation : public SpellScriptLoader
         }
 };
 
+// Carbonation 114386 - Damage.
+class spell_yanzhu_carbonation_damage : public SpellScriptLoader
+{
+    public:
+        spell_yanzhu_carbonation_damage() : SpellScriptLoader("spell_yanzhu_carbonation_damage") { }
+
+        class spell_yanzhu_carbonation_damage_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_yanzhu_carbonation_damage_SpellScript);
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                if (!GetCaster() || targets.empty())
+                    return;
+
+				Map* map = GetCaster()->GetMap();
+				if (map && map->IsDungeon())
+				{
+					targets.clear();
+					std::list<Player*> playerList;
+					Map::PlayerList const& players = map->GetPlayers();
+					for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+						if (Player* player = itr->getSource())
+							if (!(player->HasAura(SPELL_FIZZY_BUBBLE) && player->GetPositionZ() > GetCaster()->GetPositionZ() + 1.5f))
+								targets.push_back(player);
+				}
+            }
+
+            void Register()
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yanzhu_carbonation_damage_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yanzhu_carbonation_damage_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_yanzhu_carbonation_damage_SpellScript();
+        }
+};
+
 // Wall of Suds 114467.
 class spell_wall_of_suds : public SpellScriptLoader
 {
@@ -1591,6 +1636,7 @@ void AddSC_boss_yan_zhu_the_uncasked()
     new spell_yanzhu_blackout_brew();
     new spell_yeasty_alemental_ferment();
     new spell_yanzhu_carbonation();
+    new spell_yanzhu_carbonation_damage();
     new spell_wall_of_suds();
     new spell_yanzhu_sudsy();
 }

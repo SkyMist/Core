@@ -49,7 +49,10 @@ enum Data     // GUID handling.
 {
 	DATA_OOKOOK                     = 0,
     DATA_HOPTALLUS                  = 1,
-    DATA_YANZHU_THE_UNCASKED        = 2
+    DATA_YANZHU_THE_UNCASKED        = 2,
+
+    DATA_HOPTALLUS_DOOR             = 3,
+    DATA_YAN_ZHU_DOOR               = 4
 };
 
 enum InstanceSpells
@@ -127,6 +130,7 @@ Position const ChenSummonPosition       = { -671.597f, 1143.943f, 166.821f }; //
 enum GameObjects
 {
     GAMEOBJECT_BREWERY_DOOR         = 209938, // Instance doors. 
+    GAMEOBJECT_OOK_OOK_DOOR         = 211127, // Ook-Ook door.
     GAMEOBJECT_PART_CHEWED_CARROT   = 211126, // Hoptallus door. 
     GAMEOBJECT_MYSTERIOUS_BARREL    = 211138  // Hoptallus barrel.
 };
