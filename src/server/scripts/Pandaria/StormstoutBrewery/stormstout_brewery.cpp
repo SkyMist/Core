@@ -37,14 +37,6 @@ First Alemental after Hoptallus:
 Ancient Brewmaster says: Whatzit... are they... what are they doin' to our alementals?
 Ancient Brewmaster yells: Hey... hey YOU! Those are OUR, flying... beer monsters?
 
-The Tasting Room:
-
-// Check Intro in Boss script, each line corresponds to a spawn. //
-Meteor-like shower. Two Bloated / Stout Brew Alementals spawn in the mid.
-Meteor-like shower. Nine Bubbling / Yeasty Brew Alementals spawn in the mid.
-Meteor-like shower. Four Sudsy / Fizzy Brew Alementals spawn in the mid.
-Meteor-like shower, all 3 above. Boss Yan-zhu the Uncasked spawn in the mid.
-
 Ancestral Brewmaster:
 Ancestral Brewmaster says(1): Are these guys Alliance or Horde?
 Ancestral Brewmaster says(3): Why does it matter?
@@ -232,14 +224,6 @@ enum Spells
     // Yeasty Brew Alemental
     // Uses SPELL_BREW_BOLT4.
     // Uses Ferment in boss script.
-
-    // Yan-zhu the Uncasked intro (Uncle Gao).
-    SPELL_BREW_FINALE_DARK  = 128257, // First wave of spawns, Bloated / Stout Alementals. From Left cauldron (first).
-    SPELL_DARK_SPAWN_EFF    = 128244, // Visual for first wave spawn.
-    SPELL_BREW_FINALE_MED   = 128255, // Second wave of spawns, Yeasty / Bubbling Alementals. From Middle cauldron.
-    SPELL_MED_SPAWN_EFF     = 128243, // Visual for second wave spawn.
-    SPELL_BREW_FINALE_WHEAT = 128253, // Third wave of spawns, Fizzy / Sudsy Alementals. From Right cauldron (last).
-    SPELL_WHEAT_SPAWN_EFF   = 128242  // Visual for third wave spawn.
 };
 
 enum Events

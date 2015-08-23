@@ -37,6 +37,12 @@ Intro
     Uncle Gao yells: Yes, yes, yes...no, no, no no no! Yes! No! Peppers!
     Uncle Gao yells: Ahh! Help! What is that thing? It doesn't matter, nothing will stop me now, not when I'm so close! Maybe if I don't look at it...?
 
+    // Each text line above corresponds to a spawn. //
+    Meteor-like shower. Two Bloated / Stout Brew Alementals spawn in the mid.
+    Meteor-like shower. Nine Bubbling / Yeasty Brew Alementals spawn in the mid.
+    Meteor-like shower. Four Sudsy / Fizzy Brew Alementals spawn in the mid.
+    Meteor-like shower, all 3 above. Boss Yan-zhu the Uncasked spawn in the mid.
+
 Outro
     Uncle Gao says: Is it... can it be???
     * Gao runs over and kneels down by Yan-Zhu's remains and speaks reverently. *
@@ -76,9 +82,30 @@ Outro
         - Sudsy Alementals : Wall of Suds.
 */
 
-enum Yells
+enum UncleGaoYells
 {
     // Intro / Outro.
+    UNCLE_GAO_SAY_INTRO_1    = 0,       // Yes yes yes! So close! Just a pinch of...oops...
+    UNCLE_GAO_SAY_INTRO_2,              // Too bitter! Just a drop of honey, and a cane of sugar, and maybe some corn? Yes, more corn!
+    UNCLE_GAO_SAY_INTRO_3,              // Yes, yes, yes...no, no, no no no! Yes! No! Peppers!
+    UNCLE_GAO_SAY_INTRO_4,              // Ahh! Help! What is that thing? It doesn't matter, nothing will stop me now, not when I'm so close! Maybe if I don't look at it...?
+
+    UNCLE_GAO_SAY_OUTRO_1,              // Is it... can it be???
+    UNCLE_GAO_SAY_OUTRO_2,              // Such harmony of flavor, such heady aroma! It is...the perfect brew!
+    UNCLE_GAO_SAY_OUTRO_3,              // The name of Stormstout will be sung once again throughout the hills!
+    UNCLE_GAO_SAY_OUTRO_4,              // You again! Don't you see? I have made a name for myself at last: I have brewed perfection!
+    UNCLE_GAO_SAY_OUTRO_5,              // Details, details.
+    UNCLE_GAO_SAY_OUTRO_6,              // Look, "Chen Stormstout", we can't all be heroes, running from our responsibilities, tromping around the Dread Wastes, saving the world. Some of us are "Artists".
+    UNCLE_GAO_SAY_OUTRO_7               // Yes, yes. That happens.
+};
+
+enum ChenYanzhuYells
+{
+    // Outro.
+    CHEN_SAY_OUTRO_1          = 0,      // Uncle Gao, this brewery was left in your care! What have you done?
+    CHEN_SAY_OUTRO_2,                   // At what cost? The Brewery is trashed! Infested!
+    CHEN_SAY_OUTRO_3,                   // And there are Virmen in the main store!
+    CHEN_SAY_OUTRO_4,                   // I think the brewery might be on fire.
 };
 
 enum Spells
@@ -120,7 +147,15 @@ enum Spells
     SPELL_FERMENT             = 106859, // Channeled beam, triggers 114451 - 1% Hp / Mana restore on target.
     SPELL_FERMENT_HEAL        = 114451, // Heal.
     SPELL_WALL_OF_SUDS        = 114467, // Triggers 114466 damage and stun.
-    SPELL_WALL_OF_SUDS_DAMAGE = 114466  // Triggered by above.
+    SPELL_WALL_OF_SUDS_DAMAGE = 114466, // Triggered by above.
+
+    // Boss intro (Uncle Gao).
+    SPELL_BREW_FINALE_DARK  = 128257, // First wave of spawns, Bloated / Stout Alementals. From Left cauldron (first).
+    SPELL_DARK_SPAWN_EFF    = 128244, // Visual for first wave spawn.
+    SPELL_BREW_FINALE_MED   = 128255, // Second wave of spawns, Yeasty / Bubbling Alementals. From Middle cauldron.
+    SPELL_MED_SPAWN_EFF     = 128243, // Visual for second wave spawn.
+    SPELL_BREW_FINALE_WHEAT = 128253, // Third wave of spawns, Fizzy / Sudsy Alementals. From Right cauldron (last).
+    SPELL_WHEAT_SPAWN_EFF   = 128242  // Visual for third wave spawn.
 };
 
 enum Events
@@ -145,7 +180,49 @@ enum Events
 
     // Yeasty Brew Alemental
     EVENT_YEASTY_BREW_BOLT,
-    EVENT_FERMENT
+    EVENT_FERMENT,
+
+    // Uncle Gao
+    EVENT_UNCLE_GAO_SAY_INTRO_1,
+    EVENT_UNCLE_GAO_SAY_INTRO_2,
+    EVENT_UNCLE_GAO_SAY_INTRO_3,
+    EVENT_UNCLE_GAO_SAY_INTRO_4,
+
+    EVENT_UNCLE_GAO_INTRO_1,
+    EVENT_UNCLE_GAO_INTRO_2,
+    EVENT_UNCLE_GAO_INTRO_3,
+    EVENT_UNCLE_GAO_INTRO_4,
+    EVENT_UNCLE_GAO_INTRO_5,
+    EVENT_UNCLE_GAO_INTRO_6,
+    EVENT_UNCLE_GAO_INTRO_7,
+    EVENT_UNCLE_GAO_INTRO_8,
+    EVENT_UNCLE_GAO_INTRO_9,
+
+    EVENT_UNCLE_GAO_SAY_OUTRO_1,
+    EVENT_UNCLE_GAO_SAY_OUTRO_2,
+    EVENT_UNCLE_GAO_SAY_OUTRO_3,
+    EVENT_UNCLE_GAO_SAY_OUTRO_4,
+    EVENT_UNCLE_GAO_SAY_OUTRO_5,
+    EVENT_UNCLE_GAO_SAY_OUTRO_6,
+    EVENT_UNCLE_GAO_SAY_OUTRO_7,
+
+    EVENT_CHEN_SAY_OUTRO_1,
+    EVENT_CHEN_SAY_OUTRO_2,
+    EVENT_CHEN_SAY_OUTRO_3,
+    EVENT_CHEN_SAY_OUTRO_4,
+
+    EVENT_UNCLE_GAO_OUTRO_1,
+    EVENT_UNCLE_GAO_OUTRO_2,
+    EVENT_UNCLE_GAO_OUTRO_3,
+    EVENT_UNCLE_GAO_OUTRO_4,
+    EVENT_UNCLE_GAO_OUTRO_5,
+    EVENT_UNCLE_GAO_OUTRO_6,
+    EVENT_UNCLE_GAO_OUTRO_7,
+    EVENT_UNCLE_GAO_OUTRO_8,
+    EVENT_UNCLE_GAO_OUTRO_9,
+    EVENT_UNCLE_GAO_OUTRO_10,
+    EVENT_UNCLE_GAO_OUTRO_11,
+    EVENT_UNCLE_GAO_OUTRO_12
 };
 
 enum Abilities
@@ -163,7 +240,15 @@ enum Abilities
     ABILITY_WALL_OF_SUDS
 };
 
-// NPC summon positions.
+// Uncle Gao actions.
+enum Actions
+{
+    ACTION_START_INTRO      = 0, // Uncle Gao Yanzhu intro start.
+    ACTION_START_OUTRO,          // Uncle Gao Yanzhu outro start.
+    ACTION_EVADE                 // Uncle Gao evade.
+};
+
+// Wall of Suds summon positions.
 Position const SudsPositions[4] =
 {
     {-734.301f, 1130.030f, 166.660f, 1.843f}, // Top
@@ -172,11 +257,501 @@ Position const SudsPositions[4] =
     {-670.259f, 1190.673f, 166.749f, 4.988f}, // Bottom
 };
 
-// NPC move positions, inversed from summon ones. L->R and B->U + the other way around.
+// Wall of Suds move positions, inversed from summon ones. L->R and B->U + the other way around.
 Position const SudsMovePositions[2] =
 {
-    {-662.180f, 1150.694f, 166.710f}, // Right and Top go here.
-    {-745.371f, 1169.491f, 166.752f}, // Left and Bottom go here.
+    {-662.180f, 1150.694f, 166.710f},         // Right and Top go here.
+    {-745.371f, 1169.491f, 166.752f},         // Left and Bottom go here.
+};
+
+// Cauldron Bunny summon positions.
+Position const CauldronPositions[3] =
+{
+    {-688.800f, 1194.998f, 168.184f, 4.872f}, // Left
+    {-683.536f, 1196.037f, 168.590f, 5.009f}, // Mid
+    {-677.967f, 1197.104f, 168.590f, 5.021f}, // Right
+};
+
+// Uncle Gao move positions for intro / outro.
+Position const GaoMovePositions[8] =
+{
+    // Intro
+    {-687.722f, 1190.905f, 166.712f},         // First beer cauldron.
+    {-682.627f, 1191.762f, 166.714f},         // Second beer cauldron.
+    {-676.919f, 1193.879f, 166.722f},         // Third beer cauldron.
+
+    // Outro
+    {-703.178f, 1162.610f, 166.142f},         // Middle of room.
+    {-703.221f, 1179.328f, 166.240f},         // To stove 1.
+    {-703.380f, 1180.399f, 166.730f},         // To stove 2.
+    {-704.285f, 1190.693f, 166.745f},         // To stove 3.
+    {-709.437f, 1185.671f, 166.711f},         // To stove 4, arrived.
+};
+
+// Chen Stormstout move positions for outro.
+Position const ChenMovePositions[4] =
+{
+    // Outro
+    {-682.729f, 1151.606f, 166.730f},         // To middle of room 1.
+    {-683.797f, 1152.155f, 166.175f},         // To middle of room 2.
+    {-695.625f, 1158.195f, 166.144f},         // To middle of room 3, arrived.
+    {-706.771f, 1178.109f, 166.163f},         // To stove, arrived.
+};
+
+// Waves summon positions.
+Position const AddWavesPositions[15] =
+{
+    // First wave.
+    {-704.550f, 1166.890f, 166.142f, 0.278f},
+    {-702.050f, 1158.719f, 166.142f, 0.302f},
+
+    // Second wave.
+    {-694.833f, 1165.140f, 166.144f, 0.290f},
+    {-697.225f, 1173.010f, 166.148f, 0.247f},
+    {-692.408f, 1157.320f, 166.149f, 0.274f},
+    {-701.291f, 1154.790f, 166.149f, 0.235f},
+    {-703.242f, 1162.760f, 166.143f, 0.238f},
+    {-705.262f, 1171.090f, 166.148f, 0.238f},
+    {-713.612f, 1168.650f, 166.148f, 0.277f},
+    {-711.069f, 1160.770f, 166.143f, 0.277f},
+    {-708.717f, 1152.450f, 166.148f, 0.264f},
+
+    // Third wave.
+    {-707.747f, 1165.800f, 166.143f, 0.251f},
+    {-700.354f, 1167.900f, 166.143f, 0.294f},
+    {-697.765f, 1159.970f, 166.143f, 0.266f},
+    {-705.626f, 1157.790f, 166.143f, 0.270f},
+};
+
+// Uncle Gao 59074.
+class npc_uncle_gao : public CreatureScript
+{
+    public :
+        npc_uncle_gao() : CreatureScript("npc_uncle_gao") { }
+
+        struct npc_uncle_gao_AI : public ScriptedAI
+        {
+            npc_uncle_gao_AI(Creature* creature) : ScriptedAI(creature), summons(me)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+            EventMap events;
+            SummonList summons;
+            bool introStarted, outroStarted;
+            uint8 RandomStoutAbility;
+            uint8 RandomAleAbility;
+            uint8 RandomWheatAbility;
+            uint8 FirstWaveAddsDead;
+            uint8 SecondWaveAddsDead;
+            uint8 ThirdWaveAddsDead;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                events.Reset();
+                summons.DespawnAll();
+
+                me->SetReactState(REACT_DEFENSIVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+
+                introStarted = false;
+                outroStarted = false;
+
+                RandomStoutAbility = RAND(ABILITY_BLOAT, ABILITY_BLACKOUT_BREW);
+                RandomAleAbility   = RAND(ABILITY_BUBBLE_SHIELD, ABILITY_YEASTY_BREW_ELEMENTALS);
+                RandomWheatAbility = RAND(ABILITY_CARBONATION, ABILITY_WALL_OF_SUDS);
+
+                FirstWaveAddsDead = 0;
+                SecondWaveAddsDead = 0;
+                ThirdWaveAddsDead = 0;
+
+                if (instance)
+                    instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, NOT_STARTED);
+            }
+
+            void EnterEvadeMode()
+            {
+                me->RemoveAllAuras();
+                Reset();
+                me->GetMotionMaster()->MoveTargetedHome();
+
+                if (instance)
+                    instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, FAIL);
+            }
+
+            void JustSummoned(Creature* summon)
+            {
+                summons.Summon(summon);
+                summon->setActive(true);
+
+                switch(summon->GetEntry())
+                {
+                    case NPC_BLOATED_BREW_ALEMENTAL:
+                    case NPC_STOUT_BREW_ALEMENTAL:
+                        summon->CastSpell(summon, SPELL_DARK_SPAWN_EFF, false);
+                        break;
+
+                    case NPC_YEASTY_BREW_ALEMENTAL:
+                    case NPC_BUBBLING_BREW_ALEMENTAL:
+                        summon->CastSpell(summon, SPELL_MED_SPAWN_EFF, false);
+                        break;
+
+                    case NPC_FIZZY_BREW_ALEMENTAL:
+                    case NPC_SUDSY_BREW_ALEMENTAL:
+                        summon->CastSpell(summon, SPELL_WHEAT_SPAWN_EFF, false);
+                        break;
+
+                    default: break;
+                }
+            }
+
+            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
+            {
+                if (summon->GetEntry() != BOSS_YANZHU_THE_UNCASKED)
+                    summons.Despawn(summon);
+
+                switch(summon->GetEntry())
+                {
+                    case NPC_BLOATED_BREW_ALEMENTAL:
+                    case NPC_STOUT_BREW_ALEMENTAL:
+                        FirstWaveAddsDead += 1;
+                        break;
+
+                    case NPC_YEASTY_BREW_ALEMENTAL:
+                    case NPC_BUBBLING_BREW_ALEMENTAL:
+                        SecondWaveAddsDead += 1;
+                        break;
+
+                    case NPC_FIZZY_BREW_ALEMENTAL:
+                    case NPC_SUDSY_BREW_ALEMENTAL:
+                        ThirdWaveAddsDead += 1;
+                        break;
+
+                    default: break;
+                }
+            }
+
+            void DoAction(int32 const action)
+            {
+                if (action == ACTION_START_INTRO && introStarted || action == ACTION_START_OUTRO && outroStarted)
+                    return;
+
+                switch (action)
+                {
+                    // Intro
+                    case ACTION_START_INTRO:
+                        introStarted = true;
+                        events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_INTRO_1, 1000);
+                        break;
+
+                    // Outro
+                    case ACTION_START_OUTRO:
+                        outroStarted = true;
+                        events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_1, 1000);
+                        break;
+
+                    // Evade
+                    case ACTION_EVADE:
+                        EnterEvadeMode();
+                        break;
+
+                    default: break;
+                }
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                if (!introStarted && me->FindNearestPlayer(40.0f, true))
+                    DoAction(ACTION_START_INTRO);
+
+                if (!introStarted)
+                    return;
+
+                if (instance && instance->IsWipe())
+                {
+                    EnterEvadeMode();
+                    return;
+                }
+
+                if (FirstWaveAddsDead == 2)
+                {
+                    events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_3, 1000);
+                    FirstWaveAddsDead = 0;
+				}
+
+                if (SecondWaveAddsDead == 9)
+                {
+                    events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_6, 1000);
+                    SecondWaveAddsDead = 0;
+				}
+
+                if (ThirdWaveAddsDead == 4)
+                {
+                    events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_9, 1000);
+                    ThirdWaveAddsDead = 0;
+				}
+
+                events.Update(diff);
+
+                while(uint32 eventId = events.ExecuteEvent())
+                {
+                    switch(eventId)
+                    {
+                        // Intro
+                        case EVENT_UNCLE_GAO_SAY_INTRO_1:
+                            Talk(UNCLE_GAO_SAY_INTRO_1);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+                            for (uint8 i = 0; i < 3; i++)
+                                me->SummonCreature(NPC_CAULDRON_BUNNY, CauldronPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
+                            me->SummonCreature(NPC_BREW_BUNNY, YanzhuSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
+                            if (instance)
+                                instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, IN_PROGRESS);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_1, 6000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_1:
+                            if (Creature* bunny = me->FindNearestCreature(NPC_CAULDRON_BUNNY, 10.0f, true))
+                                if (Creature* mid = me->FindNearestCreature(NPC_BREW_BUNNY, 100.0f, true))
+                                    bunny->CastSpell(mid, SPELL_BREW_FINALE_DARK, false);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_2, 5000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_2:
+                            for (uint8 i = 0; i < 2; i++)
+                                me->SummonCreature(RandomStoutAbility == ABILITY_BLOAT ? NPC_BLOATED_BREW_ALEMENTAL : NPC_STOUT_BREW_ALEMENTAL, AddWavesPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
+                            break;
+
+                            // -- First wave summoned.
+
+                        case EVENT_UNCLE_GAO_INTRO_3:
+                            me->GetMotionMaster()->MovePoint(1, GaoMovePositions[1]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_INTRO_2, 3000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_INTRO_2:
+                            Talk(UNCLE_GAO_SAY_INTRO_2);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+                            me->SetFacingTo(1.723f);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_4, 10000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_4:
+                            if (Creature* bunny = me->FindNearestCreature(NPC_CAULDRON_BUNNY, 10.0f, true))
+                                if (Creature* mid = me->FindNearestCreature(NPC_BREW_BUNNY, 100.0f, true))
+                                    bunny->CastSpell(mid, SPELL_BREW_FINALE_MED, false);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_5, 5000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_5:
+                            for (uint8 i = 2; i < 11; i++)
+                                me->SummonCreature(RandomAleAbility == ABILITY_BUBBLE_SHIELD ? NPC_BUBBLING_BREW_ALEMENTAL : NPC_YEASTY_BREW_ALEMENTAL, AddWavesPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
+                            break;
+
+                            // -- Second wave summoned.
+
+                        case EVENT_UNCLE_GAO_INTRO_6:
+                            me->GetMotionMaster()->MovePoint(2, GaoMovePositions[2]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_INTRO_3, 3000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_INTRO_3:
+                            Talk(UNCLE_GAO_SAY_INTRO_3);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
+                            me->SetFacingTo(1.848f);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_7, 8000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_7:
+                            if (Creature* bunny = me->FindNearestCreature(NPC_CAULDRON_BUNNY, 10.0f, true))
+                                if (Creature* mid = me->FindNearestCreature(NPC_BREW_BUNNY, 100.0f, true))
+                                    bunny->CastSpell(mid, SPELL_BREW_FINALE_WHEAT, false);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_8, 5000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_INTRO_8:
+                            for (uint8 i = 11; i < 15; i++)
+                                me->SummonCreature(RandomAleAbility == ABILITY_WALL_OF_SUDS ? NPC_SUDSY_BREW_ALEMENTAL : NPC_FIZZY_BREW_ALEMENTAL, AddWavesPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
+                            break;
+
+                            // -- Third wave summoned.
+
+                        case EVENT_UNCLE_GAO_INTRO_9:
+                        {
+                            if (Creature* mid = me->FindNearestCreature(NPC_BREW_BUNNY, 100.0f, true))
+                            {
+                                std::list<Creature*> cauldronList;
+                                GetCreatureListWithEntryInGrid(cauldronList, me, NPC_CAULDRON_BUNNY, 30.0f);
+                                if (!cauldronList.empty())
+                                {
+                                    for (auto cauldron: cauldronList)
+                                    {
+                                        if (cauldron = cauldronList.front())
+                                            cauldron->CastSpell(mid, SPELL_BREW_FINALE_DARK, false);
+                                        else if (cauldron = cauldronList.back())
+                                            cauldron->CastSpell(mid, SPELL_BREW_FINALE_WHEAT, false);
+                                        else
+                                            cauldron->CastSpell(mid, SPELL_BREW_FINALE_MED, false);
+                                    }
+                                }
+                            }
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_INTRO_4, 5000);
+                            break;
+					    }
+
+                        case EVENT_UNCLE_GAO_SAY_INTRO_4:
+                            Talk(UNCLE_GAO_SAY_INTRO_4);
+                            me->HandleEmote(EMOTE_ONESHOT_COWER);
+                            me->SummonCreature(BOSS_YANZHU_THE_UNCASKED, YanzhuSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
+                            break;
+
+                            // -- Yanzhu the Uncasked summoned.
+
+                        // Outro
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_1:
+                            Talk(UNCLE_GAO_SAY_OUTRO_1);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_1, 3000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_1:
+                            me->SetWalk(false);
+                            me->GetMotionMaster()->MovePoint(3, GaoMovePositions[3]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_2, 8000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_2:
+                            Talk(UNCLE_GAO_SAY_OUTRO_2);
+                            me->HandleEmote(EMOTE_ONESHOT_KNEEL);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_3, 8000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_3:
+                            Talk(UNCLE_GAO_SAY_OUTRO_3);
+                            me->HandleEmote(EMOTE_ONESHOT_CHEER);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_2, 1000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_2:
+                            if (Creature* Chen = me->SummonCreature(NPC_CHEN_STORMSTOUT_YANZHU, ChenSummonPosition, TEMPSUMMON_MANUAL_DESPAWN))
+                                Chen->GetMotionMaster()->MovePoint(1, ChenMovePositions[0]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_3, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_3:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                                Chen->GetMotionMaster()->MovePoint(2, ChenMovePositions[1]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_4, 2000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_4:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                                Chen->GetMotionMaster()->MovePoint(3, ChenMovePositions[2]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_5, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_5:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                            {
+                                Chen->SetFacingTo(2.667f);
+                                Chen->AI()->Talk(CHEN_SAY_OUTRO_1);
+                                Chen->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+					        }
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_4, 7000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_4:
+                            Talk(UNCLE_GAO_SAY_OUTRO_4);
+                            me->HandleEmote(EMOTE_ONESHOT_POINT);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_6, 10000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_6:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                            {
+                                Chen->AI()->Talk(CHEN_SAY_OUTRO_2);
+                                Chen->HandleEmote(EMOTE_ONESHOT_QUESTION);
+					        }
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_5, 6000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_5:
+                            Talk(UNCLE_GAO_SAY_OUTRO_5);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_7, 3000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_7:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                            {
+                                Chen->AI()->Talk(CHEN_SAY_OUTRO_3);
+                                Chen->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+					        }
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_8, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_8:
+                            me->SetWalk(true);
+                            me->GetMotionMaster()->MovePoint(4, GaoMovePositions[4]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_9, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_9:
+                            me->GetMotionMaster()->MovePoint(5, GaoMovePositions[5]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_10, 1500);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_10:
+                            me->GetMotionMaster()->MovePoint(6, GaoMovePositions[6]);
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                                Chen->GetMotionMaster()->MovePoint(4, ChenMovePositions[3]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_11, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_11:
+                            me->GetMotionMaster()->MovePoint(7, GaoMovePositions[7]);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_6, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_6:
+                            me->SetFacingTo(4.992f);
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                                Chen->SetFacingTo(1.972f);
+                            Talk(UNCLE_GAO_SAY_OUTRO_6);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_12, 12000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_OUTRO_12:
+                            if (Creature* Chen = me->FindNearestCreature(NPC_CHEN_STORMSTOUT_YANZHU, 100.0f, true))
+                            {
+                                Chen->AI()->Talk(CHEN_SAY_OUTRO_4);
+                                Chen->HandleEmote(EMOTE_ONESHOT_TALK);
+					        }
+                            events.ScheduleEvent(EVENT_UNCLE_GAO_SAY_OUTRO_7, 4000);
+                            break;
+
+                        case EVENT_UNCLE_GAO_SAY_OUTRO_7:
+                            Talk(UNCLE_GAO_SAY_OUTRO_7);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
+                            break;
+
+                        default: break;
+                    }
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_uncle_gao_AI(creature);
+        }
 };
 
 class boss_yan_zhu_the_uncasked : public CreatureScript
@@ -194,77 +769,68 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
             InstanceScript* instance;
             EventMap events;
             SummonList summons;
-            uint8 RandomStoutAbility;
-            uint8 RandomAleAbility;
-            uint8 RandomWheatAbility;
+            Creature* uncleGao;
+            uint8 BossStoutAbility;
+            uint8 BossAleAbility;
+            uint8 BossWheatAbility;
             uint8 sudWallsCasts;
 
-            void InitializeAI()
+            void IsSummonedBy(Unit* summoner)
             {
-                if (!me->isDead())
-                    Reset();
-            }
+                uncleGao = summoner->ToCreature();
 
-            void Reset()
-            {
                 events.Reset();
                 summons.DespawnAll();
 
-                if (instance)
-                    instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, NOT_STARTED);
-
-                RandomStoutAbility = RAND(ABILITY_BLOAT, ABILITY_BLACKOUT_BREW);
-                RandomAleAbility   = RAND(ABILITY_BUBBLE_SHIELD, ABILITY_YEASTY_BREW_ELEMENTALS);
-                RandomWheatAbility = RAND(ABILITY_CARBONATION, ABILITY_WALL_OF_SUDS);
-
                 sudWallsCasts = 0;
 
-                _Reset();
+                BossStoutAbility = CAST_AI(npc_uncle_gao::npc_uncle_gao_AI, uncleGao->AI())->RandomStoutAbility;
+                BossAleAbility   = CAST_AI(npc_uncle_gao::npc_uncle_gao_AI, uncleGao->AI())->RandomAleAbility;
+                BossWheatAbility = CAST_AI(npc_uncle_gao::npc_uncle_gao_AI, uncleGao->AI())->RandomWheatAbility;
 
                 // Bremastery: Stout.
-                if (RandomStoutAbility == ABILITY_BLOAT)
+                if (BossStoutAbility == ABILITY_BLOAT)
                     me->AddAura(SPELL_BLOAT_DUMMY, me);         // Add the visual tooltip.
                 else
                     me->AddAura(SPELL_BLACKOUT_BREW_DUMMY, me); // Add the visual tooltip.
 
                 // Bremastery: Ale.
-                if (RandomAleAbility == ABILITY_BUBBLE_SHIELD)
+                if (BossAleAbility == ABILITY_BUBBLE_SHIELD)
                     me->AddAura(SPELL_BUBBLE_SHIELD_DUMMY, me); // Add the visual tooltip.
                 else
                     me->AddAura(SPELL_YEASTY_BREW_DUMMY, me);   // Add the visual tooltip.
 
                 // Brewmastery: Wheat.
-                if (RandomWheatAbility == ABILITY_CARBONATION)
+                if (BossWheatAbility == ABILITY_CARBONATION)
                     me->AddAura(SPELL_CARBONATION_DUMMY, me);   // Add the visual tooltip.
                 else
                     me->AddAura(SPELL_WALL_OF_SUDS_DUMMY, me);  // Add the visual tooltip.
             }
 
+            void Reset() { }
+
             void EnterCombat(Unit* /*who*/)
 			{
                 if (instance)
-                {
-                    instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, IN_PROGRESS);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
-                }
 
                 // Melee range check.
                 events.ScheduleEvent(EVENT_BREW_BOLT, 5000);
 
                 // Bremastery: Stout.
-                if (RandomStoutAbility == ABILITY_BLOAT)
+                if (BossStoutAbility == ABILITY_BLOAT)
                     events.ScheduleEvent(EVENT_BLOAT, urand(11000, 13000));
                 else
                     events.ScheduleEvent(EVENT_BLACKOUT_BREW, urand(9000, 11000));
 
                 // Bremastery: Ale.
-                if (RandomAleAbility == ABILITY_BUBBLE_SHIELD)
+                if (BossAleAbility == ABILITY_BUBBLE_SHIELD)
                     events.ScheduleEvent(EVENT_BUBBLE_SHIELD, urand(16000, 19000));
                 else
                     events.ScheduleEvent(EVENT_YEASTY_BREW_ELEMENTALS, urand(18000, 20000));
 
                 // Brewmastery: Wheat.
-                if (RandomWheatAbility == ABILITY_CARBONATION)
+                if (BossWheatAbility == ABILITY_CARBONATION)
                     events.ScheduleEvent(EVENT_CARBONATION, urand(22500, 24500));
                 else
                     events.ScheduleEvent(EVENT_WALL_OF_SUDS, urand(25000, 27000));
@@ -274,15 +840,13 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
 
             void EnterEvadeMode()
             {
+                summons.DespawnAll();
                 me->RemoveAllAuras();
-                Reset();
                 me->DeleteThreatList();
                 me->CombatStop(true);
-                me->GetMotionMaster()->MoveTargetedHome();
 
                 if (instance)
                 {
-                    instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, FAIL);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
 
                     if (me->HasAura(SPELL_BLOAT_DUMMY))
@@ -296,7 +860,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
 
-                // _EnterEvadeMode();
+                uncleGao->AI()->DoAction(ACTION_EVADE);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -318,6 +882,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     if (me->HasAura(SPELL_WALL_OF_SUDS_DUMMY))
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
+
+                uncleGao->AI()->DoAction(ACTION_START_OUTRO);
 
                 _JustDied();
             }
@@ -749,7 +1315,7 @@ class spell_yanzhu_gushing_brew : public SpellScriptLoader
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                if (targets.empty())
+                if (!GetCaster() || targets.empty())
                     return;
 
                 Map* map = GetCaster()->GetMap();
@@ -826,8 +1392,11 @@ class spell_yanzhu_blackout_brew : public SpellScriptLoader
 
             void OnPeriodic(constAuraEffectPtr /*aurEff*/)
             {
+                if (!GetCaster() || !GetTarget())
+                    return;
+
                 // Remove a stack if the player is moving or jumping (Jumping checked by MOVEMENTFLAG_FALLING and PositionZ compared to boss one plus a small margin).
-                if (GetTarget()->isMoving() || GetTarget()->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) || GetTarget()->GetPositionZ() > GetCaster()->GetPositionZ() + 0.1f)
+                if (GetTarget()->isMoving() || GetTarget()->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) || GetTarget()->GetPositionZ() > GetCaster()->GetPositionZ() + 0.6f)
                     if (AuraPtr blackoutBrew = GetTarget()->GetAura(SPELL_BLACKOUT_BREW)) // Get the aura.
                         if (blackoutBrew->GetStackAmount() > 1)
                             blackoutBrew->SetStackAmount(blackoutBrew->GetStackAmount() - 1); // Remove a stack till the base one is left.
@@ -907,8 +1476,8 @@ class spell_yanzhu_carbonation : public SpellScriptLoader
 
             void PeriodicTick(constAuraEffectPtr /*aurEff*/)
             {
-                for (uint8 i = 0; i < 2; i++)
-                    if (Unit* caster = GetCaster())
+                if (Unit* caster = GetCaster())
+                    for (uint8 i = 0; i < 2; i++)
                         caster->SummonCreature(NPC_FIZZY_BUBBLE, caster->GetPositionX() + frand(-13.0f, 13.0f), caster->GetPositionY() + frand(-13.0f, 13.0f), caster->GetPositionZ() + 1.0f,  caster->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
@@ -944,7 +1513,7 @@ class spell_wall_of_suds : public SpellScriptLoader
                     if (!PlayerList.isEmpty())
                         for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
                             if (Player* player = i->getSource())
-                                if (caster->isInFront(player, M_PI / 5) && !player->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && player->GetPositionZ() <= caster->GetPositionZ() + 0.1f)
+                                if (caster->isInFront(player, M_PI / 5) && !player->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && player->GetPositionZ() <= caster->GetPositionZ() + 0.6f)
                                     caster->CastSpell(player, SPELL_WALL_OF_SUDS_DAMAGE, true);
                 }
             }
@@ -1012,6 +1581,7 @@ class spell_yanzhu_sudsy : public SpellScriptLoader
 
 void AddSC_boss_yan_zhu_the_uncasked()
 {
+    new npc_uncle_gao();
     new boss_yan_zhu_the_uncasked();
     new npc_bubble_shield_yanzhu();
     new npc_fizzy_bubble_yanzhu();

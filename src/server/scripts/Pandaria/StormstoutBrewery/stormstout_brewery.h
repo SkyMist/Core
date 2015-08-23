@@ -69,10 +69,13 @@ enum CreaturesIds
 
     NPC_AUNTIE_STORMSTOUT           = 59822,
     NPC_CHEN_STORMSTOUT_ENTRANCE    = 59704,
-    NPC_CHEN_STORMSTOUT_YANZHU      = 64361,
     NPC_ANCESTRAL_BREWMASTER_1      = 59075,
     NPC_ANCESTRAL_BREWMASTER_2      = 65375,
     NPC_ANCESTRAL_BREWMASTER_3      = 65376,
+    NPC_UNCLE_GAO                   = 59074,
+    NPC_CHEN_STORMSTOUT_YANZHU      = 64361,
+    NPC_BREW_BUNNY                  = 66840,
+    NPC_CAULDRON_BUNNY              = 68330,
 
     // - Ook-Ook.
     NPC_OOK_BARREL                  = 56682,
@@ -119,6 +122,7 @@ Position const ookOokSummonPosition     = { -755.653f, 1351.396f, 146.923f }; //
 Position const HoptallusSummonPosition  = { -713.955f, 1254.574f, 164.790f }; // Hoptallus summon position.
 Position const YanzhuSummonPosition     = { -703.178f, 1162.610f, 166.142f }; // Yan-zhu the Uncasked summon position.
 Position const PartyAnimalDespawnPos    = { -767.081f, 1392.731f, 146.747f }; // Hozen Party Animal despawn position.
+Position const ChenSummonPosition       = { -671.597f, 1143.943f, 166.821f }; // Chen Stormstout Yan-zhu Outro summon position.
 
 enum GameObjects
 {

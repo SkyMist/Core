@@ -311,6 +311,22 @@ class instance_stormstout_brewery : public InstanceMapScript
                 return true;
             }
 
+            bool IsWipe()
+            {
+                Map::PlayerList const& PlayerList = instance->GetPlayers();
+
+                if (!PlayerList.isEmpty())
+                {
+                    for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                    {
+                        if (Player* plr = i->getSource())
+                            if (plr->isAlive() && !plr->isGameMaster())
+                                return false;
+                    }
+                }
+                return true;
+            }
+
             std::string GetSaveData()
             {
                 OUT_SAVE_INST_DATA;
