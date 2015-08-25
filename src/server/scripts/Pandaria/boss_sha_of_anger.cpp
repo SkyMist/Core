@@ -73,7 +73,7 @@ enum Events
 
 enum Creatures
 {
-	NPC_OVERCOME_BY_ANGER_BUNNY  = 60732,
+    NPC_OVERCOME_BY_ANGER_BUNNY  = 60732,
     NPC_IRE                      = 60579,
     NPC_BITTER_THOUGHTS          = 61523
 };
@@ -212,22 +212,20 @@ class boss_sha_of_anger : public CreatureScript
                     {
                         // Melee range check.
                         case EVENT_SEETHE:
-                            if (!unleashWrathPhase && !HasHostileInMeleeRange())
+                            if (!HasHostileInMeleeRange())
                                 DoCast(me->getVictim(), SPELL_SEETHE);
                             events.ScheduleEvent(EVENT_SEETHE, 2500);
                             break;
 
                         case EVENT_ENDLESS_RAGE:
-                            if (!unleashWrathPhase)
-                                DoCast(me, SPELL_ENDLESS_RAGE);
+                            DoCast(me, SPELL_ENDLESS_RAGE);
                             events.ScheduleEvent(EVENT_ENDLESS_RAGE, 45000);
                             break;
 
                         case EVENT_GROWING_ANGER:
                             Talk(SAY_GROWING_ANGER);
-                            if (!unleashWrathPhase)
-                                DoCast(me, SPELL_GROWING_ANGER);
-							events.ScheduleEvent(EVENT_GROWING_ANGER, 45000);
+                            DoCast(me, SPELL_GROWING_ANGER);
+                            events.ScheduleEvent(EVENT_GROWING_ANGER, 45000);
                             break;
 
                         case EVENT_UNLEASHED_WRATH:
