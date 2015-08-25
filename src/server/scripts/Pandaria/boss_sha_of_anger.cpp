@@ -87,7 +87,7 @@ class boss_sha_of_anger : public CreatureScript
         {
             boss_sha_of_anger_AI(Creature* creature) : ScriptedAI(creature), vehicle(creature->GetVehicleKit()), summons(me)
             {
-                ASSERT(vehicle);                // Red energy bar. Vehicle Id 2189.
+                ASSERT(vehicle); // Red (Focus-like) energy bar. Vehicle Id 2115 matches, need more info.
             }
 
             EventMap events;
