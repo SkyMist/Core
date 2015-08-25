@@ -28,41 +28,54 @@
 
 enum Yells
 {
-    TALK_INTRO                   = 0,
-    TALK_ANGER,
-    TALK_SPAWN,
-    TALK_RESET,
-    TALK_SLAY,
-    TALK_AGGRO
+    SAY_SPAWN                    = 0,      // 0 - Give in to your anger. ; 1 - Your rage gives you strength! ; 2 - Your rage sustains me! ; 3 - You will not bury me again! ; 4 - My wrath flows freely!
+    SAY_AGGRO,                             // Yes, YES! Bring your rage to bear! Try to strike me down!
+    SAY_KILL,                              // 0 - Extinguished! ; 1 - Does that make you angry? ; 2 - Feel your rage! ; 3 - Let your rage consume you.
+    SAY_GROWING_ANGER,                     // Feed me with your ANGER!
+    SAY_UNLEASHED_WRATH                    // My fury is UNLEASHED!
+};
+
+enum Sounds
+{
+    SOUND_DEATH                  = 29000   // Laughter on boss death.
 };
 
 enum Spells
 {
-    SPELL_SHADOW_BOLT_ANGER      = 119487,
-    SPELL_OVERCOME_BY_ANGER      = 129356,
-    SPELL_ENDLESS_RAGE           = 119446,
-    SPELL_BITTER_THOUGHTS        = 119601,
+    // Boss
+    SPELL_SEETHE                 = 119487, // Dmg  + increase damage taken.
+    SPELL_ENDLESS_RAGE           = 119586, // Cast time. Triggers 119592 SE.
+    SPELL_ENDLESS_RAGE_SE        = 119592, // Triggered by above. SE to cast 119587.
+    SPELL_ENDLESS_RAGE_MISS      = 119587, // Missile. Triggers 119446.
+    SPELL_ENDLESS_RAGE_DMG       = 119446, // Triggered by above. Damage + summon NPC's Ire and Bitter Thoughts.
+    SPELL_GROWING_ANGER          = 119622, // Cast time, per. dummy aura for Aggressive behaviour.
+    SPELL_AGGRESSIVE_BEHAVIOUR   = 119626, // MC, dmg + health increase, heal, periodic dummy for health pct. check.
+    SPELL_UNLEASHED_WRATH        = 119488, // Triggers 119489.
+    SPELL_UNLEASHED_WRATH_DMG    = 119489, // Triggered by above.
+    SPELL_ENERGY_DRAIN           = 117707, // No Energy Regen.
     SPELL_BERSERK                = 47008,
-    SPELL_DOMINATE_MIND_WARNING  = 119622,
-    SPELL_DOMINATE_MIND          = 119626,
-    SPELL_SEETHE_AURA            = 119487
+
+    // NPC's
+    SPELL_OVERCOME_BY_ANGER      = 129356, // When standing in zones in Kun Lai.
+    SPELL_BITTER_THOUGHTS        = 119601, // Aura, triggers 119610.
+    SPELL_BITTER_THOUGHTS_PACIFY = 119610  // Triggered by above. Pacify and Silence.
 };
 
 enum Events
 {
-    EVENT_GROWING_ANGER_WARNING  = 1,
-    EVENT_GROWING_ANGER          = 2,
-    EVENT_UNLEASHED_WRATH        = 3,
-    EVENT_BERSERK                = 4,
-    EVENT_DESPAWN                = 5,
-    EVENT_SPAWN                  = 6,
-    EVENT_UPDATE_RAGE            = 7,
-    EVENT_RANGE_ATTACK           = 8
+    // Boss
+    EVENT_SEETHE                 = 1,
+    EVENT_ENDLESS_RAGE,
+    EVENT_GROWING_ANGER,
+    EVENT_UNLEASHED_WRATH,
+    EVENT_BERSERK
 };
 
 enum Creatures
 {
-    NPC_SHA_OF_DOUBT             = 56439
+	NPC_OVERCOME_BY_ANGER_BUNNY  = 60732,
+    NPC_IRE                      = 60579,
+    NPC_BITTER_THOUGHTS          = 61523
 };
 
 class boss_sha_of_anger : public CreatureScript
@@ -70,86 +83,96 @@ class boss_sha_of_anger : public CreatureScript
     public:
         boss_sha_of_anger() : CreatureScript("boss_sha_of_anger") { }
 
-        CreatureAI* GetAI(Creature* creature) const
-        {
-            return new boss_sha_of_anger_AI(creature);
-        }
-
         struct boss_sha_of_anger_AI : public ScriptedAI
         {
-            boss_sha_of_anger_AI(Creature* creature) : ScriptedAI(creature) { }
+            boss_sha_of_anger_AI(Creature* creature) : ScriptedAI(creature), vehicle(creature->GetVehicleKit()), summons(me)
+            {
+                ASSERT(vehicle);                // Red energy bar. Vehicle Id 2189.
+            }
 
-            int _targetCount;
-            int _cloudCount;
-            int _maxTargetCount;
-            uint8 _dominateMindCount;
-            uint32 timer;
-            bool phase1;
-            bool range;
+            EventMap events;
+            SummonList summons;
+            Vehicle* vehicle;
+            bool unleashWrathPhase;
+            uint32 energyTimer;
 
-            std::list<uint64> targetedDominationPlayerGuids;
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
 
             void Reset()
             {
-                me->setPowerType(POWER_RAGE);
-                me->SetPower(POWER_RAGE, 0);
-
-                me->SetFloatValue(UNIT_FIELD_COMBAT_REACH, 5.0f);
-
-                summons.DespawnAll();
-
-                phase1 = true;
-                range = false;
-                _dominateMindCount = 2;
-                _cloudCount = 3;
-                _targetCount = 0;
-                _maxTargetCount = 5;
-                timer = 0;
-
-                Talk(TALK_RESET);
+                Talk(SAY_SPAWN);
 
                 events.Reset();
-                events.ScheduleEvent(EVENT_GROWING_ANGER_WARNING, 19000);
-                events.ScheduleEvent(EVENT_SPAWN, 5000);
-                events.ScheduleEvent(EVENT_UNLEASHED_WRATH, 52000);
-                events.ScheduleEvent(EVENT_BERSERK, 900000);
-                events.ScheduleEvent(EVENT_UPDATE_RAGE, 1000);
+                summons.DespawnAll();
 
-                targetedDominationPlayerGuids.clear();
+                unleashWrathPhase = false;
+                energyTimer = -1;
 
-                std::list<Player*> playerList;
-                GetPlayerListInGrid(playerList, me, 100.0f);
+                me->setPowerType(POWER_ENERGY);
+                me->SetMaxPower(POWER_ENERGY, 100);
+                me->SetPower(POWER_ENERGY, 0);
 
-                for (auto itr : playerList)
-                    itr->RemoveAura(SPELL_DOMINATE_MIND);
+                DoCast(me, SPELL_ENERGY_DRAIN);
+                me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+            }
+
+            void EnterCombat(Unit* /*who*/)
+            {
+                Talk(SAY_AGGRO);
+
+                energyTimer = 1000;
+                events.ScheduleEvent(EVENT_SEETHE, 5000);         // Melee range check.
+                events.ScheduleEvent(EVENT_ENDLESS_RAGE, 20000);  // 20s into the fight, 45s after that.
+                events.ScheduleEvent(EVENT_GROWING_ANGER, 30000); // 30s into the fight, 45s after that.
+                events.ScheduleEvent(EVENT_BERSERK, 900000);      // Berserk, 15 mins.
             }
 
             void KilledUnit(Unit* victim)
             {
                 if (victim->GetTypeId() == TYPEID_PLAYER)
-                    Talk(TALK_SLAY);
+                    Talk(SAY_KILL);
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterEvadeMode()
             {
-                Talk(TALK_AGGRO);
+                RemoveAggressiveBehaviour();
+                me->RemoveAllAuras();
+                Reset();
+                me->DeleteThreatList();
+                me->CombatStop(true);
+                me->GetMotionMaster()->MoveTargetedHome();
+            }
+
+            void JustDied(Unit* /*killer*/)
+            {
+                // Send death laughter sound.
+                sCreatureTextMgr->SendSound(me, SOUND_DEATH, CHAT_MSG_MONSTER_YELL, 0, TEXT_RANGE_NORMAL, TEAM_OTHER, false);
+
+                summons.DespawnAll();
+                RemoveAggressiveBehaviour();
             }
 
             void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
+                summon->setActive(true);
 
-                // Clouds
-                if (summon->GetEntry() == 61523)
+		        if (me->isInCombat())
+                    summon->SetInCombatWithZone();
+
+                // Bitter Thoughts clouds.
+                if (summon->GetEntry() == NPC_BITTER_THOUGHTS)
                 {
+                    summon->SetReactState(REACT_PASSIVE);
+                    summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                     summon->CastSpell(summon, SPELL_BITTER_THOUGHTS, true);
-                    summon->DespawnOrUnsummon(60000);
+                    summon->DespawnOrUnsummon(60000); // 1 min duration.
                 }
-            }
-
-            void SummonedCreatureDespawn(Creature* summon)
-            {
-                summons.Despawn(summon);
             }
 
             void UpdateAI(const uint32 diff)
@@ -157,167 +180,240 @@ class boss_sha_of_anger : public CreatureScript
                 if (!UpdateVictim())
                     return;
 
-                if (me->HasUnitState(UNIT_STATE_CASTING))
-                    return;
+                // Handle energy regen and events.
+                if (!unleashWrathPhase && me->GetPower(POWER_ENERGY) == 100)
+                {
+                    events.ScheduleEvent(EVENT_UNLEASHED_WRATH, 1000);
+                    unleashWrathPhase = true;
+                    energyTimer = 5000; // 1s until event + 3s cast time + 1s for first drain.
+                }
+
+                if (unleashWrathPhase && me->GetPower(POWER_ENERGY) == 0)
+                {
+                    unleashWrathPhase = false;
+                    energyTimer = 1000;
+			    }
+
+                if (energyTimer <= diff)
+                {
+                    me->SetPower(POWER_ENERGY, !unleashWrathPhase ? (me->GetPower(POWER_ENERGY) + 2) : (me->GetPower(POWER_ENERGY) - 4));
+                    energyTimer = 1000;
+                }
+                else energyTimer -= diff;
 
                 events.Update(diff);
+
+                if (me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
                     switch (eventId)
                     {
-                        case EVENT_UNLEASHED_WRATH:
-                            phase1 = false;
-
-                            for (uint8 i = 0; i < 5; i++)
-                            {
-                                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
-                                {
-                                    if (target->GetAuraCount(SPELL_SEETHE_AURA) < 3)
-                                    {
-                                        me->CastSpell(target, SPELL_SHADOW_BOLT_ANGER, false);
-                                        me->AddAura(SPELL_SEETHE_AURA, target);
-                                    }
-                                }
-                            }
-
-                            if (_targetCount < _maxTargetCount)
-                            {
-                                if (_targetCount == 0)
-                                    Talk(TALK_INTRO);
-
-                                _targetCount++;
-                                events.ScheduleEvent(EVENT_UNLEASHED_WRATH, 2000);
-                            }
-                            else
-                            {
-                                events.ScheduleEvent(EVENT_UNLEASHED_WRATH, 50000);
-                                phase1 = true;
-                                _targetCount = 0;
-                            }
+                        // Melee range check.
+                        case EVENT_SEETHE:
+                            if (!unleashWrathPhase && !HasHostileInMeleeRange())
+                                DoCast(me->getVictim(), SPELL_SEETHE);
+                            events.ScheduleEvent(EVENT_SEETHE, 2500);
                             break;
 
-                        case EVENT_GROWING_ANGER_WARNING:
-                            Talk(TALK_ANGER);
-                            for (uint8 i = 0; i < _dominateMindCount; ++i)
-                            {
-                                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
-                                {
-                                    targetedDominationPlayerGuids.push_back(target->GetGUID());
-                                    me->CastSpell(target, SPELL_DOMINATE_MIND_WARNING, true);
-                                }
-                            }
-                            events.ScheduleEvent(EVENT_GROWING_ANGER, 6000);
+                        case EVENT_ENDLESS_RAGE:
+                            if (!unleashWrathPhase)
+                                DoCast(me, SPELL_ENDLESS_RAGE);
+                            events.ScheduleEvent(EVENT_ENDLESS_RAGE, 45000);
                             break;
 
                         case EVENT_GROWING_ANGER:
-                            if (!targetedDominationPlayerGuids.empty())
-                                for (auto guid : targetedDominationPlayerGuids)
-                                    if (Player* target = ObjectAccessor::GetPlayer(*me, guid))
-                                        if (!me->getVictim() || target != me->getVictim())
-                                            DoCast(target, SPELL_DOMINATE_MIND);
-                            events.ScheduleEvent(EVENT_GROWING_ANGER_WARNING, 19000);
+                            Talk(SAY_GROWING_ANGER);
+                            if (!unleashWrathPhase)
+                                DoCast(me, SPELL_GROWING_ANGER);
+							events.ScheduleEvent(EVENT_GROWING_ANGER, 45000);
                             break;
 
-                        case EVENT_SPAWN:
-                            Talk(TALK_SPAWN);
-                            for (uint8 i = 0; i < _cloudCount; ++i)
-                                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
-                                    DoCast(target, SPELL_ENDLESS_RAGE);
-                            events.ScheduleEvent(EVENT_SPAWN, 15000);
-                            break;
-
-                        case EVENT_UPDATE_RAGE:
-                            timer = phase1 ? (timer + 20) : (timer - 20);
-                            me->SetPower(POWER_RAGE, timer);
-                            events.ScheduleEvent(EVENT_UPDATE_RAGE, 1000);
+                        case EVENT_UNLEASHED_WRATH:
+                            Talk(SAY_UNLEASHED_WRATH);
+                            DoCast(me, SPELL_UNLEASHED_WRATH);
                             break;
 
                         case EVENT_BERSERK:
                             DoCast(me, SPELL_BERSERK);
                             break;
 
-                        case EVENT_RANGE_ATTACK:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO))
-                            {
-                                DoCast(target, SPELL_SHADOW_BOLT_ANGER);
-                                me->AddAura(SPELL_SEETHE_AURA, target);
-                            }
-                            range = false;
-                            break;
-
                         default: break;
                     }
                 }
 
-                if (me->getVictim() && !me->IsWithinMeleeRange(me->getVictim()) && !range)
-                {
-                    range = true;
-                    events.ScheduleEvent(EVENT_RANGE_ATTACK, 2000);
-                }
-
-                if (!range)
-                    DoMeleeAttackIfReady();
+                DoMeleeAttackIfReady();
             }
-        };
-};
 
-class mob_sha_of_anger_bunny : public CreatureScript
-{
-    public:
-        mob_sha_of_anger_bunny() : CreatureScript("mob_sha_of_anger_bunny") {}
+        // Particular AI functions.
+        private:
 
-        struct mob_sha_of_anger_bunnyAI : public ScriptedAI
-        {
-            mob_sha_of_anger_bunnyAI(Creature* creature) : ScriptedAI(creature)
+            // Check for pets or players in Melee range.
+            bool HasHostileInMeleeRange()
             {
-                creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-                creature->GetMotionMaster()->Clear();
+                // Check for tank.
+                if (Unit* tank = me->getVictim())
+                    if (tank->IsWithinDistInMap(me, MELEE_RANGE))
+                        return true;
+
+                // Check for pets.
+                if (Unit* unit = me->SelectNearbyTarget(NULL, MELEE_RANGE))
+                    if (unit->isPet())
+                        return true;
+
+                // Check for players.
+                if (Player* nearPlayer = me->FindNearestPlayer(MELEE_RANGE))
+                    if (nearPlayer->IsWithinDistInMap(me, MELEE_RANGE))
+                        if (!nearPlayer->isGameMaster())
+                            return true;
+            
+                return false;
             }
 
-            void Reset()
+            // Remove boss auras from players.
+            void RemoveAggressiveBehaviour()
             {
-                me->GetMotionMaster()->Clear();
-                me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+                std::list<Player*> playerList;
+                GetPlayerListInGrid(playerList, me, 100.0f);
 
-                if (me->AI())
-                    me->AI()->SetCanSeeEvenInPassiveMode(true);
-            }
-
-            void MoveInLineOfSight(Unit* who)
-            {
-                if (who->GetTypeId() != TYPEID_PLAYER)
-                    return;
-
-                if (!who->IsWithinDist(me, 30.0f))
-                    return;
-
-                if (who->IsWithinDist(me, 20.0f))
-                    who->AddAura(SPELL_OVERCOME_BY_ANGER, who);
-                else if (who->HasAura(SPELL_OVERCOME_BY_ANGER))
-                    who->RemoveAura(SPELL_OVERCOME_BY_ANGER);
-            }
-
-            void UpdateAI(uint32 const diff)
-            {
-                if (me->AI() && !me->AI()->CanSeeEvenInPassiveMode())
-                    me->AI()->SetCanSeeEvenInPassiveMode(true);
-
-                if (!me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-
-                if (me->isMoving())
-                    me->StopMoving();
-            }
+                for (auto itr : playerList)
+                    itr->RemoveAurasDueToSpell(SPELL_AGGRESSIVE_BEHAVIOUR);
+			}
         };
 
         CreatureAI* GetAI(Creature* creature) const
         {
-            return new mob_sha_of_anger_bunnyAI(creature);
+            return new boss_sha_of_anger_AI(creature);
         }
 };
 
+// Anger Sha Effect Bunny 60732.
+class npc_overcome_by_anger_bunny : public CreatureScript
+{
+    public:
+        npc_overcome_by_anger_bunny() : CreatureScript("npc_overcome_by_anger_bunny") { }
+
+        struct npc_overcome_by_anger_bunnyAI : public ScriptedAI
+        {
+            npc_overcome_by_anger_bunnyAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void Reset()
+            {
+                me->SetReactState(REACT_PASSIVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_DISABLE_MOVE);
+                SetCanSeeEvenInPassiveMode(true);
+            }
+
+            void MoveInLineOfSight(Unit* who)
+            {
+                if (me->GetMapId() == 870 && who->GetTypeId() == TYPEID_PLAYER && who->IsWithinDist(me, 30.0f))
+                {
+                    if (who->IsWithinDist(me, 20.0f))
+                        who->AddAura(SPELL_OVERCOME_BY_ANGER, who);
+                    else if (!who->IsWithinDist(me, 20.0f) && who->HasAura(SPELL_OVERCOME_BY_ANGER))
+                        who->RemoveAurasDueToSpell(SPELL_OVERCOME_BY_ANGER);
+                }
+            }
+
+            void UpdateAI(uint32 const diff) { }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_overcome_by_anger_bunnyAI(creature);
+        }
+};
+
+// Endless Rage triggered spell 119592.
+class spell_sha_of_anger_endless_rage : public SpellScriptLoader
+{
+    public:
+        spell_sha_of_anger_endless_rage() : SpellScriptLoader("spell_sha_of_anger_endless_rage") { }
+
+        class spell_sha_of_anger_endless_rage_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_sha_of_anger_endless_rage_SpellScript);
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                if (!GetCaster())
+                    return;
+
+                GetCaster()->CastSpell(GetHitUnit(), GetSpellInfo()->Effects[EFFECT_0].BasePoints, true); // SPELL_ENDLESS_RAGE_MISS.
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_sha_of_anger_endless_rage_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_sha_of_anger_endless_rage_SpellScript();
+        }
+};
+
+// Growing Anger 119622.
+class spell_sha_of_anger_growing_anger : public SpellScriptLoader
+{
+    public:
+        spell_sha_of_anger_growing_anger() : SpellScriptLoader("spell_sha_of_anger_growing_anger") { }
+
+        class spell_sha_of_anger_growing_anger_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_sha_of_anger_growing_anger_SpellScript)
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                if (!GetCaster() || targets.empty())
+                    return;
+
+                // Maximum 3 targets.
+                if (targets.size() > 3)
+                    SkyMistCore::RandomResizeList(targets, 3);
+            }
+
+            void Register()
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_of_anger_growing_anger_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_of_anger_growing_anger_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_sha_of_anger_growing_anger_SpellScript();
+        }
+
+        class spell_sha_of_anger_growing_anger_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_sha_of_anger_growing_anger_AuraScript)
+
+            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                Unit* caster = GetCaster();
+                Unit* target = GetTarget();
+                if (!caster || !target)
+                    return;
+
+                GetCaster()->CastSpell(target, SPELL_AGGRESSIVE_BEHAVIOUR, true);
+            }
+
+            void Register()
+            {
+                OnEffectRemove += AuraEffectRemoveFn(spell_sha_of_anger_growing_anger_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
+        {
+            return new spell_sha_of_anger_growing_anger_AuraScript();
+        }
+};
+
+// Aggressive Behaviour 119626.
 class spell_sha_of_anger_aggressive_behaviour : public SpellScriptLoader
 {
     public:
@@ -341,18 +437,18 @@ class spell_sha_of_anger_aggressive_behaviour : public SpellScriptLoader
                 {
                     if (!target->ToPlayer())
                         return;
-                    
+
                     target->SetPvP(true);
                     target->setFaction(16);
                     target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
                 }
-
             }
 
             void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* target = GetTarget())
                 {
+                    target->SetPvP(false); // This should only be removed for FFA PvP realms.
                     target->RestoreFaction();
                     target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
                 }
@@ -372,7 +468,39 @@ class spell_sha_of_anger_aggressive_behaviour : public SpellScriptLoader
         }
 };
 
-// Overcome by Anger - 129356
+// Unleashed Wrath 119489.
+class spell_sha_of_anger_unleashed_wrath : public SpellScriptLoader
+{
+    public:
+        spell_sha_of_anger_unleashed_wrath() : SpellScriptLoader("spell_sha_of_anger_unleashed_wrath") { }
+
+        class spell_sha_of_anger_unleashed_wrath_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_sha_of_anger_unleashed_wrath_SpellScript)
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                if (!GetCaster() || targets.empty())
+                    return;
+
+                // Maximum 10 targets.
+                if (targets.size() > 10)
+                    SkyMistCore::RandomResizeList(targets, 10);
+            }
+
+            void Register()
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_of_anger_unleashed_wrath_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_sha_of_anger_unleashed_wrath_SpellScript();
+        }
+};
+
+// Overcome by Anger - 129356.
 class spell_sha_of_anger_overcome_by_anger : public SpellScriptLoader
 {
     public:
@@ -382,16 +510,13 @@ class spell_sha_of_anger_overcome_by_anger : public SpellScriptLoader
         {
             PrepareAuraScript(spell_sha_of_anger_overcome_by_anger_AuraScript);
 
-            void OnUpdate(uint32 diff)
+            void OnUpdate(const uint32 diff)
             {
-                if (Unit* target = GetTarget())
+                if (Unit* target = GetUnitOwner())
                 {
-                    if (Unit* caster = GetCaster())
-                    {
-                        if (target->GetMapId() != caster->GetMapId() ||
-                            !target->IsWithinDist(caster, 30.0f))
-                            target->RemoveAura(SPELL_OVERCOME_BY_ANGER);
-                    }
+                    // Teleport handling. Aura is removed if not in Kun-Lai Summit, Pandaria.
+                    if (target->GetMapId() != 870 || target->GetZoneId() != 5841)
+                        target->RemoveAurasDueToSpell(SPELL_OVERCOME_BY_ANGER);
                 }
             }
 
@@ -410,7 +535,10 @@ class spell_sha_of_anger_overcome_by_anger : public SpellScriptLoader
 void AddSC_boss_sha_of_anger()
 {
     new boss_sha_of_anger();
-    new mob_sha_of_anger_bunny();
+    new npc_overcome_by_anger_bunny();
+    new spell_sha_of_anger_endless_rage();
+    new spell_sha_of_anger_growing_anger();
     new spell_sha_of_anger_aggressive_behaviour();
+    new spell_sha_of_anger_unleashed_wrath();
     new spell_sha_of_anger_overcome_by_anger();
 }
