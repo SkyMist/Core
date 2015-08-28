@@ -26,13 +26,30 @@
 #include "SpellAuraEffects.h"
 #include "Player.h"
 
+enum Yells
+{
+    // Chief Salyis.
+    SAY_SPAWN                   = 0, // Loot and pillage, bwhahaha!
+    SAY_AGGRO,                       // Bring me their corpses!
+    SAY_DEATH,                       // Retreat to the hills!
+    SAY_KILL,                        // They are soft... weak!
+    SAY_CANNON_BARRAGE               // Arm the cannons! Ready... arm... fire!
+};
+
+#define ANN_CANNON_BARRAGE "Galleon prepares to unleash a |cFFFF0000|Hspell:121600|h[Cannon Barrage]|h|r!"
+#define ANN_STOMP "Galleon is about to |cFFFF0000|Hspell:121787|h[Stomp]|h|r!"
+#define ANN_WARMONGERS_LEAP "Warmongers leap from Galleon's back to join the battle!"
+
 enum Spells
 {
+    // Galleon.
     SPELL_STOMP                 = 121787,
     SPELL_CANNON_BARRAGE        = 121600,
     SPELL_FIRE_SHOT             = 121673,
     SPELL_IMPALING_PULL         = 121747,
     SPELL_BERSERK               = 47008
+
+    // NPC's.
 };
 
 enum Events
@@ -48,6 +65,7 @@ enum Events
 enum Creatures
 {
     NPC_SALYIN_WARMONGER        = 62351,
+    NPC_CHIEF_SALYIS            = 62352
 };
 
 class boss_galleon : public CreatureScript
@@ -57,13 +75,25 @@ class boss_galleon : public CreatureScript
 
         struct boss_galleon_AI : public ScriptedAI
         {
-            boss_galleon_AI(Creature* creature) : ScriptedAI(creature) { }
+            boss_galleon_AI(Creature* creature) : ScriptedAI(creature), vehicle(creature->GetVehicleKit()), summons(me)
+            {
+                ASSERT(vehicle);
+            }
 
             EventMap events;
+            SummonList summons;
+            Vehicle* vehicle;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
 
             void Reset()
             {
                 events.Reset();
+                summons.DespawnAll();
             }
 
             void KilledUnit(Unit* victim) { }

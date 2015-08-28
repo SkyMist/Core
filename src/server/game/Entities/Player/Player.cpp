@@ -17564,7 +17564,7 @@ bool Player::CanRewardQuest(Quest const* quest, bool msg)
     if (!quest->IsDFQuest() && !quest->IsAutoComplete() && !(quest->GetFlags() & QUEST_FLAGS_AUTOCOMPLETE) && GetQuestStatus(quest->GetQuestId()) != QUEST_STATUS_COMPLETE)
         return false;
 
-    // daily quest can't be rewarded (25 daily quest already completed)
+    // completed daily / weekly / monthly / seasonal quest can't be rewarded.
     if (!SatisfyQuestDay(quest, true) || !SatisfyQuestWeek(quest, true) || !SatisfyQuestMonth(quest, true) || !SatisfyQuestSeasonal(quest, true))
         return false;
 
@@ -18423,7 +18423,7 @@ bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
 
-    // Normal Daily Quests.
+    // Normal Daily Quests. Patch 5.0.4 (2012-08-28): The cap for daily quests has been removed. The previous cap was 25.
     if (!m_dailyQuestStorage.empty())
     {
         for (auto id : m_dailyQuestStorage)
@@ -20452,6 +20452,9 @@ bool Player::isAllowedToLoot(const Creature* creature)
     if (HasPendingBind())
         return false;
 
+    if (!CanLootWeeklyBoss(creature->GetEntry()))
+        return false;
+
     const Loot* loot = &creature->loot;
     if (loot->isLooted()) // nothing to loot or everything looted.
         return false;
@@ -20490,6 +20493,71 @@ bool Player::isAllowedToLoot(const Creature* creature)
 
     return false;
 }
+
+// New Loot-based Lockout system.
+// Check http://eu.battle.net/wow/en/forum/topic/12822112588 .
+// Used for: All Raid Finder raids, MOP Siege of Orgrimmar Normal/Heroic, WOD raids Normal/Heroic. World bosses are also tracked in the "Raid Info" window since 5.4.
+
+bool Player::IsFirstWeeklyBossKill(uint32 creatureEntry)
+{
+    if (!creatureEntry)
+        return true;
+
+    uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(creatureEntry);
+    if (!questId)
+        return true;
+
+    // The boss is killed first this week if the player has not completed the quest.
+    if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+		if (!SatisfyQuestWeek(quest, false))
+            return false;
+
+    return true;
+}
+
+bool Player::CanLootWeeklyBoss(uint32 creatureEntry)
+{
+    if (!creatureEntry)
+        return true;
+
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_KILL);
+    stmt->setUInt32(0, GetGUIDLow());
+    stmt->setUInt32(1, creatureEntry);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+
+    if (!result)
+        return true;
+
+    Field* fields = result->Fetch();
+    bool weeklyBossLooted = fields[0].GetUInt8();
+
+    // The boss cannot be looted if the player has done it before this week.
+    if (weeklyBossLooted)
+        return false;
+
+    return true;
+}
+
+void Player::SetWeeklyBossLooted(uint32 creatureEntry, bool looted)
+{
+    if (!looted) // This is the first insertion when the player completes the quest, and the boss has not been looted yet.
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_WEEKLY_BOSS_KILL);
+        stmt->setUInt32(0, GetGUIDLow());
+        stmt->setUInt32(1, creatureEntry);
+        stmt->setUInt8(2, looted);
+        CharacterDatabase.Execute(stmt);
+    }
+    else         // We call this once the boss has been looted to update set the field to true.
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_WEEKLY_BOSS_KILL);
+        stmt->setUInt8(0, looted);
+        stmt->setUInt32(1, GetGUIDLow());
+        stmt->setUInt32(2, creatureEntry);
+        CharacterDatabase.Execute(stmt);
+    }
+}
+// End of New Loot-based Lockout system.
 
 void Player::_LoadActions(PreparedQueryResult result)
 {
@@ -27260,21 +27328,56 @@ bool Player::GetsRecruitAFriendBonus(bool forXP)
 
 void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
 {
-     //currency reward
+    // Check for boss loot quests and add them as completed for the player / group.
+    if (victim->GetTypeId() == TYPEID_UNIT)
+    {
+        if (Creature* deadCreature = victim->ToCreature())
+        {
+            if (deadCreature->HasWeeklyBossLootQuestId())
+            {
+                if (uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(deadCreature->GetEntry()))
+                {
+                    if (Group* group = GetGroup()) // Group case.
+                    {
+                        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                        {
+                            Player* groupGuy = itr->getSource();
+                            if (IsInMap(groupGuy) && groupGuy->IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                            {
+                                groupGuy->CompleteQuest(questId);
+                                groupGuy->SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                        {
+                            CompleteQuest(questId); // Not in a group.
+                            SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Currency reward.
     if (sMapStore.LookupEntry(GetMapId())->IsDungeon())
     {
-        if (Group *pGroup = GetGroup())
+        if (Group* group = GetGroup())
         {
-            for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+            for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
             {
-                Player* pGroupGuy = itr->getSource();
-                if (IsInMap(pGroupGuy))
-                    pGroupGuy->RewardCurrencyAtKill(victim);
+                Player* groupGuy = itr->getSource();
+                if (IsInMap(groupGuy))
+                    groupGuy->RewardCurrencyAtKill(victim);
             }
         }
         else
             RewardCurrencyAtKill(victim);
     }
+
     KillRewarder(this, victim, isBattleGround).Reward();
 }
 

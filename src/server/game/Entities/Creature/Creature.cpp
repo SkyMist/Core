@@ -1563,6 +1563,16 @@ bool Creature::hasInvolvedQuest(uint32 quest_id) const
     return false;
 }
 
+// Quest for weekly looting, new MOP Lockout system.
+bool Creature::HasWeeklyBossLootQuestId()
+{
+    uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(GetEntry());
+    if (!questId)
+        return false;
+
+    return true;
+}
+
 void Creature::DeleteFromDB()
 {
     if (!m_DBTableGuid)

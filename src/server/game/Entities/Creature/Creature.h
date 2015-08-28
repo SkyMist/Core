@@ -765,6 +765,9 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         bool hasQuest(uint32 quest_id) const;
         bool hasInvolvedQuest(uint32 quest_id)  const;
 
+        // New Loot-based Lockout system.
+        bool HasWeeklyBossLootQuestId();
+
         bool isRegeneratingHealth() { return m_regenHealth; }
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }
         virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }

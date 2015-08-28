@@ -10,16 +10,16 @@
 
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
-  Pandaria/boss_sha_of_anger.cpp
-  Pandaria/boss_galleon.cpp
-  Pandaria/boss_nalak.cpp
-  Pandaria/boss_ordos.cpp
-  Pandaria/boss_oondasta.cpp
 
-  Pandaria/AugustCelestials/boss_chi_ji.cpp
-  Pandaria/AugustCelestials/boss_niuzao.cpp
-  Pandaria/AugustCelestials/boss_xuen.cpp
-  Pandaria/AugustCelestials/boss_yu_lon.cpp
+  Pandaria/WorldBosses/boss_sha_of_anger.cpp
+  Pandaria/WorldBosses/boss_galleon.cpp
+  Pandaria/WorldBosses/boss_nalak.cpp
+  Pandaria/WorldBosses/boss_ordos.cpp
+  Pandaria/WorldBosses/boss_oondasta.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_chi_ji.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_niuzao.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_xuen.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_yu_lon.cpp
 
   Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
   Pandaria/MogushanPalace/mogu_shan_palace.h

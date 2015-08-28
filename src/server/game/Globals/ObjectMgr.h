@@ -1035,6 +1035,9 @@ class ObjectMgr
         uint32 GeneratePetNumber();
         uint64 GenerateVoidStorageItemId();
 
+        // New Loot-based Lockout system.
+        uint32 GetWeeklyBossLootQuestId(uint32 creatureEntry);
+
         typedef std::multimap<int32, uint32> ExclusiveQuestGroups;
         ExclusiveQuestGroups mExclusiveQuestGroups;
 

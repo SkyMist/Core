@@ -5255,6 +5255,22 @@ void ObjectMgr::LoadInstanceEncounters()
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u instance encounters in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+// Boss loot quest Id, used for new Loot-based Lockout system.
+uint32 ObjectMgr::GetWeeklyBossLootQuestId(uint32 creatureEntry)
+{
+    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_BOSS_LOOT_QUEST_ID);
+    stmt->setUInt32(0, creatureEntry);
+    PreparedQueryResult result = WorldDatabase.Query(stmt);
+
+    if (!result)
+        return 0;
+
+    Field* fields = result->Fetch();
+    uint32 questId = fields[0].GetUInt32();
+
+    return questId;
+}
+
 GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
 {
     GossipTextContainer::const_iterator itr = _gossipTextStore.find(Text_ID);

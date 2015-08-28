@@ -42,7 +42,7 @@ enum Sounds
 
 enum Spells
 {
-    // Boss
+    // Sha of Anger.
     SPELL_SEETHE                 = 119487, // Dmg  + increase damage taken.
     SPELL_ENDLESS_RAGE           = 119586, // Cast time. Triggers 119592 SE.
     SPELL_ENDLESS_RAGE_SE        = 119592, // Triggered by above. SE to cast 119587.
@@ -55,7 +55,7 @@ enum Spells
     SPELL_ENERGY_DRAIN           = 117707, // No Energy Regen.
     SPELL_BERSERK                = 47008,
 
-    // NPC's
+    // NPC's.
     SPELL_OVERCOME_BY_ANGER      = 129356, // When standing in zones in Kun Lai.
     SPELL_BITTER_THOUGHTS        = 119601, // Aura, triggers 119610.
     SPELL_BITTER_THOUGHTS_PACIFY = 119610  // Triggered by above. Pacify and Silence.
@@ -63,7 +63,7 @@ enum Spells
 
 enum Events
 {
-    // Boss
+    // Sha of Anger.
     EVENT_SEETHE                 = 1,
     EVENT_ENDLESS_RAGE,
     EVENT_GROWING_ANGER,
