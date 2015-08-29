@@ -3669,7 +3669,7 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 58563: // Assassinate Restless Lookout
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET;
                     break;
-                // Pandashan's Dragon Gun
+                // Shado-Pan Dragon Gun
                 case 120751:
                 case 120876:
                 case 120964:
@@ -3742,6 +3742,7 @@ void SpellMgr::LoadSpellCustomAttr()
             case 108862: // Twilight Onslaught
             case 109226: // Twilight Onslaught
             case 109227: // Twilight Onslaught
+            case 144688: // Magma Crush Ordos
                     // ONLY SPELLS WITH SPELLFAMILY_GENERIC and EFFECT_SCHOOL_DAMAGE
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_SHARE_DAMAGE;
                     break;
@@ -5350,7 +5351,11 @@ void SpellMgr::LoadSpellCustomAttr()
                     spellInfo->Effects[0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
                     break;
                 case 106334:// Wash Away
-                    spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                case 138391:// Alpha Male Oondasta
+                    spellInfo->AttributesEx3 &= ~SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                    break;
+                case 144699:// Ancient Flame Ordos
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
                     break;
                 case 120552:// Mantid Munition Explosion
                     spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
@@ -8700,6 +8705,43 @@ void SpellMgr::LoadSpellCustomAttr()
             // -- PVE CONTENT -- //
 
             // DUNGEONS AND RAIDS - CHECKED 18019 !!!!
+
+            // STORMSTOUT BREWERY (DUNGEON).
+
+                case 106807: // Ground Pound.
+                case 112944: // Carrot Breath.
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    break;
+                case 106808: // Ground Pound (Damage).
+                    spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                    break;
+                case 112945: // Carrot Breath (Damage).
+                    spellInfo->ExcludeTargetAuraSpell = 0;
+                    break;
+                case 144466: // Wall of Suds (Damage).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 106859: // Ferment.
+                    spellInfo->ChannelInterruptFlags = 0x0;
+                    spellInfo->InterruptFlags = 0x0;
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    break;
+                case 114451: // Ferment (Damage).
+                    spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ANY;
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                    break;
+                case 116155: // Brew Bolt.
+                    spellInfo->AttributesEx6 &= ~SPELL_ATTR6_UNK14;
+                    break;
+                case 114468: // Sudsy
+                    spellInfo->ProcFlags = 0;
+                    spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_PERIODIC_TRIGGER_SPELL;
+                    spellInfo->Effects[EFFECT_0].Amplitude = 200;
+                    break;
 
             // THRONE OF THUNDER (RAID).
 

@@ -402,7 +402,7 @@ void WorldSession::HandleBattlegroundPortOpcode(WorldPacket& recvData)
 
     if (bgQueueTypeId >= MAX_BATTLEGROUND_QUEUE_TYPES)
     {
-        sLog->OutPandashan("HandleBattlegroundPortOpcode: bgQueueTypeId %u in conflict with MAX_BATTLEGROUND_QUEUE_TYPES!", bgQueueTypeId);
+        sLog->OutSpecialLog("HandleBattlegroundPortOpcode: bgQueueTypeId %u in conflict with MAX_BATTLEGROUND_QUEUE_TYPES!", bgQueueTypeId);
         return;
     }
 
@@ -739,7 +739,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
 
         if (!ginfo)
         {
-            sLog->OutPandashan("NULL ginfo !!!!");
+            sLog->OutSpecialLog("NULL ginfo !!!!");
             return;
         }
 

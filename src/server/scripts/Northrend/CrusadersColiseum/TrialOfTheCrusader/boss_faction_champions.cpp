@@ -2278,7 +2278,7 @@ class spell_toc_bloodlust : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(true, AURA_SATED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, AURA_SATED));
             }
 
             void ApplyDebuff()
@@ -2319,7 +2319,7 @@ class spell_toc_heroism : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(true, AURA_EXHAUSTION));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, AURA_EXHAUSTION));
             }
 
             void ApplyDebuff()

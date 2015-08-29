@@ -1,6 +1,6 @@
 #include "SpellChargesTracker.h"
 
-namespace JadeCore
+namespace SkyMistCore
 {
     void SpellChargesTracker::consume(std::uint32_t spellId, std::uint32_t regenTimer)
     {
@@ -43,4 +43,4 @@ namespace JadeCore
             ++i;
         }
     }
-} // namespace JadeCore
+} // namespace SkyMistCore

@@ -1,5 +1,20 @@
 /*
-    World Boss: Nalak <The Storm Lord>
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * World Boss: Nalak <The Storm Lord>.
 */
 
 #include "ObjectMgr.h"
@@ -13,6 +28,7 @@
 
 enum Texts
 {
+    // Nalak.
     SAY_INTRO         = 0, // I am born of thunder!
     SAY_AGGRO         = 1, // Can you feel a chill wind blow? The storm is coming...
     SAY_DEATH         = 2, // I am but... The darkness... Before the storm...
@@ -23,6 +39,7 @@ enum Texts
 
 enum Spells
 {
+    // Nalak.
     SPELL_ARC_NOVA          = 136338, // 39s, every 42 s.
     SPELL_LIGHTNING_TET_A   = 136339, // 28s, every 35 s.
     SPELL_LIGHTNING_TET_S   = 136350, // Scripting spell. 0 - SE SPELL_LIGHTNING_TET_D +30yd; 1 - Dummy close dmg. SPELL_LITHGNING_TET_N.
@@ -51,7 +68,7 @@ class boss_nalak : public CreatureScript
                 introDone = false;
             }
 
-            EventMap _events;
+            EventMap events;
             bool introDone;
 
             void InitializeAI()
@@ -62,8 +79,7 @@ class boss_nalak : public CreatureScript
 
             void Reset()
             {
-			    me->RemoveAurasDueToSpell(SPELL_STATIC_SHIELD);
-                _events.Reset();
+                events.Reset();
             }
 
             void MoveInLineOfSight(Unit* who)
@@ -80,9 +96,9 @@ class boss_nalak : public CreatureScript
                 Talk(SAY_AGGRO);
                 DoCast(me, SPELL_STATIC_SHIELD);
 
-                _events.ScheduleEvent(EVENT_ARC_NOVA, urand(37000, 41000)); // 37-41s
-                _events.ScheduleEvent(EVENT_LIGHTNING_TET, urand(28000, 35000)); // 28-35s
-                _events.ScheduleEvent(EVENT_STORMCLOUD, urand(13000, 17000)); // 13-17s
+                events.ScheduleEvent(EVENT_ARC_NOVA, urand(37000, 41000)); // 37-41s
+                events.ScheduleEvent(EVENT_LIGHTNING_TET, urand(28000, 35000)); // 28-35s
+                events.ScheduleEvent(EVENT_STORMCLOUD, urand(13000, 17000)); // 13-17s
             }
 
             void KilledUnit(Unit* victim)
@@ -93,9 +109,10 @@ class boss_nalak : public CreatureScript
 
             void EnterEvadeMode()
             {
+                me->RemoveAllAuras();
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -109,30 +126,30 @@ class boss_nalak : public CreatureScript
                 if (!UpdateVictim())
                     return;
 
-                _events.Update(diff);
+                events.Update(diff);
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                while (uint32 eventId = _events.ExecuteEvent())
+                while (uint32 eventId = events.ExecuteEvent())
                 {
                     switch (eventId)
                     {
                         case EVENT_ARC_NOVA:
                             Talk(SAY_ARC_NOVA);
                             DoCast(me, SPELL_ARC_NOVA);
-                            _events.ScheduleEvent(EVENT_ARC_NOVA, urand(41000, 43000));
+                            events.ScheduleEvent(EVENT_ARC_NOVA, urand(41000, 43000));
                             break;
 
                         case EVENT_LIGHTNING_TET:
                             DoCast(me, SPELL_LIGHTNING_TET_A);
-                            _events.ScheduleEvent(EVENT_LIGHTNING_TET, urand(37000, 39000));
+                            events.ScheduleEvent(EVENT_LIGHTNING_TET, urand(37000, 39000));
                             break;
 
                         case EVENT_STORMCLOUD:
                             Talk(SAY_STORM_CLOUD);
                             DoCast(me, SPELL_STORMCLOUD);
-                            _events.ScheduleEvent(EVENT_STORMCLOUD, urand(33000, 37000));
+                            events.ScheduleEvent(EVENT_STORMCLOUD, urand(33000, 37000));
                             break;
 
                         default: break;
@@ -243,13 +260,13 @@ class spell_lightning_tether_trigger : public SpellScriptLoader
             void HandleScript(SpellEffIndex effIndex)
             {
                 PreventHitDefaultEffect(effIndex);
-                GetCaster()->CastSpell(GetHitUnit(), uint32(GetEffectValue()), true); // SPELL_LIGHTNING_TET_D
+                GetCaster()->CastSpell(GetHitUnit(), GetSpellInfo()->Effects[EFFECT_0].BasePoints, true); // SPELL_LIGHTNING_TET_D
             }
 
             void HandleDummy(SpellEffIndex effIndex)
             {
                 PreventHitDefaultEffect(effIndex);
-                GetCaster()->CastSpell(GetHitUnit(), uint32(GetEffectValue()), true); // SPELL_LIGHTNING_TET_N
+                GetCaster()->CastSpell(GetHitUnit(), GetSpellInfo()->Effects[EFFECT_1].BasePoints, true); // SPELL_LIGHTNING_TET_N
             }
 
             void Register()

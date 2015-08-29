@@ -197,13 +197,13 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                 else
                 {
                     std::list<Creature*> linkedLootCreatures;
-                    CellCoord p(JadeCore::ComputeCellCoord(player->GetPositionX(), player->GetPositionY()));
+                    CellCoord p(SkyMistCore::ComputeCellCoord(player->GetPositionX(), player->GetPositionY()));
                     Cell cell(p);
                     cell.SetNoCreate();
 
-                    JadeCore::AllDeadCreaturesInRange check(player, 25.0f, creature->GetGUID());
-                    JadeCore::CreatureListSearcher<JadeCore::AllDeadCreaturesInRange> searcher(player, linkedLootCreatures, check);
-                    TypeContainerVisitor<JadeCore::CreatureListSearcher<JadeCore::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
+                    SkyMistCore::AllDeadCreaturesInRange check(player, 25.0f, creature->GetGUID());
+                    SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange> searcher(player, linkedLootCreatures, check);
+                    TypeContainerVisitor<SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
                     cell.Visit(p, cSearcher, *(player->GetMap()), *player,  25.0f);
 
                     for (auto itr : linkedLootCreatures)
@@ -474,6 +474,20 @@ void WorldSession::DoLootRelease(uint64 lguid)
             // skip pickpocketing loot for speed, skinning timer reduction is no-op in fact
             if (!creature->isAlive())
                 creature->AllLootRemovedFromCorpse();
+
+            // New Loot-based Lockout system. Check and allow the player / group to loot the weekly boss just once, if it wasn't looted before.
+            if (Group* group = GetPlayer()->GetGroup())
+            {
+                for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                    if (Player* groupGuy = itr->getSource())
+                        if (GetPlayer()->IsInMap(groupGuy) && creature->HasWeeklyBossLootQuestId() && !groupGuy->IsFirstWeeklyBossKill(creature->GetEntry()) && groupGuy->CanLootWeeklyBoss(creature->GetEntry()))
+                            groupGuy->SetWeeklyBossLooted(creature->GetEntry(), true);
+            }
+            else
+            {
+                if (creature->HasWeeklyBossLootQuestId() && !GetPlayer()->IsFirstWeeklyBossKill(creature->GetEntry()) && GetPlayer()->CanLootWeeklyBoss(creature->GetEntry()))
+                    GetPlayer()->SetWeeklyBossLooted(creature->GetEntry(), true);
+            }
 
             creature->RemoveFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
             loot->clear();

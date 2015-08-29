@@ -2592,8 +2592,8 @@ class npc_korkron_primalist: public CreatureScript
                             {
                                 std::list<Unit*> TargetList;
                                 Unit* finalTarget = me;
-                                JadeCore::AnyFriendlyUnitInObjectRangeCheck checker(me, me, 30.0f);
-                                JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(me, TargetList, checker);
+                                SkyMistCore::AnyFriendlyUnitInObjectRangeCheck checker(me, me, 30.0f);
+                                SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(me, TargetList, checker);
                                 me->VisitNearbyObject(30.0f, searcher);
                                 for (std::list<Unit*>::iterator itr = TargetList.begin(); itr != TargetList.end(); ++itr)
                                     if ((*itr)->GetHealthPct() < finalTarget->GetHealthPct())

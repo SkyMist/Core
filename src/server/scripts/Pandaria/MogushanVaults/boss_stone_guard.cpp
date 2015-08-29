@@ -1074,19 +1074,19 @@ class spell_jasper_chains : public SpellScriptLoader
                 if (!caster || targets.empty())
                     return;
 
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_JASPER_CHAINS));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_TOTALY_PETRIFIED));
-               // targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_REND_FLESH)); // dont cast chases on defence player
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_JASPER_CHAINS));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_TOTALY_PETRIFIED));
+               // targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_REND_FLESH)); // dont cast chases on defence player
 
                 if (targets.size() < 2)
                     return;
 
                 if (!targets.empty())
-                    if (WorldObject* FirstPlayer = JadeCore::Containers::SelectRandomContainerElement(targets))
+                    if (WorldObject* FirstPlayer = SkyMistCore::Containers::SelectRandomContainerElement(targets))
                     {
                         targets.remove(FirstPlayer);
                         if (!targets.empty())
-                            if (WorldObject* SecondPlayer = JadeCore::Containers::SelectRandomContainerElement(targets))
+                            if (WorldObject* SecondPlayer = SkyMistCore::Containers::SelectRandomContainerElement(targets))
                             {
                                 if (AuraPtr aura = caster->AddAura(SPELL_JASPER_CHAINS, FirstPlayer->ToUnit()))
                                     aura->SetScriptGuid(0, SecondPlayer->GetGUID());

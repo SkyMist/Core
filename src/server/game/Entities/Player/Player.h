@@ -2938,6 +2938,11 @@ class Player : public Unit, public GridObject<Player>
 
         bool isAllowedToLoot(const Creature* creature);
 
+        // New Loot-based Lockout system.
+        bool IsFirstWeeklyBossKill(uint32 creatureEntry);
+        bool CanLootWeeklyBoss(uint32 creatureEntry);
+        void SetWeeklyBossLooted(uint32 creatureEntry, bool looted);
+
         DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
         uint8 GetRunesState() const { return m_runes.runeState; }
         RuneType GetBaseRune(uint8 index) const { return RuneType(m_runes.runes[index].BaseRune); }
@@ -3479,7 +3484,7 @@ class Player : public Unit, public GridObject<Player>
         PreparedQueryResultFuture _petPreloadCallback;
         QueryResultHolderFuture _petLoginCallback;
 
-        JadeCore::SpellChargesTracker spellChargesTracker_;
+        SkyMistCore::SpellChargesTracker spellChargesTracker_;
 
         uint8 m_bgRoles;
 

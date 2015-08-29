@@ -2041,8 +2041,8 @@ public:
                 return;
 
             std::list<Unit*> targets;
-            JadeCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, 60);
-            JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(me, targets, u_check);
+            SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, 60);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(me, targets, u_check);
             me->VisitNearbyObject(30, searcher);
             for (std::list<Unit*>::const_iterator itr = targets.begin(); itr != targets.end(); ++itr)
             {
@@ -3868,7 +3868,7 @@ class npc_demonic_gateway_purple : public CreatureScript
                 if (greenGates.empty())
                     return;
 
-                greenGates.sort(JadeCore::DistanceCompareOrderPred(me));
+                greenGates.sort(SkyMistCore::DistanceCompareOrderPred(me));
                 for (auto itr : greenGates)
                 {
                     clicker->CastSpell(clicker, 113942, true);
@@ -3959,7 +3959,7 @@ class npc_demonic_gateway_green : public CreatureScript
                 if (purpleGates.empty())
                     return;
 
-                purpleGates.sort(JadeCore::DistanceCompareOrderPred(me));
+                purpleGates.sort(SkyMistCore::DistanceCompareOrderPred(me));
                 for (auto itr : purpleGates)
                 {
                     clicker->CastSpell(clicker, 113942, true);
@@ -4910,16 +4910,16 @@ class npc_psyfiend : public CreatureScript
                     std::list<Unit*> targetList;
                     float radius = 20.0f;
 
-                    JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(me, me, radius);
-                    JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(me, targetList, u_check);
+                    SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(me, me, radius);
+                    SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(me, targetList, u_check);
 
                     me->VisitNearbyObject(radius, searcher);
 
-                    targetList.remove_if(JadeCore::UnitAuraCheck(true, SPELL_PSYCHIC_HORROR));
+                    targetList.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_PSYCHIC_HORROR));
 
                     if (!targetList.empty())
                     {
-                        targetList.sort(JadeCore::ObjectDistanceOrderPred(me));
+                        targetList.sort(SkyMistCore::ObjectDistanceOrderPred(me));
                         targetList.resize(1);
 
                         for (auto itr : targetList)
@@ -5275,14 +5275,14 @@ class npc_custom_caster_guard : public CreatureScript
                         UnitList targets;
                         DebuffCheck u_check(me, me->GetOwnerGUID());
                         
-                        JadeCore::UnitListSearcher<DebuffCheck> searcher(me, targets, u_check);
+                        SkyMistCore::UnitListSearcher<DebuffCheck> searcher(me, targets, u_check);
                         me->VisitNearbyObject(100.0f, searcher);
                         if (!targets.empty())
                         {
                             if (targets.size() > 1)
                             {
-                                targets.sort(JadeCore::DistanceOrderPred(me));
-                                JadeCore::Containers::RandomResizeList(targets, 1);
+                                targets.sort(SkyMistCore::DistanceOrderPred(me));
+                                SkyMistCore::Containers::RandomResizeList(targets, 1);
                             }
                             Unit* newTarget = *(targets.begin());
                             if (me->getVictim() != newTarget)

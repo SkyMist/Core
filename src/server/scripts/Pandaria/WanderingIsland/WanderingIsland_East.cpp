@@ -90,7 +90,7 @@ public:
                 return;
             }
 
-            JadeCore::Containers::RandomResizeList(poleList, 1);
+            SkyMistCore::Containers::RandomResizeList(poleList, 1);
 
             for (auto creature: poleList)
                 me->EnterVehicle(creature);

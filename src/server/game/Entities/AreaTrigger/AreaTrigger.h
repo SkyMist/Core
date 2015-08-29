@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2012-2013 JadeCore <http://www.pandashan.com/>
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it

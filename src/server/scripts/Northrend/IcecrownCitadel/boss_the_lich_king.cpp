@@ -609,7 +609,7 @@ class boss_the_lich_king : public CreatureScript
 
                 // Reset The Frozen Throne gameobjects
                 FrozenThroneResetWorker reset;
-                JadeCore::GameObjectWorker<FrozenThroneResetWorker> worker(me, reset);
+                SkyMistCore::GameObjectWorker<FrozenThroneResetWorker> worker(me, reset);
                 me->VisitNearbyGridObject(333.0f, worker);
 
                 // Reset any light override
@@ -1013,7 +1013,7 @@ class boss_the_lich_king : public CreatureScript
                         {
                             std::list<Creature*> shadowTraps;
                             ShadowTrapSearcher check(me, 100.0f);
-                            JadeCore::CreatureListSearcher<ShadowTrapSearcher> searcher(me, shadowTraps, check);
+                            SkyMistCore::CreatureListSearcher<ShadowTrapSearcher> searcher(me, shadowTraps, check);
                             me->VisitNearbyGridObject(100.0f, searcher);
                             for (std::list<Creature*>::iterator itr = shadowTraps.begin(); itr != shadowTraps.end(); ++itr)
                                 (*itr)->DespawnOrUnsummon();
@@ -1137,7 +1137,7 @@ class boss_the_lich_king : public CreatureScript
                                 GetCreatureListWithEntryInGrid(triggers, terenas, NPC_WORLD_TRIGGER_INFINITE_AOI, 100.0f);
                                 if (!triggers.empty())
                                 {
-                                    triggers.sort(JadeCore::ObjectDistanceOrderPred(terenas, true));
+                                    triggers.sort(SkyMistCore::ObjectDistanceOrderPred(terenas, true));
                                     Creature* spawner = triggers.front();
                                     spawner->CastSpell(spawner, SPELL_SUMMON_SPIRIT_BOMB_1, true);  // summons bombs randomly
                                     spawner->CastSpell(spawner, SPELL_SUMMON_SPIRIT_BOMB_2, true);  // summons bombs on players
@@ -1745,7 +1745,7 @@ class npc_valkyr_shadowguard : public CreatureScript
                                 if (triggers.empty())
                                     return;
 
-                                triggers.sort(JadeCore::ObjectDistanceOrderPred(me));
+                                triggers.sort(SkyMistCore::ObjectDistanceOrderPred(me));
                                 DoCast(target, SPELL_VALKYR_CARRY);
                                 _dropPoint.Relocate(triggers.front());
                                 _events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 1500);
@@ -2455,7 +2455,7 @@ class spell_the_lich_king_necrotic_plague_jump : public SpellScriptLoader
 
             void SelectTarget(std::list<Unit*>& targets)
             {
-                targets.sort(JadeCore::ObjectDistanceOrderPred(GetCaster()));
+                targets.sort(SkyMistCore::ObjectDistanceOrderPred(GetCaster()));
                 if (targets.size() < 2)
                     return;
 
@@ -2882,11 +2882,11 @@ class spell_the_lich_king_valkyr_target_search : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                targets.remove_if(JadeCore::UnitAuraCheck(true, GetSpellInfo()->Id));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, GetSpellInfo()->Id));
                 if (targets.empty())
                     return;
 
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 targets.clear();
                 targets.push_back(_target);
                 GetCaster()->GetAI()->SetGUID(_target->GetGUID());
@@ -3094,7 +3094,7 @@ class spell_the_lich_king_vile_spirit_move_target_search : public SpellScriptLoa
                 if (targets.empty())
                     return;
 
-                _target = JadeCore::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 if (_target->ToUnit()->isPet())
                     return;
             }

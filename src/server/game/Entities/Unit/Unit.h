@@ -2509,7 +2509,7 @@ class Unit : public WorldObject
         time_t _lastDamagedTime;
 };
 
-namespace JadeCore
+namespace SkyMistCore
 {
     // Binary predicate for sorting Units based on percent value of a power
     class PowerPctOrderPred

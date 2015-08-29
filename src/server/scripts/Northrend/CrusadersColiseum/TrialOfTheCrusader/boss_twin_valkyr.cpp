@@ -117,7 +117,7 @@ class OrbsDespawner : public BasicEvent
 
         bool Execute(uint64 /*currTime*/, uint32 /*diff*/)
         {
-            JadeCore::CreatureWorker<OrbsDespawner> worker(_creature, *this);
+            SkyMistCore::CreatureWorker<OrbsDespawner> worker(_creature, *this);
             _creature->VisitNearbyGridObject(5000.0f, worker);
             return true;
         }

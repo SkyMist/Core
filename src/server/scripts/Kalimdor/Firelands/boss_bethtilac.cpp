@@ -242,7 +242,7 @@ class boss_bethtilac : public CreatureScript
                             //if (!me->getVictim() || !me->IsWithinMeleeRange(me->getVictim()))
                             std::list<Player*> PlayerList;
                             PlayerPositionCheck checker(true);
-                            JadeCore::PlayerListSearcher<PlayerPositionCheck> searcher(me, PlayerList, checker);
+                            SkyMistCore::PlayerListSearcher<PlayerPositionCheck> searcher(me, PlayerList, checker);
                             me->VisitNearbyWorldObject(300.0f, searcher);
                             if (PlayerList.size() == 0)
                                 DoCastAOE(SPELL_VENOM_RAIN);
@@ -254,7 +254,7 @@ class boss_bethtilac : public CreatureScript
                             {
                                 std::list<Player*> PlayerList;
                                 PlayerPositionCheck checker(true);
-                                JadeCore::PlayerListSearcher<PlayerPositionCheck> searcher(me, PlayerList, checker);
+                                SkyMistCore::PlayerListSearcher<PlayerPositionCheck> searcher(me, PlayerList, checker);
                                 me->VisitNearbyWorldObject(300.0f, searcher);
                                 if (PlayerList.size() > 0)
                                     DoCastAOE(SPELL_EMBER_FLARE_1);

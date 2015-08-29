@@ -282,7 +282,7 @@ class spell_pri_psyfiend_hit_me_driver : public SpellScriptLoader
                         return;
 
                     if (psyfiendList.size() > 1)
-                        JadeCore::Containers::RandomResizeList(psyfiendList, 1);
+                        SkyMistCore::Containers::RandomResizeList(psyfiendList, 1);
 
                     for (auto itr : psyfiendList)
                         if (itr->AI())
@@ -1370,7 +1370,7 @@ class spell_pri_atonement : public SpellScriptLoader
 
                             if (groupList.size() > 1)
                             {
-                                groupList.sort(JadeCore::HealthPctOrderPred());
+                                groupList.sort(SkyMistCore::HealthPctOrderPred());
                                 groupList.resize(1);
                             }
 
@@ -1853,7 +1853,7 @@ class spell_pri_cascade_second : public SpellScriptLoader
                             return;
 
                         // Each bound hit twice more targets up to 8 for the same bound
-                        JadeCore::Containers::RandomResizeList(targetList, (affectedUnits * 2));
+                        SkyMistCore::Containers::RandomResizeList(targetList, (affectedUnits * 2));
 
                         for (auto itr : targetList)
                         {
@@ -3011,8 +3011,8 @@ class spell_binding_heal : public SpellScriptLoader
                     if (GetCaster()->HasAura(63248))
                     {
                        std::list<Unit*> targets;
-                       JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 20.0f);
-                       JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
+                       SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 20.0f);
+                       SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
                        GetCaster()->VisitNearbyObject(20, searcher);
 
                        if (!targets.empty())
@@ -3033,7 +3033,7 @@ class spell_binding_heal : public SpellScriptLoader
                            if (targets.empty())
                                return;
                        }
-                        unitList.push_back(JadeCore::Containers::SelectRandomContainerElement(targets));
+                        unitList.push_back(SkyMistCore::Containers::SelectRandomContainerElement(targets));
                     }
                  }
             }

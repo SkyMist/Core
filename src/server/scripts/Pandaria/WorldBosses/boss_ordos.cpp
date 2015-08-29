@@ -1,44 +1,68 @@
 /*
-    World Boss: Ordos <Fire-God of the Yaungol>
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * World Boss: Ordos <Fire-God of the Yaungol>.
 */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "CreatureTextMgr.h"
+#include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
 enum Texts
 {
-    SAY_AGGRO         = 0, // You will take my place on the eternal brazier.
-    SAY_DEATH         = 1, // The eternal fire will never be extinguished.
-    SAY_SLAY          = 2, // Up in smoke.
-    SAY_ANCIENT_FLAME = 3, // Your flesh will melt.
-    SAY_ETERNAL_AGONY = 4, // Your pain will be endless.
-    SAY_POOL_OF_FIRE  = 5, // You will feel but a fraction of my agony.
-    SAY_BURNING_SOUL  = 6  // Burn!
+    // Ordos.
+    SAY_AGGRO               = 0,      // You will take my place on the eternal brazier.
+    SAY_DEATH               = 1,      // The eternal fire will never be extinguished.
+    SAY_SLAY                = 2,      // Up in smoke.
+
+    SAY_ANCIENT_FLAME       = 3,      // Your flesh will melt.
+    SAY_ETERNAL_AGONY       = 4,      // Your pain will be endless.
+    SAY_POOL_OF_FIRE        = 5,      // You will feel but a fraction of my agony.
+    SAY_BURNING_SOUL        = 6       // Burn!
 };
 
 enum Spells
 {
+    // Ordos.
+    SPELL_MAGMA_CRUSH       = 144688, // 10s, every 15 s.
     SPELL_ANCIENT_FLAME_S   = 144695, // 40s
     SPELL_ANCIENT_FLAME_A   = 144691, // Periodic dmg. aura.
     SPELL_ANCIENT_FLAME_D   = 144699, // Dmg spell.
     SPELL_BURNING_SOUL      = 144689, // 20s, every 30 s.
     SPELL_BURNING_SOUL_EX   = 144690, // Removal Explode spell.
-    SPELL_MAGMA_CRUSH       = 144688, // 10s, every 15 s.
     SPELL_POOL_OF_FIRE      = 144692, // 30s - Summon spell.
     SPELL_POOL_OF_FIRE_A    = 144693, // Periodic dmg. aura.
+
     SPELL_ETERNAL_AGONY     = 144696  // Enrage spell, 5 min.
 };
 
 enum Events
 {
+    // Ordos.
     EVENT_ANCIENT_FLAME    = 1,
-    EVENT_BURNING_SOUL     = 2,
-    EVENT_POOL_OF_FIRE     = 3,
-    EVENT_MAGMA_CRUSH      = 4,
+    EVENT_BURNING_SOUL,
+    EVENT_POOL_OF_FIRE,
+    EVENT_MAGMA_CRUSH,
 
-    EVENT_ETERNAL_AGONY    = 5 // Berserk.
+    EVENT_ETERNAL_AGONY               // Berserk.
 };
 
 enum Npcs
@@ -55,7 +79,7 @@ class boss_ordos : public CreatureScript
         {
             boss_ordosAI(Creature* creature) : ScriptedAI(creature), summons(me) { }
 
-            EventMap _events;
+            EventMap events;
             SummonList summons;
 
             void InitializeAI()
@@ -66,7 +90,7 @@ class boss_ordos : public CreatureScript
 
             void Reset()
             {
-                _events.Reset();
+                events.Reset();
                 summons.DespawnAll();
             }
     
@@ -74,12 +98,12 @@ class boss_ordos : public CreatureScript
             {
                 Talk(SAY_AGGRO);
 
-                _events.ScheduleEvent(EVENT_MAGMA_CRUSH, urand(10000, 13000)); // 10-13
-                _events.ScheduleEvent(EVENT_ANCIENT_FLAME, urand(40000, 45000)); // 40-45
-                _events.ScheduleEvent(EVENT_BURNING_SOUL, urand(20000, 30000)); // 20-30
-                _events.ScheduleEvent(EVENT_POOL_OF_FIRE, urand(30000, 45000)); // 30-40
+                events.ScheduleEvent(EVENT_MAGMA_CRUSH, 10000);                 // 10-15s
+                events.ScheduleEvent(EVENT_ANCIENT_FLAME, 40000);               // 40-45s
+                events.ScheduleEvent(EVENT_BURNING_SOUL, 20000);                // 20-30s
+                events.ScheduleEvent(EVENT_POOL_OF_FIRE, 30000);                // 30-40s
 
-                _events.ScheduleEvent(EVENT_ETERNAL_AGONY, 300000); // Berserk. After 5 minutes.
+                events.ScheduleEvent(EVENT_ETERNAL_AGONY, 300000);              // Berserk. After 5 minutes.
             }
 
             void KilledUnit(Unit* victim)
@@ -90,9 +114,11 @@ class boss_ordos : public CreatureScript
 
             void EnterEvadeMode()
             {
+                me->RemoveAllAuras();
+                me->RemoveAllAreaTriggers();
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -100,6 +126,7 @@ class boss_ordos : public CreatureScript
             {
                 Talk(SAY_DEATH);
                 summons.DespawnAll();
+                me->RemoveAllAreaTriggers();
             }
 
             void JustSummoned(Creature* summon)
@@ -112,8 +139,10 @@ class boss_ordos : public CreatureScript
 
                 if (summon->GetEntry() == NPC_ANCIENT_FLAME)
                 {
-                    summon->AddAura(SPELL_ANCIENT_FLAME_A, summon);
+                    summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_DISABLE_MOVE);
+                    summon->AddUnitState(UNIT_STATE_CANNOT_TURN);
                     summon->SetReactState(REACT_PASSIVE);
+                    summon->AddAura(SPELL_ANCIENT_FLAME_A, summon);
                 }
             }
 
@@ -122,44 +151,56 @@ class boss_ordos : public CreatureScript
                 if (!UpdateVictim())
                     return;
 
-                _events.Update(diff);
+                events.Update(diff);
+
+                // While they are alive, the Ancient Flames must always have the Periodic aura.
+                std::list<Creature*> searcher;
+                GetCreatureListWithEntryInGrid(searcher, me, NPC_ANCIENT_FLAME, 100.0f);
+                for (auto aFlame : searcher)
+                {
+                    if (!aFlame)
+                        continue;
+
+                    if (!aFlame->HasAura(SPELL_ANCIENT_FLAME_A))
+                        aFlame->AddAura(SPELL_ANCIENT_FLAME_A, aFlame);
+                }
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                while (uint32 eventId = _events.ExecuteEvent())
+                while (uint32 eventId = events.ExecuteEvent())
                 {
                     switch (eventId)
                     {
                         case EVENT_MAGMA_CRUSH:
                             DoCastVictim(SPELL_MAGMA_CRUSH);
-                            _events.ScheduleEvent(EVENT_MAGMA_CRUSH, urand(7000, 27000));
+                            events.ScheduleEvent(EVENT_MAGMA_CRUSH, urand(15000, 20000));
                             break;
 
                         case EVENT_ANCIENT_FLAME:
                             Talk(SAY_ANCIENT_FLAME);
-                            //DoCast(me, SPELL_ANCIENT_FLAME);
-                            _events.ScheduleEvent(EVENT_ANCIENT_FLAME, urand(40000, 45000));
+                            DoCast(me, SPELL_ANCIENT_FLAME_S);
+                            events.ScheduleEvent(EVENT_ANCIENT_FLAME, urand(40000, 45000));
                             break;
 
                         case EVENT_POOL_OF_FIRE:
                             Talk(SAY_POOL_OF_FIRE);
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                                 DoCast(target, SPELL_POOL_OF_FIRE);
-                            _events.ScheduleEvent(EVENT_POOL_OF_FIRE, urand(30000, 40000));
+                            events.ScheduleEvent(EVENT_POOL_OF_FIRE, urand(30000, 40000));
                             break;
 
                         case EVENT_BURNING_SOUL:
                             Talk(SAY_BURNING_SOUL);
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                                 DoCast(target, SPELL_BURNING_SOUL);
-                            _events.ScheduleEvent(EVENT_BURNING_SOUL, urand(10000, 25000));
+                            events.ScheduleEvent(EVENT_BURNING_SOUL, urand(20000, 30000));
                             break;
 
                         case EVENT_ETERNAL_AGONY: // Berserk.
                             Talk(SAY_ETERNAL_AGONY);
                             DoCast(me, SPELL_ETERNAL_AGONY);
-                            _events.ScheduleEvent(EVENT_ETERNAL_AGONY, urand(20000, 25000));
+                            events.ScheduleEvent(EVENT_ETERNAL_AGONY, 20000); // If anyone is left alive (bubble etc.) :).
                             break;
 
                         default: break;
@@ -176,36 +217,6 @@ class boss_ordos : public CreatureScript
         }
 };
 
-// Ancient Flames 144691.
-class spell_ancient_flames : public SpellScriptLoader
-{
-    public:
-        spell_ancient_flames() : SpellScriptLoader("spell_ancient_flames") { }
-
-    private:
-        class spell_ancient_flames_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_ancient_flames_AuraScript)
-
-            void HandlePeriodicTick(constAuraEffectPtr /*aurEff*/)
-            {
-                PreventDefaultAction();
-                if (Unit* target = ObjectAccessor::GetUnit(*GetCaster(), GetCaster()->GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT)))
-                    GetCaster()->CastSpell(target, GetSpellInfo()->Effects[EFFECT_0].TriggerSpell, true); // SPELL_ANCIENT_FLAME_D
-            }
-
-            void Register()
-            {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_ancient_flames_AuraScript::HandlePeriodicTick, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_ancient_flames_AuraScript();
-        }
-};
-
 // Ordos Burning Soul 144689.
 class spell_ordos_burning_soul_aura : public SpellScriptLoader
 {
@@ -216,22 +227,29 @@ class spell_ordos_burning_soul_aura : public SpellScriptLoader
         {
             PrepareAuraScript(spell_ordos_burning_soul_aura_AuraScript);
 
-            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
             {
-                switch (GetTargetApplication()->GetRemoveMode())
-                {
-                    case AURA_REMOVE_BY_EXPIRE: // On expire.
-                        break;
+                if (!(mode & AURA_EFFECT_HANDLE_REAL))
+                    return;
 
-                    default: return;
-                }
+                Unit* target = GetTarget();
 
-                GetTarget()->CastSpell(GetTarget(), SPELL_BURNING_SOUL_EX, true);
+                if (!target || !GetTargetApplication() || !GetAura())
+                    return;
+
+                if (target->GetTypeId() != TYPEID_PLAYER)
+                    return;
+
+                // Only on removal by expire.
+                if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_EXPIRE)
+                    return;
+
+                target->CastSpell(target, SPELL_BURNING_SOUL_EX, true);
             }
 
             void Register()
             {
-                AfterEffectRemove += AuraEffectRemoveFn(spell_ordos_burning_soul_aura_AuraScript::OnRemove, EFFECT_1, SPELL_AURA_MOD_FEAR, AURA_EFFECT_HANDLE_REAL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_ordos_burning_soul_aura_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
             }
         };
 
@@ -244,6 +262,5 @@ class spell_ordos_burning_soul_aura : public SpellScriptLoader
 void AddSC_boss_ordos()
 {
     new boss_ordos();
-    new spell_ancient_flames();
     new spell_ordos_burning_soul_aura();
 }

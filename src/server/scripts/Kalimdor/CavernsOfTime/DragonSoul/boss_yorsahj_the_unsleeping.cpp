@@ -359,7 +359,7 @@ class boss_yorsahj_the_unsleeping: public CreatureScript
                         {
                             std::list<Creature*> creatures;
                             GlobulesCheck checker;
-                            JadeCore::CreatureListSearcher<GlobulesCheck> searcher(me, creatures, checker);
+                            SkyMistCore::CreatureListSearcher<GlobulesCheck> searcher(me, creatures, checker);
                             me->VisitNearbyObject(100.0f, searcher);
 
                             if (!creatures.empty())
@@ -839,7 +839,7 @@ class spell_yorsahj_the_unsleeping_digestive_acid_aoe : public SpellScriptLoader
                         targets.remove(pTank);
 
                 uint32 max_targets = (GetCaster()->GetMap()->Is25ManRaid() ? 8 : 4);
-                JadeCore::Containers::RandomResizeList(targets, max_targets);
+                SkyMistCore::Containers::RandomResizeList(targets, max_targets);
             }
 
             void HandleScript(SpellEffIndex /*effIndex*/)

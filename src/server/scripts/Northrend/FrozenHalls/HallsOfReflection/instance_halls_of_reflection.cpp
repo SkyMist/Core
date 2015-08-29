@@ -522,9 +522,9 @@ public:
                             uint64 bossGuid = i <= 3 ? _falricGUID : _marwynGUID;
 
                             if (!i)
-                                JadeCore::RandomResizeList(tempList, 3);
+                                SkyMistCore::RandomResizeList(tempList, 3);
                             else if (i < 6 && i != 3)
-                                JadeCore::RandomResizeList(tempList, 4);
+                                SkyMistCore::RandomResizeList(tempList, 4);
 
                             for (std::list<uint32>::const_iterator itr = tempList.begin(); itr != tempList.end(); ++itr)
                             {

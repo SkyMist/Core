@@ -43,9 +43,9 @@ class instance_end_time : public InstanceMapScript
                 std::list<uint32> echo_list;
                 for (uint8 i = 0; i < 4; ++i)
                     echo_list.push_back(i);
-                first_echo = JadeCore::Containers::SelectRandomContainerElement(echo_list);
+                first_echo = SkyMistCore::Containers::SelectRandomContainerElement(echo_list);
                 echo_list.remove(first_echo);
-                second_echo = JadeCore::Containers::SelectRandomContainerElement(echo_list);
+                second_echo = SkyMistCore::Containers::SelectRandomContainerElement(echo_list);
             }
 
             void OnPlayerEnter(Player* pPlayer)

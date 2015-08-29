@@ -180,8 +180,8 @@ class spell_hun_glaive_toss_damage : public SpellScriptLoader
                 std::list<Unit*> targetList;
                 float radius = 40.0f;
 
-                JadeCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
-                JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
+                SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
                 GetCaster()->VisitNearbyObject(radius, searcher);
 
                 for (auto itr : targetList)
@@ -722,7 +722,7 @@ class spell_hun_lynx_rush : public SpellScriptLoader
                 if (targetList.empty())
                     return;
 
-                JadeCore::Containers::RandomResizeList(targetList, 1);
+                SkyMistCore::Containers::RandomResizeList(targetList, 1);
 
                 for (auto itr : targetList)
                 {
@@ -793,7 +793,7 @@ class spell_hun_lynx_rush : public SpellScriptLoader
                                 if (targetList.empty())
                                     return;
 
-                                JadeCore::Containers::RandomResizeList(targetList, 1);
+                                SkyMistCore::Containers::RandomResizeList(targetList, 1);
 
                                 for (auto itr : targetList)
                                 {
@@ -1002,20 +1002,20 @@ class spell_hun_binding_shot : public SpellScriptLoader
 
                     std::list<Unit*> bindedList;
 
-                    CellCoord p(JadeCore::ComputeCellCoord(dynObj->GetPositionX(), dynObj->GetPositionY()));
+                    CellCoord p(SkyMistCore::ComputeCellCoord(dynObj->GetPositionX(), dynObj->GetPositionY()));
                     Cell cell(p);
                     cell.SetNoCreate();
 
-                    JadeCore::AnyUnitInObjectRangeCheck u_check(dynObj, 15.0f);
-                    JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck> searcher(dynObj, bindedList, u_check);
+                    SkyMistCore::AnyUnitInObjectRangeCheck u_check(dynObj, 15.0f);
+                    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck> searcher(dynObj, bindedList, u_check);
 
-                    TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-                    TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+                    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+                    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
                     cell.Visit(p, world_unit_searcher, *dynObj->GetMap(), *dynObj, 15.0f);
                     cell.Visit(p, grid_unit_searcher, *dynObj->GetMap(), *dynObj, 15.0f);
 
-                    bindedList.remove_if(JadeCore::UnitAuraCheck(false, GetSpellInfo()->Id, caster->GetGUID()));
+                    bindedList.remove_if(SkyMistCore::UnitAuraCheck(false, GetSpellInfo()->Id, caster->GetGUID()));
 
                     for (auto itr : bindedList)
                     {
@@ -1379,10 +1379,10 @@ class spell_hun_ancient_hysteria : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(JadeCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_SHAMAN_EXHAUSTED));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_SHAMAN_SATED));
-                targets.remove_if(JadeCore::UnitAuraCheck(true, SPELL_MAGE_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_SHAMAN_EXHAUSTED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_SHAMAN_SATED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_MAGE_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()
@@ -1947,8 +1947,8 @@ class spell_hun_pet_carrion_feeder : public SpellScriptLoader
                 float max_range = GetSpellInfo()->GetMaxRange(false);
                 WorldObject* result = NULL;
                 // search for nearby enemy corpse in range
-                JadeCore::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_ENEMY);
-                JadeCore::WorldObjectSearcher<JadeCore::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
+                SkyMistCore::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_ENEMY);
+                SkyMistCore::WorldObjectSearcher<SkyMistCore::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
                 caster->GetMap()->VisitFirstFound(caster->m_positionX, caster->m_positionY, max_range, searcher);
                 if (!result)
                     return SPELL_FAILED_NO_EDIBLE_CORPSES;

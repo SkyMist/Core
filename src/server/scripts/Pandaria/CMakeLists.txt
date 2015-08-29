@@ -10,29 +10,36 @@
 
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
-  Pandaria/boss_sha_of_anger.cpp
-  Pandaria/boss_galion.cpp
-  Pandaria/boss_nalak.cpp
-  Pandaria/boss_chi_ji.cpp
-  Pandaria/boss_ordos.cpp
+
+  Pandaria/WorldBosses/boss_sha_of_anger.cpp
+  Pandaria/WorldBosses/boss_galleon.cpp
+  Pandaria/WorldBosses/boss_nalak.cpp
+  Pandaria/WorldBosses/boss_ordos.cpp
+  Pandaria/WorldBosses/boss_oondasta.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_chi_ji.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_niuzao.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_xuen.cpp
+  Pandaria/WorldBosses/AugustCelestials/boss_yu_lon.cpp
 
   Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
+  Pandaria/MogushanPalace/mogu_shan_palace.h
   Pandaria/MogushanPalace/boss_trial_of_the_king.cpp
   Pandaria/MogushanPalace/boss_gekkan.cpp
   Pandaria/MogushanPalace/boss_xin_the_weaponmaster.cpp
 
   Pandaria/TempleJadeSerpent/instance_temple_of_jade_serpent.cpp
+  Pandaria/TempleJadeSerpent/temple_of_jade_serpent.h
   Pandaria/TempleJadeSerpent/boss_wise_mari.cpp
   Pandaria/TempleJadeSerpent/boss_lorewalker_stonestep.cpp
   Pandaria/TempleJadeSerpent/boss_liu_flameheart.cpp
   Pandaria/TempleJadeSerpent/boss_sha_of_doubt.cpp
 
-  Pandaria/StormstoutBrewery/boss_hoptallus.cpp
-  Pandaria/StormstoutBrewery/boss_ook_ook.cpp
-  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
   Pandaria/StormstoutBrewery/instance_stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.h
+  Pandaria/StormstoutBrewery/boss_hoptallus.cpp
+  Pandaria/StormstoutBrewery/boss_ook_ook.cpp
+  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
 
   Pandaria/GateSettingSun/instance_gate_setting_sun.cpp
   Pandaria/GateSettingSun/gate_setting_sun.cpp
@@ -49,7 +56,7 @@ set(scripts_STAT_SRCS
   Pandaria/ShadopanMonastery/boss_master_snowdrift.cpp
   Pandaria/ShadopanMonastery/boss_sha_of_violence.cpp
   Pandaria/ShadopanMonastery/boss_taran_zhu.cpp
-  
+
   Pandaria/SiegeOfNiuzaoTemple/instance_siege_of_niuzao_temple.cpp
   Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.cpp
   Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.h
@@ -86,13 +93,13 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/boss_lei_shi.cpp
   Pandaria/TerraceOfEndlessSpring/boss_sha_of_fear.cpp
 
-  Pandaria/ToT/instance_throne_of_thunder.cpp
-  Pandaria/ToT/throne_of_thunder.h
-  Pandaria/ToT/boss_jin_rokh_breaker.cpp
-  Pandaria/ToT/boss_horridon.cpp
-  Pandaria/ToT/boss_tortos.cpp
-  Pandaria/ToT/boss_council_of_elders.cpp
-  Pandaria/ToT/boss_megaera.cpp
+  Pandaria/ThroneOfThunder/instance_throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.h
+  Pandaria/ThroneOfThunder/boss_jin_rokh_breaker.cpp
+  Pandaria/ThroneOfThunder/boss_horridon.cpp
+  Pandaria/ThroneOfThunder/boss_tortos.cpp
+  Pandaria/ThroneOfThunder/boss_council_of_elders.cpp
+  Pandaria/ThroneOfThunder/boss_megaera.cpp
 
   Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
   Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp

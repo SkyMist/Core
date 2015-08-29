@@ -649,7 +649,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
 
     // Log damage > 1 000 000 on worldboss
     if (damage > 1000000 && GetTypeId() == TYPEID_PLAYER && victim->GetTypeId() == TYPEID_UNIT && victim->ToCreature()->GetCreatureTemplate()->rank)
-        sLog->OutPandashan("World Boss %u [%s] take more than 1M damage (%u) by player %u [%s] with spell %u", victim->GetEntry(), victim->GetName(), damage, GetGUIDLow(), GetName(), spellProto ? spellProto->Id : 0);
+        sLog->OutSpecialLog("World Boss %u [%s] take more than 1M damage (%u) by player %u [%s] with spell %u", victim->GetEntry(), victim->GetName(), damage, GetGUIDLow(), GetName(), spellProto ? spellProto->Id : 0);
 
     // need for operations with Player class
     Player* plr = victim->ToPlayer();
@@ -800,7 +800,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         if (targetList.size() > 1)
         {
             targetList.remove(this); // Remove Player
-            targetList.sort(JadeCore::HealthPctOrderPred());
+            targetList.sort(SkyMistCore::HealthPctOrderPred());
             targetList.resize(1);
         }
 
@@ -2173,7 +2173,7 @@ void Unit::CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffe
     // We're going to call functions which can modify content of the list during iteration over it's elements
     // Let's copy the list so we can prevent iterator invalidation
     AuraEffectList vSchoolAbsorbCopy(victim->GetAuraEffectsByType(SPELL_AURA_SCHOOL_ABSORB));
-    vSchoolAbsorbCopy.sort(JadeCore::AbsorbAuraOrderPred());
+    vSchoolAbsorbCopy.sort(SkyMistCore::AbsorbAuraOrderPred());
 
     // absorb without mana cost
     for (AuraEffectList::iterator itr = vSchoolAbsorbCopy.begin(); (itr != vSchoolAbsorbCopy.end()) && (dmgInfo.GetDamage() > 0); ++itr)
@@ -5853,7 +5853,7 @@ void Unit::SendSpellDamageResist(Unit* target, uint32 spellId)
 
 void Unit::SendMessageUnfriendlyToSetInRange(WorldPacket* data, float fist)
 {
-    JadeCore::UnfriendlyMessageDistDeliverer notifier(this, data, GetVisibilityRange());
+    SkyMistCore::UnfriendlyMessageDistDeliverer notifier(this, data, GetVisibilityRange());
     VisitNearbyWorldObject(GetVisibilityRange(), notifier);
 }
 
@@ -7528,8 +7528,8 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     
                     std::list<Player*> plrList;
-                    JadeCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
-                    JadeCore::PlayerListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
+                    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
+                    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
                     VisitNearbyObject(15.0f, searcher);
                     if (plrList.empty())
                         return false;
@@ -7539,7 +7539,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     if (plrList.empty())
                         return false;
 
-                    plrList.sort(JadeCore::HealthPctOrderPred());
+                    plrList.sort(SkyMistCore::HealthPctOrderPred());
                     plrList.resize(1);
 
                     int32 bp0 = damage;
@@ -8125,8 +8125,8 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     
                     std::list<Player*> plrList;
-                    JadeCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
-                    JadeCore::PlayerListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
+                    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
+                    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
                     VisitNearbyObject(15.0f, searcher);
                     if (plrList.empty())
                         return false;
@@ -8136,7 +8136,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     if (plrList.empty())
                         return false;
 
-                    plrList.sort(JadeCore::HealthPctOrderPred());
+                    plrList.sort(SkyMistCore::HealthPctOrderPred());
                     plrList.resize(1);
 
                     int32 bp0 = int32(CalculatePct(damage, 10));
@@ -10253,8 +10253,8 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
             if (HasAura(119477))
             {
                 std::list<Unit*> targets;
-                JadeCore::AnyGroupedUnitInObjectRangeCheck u_check(this, this, 100.0f, true);
-                JadeCore::UnitListSearcher<JadeCore::AnyGroupedUnitInObjectRangeCheck> searcher(this, targets, u_check);
+                SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(this, this, 100.0f, true);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(this, targets, u_check);
                 victim->VisitNearbyObject(100.0f, searcher);
 
                 Unit* lowhealtarget = NULL;
@@ -12484,13 +12484,13 @@ int32 Unit::DealHeal(Unit* victim, uint32 addhealth, SpellInfo const* spellProto
         {
             std::list<Unit*> targetList;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(unit, unit, 6.0f);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(unit, unit, 6.0f);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, targetList, u_check);
             unit->VisitNearbyObject(6.0f, searcher);
 
             if (!targetList.empty())
             {
-                targetList.sort(JadeCore::HealthPctOrderPred());
+                targetList.sort(SkyMistCore::HealthPctOrderPred());
 
                 for (auto itr : targetList)
                 {
@@ -18778,15 +18778,15 @@ void Unit::UpdateReactives(uint32 p_time)
 
 void Unit::GetAttackableUnitListInRange(std::list<Unit*> &list, float fMaxSearchRange) const
 {
-    CellCoord p(JadeCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
-    JadeCore::AnyUnitInObjectRangeCheck u_check(this, fMaxSearchRange);
-    JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck> searcher(this, list, u_check);
+    SkyMistCore::AnyUnitInObjectRangeCheck u_check(this, fMaxSearchRange);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck> searcher(this, list, u_check);
 
-    TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-    TypeContainerVisitor<JadeCore::UnitListSearcher<JadeCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
     cell.Visit(p, world_unit_searcher, *GetMap(), *this, fMaxSearchRange);
     cell.Visit(p, grid_unit_searcher, *GetMap(), *this, fMaxSearchRange);
@@ -18795,8 +18795,8 @@ void Unit::GetAttackableUnitListInRange(std::list<Unit*> &list, float fMaxSearch
 Unit* Unit::SelectNearbyTarget(Unit* exclude, float dist) const
 {
     std::list<Unit*> targets;
-    JadeCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, dist);
-    JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, dist);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
     VisitNearbyObject(dist, searcher);
 
     // remove current target
@@ -18820,14 +18820,14 @@ Unit* Unit::SelectNearbyTarget(Unit* exclude, float dist) const
         return NULL;
 
     // select random
-    return JadeCore::Containers::SelectRandomContainerElement(targets);
+    return SkyMistCore::Containers::SelectRandomContainerElement(targets);
 }
 
 Unit* Unit::SelectNearbyAlly(Unit* exclude, float dist) const
 {
     std::list<Unit*> targets;
-    JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, this, dist);
-    JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, this, dist);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
     VisitNearbyObject(dist, searcher);
 
     if (exclude)
@@ -18847,7 +18847,7 @@ Unit* Unit::SelectNearbyAlly(Unit* exclude, float dist) const
         return NULL;
 
     // select random
-    return JadeCore::Containers::SelectRandomContainerElement(targets);
+    return SkyMistCore::Containers::SelectRandomContainerElement(targets);
 }
 
 void Unit::ApplyAttackTimePercentMod(WeaponAttackType att, float val, bool apply)
@@ -19287,8 +19287,8 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* victim, AuraPtr aura, SpellInfo con
     if (aura->GetId() == 93399 && (procSpell->Id == 8921 || procSpell->Id == 93402))
     {
         UnitList targets;
-        JadeCore::AnyUnitHavingBuffInObjectRangeCheck u_check(this, this, 150.0f, procSpell->Id, false);
-        JadeCore::UnitListSearcher<JadeCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(this, targets, u_check);
+        SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(this, this, 150.0f, procSpell->Id, false);
+        SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(this, targets, u_check);
         VisitNearbyObject(150.0f, searcher);
 
         // Blue post - The way this works under the hood is by multiplying the base proc chance by SQRT(x)/x, where x is the number of mobs that have Moonfire or Sunfire active.
@@ -20677,7 +20677,7 @@ public:
 
     virtual bool Execute(uint64 , uint32)
     {
-        JadeCore::AIRelocationNotifier notifier(m_owner);
+        SkyMistCore::AIRelocationNotifier notifier(m_owner);
         m_owner.VisitNearbyObject(m_owner.GetVisibilityRange(), notifier);
         return true;
     }
@@ -21777,7 +21777,7 @@ bool Unit::HandleSpellClick(Unit* clicker, int8 seatId)
         // if (!spellEntry) should be checked at npc_spellclick load
         if (!spellEntry)
         {
-            sLog->OutPandashan("HandleSpellClick: spellEntry pointer is NULL!!");
+            sLog->OutSpecialLog("HandleSpellClick: spellEntry pointer is NULL!!");
             return false;
         }
 
@@ -22167,7 +22167,7 @@ void Unit::SendTeleportPacket(Position &oldPos)
 bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
 {
     // prevent crash when a bad coord is sent by the client
-    if (!JadeCore::IsValidMapCoord(x, y, z, orientation))
+    if (!SkyMistCore::IsValidMapCoord(x, y, z, orientation))
         return false;
 
     bool turn = (GetOrientation() != orientation);

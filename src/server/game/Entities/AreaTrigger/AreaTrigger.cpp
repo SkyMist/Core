@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2012-2013 JadeCore <http://www.pandashan.com/>
  * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -173,8 +172,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -188,8 +187,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 8.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -224,8 +223,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -258,8 +257,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 100.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -279,8 +278,8 @@ void AreaTrigger::Update(uint32 p_time)
             bool affected = false;
             radius = 2.25f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -310,8 +309,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -359,8 +358,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 30.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -384,8 +383,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -418,8 +417,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -439,8 +438,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -463,8 +462,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -484,8 +483,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -506,8 +505,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -557,8 +556,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            JadeCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            JadeCore::UnitListSearcher<JadeCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())

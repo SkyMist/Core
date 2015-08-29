@@ -790,7 +790,7 @@ class Spell
 #endif
 };
 
-namespace JadeCore
+namespace SkyMistCore
 {
     struct WorldObjectSpellTargetCheck
     {

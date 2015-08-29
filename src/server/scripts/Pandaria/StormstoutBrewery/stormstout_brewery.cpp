@@ -1,7 +1,22 @@
 /*
-    Dungeon : Stormstout Brewery 85-87
-    Instance Script
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Dungeon: Stormstout Brewery.
+ * Description: Mob scripts.
+ */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
@@ -22,15 +37,11 @@ First Alemental after Hoptallus:
 Ancient Brewmaster says: Whatzit... are they... what are they doin' to our alementals?
 Ancient Brewmaster yells: Hey... hey YOU! Those are OUR, flying... beer monsters?
 
-The Tasting Room:
-
-// Check Intro in Boss script, each line corresponds to a spawn. //
-Meteor-like shower. Two Bloated Brew Alementals spawn in the mid.
-Meteor-like shower. Nine Bubbling Brew Alementals spawn in the mid.
-Meteor-like shower. Four Sudsy Brew Alementals spawn in the mid.
-Meteor-like shower. Boss Yan-zhu the Uncasked spawn in the mid.
-
 Ancestral Brewmaster:
+Ancestral Brewmaster says(1): Are these guys Alliance or Horde?
+Ancestral Brewmaster says(3): Why does it matter?
+Ancestral Brewmaster says(1): I need to know which side to stop rooting for!
+
 Ancestral Brewmaster says(1): Do you think all of this fighting is educational for this group?
 Ancestral Brewmaster says(2): Yes, it will drive them to read books!
 
@@ -71,7 +82,7 @@ Ancestral Brewmaster says(2): And where is that?
 Ancestral Brewmaster says(1): Outland!
 
 Ancestral Brewmaster says(1): The last paladin offered me eternal salvation!
-Ancestral Brewmaster says(x): What'd you say?
+Ancestral Brewmaster says(2): What'd you say?
 Ancestral Brewmaster says(1): Kings, please.
 
 Ancestral Brewmaster says(1): This group is awful!
@@ -88,7 +99,7 @@ Ancestral Brewmaster says(1): Why didn't that mage put intellect on his weapon?
 Ancestral Brewmaster says(2): Because he didn't want it to be smarter than he was!
 
 Ancestral Brewmaster says(1): You fool, you're sleeping through the fight!
-Ancestral Brewmaster says(x): Who's the fool? You're watching it!
+Ancestral Brewmaster says(2): Who's the fool? You're watching it!
 
 Ancestral Brewmaster says(1): You know what's the best thing about this group?
 Ancestral Brewmaster says(2): What?
@@ -109,43 +120,55 @@ Ancestral Brewmaster says(1): No, my eyesight will get worse!
 Ancestral Brewmaster says(1): I think I'm going to need another drink!
 Ancestral Brewmaster says(2): Why do you say that?
 Ancestral Brewmaster says(1): I'm beginning to like these guys!
+
+Ancestral Brewmaster says(1): Pay up, they made it through those alementals!
+Ancestral Brewmaster says(3): Double or nothing on the next group?
 */
 
 // Chen Stormstout / Auntie Stormstout intro yells.
 enum IntroYells
 {
-    AUNTIE_ENTRANCE_SAY_1 = 0, // Auntie Stormstout says: Oh, hello Zan, it is good of you to visit ol' Auntie Stormstout.
-    CHEN_ENTRANCE_SAY_1   = 0, // Chen Stormstout   says: I am not Zan - I am Chen Stormstout!
-    AUNTIE_ENTRANCE_SAY_2 = 1, // Auntie Stormstout says: Oh, Zan! You remind me so much of your father.
-    CHEN_ENTRANCE_SAY_2   = 1, // Chen Stormstout   says: Tell me, what has happened here?
-    AUNTIE_ENTRANCE_SAY_3 = 2, // Auntie Stormstout says: It is certainly a nice day outside!
-    CHEN_ENTRANCE_SAY_3   = 2, // Chen Stormstout   says: Where are the other Stormstouts? Why are hozen all over the brewery?
-    AUNTIE_ENTRANCE_SAY_4 = 3, // Auntie Stormstout says: Have you seen the size of Esme's turnips?
-    CHEN_ENTRANCE_SAY_4   = 3, // Chen Stormstout   says: Auntie Stormstout... why is the brewery abandoned?
-    AUNTIE_ENTRANCE_SAY_5 = 4, // Auntie Stormstout says: Abandoned? Oh heavens no! Uncle Gao is in charge while the others are beyond the wall. Isn't that exciting?
-    CHEN_ENTRANCE_SAY_5   = 4, // Chen Stormstout   says: I see - and where is Uncle Gao?
-    AUNTIE_ENTRANCE_SAY_6 = 5, // Auntie Stormstout says: I have some cookies for you!
-    CHEN_ENTRANCE_SAY_6   = 5, // Chen Stormstout   says: There is no time for cookies! Well, one cookie. Just one.
-    CHEN_ENTRANCE_SAY_7   = 6  // Chen Stormstout   says: Wait - these are ghost cookies. These aren't filling at all!
+    AUNTIE_ENTRANCE_SAY_1   = 0, // Auntie Stormstout says: Oh, hello Zan, it is good of you to visit ol' Auntie Stormstout.
+    CHEN_ENTRANCE_SAY_1     = 0, // Chen Stormstout   says: I am not Zan - I am Chen Stormstout!
+    AUNTIE_ENTRANCE_SAY_2   = 1, // Auntie Stormstout says: Oh, Zan! You remind me so much of your father.
+    CHEN_ENTRANCE_SAY_2     = 1, // Chen Stormstout   says: Tell me, what has happened here?
+    AUNTIE_ENTRANCE_SAY_3   = 2, // Auntie Stormstout says: It is certainly a nice day outside!
+    CHEN_ENTRANCE_SAY_3     = 2, // Chen Stormstout   says: Where are the other Stormstouts? Why are hozen all over the brewery?
+    AUNTIE_ENTRANCE_SAY_4   = 3, // Auntie Stormstout says: Have you seen the size of Esme's turnips?
+    CHEN_ENTRANCE_SAY_4     = 3, // Chen Stormstout   says: Auntie Stormstout... why is the brewery abandoned?
+    AUNTIE_ENTRANCE_SAY_5   = 4, // Auntie Stormstout says: Abandoned? Oh heavens no! Uncle Gao is in charge while the others are beyond the wall. Isn't that exciting?
+    CHEN_ENTRANCE_SAY_5     = 4, // Chen Stormstout   says: I see - and where is Uncle Gao?
+    AUNTIE_ENTRANCE_SAY_6   = 5, // Auntie Stormstout says: I have some cookies for you!
+    CHEN_ENTRANCE_SAY_6     = 5, // Chen Stormstout   says: There is no time for cookies! Well, one cookie. Just one.
+    CHEN_ENTRANCE_SAY_7     = 6  // Chen Stormstout   says: Wait - these are ghost cookies. These aren't filling at all!
 };
 
 // Hozen Bouncer yells.
 enum BouncerYells
 {
-    SAY_OOK_KILLED = 0, // You take down Ook-Ook...
-    SAY_MEANS      = 1, // You know what dat mean...
-    SAY_NEW_OOK    = 2, // You da new Ook!
-    SAY_PARTY      = 3  // Get da party started for da new Ook!
+    SAY_OOK_KILLED          = 0, // You take down Ook-Ook...
+    SAY_MEANS               = 1, // You know what dat mean...
+    SAY_NEW_OOK             = 2, // You da new Ook!
+    SAY_PARTY               = 3  // Get da party started for da new Ook!
 };
+
+// Ancestral Brewmaster yells.
+enum AncestralBrewmasterYells
+{
+    SAY_ABM_HOPTALLUS_1     = 0, // Whatzit... are they... what are they doin' to our alementals?
+    SAY_ABM_HOPTALLUS_2     = 0, // Hey... hey YOU! Those are OUR flying... beer monsters?
+};
+
+#define ANN_ILLUSION "Removing the spirit's illusion damages the hozen's fragile mind!"
 
 enum Spells
 {
     // FRIENDLY
     SPELL_AUNTIE_VISUAL     = 115618, // Auntie Stormstout visual.
-
     SPELL_GUSHING_BREW_BVIS = 114379, // Gushing Brew beam visual (The Great Wheel).
     SPELL_GUSHING_BREW_A    = 114380, // Gushing Brew aura (NPC that has beam cast on).
     SPELL_LEAKING_BEER_B_A  = 146604, // Dummy for NPC on Keg.
+    SPELL_BEER_PUDDLE_VIS   = 112960, // Beer on ground visual.
 
     // HOSTILE
 
@@ -185,6 +208,7 @@ enum Spells
     SPELL_BREW_BOLT2        = 115650,
     SPELL_SUDS              = 116178, // Creates NPC_POOL_OF_SUDS at target location.
     AURA_SUDS               = 116179, // Periodic dmg trigger aura.
+    SPELL_SUDS_DUMMY_VIS    = 119418, // Tooltip: "Can summon puddles of suds."
 
     // Unruly Alemental
     SPELL_BREW_BOLT3        = 118104,
@@ -202,10 +226,11 @@ enum Spells
 
     // Bloated Brew Alemental
     // Uses SPELL_BREW_BOLT.
-    SPELL_BLOAT             = 106546
+    SPELL_BLOAT             = 106546,
 
     // Yeasty Brew Alemental
     // Uses SPELL_BREW_BOLT4.
+    // Uses Ferment in boss script.
 };
 
 enum Events
@@ -235,7 +260,7 @@ enum Events
     EVENT_RUN_AND_CRASH,
     EVENT_BOUNCER_DIE,
 
-    // Chen Stormstout / Auntie Stormstout intro event.
+    // Chen Stormstout / Auntie Stormstout intro event
     EVENT_AUNTIE_ENTRANCE_SAY_1,
     EVENT_CHEN_ENTRANCE_SAY_1,
     EVENT_AUNTIE_ENTRANCE_SAY_2,
@@ -248,7 +273,12 @@ enum Events
     EVENT_CHEN_ENTRANCE_SAY_5,
     EVENT_AUNTIE_ENTRANCE_SAY_6,
     EVENT_CHEN_ENTRANCE_SAY_6,
-    EVENT_CHEN_ENTRANCE_SAY_7
+    EVENT_CHEN_ENTRANCE_SAY_7,
+
+    // Ancestral Brewmaster
+    EVENT_SPEAK_HOPTALLUS_1,
+    EVENT_SPEAK_HOPTALLUS_2,
+    EVENT_SPEAK_RANDOM
 };
 
 enum Actions
@@ -272,7 +302,7 @@ class at_stormstout_brewery_entrance : public AreaTriggerScript
             if (!instance)
                 return true;
 
-            if (instance->GetData(DATA_HOZEN_KILLED) < HOZEN_KILLS_NEEDED && instance->GetData(DATA_OOKOOK_EVENT) != DONE)
+            if (instance->GetData(DATA_HOZEN_KILLED) < HOZEN_KILLS_NEEDED && instance->GetData(DATA_OOK_SUMMONED) == false && instance->GetData(DATA_OOKOOK_EVENT) != DONE)
             {
                 // Add the Hozen Counter aura.
                 if (player->GetGroup())
@@ -372,66 +402,79 @@ class npc_chen_stormstout_entrance : public CreatureScript
                     {
                         case EVENT_AUNTIE_ENTRANCE_SAY_1:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_1);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_1, 8000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_1:
                             Talk(CHEN_ENTRANCE_SAY_1);
+                            me->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_2, 5000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_2:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_2);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_2, 6000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_2:
                             Talk(CHEN_ENTRANCE_SAY_2);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_3, 5000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_3:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_3);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_3, 5000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_3:
                             Talk(CHEN_ENTRANCE_SAY_3);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_4, 9000);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_4:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_4);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_QUESTION);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_4, 5500);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_4:
                             Talk(CHEN_ENTRANCE_SAY_4);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_5, 6500);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_5:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_5);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_5, 11000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_5:
                             Talk(CHEN_ENTRANCE_SAY_5);
+                            me->HandleEmote(EMOTE_ONESHOT_TALK);
                             events.ScheduleEvent(EVENT_AUNTIE_ENTRANCE_SAY_6, 4500);
                             break;
 
                         case EVENT_AUNTIE_ENTRANCE_SAY_6:
                             auntieStormstout->AI()->Talk(AUNTIE_ENTRANCE_SAY_6);
+                            auntieStormstout->HandleEmote(EMOTE_ONESHOT_POINT);
                             events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_6, 4500);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_6:
                             Talk(CHEN_ENTRANCE_SAY_6);
-                            events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_7, 30000);
+                            me->HandleEmote(EMOTE_ONESHOT_NO);
+                            events.ScheduleEvent(EVENT_CHEN_ENTRANCE_SAY_7, 15000);
                             break;
 
                         case EVENT_CHEN_ENTRANCE_SAY_7:
                             Talk(CHEN_ENTRANCE_SAY_7);
+                            me->HandleEmote(EMOTE_ONESHOT_EAT);
                             break;
 
                         default: break;
@@ -443,6 +486,93 @@ class npc_chen_stormstout_entrance : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_chen_stormstout_entrance_AI(creature);
+        }
+};
+
+// Ancestral Brewmaster 59075.
+class npc_ancestral_brewmaster : public CreatureScript
+{
+    public :
+        npc_ancestral_brewmaster() : CreatureScript("npc_ancestral_brewmaster") { }
+
+        struct npc_ancestral_brewmaster_AI : public ScriptedAI
+        {
+            npc_ancestral_brewmaster_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+            EventMap events;
+            bool said, alone, hasTwo, hasThree;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                events.Reset();
+                me->SetReactState(REACT_PASSIVE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                said = false;
+                hasTwo = me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_2, 4.0f, true) ? true : false;
+                hasThree = (hasTwo && me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_3, 4.0f, true)) ? true : false;
+                alone = (!hasTwo && !hasThree) ? true : false;
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                // Check stuff for the Brewmasters after Hoptallus.
+                if (!said && hasTwo && instance->GetData(DATA_HOPTALLUS_EVENT) == DONE)
+                {
+                    if (me->FindNearestPlayer(20.0f, true))
+                    {
+                        if (Creature* Alemental = me->FindNearestCreature(NPC_BLOATED_BREW_ALEMENTAL, 20.0f, true))
+                        {
+                            if (Alemental->isInCombat())
+                            {
+                                events.ScheduleEvent(EVENT_SPEAK_HOPTALLUS_1, 2000);
+                                said = true;
+                            }
+                        }
+                    }
+                }
+
+                events.Update(diff);
+
+                while(uint32 eventId = events.ExecuteEvent())
+                {
+                    switch(eventId)
+                    {
+                        case EVENT_SPEAK_HOPTALLUS_1:
+                            Talk(SAY_ABM_HOPTALLUS_1);
+                            me->HandleEmote(EMOTE_ONESHOT_QUESTION);
+                            events.ScheduleEvent(EVENT_SPEAK_HOPTALLUS_2, 8000);
+                            break;
+
+                        case EVENT_SPEAK_HOPTALLUS_2:
+                            if (Creature* brewMaster2 = me->FindNearestCreature(NPC_ANCESTRAL_BREWMASTER_2, 5.0f, true))
+                            {
+                                brewMaster2->AI()->Talk(SAY_ABM_HOPTALLUS_2);
+                                brewMaster2->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+					        }
+                            break;
+
+                        case EVENT_SPEAK_RANDOM:
+                            break;
+
+                        default: break;
+                    }
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_ancestral_brewmaster_AI(creature);
         }
 };
 
@@ -478,11 +608,12 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 events.Reset();
                 summons.DespawnAll();
                 helperDead = false;
+                me->SetReactState(REACT_DEFENSIVE);
 
                 // Summon the "helper".
                 if (!summonedFirstHelper)
                 {
-                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
                     summonedFirstHelper = true;
                 }
             }
@@ -493,14 +624,14 @@ class npc_sodden_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
             void JustReachedHome()
             {
                 if (helperDead)
-                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_AQUA_DANCER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -530,6 +661,7 @@ class npc_sodden_hozen_brawler : public CreatureScript
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_AQUATIC_ILLUSION);
                 DoCast(me, SPELL_AQUAT_ILLUSION_R);
+                me->MonsterTextEmote(ANN_ILLUSION, NULL, true);
                 helperDead = true;
             }
 
@@ -582,7 +714,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 // Summon the "helper".
                 if (!summonedFirstHelper)
                 {
-                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
                     summonedFirstHelper = true;
                 }
             }
@@ -593,14 +725,14 @@ class npc_inflamed_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
             void JustReachedHome()
             {
                 if (helperDead)
-                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() - 3.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
+                    me->SummonCreature(NPC_FIERY_TRICKSTER, me->GetPositionX(), me->GetPositionY() + 4.0f, me->GetPositionZ() + 8.0f, me->GetOrientation(), TEMPSUMMON_MANUAL_DESPAWN);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -630,6 +762,7 @@ class npc_inflamed_hozen_brawler : public CreatureScript
                 summons.Despawn(summon);
                 me->RemoveAurasDueToSpell(SPELL_FIERY_ILLUSION);
                 DoCast(me, SPELL_FIERY_ILLUSION_R);
+                me->MonsterTextEmote(ANN_ILLUSION, NULL, true);
                 helperDead = true;
             }
 
@@ -663,7 +796,7 @@ class npc_hozen_bouncer : public CreatureScript
 
             InstanceScript* instance;
             EventMap events;
-            bool isInCombat;
+            bool IsInCombat;
 
             void InitializeAI()
             {
@@ -674,17 +807,21 @@ class npc_hozen_bouncer : public CreatureScript
             void Reset()
             {
                 events.Reset();
-                isInCombat = false;
-                me->SetReactState(REACT_PASSIVE);
+                IsInCombat = false;
+                me->SetReactState(REACT_DEFENSIVE);
                 me->AddAura(SPELL_HOZEN_DOORGUARD, me);
 
                 events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* who)
             {
-                isInCombat = true;
+                IsInCombat = true;
                 me->SetReactState(REACT_AGGRESSIVE);
+                me->RemoveAurasDueToSpell(SPELL_HOZEN_DOORGUARD);
+                if (Creature* doorGuard = me->FindNearestCreature(NPC_HOZEN_BOUNCER, 100.0f, true))
+                    if (!doorGuard->isInCombat())
+                        doorGuard->AI()->AttackStart(who);
                 events.CancelEvent(EVENT_CHECK_OOK);
             }
 
@@ -692,9 +829,8 @@ class npc_hozen_bouncer : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
-                events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
             }
 
             void MovementInform(uint32 type, uint32 id)
@@ -707,7 +843,7 @@ class npc_hozen_bouncer : public CreatureScript
 
             void UpdateAI(const uint32 diff)
             {
-                if (!UpdateVictim() && isInCombat)
+                if (!UpdateVictim() && IsInCombat)
                     return;
 
                 events.Update(diff);
@@ -720,15 +856,13 @@ class npc_hozen_bouncer : public CreatureScript
                             // Check for Ook-ook killed.
                             if (instance->GetBossState(DATA_OOKOOK_EVENT) == DONE)
                             {
-                                events.CancelEvent(EVENT_CHECK_OOK);
-
                                 // Check on Y position (only one does the talking).
                                 if (me->GetPositionY() > 1303.0f)
                                     events.ScheduleEvent(EVENT_SAY_OOK_KILLED, 2000);
-
                                 events.ScheduleEvent(EVENT_RUN_AND_CRASH, 18000);
                             }
-                            events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
+                            else
+                                events.ScheduleEvent(EVENT_CHECK_OOK, 10000);
                             break;
 
                         case EVENT_SAY_OOK_KILLED:
@@ -762,7 +896,7 @@ class npc_hozen_bouncer : public CreatureScript
                     }
                 }
 
-                if (isInCombat)
+                if (IsInCombat)
                     DoMeleeAttackIfReady();
             }
         };
@@ -798,6 +932,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             void Reset()
             {
                 events.Reset();
+                me->SetReactState(REACT_DEFENSIVE);
 
                 // Add Sleep cosmetic to the Sleepy Hozen Brawlers.
                 if (me->GetEntry() == NPC_SLEEPY_HOZEN_BRAWLER && !me->HasAura(SPELL_COSMETIC_SLEEP))
@@ -823,7 +958,7 @@ class npc_drunken_sleepy_hozen_brawler : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -904,7 +1039,7 @@ class npc_stout_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -972,6 +1107,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
             void Reset()
             {
                 events.Reset();
+                me->AddAura(SPELL_SUDS_DUMMY_VIS, me);
             }
 
             void EnterCombat(Unit* /*who*/)
@@ -984,7 +1120,7 @@ class npc_sudsy_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1102,7 +1238,7 @@ class npc_unruly_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1183,7 +1319,7 @@ class npc_fizzy_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1299,7 +1435,7 @@ class npc_bloated_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1382,7 +1518,7 @@ class npc_bubbling_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1495,7 +1631,7 @@ class npc_yeasty_brew_alemental : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
@@ -1530,6 +1666,77 @@ class npc_yeasty_brew_alemental : public CreatureScript
         CreatureAI* GetAI(Creature* creature) const
         {
             return new npc_yeasty_brew_alemental_AI(creature);
+        }
+};
+
+// Leaking beer barrel 73186.
+class npc_leaking_beer_barrel : public CreatureScript
+{
+    public :
+        npc_leaking_beer_barrel() : CreatureScript("npc_leaking_beer_barrel") { }
+
+        struct npc_leaking_beer_barrel_AI : public ScriptedAI
+        {
+            npc_leaking_beer_barrel_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                if (Creature* beerBunny = me->FindNearestCreature(NPC_BEER_BARREL_BUNNY, 15.0f, true))
+                    DoCast(beerBunny, SPELL_GUSHING_BREW_BVIS);
+            }
+
+            void UpdateAI(const uint32 diff) { }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_leaking_beer_barrel_AI(creature);
+        }
+};
+
+// Beer barrel bunny 66215.
+class npc_beer_barrel_bunny : public CreatureScript
+{
+    public :
+        npc_beer_barrel_bunny() : CreatureScript("npc_beer_barrel_bunny") { }
+
+        struct npc_beer_barrel_bunny_AI : public ScriptedAI
+        {
+            npc_beer_barrel_bunny_AI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
+
+            void Reset()
+            {
+                me->AddAura(SPELL_GUSHING_BREW_A, me);
+            }
+
+            void UpdateAI(const uint32 diff) { }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_beer_barrel_bunny_AI(creature);
         }
 };
 
@@ -1587,6 +1794,7 @@ void AddSC_stormstout_brewery()
 {
     new at_stormstout_brewery_entrance();
     new npc_chen_stormstout_entrance();
+    new npc_ancestral_brewmaster();
     new npc_sodden_hozen_brawler();
     new npc_inflamed_hozen_brawler();
     new npc_hozen_bouncer();
@@ -1600,5 +1808,7 @@ void AddSC_stormstout_brewery()
     new npc_bloated_brew_alemental();
     new npc_bubbling_brew_alemental();
     new npc_yeasty_brew_alemental();
+    new npc_leaking_beer_barrel();
+    new npc_beer_barrel_bunny();
     new spell_stormstout_brewery_habanero_beer();
 }

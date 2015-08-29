@@ -1,7 +1,22 @@
 /*
-    Dungeon : Stormstout Brewery 85-87
-    Boss: Hoptallus
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Dungeon: Stormstout Brewery.
+ * Boss: Hoptallus.
+ */
 
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
@@ -35,7 +50,7 @@ enum Spells
     SPELL_KEG_CARRY              = 131820, // Hopper carry keg.
     SPELL_EXPLOSIVE_BREW         = 114291, // When Hopper reaches target.
 
-    SPELL_HAMMER_VISUAL          = 114530,
+    SPELL_HAMMER_VISUAL          = 114530, // Bopper carry hammer + hammer ground visual.
     SPELL_HAMMER_ARROW           = 114533,
     SPELL_SMASH_AURA             = 111662, // Hammer aura.
     SPELL_SMASH                  = 111666  // Player cast spell on button click.
@@ -99,6 +114,8 @@ class boss_hoptallus : public CreatureScript
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                     me->SetHomePosition(hoptallusMovePosition.GetPositionX(), hoptallusMovePosition.GetPositionY(), hoptallusMovePosition.GetPositionZ(), 1.85f);
                     me->GetMotionMaster()->MovePoint(1, hoptallusMovePosition);
+                    if (GameObject* barrel = me->FindNearestGameObject(GAMEOBJECT_MYSTERIOUS_BARREL, 100.0f))
+                        barrel->UseDoorOrButton(0);
                     introStarted = true;
                 }
             }
@@ -119,6 +136,9 @@ class boss_hoptallus : public CreatureScript
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, IN_PROGRESS);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me); // Add
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_READY);
                 }
 
                 // Carrot Breath handled through EVENT_FURLWIND and the other way around.
@@ -138,13 +158,16 @@ class boss_hoptallus : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
+                me->CombatStop(true);
                 me->GetMotionMaster()->MoveTargetedHome();
 
                 if (instance)
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, FAIL);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_ACTIVE);
                 }
 
                 _EnterEvadeMode();
@@ -159,6 +182,12 @@ class boss_hoptallus : public CreatureScript
                 {
                     instance->SetData(DATA_HOPTALLUS_EVENT, DONE);
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me); // Remove
+
+                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_HOPTALLUS_DOOR)))
+                        door->SetGoState(GO_STATE_ACTIVE);
+
+                    if (GameObject* carrot = me->FindNearestGameObject(GAMEOBJECT_PART_CHEWED_CARROT, 100.0f))
+                        carrot->RemoveFromWorld();
                 }
 
                 _JustDied();
@@ -264,12 +293,12 @@ class npc_hopper : public CreatureScript
 
             void IsSummonedBy(Unit* /*summoner*/)
             {
-                me->AddAura(SPELL_KEG_CARRY, me);
                 Reset();
             }
 
             void Reset()
             {
+                me->AddAura(SPELL_KEG_CARRY, me);
                 events.Reset();
             }
 
@@ -282,8 +311,7 @@ class npc_hopper : public CreatureScript
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
-                me->DespawnOrUnsummon();
+                me->CombatStop(true);
             }
 
             void UpdateAI(const uint32 diff)
@@ -342,14 +370,16 @@ class npc_bopper : public CreatureScript
                 Reset();
             }
 
-            void Reset() { }
+            void Reset()
+            {
+                me->AddAura(SPELL_HAMMER_VISUAL, me);
+            }
 
             void EnterEvadeMode()
             {
                 Reset();
                 me->DeleteThreatList();
-                me->CombatStop(false);
-                me->DespawnOrUnsummon();
+                me->CombatStop(true);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -389,7 +419,8 @@ class npc_hoptallus_bopper_hammer : public CreatureScript
 
             void OnSpellClick(Unit* clicker)
             {
-                clicker->AddAura(SPELL_SMASH_AURA, clicker);
+                if (AuraPtr smash = clicker->AddAura(SPELL_SMASH_AURA, clicker))
+                    smash->SetStackAmount(3);
                 me->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
                 me->DespawnOrUnsummon();
             }
@@ -399,19 +430,6 @@ class npc_hoptallus_bopper_hammer : public CreatureScript
         {
             return new npc_hoptallus_bopper_hammerAI(creature);
         }
-};
-
-class PositionCheck : public std::unary_function<Unit*, bool>
-{
-    public:
-        explicit PositionCheck(Unit* _caster) : caster(_caster) { }
-        bool operator()(WorldObject* object)
-        {
-            return !caster->HasInArc(M_PI / 3, object);
-        }
-
-    private:
-        Unit* caster;
 };
 
 class PlayerCheck : public std::unary_function<Unit*, bool>
@@ -480,7 +498,17 @@ public:
 
         void FilterTargets(std::list<WorldObject*>& targets)
         {
-            targets.remove_if(PositionCheck(GetCaster()));
+            Map* map = GetCaster()->GetMap();
+            if (map && map->IsDungeon())
+            {
+                targets.clear();
+                std::list<Player*> playerList;
+                Map::PlayerList const& players = map->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                    if (Player* player = itr->getSource())
+                        if (GetCaster()->isInFront(player, M_PI / 3))
+                            targets.push_back(player);
+            }
         }
 
         void Register()

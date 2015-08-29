@@ -512,7 +512,7 @@ inline void KillRewarder::_InitGroupData()
                         _maxLevel = lvl;
                     // 2.4. _maxNotGrayMember - maximum level of alive group member within reward distance,
                     //      for whom victim is not gray;
-                    uint32 grayLevel = JadeCore::XP::GetGrayLevel(lvl);
+                    uint32 grayLevel = SkyMistCore::XP::GetGrayLevel(lvl);
                     if (_victim->getLevel() > grayLevel && (!_maxNotGrayMember || _maxNotGrayMember->getLevel() < lvl))
                         _maxNotGrayMember = member;
                 }
@@ -532,7 +532,7 @@ inline void KillRewarder::_InitXP(Player* player)
     // * otherwise, not in PvP;
     // * not if killer is on vehicle.
     if (_isBattleGround || (!_isPvP && !_killer->GetVehicle()))
-        _xp = JadeCore::XP::Gain(player, _victim);
+        _xp = SkyMistCore::XP::Gain(player, _victim);
 }
 
 inline void KillRewarder::_RewardHonor(Player* player)
@@ -650,7 +650,7 @@ void KillRewarder::_RewardGroup()
             {
                 // 3.1.2. Alter group rate if group is in raid (not for battlegrounds).
                 const bool isRaid = !_isPvP && sMapStore.LookupEntry(_killer->GetMapId())->IsRaid() && _group->isRaidGroup();
-                _groupRate = JadeCore::XP::xp_in_group_rate(_count, isRaid);
+                _groupRate = SkyMistCore::XP::xp_in_group_rate(_count, isRaid);
             }
 
             // 3.1.3. Reward each group member (even dead or corpse) within reward distance.
@@ -2664,7 +2664,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         return false;
     }
 
-    if (!JadeCore::IsValidMapCoord(x, y, z, orientation))
+    if (!SkyMistCore::IsValidMapCoord(x, y, z, orientation))
     {
         sLog->outError(LOG_FILTER_MAPS, "TeleportTo: invalid coordinates (X: %f, Y: %f, Z: %f, O: %f) given when teleporting player (GUID: %u, name: %s, map: %d, X: %f, Y: %f, Z: %f, O: %f).",
             x, y, z, orientation, GetGUIDLow(), GetName(), GetMapId(), GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
@@ -8182,7 +8182,7 @@ void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self)
     if (self)
         GetSession()->SendPacket(data);
 
-    JadeCore::MessageDistDeliverer notifier(this, data, dist);
+    SkyMistCore::MessageDistDeliverer notifier(this, data, dist);
     VisitNearbyWorldObject(dist, notifier);
 }
 
@@ -8191,7 +8191,7 @@ void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self, b
     if (self)
         GetSession()->SendPacket(data);
 
-    JadeCore::MessageDistDeliverer notifier(this, data, dist, own_team_only);
+    SkyMistCore::MessageDistDeliverer notifier(this, data, dist, own_team_only);
     VisitNearbyWorldObject(dist, notifier);
 }
 
@@ -8202,7 +8202,7 @@ void Player::SendMessageToSet(WorldPacket* data, Player const* skipped_rcvr)
 
     // we use World::GetMaxVisibleDistance() because i cannot see why not use a distance
     // update: replaced by GetMap()->GetVisibilityDistance()
-    JadeCore::MessageDistDeliverer notifier(this, data, GetVisibilityRange(), false, skipped_rcvr);
+    SkyMistCore::MessageDistDeliverer notifier(this, data, GetVisibilityRange(), false, skipped_rcvr);
     VisitNearbyWorldObject(GetVisibilityRange(), notifier);
 }
 
@@ -8396,7 +8396,7 @@ int32 Player::CalculateReputationGain(uint32 creatureOrQuestLevel, int32 rep, in
 
     float rate = for_quest ? sWorld->getRate(RATE_REPUTATION_LOWLEVEL_QUEST) : sWorld->getRate(RATE_REPUTATION_LOWLEVEL_KILL);
 
-    if (rate != 1.0f && creatureOrQuestLevel <= JadeCore::XP::GetGrayLevel(getLevel()))
+    if (rate != 1.0f && creatureOrQuestLevel <= SkyMistCore::XP::GetGrayLevel(getLevel()))
         percent *= rate;
 
     float repMod = noQuestBonus ? 0.0f : (float)GetTotalAuraModifier(SPELL_AURA_MOD_REPUTATION_GAIN);
@@ -8688,7 +8688,7 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
                 return false;
 
             uint8 k_level = getLevel();
-            uint8 k_grey = JadeCore::XP::GetGrayLevel(k_level);
+            uint8 k_grey = SkyMistCore::XP::GetGrayLevel(k_level);
             uint8 v_level = victim->getLevel();
 
             if (v_level <= k_grey)
@@ -8715,7 +8715,7 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
             else
                 victim_guid = 0;                        // Don't show HK: <rank> message, only log.
 
-            honor_f = ceil(JadeCore::Honor::hk_honor_at_level_f(k_level) * (v_level - k_grey) / (k_level - k_grey));
+            honor_f = ceil(SkyMistCore::Honor::hk_honor_at_level_f(k_level) * (v_level - k_grey) / (k_level - k_grey));
 
             // count the number of playerkills in one day
             ApplyModUInt32Value(PLAYER_FIELD_KILLS, 1, true);
@@ -9209,10 +9209,10 @@ uint32 Player::CalculateCurrencyWeekCap(uint32 id)
         switch (entry->ID)
         {
             case CURRENCY_TYPE_CONQUEST_META_ARENA:
-                cap = JadeCore::Currency::ConquestRatingCalculator(GetMaxArenaRating()) * CURRENCY_PRECISION;
+                cap = SkyMistCore::Currency::ConquestRatingCalculator(GetMaxArenaRating()) * CURRENCY_PRECISION;
                 break;
             case CURRENCY_TYPE_CONQUEST_META_RBG:
-                cap = JadeCore::Currency::BgConquestRatingCalculator(GetRatedBGRating()) * CURRENCY_PRECISION;
+                cap = SkyMistCore::Currency::BgConquestRatingCalculator(GetRatedBGRating()) * CURRENCY_PRECISION;
                 break;
 
             default: break;
@@ -10869,13 +10869,13 @@ void Player::SendLoot(uint64 guid, LootType loot_type, bool fetchLoot)
 
             if (loot_type == LOOT_CORPSE)
             {
-                CellCoord p(JadeCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
+                CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
                 Cell cell(p);
                 cell.SetNoCreate();
 
-                JadeCore::AllDeadCreaturesInRange check(this, 25.0f, creature->GetGUID());
-                JadeCore::CreatureListSearcher<JadeCore::AllDeadCreaturesInRange> searcher(this, linkedLootCreature, check);
-                TypeContainerVisitor<JadeCore::CreatureListSearcher<JadeCore::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
+                SkyMistCore::AllDeadCreaturesInRange check(this, 25.0f, creature->GetGUID());
+                SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange> searcher(this, linkedLootCreature, check);
+                TypeContainerVisitor<SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
                 cell.Visit(p, cSearcher, *(GetMap()), *this,  25.0f);
             }
 
@@ -17564,7 +17564,7 @@ bool Player::CanRewardQuest(Quest const* quest, bool msg)
     if (!quest->IsDFQuest() && !quest->IsAutoComplete() && !(quest->GetFlags() & QUEST_FLAGS_AUTOCOMPLETE) && GetQuestStatus(quest->GetQuestId()) != QUEST_STATUS_COMPLETE)
         return false;
 
-    // daily quest can't be rewarded (25 daily quest already completed)
+    // completed daily / weekly / monthly / seasonal quest can't be rewarded.
     if (!SatisfyQuestDay(quest, true) || !SatisfyQuestWeek(quest, true) || !SatisfyQuestMonth(quest, true) || !SatisfyQuestSeasonal(quest, true))
         return false;
 
@@ -17915,7 +17915,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     // Calculate and award Guild XP.
     if (Guild* guild = sGuildMgr->GetGuildById(GetGuildId()))
-        if (GetQuestLevel(quest) > JadeCore::XP::GetGrayLevel(getLevel()))
+        if (GetQuestLevel(quest) > SkyMistCore::XP::GetGrayLevel(getLevel()))
             guild->GiveXP(uint32(guild->CalculateQuestExperienceReward(getLevel(), GetQuestLevel(quest)) * sWorld->getRate(RATE_XP_QUEST)), this);
 
     // Give player extra money if GetRewOrReqMoney > 0 and get ReqMoney if negative
@@ -18423,7 +18423,7 @@ bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
 
-    // Normal Daily Quests.
+    // Normal Daily Quests. Patch 5.0.4 (2012-08-28): The cap for daily quests has been removed. The previous cap was 25.
     if (!m_dailyQuestStorage.empty())
     {
         for (auto id : m_dailyQuestStorage)
@@ -19968,7 +19968,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder, PreparedQueryResult
         m_movementInfo.t_guid = MAKE_NEW_GUID(transGUID, 0, HIGHGUID_MO_TRANSPORT);
         m_movementInfo.t_pos.Relocate(fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), fields[30].GetFloat());
 
-        if (!JadeCore::IsValidMapCoord(
+        if (!SkyMistCore::IsValidMapCoord(
             GetPositionX()+m_movementInfo.t_pos.m_positionX, GetPositionY()+m_movementInfo.t_pos.m_positionY,
             GetPositionZ()+m_movementInfo.t_pos.m_positionZ, GetOrientation()+m_movementInfo.t_pos.GetOrientation()) ||
             // transport size limited
@@ -20452,6 +20452,9 @@ bool Player::isAllowedToLoot(const Creature* creature)
     if (HasPendingBind())
         return false;
 
+    if (!CanLootWeeklyBoss(creature->GetEntry()))
+        return false;
+
     const Loot* loot = &creature->loot;
     if (loot->isLooted()) // nothing to loot or everything looted.
         return false;
@@ -20490,6 +20493,71 @@ bool Player::isAllowedToLoot(const Creature* creature)
 
     return false;
 }
+
+// New Loot-based Lockout system.
+// Check http://eu.battle.net/wow/en/forum/topic/12822112588 .
+// Used for: All Raid Finder raids, MOP Siege of Orgrimmar Normal/Heroic, WOD raids Normal/Heroic. World bosses are also tracked in the "Raid Info" window since 5.4.
+
+bool Player::IsFirstWeeklyBossKill(uint32 creatureEntry)
+{
+    if (!creatureEntry)
+        return true;
+
+    uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(creatureEntry);
+    if (!questId)
+        return true;
+
+    // The boss is killed first this week if the player has not completed the quest.
+    if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
+		if (!SatisfyQuestWeek(quest, false))
+            return false;
+
+    return true;
+}
+
+bool Player::CanLootWeeklyBoss(uint32 creatureEntry)
+{
+    if (!creatureEntry)
+        return true;
+
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_KILL);
+    stmt->setUInt32(0, GetGUIDLow());
+    stmt->setUInt32(1, creatureEntry);
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+
+    if (!result)
+        return true;
+
+    Field* fields = result->Fetch();
+    bool weeklyBossLooted = fields[0].GetUInt8();
+
+    // The boss cannot be looted if the player has done it before this week.
+    if (weeklyBossLooted)
+        return false;
+
+    return true;
+}
+
+void Player::SetWeeklyBossLooted(uint32 creatureEntry, bool looted)
+{
+    if (!looted) // This is the first insertion when the player completes the quest, and the boss has not been looted yet.
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_WEEKLY_BOSS_KILL);
+        stmt->setUInt32(0, GetGUIDLow());
+        stmt->setUInt32(1, creatureEntry);
+        stmt->setUInt8(2, looted);
+        CharacterDatabase.Execute(stmt);
+    }
+    else         // We call this once the boss has been looted to update set the field to true.
+    {
+        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_WEEKLY_BOSS_KILL);
+        stmt->setUInt8(0, looted);
+        stmt->setUInt32(1, GetGUIDLow());
+        stmt->setUInt32(2, creatureEntry);
+        CharacterDatabase.Execute(stmt);
+    }
+}
+// End of New Loot-based Lockout system.
 
 void Player::_LoadActions(PreparedQueryResult result)
 {
@@ -25983,7 +26051,7 @@ template void Player::UpdateVisibilityOf(DynamicObject* target, UpdateData& data
 void Player::UpdateVisibilityForPlayer()
 {
     // updates visibility of all objects around point of view for current player
-    JadeCore::VisibleNotifier notifier(*this);
+    SkyMistCore::VisibleNotifier notifier(*this);
     m_seer->VisitNearbyObject(GetSightRange(), notifier, true);
     notifier.SendToSelf();   // send gathered data
 }
@@ -27201,7 +27269,7 @@ uint32 Player::GetResurrectionSpellId()
 bool Player::isHonorOrXPTarget(Unit* victim)
 {
     uint8 v_level = victim->getLevel();
-    uint8 k_grey  = JadeCore::XP::GetGrayLevel(getLevel());
+    uint8 k_grey  = SkyMistCore::XP::GetGrayLevel(getLevel());
 
     // Victim level less gray level
     if (v_level <= k_grey)
@@ -27260,21 +27328,56 @@ bool Player::GetsRecruitAFriendBonus(bool forXP)
 
 void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
 {
-     //currency reward
+    // Check for boss loot quests and add them as completed for the player / group.
+    if (victim->GetTypeId() == TYPEID_UNIT)
+    {
+        if (Creature* deadCreature = victim->ToCreature())
+        {
+            if (deadCreature->HasWeeklyBossLootQuestId())
+            {
+                if (uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(deadCreature->GetEntry()))
+                {
+                    if (Group* group = GetGroup()) // Group case.
+                    {
+                        for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                        {
+                            Player* groupGuy = itr->getSource();
+                            if (IsInMap(groupGuy) && groupGuy->IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                            {
+                                groupGuy->CompleteQuest(questId);
+                                groupGuy->SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                        {
+                            CompleteQuest(questId); // Not in a group.
+                            SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Currency reward.
     if (sMapStore.LookupEntry(GetMapId())->IsDungeon())
     {
-        if (Group *pGroup = GetGroup())
+        if (Group* group = GetGroup())
         {
-            for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+            for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
             {
-                Player* pGroupGuy = itr->getSource();
-                if (IsInMap(pGroupGuy))
-                    pGroupGuy->RewardCurrencyAtKill(victim);
+                Player* groupGuy = itr->getSource();
+                if (IsInMap(groupGuy))
+                    groupGuy->RewardCurrencyAtKill(victim);
             }
         }
         else
             RewardCurrencyAtKill(victim);
     }
+
     KillRewarder(this, victim, isBattleGround).Reward();
 }
 
@@ -28806,7 +28909,7 @@ bool Player::LearnTalent(uint32 talentId)
 
         if (tInfo->rank == talentInfo->rank && HasSpell(tInfo->spellId))
         {
-            sLog->OutPandashan("[Cheat] Player GUID %u try to learn talent %u, but he has already spell %u", GetGUIDLow(), talentInfo->spellId, tInfo->spellId);
+            sLog->OutSpecialLog("[Cheat] Player GUID %u try to learn talent %u, but he has already spell %u", GetGUIDLow(), talentInfo->spellId, tInfo->spellId);
             return false;
         }
     }

@@ -737,10 +737,15 @@ void AddSC_madness_of_deathwing();
 
 // Pandaria
 void AddSC_boss_sha_of_anger();                     // Pandaria World Bosses
-void AddSC_boss_galion();
-void AddSC_boss_chi_ji();
+void AddSC_boss_galleon();
 void AddSC_boss_nalak();
 void AddSC_boss_ordos();
+void AddSC_boss_oondasta();
+
+void AddSC_boss_chi_ji();                           // August Celestials World Bosses
+void AddSC_boss_niuzao();
+void AddSC_boss_xuen();
+void AddSC_boss_yu_lon();
 
 void AddSC_instance_temple_of_jade_serpent();       // Temple of Jade Serpent
 void AddSC_boss_wise_mari();
@@ -1617,10 +1622,15 @@ void AddPandariaScripts()
 {
 #ifdef SCRIPTS
     AddSC_boss_sha_of_anger();                      // Pandaria World Bosses
-    AddSC_boss_galion();
-    AddSC_boss_chi_ji();
+    AddSC_boss_galleon();
     AddSC_boss_nalak();
     AddSC_boss_ordos();
+    AddSC_boss_oondasta();
+
+    AddSC_boss_chi_ji();                            // August Celestials World Bosses
+    AddSC_boss_niuzao();
+    AddSC_boss_xuen();
+    AddSC_boss_yu_lon();
 
     AddSC_instance_temple_of_jade_serpent();        // Temple of Jade Serpent
     AddSC_boss_wise_mari();

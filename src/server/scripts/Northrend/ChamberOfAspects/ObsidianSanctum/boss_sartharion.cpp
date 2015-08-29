@@ -539,8 +539,8 @@ public:
         void CastLavaStrikeOnTarget(Unit* target)
         {
             std::list<Creature*> pFireCyclonesList;
-            JadeCore::AllCreaturesOfEntryInRange checker(me, NPC_FIRE_CYCLONE, 200.0f);
-            JadeCore::CreatureListSearcher<JadeCore::AllCreaturesOfEntryInRange> searcher(me, pFireCyclonesList, checker);
+            SkyMistCore::AllCreaturesOfEntryInRange checker(me, NPC_FIRE_CYCLONE, 200.0f);
+            SkyMistCore::CreatureListSearcher<SkyMistCore::AllCreaturesOfEntryInRange> searcher(me, pFireCyclonesList, checker);
             me->VisitNearbyObject(200.0f, searcher);
 
             if (pFireCyclonesList.empty())

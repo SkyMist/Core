@@ -148,13 +148,13 @@ class SmartScript
         {
             GameObject* gameObject = NULL;
 
-            CellCoord p(JadeCore::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
+            CellCoord p(SkyMistCore::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
             Cell cell(p);
 
-            JadeCore::GameObjectWithDbGUIDCheck goCheck(*searchObject, guid);
-            JadeCore::GameObjectSearcher<JadeCore::GameObjectWithDbGUIDCheck> checker(searchObject, gameObject, goCheck);
+            SkyMistCore::GameObjectWithDbGUIDCheck goCheck(*searchObject, guid);
+            SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectWithDbGUIDCheck> checker(searchObject, gameObject, goCheck);
 
-            TypeContainerVisitor<JadeCore::GameObjectSearcher<JadeCore::GameObjectWithDbGUIDCheck>, GridTypeMapContainer > objectChecker(checker);
+            TypeContainerVisitor<SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectWithDbGUIDCheck>, GridTypeMapContainer > objectChecker(checker);
             cell.Visit(p, objectChecker, *searchObject->GetMap(), *searchObject, searchObject->GetGridActivationRange());
 
             return gameObject;
@@ -163,13 +163,13 @@ class SmartScript
         Creature* FindCreatureNear(WorldObject* searchObject, uint32 guid) const
         {
             Creature* creature = NULL;
-            CellCoord p(JadeCore::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
+            CellCoord p(SkyMistCore::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
             Cell cell(p);
 
-            JadeCore::CreatureWithDbGUIDCheck target_check(searchObject, guid);
-            JadeCore::CreatureSearcher<JadeCore::CreatureWithDbGUIDCheck> checker(searchObject, creature, target_check);
+            SkyMistCore::CreatureWithDbGUIDCheck target_check(searchObject, guid);
+            SkyMistCore::CreatureSearcher<SkyMistCore::CreatureWithDbGUIDCheck> checker(searchObject, creature, target_check);
 
-            TypeContainerVisitor<JadeCore::CreatureSearcher <JadeCore::CreatureWithDbGUIDCheck>, GridTypeMapContainer > unit_checker(checker);
+            TypeContainerVisitor<SkyMistCore::CreatureSearcher <SkyMistCore::CreatureWithDbGUIDCheck>, GridTypeMapContainer > unit_checker(checker);
             cell.Visit(p, unit_checker, *searchObject->GetMap(), *searchObject, searchObject->GetGridActivationRange());
 
             return creature;

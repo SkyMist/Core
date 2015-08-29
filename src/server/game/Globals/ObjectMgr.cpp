@@ -1670,7 +1670,7 @@ void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = JadeCore::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.creatures.insert(guid);
         }
@@ -1684,7 +1684,7 @@ void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = JadeCore::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.creatures.erase(guid);
         }
@@ -1988,7 +1988,7 @@ void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = JadeCore::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.gameobjects.insert(guid);
         }
@@ -2002,7 +2002,7 @@ void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = JadeCore::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.gameobjects.erase(guid);
         }
@@ -4552,7 +4552,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
                     continue;
                 }
 
-                if (!JadeCore::IsValidMapCoord(tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation))
+                if (!SkyMistCore::IsValidMapCoord(tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation))
                 {
                     sLog->outError(LOG_FILTER_SQL, "Table `%s` has invalid coordinates (X: %f Y: %f Z: %f O: %f) in SCRIPT_COMMAND_TELEPORT_TO for script id %u",
                         tableName.c_str(), tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation, tmp.id);
@@ -4650,7 +4650,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
 
             case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
             {
-                if (!JadeCore::IsValidMapCoord(tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation))
+                if (!SkyMistCore::IsValidMapCoord(tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation))
                 {
                     sLog->outError(LOG_FILTER_SQL, "Table `%s` has invalid coordinates (X: %f Y: %f Z: %f O: %f) in SCRIPT_COMMAND_TEMP_SUMMON_CREATURE for script id %u",
                         tableName.c_str(), tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation, tmp.id);
@@ -5253,6 +5253,22 @@ void ObjectMgr::LoadInstanceEncounters()
     while (result->NextRow());
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u instance encounters in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+// Boss loot quest Id, used for new Loot-based Lockout system.
+uint32 ObjectMgr::GetWeeklyBossLootQuestId(uint32 creatureEntry)
+{
+    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_BOSS_LOOT_QUEST_ID);
+    stmt->setUInt32(0, creatureEntry);
+    PreparedQueryResult result = WorldDatabase.Query(stmt);
+
+    if (!result)
+        return 0;
+
+    Field* fields = result->Fetch();
+    uint32 questId = fields[0].GetUInt32();
+
+    return questId;
 }
 
 GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
@@ -7187,7 +7203,7 @@ void ObjectMgr::LoadPointsOfInterest()
         POI.data = fields[5].GetUInt32();
         POI.icon_name = fields[6].GetString();
 
-        if (!JadeCore::IsValidMapCoord(POI.x, POI.y))
+        if (!SkyMistCore::IsValidMapCoord(POI.x, POI.y))
         {
             sLog->outError(LOG_FILTER_SQL, "Table `points_of_interest` (Entry: %u) have invalid coordinates (X: %f Y: %f), ignored.", point_id, POI.x, POI.y);
             continue;
@@ -9338,7 +9354,7 @@ void ObjectMgr::RestructCreatureGUID(uint32 nbLigneToRestruct)
 
     WorldDatabase.CommitTransaction(worldTrans);
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u lignes ont ete restructuree.", nbLigneToRestruct);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u guids were reassigned.", nbLigneToRestruct);
 }
 
 void ObjectMgr::RestructGameObjectGUID(uint32 nbLigneToRestruct)
@@ -9408,7 +9424,7 @@ void ObjectMgr::RestructGameObjectGUID(uint32 nbLigneToRestruct)
 
     WorldDatabase.CommitTransaction(worldTrans);
 
-    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u lignes ont ete restructuree.", nbLigneToRestruct);
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "%u guids were reassigned.", nbLigneToRestruct);
 }
 
 void ObjectMgr::LoadItemExtendedCost()

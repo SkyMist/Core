@@ -43,7 +43,7 @@ BattlegroundAV::~BattlegroundAV() { }
 
 uint16 BattlegroundAV::GetBonusHonor(uint8 kills) //TODO: move this function to Battleground.cpp (needs to find a way to get m_MaxLevel)
 {
-    return JadeCore::Honor::hk_honor_at_level(m_MaxLevel, kills);
+    return SkyMistCore::Honor::hk_honor_at_level(m_MaxLevel, kills);
 }
 
 void BattlegroundAV::HandleKillPlayer(Player* player, Player* killer)

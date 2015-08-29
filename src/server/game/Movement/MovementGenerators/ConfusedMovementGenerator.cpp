@@ -52,8 +52,8 @@ void ConfusedMovementGenerator<T>::Initialize(T &unit)
         float wanderY = y + frand(min_wander_distance, max_wander_distance);
 
         // prevent invalid coordinates generation
-        JadeCore::NormalizeMapCoord(wanderX);
-        JadeCore::NormalizeMapCoord(wanderY);
+        SkyMistCore::NormalizeMapCoord(wanderX);
+        SkyMistCore::NormalizeMapCoord(wanderY);
 
         if (unit.IsWithinLOS(wanderX, wanderY, z))
         {

@@ -42,7 +42,7 @@
 #include "Group.h"
 #include "Chat.h"
 
-namespace JadeCore
+namespace SkyMistCore
 {
     class AchievementChatBuilder
     {
@@ -63,7 +63,7 @@ namespace JadeCore
             int32 i_textId;
             uint32 i_achievementId;
     };
-}                                                           // namespace JadeCore
+}                                                           // namespace SkyMistCore
 
 bool AchievementCriteriaData::IsValid(AchievementCriteriaEntry const* criteria)
 {
@@ -1157,8 +1157,8 @@ void AchievementMgr<T>::SendAchievementEarned(AchievementEntry const* achievemen
 
     if (Guild* guild = sGuildMgr->GetGuildById(GetOwner()->GetGuildId()))
     {
-        JadeCore::AchievementChatBuilder say_builder(*GetOwner(), CHAT_MSG_GUILD_ACHIEVEMENT, LANG_ACHIEVEMENT_EARNED, achievement->ID);
-        JadeCore::LocalizedPacketDo<JadeCore::AchievementChatBuilder> say_do(say_builder);
+        SkyMistCore::AchievementChatBuilder say_builder(*GetOwner(), CHAT_MSG_GUILD_ACHIEVEMENT, LANG_ACHIEVEMENT_EARNED, achievement->ID);
+        SkyMistCore::LocalizedPacketDo<SkyMistCore::AchievementChatBuilder> say_do(say_builder);
         guild->BroadcastWorker(say_do);
     }
 
@@ -1175,15 +1175,15 @@ void AchievementMgr<T>::SendAchievementEarned(AchievementEntry const* achievemen
     // If player is in world he can tell his friends about new achievement
     else if (GetOwner()->IsInWorld())
     {
-        CellCoord p = JadeCore::ComputeCellCoord(GetOwner()->GetPositionX(), GetOwner()->GetPositionY());
+        CellCoord p = SkyMistCore::ComputeCellCoord(GetOwner()->GetPositionX(), GetOwner()->GetPositionY());
 
         Cell cell(p);
         cell.SetNoCreate();
 
-        JadeCore::AchievementChatBuilder say_builder(*GetOwner(), CHAT_MSG_ACHIEVEMENT, LANG_ACHIEVEMENT_EARNED, achievement->ID);
-        JadeCore::LocalizedPacketDo<JadeCore::AchievementChatBuilder> say_do(say_builder);
-        JadeCore::PlayerDistWorker<JadeCore::LocalizedPacketDo<JadeCore::AchievementChatBuilder> > say_worker(GetOwner(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
-        TypeContainerVisitor<JadeCore::PlayerDistWorker<JadeCore::LocalizedPacketDo<JadeCore::AchievementChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+        SkyMistCore::AchievementChatBuilder say_builder(*GetOwner(), CHAT_MSG_ACHIEVEMENT, LANG_ACHIEVEMENT_EARNED, achievement->ID);
+        SkyMistCore::LocalizedPacketDo<SkyMistCore::AchievementChatBuilder> say_do(say_builder);
+        SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::AchievementChatBuilder> > say_worker(GetOwner(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
+        TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::AchievementChatBuilder> >, WorldTypeMapContainer > message(say_worker);
         cell.Visit(p, message, *GetOwner()->GetMap(), *GetOwner(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY));
     }
 

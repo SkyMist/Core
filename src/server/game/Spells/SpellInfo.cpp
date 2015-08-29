@@ -3047,9 +3047,10 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                             {
                                 if (!spellTriggeredProto->Effects[i].Effect)
                                     continue;
-                                // if non-positive trigger cast targeted to positive target this main cast is non-positive
-                                // this will place this spell auras as debuffs
-                                if (_IsPositiveTarget(spellTriggeredProto->Effects[i].TargetA.GetTarget(), spellTriggeredProto->Effects[effIndex].TargetB.GetTarget()) && !spellTriggeredProto->_IsPositiveEffect(i, true))
+
+                                // if a non-positive trigger spell is cast on a positive / non-positive target this will place these spell auras as debuffs.
+                                // _IsPositiveTarget(spellTriggeredProto->Effects[i].TargetA.GetTarget(), spellTriggeredProto->Effects[effIndex].TargetB.GetTarget()) && -> left here as ref.
+                                if (!spellTriggeredProto->_IsPositiveEffect(i, true))
                                     return false;
                             }
                         }
@@ -3177,6 +3178,7 @@ bool SpellInfo::_IsPositiveTarget(uint32 targetA, uint32 targetB)
         case TARGET_UNIT_SRC_AREA_ENEMY:
         case TARGET_UNIT_DEST_AREA_ENEMY:
         case TARGET_UNIT_CONE_ENEMY_24:
+        case TARGET_UNIT_CONE_ENEMY_54:
         case TARGET_UNIT_CONE_ENEMY_104:
         case TARGET_UNIT_CONE_ENEMY_110:
         case TARGET_UNIT_CONE_ENEMY_129:

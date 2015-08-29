@@ -238,8 +238,8 @@ void CreatureGroup::LeaderMoveTo(float x, float y, float z)
         float dy = y +  std::sin(angle + pathangle) * dist;
         float dz = z;
 
-        JadeCore::NormalizeMapCoord(dx);
-        JadeCore::NormalizeMapCoord(dy);
+        SkyMistCore::NormalizeMapCoord(dx);
+        SkyMistCore::NormalizeMapCoord(dy);
 
         member->UpdateGroundPositionZ(dx, dy, dz);
 

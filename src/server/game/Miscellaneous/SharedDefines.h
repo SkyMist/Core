@@ -794,7 +794,6 @@ enum SpellAttr10
 #define MAX_TALENT_SPECS        2
 #define MAX_TALENT_SPELLS       6
 #define MAX_GLYPH_SLOT_INDEX    6
-#define REQ_PRIMARY_TREE_TALENTS 31
 
 // Custom values
 enum SpellClickUserTypes
@@ -1066,40 +1065,40 @@ enum SpellEffects
     SPELL_EFFECT_CREATE_ITEM_2                      = 157,
     SPELL_EFFECT_MILLING                            = 158,
     SPELL_EFFECT_ALLOW_RENAME_PET                   = 159,
-    SPELL_EFFECT_160                                = 160, // forcecast trigger spell ?
+    SPELL_EFFECT_160                                = 160, // SPELL_EFFECT_FORCECAST_TRIGGER_SPELL. NYI.
     SPELL_EFFECT_TALENT_SPEC_COUNT                  = 161,
     SPELL_EFFECT_TALENT_SPEC_SELECT                 = 162,
     SPELL_EFFECT_163                                = 163, // Unused (5.0.5)
     SPELL_EFFECT_REMOVE_AURA                        = 164,
     SPELL_EFFECT_DAMAGE_FROM_MAX_HEALTH_PCT         = 165,
     SPELL_EFFECT_GIVE_CURRENCY                      = 166,
-    SPELL_EFFECT_167                                = 167, // phase shift related
+    SPELL_EFFECT_167                                = 167, // SPELL_EFFECT_UPDATE_PHASE_SHIFT. NYI.
     SPELL_EFFECT_CONTROL_PET                        = 168, // allow hunter and warlock control pet
     SPELL_EFFECT_DESTROY_ITEM                       = 169,
     SPELL_EFFECT_UPDATE_ZONE_AURAS_AND_PHASES       = 170,
-    SPELL_EFFECT_171                                = 171, // Summons gamebject (player farm related)
+    SPELL_EFFECT_171                                = 171, // SPELL_EFFECT_SUMMON_GAMEOBJECT. NYI.
     SPELL_EFFECT_RESURRECT_WITH_AURA                = 172, // Aoe resurrection (guild perk)
     SPELL_EFFECT_UNLOCK_GUILD_VAULT_TAB             = 173, // Guild tab unlocked (guild perk)
     SPELL_EFFECT_APPLY_AURA_ON_PET                  = 174,
-    SPELL_EFFECT_175                                = 175, // random target ? only 125570
+    SPELL_EFFECT_175                                = 175, // SPELL_EFFECT_SELECT_RANDOM_TARGET_RADIUS. Only 125570. NYI.
     SPELL_EFFECT_SANCTUARY_2                        = 176, // Some kind of sanctuary effect (Vanish)
-    SPELL_EFFECT_177                                = 177,
+    SPELL_EFFECT_177                                = 177, // SPELL_EFFECT_DESPAWN_PERSISTENT_AREA_AURAS. Check 137182. NYI.
     SPELL_EFFECT_178                                = 178, // Unused (5.0.5)
     SPELL_EFFECT_CREATE_AREATRIGGER                 = 179,
     SPELL_EFFECT_UPDATE_AREATRIGGER                 = 180, // "Update Area Triggers" 106584 & 1333355
     SPELL_EFFECT_UNLEARN_TALENT                     = 181,
-    SPELL_EFFECT_182                                = 182, // despawwn areatrigger
+    SPELL_EFFECT_182                                = 182, // SPELL_EFFECT_DESPAWN_AREA_TRIGGER. NYI.
     SPELL_EFFECT_183                                = 183, // Unused (5.0.5)
-    SPELL_EFFECT_REPUTATION_REWARD                  = 184, // add 400 (normal) 800 (10/25 player mode) Avengers of Hyjal (TDF ?) see 73843
+    SPELL_EFFECT_REPUTATION_REWARD                  = 184, // Adds 400 (normal) 800 (10/25 player mode) Avengers of Hyjal (TDF ?) reputation. See 73843.
     SPELL_EFFECT_185                                = 185, // Scene related
     SPELL_EFFECT_186                                = 186, // Scene related
-    SPELL_EFFECT_RANDOM_DIGSITE                     = 187, // 126957 only
+    SPELL_EFFECT_RANDOM_DIGSITE                     = 187, // Randomizes Archaeology digsites. 126957 only.
     SPELL_EFFECT_STAMPEDE                           = 188, // Stampede 121818
     SPELL_EFFECT_LOOT_BONUS                         = 189, // Boss loot bonus ?
     SPELL_EFFECT_190                                = 190, // internal spell
     SPELL_EFFECT_TELEPORT_TO_DIGSITE                = 191, // Teleport player to an random digsite (Archaeology)
     SPELL_EFFECT_UNCAGE_PET                         = 192, // Battle pet exchange (123302)
-    SPELL_EFFECT_193                                = 193, // Unused (5.0.5)
+    SPELL_EFFECT_START_PET_BATTLE                   = 193, // Starts Battle Pet fight. 5.0.5.
     SPELL_EFFECT_194                                = 194, // Unused (5.0.5)
     SPELL_EFFECT_195                                = 195, // Scene related
     SPELL_EFFECT_196                                = 196, // summon multi NPC
@@ -1108,12 +1107,12 @@ enum SpellEffects
     SPELL_EFFECT_199                                = 199, //
     SPELL_EFFECT_HEAL_BATTLEPET_PCT                 = 200, // Battle pet Healing  125439, 125801
     SPELL_EFFECT_BATTLE_PET                         = 201, // Battle pet first slot and track
-    SPELL_EFFECT_202                                = 202, // Unk 5.4.0
+    SPELL_EFFECT_202                                = 202, // Affects visibility for quest NPC's, check 123316. 5.4.0. NYI.
     SPELL_EFFECT_203                                = 203, // Unk 5.4.0
-    SPELL_EFFECT_UPGRADE_BATTLEPET                  = 204, // BATTLEPET System 5.4.0
-    SPELL_EFFECT_PVE_PVP_CHOICE                     = 205, // Unk use 5.4.0
+    SPELL_EFFECT_UPGRADE_BATTLEPET                  = 204, // Changes Battle Pet quality. 5.4.0.
+    SPELL_EFFECT_LAUNCH_QUEST_CHOICE                = 205, // Launches quest choice PvE / PvP 5.4.0. NYI.
     SPELL_EFFECT_ETERNITY_EMBRACE                   = 206, // used for TimelessIsle 5.4.0
-    SPELL_EFFECT_207                                = 207, // Unused 5.4.0
+    SPELL_EFFECT_LAUNCH_QUEST_TASK                  = 207, // Launches progress bar quest. Unused 5.4.0. NYI.
     SPELL_EFFECT_TEST_REPUTATION                    = 208, // Unk 5.4.0
     TOTAL_SPELL_EFFECTS                             = 209
 };
