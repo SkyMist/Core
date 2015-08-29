@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -20,33 +19,24 @@
 /// @{
 /// \file
 
-#ifndef _MASTER_H
-#define _MASTER_H
+#ifndef _TRINITY_RARUNNABLE_H_
+#define _TRINITY_RARUNNABLE_H_
 
-#include <Common.h>
-#include <Networking/Networking.h>
+#include "Common.h"
 
-/// Start the server
-class Master : public Networking::Server
+#include <ace/Reactor.h>
+
+class RARunnable : public ACE_Based::Runnable
 {
-    public:
-        Master();
-        ~Master();
-        int Run();
+public:
+    RARunnable();
+    virtual ~RARunnable();
+    void run();
 
-    private:
-        bool _StartDB();
-        void _StopDB();
+private:
+    ACE_Reactor* m_Reactor;
 
-        void ClearOnlineAccounts();
-    
-    private:
-        uv_signal_t _signalInt;
-        uv_signal_t _signalBrk;
-        uv_signal_t _signalTrm;
-        uv_loop_t   _loop;
 };
 
-#define sMaster ACE_Singleton<Master, ACE_Null_Mutex>::instance()
-#endif
+#endif /* _TRINITY_RARUNNABLE_H_ */
 /// @}

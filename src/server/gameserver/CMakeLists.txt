@@ -11,7 +11,6 @@
 file(GLOB_RECURSE sources_CommandLine CommandLine/*.cpp CommandLine/*.h)
 file(GLOB_RECURSE sources_RemoteAccess RemoteAccess/*.cpp RemoteAccess/*.h)
 file(GLOB_RECURSE sources_TCSoap TCSoap/*.cpp TCSoap/*.h)
-file(GLOB_RECURSE sources_WorldThread WorldThread/*.cpp WorldThread/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
 if( USE_COREPCH )
@@ -19,26 +18,25 @@ if( USE_COREPCH )
 endif()
 
 if ( USE_COREPCH AND MSVC )
-  set(worldserver_SRCS
+  set(gameserver_SRCS
     PrecompiledHeaders/worldPCH.cpp
     PrecompiledHeaders/worldPCH.h
   )
 endif()
 
-set(worldserver_SRCS
-  ${worldserver_SRCS}
+set(gameserver_SRCS
+  ${gameserver_SRCS}
   ${sources_CommandLine}
   ${sources_RemoteAccess}
   ${sources_TCSoap}
-  ${sources_WorldThread}
   ${sources_localdir}
 )
 
 if( WIN32 )
-  set(worldserver_SRCS
-    ${worldserver_SRCS}
+  set(gameserver_SRCS
+    ${gameserver_SRCS}
     ${sources_Debugging}
-    worldserver.rc
+    gameserver.rc
   )
 endif()
 
@@ -145,23 +143,23 @@ include_directories(
   ${OPENSSL_INCLUDE_DIR}
 )
 
-set(worldserver_LINK_FLAGS "")
+set(gameserver_LINK_FLAGS "")
 
-add_executable(worldserver ${worldserver_SRCS})
+add_executable(gameserver ${gameserver_SRCS})
 
 if( NOT WIN32 )
-  add_definitions(-D_TRINITY_CORE_CONFIG='"${CONF_DIR}/worldserver.conf"')
+  add_definitions(-D_TRINITY_CORE_CONFIG='"${CONF_DIR}/gameserver.conf"')
 endif()
 
-add_dependencies(worldserver revision.h)
+add_dependencies(gameserver revision.h)
 
 if( UNIX )
-  set(worldserver_LINK_FLAGS "-pthread ${worldserver_LINK_FLAGS}")
+  set(gameserver_LINK_FLAGS "-pthread ${gameserver_LINK_FLAGS}")
 endif()
 
-set_target_properties(worldserver PROPERTIES LINK_FLAGS "${worldserver_LINK_FLAGS}")
+set_target_properties(gameserver PROPERTIES LINK_FLAGS "${gameserver_LINK_FLAGS}")
 
-target_link_libraries(worldserver
+target_link_libraries(gameserver
   game
   shared
   scripts
@@ -181,25 +179,25 @@ target_link_libraries(worldserver
 )
 
 if( WIN32 )
-  add_custom_command(TARGET worldserver
+  add_custom_command(TARGET gameserver
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/worldserver.conf.dist ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/gameserver.conf.dist ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
   )
 endif()
 
 if( UNIX )
-  install(TARGETS worldserver DESTINATION bin)
-  install(FILES worldserver.conf.dist DESTINATION etc)
+  install(TARGETS gameserver DESTINATION bin)
+  install(FILES gameserver.conf.dist DESTINATION etc)
 elseif( WIN32 )
-  install(TARGETS worldserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
-  install(FILES worldserver.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  install(TARGETS gameserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  install(FILES gameserver.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # Generate precompiled header
 if( USE_COREPCH )
   if(CMAKE_COMPILER_IS_GNUCXX)
-    add_precompiled_header(worldserver ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/worldPCH.h)
+    add_precompiled_header(gameserver ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/worldPCH.h)
   elseif(MSVC)
-    add_native_precompiled_header(worldserver ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/worldPCH)
+    add_native_precompiled_header(gameserver ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/worldPCH)
   endif()
 endif()

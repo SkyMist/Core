@@ -33,6 +33,7 @@ class Master : public Networking::Server
         Master();
         ~Master();
         int Run();
+        void Stop();
 
     private:
         bool _StartDB();

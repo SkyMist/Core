@@ -20,33 +20,14 @@
 /// @{
 /// \file
 
-#ifndef _MASTER_H
-#define _MASTER_H
+#ifndef __CLIRUNNABLE_H
+#define __CLIRUNNABLE_H
 
-#include <Common.h>
-#include <Networking/Networking.h>
-
-/// Start the server
-class Master : public Networking::Server
+/// Command Line Interface handling thread
+class CliRunnable : public ACE_Based::Runnable
 {
     public:
-        Master();
-        ~Master();
-        int Run();
-
-    private:
-        bool _StartDB();
-        void _StopDB();
-
-        void ClearOnlineAccounts();
-    
-    private:
-        uv_signal_t _signalInt;
-        uv_signal_t _signalBrk;
-        uv_signal_t _signalTrm;
-        uv_loop_t   _loop;
+        void run();
 };
-
-#define sMaster ACE_Singleton<Master, ACE_Null_Mutex>::instance()
 #endif
 /// @}

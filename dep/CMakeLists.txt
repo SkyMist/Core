@@ -34,6 +34,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
 endif()
 
 add_subdirectory(g3dlite)
+add_subdirectory(libuv)
+add_subdirectory(cryptopp)
 
 if(SERVERS)
   add_subdirectory(gsoap)

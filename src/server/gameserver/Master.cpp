@@ -20,15 +20,9 @@
     \ingroup Trinityd
 */
 
-#include <uv.h>
-
-#include "Common.h"
+#include <Common.h>
 #include "SystemConfig.h"
-#include "SignalHandler.h"
 #include "World.h"
-#include "WorldRunnable.h"
-#include "WorldSocket.h"
-#include "WorldSocketMgr.h"
 #include "Configuration/Config.h"
 #include "Database/DatabaseEnv.h"
 #include "Database/DatabaseWorkerPool.h"
@@ -103,6 +97,8 @@ void C_FreezeThread(void* data)
 
 Master::Master()
 {
+    uv_loop_init(&_loop);
+    
     uv_signal_init(&_loop, &_signalInt);
     uv_signal_init(&_loop, &_signalTrm);
     uv_signal_init(&_loop, &_signalBrk);
@@ -113,6 +109,8 @@ Master::~Master()
     uv_signal_stop(&_signalInt);
     uv_signal_stop(&_signalBrk);
     uv_signal_stop(&_signalTrm);
+    
+    uv_loop_close(&_loop);
 }
 
 /// Main function
@@ -161,10 +159,6 @@ int Master::Run()
 #endif
     
     uv_signal_start(&_signalTrm, C_SignalCallback, SIGTERM);
-
-    ///- Launch WorldRunnable thread
-    uv_thread_t WorldThread;
-    uv_thread_create(&WorldThread, C_WorldThread, NULL);
     
     /*ACE_Based::Thread world_thread(new WorldRunnable);
     world_thread.setPriority(ACE_Based::Highest);*/
@@ -241,21 +235,13 @@ int Master::Run()
     uv_thread_create(&FreezeThread, C_FreezeThread, reinterpret_cast<void*>(DelayTime));
 
     ///- Launch the world listener socket
-    uint16 wsport = sWorld->getIntConfig(CONFIG_PORT_WORLD);
-    std::string bind_ip = ConfigMgr::GetStringDefault("BindIP", "0.0.0.0");
-
-    if (sWorldSocketMgr->StartNetwork(wsport, bind_ip.c_str()) == -1)
-    {
-        sLog->outError(LOG_FILTER_WORLDSERVER, "Failed to start network");
-        World::StopNow(ERROR_EXIT_CODE);
-        // go down and shutdown the server
-    }
-
+    StartNetworking(ConfigMgr::GetStringDefault("BindIP", "0.0.0.0"), sWorld->getIntConfig(CONFIG_PORT_WORLD));
+    
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon) ready...", _FULLVERSION);
-
+    
+    uv_run(&_loop, UV_RUN_DEFAULT);
     // when the main thread closes the singletons get unloaded
     // since worldrunnable uses them, it will crash if unloaded after master
-    uv_thread_join(&WorldThread);
     uv_thread_join(&FreezeThread);
     delete DelayTime;
     
@@ -267,11 +253,6 @@ int Master::Run()
         soap_thread->destroy();
         delete soap_thread;
     }
-
-    ///- Clean database before leaving
-    ClearOnlineAccounts();
-
-    _StopDB();
 
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "Halting process...");
 
@@ -331,6 +312,17 @@ int Master::Run()
 
     // Exit the process with specified return value
     return World::GetExitCode();
+}
+
+/// Stop the event loop, kills the server
+void Master::Stop()
+{
+    //stop the accepting socket
+    //save everything to the DB
+    //disconnect all the connected players
+    uv_stop(&_loop);
+    ClearOnlineAccounts();
+    _StopDB();
 }
 
 /// Initialize connection to the databases

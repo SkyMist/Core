@@ -84,6 +84,7 @@
 #include <queue>
 #include <sstream>
 #include <algorithm>
+#include <atomic>
 
 #include "Threading/LockedQueue.h"
 #include "Threading/Threading.h"
@@ -93,6 +94,8 @@
 #include <ace/RW_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
 #include <ace/OS_NS_time.h>
+
+#include <uv.h>
 
 #if PLATFORM == PLATFORM_WINDOWS
 #  include <ace/config-all.h>
@@ -131,7 +134,7 @@
 
 #endif
 
-inline float finiteAlways(float f) { return finite(f) ? f : 0.0f; }
+inline float finiteAlways(float f) { return isfinite(f) ? f : 0.0f; }
 
 #define atol(a) strtoul( a, NULL, 10)
 
@@ -217,6 +220,12 @@ struct ArenaLog
     uint32 timestamp;
     std::string str;
 };
+
+//sleep unification for both windows and unix
+#ifdef _WIN32
+#include <Windows.h>
+#define sleep(time) Sleep(time)
+#endif
 
 // we always use stdlibc++ std::max/std::min, undefine some not C++ standard defines (Win API and some other platforms)
 #ifdef max
