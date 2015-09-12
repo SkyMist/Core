@@ -429,7 +429,7 @@ void InitOpcodes()
     DEFINE_OPCODE_HANDLER(CMSG_PET_STOP_ATTACK,                         STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandlePetStopAttack             );
     DEFINE_OPCODE_HANDLER(CMSG_PING,                                    STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_EarlyProccess            );
     DEFINE_OPCODE_HANDLER(CMSG_PLAYED_TIME,                             STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandlePlayedTime                );
-    //DEFINE_OPCODE_HANDLER(CMSG_PLAYER_DIFFICULTY_CHANGE,                 STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_NULL                     );
+    DEFINE_OPCODE_HANDLER(CMSG_PLAYER_DIFFICULTY_CHANGE,                STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleChangePlayerDifficulty    );
     DEFINE_OPCODE_HANDLER(CMSG_PLAYER_LOGIN,                            STATUS_AUTHED,    PROCESS_THREADUNSAFE, &WorldSession::HandlePlayerLoginOpcode         );
     DEFINE_OPCODE_HANDLER(CMSG_PLAYER_LOGOUT,                           STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandlePlayerLogoutOpcode        );
     DEFINE_OPCODE_HANDLER(CMSG_PLAYER_VEHICLE_ENTER,                    STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, &WorldSession::HandleEnterPlayerVehicle        );
@@ -640,6 +640,7 @@ void InitOpcodes()
     DEFINE_OPCODE_HANDLER(SMSG_ADD_RUNE_POWER,                          STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_AI_REACTION,                             STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_ALL_ACHIEVEMENT_DATA,                    STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
+    //DEFINE_OPCODE_HANDLER(SMSG_ALL_ACCOUNT_CRITERIA,                    STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_AREA_SPIRIT_HEALER_TIME,                 STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     //DEFINE_OPCODE_HANDLER(SMSG_ARENA_ERROR,                             STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_ARENA_OPPONENT_SPECIALIZATIONS,          STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
@@ -1096,7 +1097,7 @@ void InitOpcodes()
     DEFINE_OPCODE_HANDLER(SMSG_PET_TAME_FAILURE,                        STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_PLAYED_TIME,                             STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_PLAYER_BOUND,                            STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
-    //DEFINE_OPCODE_HANDLER(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT,         STATUS_UNHANDLED, PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
+    DEFINE_OPCODE_HANDLER(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT,         STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_PLAYER_SAVE_GUILD_EMBLEM,                STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_PLAYER_TABARD_VENDOR_SHOW,               STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );
     DEFINE_OPCODE_HANDLER(SMSG_PLAYER_VEHICLE_DATA,                     STATUS_NEVER,     PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               );

@@ -172,6 +172,8 @@ DBCStorage <PvPDifficultyEntry>          sPvPDifficultyStore(PvPDifficultyfmt);
 DBCStorage <QuestSortEntry>              sQuestSortStore(QuestSortEntryfmt);
 DBCStorage <QuestXPEntry>                sQuestXPStore(QuestXPfmt);
 DBCStorage <QuestFactionRewEntry>        sQuestFactionRewardStore(QuestFactionRewardfmt);
+DBCStorage <QuestPOIBlobEntry>           sQuestPOIBlobStore(QuestPOIBlobfmt);
+DBCStorage <QuestPOIPointEntry>          sQuestPOIPointStore(QuestPOIPointfmt);
 DBCStorage <RandomPropertiesPointsEntry> sRandomPropertiesPointsStore(RandomPropertiesPointsfmt);
 
 DBCStorage <ResearchBranchEntry> sResearchBranchStore(ResearchBranchfmt);
@@ -502,6 +504,9 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sQuestXPStore,                dbcPath, "QuestXP.dbc");                                                      // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sQuestFactionRewardStore,     dbcPath, "QuestFactionReward.dbc");                                           // 17399
     LoadDBC(availableDbcLocales, bad_dbc_files, sQuestSortStore,              dbcPath, "QuestSort.dbc");                                                    // 17399
+
+    LoadDBC(availableDbcLocales, bad_dbc_files, sQuestPOIBlobStore,           dbcPath, "QuestPOIBlob.dbc");                                                 // 17399
+    LoadDBC(availableDbcLocales, bad_dbc_files, sQuestPOIPointStore,          dbcPath, "QuestPOIPoint.dbc");                                                // 17399
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sRandomPropertiesPointsStore, dbcPath, "RandPropPoints.dbc");                                               // 17399
 

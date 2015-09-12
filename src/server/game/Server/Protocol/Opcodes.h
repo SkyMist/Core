@@ -269,7 +269,7 @@ enum Opcodes
     CMSG_INITIATE_TRADE                               = 0x12BB, // 5.4.7 18019
     CMSG_INSPECT                                      = 0x01D4, // 5.4.7 18019
     CMSG_INSPECT_HONOR_STATS                          = 0x141A, // 5.4.7 18019
-    CMSG_INSTANCE_LOCK_WARNING_RESPONSE               = 0x1CB3, // 5.4.7 18019 Not implemented - CHECK!
+    CMSG_INSTANCE_LOCK_WARNING_RESPONSE               = 0x0000,
     CMSG_ITEM_REFUND                                  = 0x05FC, // 5.4.7 18019
     CMSG_ITEM_REFUND_INFO                             = 0x10DC, // 5.4.7 18019
     CMSG_ITEM_TEXT_QUERY                              = 0x131B, // 5.4.7 18019
@@ -588,6 +588,7 @@ enum Opcodes
     SMSG_ADD_RUNE_POWER                               = 0x1528, // 5.4.7 18019
     SMSG_AI_REACTION                                  = 0x0721, // 5.4.7 18019
     SMSG_ALL_ACHIEVEMENT_DATA                         = 0x072B, // 5.4.7 18019
+    SMSG_ALL_ACCOUNT_CRITERIA                         = 0x13F0, // 5.4.7 18019 - CHECK!
     SMSG_AREA_SPIRIT_HEALER_TIME                      = 0x0441, // 5.4.7 18019
     SMSG_ARENA_ERROR                                  = 0x0000,
     SMSG_ARENA_OPPONENT_SPECIALIZATIONS               = 0x0E3D, // 5.4.7 18019
@@ -605,7 +606,7 @@ enum Opcodes
     SMSG_AUCTION_OWNER_LIST_RESULT                    = 0x048F, // 5.4.7 18019
     SMSG_AUCTION_OWNER_BID_NOTIFICATION               = 0x0C42, // 5.4.7 18019
     SMSG_AUCTION_REMOVED_NOTIFICATION                 = 0x0000,
-    SMSG_AURA_POINTS_DEPLETED                         = 0x0000,
+    SMSG_AURA_POINTS_DEPLETED                         = 0x0000, // 0x0151  // 5.4.7 18019 - CHECK!
     SMSG_AURA_UPDATE                                  = 0x1B8D, // 5.4.7 18019
     SMSG_AUTH_CHALLENGE                               = 0x14B8, // 5.4.7 18019
     SMSG_AUTH_RESPONSE                                = 0x15A0, // 5.4.7 18019

@@ -2939,9 +2939,18 @@ class Player : public Unit, public GridObject<Player>
         bool isAllowedToLoot(const Creature* creature);
 
         // New Loot-based Lockout system.
-        bool IsFirstWeeklyBossKill(uint32 creatureEntry);
-        bool CanLootWeeklyBoss(uint32 creatureEntry);
-        void SetWeeklyBossLooted(uint32 creatureEntry, bool looted);
+        bool IsFirstWeeklyBossKill(Creature* creature);
+        bool CanLootWeeklyBoss(Creature* creature);
+        void SetWeeklyBossLooted(Creature* creature, bool looted);
+        std::set<uint32> GetKilledWeeklyBossMaps();
+        std::list<uint32> GetKilledWeeklyBosses(uint32 mapId, uint32 difficulty);
+		uint32 GetKilledWeeklyBossEncounterMask(uint32 mapId, uint32 difficulty);
+
+        // Dynamic Difficulty system.
+        void AddDynamicDifficultyMap(uint32 mapId);
+        void DeleteDynamicDifficultyMap(uint32 mapId);
+        bool HasDynamicDifficultyMap(uint32 mapId);
+        std::list<uint32> GetDynamicDifficultyMaps();
 
         DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
         uint8 GetRunesState() const { return m_runes.runeState; }

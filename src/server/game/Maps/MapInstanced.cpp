@@ -158,6 +158,7 @@ Map* MapInstanced::CreateInstanceForPlayer(const uint32 mapId, Player* player)
                     pSave = groupBind->save;
             }
         }
+
         if (pSave)
         {
             // solo/perm/group

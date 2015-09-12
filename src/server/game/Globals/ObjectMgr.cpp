@@ -5256,10 +5256,11 @@ void ObjectMgr::LoadInstanceEncounters()
 }
 
 // Boss loot quest Id, used for new Loot-based Lockout system.
-uint32 ObjectMgr::GetWeeklyBossLootQuestId(uint32 creatureEntry)
+uint32 ObjectMgr::GetWeeklyBossLootQuestId(uint32 creatureEntry, uint32 difficulty)
 {
     PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_BOSS_LOOT_QUEST_ID);
     stmt->setUInt32(0, creatureEntry);
+    stmt->setUInt32(1, difficulty);
     PreparedQueryResult result = WorldDatabase.Query(stmt);
 
     if (!result)

@@ -178,6 +178,11 @@ Unit* ObjectAccessor::FindUnit(uint64 guid)
     return GetObjectInWorld(guid, (Unit*)NULL);
 }
 
+Creature* ObjectAccessor::FindCreature(uint64 guid)
+{
+    return GetObjectInWorld(guid, (Creature*)NULL);
+}
+
 DynamicObject* ObjectAccessor::FindDynamicObject(uint64 guid)
 {
     return GetObjectInWorld(guid, (DynamicObject*)NULL);

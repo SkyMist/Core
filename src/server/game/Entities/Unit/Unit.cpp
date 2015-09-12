@@ -176,6 +176,7 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
     , m_unitTypeMask(UNIT_MASK_NONE)
     , m_HostileRefManager(this)
     , _lastDamagedTime(0)
+    , _lastCombatTime(0)
 
 {
 #ifdef _MSC_VER
@@ -458,10 +459,11 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     // If the spline is Finalized disable it and update the mover's position.
     bool arrived = movespline->Finalized();
 
-    if (arrived)
-        DisableSpline();
+    if (arrived && m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FORWARD))
+        m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
 
     m_movesplineTimer.Update(t_diff);
+
     if (m_movesplineTimer.Passed() || arrived)
         UpdateSplinePosition();
 }
@@ -11903,6 +11905,7 @@ void Unit::CombatStop(bool includingCast)
     RemoveAllAttackers();
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->SendAttackSwingCancelAttack();     // melee and ranged forced attack cancel
+
     ClearInCombat();
 }
 
@@ -15275,6 +15278,11 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, bool isControlled)
 void Unit::ClearInCombat()
 {
     m_CombatTimer = 0;
+
+    // Set last combat time.
+    if (isInCombat() && (GetTypeId() == TYPEID_PLAYER))
+        SetLastCombatTime(time(NULL));
+
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
 
     // Player's state will be cleared in Player::UpdateContestedPvP

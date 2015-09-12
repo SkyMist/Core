@@ -2734,19 +2734,6 @@ void Group::SetRaidDifficulty(Difficulty difficulty)
     SendUpdate();
 }
 
-bool Group::InCombatToInstance(uint32 instanceId)
-{
-    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
-    {
-        Player* player = itr->getSource();
-        if (player && !player->getAttackers().empty() && player->GetInstanceId() == instanceId && (player->GetMap()->IsRaidOrHeroicDungeon()))
-            for (std::set<Unit*>::const_iterator i = player->getAttackers().begin(); i != player->getAttackers().end(); ++i)
-                if ((*i) && (*i)->GetTypeId() == TYPEID_UNIT && (*i)->ToCreature()->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND)
-                    return true;
-    }
-    return false;
-}
-
 void Group::ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo)
 {
     if (isBGGroup() || isBFGroup())
@@ -2828,17 +2815,8 @@ InstanceGroupBind* Group::GetBoundInstance(Player* player)
 
 InstanceGroupBind* Group::GetBoundInstance(Map* aMap)
 {
-    // Currently spawn numbering not different from map difficulty
-    Difficulty difficulty = GetDifficulty(aMap->IsRaid());
-
-    // some instances only have one difficulty
-    GetDownscaledMapDifficultyData(aMap->GetId(), difficulty);
-
-    BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(aMap->GetId());
-    if (itr != m_boundInstances[difficulty].end())
-        return &itr->second;
-    else
-        return NULL;
+    MapEntry const* mapEntry = sMapStore.LookupEntry(aMap->GetId());
+    return GetBoundInstance(mapEntry);
 }
 
 InstanceGroupBind* Group::GetBoundInstance(MapEntry const* mapEntry)
@@ -2846,6 +2824,7 @@ InstanceGroupBind* Group::GetBoundInstance(MapEntry const* mapEntry)
     if (!mapEntry)
         return NULL;
 
+    // Currently spawn numbering not different from map difficulty.
     Difficulty difficulty = GetDifficulty(mapEntry->IsRaid());
 
     // some instances only have one difficulty

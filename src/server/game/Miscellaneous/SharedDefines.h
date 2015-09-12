@@ -3773,6 +3773,8 @@ enum SkillType
     SKILL_NEW_PET_WRATHGUARD       = 931, // New in MoP 5.0.5
     SKILL_ALL                      = 934, // 5.0.5 Tous - Specialisations","Les sorts gerant une combinaison de specialisation se trouvent ici.
     SKILL_NEW_RUNEFORGING          = 960, // New in MoP 5.0.5
+    SKILL_PET_PR_FIRE_ELEMENTAL    = 962, // New in MoP 5.0.5
+    SKILL_PET_PR_EARTH_ELEMENTAL   = 963, // New in MoP 5.0.5
     SKILL_WAY_OF_GRILL             = 975, // New in MoP 5.0.5 (cooking)
     SKILL_WAY_OF_WOK               = 976, // New in MoP 5.0.5 (cooking)
     SKILL_WAY_OF_POT               = 977, // New in MoP 5.0.5 (cooking)
@@ -3786,7 +3788,7 @@ enum SkillType
     SKILL_WATER_STRIDER            = 985, // 5.4.X
     SKILL_QUILEN                   = 916, // 5.4.X
     SKILL_GOAT                     = 987, // 5.4.X
-    SKILL_BASILIK                  = 988, // 5.4.X
+    SKILL_BASILISK                 = 988, // 5.4.X
     SKILL_NO_PLAYER                = 999, // 5.4.X
     SKILL_DIREHORN                 = 1305 // 5.4.X Last on DBC
 };
