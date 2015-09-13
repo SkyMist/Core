@@ -20452,8 +20452,9 @@ bool Player::isAllowedToLoot(const Creature* creature)
     if (HasPendingBind())
         return false;
 
-    if (!CanLootWeeklyBoss(creature->GetEntry()))
-        return false;
+    if (Creature* deadCreature = GetMap()->GetCreature(creature->GetGUID())) // Let's avoid a const_cast here :).
+        if (!CanLootWeeklyBoss(deadCreature))
+            return false;
 
     const Loot* loot = &creature->loot;
     if (loot->isLooted()) // nothing to loot or everything looted.
@@ -20498,12 +20499,14 @@ bool Player::isAllowedToLoot(const Creature* creature)
 // Check http://eu.battle.net/wow/en/forum/topic/12822112588 .
 // Used for: All Raid Finder raids, MOP Siege of Orgrimmar Normal/Heroic, WOD raids Normal/Heroic. World bosses are also tracked in the "Raid Info" window since 5.4.
 
-bool Player::IsFirstWeeklyBossKill(uint32 creatureEntry)
+bool Player::IsFirstWeeklyBossKill(Creature* creature)
 {
-    if (!creatureEntry)
+    if (!creature)
         return true;
 
-    uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(creatureEntry);
+    uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
+
+    uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(creature->GetEntry(), difficulty);
     if (!questId)
         return true;
 
@@ -20515,14 +20518,18 @@ bool Player::IsFirstWeeklyBossKill(uint32 creatureEntry)
     return true;
 }
 
-bool Player::CanLootWeeklyBoss(uint32 creatureEntry)
+bool Player::CanLootWeeklyBoss(Creature* creature)
 {
-    if (!creatureEntry)
+    if (!creature)
         return true;
+
+    uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_KILL);
     stmt->setUInt32(0, GetGUIDLow());
-    stmt->setUInt32(1, creatureEntry);
+    stmt->setUInt32(1, creature->GetEntry());
+    stmt->setUInt32(2, difficulty);
+
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
     if (!result)
@@ -20538,14 +20545,21 @@ bool Player::CanLootWeeklyBoss(uint32 creatureEntry)
     return true;
 }
 
-void Player::SetWeeklyBossLooted(uint32 creatureEntry, bool looted)
+void Player::SetWeeklyBossLooted(Creature* creature, bool looted)
 {
+    if (!creature)
+        return;
+
+    uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
+
     if (!looted) // This is the first insertion when the player completes the quest, and the boss has not been looted yet.
     {
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_WEEKLY_BOSS_KILL);
         stmt->setUInt32(0, GetGUIDLow());
-        stmt->setUInt32(1, creatureEntry);
-        stmt->setUInt8(2, looted);
+        stmt->setUInt32(1, creature->GetEntry());
+        stmt->setUInt32(2, creature->GetMap()->GetId());
+        stmt->setUInt32(3, difficulty);
+        stmt->setUInt8(4, looted);
         CharacterDatabase.Execute(stmt);
     }
     else         // We call this once the boss has been looted to update set the field to true.
@@ -20553,11 +20567,110 @@ void Player::SetWeeklyBossLooted(uint32 creatureEntry, bool looted)
         PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_WEEKLY_BOSS_KILL);
         stmt->setUInt8(0, looted);
         stmt->setUInt32(1, GetGUIDLow());
-        stmt->setUInt32(2, creatureEntry);
+        stmt->setUInt32(2, creature->GetEntry());
+        stmt->setUInt32(3, creature->GetMap()->GetId());
+        stmt->setUInt32(4, difficulty);
         CharacterDatabase.Execute(stmt);
     }
 }
+
+std::set<uint32> Player::GetKilledWeeklyBossMaps()
+{
+    std::set<uint32> weeklyBossMaps;
+
+    PreparedStatement* mapStmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_MAPS);
+    mapStmt->setUInt32(0, GetGUIDLow());
+
+    PreparedQueryResult mapResult = CharacterDatabase.Query(mapStmt);
+
+    if (mapResult)
+    {
+        do
+        {
+            Field* mapField = mapResult->Fetch();
+            uint32 weeklyBossMapEntry = mapField[0].GetUInt32();
+            uint32 weeklyBossMapDifficulty = mapField[1].GetUInt32();
+
+            if (weeklyBossMaps.empty() || weeklyBossMaps.find(MAKE_PAIR32(weeklyBossMapEntry, weeklyBossMapDifficulty)) == weeklyBossMaps.end())
+                weeklyBossMaps.insert(MAKE_PAIR32(weeklyBossMapEntry, weeklyBossMapDifficulty));
+        }
+        while (mapResult->NextRow());
+    }
+
+    return weeklyBossMaps;
+}
+
+std::list<uint32> Player::GetKilledWeeklyBosses(uint32 mapId, uint32 difficulty)
+{
+    std::list<uint32> weeklyBossEntries;
+
+    // Get the entry of all the bosses the player looted, based on map and difficulty.
+    PreparedStatement* entryStmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_KILLS);
+    entryStmt->setUInt32(0, GetGUIDLow());
+    entryStmt->setUInt32(1, mapId);
+    entryStmt->setUInt32(2, difficulty);
+
+    PreparedQueryResult entryResult = CharacterDatabase.Query(entryStmt);
+
+    if (entryResult)
+    {
+        do
+        {
+            Field* resultField = entryResult->Fetch();
+            uint32 weeklyBossEntry = resultField[0].GetUInt32();
+
+            weeklyBossEntries.push_back(weeklyBossEntry);
+        }
+        while (entryResult->NextRow());
+    }
+
+    return weeklyBossEntries;
+}
+
+uint32 Player::GetKilledWeeklyBossEncounterMask(uint32 mapId, uint32 difficulty)
+{
+	uint32 encounterMask = 0;
+
+	DungeonEncounterList const* encounters = sObjectMgr->GetDungeonEncounterList(mapId, Difficulty(difficulty));
+	std::list<uint32> weeklyBossesKilled = GetKilledWeeklyBosses(mapId, difficulty);
+
+	if (encounters && !weeklyBossesKilled.empty())
+        for (DungeonEncounterList::const_iterator itr = encounters->begin(); itr != encounters->end(); ++itr)
+            for (auto weeklyBossKilled : weeklyBossesKilled)
+                if ((*itr)->creditEntry == weeklyBossKilled)
+                    encounterMask |= 1 << (*itr)->dbcEntry->encounterIndex;
+
+	return encounterMask;
+}
 // End of New Loot-based Lockout system.
+
+// Dynamic Difficulty system.
+
+void Player::AddDynamicDifficultyMap(uint32 mapId)
+{
+    
+}
+
+void Player::DeleteDynamicDifficultyMap(uint32 mapId)
+{
+    
+}
+
+bool Player::HasDynamicDifficultyMap(uint32 mapId)
+{
+    if (!mapId)
+        return false;
+
+    return false;
+}
+
+std::list<uint32> Player::GetDynamicDifficultyMaps()
+{
+	std::list<uint32> DifficultyMaps;
+	DifficultyMaps.push_back(631);
+	return DifficultyMaps;
+}
+// End of Dynamic Difficulty system.
 
 void Player::_LoadActions(PreparedQueryResult result)
 {
@@ -21489,12 +21602,12 @@ void Player::_LoadBoundInstances(PreparedQueryResult result)
             MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
             if (!mapEntry || !mapEntry->IsDungeon())
             {
-                sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existed or not dungeon map %d", GetName(), GetGUIDLow(), mapId);
+                sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existing or not dungeon map %d", GetName(), GetGUIDLow(), mapId);
                 deleteInstance = true;
             }
             else if (difficulty >= MAX_DIFFICULTY)
             {
-                sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existed difficulty %d instance for map %u", GetName(), GetGUIDLow(), difficulty, mapId);
+                sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existing difficulty %d instance for map %u", GetName(), GetGUIDLow(), difficulty, mapId);
                 deleteInstance = true;
             }
             else
@@ -21502,7 +21615,7 @@ void Player::_LoadBoundInstances(PreparedQueryResult result)
                 MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, Difficulty(difficulty));
                 if (!mapDiff)
                 {
-                    sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existed difficulty %d instance for map %u", GetName(), GetGUIDLow(), difficulty, mapId);
+                    sLog->outError(LOG_FILTER_PLAYER, "_LoadBoundInstances: player %s(%d) has bind to not existing difficulty %d instance for map %u", GetName(), GetGUIDLow(), difficulty, mapId);
                     deleteInstance = true;
                 }
                 else if (!perm && group)
@@ -21562,6 +21675,10 @@ void Player::UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload)
 {
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
     UnbindInstance(itr, difficulty, unload);
+
+    // Delete the Dynamic Difficulty Map if the player has one.
+    if (HasDynamicDifficultyMap(mapid))
+        DeleteDynamicDifficultyMap(mapid);
 }
 
 void Player::UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficulty, bool unload)
@@ -21659,16 +21776,27 @@ void Player::BindToInstance()
 void Player::SendRaidInfo()
 {
     uint32 counter = 0;
+    uint32 strictInstancesCounter = 0;
+    uint32 lootInstancesCounter = 0;
+
+    std::set<uint32> weeklyBossMaps = GetKilledWeeklyBossMaps();
+
     WorldPacket data(SMSG_RAID_INSTANCE_INFO);
 
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i) // Instances.
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
             if (itr->second.perm)
                 counter++;
 
+    if (!weeklyBossMaps.empty())           // Weekly loot-based lockout. We have to add the maps number to the counter for sending.
+    {
+        strictInstancesCounter = counter;
+        counter += weeklyBossMaps.size();
+    }
+
     data.WriteBits(counter, 20);
 
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i) // Instances.
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
         {
@@ -21691,18 +21819,40 @@ void Player::SendRaidInfo()
         }
     }
 
+    if (!weeklyBossMaps.empty())               // Weekly loot-based lockout.
+    {
+        lootInstancesCounter = strictInstancesCounter; // Reset the counter.
+
+        for (auto weeklyBossMap : weeklyBossMaps)
+        {
+            ObjectGuid WeeklyBossInstanceGUID = MAKE_NEW_GUID(lootInstancesCounter, 0, HIGHGUID_INSTANCE_SAVE);
+
+            data.WriteBit(WeeklyBossInstanceGUID[1]);
+            data.WriteBit(1);                            // Expired, negated.
+            data.WriteBit(WeeklyBossInstanceGUID[0]);
+            data.WriteBit(WeeklyBossInstanceGUID[4]);
+            data.WriteBit(WeeklyBossInstanceGUID[2]);
+            data.WriteBit(WeeklyBossInstanceGUID[3]);
+            data.WriteBit(WeeklyBossInstanceGUID[5]);
+            data.WriteBit(WeeklyBossInstanceGUID[6]);
+            data.WriteBit(WeeklyBossInstanceGUID[7]);
+            data.WriteBit(0);                            // Extended.
+
+            lootInstancesCounter++; // Increase the counter.
+        }
+    }
+
     data.FlushBits();
 
     time_t now = time(NULL);
 
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i) // Instances.
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
         {
             if (itr->second.perm)
             {
                 InstanceSave* save = itr->second.save;
-                bool isHeroic = save->GetDifficulty() == DUNGEON_DIFFICULTY_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || save->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC;
                 ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
 
                 data << uint32(save->GetResetTime() - now);  // Reset time.
@@ -21718,6 +21868,35 @@ void Player::SendRaidInfo()
                 data.WriteByteSeq(instanceGUID[5]);
                 data.WriteByteSeq(instanceGUID[1]);                
             }
+        }
+    }
+
+    if (!weeklyBossMaps.empty())               // Weekly loot-based lockout.
+    {
+        lootInstancesCounter = strictInstancesCounter; // Reset the counter.
+        time_t weeklyQuestResetTime = uint64(sWorld->getWorldState(WS_WEEKLY_QUEST_RESET_TIME));
+
+        for (auto weeklyBossMap : weeklyBossMaps)
+        {
+            uint32 mapId = PAIR32_LOPART(weeklyBossMap); // Map Id retrieval.
+            uint32 difficulty = PAIR32_HIPART(weeklyBossMap); // Difficulty retrieval.
+
+            ObjectGuid WeeklyBossInstanceGUID = MAKE_NEW_GUID(lootInstancesCounter, 0, HIGHGUID_INSTANCE_SAVE);
+
+            data << uint32(weeklyQuestResetTime - now);   // Reset time.
+            data.WriteByteSeq(WeeklyBossInstanceGUID[0]);
+            data.WriteByteSeq(WeeklyBossInstanceGUID[3]);
+            data << uint32(mapId);                        // Map id.
+            data.WriteByteSeq(WeeklyBossInstanceGUID[2]);
+            data.WriteByteSeq(WeeklyBossInstanceGUID[4]);
+            data << uint32(difficulty);                   // Difficulty.
+            data.WriteByteSeq(WeeklyBossInstanceGUID[7]);
+            data << uint32(GetKilledWeeklyBossEncounterMask(mapId, difficulty));    // Completed encounters mask.
+            data.WriteByteSeq(WeeklyBossInstanceGUID[6]);
+            data.WriteByteSeq(WeeklyBossInstanceGUID[5]);
+            data.WriteByteSeq(WeeklyBossInstanceGUID[1]);
+
+            lootInstancesCounter++; // Increase the counter.
         }
     }
 
@@ -27335,26 +27514,26 @@ void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
         {
             if (deadCreature->HasWeeklyBossLootQuestId())
             {
-                if (uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(deadCreature->GetEntry()))
+                if (uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(deadCreature->GetEntry(), deadCreature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY))
                 {
                     if (Group* group = GetGroup()) // Group case.
                     {
                         for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
                         {
                             Player* groupGuy = itr->getSource();
-                            if (IsInMap(groupGuy) && groupGuy->IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                            if (IsInMap(groupGuy) && groupGuy->IsFirstWeeklyBossKill(deadCreature))
                             {
                                 groupGuy->CompleteQuest(questId);
-                                groupGuy->SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                                groupGuy->SetWeeklyBossLooted(deadCreature, false);
                             }
                         }
                     }
                     else
                     {
-                        if (IsFirstWeeklyBossKill(deadCreature->GetEntry()))
+                        if (IsFirstWeeklyBossKill(deadCreature))
                         {
                             CompleteQuest(questId); // Not in a group.
-                            SetWeeklyBossLooted(deadCreature->GetEntry(), false);
+                            SetWeeklyBossLooted(deadCreature, false);
                         }
                     }
                 }

@@ -94,10 +94,10 @@ namespace Movement
         ObjectGuid guid = unit->GetGUID();
         ObjectGuid transport = unit->GetTransGUID();
 
-        data << float(0.f); // Most likely transport Y
+        data << float(transport? unit->GetTransOffsetY() : 0.f); // Most likely transport Y
         data << uint32(splineId);
-        data << float(0.f); // Most likely transport Z
-        data << float(0.f); // Most likely transport X
+        data << float(transport? unit->GetTransOffsetZ() : 0.f); // Most likely transport Z
+        data << float(transport? unit->GetTransOffsetX() : 0.f); // Most likely transport X
         data << float(pos.x);
         data << float(pos.y);
         data << float(pos.z);
@@ -245,17 +245,17 @@ namespace Movement
             data << moveSpline.timePassed();
         }
 
+        data << moveSpline.GetId();
+
         if (!moveSpline.isCyclic())
         {
             Vector3 dest = moveSpline.FinalDestination();
-            data << moveSpline.GetId();
             data << float(dest.x);
             data << float(dest.y);
             data << float(dest.z);
         }
         else
         {
-            data << moveSpline.GetId();
             data << float(0.0f);
             data << float(0.0f);
             data << float(0.0f);

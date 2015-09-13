@@ -429,7 +429,36 @@ enum MapTypes                                               // Lua_IsInInstance
     MAP_SCENARIO        = 5                                 // Scenario
 };
 
-enum AbilytyLearnType
+enum MapFlags
+{
+    /* Some research (numbers are hex):
+
+    Raids:
+        ssc, bt, gl, swp               1, 10, 200, 400
+        ulduar, os, eoe:               1, 4, 8, 10, 200, 400, 8000
+        icc, toc, bwd, bot, rs, totfw: 1, 4, 8, 10, 100, 200, 400, 800, 8000
+        bh:                            1, 4, 8, 10,  20, 200, 400, 800, 8000                         // no 100 extra 20
+        fl:                            1, 4, 8, 10, 100, 200, 400, 800, 8000, 200000                 // extra 200000
+        tot, mv, hf:                   1, 4, 8, 10, 40, 100, 200, 400, 800, 1000, 2000, 8000, 800000 // extra 40, 1000, 2000, 800000
+        soo:                           1, 4, 8, 10, 40, 100, 200, 400, 800, 1000, 8000, 800000       // extra 40, 1000, 800000
+
+        Flags 8 and 2000 are present / not. 40 found in pandaria 1000000 on mainland.
+    */
+
+    MAP_FLAGS_IS_OBSOLETE_DISABLED   = 0x002, // Seen on Obsolete / Unused / Test maps.
+    MAP_FLAGS_HAS_DYNAMIC_DIFFICULTY = 0x100  // Can change difficulty (N / HC) from inside the map.
+};
+
+enum MapEntryNames
+{
+    MAP_EASTERN_KINGDOMS = 0,
+    MAP_KALIMDOR         = 1,
+    MAP_OUTLAND          = 530,
+    MAP_NORTHREND        = 571,
+    MAP_PANDARIA         = 870
+};
+
+enum AbilityLearnType
 {
     ABILITY_LEARNED_ON_GET_PROFESSION_SKILL     = 1,
     ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL  = 2

@@ -100,6 +100,11 @@ class instance_icecrown_citadel : public InstanceMapScript
         {
             instance_icecrown_citadel_InstanceMapScript(InstanceMap* map) : InstanceScript(map)
             {
+                Initialize();
+            }
+
+            void Initialize()
+            {
                 SetBossNumber(EncounterCount);
                 LoadDoorData(doorData);
                 TeamInInstance = 0;
@@ -163,6 +168,18 @@ class instance_icecrown_citadel : public InstanceMapScript
                 MuradinBronzebeardNotVisualGUID = 0;
                 GbBattleMageGUID = 0;
                 isPrepared = false;
+
+			    for (uint32 i = 0; i < EncounterCount; ++i)
+			        SetBossState(i, NOT_STARTED);
+            }
+
+            bool IsEncounterInProgress() const
+            {
+                for (uint32 i = 0; i < EncounterCount; ++i)
+                    if (GetBossState(i) == IN_PROGRESS)
+                        return true;
+
+                return false;
             }
 
             void FillInitialWorldStates(ByteBuffer& data)
@@ -179,7 +196,6 @@ class instance_icecrown_citadel : public InstanceMapScript
 
             void OnPlayerEnter(Player* player)
             {
-
                 if (instance->IsHeroic())
                 {
                     player->SendUpdateWorldState(WORLDSTATE_SHOW_ATTEMPTS, 1);
@@ -358,8 +374,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case NPC_GB_KORKRON_BATTLE_MAGE:
                         GbBattleMageGUID = creature->GetGUID();
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
 
@@ -395,8 +411,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         }
                         break;
                     }
-                    default:
-                        break;
+
+                    default: break;
                 }
 
                 return entry;
@@ -455,8 +471,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         }
                         break;
                     }
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
 
@@ -611,8 +627,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         if (GetBossState(DATA_THE_LICH_KING) == DONE)
                             go->SetRespawnTime(7 * DAY);
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
 
@@ -645,13 +661,16 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case GO_ICE_WALL:
                         AddDoor(go, false);
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
 
             uint32 GetData(uint32 type)
             {
+                if (type <= DATA_THE_LICH_KING)
+                    return GetBossState(type);
+
                 switch (type)
                 {
                     case DATA_SINDRAGOSA_FROSTWYRMS:
@@ -672,8 +691,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         return HeroicAttempts;
                     case DATA_BUFF_REMOVED:
                         return BuffRemovedState;
-                    default:
-                        break;
+
+                    default: break;
                 }
 
                 return 0;
@@ -754,8 +773,8 @@ class instance_icecrown_citadel : public InstanceMapScript
                         return MuradinBronzebeardNotVisualGUID;
                     case DATA_GB_BATTLE_MAGE:
                         return GbBattleMageGUID;
-                    default:
-                        break;
+
+                    default: break;
                 }
 
                 return 0;
@@ -887,82 +906,91 @@ class instance_icecrown_citadel : public InstanceMapScript
                         }
                         break;
                     }
-                    default:
-                        break;
-                 }
 
-                 return true;
+                    default: break;
+                }
+
+                return true;
             }
 
             void SetData(uint32 type, uint32 data)
             {
-                switch (type)
+                if (type <= DATA_THE_LICH_KING)
                 {
-                    case DATA_BONED_ACHIEVEMENT:
-                        IsBonedEligible = data ? true : false;
-                        break;
-                    case DATA_OOZE_DANCE_ACHIEVEMENT:
-                        IsOozeDanceEligible = data ? true : false;
-                        break;
-                    case DATA_NAUSEA_ACHIEVEMENT:
-                        IsNauseaEligible = data ? true : false;
-                        break;
-                    case DATA_ORB_WHISPERER_ACHIEVEMENT:
-                        IsOrbWhispererEligible = data ? true : false;
-                        break;
-                    case DATA_SINDRAGOSA_FROSTWYRMS:
-                        FrostwyrmGUIDs.insert(data);
-                        break;
-                    case DATA_SPINESTALKER:
-                        SpinestalkerTrash.insert(data);
-                        break;
-                    case DATA_RIMEFANG:
-                        RimefangTrash.insert(data);
-                        break;
-                    case DATA_COLDFLAME_JETS:
-                        ColdflameJetsState = data;
-                        if (ColdflameJetsState == DONE)
-                            SaveToDB();
-                        break;
-                    case DATA_SINDRAGOSA_GAUNTLET:
-                        HandleGameObject(SindragosaGauntletDoorGUID, data == DONE);
-                        SindragosaGauntletState = data;
-                        if (SindragosaGauntletState == DONE)
-                            SaveToDB();
-                        break;
-                    case DATA_BLOOD_QUICKENING_STATE:
+                    SetBossState(type, EncounterState(data));
+                    if (data == DONE)
+                        SaveToDB();
+                }
+                else
+                {
+                    switch (type)
                     {
-                        // skip if nothing changes
-                        if (BloodQuickeningState == data)
+                        case DATA_BONED_ACHIEVEMENT:
+                            IsBonedEligible = data ? true : false;
                             break;
-
-                        // 5 is the index of Blood Quickening
-                        if (!sPoolMgr->IsSpawnedObject<Quest>(WeeklyQuestData[5].questId[instance->GetSpawnMode() & 1]))
+                        case DATA_OOZE_DANCE_ACHIEVEMENT:
+                            IsOozeDanceEligible = data ? true : false;
                             break;
-
-                        switch (data)
+                        case DATA_NAUSEA_ACHIEVEMENT:
+                            IsNauseaEligible = data ? true : false;
+                            break;
+                        case DATA_ORB_WHISPERER_ACHIEVEMENT:
+                            IsOrbWhispererEligible = data ? true : false;
+                            break;
+                        case DATA_SINDRAGOSA_FROSTWYRMS:
+                            FrostwyrmGUIDs.insert(data);
+                            break;
+                        case DATA_SPINESTALKER:
+                            SpinestalkerTrash.insert(data);
+                            break;
+                        case DATA_RIMEFANG:
+                            RimefangTrash.insert(data);
+                            break;
+                        case DATA_COLDFLAME_JETS:
+                            ColdflameJetsState = data;
+                            if (ColdflameJetsState == DONE)
+                                SaveToDB();
+                            break;
+                        case DATA_SINDRAGOSA_GAUNTLET:
+                            HandleGameObject(SindragosaGauntletDoorGUID, data == DONE);
+                            SindragosaGauntletState = data;
+                            if (SindragosaGauntletState == DONE)
+                                SaveToDB();
+                            break;
+                        case DATA_BLOOD_QUICKENING_STATE:
                         {
-                            case IN_PROGRESS:
-                                Events.ScheduleEvent(EVENT_UPDATE_EXECUTION_TIME, 60000);
-                                BloodQuickeningMinutes = 30;
-                                DoUpdateWorldState(WORLDSTATE_SHOW_TIMER, 1);
-                                DoUpdateWorldState(WORLDSTATE_EXECUTION_TIME, BloodQuickeningMinutes);
+                            // skip if nothing changes
+                            if (BloodQuickeningState == data)
                                 break;
-                            case DONE:
-                                Events.CancelEvent(EVENT_UPDATE_EXECUTION_TIME);
-                                BloodQuickeningMinutes = 0;
-                                DoUpdateWorldState(WORLDSTATE_SHOW_TIMER, 0);
+                    
+                            // 5 is the index of Blood Quickening
+                            if (!sPoolMgr->IsSpawnedObject<Quest>(WeeklyQuestData[5].questId[instance->GetSpawnMode() & 1]))
                                 break;
-                            default:
-                                break;
+                    
+                            switch (data)
+                            {
+                                case IN_PROGRESS:
+                                    Events.ScheduleEvent(EVENT_UPDATE_EXECUTION_TIME, 60000);
+                                    BloodQuickeningMinutes = 30;
+                                    DoUpdateWorldState(WORLDSTATE_SHOW_TIMER, 1);
+                                    DoUpdateWorldState(WORLDSTATE_EXECUTION_TIME, BloodQuickeningMinutes);
+                                    break;
+                                case DONE:
+                                    Events.CancelEvent(EVENT_UPDATE_EXECUTION_TIME);
+                                    BloodQuickeningMinutes = 0;
+                                    DoUpdateWorldState(WORLDSTATE_SHOW_TIMER, 0);
+                                    break;
+                                default:
+                                    break;
+                            }
+                    
+                            BloodQuickeningState = data;
+                            SaveToDB();
+                            break;
                         }
 
-                        BloodQuickeningState = data;
-                        SaveToDB();
-                        break;
+                        default: break;
                     }
-                    default:
-                        break;
                 }
             }
 
@@ -1341,8 +1369,8 @@ class instance_icecrown_citadel : public InstanceMapScript
 
             void PrepareGunshipEvent(Player* player)
             {
-                Transport* hammerShip;
-                Transport* skybreakerShip;
+                Transport* hammerShip = NULL;
+                Transport* skybreakerShip = NULL;
 
                 // need for next data checks
                 //if (GetBossState(DATA_GUNSHIP_EVENT) == DONE)

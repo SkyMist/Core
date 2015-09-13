@@ -1036,7 +1036,7 @@ class ObjectMgr
         uint64 GenerateVoidStorageItemId();
 
         // New Loot-based Lockout system.
-        uint32 GetWeeklyBossLootQuestId(uint32 creatureEntry);
+        uint32 GetWeeklyBossLootQuestId(uint32 creatureEntry, uint32 difficulty);
 
         typedef std::multimap<int32, uint32> ExclusiveQuestGroups;
         ExclusiveQuestGroups mExclusiveQuestGroups;

@@ -480,13 +480,13 @@ void WorldSession::DoLootRelease(uint64 lguid)
             {
                 for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
                     if (Player* groupGuy = itr->getSource())
-                        if (GetPlayer()->IsInMap(groupGuy) && creature->HasWeeklyBossLootQuestId() && !groupGuy->IsFirstWeeklyBossKill(creature->GetEntry()) && groupGuy->CanLootWeeklyBoss(creature->GetEntry()))
-                            groupGuy->SetWeeklyBossLooted(creature->GetEntry(), true);
+                        if (GetPlayer()->IsInMap(groupGuy) && creature->HasWeeklyBossLootQuestId() && !groupGuy->IsFirstWeeklyBossKill(creature) && groupGuy->CanLootWeeklyBoss(creature))
+                            groupGuy->SetWeeklyBossLooted(creature, true);
             }
             else
             {
-                if (creature->HasWeeklyBossLootQuestId() && !GetPlayer()->IsFirstWeeklyBossKill(creature->GetEntry()) && GetPlayer()->CanLootWeeklyBoss(creature->GetEntry()))
-                    GetPlayer()->SetWeeklyBossLooted(creature->GetEntry(), true);
+                if (creature->HasWeeklyBossLootQuestId() && !GetPlayer()->IsFirstWeeklyBossKill(creature) && GetPlayer()->CanLootWeeklyBoss(creature))
+                    GetPlayer()->SetWeeklyBossLooted(creature, true);
             }
 
             creature->RemoveFlag(OBJECT_FIELD_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);

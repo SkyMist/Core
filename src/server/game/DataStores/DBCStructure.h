@@ -1605,7 +1605,7 @@ struct LFGDungeonEntry
     // Helpers
     uint32 Entry() const { return ID + (type << 24); }
     // 1 = LFG_TYPE_DUNGEON
-    bool isScenario() const { return type == 1 && tankNeeded == 0 && healerNeeded == 0 && dpsNeeded == 3; }
+    bool isScenario() const { return type == 1 && tankNeeded == 0 && healerNeeded == 0 && (dpsNeeded == 3 || dpsNeeded == 1); }
 };
 
 
@@ -1667,7 +1667,7 @@ struct MapEntry
     uint32      MapID;                                      // 0
     //char*     internalname;                               // 1        unused
     uint32      map_type;                                   // 2
-    //uint32    flags;                                      // 3
+    uint32      flags;                                      // 3        map flags
     //uint32    isPvp;                                      // 4        0 / 1 / 2 / 3 transport only
     char*       name;                                       // 5        m_MapName_lang
     uint32      linked_zone;                                // 6        m_areaTableID
@@ -1711,6 +1711,8 @@ struct MapEntry
     {
         return MapID == 0 || MapID == 1 || MapID == 530 || MapID == 571 || MapID == 860 || MapID == 870;
     }
+
+    bool HasDynamicDifficulty() const { return (flags & MAP_FLAGS_HAS_DYNAMIC_DIFFICULTY) != 0; }
 };
 
 // @author Selenium: 5.4 valid
@@ -1810,6 +1812,22 @@ struct QuestFactionRewEntry
 {
   uint32      id;
   int32       QuestRewFactionValue[10];
+};
+
+struct QuestPOIBlobEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    uint32      type;                                       // 1 m_Type
+    uint32      mapId;                                      // 2 m_mapId
+    uint32      unk;                                        // 3 m_unk questId?
+};
+
+struct QuestPOIPointEntry
+{
+    uint32      Id;                                         // 0 m_Id
+    int32       x;                                          // 1 m_zoneX
+    int32       y;                                          // 2 m_zoneY
+    uint32      blobId;                                     // 3 m_Id
 };
 
 struct RandomPropertiesPointsEntry
@@ -2311,10 +2329,10 @@ struct SpellPowerEntry
 struct SpellRuneCostEntry
 {
     uint32  ID;                                             // 0
-    uint32  RuneCost[4];                                    // 1-3 (0=blood, 1=frost, 2=unholy, 3=wtf)
+    uint32  RuneCost[4];                                    // 1-3 (0 = Blood, 1 = Frost, 2 = Unholy, 3 = Death)
     uint32  runePowerGain;                                  // 4
 
-    bool NoRuneCost() const { return RuneCost[0] == 0 && RuneCost[1] == 0 && RuneCost[2] == 0; }
+    bool NoRuneCost() const { return RuneCost[0] == 0 && RuneCost[1] == 0 && RuneCost[2] == 0 && RuneCost[3] == 0; }
     bool NoRunicPowerGain() const { return runePowerGain == 0; }
 };
 
