@@ -1814,14 +1814,16 @@ struct QuestFactionRewEntry
   int32       QuestRewFactionValue[10];
 };
 
+// Used for Archaeology and some quests.
 struct QuestPOIBlobEntry
 {
     uint32      Id;                                         // 0 m_Id
     uint32      type;                                       // 1 m_Type
     uint32      mapId;                                      // 2 m_mapId
-    uint32      unk;                                        // 3 m_unk questId?
+    uint32      worldMapAreaId;                             // 3 m_worldMapAreaId
 };
 
+// Used for Archaeology and some quests.
 struct QuestPOIPointEntry
 {
     uint32      Id;                                         // 0 m_Id
@@ -1866,10 +1868,11 @@ struct ResearchSiteEntry
 {
     uint32 ID;                                              // 0
     uint32 mapId;                                           // 1
-    uint32 POIid;                                           // 2
+    uint32 POIid;                                           // 2 Blob Id from QuestPOIBlob - API ArcheologyGetVisibleBlobID.
     //char* areaName;                                       // 3
     //uint32 flags;                                         // 4
 };
+
 // @author Selenium: 5.4 valid
 struct ScalingStatDistributionEntry
 {

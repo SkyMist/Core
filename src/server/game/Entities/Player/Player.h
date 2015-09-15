@@ -2944,7 +2944,7 @@ class Player : public Unit, public GridObject<Player>
         void SetWeeklyBossLooted(Creature* creature, bool looted);
         std::set<uint32> GetKilledWeeklyBossMaps();
         std::list<uint32> GetKilledWeeklyBosses(uint32 mapId, uint32 difficulty);
-		uint32 GetKilledWeeklyBossEncounterMask(uint32 mapId, uint32 difficulty);
+        uint32 GetKilledWeeklyBossEncounterMask(uint32 mapId, uint32 difficulty);
 
         // Dynamic Difficulty system.
         void AddDynamicDifficultyMap(uint32 mapId);
