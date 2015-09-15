@@ -2342,7 +2342,7 @@ bool InstanceMap::AddPlayerToMap(Player* player)
                 mapSave = sInstanceSaveMgr->AddInstanceSave(GetId(), GetInstanceId(), Difficulty(GetSpawnMode()), 0, true);
             }
 
-            // check for existing instance binds
+            // Check for existing instance binds for the difficulty.
             InstancePlayerBind* playerBind = player->GetBoundInstance(GetId(), Difficulty(GetSpawnMode()));
             if (playerBind && playerBind->perm)
             {
