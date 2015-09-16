@@ -17,7 +17,7 @@ namespace Packets
     };
     
     template<class Header>
-    class ServerPacket : Packet
+    class ServerPacket : public Packet
     {
         public:
             ServerPacket(ServerOpcodes Opcode);
@@ -31,10 +31,10 @@ namespace Packets
     };
     
     template<class Header>
-    class ClientPacket : Packet
+    class ClientPacket : public Packet
     {
         public:
-            ClientPacket(uv_buf_t* Buffer);
+            ClientPacket(const uv_buf_t* Buffer);
             ~ClientPacket();
         
             ClientOpcodes GetOpcode();

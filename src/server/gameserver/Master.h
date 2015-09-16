@@ -23,8 +23,7 @@
 #ifndef _MASTER_H
 #define _MASTER_H
 
-#include <Common.h>
-#include <Networking/Networking.h>
+#include "GameServiceHandler.h"
 
 /// Start the server
 class Master : public Networking::Server
@@ -32,8 +31,13 @@ class Master : public Networking::Server
     public:
         Master();
         ~Master();
+    
         int Run();
         void Stop();
+    
+        void Update();
+        void CreateServiceHandlerInstance(uv_tcp_t* ClientSocket) override;
+        void AddServiceHandler(std::string AccountName, GameServiceHandler* Handler);
 
     private:
         bool _StartDB();
@@ -45,7 +49,12 @@ class Master : public Networking::Server
         uv_signal_t _signalInt;
         uv_signal_t _signalBrk;
         uv_signal_t _signalTrm;
+        uv_idle_t   _updateHandle;
         uv_loop_t   _loop;
+    
+        std::chrono::system_clock::time_point _lastTickTime;
+    
+        GameServiceHandlerMap _sessions;
 };
 
 #define sMaster ACE_Singleton<Master, ACE_Null_Mutex>::instance()

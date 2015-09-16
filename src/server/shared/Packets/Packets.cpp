@@ -33,13 +33,13 @@ uv_buf_t* Packets::ServerPacket<Header>::ToBuffer()
 }
 
 template<class Header>
-Packets::ClientPacket<Header>::ClientPacket(uv_buf_t* Buffer)
+Packets::ClientPacket<Header>::ClientPacket(const uv_buf_t* Buffer)
 {
 
 }
 
 template<>
-Packets::ClientPacket<Packets::NormalHeader>::ClientPacket(uv_buf_t* Buffer)
+Packets::ClientPacket<Packets::NormalHeader>::ClientPacket(const uv_buf_t* Buffer)
 {
     Packets::NormalHeader _header;
     memcpy(&_header, Buffer->base, sizeof(Packets::NormalHeader));
@@ -48,7 +48,7 @@ Packets::ClientPacket<Packets::NormalHeader>::ClientPacket(uv_buf_t* Buffer)
 }
 
 template<>
-Packets::ClientPacket<Packets::SetupHeader>::ClientPacket(uv_buf_t* Buffer)
+Packets::ClientPacket<Packets::SetupHeader>::ClientPacket(const uv_buf_t* Buffer)
 {
     Packets::SetupHeader _header;
     memcpy(&_header, Buffer->base, sizeof(Packets::SetupHeader));

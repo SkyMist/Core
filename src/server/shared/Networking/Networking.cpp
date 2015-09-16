@@ -1,6 +1,8 @@
 #include "Networking.h"
-#include "Packets/Headers.h"
+#include "Packets/Auth.h"
 #include "Log.h"
+#include "../../../../dep/cryptopp/cryptlib.h"
+#include "../../../../dep/cryptopp/osrng.h"
 
 int Networking::Server::StartNetworking(std::string Address, uint16 port)
 {
@@ -29,6 +31,11 @@ int Networking::Server::StartNetworking(std::string Address, uint16 port)
     }
     
     return 0;
+}
+
+void Networking::Server::StopNetworking()
+{
+    uv_close(reinterpret_cast<uv_handle_t*>(&_acceptSocket), NULL);
 }
 
 void Networking::Server::CreateServiceHandlerInstance(uv_tcp_t* ClientSocket)
@@ -79,6 +86,11 @@ void Networking::WriteCallback(uv_write_t* req, int status)
     delete req;
 }
 
+void Networking::CloseCallback(uv_shutdown_t* req, int status)
+{
+    delete req;
+}
+
 Networking::ServiceHandler::ServiceHandler(uv_tcp_t* ClientSocket)
 {
     _clientSocket = reinterpret_cast<uv_stream_t*>(ClientSocket);
@@ -98,8 +110,10 @@ Networking::ServiceHandler::ServiceHandler(uv_tcp_t* ClientSocket)
 
 Networking::ServiceHandler::~ServiceHandler()
 {
-    uv_read_stop(_clientSocket);
-    
+    uv_shutdown_t* shutdownReq = new uv_shutdown_t;
+    uv_shutdown(shutdownReq, reinterpret_cast<uv_stream_t*>(&_clientSocket), Networking::CloseCallback);
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(&_clientSocket));
+    uv_close(reinterpret_cast<uv_handle_t*>(&_clientSocket), NULL);
 }
 
 void Networking::ServiceHandler::OnDataReceived(const uv_buf_t* Data, std::size_t Size)
@@ -110,30 +124,50 @@ void Networking::ServiceHandler::OnDataReceived(const uv_buf_t* Data, std::size_
         std::string ClientGreeting = reinterpret_cast<const char*>(Data->base+2);
         
         if (BufferSize == 48 && ClientGreeting.compare("WORLD OF WARCRAFT CONNECTION - CLIENT TO SERVER"))
+        {
             _isInitialized = true;
-        
-        //send smsg_auth_challenge
+            
+            CryptoPP::AutoSeededRandomPool rng;
+            _serverChallenge = rng.GenerateWord32();
+            
+            Packets::Auth::AuthChallenge Challenge;
+            
+            Challenge.challenge = _serverChallenge;
+            memcpy(Challenge.DoSChallenge, _cipherSeed, _cipherSize);
+            
+            SendPacket(Challenge);
+        }
+        else
+        {
+            //close the connection, the greeting wasn't transmited properly
+        }
     }
     else
     {
         if(_isAuthenticated)
         {
-            //use the DWORD type header
+            _decryptCipher.ProcessString(reinterpret_cast<byte*>(Data->base), sizeof(Packets::NormalHeader));
+            Packets::NormalClientPacket* Packet = new Packets::NormalClientPacket(Data);
+            ProcessMessage(Packet);
         }
         else
         {
-            //use the WORD type header
+            Packets::SetupClientPacket* Packet = new Packets::SetupClientPacket(Data);
+            ProcessSetupMessage(Packet);
         }
     }
 }
 
 void Networking::ServiceHandler::SendPacket(Packets::NormalServerPacket& Packet)
 {
-    
+    Packet.Process();
+    _encryptCipher.ProcessString(reinterpret_cast<byte*>(Packet.ToBuffer()->base), sizeof(Packets::NormalHeader));
+    WriteToSocket(Packet.ToBuffer());
 }
 
 void Networking::ServiceHandler::SendPacket(Packets::SetupServerPacket& Packet)
 {
+    Packet.Process();
     WriteToSocket(Packet.ToBuffer());
 }
 
@@ -142,4 +176,59 @@ void Networking::ServiceHandler::WriteToSocket(uv_buf_t* Buffer)
     uv_write_t* writeRequest = new uv_write_t;
     writeRequest->data = reinterpret_cast<void*>(Buffer);
     uv_write(writeRequest, _clientSocket, Buffer, 1, Networking::WriteCallback);
+}
+
+void Networking::ServiceHandler::ProcessSetupMessage(Packets::SetupClientPacket *Packet)
+{
+    switch (Packet->GetOpcode())
+    {
+        case Packets::CMSG_AUTH_SESSION:
+        {
+            try {
+                Authenticate(Packet);
+            } catch (std::runtime_error& authError) {
+                sLog->outError(LOG_FILTER_CHARACTER, authError.what());
+            }
+            break;
+        }
+    }
+}
+
+void Networking::ServiceHandler::Authenticate(Packets::SetupClientPacket* Packet)
+{
+    throw new std::runtime_error("No Authentication mechanism provided for session");
+}
+
+void Networking::ServiceHandler::InitializeCipher()
+{
+    std::size_t SeedSize = _cipherSize >> 1;
+    byte* dropBuffer = new byte[1024];
+    
+    byte* DecryptSeed = new byte[SeedSize];
+    memcpy(DecryptSeed, &_cipherSeed[15], SeedSize);
+    
+    byte* EncryptSeed = new byte[SeedSize];
+    memcpy(EncryptSeed, &_cipherSeed[0], SeedSize);
+    
+    CryptoPP::HMAC<CryptoPP::SHA1> DecryptHMAC(DecryptSeed, SeedSize);
+    byte* DecryptSeedDigest = new byte[DecryptHMAC.DIGESTSIZE];
+    
+    DecryptHMAC.Update(_sessionKey, sizeof(_sessionKey));
+    DecryptHMAC.Final(DecryptSeedDigest);
+    _decryptCipher = CryptoPP::Weak::ARC4(DecryptSeedDigest, DecryptHMAC.DIGESTSIZE);
+    memset(dropBuffer, 0, 1024);
+    _decryptCipher.ProcessString(dropBuffer, 1024);
+    delete[] DecryptSeed;
+    
+    CryptoPP::HMAC<CryptoPP::SHA1> EncryptHMAC(EncryptSeed, SeedSize);
+    byte* EncryptSeedDigest = new byte[EncryptHMAC.DIGESTSIZE];
+    
+    EncryptHMAC.Update(_sessionKey, sizeof(_sessionKey));
+    EncryptHMAC.Final(EncryptSeedDigest);
+    _encryptCipher = CryptoPP::Weak::ARC4(EncryptSeedDigest, EncryptHMAC.DIGESTSIZE);
+    memset(dropBuffer, 0, 1024);
+    _encryptCipher.ProcessString(dropBuffer, 1024);
+    delete[] EncryptSeed;
+    
+    delete[] dropBuffer;
 }

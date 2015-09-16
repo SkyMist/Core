@@ -85,6 +85,8 @@
 #include <sstream>
 #include <algorithm>
 #include <atomic>
+#include <chrono>
+#include <ctime>
 
 #include "Threading/LockedQueue.h"
 #include "Threading/Threading.h"

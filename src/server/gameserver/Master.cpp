@@ -34,13 +34,11 @@
 #include "Log.h"
 #include "Master.h"
 #include "RARunnable.h"
-#include "TCSoap.h"
 #include "Timer.h"
 #include "Util.h"
 #include "AuthSocket.h"
 #include "RealmList.h"
 
-#include "BigNumber.h"
 
 #ifdef _WIN32
 #include "ServiceWin32.h"
@@ -49,50 +47,29 @@ extern int m_ServiceStatus;
 
 void C_SignalCallback(uv_signal_t* handle, int signum)
 {
+    Master* Server = reinterpret_cast<Master*>(handle->data);
+    
     switch (signum)
     {
         case SIGINT:
-            World::StopNow(RESTART_EXIT_CODE);
+            //to be replaced with proper restart code
+            //World::StopNow(RESTART_EXIT_CODE);
+            Server->Stop();
             break;
         case SIGTERM:
 #ifdef _WIN32
         case SIGBREAK:
             if (m_ServiceStatus != 1)
 #endif
-                World::StopNow(SHUTDOWN_EXIT_CODE);
+                //World::StopNow(SHUTDOWN_EXIT_CODE);
+                Server->Stop();
             break;
     }
 }
 
-void C_FreezeThread(void* data)
+void C_UpdateTick(uv_idle_t* handle)
 {
-    uint32 DelayTime = *reinterpret_cast<uint32*>(data);
-    
-    if (!DelayTime)
-        return;
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Starting up anti-freeze thread (%u seconds max stuck time)...", DelayTime/1000);
-    uint32 w_loops = 0;
-    uint32 w_lastchange = 0;
-    while (!World::IsStopped())
-    {
-        sleep(1000);
-        uint32 curtime = getMSTime();
-        // normal work
-        uint32 worldLoopCounter = World::m_worldLoopCounter;
-        if (w_loops != worldLoopCounter)
-        {
-            w_lastchange = curtime;
-            w_loops = worldLoopCounter;
-        }
-        // possible freeze
-        else if (getMSTimeDiff(w_lastchange, curtime) > DelayTime)
-        {
-            sLog->outError(LOG_FILTER_WORLDSERVER, "World Thread hangs, kicking out server!");
-            // ASSERT(false);
-            exit(0);
-        }
-    }
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Anti-freeze thread exiting without problems.");
+    reinterpret_cast<Master*>(handle->data)->Update();
 }
 
 Master::Master()
@@ -100,8 +77,18 @@ Master::Master()
     uv_loop_init(&_loop);
     
     uv_signal_init(&_loop, &_signalInt);
+    _signalInt.data = reinterpret_cast<void*>(this);
+    
     uv_signal_init(&_loop, &_signalTrm);
+    _signalTrm.data = reinterpret_cast<void*>(this);
+    
     uv_signal_init(&_loop, &_signalBrk);
+    _signalBrk.data = reinterpret_cast<void*>(this);
+    
+    uv_idle_init(&_loop, &_updateHandle);
+    _updateHandle.data = reinterpret_cast<void*>(this);
+    
+    _lastTickTime = std::chrono::system_clock::now();
 }
 
 Master::~Master()
@@ -110,15 +97,14 @@ Master::~Master()
     uv_signal_stop(&_signalBrk);
     uv_signal_stop(&_signalTrm);
     
+    uv_idle_stop(&_updateHandle);
+    
     uv_loop_close(&_loop);
 }
 
 /// Main function
 int Master::Run()
 {
-    BigNumber seed1;
-    seed1.SetRand(16 * 8);
-
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon)", _FULLVERSION);
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "<Ctrl-C> to stop.\n");
 
@@ -149,7 +135,7 @@ int Master::Run()
         return 1;
 
     ///- Initialize the World
-    sWorld->SetInitialWorldSettings();
+    //sWorld->SetInitialWorldSettings();
 
     ///- Register worldserver's signal handlers
     uv_signal_start(&_signalInt, C_SignalCallback, SIGINT);
@@ -218,41 +204,19 @@ int Master::Run()
         }
     }
     #endif
-    //Start soap serving thread
-    ACE_Based::Thread* soap_thread = NULL;
-
-    if (ConfigMgr::GetBoolDefault("SOAP.Enabled", false))
-    {
-        TCSoapRunnable* runnable = new TCSoapRunnable();
-        runnable->setListenArguments(ConfigMgr::GetStringDefault("SOAP.IP", "127.0.0.1"), uint16(ConfigMgr::GetIntDefault("SOAP.Port", 7878)));
-        soap_thread = new ACE_Based::Thread(runnable);
-    }
-    
-    ///- Setup up freeze catcher thread
-    uint32* DelayTime = new uint32;
-    *DelayTime = ConfigMgr::GetIntDefault("MaxCoreStuckTime", 0);
-    uv_thread_t FreezeThread;
-    uv_thread_create(&FreezeThread, C_FreezeThread, reinterpret_cast<void*>(DelayTime));
 
     ///- Launch the world listener socket
     StartNetworking(ConfigMgr::GetStringDefault("BindIP", "0.0.0.0"), sWorld->getIntConfig(CONFIG_PORT_WORLD));
     
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon) ready...", _FULLVERSION);
     
+    uv_idle_start(&_updateHandle, C_UpdateTick);
+    
     uv_run(&_loop, UV_RUN_DEFAULT);
     // when the main thread closes the singletons get unloaded
     // since worldrunnable uses them, it will crash if unloaded after master
-    uv_thread_join(&FreezeThread);
-    delete DelayTime;
-    
-    rar_thread.wait();
 
-    if (soap_thread)
-    {
-        soap_thread->wait();
-        soap_thread->destroy();
-        delete soap_thread;
-    }
+    rar_thread.wait();
 
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "Halting process...");
 
@@ -314,15 +278,37 @@ int Master::Run()
     return World::GetExitCode();
 }
 
+void Master::Update()
+{
+    std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - _lastTickTime);
+    //call all the update calls
+    _lastTickTime = std::chrono::system_clock::now();
+}
+
+void Master::CreateServiceHandlerInstance(uv_tcp_t* ClientSocket)
+{
+    new GameServiceHandler(ClientSocket);
+}
+
+void Master::AddServiceHandler(std::string AccountName, GameServiceHandler *Handler)
+{
+    _sessions[AccountName] = Handler;
+    
+    //send smsg_auth_response to successful "login"
+    //and send all the required packets
+    //or put to login queue
+}
+
 /// Stop the event loop, kills the server
 void Master::Stop()
 {
     //stop the accepting socket
     //save everything to the DB
     //disconnect all the connected players
-    uv_stop(&_loop);
+    StopNetworking();
     ClearOnlineAccounts();
     _StopDB();
+    uv_stop(&_loop);
 }
 
 /// Initialize connection to the databases
