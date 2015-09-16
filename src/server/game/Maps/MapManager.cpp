@@ -239,6 +239,30 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
         }
     }
 
+    // If the player or group leader defeats any bosses on Normal and goes out, switches diff and tries to enter on Heroic difficulty, he can't. Or the other way around.
+    // He can do it only by using Dynamic Difficulty, inside the instance.
+    uint32 boundDifficultyToCheck = 0;
+    switch (targetDifficulty)
+    {
+        case RAID_DIFFICULTY_10MAN_NORMAL:
+            boundDifficultyToCheck = RAID_DIFFICULTY_10MAN_HEROIC;
+            break;
+
+        case RAID_DIFFICULTY_25MAN_NORMAL:
+            boundDifficultyToCheck = RAID_DIFFICULTY_25MAN_HEROIC;
+            break;
+
+        case RAID_DIFFICULTY_10MAN_HEROIC:
+            boundDifficultyToCheck = RAID_DIFFICULTY_10MAN_NORMAL;
+            break;
+
+        case RAID_DIFFICULTY_25MAN_HEROIC:
+            boundDifficultyToCheck = RAID_DIFFICULTY_25MAN_NORMAL;
+            break;
+
+        default: break;
+    }
+
     // Get instance where the player's group is bound & it's map.
     if (group)
     {
@@ -252,9 +276,16 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
         // Player permanently bound to different instance than group leader one.
         if (group->GetLeaderGUID())
         if (Player* leader = ObjectAccessor::FindPlayer(group->GetLeaderGUID()))
-		{
-             InstancePlayerBind* leaderBoundInstance = leader->GetBoundInstance(mapid, leader->GetDifficulty(entry->IsRaid()));
-             InstancePlayerBind* playerBoundInstance = player->GetBoundInstance(mapid, player->GetDifficulty(entry->IsRaid())); // Player inherits leader difficulty.
+        {
+            InstancePlayerBind* leaderBoundInstance = leader->GetBoundInstance(mapid, leader->GetDifficulty(entry->IsRaid()));
+            InstancePlayerBind* playerBoundInstance = player->GetBoundInstance(mapid, player->GetDifficulty(entry->IsRaid())); // Player inherits leader difficulty.
+
+            // The leader / players cannot enter a raid if a boss is killed on Normal and alive on Heroic (unless using Dynamic Difficulty), and viceversa.
+            if (leader->GetBoundInstance(mapid, Difficulty(boundDifficultyToCheck)))
+            {
+                player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY);
+                return false;
+            }
 
             // The leader and the player are both bound to an instance, check if it's the same.
             if (leaderBoundInstance && playerBoundInstance)
@@ -292,8 +323,17 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
             return false;
         }
     }
+    else
+    {
+        // The player cannot enter a raid if a boss is killed on Normal and alive on Heroic (unless using Dynamic Difficulty), and viceversa.
+        if (player->GetBoundInstance(mapid, Difficulty(boundDifficultyToCheck)))
+        {
+            player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY);
+            return false;
+        }
+    }
 
-    // Players are only allowed to enter 5 (modifiable by config) instances per hour.
+    // As of Patch 5.4.7, players are limited to entering 10 instances per hour (modifiable by config).
     if (entry->IsDungeon() && (!player->GetGroup() || (player->GetGroup() && !player->GetGroup()->isLFGGroup())))
     {
         uint32 instanceIdToCheck = 0;

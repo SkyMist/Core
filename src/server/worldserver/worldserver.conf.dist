@@ -1126,8 +1126,8 @@ DBC.EnforceItemAttributes = 1
 
 #
 #   AccountInstancesPerHour
-#        Description: Controls the max amount of different instances player can enter within hour
-#        Default:     5
+#        Description: Controls the max amount of different instances players can enter per hour.
+#        Default:     10
 
 AccountInstancesPerHour = 10
 
