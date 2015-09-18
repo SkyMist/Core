@@ -404,10 +404,6 @@ class boss_ancient_regail : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);
@@ -690,10 +686,6 @@ class boss_ancient_asani : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);
@@ -975,10 +967,6 @@ class boss_protector_kaolan : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);

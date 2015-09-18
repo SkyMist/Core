@@ -19691,13 +19691,13 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellProto)
             {
                 if (instanceMap->IsRaidOrHeroicDungeon())
                 {
-                    if (creature->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND)
+                    // Weekly loot lock maps do not permanently bind players, they can kill the bosses any number of times.
+                    if (creature->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND && instanceMap->GetInstanceLockType() != INSTANCE_LOCK_LOOT_BASED)
                         ((InstanceMap*)instanceMap)->PermBindAllPlayers(creditedPlayer);
                 }
                 else
                 {
-                    // the reset time is set but not added to the scheduler
-                    // until the players leave the instance
+                    // The reset time is set but not added to the scheduler until the players leave the instance.
                     time_t resettime = creature->GetRespawnTimeEx() + 2 * HOUR;
                     if (InstanceSave* save = sInstanceSaveMgr->GetInstanceSave(creature->GetInstanceId()))
                         if (save->GetResetTime() < resettime) save->SetResetTime(resettime);
