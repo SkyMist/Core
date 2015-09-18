@@ -2774,7 +2774,11 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
     }
 
     // You must be in a raid group to enter a raid, unless the raid is from an older expansion.
-	if ((uint32(player->GetExpByLevel()) <= map->Expansion()) && (!group || !group->isRaidGroup()))
+	if (!_player->isGameMaster() && uint32(player->GetExpByLevel()) <= map->Expansion() && (!group || !group->isRaidGroup()))
+        return;
+
+    // You must satisfy special requirements to be able to use this. Ex: defeat LK on Heroic to unlock that difficulty and the possibility of changing to it.
+    if (_player->Satisfy(sObjectMgr->GetAccessRequirement(map->GetId(), difficulty), map->GetId(), true))
         return;
 
     uint32 result = DIFF_CHANGE_START; // Default result: Success, start swap. ! DIFF_CHANGE_START causes the sending of CMSG_LOADING_SCREEN. Ends with DIFF_CHANGE_SUCCESS.
