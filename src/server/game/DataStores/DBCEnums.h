@@ -455,7 +455,10 @@ enum MapEntryNames
     MAP_KALIMDOR         = 1,
     MAP_OUTLAND          = 530,
     MAP_NORTHREND        = 571,
-    MAP_PANDARIA         = 870
+    MAP_PANDARIA         = 870,
+
+    // Instance maps.
+    MAP_SIEGE_ORGRIMMAR  = 1136
 };
 
 enum AbilityLearnType

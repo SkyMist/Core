@@ -54,7 +54,7 @@ DoorData const doorData[] =
 class instance_siege_of_orgrimmar : public InstanceMapScript
 {
     public:
-        instance_siege_of_orgrimmar() : InstanceMapScript("instance_siege_of_orgrimmar", 1008) { }
+        instance_siege_of_orgrimmar() : InstanceMapScript("instance_siege_of_orgrimmar", 1136) { }
 
         struct instance_siege_of_orgrimmar_InstanceMapScript : public InstanceScript
         {

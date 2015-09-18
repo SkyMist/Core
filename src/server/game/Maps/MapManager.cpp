@@ -227,7 +227,7 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
     }
     
     Group* group = player->GetGroup();
-    if (entry->IsRaid() && entry->Expansion() >= 4)
+    if (entry->IsRaid() && entry->Expansion() >= EXP_PANDARIA)
     {
         // Can only enter in a raid group.
         if ((!group || !group->isRaidGroup()) && !sWorld->getBoolConfig(CONFIG_INSTANCE_IGNORE_RAID))

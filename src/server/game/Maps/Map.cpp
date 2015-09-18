@@ -2609,13 +2609,32 @@ MapDifficulty const* Map::GetMapDifficulty() const
     return GetMapDifficultyData(GetId(), GetDifficulty());
 }
 
+// Instance lock type for the map.
+InstanceLockTypes Map::GetInstanceLockType()
+{
+    // Siege of Orgrimmar, Flex mode, all LFR raids.
+    if (GetId() == MAP_SIEGE_ORGRIMMAR || IsRaid() && (GetDifficulty() == RAID_DIFFICULTY_1025MAN_FLEX || GetDifficulty() == RAID_DIFFICULTY_25MAN_LFR))
+        return INSTANCE_LOCK_LOOT_BASED;
+
+    // Dungeons, Vanilla + TBC raids, WOTLK + MOP Heroic raids.
+    if (IsNonRaidDungeon() || IsRaid() && (Expansion() < EXP_WOTLK || Expansion() >= EXP_WOTLK && (GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC || GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)))
+        return INSTANCE_LOCK_STRICT;
+
+    // Normal WOTLK, MOP raids.
+    if (IsRaid() && (Expansion() >= EXP_WOTLK && (GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL || GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL)))
+        return INSTANCE_LOCK_FLEXIBLE;
+
+    // Not a raid / dungeon map.
+    return INSTANCE_LOCK_NONE;
+}
+
 uint32 InstanceMap::GetMaxPlayers() const
 {
     if (MapDifficulty const* mapDiff = GetMapDifficulty())
     {
         if (mapDiff->maxPlayers || IsRegularDifficulty())    // Normal case (expect that regular difficulty always have correct maxplayers)
             return mapDiff->maxPlayers;
-        else                                                 // DBC have 0 maxplayers for heroic instances with expansion < 2
+        else                                                 // DBC have 0 maxplayers for heroic instances with expansion < EXP_WOTLK
         {                                                    // The heroic entry exists, so we don't have to check anything, simply return normal max players
             MapDifficulty const* normalDiff = GetMapDifficultyData(GetId(), DUNGEON_DIFFICULTY_NORMAL);
             return normalDiff ? normalDiff->maxPlayers : 0;

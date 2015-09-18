@@ -17767,7 +17767,7 @@ void Player::AddQuest(Quest const* quest, Object* questGiver)
     UpdateForQuestWorldObjects();
 }
 
-void Player::CompleteQuest(uint32 quest_id)
+void Player::CompleteQuest(uint32 quest_id, bool noRewards /* = false */)
 {
     if (quest_id)
     {
@@ -17780,7 +17780,7 @@ void Player::CompleteQuest(uint32 quest_id)
         if (Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest_id))
         {
             if (qInfo->HasFlag(QUEST_FLAGS_AUTO_REWARDED))
-                RewardQuest(qInfo, 0, this, false);
+                RewardQuest(qInfo, 0, this, false, noRewards);
             else
                 SendQuestComplete(qInfo);
         }
@@ -17799,7 +17799,7 @@ void Player::IncompleteQuest(uint32 quest_id)
     }
 }
 
-void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, bool announce)
+void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, bool announce /* = true */, bool noRewards /* = false */)
 {
     // This THING should be here to protect code from quests which get player far teleports as a reward. Should work fine, cause far teleport will be executed in Player::Update().
     SetCanDelayTeleport(true);
@@ -17881,10 +17881,12 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     // if (uint32 skill = quest->GetRewardSkillId())
     //     UpdateSkillPro(skill, 1000, quest->GetRewardSkillPoints());
 
-    RewardReputation(quest);
+    // Reward reputation.
+    if (!noRewards)
+        RewardReputation(quest);
 
     // Calculate and award Guild reputation.
-    if (GetGuildId())
+    if (GetGuildId() && !noRewards)
         RewardGuildReputationQuest(quest);
 
     uint16 log_slot = FindQuestSlot(quest_id);
@@ -17899,10 +17901,10 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     else
         QuestXpRate = sWorld->getRate(RATE_XP_QUEST);
 
-    // Not give XP in case already completed once repeatable quest
+    // Do not give XP in case of an already completed one-time repeatable quest.
     uint32 XP = rewarded ? 0 : uint32(quest->XPValue(this) * QuestXpRate);
 
-    // handle SPELL_AURA_MOD_XP_QUEST_PCT auras
+    // Handle SPELL_AURA_MOD_XP_QUEST_PCT auras.
     Unit::AuraEffectList const& ModXPPctAuras = GetAuraEffectsByType(SPELL_AURA_MOD_XP_QUEST_PCT);
     for (Unit::AuraEffectList::const_iterator i = ModXPPctAuras.begin(); i != ModXPPctAuras.end(); ++i)
         AddPct(XP, (*i)->GetAmount());
@@ -17912,20 +17914,23 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     int32 moneyRew = 0;
     if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        GiveXP(XP, NULL);
+    {
+        if (!noRewards)
+            GiveXP(XP, NULL);
+    }
     else
         moneyRew = int32(quest->GetRewMoneyMaxLevel() * sWorld->getRate(RATE_DROP_MONEY));
 
     // Calculate and award Guild XP.
     if (Guild* guild = sGuildMgr->GetGuildById(GetGuildId()))
-        if (GetQuestLevel(quest) > SkyMistCore::XP::GetGrayLevel(getLevel()))
+        if (GetQuestLevel(quest) > SkyMistCore::XP::GetGrayLevel(getLevel()) && !noRewards)
             guild->GiveXP(uint32(guild->CalculateQuestExperienceReward(getLevel(), GetQuestLevel(quest)) * sWorld->getRate(RATE_XP_QUEST)), this);
 
     // Give player extra money if GetRewOrReqMoney > 0 and get ReqMoney if negative
     if (quest->GetRewOrReqMoney())
         moneyRew += quest->GetRewOrReqMoney();
 
-    if (moneyRew)
+    if (moneyRew && !noRewards)
     {
         ModifyMoney(moneyRew);
 
@@ -17933,11 +17938,12 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
             UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_QUEST_REWARD, uint32(moneyRew));
     }
 
-    // honor reward
-    if (uint32 honor = quest->CalculateHonorGain(getLevel()))
-        RewardHonor(NULL, 0, honor);
+    // Honor reward.
+    if (!noRewards)
+        if (uint32 honor = quest->CalculateHonorGain(getLevel()))
+            RewardHonor(NULL, 0, honor);
 
-    // title reward
+    // Title reward.
     if (quest->GetCharTitleId())
     {
         if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(quest->GetCharTitleId()))
@@ -21843,8 +21849,9 @@ void Player::SendRaidInfo()
 
     for (uint8 i = 0; i < MAX_DIFFICULTY; ++i) // Instances.
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
-            if (itr->second.perm)
-                counter++;
+            if (Map* map = sMapMgr->FindMap(itr->second.save->GetMapId(), itr->second.save->GetInstanceId()))
+                if (map->GetInstanceLockType() != INSTANCE_LOCK_LOOT_BASED && itr->second.perm)
+                    counter++;
 
     if (!weeklyBossMaps.empty())           // Weekly loot-based lockout. We have to add the maps number to the counter for sending.
     {
@@ -21858,21 +21865,24 @@ void Player::SendRaidInfo()
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
         {
-            if (itr->second.perm)
+            if (Map* map = sMapMgr->FindMap(itr->second.save->GetMapId(), itr->second.save->GetInstanceId()))
             {
-                InstanceSave* save = itr->second.save;
-                ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
+                if (map->GetInstanceLockType() != INSTANCE_LOCK_LOOT_BASED && itr->second.perm)
+                {
+                    InstanceSave* save = itr->second.save;
+                    ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
 
-                data.WriteBit(instanceGUID[1]);
-                data.WriteBit(1);                            // Expired, negated.
-                data.WriteBit(instanceGUID[0]);
-                data.WriteBit(instanceGUID[4]);
-                data.WriteBit(instanceGUID[2]);
-                data.WriteBit(instanceGUID[3]);
-                data.WriteBit(instanceGUID[5]);
-                data.WriteBit(instanceGUID[6]);
-                data.WriteBit(instanceGUID[7]);
-                data.WriteBit(0);                            // Extended.
+                    data.WriteBit(instanceGUID[1]);
+                    data.WriteBit(1);                            // Expired, negated.
+                    data.WriteBit(instanceGUID[0]);
+                    data.WriteBit(instanceGUID[4]);
+                    data.WriteBit(instanceGUID[2]);
+                    data.WriteBit(instanceGUID[3]);
+                    data.WriteBit(instanceGUID[5]);
+                    data.WriteBit(instanceGUID[6]);
+                    data.WriteBit(instanceGUID[7]);
+                    data.WriteBit(0);                            // Extended.
+                }
             }
         }
     }
@@ -21908,23 +21918,26 @@ void Player::SendRaidInfo()
     {
         for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
         {
-            if (itr->second.perm)
+            if (Map* map = sMapMgr->FindMap(itr->second.save->GetMapId(), itr->second.save->GetInstanceId()))
             {
-                InstanceSave* save = itr->second.save;
-                ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
+                if (map->GetInstanceLockType() != INSTANCE_LOCK_LOOT_BASED && itr->second.perm)
+                {
+                    InstanceSave* save = itr->second.save;
+                    ObjectGuid instanceGUID = MAKE_NEW_GUID(save->GetInstanceId(), 0, HIGHGUID_INSTANCE_SAVE);
 
-                data << uint32(save->GetResetTime() - now);  // Reset time.
-                data.WriteByteSeq(instanceGUID[0]);
-                data.WriteByteSeq(instanceGUID[3]);
-                data << uint32(save->GetMapId());            // Map id.
-                data.WriteByteSeq(instanceGUID[2]);
-                data.WriteByteSeq(instanceGUID[4]);
-                data << uint32(save->GetDifficulty());       // Difficulty.
-                data.WriteByteSeq(instanceGUID[7]);
-                data << uint32(save->GetEncounterMask());    // Completed encounters mask.
-                data.WriteByteSeq(instanceGUID[6]);
-                data.WriteByteSeq(instanceGUID[5]);
-                data.WriteByteSeq(instanceGUID[1]);                
+                    data << uint32(save->GetResetTime() - now);  // Reset time.
+                    data.WriteByteSeq(instanceGUID[0]);
+                    data.WriteByteSeq(instanceGUID[3]);
+                    data << uint32(save->GetMapId());            // Map id.
+                    data.WriteByteSeq(instanceGUID[2]);
+                    data.WriteByteSeq(instanceGUID[4]);
+                    data << uint32(save->GetDifficulty());       // Difficulty.
+                    data.WriteByteSeq(instanceGUID[7]);
+                    data << uint32(save->GetEncounterMask());    // Completed encounters mask.
+                    data.WriteByteSeq(instanceGUID[6]);
+                    data.WriteByteSeq(instanceGUID[5]);
+                    data.WriteByteSeq(instanceGUID[1]);
+                }
             }
         }
     }
@@ -22114,7 +22127,7 @@ bool Player::CheckInstanceLoginValid()
     if (!GetMap())
         return false;
 
-    if (!GetMap()->IsDungeon() || isGameMaster() || (GetMap()->IsDungeon() && GetMap()->Expansion() < 4))
+    if (!GetMap()->IsDungeon() || isGameMaster() || (GetMap()->IsDungeon() && GetMap()->Expansion() < EXP_PANDARIA))
         return true;
 
     if (GetMap()->IsRaid())
@@ -27581,7 +27594,7 @@ void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
                             Player* groupGuy = itr->getSource();
                             if (IsInMap(groupGuy) && groupGuy->IsFirstWeeklyBossKill(deadCreature))
                             {
-                                groupGuy->CompleteQuest(questId);
+                                groupGuy->CompleteQuest(questId, true);
                                 groupGuy->SetWeeklyBossLooted(deadCreature, false);
                             }
                         }
@@ -27590,7 +27603,7 @@ void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
                     {
                         if (IsFirstWeeklyBossKill(deadCreature))
                         {
-                            CompleteQuest(questId); // Not in a group.
+                            CompleteQuest(questId, true); // Not in a group.
                             SetWeeklyBossLooted(deadCreature, false);
                         }
                     }

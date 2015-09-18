@@ -34,14 +34,6 @@ struct MapEntry;
 class Player;
 class Group;
 
-// Lock types since Cataclysm, updated. Check http://eu.battle.net/wow/en/forum/topic/12822112588 .
-enum InstanceLockTypes
-{
-    INSTANCE_LOCK_STRICT    = 0, // Used for: Vanilla + TBC raids, WOTLK Heroic raids, MOP Heroic raids excluding SOO, Mythic diff raids in WOD.
-    INSTANCE_LOCK_FLEXIBLE,      // Used for: Normal WOTLK, MOP raids. SOO excluded.
-    INSTANCE_LOCK_LOOT_BASED     // Used for: All LFR raids, SOO, Normal / Heroic diff raids in WOD.
-};
-
 /*
     Holds the information necessary for creating a new map for an existing instance
 

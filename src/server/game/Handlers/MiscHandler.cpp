@@ -2985,8 +2985,8 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
                         // Update everything.
                         if (groupGuy->IsInWorld())
                         {
-			                map->RemovePlayerFromMap(groupGuy, false);
-			                sScriptMgr->OnPlayerLeaveMap(map, groupGuy);
+                            map->RemovePlayerFromMap(groupGuy, false);
+                            sScriptMgr->OnPlayerLeaveMap(map, groupGuy);
                         }
 
                         Map* map2 = sMapMgr->CreateMap(map->GetId(), groupGuy);
@@ -3034,8 +3034,8 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
             // Update everything.
             if (_player->IsInWorld())
             {
-			    map->RemovePlayerFromMap(_player, false);
-			    sScriptMgr->OnPlayerLeaveMap(map, player);
+                map->RemovePlayerFromMap(_player, false);
+                sScriptMgr->OnPlayerLeaveMap(map, player);
             }
 
             Map* map2 = sMapMgr->CreateMap(map->GetId(), _player);
