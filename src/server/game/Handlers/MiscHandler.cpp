@@ -49,6 +49,7 @@
 #include "ScriptMgr.h"
 #include "MapManager.h"
 #include "InstanceScript.h"
+#include "InstanceSaveMgr.h"
 #include "GameObjectAI.h"
 #include "Group.h"
 #include "AccountMgr.h"
@@ -2743,13 +2744,15 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_PLAYER_DIFFICULTY_CHANGE");
 
-    uint32 difficulty;
+    uint32 difficulty = RAID_DIFFICULTY_10MAN_NORMAL;
 
     Player* player = GetPlayer();
     Map* map = _player->FindMap();
     Group* group = _player->GetGroup();
 
-    switch (map->GetDifficulty())
+    Difficulty oldDifficulty = map->GetDifficulty();
+
+    switch (oldDifficulty)
     {
         case RAID_DIFFICULTY_10MAN_NORMAL:
             difficulty = RAID_DIFFICULTY_10MAN_HEROIC;
@@ -2888,7 +2891,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
                     {
                         if (Player* groupGuy = itr->getSource())
                         {
-                            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 5);
+                            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 4);
                             data.WriteBits(result, 4);
 
                             data.WriteBit(groupCombatCooldown); // Should be false here.
@@ -2901,7 +2904,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
             }
             else // Solo, older expansion raids.
             {
-                WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 5);
+                WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 4);
                 data.WriteBits(result, 4);
 
                 data.WriteBit(groupCombatCooldown); // Should be false here.
@@ -2914,7 +2917,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
         }
         case DIFF_CHANGE_FAIL_SOMEONE_LOCKED:
         {
-            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 8 + 1 + 1);
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 8 + 1);
             data.WriteBits(result, 4);
 
             uint8 bitOrder[8] = { 6, 0, 4, 5, 2, 1, 3, 7 };
@@ -2928,7 +2931,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
         }
         case DIFF_CHANGE_FAIL_COOLDOWN:
         {
-            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 5);
+            WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 4);
             data.WriteBits(result, 4);
 
             data.WriteBit(groupCombatCooldown); // Bit controls difficulty changed recently / someone was in combat.
@@ -2964,15 +2967,45 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
         {
             if (group->IsLeader(_player->GetGUID()))
             {
+                // Set raid difficulty.
                 group->SetRaidDifficulty(Difficulty(difficulty));
-                map->SetSpawnMode(difficulty);
 
                 for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Remove the loading screen and update the zone for all players here.
                 {
                     if (Player* groupGuy = itr->getSource())
                     {
-                        groupGuy->AddDynamicDifficultyMap(map->GetId());
-                        groupGuy->UpdateObjectVisibility(false);
+                        // Add the players the DynamicDifficultyMap if they don't have it.
+                        if (!groupGuy->HasDynamicDifficultyMap(map->GetId()))
+                            groupGuy->AddDynamicDifficultyMap(map->GetId());
+
+                        // Set the players as being on a DynamicDifficultyMap if they are not.
+                        if (!groupGuy->IsOnDynamicDifficultyMap())
+                            groupGuy->SetOnDynamicDifficultyMap(true);
+
+                        // Update everything.
+                        if (groupGuy->IsInWorld())
+                        {
+			                map->RemovePlayerFromMap(groupGuy, false);
+			                sScriptMgr->OnPlayerLeaveMap(map, groupGuy);
+                        }
+
+                        Map* map2 = sMapMgr->CreateMap(map->GetId(), groupGuy);
+
+                        groupGuy->ResetMap();
+                        groupGuy->SetMap(map2);
+
+                        groupGuy->SendInitialPacketsBeforeAddToMap();
+
+                        if (!groupGuy->GetMap()->AddPlayerToMap(groupGuy))
+                            sLog->outError(LOG_FILTER_NETWORKIO, "Failed to change dynamic difficulty for player %s (%d) (G) to map %s because of unknown reason!", groupGuy->GetName(), groupGuy->GetGUIDLow(), map->GetMapName());
+
+                        groupGuy->SendInitialPacketsAfterAddToMap();
+
+                        if (time_t timeReset = sInstanceSaveMgr->GetResetTimeFor(map->GetId(), oldDifficulty))
+                        {
+                            uint32 timeleft = uint32(timeReset - time(NULL));
+                            groupGuy->SendInstanceResetWarning(map->GetId(), oldDifficulty, timeleft);
+                        }
 
                         // Send the difficulty change result to all players to remove their loading screen.
                         WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 4 + 4);
@@ -2990,15 +3023,38 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
             // Set raid difficulty.
             _player->SetRaidDifficulty(Difficulty(difficulty));
 
-            // Add player DynamicDifficultyMap if he doesn't have one.
+            // Add the player the DynamicDifficultyMap if he doesn't have it.
             if (!_player->HasDynamicDifficultyMap(map->GetId()))
                 _player->AddDynamicDifficultyMap(map->GetId());
 
+            // Set the player as being on a DynamicDifficultyMap if he is not.
+            if (!_player->IsOnDynamicDifficultyMap())
+                _player->SetOnDynamicDifficultyMap(true);
+
             // Update everything.
-			map->RemovePlayerFromMap(_player, false);
-			sScriptMgr->OnPlayerLeaveMap(map, player);
+            if (_player->IsInWorld())
+            {
+			    map->RemovePlayerFromMap(_player, false);
+			    sScriptMgr->OnPlayerLeaveMap(map, player);
+            }
+
             Map* map2 = sMapMgr->CreateMap(map->GetId(), _player);
-			((InstanceMap*)map2)->AddPlayerToMap(_player);
+
+            _player->ResetMap();
+            _player->SetMap(map2);
+
+            _player->SendInitialPacketsBeforeAddToMap();
+
+            if (!_player->GetMap()->AddPlayerToMap(_player))
+                sLog->outError(LOG_FILTER_NETWORKIO, "Failed to change dynamic difficulty for player %s (%d) to map %s because of unknown reason!", _player->GetName(), _player->GetGUIDLow(), map->GetMapName());
+
+            _player->SendInitialPacketsAfterAddToMap();
+
+            if (time_t timeReset = sInstanceSaveMgr->GetResetTimeFor(map->GetId(), oldDifficulty))
+            {
+                uint32 timeleft = uint32(timeReset - time(NULL));
+                _player->SendInstanceResetWarning(map->GetId(), oldDifficulty, timeleft);
+            }
 
             // Send the difficulty change result to the player to remove his loading screen.
             WorldPacket data(SMSG_PLAYER_DIFFICULTY_CHANGE_RESULT, 1 + 4 + 4);

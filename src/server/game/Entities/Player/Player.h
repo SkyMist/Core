@@ -2950,7 +2950,9 @@ class Player : public Unit, public GridObject<Player>
         void AddDynamicDifficultyMap(uint32 mapId);
         void DeleteDynamicDifficultyMap(uint32 mapId);
         bool HasDynamicDifficultyMap(uint32 mapId);
-        std::list<uint32> GetDynamicDifficultyMaps();
+        void UpdateDynamicDifficultyMapState();
+        bool IsOnDynamicDifficultyMap() { return isOnDynamicDifficultyMap; }
+        void SetOnDynamicDifficultyMap(bool apply) { isOnDynamicDifficultyMap = apply; }
 
         DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
         uint8 GetRunesState() const { return m_runes.runeState; }
@@ -3243,6 +3245,8 @@ class Player : public Unit, public GridObject<Player>
         Difficulty m_dungeonDifficulty;
         Difficulty m_raidDifficulty;
         Difficulty m_raidMapDifficulty;
+
+        bool isOnDynamicDifficultyMap;
 
         uint32 m_atLoginFlags;
 

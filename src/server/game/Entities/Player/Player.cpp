@@ -898,6 +898,8 @@ Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_rep
     m_dungeonDifficulty = DUNGEON_DIFFICULTY_NORMAL;
     m_raidDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
 
+    isOnDynamicDifficultyMap = false;
+
     m_lastPotionId = 0;
     _talentMgr = new PlayerTalentInfo();
 
@@ -2298,10 +2300,11 @@ void Player::Update(uint32 p_time)
         }
     }
 
-    //we should execute delayed teleports only for alive(!) players
-    //because we don't want player's ghost teleported from graveyard
+    // We should execute delayed teleports only for alive(!) players because we don't want the player's ghost to be teleported from the graveyard.
     if (IsHasDelayedTeleport())
         TeleportTo(m_teleport_dest, m_teleport_options);
+
+    UpdateDynamicDifficultyMapState();
 }
 
 void Player::setDeathState(DeathState s)
@@ -20644,16 +20647,22 @@ uint32 Player::GetKilledWeeklyBossEncounterMask(uint32 mapId, uint32 difficulty)
 }
 // End of New Loot-based Lockout system.
 
-// Dynamic Difficulty system.
+// Dynamic Difficulty raid map system.
 
 void Player::AddDynamicDifficultyMap(uint32 mapId)
 {
-    
+    PreparedStatement* dynDiffMapInsStmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_DYN_DIFFICULTY_MAP);
+    dynDiffMapInsStmt->setUInt32(0, GetGUIDLow());
+    dynDiffMapInsStmt->setUInt32(1, mapId);
+    CharacterDatabase.Execute(dynDiffMapInsStmt);
 }
 
 void Player::DeleteDynamicDifficultyMap(uint32 mapId)
 {
-    
+    PreparedStatement* dynDiffMapDelStmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_DYN_DIFFICULTY_MAP);
+    dynDiffMapDelStmt->setUInt32(0, GetGUIDLow());
+    dynDiffMapDelStmt->setUInt32(1, mapId);
+    CharacterDatabase.Execute(dynDiffMapDelStmt);
 }
 
 bool Player::HasDynamicDifficultyMap(uint32 mapId)
@@ -20661,14 +20670,32 @@ bool Player::HasDynamicDifficultyMap(uint32 mapId)
     if (!mapId)
         return false;
 
+    PreparedStatement* dynDiffMapStmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_DYN_DIFFICULTY_MAP);
+    dynDiffMapStmt->setUInt32(0, GetGUIDLow());
+    dynDiffMapStmt->setUInt32(1, mapId);
+
+    PreparedQueryResult dynDiffMapResult = CharacterDatabase.Query(dynDiffMapStmt);
+    if (dynDiffMapResult)
+        return true;
+
     return false;
 }
 
-std::list<uint32> Player::GetDynamicDifficultyMaps()
+void Player::UpdateDynamicDifficultyMapState()
 {
-	std::list<uint32> DifficultyMaps;
-	DifficultyMaps.push_back(631);
-	return DifficultyMaps;
+    if (Map* map = GetMap())
+    {
+        if (map->IsRaid() && map->HasDynamicDifficulty() && HasDynamicDifficultyMap(map->GetId()))
+        {
+            if (!IsOnDynamicDifficultyMap())
+                SetOnDynamicDifficultyMap(true);
+        }
+        else
+        {
+            if (IsOnDynamicDifficultyMap())
+                SetOnDynamicDifficultyMap(false);
+        }
+    }
 }
 // End of Dynamic Difficulty system.
 
@@ -21657,19 +21684,19 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapId, Difficulty difficulty
     switch (difficulty)
     {
         case RAID_DIFFICULTY_10MAN_NORMAL:
-            retrievalDifficulty = RAID_DIFFICULTY_25MAN_NORMAL;
+            retrievalDifficulty = !IsOnDynamicDifficultyMap() ? RAID_DIFFICULTY_25MAN_NORMAL : RAID_DIFFICULTY_10MAN_HEROIC;
             break;
 
         case RAID_DIFFICULTY_25MAN_NORMAL:
-            retrievalDifficulty = RAID_DIFFICULTY_10MAN_NORMAL;
+            retrievalDifficulty = !IsOnDynamicDifficultyMap() ? RAID_DIFFICULTY_10MAN_NORMAL : RAID_DIFFICULTY_25MAN_HEROIC;
             break;
 
         case RAID_DIFFICULTY_10MAN_HEROIC:
-            retrievalDifficulty = RAID_DIFFICULTY_25MAN_HEROIC;
+            retrievalDifficulty = !IsOnDynamicDifficultyMap() ? RAID_DIFFICULTY_25MAN_HEROIC : RAID_DIFFICULTY_10MAN_NORMAL;
             break;
 
         case RAID_DIFFICULTY_25MAN_HEROIC:
-            retrievalDifficulty = RAID_DIFFICULTY_10MAN_HEROIC;
+            retrievalDifficulty = !IsOnDynamicDifficultyMap() ? RAID_DIFFICULTY_10MAN_HEROIC : RAID_DIFFICULTY_25MAN_NORMAL;
             break;
 
         default: break;

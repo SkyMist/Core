@@ -650,4 +650,9 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PREPARE_STATEMENT(CHAR_SEL_WEEKLY_BOSS_KILL, "SELECT looted FROM character_weekly_boss_kills WHERE guid = ? AND entry = ? AND difficulty = ?", CONNECTION_SYNCH);
     PREPARE_STATEMENT(CHAR_SEL_WEEKLY_BOSS_KILLS, "SELECT entry FROM character_weekly_boss_kills WHERE guid = ? AND mapId = ? AND difficulty = ?", CONNECTION_SYNCH);
     PREPARE_STATEMENT(CHAR_SEL_WEEKLY_BOSS_MAPS, "SELECT DISTINCT mapId, difficulty FROM character_weekly_boss_kills WHERE guid = ?", CONNECTION_SYNCH);
+
+    // Dynamic Difficulty raid map system.
+    PREPARE_STATEMENT(CHAR_INS_DYN_DIFFICULTY_MAP, "INSERT INTO character_dynamic_difficulty_maps (guid, mapId) VALUES (?, ?)", CONNECTION_ASYNC);
+    PREPARE_STATEMENT(CHAR_DEL_DYN_DIFFICULTY_MAP, "DELETE FROM character_dynamic_difficulty_maps WHERE guid = ? AND mapId = ?", CONNECTION_ASYNC);
+    PREPARE_STATEMENT(CHAR_SEL_DYN_DIFFICULTY_MAP, "SELECT mapId FROM character_dynamic_difficulty_maps WHERE guid = ? AND mapId = ?", CONNECTION_SYNCH);
 }
