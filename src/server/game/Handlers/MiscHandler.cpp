@@ -2778,7 +2778,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
         return;
 
     // You must satisfy special requirements to be able to use this. Ex: defeat LK on Heroic to unlock that difficulty and the possibility of changing to it.
-    if (_player->Satisfy(sObjectMgr->GetAccessRequirement(map->GetId(), difficulty), map->GetId(), true))
+    if (!_player->isGameMaster() && _player->Satisfy(sObjectMgr->GetAccessRequirement(map->GetId(), difficulty), map->GetId(), true))
         return;
 
     uint32 result = DIFF_CHANGE_START; // Default result: Success, start swap. ! DIFF_CHANGE_START causes the sending of CMSG_LOADING_SCREEN. Ends with DIFF_CHANGE_SUCCESS.
