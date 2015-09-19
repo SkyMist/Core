@@ -2974,6 +2974,9 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
                 // Set raid difficulty.
                 group->SetRaidDifficulty(Difficulty(difficulty));
 
+                // Update only the leader's map. All group members will be added to it and on the same instance map.
+                Map* map2 = sMapMgr->CreateMap(map->GetId(), _player);
+
                 for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next()) // Remove the loading screen and update the zone for all players here.
                 {
                     if (Player* groupGuy = itr->getSource())
@@ -2992,8 +2995,6 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
                             map->RemovePlayerFromMap(groupGuy, false);
                             sScriptMgr->OnPlayerLeaveMap(map, groupGuy);
                         }
-
-                        Map* map2 = sMapMgr->CreateMap(map->GetId(), groupGuy);
 
                         groupGuy->ResetMap();
                         groupGuy->SetMap(map2);
