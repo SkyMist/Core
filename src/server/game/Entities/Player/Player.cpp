@@ -20515,6 +20515,28 @@ bool Player::IsFirstWeeklyBossKill(Creature* creature)
 
     uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
 
+    // If we've used Dynamic Difficulty get the right difficulty to use by checking for the bind difficulty.
+    if (creature->GetMap()->IsRaid() && HasDynamicDifficultyMap(creature->GetMapId()))
+    {
+        InstancePlayerBind* pBind = GetBoundInstance(creature->GetMapId(), GetDifficulty(creature->GetMap()->IsRaid()));
+        InstanceSave* pSave = pBind->save ? pBind->save : NULL;
+
+        // Get group bind if nothing found.
+        if (!pBind)
+        {
+            InstanceGroupBind* groupBind = NULL;
+            if (Group* group = GetGroup())
+            {
+                groupBind = group->GetBoundInstance(this);
+                if (groupBind)
+                    pSave = groupBind->save;
+            }
+        }
+
+        if (pSave && Difficulty(difficulty) != pSave->GetDifficulty())
+            difficulty = pSave->GetDifficulty();
+    }
+
     uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(creature->GetEntry(), difficulty);
     if (!questId)
         return true;
@@ -20533,6 +20555,28 @@ bool Player::CanLootWeeklyBoss(Creature* creature)
         return true;
 
     uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
+
+    // If we've used Dynamic Difficulty get the right difficulty to use by checking for the bind difficulty.
+    if (creature->GetMap()->IsRaid() && HasDynamicDifficultyMap(creature->GetMapId()))
+    {
+        InstancePlayerBind* pBind = GetBoundInstance(creature->GetMapId(), GetDifficulty(creature->GetMap()->IsRaid()));
+        InstanceSave* pSave = pBind->save ? pBind->save : NULL;
+
+        // Get group bind if nothing found.
+        if (!pBind)
+        {
+            InstanceGroupBind* groupBind = NULL;
+            if (Group* group = GetGroup())
+            {
+                groupBind = group->GetBoundInstance(this);
+                if (groupBind)
+                    pSave = groupBind->save;
+            }
+        }
+
+        if (pSave && Difficulty(difficulty) != pSave->GetDifficulty())
+            difficulty = pSave->GetDifficulty();
+    }
 
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_WEEKLY_BOSS_KILL);
     stmt->setUInt32(0, GetGUIDLow());
@@ -20560,6 +20604,28 @@ void Player::SetWeeklyBossLooted(Creature* creature, bool looted)
         return;
 
     uint32 difficulty = creature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY;
+
+    // If we've used Dynamic Difficulty get the right difficulty to use by checking for the bind difficulty.
+    if (creature->GetMap()->IsRaid() && HasDynamicDifficultyMap(creature->GetMapId()))
+    {
+        InstancePlayerBind* pBind = GetBoundInstance(creature->GetMapId(), GetDifficulty(creature->GetMap()->IsRaid()));
+        InstanceSave* pSave = pBind->save ? pBind->save : NULL;
+
+        // Get group bind if nothing found.
+        if (!pBind)
+        {
+            InstanceGroupBind* groupBind = NULL;
+            if (Group* group = GetGroup())
+            {
+                groupBind = group->GetBoundInstance(this);
+                if (groupBind)
+                    pSave = groupBind->save;
+            }
+        }
+
+        if (pSave && Difficulty(difficulty) != pSave->GetDifficulty())
+            difficulty = pSave->GetDifficulty();
+    }
 
     if (!looted) // This is the first insertion when the player completes the quest, and the boss has not been looted yet.
     {
@@ -27583,6 +27649,26 @@ void Player::RewardPlayerAndGroupAtKill(Unit* victim, bool isBattleGround)
     {
         if (Creature* deadCreature = victim->ToCreature())
         {
+            // Raid bosses don't have a quest for Normal and a separate one for Heroic, just a LFR one. Handle them here.
+            if (deadCreature->GetMap()->GetInstanceLockType() == INSTANCE_LOCK_LOOT_BASED && deadCreature->GetMap()->GetDifficulty() != RAID_DIFFICULTY_25MAN_LFR)
+            {
+                if (Group* group = GetGroup()) // Group case.
+                {
+                    for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                    {
+                        Player* groupGuy = itr->getSource();
+                        if (IsInMap(groupGuy) && groupGuy->CanLootWeeklyBoss(deadCreature))
+                            groupGuy->SetWeeklyBossLooted(deadCreature, false);
+                    }
+                }
+                else
+                {
+                    if (CanLootWeeklyBoss(deadCreature))
+                        SetWeeklyBossLooted(deadCreature, false);
+                }
+            }
+
+            // LFR bosses and world bosses have specific quests.
             if (deadCreature->HasWeeklyBossLootQuestId())
             {
                 if (uint32 questId = sObjectMgr->GetWeeklyBossLootQuestId(deadCreature->GetEntry(), deadCreature->GetMap()->IsRaid() ? GetRaidDifficulty() : REGULAR_DIFFICULTY))

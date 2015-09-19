@@ -2778,7 +2778,7 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
         return;
 
     // You must satisfy special requirements to be able to use this. Ex: defeat LK on Heroic to unlock that difficulty and the possibility of changing to it.
-    if (!_player->isGameMaster() && _player->Satisfy(sObjectMgr->GetAccessRequirement(map->GetId(), difficulty), map->GetId(), true))
+    if (!_player->isGameMaster() && _player->Satisfy(sObjectMgr->GetAccessRequirement(map->GetId(), Difficulty(difficulty)), map->GetId(), true))
         return;
 
     uint32 result = DIFF_CHANGE_START; // Default result: Success, start swap. ! DIFF_CHANGE_START causes the sending of CMSG_LOADING_SCREEN. Ends with DIFF_CHANGE_SUCCESS.
@@ -3005,10 +3005,10 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
 
                         groupGuy->SendInitialPacketsAfterAddToMap();
 
-                        if (time_t timeReset = sInstanceSaveMgr->GetResetTimeFor(map->GetId(), oldDifficulty))
+                        if (time_t timeReset = uint64(sWorld->getWorldState(WS_WEEKLY_QUEST_RESET_TIME)))
                         {
                             uint32 timeleft = uint32(timeReset - time(NULL));
-                            groupGuy->SendInstanceResetWarning(map->GetId(), oldDifficulty, timeleft);
+                            groupGuy->SendInstanceResetWarning(map->GetId(), Difficulty(difficulty), timeleft);
                         }
 
                         // Send the difficulty change result to all players to remove their loading screen.
@@ -3054,10 +3054,10 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
 
             _player->SendInitialPacketsAfterAddToMap();
 
-            if (time_t timeReset = sInstanceSaveMgr->GetResetTimeFor(map->GetId(), oldDifficulty))
+            if (time_t timeReset = uint64(sWorld->getWorldState(WS_WEEKLY_QUEST_RESET_TIME)))
             {
                 uint32 timeleft = uint32(timeReset - time(NULL));
-                _player->SendInstanceResetWarning(map->GetId(), oldDifficulty, timeleft);
+                _player->SendInstanceResetWarning(map->GetId(), Difficulty(difficulty), timeleft);
             }
 
             // Send the difficulty change result to the player to remove his loading screen.

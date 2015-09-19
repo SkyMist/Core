@@ -326,7 +326,7 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
     else
     {
         // The leader / players cannot enter a raid if a boss is killed and they used Dynamic Difficulty for it, unless they use it from inside.
-        if (player->GetBoundInstance(mapid, Difficulty(boundDifficultyToCheck)) && leader->HasDynamicDifficultyMap(mapid))
+        if (player->GetBoundInstance(mapid, Difficulty(boundDifficultyToCheck)) && player->HasDynamicDifficultyMap(mapid))
         {
             player->SendTransferAborted(entry->MapID, TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY);
             return false;
