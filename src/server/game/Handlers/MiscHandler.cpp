@@ -2389,8 +2389,7 @@ void WorldSession::HandleHearthAndResurrect(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleInstanceLockResponse(WorldPacket& recvPacket)
 {
-    uint8 accept;
-    recvPacket >> accept;
+    bool acceptLock = recvPacket.ReadBit();
 
     if (!_player->HasPendingBind())
     {
@@ -2398,7 +2397,7 @@ void WorldSession::HandleInstanceLockResponse(WorldPacket& recvPacket)
         return;
     }
 
-    if (accept)
+    if (acceptLock)
         _player->BindToInstance();
     else
         _player->RepopAtGraveyard();
@@ -2973,6 +2972,14 @@ void WorldSession::HandleChangePlayerDifficulty(WorldPacket& recvData)
             {
                 // Set raid difficulty.
                 group->SetRaidDifficulty(Difficulty(difficulty));
+
+                // Add the leader the DynamicDifficultyMap if he doesn't have it.
+                if (!_player->HasDynamicDifficultyMap(map->GetId()))
+                    _player->AddDynamicDifficultyMap(map->GetId());
+
+                // Set the leader as being on a DynamicDifficultyMap if he is not.
+                if (!_player->IsOnDynamicDifficultyMap())
+                    _player->SetOnDynamicDifficultyMap(true);
 
                 // Update only the leader's map. All group members will be added to it and on the same instance map.
                 Map* map2 = sMapMgr->CreateMap(map->GetId(), _player);

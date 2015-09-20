@@ -269,7 +269,7 @@ enum Opcodes
     CMSG_INITIATE_TRADE                               = 0x12BB, // 5.4.7 18019
     CMSG_INSPECT                                      = 0x01D4, // 5.4.7 18019
     CMSG_INSPECT_HONOR_STATS                          = 0x141A, // 5.4.7 18019
-    CMSG_INSTANCE_LOCK_WARNING_RESPONSE               = 0x0000,
+    CMSG_INSTANCE_LOCK_RESPONSE                       = 0x067F, // 5.4.7 18019
     CMSG_ITEM_REFUND                                  = 0x05FC, // 5.4.7 18019
     CMSG_ITEM_REFUND_INFO                             = 0x10DC, // 5.4.7 18019
     CMSG_ITEM_TEXT_QUERY                              = 0x131B, // 5.4.7 18019
@@ -879,7 +879,7 @@ enum Opcodes
     SMSG_INSPECT_RATED_BG_STATS                       = 0x046B, // 5.4.7 18019
     SMSG_INSPECT_RESULTS_UPDATE                       = 0x0000,
     SMSG_INSPECT_TALENT                               = 0x1E49, // 5.4.7 18019
-    SMSG_INSTANCE_LOCK_WARNING_QUERY                  = 0x0000,
+    SMSG_PENDING_RAID_LOCK                            = 0x1C52, // 5.4.7 18019
     SMSG_INSTANCE_RESET                               = 0x1F72, // 5.4.7 18019
     SMSG_INSTANCE_RESET_FAILED                        = 0x0000,
     SMSG_INSTANCE_SAVE_CREATED                        = 0x04A3, // 5.4.7 18019

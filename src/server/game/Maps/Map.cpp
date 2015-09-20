@@ -2384,12 +2384,16 @@ bool InstanceMap::AddPlayerToMap(Player* player)
                         {
                             uint32 TimeUntilLock = 60000; // Time until the player gets locked.
                             bool lockExtended = false;
+                            bool warningOnly = false;
 
-                            WorldPacket data(SMSG_INSTANCE_LOCK_WARNING_QUERY, 10);
-                            data << uint32(TimeUntilLock);
+                            WorldPacket data(SMSG_PENDING_RAID_LOCK, 10);
+
+                            data.WriteBit(warningOnly);  // events it throws:  1 : INSTANCE_LOCK_WARNING   0 : INSTANCE_LOCK_STOP / INSTANCE_LOCK_START.
+                            data.WriteBit(lockExtended); // extended.
+                            data.FlushBits();
                             data << uint32(i_data ? i_data->GetCompletedEncounterMask() : 0);
-                            data << uint8(lockExtended); // extended.
-                            data << uint8(0);            // events it throws:  1 : INSTANCE_LOCK_WARNING   0 : INSTANCE_LOCK_STOP / INSTANCE_LOCK_START.
+                            data << uint32(TimeUntilLock);
+
                             player->GetSession()->SendPacket(&data);
                             player->SetPendingBind(mapSave->GetInstanceId(), TimeUntilLock);
                         }
