@@ -335,7 +335,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         go ? (const WorldObject*)go : (
         dob ? (const WorldObject*)dob : atr ? (const WorldObject*)atr : (const WorldObject*)ToCorpse())));
 
-    uint32 bitCounter2 = 0;
     bool hasAreaTriggerData = isType(TYPEMASK_AREATRIGGER) && ((AreaTrigger*)this)->GetVisualRadius() != 0.0f;
     bool isSceneObject = false;
 
@@ -413,8 +412,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(transGuid[2]);
         data->WriteBit(transGuid[1]);
         data->WriteBit(transGuid[4]);
-        data->WriteBit(wo->m_movementInfo.has_t_time2);              // HasTransportTime2
         data->WriteBit(wo->m_movementInfo.has_t_time3);              // HasTransportTime3
+        data->WriteBit(wo->m_movementInfo.has_t_time2);              // HasTransportTime2
         data->WriteBit(transGuid[0]);
         data->WriteBit(transGuid[6]);
         data->WriteBit(transGuid[7]);
@@ -443,33 +442,37 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             data->WriteBit(unit->m_movementInfo.has_t_time3);                                                  // Has transport time 3
         }
         data->WriteBit(!unit->m_movementInfo.HavePitch);
-        data->WriteBit(false);
-        data->WriteBits(0, 19);
+        data->WriteBit(false);                                      // UNK.
+        data->WriteBits(0, 19);                                     // bits168 UNK.
         data->WriteBit(guid[1]);
         data->WriteBit(!unit->m_movementInfo.flags2);
-        data->WriteBit(false);
+        data->WriteBit(false);                                      // UNK.
         data->WriteBit(!unit->m_movementInfo.HaveSplineElevation);
+
         if (unit->m_movementInfo.flags2)
             data->WriteBits(uint16(unit->m_movementInfo.flags2), 13);
 
-        data->WriteBit(!unit->HaveOrientation()); // Has Orientation bit
+        data->WriteBit(!unit->HaveOrientation());                   // Has Orientation bit.
         data->WriteBit(!unit->m_movementInfo.time);
         data->WriteBit(!unit->m_movementInfo.flags);
-        data->WriteBit(true);                                       // Movement counter
+        data->WriteBit(true);                                       // bitA8 Movement counter inversed.
         data->WriteBit(guid[2]);
         data->WriteBit(guid[6]);
         data->WriteBit(unit->m_movementInfo.hasFallData);
         data->WriteBit(guid[5]);
         data->WriteBit(guid[4]);
         data->WriteBit(guid[0]);
+
         if (unit->m_movementInfo.flags)
             data->WriteBits(uint32(unit->m_movementInfo.flags), 30);
 
-        data->WriteBit(false);
+        data->WriteBit(false);                                      // UNK.
+
         if (unit->m_movementInfo.hasFallData)
             data->WriteBit(unit->m_movementInfo.hasFallDirection);
 
-        data->WriteBits(0, 22);
+        data->WriteBits(0, 22);                                     // bits98 UNK.
+
         data->WriteBit(guid[7]);
         data->WriteBit(isSplineEnabled);
         data->WriteBit(guid[3]);
@@ -479,19 +482,32 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     
     if (hasAreaTriggerData)
     {
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(false);
-        data->WriteBit(true);    // radius
-        data->WriteBit(false);
-        data->WriteBit(false);
+        bool hasVisualRadius = ((AreaTrigger*)this)->GetVisualRadius() != 0.0f;
+
+        data->WriteBit(false); // bit230 UNK.
+        data->WriteBit(false); // bit258 UNK.
+        data->WriteBit(false); // bit20E UNK.
+        data->WriteBit(false); // bit20F UNK.
+        data->WriteBit(false); // bit228 UNK.
+        data->WriteBit(false); // bit20C UNK.
+        data->WriteBit(false); // bit218 UNK.
+        data->WriteBit(false); // bit20D UNK.
+        data->WriteBit(false); // bit284 UNK.
+
+        // if (bit284 UNK)
+        // {
+        //     data->WriteBits(bits25C, 21);
+        //     data->WriteBits(bits26C, 21);
+        // }
+
+        data->WriteBit(false); // bit298 UNK.
+
+        // if (bit298 UNK)
+        //     data->WriteBits(bits288, 20);
+
+        data->WriteBit(hasVisualRadius); // bit23C, visual radius.
+        data->WriteBit(false); // bit210 UNK.
+        data->WriteBit(false); // bit220 UNK.
     }
 
     if ((flags & UPDATEFLAG_HAS_TARGET) && unit && unit->getVictim())
@@ -521,9 +537,66 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     if (hasAreaTriggerData)
     {
-        *data << float(((AreaTrigger*)this)->GetVisualRadius()); // scale
-        *data << float(((AreaTrigger*)this)->GetVisualRadius()); // scale
-        *data << uint32(8);
+        bool hasVisualRadius = ((AreaTrigger*)this)->GetVisualRadius() != 0.0f;
+
+        if (hasVisualRadius)
+        {
+            *data << float(((AreaTrigger*)this)->GetVisualRadius()); // float234 scale
+            *data << float(((AreaTrigger*)this)->GetVisualRadius()); // float238 scale
+        }
+
+      /*if (bit284 UNK)
+        {
+            for (uint8 i = 0; i < bits26C; ++i)
+            {
+                *data << float(Float270+0);
+                *data << float(Float270+1);
+            }
+
+            *data << float("Float27C");
+
+            for (uint8 i = 0; i < bits25C; ++i)
+            {
+                *data << float(Float260+0);
+                *data << float(Float260+1);
+            }
+
+            *data << float(Float280);
+        }
+
+        if (bit258 UNK)
+        {
+            *data << float(Float244);
+            *data << float(Float250);
+            *data << float(Float254);
+            *data << float(Float248);
+            *data << float(Float240);
+            *data << float(Float24C);
+        }*/
+
+        *data << uint32(8); // Areatrigger id?
+
+      /*if (bit298 UNK)
+        {
+            for (uint8 i = 0; i < bits288; ++i)
+            {
+                *data << float(Float28C+0");
+                *data << float(Float28C+1");
+                *data << float(Float28C+2");
+            }
+        }
+
+        if (bit220 UNK)
+            *data << uint32(int21C);
+
+        if (bit218 UNK)
+            *data << uint32(int214);
+
+        if (bit230 UNK)
+            *data << uint32(int22C);
+
+        if (bit228 UNK)
+            *data << uint32(int224); */
     }
 
     if ((flags & UPDATEFLAG_LIVING) && unit)
@@ -534,9 +607,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         {
             if (unit->m_movementInfo.hasFallDirection)
             {
-                *data << float(unit->m_movementInfo.j_xyspeed);
                 *data << float(unit->m_movementInfo.j_sinAngle);
                 *data << float(unit->m_movementInfo.j_cosAngle);
+                *data << float(unit->m_movementInfo.j_xyspeed);
             }
 
             *data << float(unit->m_movementInfo.j_zspeed);
@@ -546,11 +619,17 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         if (unit->movespline->Initialized() && !unit->movespline->Finalized())
             Movement::PacketBuilder::WriteCreateData(*unit->movespline, *data);
 
+        //for (uint8 i = 0; i < bits168 UNK; ++i)
+        //    *data << float(unk);
+
+        //for (uint8 i = 0; i < bits98 UNK; ++i)
+        //    *data << uint32(Int9C);
+
         *data << float(unit->GetPositionZMinusOffset());
         *data << float(unit->GetPositionY());
-        *data << float(unit->GetSpeed(MOVE_TURN_RATE)); // 188
+        *data << float(unit->GetSpeed(MOVE_FLIGHT)); // 192
         data->WriteByteSeq(guid[6]);
-        *data << unit->GetSpeed(MOVE_FLIGHT); // 192
+        *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK)); //196
 
         if (unit->m_movementInfo.t_guid != 0LL)
         {
@@ -558,17 +637,15 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
             data->WriteByteSeq(transGuid[7]);
             data->WriteByteSeq(transGuid[4]);
+
             if (unit->m_movementInfo.has_t_time3)
-            {
                 *data << uint32(unit->m_movementInfo.t_time3);
-            }
 
             *data << uint32(unit->GetTransTime());
 
             if (unit->m_movementInfo.has_t_time2)
-            {
                 *data << uint32(unit->m_movementInfo.t_time2);
-            }
+
             *data << float(unit->GetTransOffsetO());
             *data << float(unit->GetTransOffsetX());
             data->WriteByteSeq(transGuid[6]);
@@ -584,23 +661,29 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
         *data << float(unit->GetPositionX());
         data->WriteByteSeq(guid[2]);
+
         if (unit->m_movementInfo.HavePitch)
             *data << float(unit->m_movementInfo.pitch);
 
-        *data << float(unit->GetSpeed(MOVE_RUN_BACK)); // 176
-        data->WriteByteSeq(guid[1]);
-        *data << float(unit->GetSpeed(MOVE_SWIM_BACK)); //184
         *data << float(unit->GetSpeed(MOVE_SWIM)); //180
+        data->WriteByteSeq(guid[1]);
+        *data << float(unit->GetSpeed(MOVE_RUN_BACK)); // 176
+        *data << float(unit->GetSpeed(MOVE_SWIM_BACK)); //184
         data->WriteByteSeq(guid[5]);
-        *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK)); //196
-        data->WriteByteSeq(guid[3]);
+
         if (unit->m_movementInfo.HaveSplineElevation)
             *data << float(unit->m_movementInfo.splineElevation);
 
+        // if (bitA8) // Movement counter.
+        //     *data << uint32(IntA8); // Movement count.
+
+        *data << float(unit->GetSpeed(MOVE_TURN_RATE)); // 188
+        data->WriteByteSeq(guid[3]);
         *data << float(unit->GetSpeed(MOVE_RUN)); // 172
         data->WriteByteSeq(guid[7]);
         *data << float(unit->GetSpeed(MOVE_WALK)); //168
         *data << float(unit->GetSpeed(MOVE_PITCH_RATE)); //200
+
         if (unit->m_movementInfo.time)
             *data << uint32(unit->m_movementInfo.time);
 
@@ -670,7 +753,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     //     *data << uint32(int2A0);
 
     // if (810 UNK)
-    //     packet.ReadBytes("Bytes", (int)bits2AA);
+    //     packet.ReadBytes("Bytes", (int)bits2AA); -> string.
 
     if ((flags & UPDATEFLAG_ROTATION) && go)
         *data << uint64(go->GetRotation());
@@ -697,61 +780,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
     if ((flags & UPDATEFLAG_LIVING) && unit && unit->movespline->Initialized() && !unit->movespline->Finalized())
         Movement::PacketBuilder::WriteCreateGuid(*unit->movespline, *data);
-
-    /*
-    data->WriteBits(bitCounter2, 21);               //BitCounter2
-    data->WriteBit(flags & UPDATEFLAG_TRANSPORT);   //isTransport
-    data->WriteBit(hasAreaTriggerData);             //HasAreaTriggerInfo
-    data->WriteBit(0);                              //Bit1
-    data->WriteBit(0);                              //HasUnknown2
-    data->WriteBit(0);                              //Bit2
-    data->WriteBit(0);                              //Bit3
-    data->WriteBit(0);                              //HasUnknown4
-
-    // Transport time related
-    if (bitCounter2)
-    {
-        /*
-        for (uint32 i = 0; i < bitCounter2; i++)
-        todo
-        */
-    /*}
-
-    // HasAreaTriggerInfo
-    if (hasAreaTriggerData)
-    {
-        data->WriteBit(0);
-        data->WriteBit(0);
-        data->WriteBit(0);
-        data->WriteBit(0);
-        data->WriteBit(1); //scale
-        data->WriteBit(0);
-        data->WriteBit(0);
-    }
-
-    // If (HasUnknown2 )
-    // readSomeBits, TODO check via IDA debug
-    //We know have to realign the bits so as to put bytes.
-    data->FlushBits();
-    for (uint32 i = 0; i < bitCounter2; i++)
-    {
-        //unk32
-        //unkfloat
-        //unkfloat
-        //unk32
-        //unkfloat
-        //unkfloatd
-    }
-
-    // HasAreaTriggerInfo
-    if (hasAreaTriggerData)
-    {
-        *data << float(((AreaTrigger*)this)->GetVisualRadius()); // scale
-        *data << float(((AreaTrigger*)this)->GetVisualRadius()); // scale
-        *data << uint32(8); // unk ID
-        *data << float(1); // unk, always 1 in sniff
-        *data << float(1); // unk, always 1 in sniff
-    }*/
 }
 
 void Object::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const

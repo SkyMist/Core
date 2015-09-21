@@ -251,7 +251,7 @@ namespace Movement
             data.WriteBits(0, 2);
         }
         data.WriteBit(unk4);                        // unk bit 38
-        data.WriteBit(false);                       // !has duration
+        data.WriteBit(!move_spline.Duration());     // !has duration
         data.FlushBits();
 
         if (splineType == MonsterMoveFacingTarget)
@@ -323,7 +323,10 @@ namespace Movement
                 WriteCatmullRomPath(move_spline.spline, data);
         }
         data.WriteByteSeq(moverGUID[6]);
-        data << move_spline.Duration();
+
+        if (move_spline.Duration())
+            data << move_spline.Duration();
+
         if (splineType == MonsterMoveFacingSpot)
             data << move_spline.facing.f.x << move_spline.facing.f.y << move_spline.facing.f.z;
 

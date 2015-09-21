@@ -171,22 +171,24 @@ namespace Movement
     void PacketBuilder::WriteCreateBits(MoveSpline const& moveSpline, ByteBuffer& data)
     {
         bool isSplineEnabled = moveSpline.Initialized() && !moveSpline.Finalized();
-        ASSERT(isSplineEnabled);
-
         MoveSplineFlag flags = moveSpline.splineflags;
 
-        data.WriteBit(true);
-        data.WriteBit(flags.parabolic || flags.animation);
-        data.WriteBits(uint8(moveSpline.spline.mode()), 2);
-        data.WriteBits(moveSpline.getPath().size(), 20);
-        data.WriteBits(flags.raw(), 25);
-        data.WriteBit(flags.parabolic);
-        data.WriteBit(false);
+        data.WriteBit(isSplineEnabled);
 
-        if (!isSplineEnabled)
+        if (isSplineEnabled)
         {
-            data.WriteBits(0, 2);
-            data.WriteBits(0, 21);
+            data.WriteBit(flags.parabolic || flags.animation);
+            data.WriteBits(uint8(moveSpline.spline.mode()), 2);
+            data.WriteBits(moveSpline.getPath().size(), 20);
+            data.WriteBits(flags.raw(), 25);
+            data.WriteBit(flags.parabolic);
+            data.WriteBit(false); // bit134 UNK
+
+            // if (bit134 UNK)
+            // {
+            //     data.WriteBits(word300 UNK, 2);
+            //     data.WriteBits(bits138 UNK, 21);
+            // }
         }
     }
 
