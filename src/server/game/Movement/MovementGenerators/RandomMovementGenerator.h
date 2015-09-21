@@ -31,7 +31,7 @@ class RandomMovementGenerator : public MovementGeneratorMedium< T, RandomMovemen
         void Initialize(T &);
         void Finalize(T &);
         void Reset(T &);
-        bool Update(T &, const uint32);
+        bool Update(T &, const uint32 &diff);
         bool GetResetPosition(T&, float& x, float& y, float& z);
         MovementGeneratorType GetMovementGeneratorType() { return RANDOM_MOTION_TYPE; }
     private:

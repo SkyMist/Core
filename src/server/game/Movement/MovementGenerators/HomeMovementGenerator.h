@@ -37,7 +37,7 @@ class HomeMovementGenerator<Creature> : public MovementGeneratorMedium< Creature
         void Initialize(Creature &);
         void Finalize(Creature &);
         void Reset(Creature &);
-        bool Update(Creature &, const uint32);
+        bool Update(Creature &, const uint32 &time_diff);
         MovementGeneratorType GetMovementGeneratorType() { return HOME_MOTION_TYPE; }
 
     private:

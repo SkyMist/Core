@@ -339,24 +339,24 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     bool hasAreaTriggerData = isType(TYPEMASK_AREATRIGGER) && ((AreaTrigger*)this)->GetVisualRadius() != 0.0f;
     bool isSceneObject = false;
 
-    data->WriteBit(false); // 676
-    data->WriteBit((flags & UPDATEFLAG_VEHICLE) && unit);                      // hasVehicleData 488
-    data->WriteBit(false); // 1044
-    data->WriteBit((flags & UPDATEFLAG_ROTATION) && go);                       // hasRotation 512
-    data->WriteBit(false); // 0
-    data->WriteBit((flags & UPDATEFLAG_LIVING) && unit);                       // isAlive 368
-    data->WriteBit(false); // 1032
-    data->WriteBit(false); // 2
-    data->WriteBit(hasAreaTriggerData); // 668
-    data->WriteBit(flags & UPDATEFLAG_SELF);                                   // unk bit 680
-    data->WriteBit(false); // 681
-    data->WriteBit(false); // 1
-    data->WriteBit((flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo);          // hasGameObjectData 424
-    data->WriteBit(flags & (UPDATEFLAG_TRANSPORT | UPDATEFLAG_TRANSPORT_ARR)); // 476
-    data->WriteBit(flags & UPDATEFLAG_ANIMKITS);                               // HasAnimKits 498
-    data->WriteBit((flags & UPDATEFLAG_STATIONARY_POSITION) && wo);            // hasStationaryPosition 448
-    data->WriteBit((flags & UPDATEFLAG_HAS_TARGET) && unit && unit->getVictim());  // hasTarget 464
-    data->WriteBit(false); // 3
+    data->WriteBit(false);                                                        // 676 UNK
+    data->WriteBit((flags & UPDATEFLAG_VEHICLE) && unit);                         // hasVehicleData 488
+    data->WriteBit(false);                                                        // 1044 UNK
+    data->WriteBit((flags & UPDATEFLAG_ROTATION) && go);                          // hasRotation 512
+    data->WriteBit(false);                                                        // fakeBit 0
+    data->WriteBit((flags & UPDATEFLAG_LIVING) && unit);                          // isAlive 368
+    data->WriteBit(false);                                                        // hasSceneObjectData 1032
+    data->WriteBit(false);                                                        // fakeBit 2
+    data->WriteBit(hasAreaTriggerData);                                           // hasAreaTrigger 668
+    data->WriteBit(flags & UPDATEFLAG_SELF);                                      // hasSelf 680
+    data->WriteBit(false);                                                        // 681 UNK
+    data->WriteBit(false);                                                        // fakeBit 1
+    data->WriteBit((flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo);             // hasGameObjectData (hasTransportPosition) 424
+    data->WriteBit(flags & (UPDATEFLAG_TRANSPORT | UPDATEFLAG_TRANSPORT_ARR));    // hasTransport 476
+    data->WriteBit(flags & UPDATEFLAG_ANIMKITS);                                  // HasAnimKits 498
+    data->WriteBit((flags & UPDATEFLAG_STATIONARY_POSITION) && wo);               // hasStationaryPosition 448
+    data->WriteBit((flags & UPDATEFLAG_HAS_TARGET) && unit && unit->getVictim()); // hasTarget 464
+    data->WriteBit(false);                                                        // fakeBit 3
 
     std::vector<uint32> transportFrames;
     if (flags & UPDATEFLAG_TRANSPORT_ARR)
@@ -374,15 +374,16 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
             //    transportFrames.push_back(goInfo->transport.nextFrame3);
         }
     }
-    data->WriteBits(transportFrames.size(), 22); // 1068
+    data->WriteBits(transportFrames.size(), 22);                                  // transportFramesCount 1068
 
-    data->WriteBit(false); // 810
-    data->WriteBit(false); // 1064
+    data->WriteBit(false);                                                        // 810 UNK
+    data->WriteBit(false);                                                        // 1064 UNK
 
+    // =========== Define needed stuff and make the checks. =================
     bool isLiving = (flags & UPDATEFLAG_LIVING) && unit;
     bool isTransportPos = (flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo;
     bool isStationaryPos = (flags & UPDATEFLAG_STATIONARY_POSITION) && wo;
-    
+
     ASSERT(!((isLiving && isTransportPos) || (isLiving && isStationaryPos)));
     if ((flags & UPDATEFLAG_HAS_TARGET) && unit && unit->getVictim())
     {
@@ -398,6 +399,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     {
         const_cast<Unit*>(unit)->m_movementInfo.Normalize();
     }
+    // =========== End of needed stuff, structure below. ================
+
+    // if (1064 UNK)
+    //     bits418 = packet.ReadBits(22);
 
     if ((flags & UPDATEFLAG_GO_TRANSPORT_POSITION) && wo)
     {
@@ -503,6 +508,9 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         data->WriteBit(1);                                                      // Missing AnimKit2
         data->WriteBit(1);                                                      // Missing AnimKit3
     }
+
+    // if (810 UNK)
+    //     data->WriteBits(bits2AA, 7);
 
     data->FlushBits();
 
@@ -658,6 +666,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     else if (flags & UPDATEFLAG_TRANSPORT_ARR)
         *data << uint32(GetUInt32Value(GAMEOBJECT_LEVEL));
 
+    // if (676 UNK)
+    //     *data << uint32(int2A0);
+
+    // if (810 UNK)
+    //     packet.ReadBytes("Bytes", (int)bits2AA);
+
     if ((flags & UPDATEFLAG_ROTATION) && go)
         *data << uint64(go->GetRotation());
 
@@ -667,12 +681,19 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << float(unit->GetOrientation());
     }
 
+    // if (1044 UNK)
+    //     *data << uint32(int410);
+
     // if (flags & UPDATEFLAG_ANIMKITS)
     // {
     //     *data << uint16(1);                                                      // Missing AnimKit1
     //     *data << uint16(1);                                                      // Missing AnimKit2
     //     *data << uint16(1);                                                      // Missing AnimKit3
     // }
+
+    // if (1064 UNK)
+    //     for (uint8 i = 0; i < bits418; ++i)
+    //         *data << uint32(Int3F8);
 
     if ((flags & UPDATEFLAG_LIVING) && unit && unit->movespline->Initialized() && !unit->movespline->Finalized())
         Movement::PacketBuilder::WriteCreateGuid(*unit->movespline, *data);

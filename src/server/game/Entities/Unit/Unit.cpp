@@ -481,7 +481,7 @@ void Unit::UpdateSplinePosition()
         pos.m_positionZ = loc.z;
         pos.SetOrientation(loc.orientation);
 
-        if (Unit* vehicle = GetVehicleBase())
+        // if (Unit* vehicle = GetVehicleBase())
             if (TransportBase* transport = GetDirectTransport())
                 transport->CalculatePassengerPosition(loc.x, loc.y, loc.z, loc.orientation);
     }
