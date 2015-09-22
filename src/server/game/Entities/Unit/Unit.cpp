@@ -1167,6 +1167,10 @@ void Unit::CastSpell(SpellCastTargets const& targets, SpellInfo const* spellInfo
     if (!spellInfo)
         return;
 
+    // Cannot cast while being Crowd Controlled.
+    if (IsInCC())
+        return;
+
     // TODO: this is a workaround - not needed anymore, but required for some scripts :(
     if (!originalCaster && triggeredByAura)
         originalCaster = triggeredByAura->GetCasterGUID();
@@ -22020,8 +22024,7 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
     bool hasSpline = IsSplineEnabled();
 
     // Fix player movement visibility during being CC-ed.
-    bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;
-    if (isInCC && !hasSpline)
+    if (GetTypeId() == TYPEID_PLAYER && IsInCC() && !hasSpline)
         hasSpline = true;
 
     data->WriteBits(GetUnitMovementFlags(), 30);
@@ -23220,8 +23223,7 @@ void Unit::WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extr
     bool hasSpline = IsSplineEnabled();
 
     // Fix player movement visibility during being CC-ed.
-    bool isInCC = (GetTypeId() == TYPEID_PLAYER && (HasAuraType(SPELL_AURA_MOD_CONFUSE) || HasAuraType(SPELL_AURA_MOD_FEAR))) ? true : false;
-    if (isInCC && !hasSpline)
+    if (GetTypeId() == TYPEID_PLAYER && IsInCC() && !hasSpline)
         hasSpline = true;
 
     ObjectGuid guid = mi->guid;
