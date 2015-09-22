@@ -23,7 +23,6 @@
 #include <vector>
 #include "SharedDefines.h"
 #include "Object.h"
-#include <LockedVector.h>
 
 class MovementGenerator;
 class Unit;
@@ -34,25 +33,25 @@ class Unit;
 // values 0 ... MAX_DB_MOTION_TYPE-1 used in DB
 enum MovementGeneratorType
 {
-    IDLE_MOTION_TYPE      = 0,                              // IdleMovementGenerator.h
-    RANDOM_MOTION_TYPE    = 1,                              // RandomMovementGenerator.h
-    WAYPOINT_MOTION_TYPE  = 2,                              // WaypointMovementGenerator.h
-    MAX_DB_MOTION_TYPE    = 3,                              // *** this and below motion types can't be set in DB.
-    ANIMAL_RANDOM_MOTION_TYPE = MAX_DB_MOTION_TYPE,         // AnimalRandomMovementGenerator.h
-    CONFUSED_MOTION_TYPE  = 4,                              // ConfusedMovementGenerator.h
-    CHASE_MOTION_TYPE     = 5,                              // TargetedMovementGenerator.h
-    HOME_MOTION_TYPE      = 6,                              // HomeMovementGenerator.h
-    FLIGHT_MOTION_TYPE    = 7,                              // WaypointMovementGenerator.h
-    POINT_MOTION_TYPE     = 8,                              // PointMovementGenerator.h
-    FLEEING_MOTION_TYPE   = 9,                              // FleeingMovementGenerator.h
-    DISTRACT_MOTION_TYPE  = 10,                             // IdleMovementGenerator.h
-    ASSISTANCE_MOTION_TYPE= 11,                             // PointMovementGenerator.h (first part of flee for assistance)
+    IDLE_MOTION_TYPE                = 0,                    // IdleMovementGenerator.h
+    RANDOM_MOTION_TYPE              = 1,                    // RandomMovementGenerator.h
+    WAYPOINT_MOTION_TYPE            = 2,                    // WaypointMovementGenerator.h
+    MAX_DB_MOTION_TYPE              = 3,                    // *** This and below motion types can't be set in DB. ***
+    ANIMAL_RANDOM_MOTION_TYPE       = MAX_DB_MOTION_TYPE,   // AnimalRandomMovementGenerator.h
+    CONFUSED_MOTION_TYPE            = 4,                    // ConfusedMovementGenerator.h
+    CHASE_MOTION_TYPE               = 5,                    // TargetedMovementGenerator.h
+    HOME_MOTION_TYPE                = 6,                    // HomeMovementGenerator.h
+    FLIGHT_MOTION_TYPE              = 7,                    // WaypointMovementGenerator.h
+    POINT_MOTION_TYPE               = 8,                    // PointMovementGenerator.h
+    FLEEING_MOTION_TYPE             = 9,                    // FleeingMovementGenerator.h
+    DISTRACT_MOTION_TYPE            = 10,                   // IdleMovementGenerator.h
+    ASSISTANCE_MOTION_TYPE          = 11,                   // PointMovementGenerator.h (first part of flee for assistance)
     ASSISTANCE_DISTRACT_MOTION_TYPE = 12,                   // IdleMovementGenerator.h (second part of flee for assistance)
-    TIMED_FLEEING_MOTION_TYPE = 13,                         // FleeingMovementGenerator.h (alt.second part of flee for assistance)
-    FOLLOW_MOTION_TYPE    = 14,
-    ROTATE_MOTION_TYPE    = 15,
-    EFFECT_MOTION_TYPE    = 16,
-    NULL_MOTION_TYPE      = 17,
+    TIMED_FLEEING_MOTION_TYPE       = 13,                   // FleeingMovementGenerator.h (alt.second part of flee for assistance)
+    FOLLOW_MOTION_TYPE              = 14,
+    ROTATE_MOTION_TYPE              = 15,
+    EFFECT_MOTION_TYPE              = 16,
+    NULL_MOTION_TYPE                = 17
 };
 
 enum MovementSlot
@@ -60,7 +59,7 @@ enum MovementSlot
     MOTION_SLOT_IDLE,
     MOTION_SLOT_ACTIVE,
     MOTION_SLOT_CONTROLLED,
-    MAX_MOTION_SLOT,
+    MAX_MOTION_SLOT
 };
 
 enum MMCleanFlag
@@ -73,30 +72,38 @@ enum MMCleanFlag
 enum RotateDirection
 {
     ROTATE_DIRECTION_LEFT,
-    ROTATE_DIRECTION_RIGHT,
+    ROTATE_DIRECTION_RIGHT
 };
 
-// assume it is 25 yard per 0.6 second
+// Assume it is 25 yards / 0.6 seconds.
 #define SPEED_CHARGE    42.0f
 
-class MotionMaster //: private std::stack<MovementGenerator *>
+class MotionMaster
 {
     private:
-        //typedef std::stack<MovementGenerator *> Impl;
         typedef MovementGenerator* _Ty;
 
         void pop()
         {
+            if (empty())
+                return;
+
             Impl[_top] = NULL;
-            while (!top())
+            while (!empty() && !top())
                 --_top;
         }
         void push(_Ty _Val) { ++_top; Impl[_top] = _Val; }
 
-        bool needInitTop() const { return _needInit[_top]; }
-        void InitTop();
-    public:
+        bool needInitTop() const 
+        { 
+            if (empty())
+                return false;
+            return _needInit[_top]; 
+        }
 
+        void InitTop();
+
+    public:
         explicit MotionMaster(Unit* unit) : _expList(NULL), _top(-1), _owner(unit), _cleanFlag(MMCF_NONE)
         {
             for (uint8 i = 0; i < MAX_MOTION_SLOT; ++i)
@@ -112,11 +119,15 @@ class MotionMaster //: private std::stack<MovementGenerator *>
 
         bool empty() const { return (_top < 0); }
         int size() const { return _top + 1; }
-        _Ty top() const { return Impl[_top]; }
-        _Ty GetMotionSlot(int slot) const { return Impl[slot]; }
+        _Ty top() const { return !empty() ? Impl[_top] : NULL; }
+        _Ty GetMotionSlot(int slot) const
+        {   if (slot  < 0)
+                slot = 0;
+            return Impl[slot];
+        }
 
-        void DirectDelete(_Ty curr);
-        void DelayedDelete(_Ty curr);
+        void DirectDelete(_Ty current);
+        void DelayedDelete(_Ty current);
 
         void UpdateMotion(uint32 diff);
         void Clear(bool reset = true)
@@ -153,8 +164,7 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         void MoveChase(Unit* target, float dist = 0.0f, float angle = 0.0f);
         void MoveConfused();
         void MoveFleeing(Unit* enemy, uint32 time = 0);
-        void MovePoint(uint32 id, const Position &pos)
-            { MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ); }
+        void MovePoint(uint32 id, Position const& pos) { MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ); }
         void MovePoint(uint32 id, float x, float y, float z);
 
         // These two movement types should only be used with creatures having landing/takeoff animations
@@ -165,8 +175,9 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         void MoveCharge(float x, float y, float z, float speed = SPEED_CHARGE, uint32 id = EVENT_CHARGE);
         void MoveKnockbackFrom(float srcX, float srcY, float speedXY, float speedZ);
         void MoveJumpTo(float angle, float speedXY, float speedZ);
-        void MoveJump(float x, float y, float z, float speedXY, float speedZ, float o = 10.0f, uint32 id = 0);
-        void CustomJump(float x, float y, float z, float speedXY, float speedZ, uint32 id = 0);
+        void MoveJump(Position const& pos, float speedXY, float speedZ, uint32 id = EVENT_JUMP) { MoveJump(pos.m_positionX, pos.m_positionY, pos.m_positionZ, speedXY, speedZ, id); };
+        void MoveJump(float x, float y, float z, float speedXY, float speedZ, float o = 10.0f, uint32 id = EVENT_JUMP);
+        void CustomJump(float x, float y, float z, float speedXY, float speedZ, uint32 id = EVENT_JUMP);
         void MoveFall(uint32 id = 0);
         void MoveBackward(uint32 id, float x, float y, float z, float speed = 0.0f);
 
@@ -184,7 +195,7 @@ class MotionMaster //: private std::stack<MovementGenerator *>
 
         bool GetDestination(float &x, float &y, float &z);
     private:
-        void Mutate(MovementGenerator *m, MovementSlot slot);                  // use Move* functions instead
+        void Mutate(MovementGenerator* movementGen, MovementSlot slot);                  // use Move* functions instead
 
         void DirectClean(bool reset);
         void DelayedClean();
@@ -192,7 +203,7 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         void DirectExpire(bool reset);
         void DelayedExpire();
 
-        typedef ACE_Based::LockedVector<_Ty> ExpireList;
+        typedef std::vector<_Ty> ExpireList;
         ExpireList* _expList;
         _Ty Impl[MAX_MOTION_SLOT];
         int _top;
@@ -201,4 +212,3 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         uint8 _cleanFlag;
 };
 #endif
-

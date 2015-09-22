@@ -1898,6 +1898,7 @@ void Spell::EffectJumpDest(SpellEffIndex effIndex)
     {
         case 49575: // Death Grip 
         case 92832: // Leap of Faith
+        case 110726: // Leap of Faith
             m_caster->GetMotionMaster()->CustomJump(x, y, z, speedXY, speedZ);
             break;
         case 49376:
