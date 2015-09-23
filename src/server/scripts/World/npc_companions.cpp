@@ -219,7 +219,7 @@ class npc_pengu : public CreatureScript
 
             void ReceiveEmote(Player* /*player*/, uint32 emote)
             {
-                if (me->isMoving())
+                if (me->IsMoving())
                     return;
 
                 switch (emote)

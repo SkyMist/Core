@@ -19,6 +19,7 @@
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
+#include "PlayerMovement.h"
 #include "AchievementMgr.h"
 #include "ArchaeologyMgr.h"
 #include "Arena.h"
@@ -839,15 +840,6 @@ enum DuelCompleteType
     DUEL_FLED        = 2
 };
 
-enum TeleportToOptions
-{
-    TELE_TO_GM_MODE             = 0x01,
-    TELE_TO_NOT_LEAVE_TRANSPORT = 0x02,
-    TELE_TO_NOT_LEAVE_COMBAT    = 0x04,
-    TELE_TO_NOT_UNSUMMON_PET    = 0x08,
-    TELE_TO_SPELL               = 0x10,
-};
-
 /// Type of environmental damages
 enum EnviromentalDamage
 {
@@ -1327,20 +1319,10 @@ class Player : public Unit, public GridObject<Player>
         }
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0);
-        bool TeleportTo(WorldLocation const &loc, uint32 options = 0)
-        {
-            return TeleportTo(loc.GetMapId(), loc.GetPositionX(), loc.GetPositionY(), loc.GetPositionZ(), loc.GetOrientation(), options);
-        }
+        bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
         bool TeleportToBGEntryPoint();
 
-        void SetSummonPoint(uint32 mapid, float x, float y, float z)
-        {
-            m_summon_expire = time(NULL) + MAX_PLAYER_SUMMON_DELAY;
-            m_summon_mapid = mapid;
-            m_summon_x = x;
-            m_summon_y = y;
-            m_summon_z = z;
-        }
+        void SetSummonPoint(uint32 mapid, float x, float y, float z);
         void SummonIfPossible(bool agree);
 
         bool Create(uint32 guidlow, CharacterCreateInfo* createInfo);
@@ -1417,14 +1399,7 @@ class Player : public Unit, public GridObject<Player>
 
         void setDeathState(DeathState s);                   // overwrite Unit::setDeathState
 
-        void InnEnter (time_t time, uint32 mapid, float x, float y, float z)
-        {
-            inn_pos_mapid = mapid;
-            inn_pos_x = x;
-            inn_pos_y = y;
-            inn_pos_z = z;
-            time_inn_enter = time;
-        }
+        void InnEnter (time_t time, uint32 mapid, float x, float y, float z);
 
         float GetRestBonus() const { return m_rest_bonus; }
         void SetRestBonus(float rest_bonus_new);
@@ -2729,14 +2704,15 @@ class Player : public Unit, public GridObject<Player>
         /*********************************************************/
         /***                 VARIOUS SYSTEMS                   ***/
         /*********************************************************/
+
+        // Movement information.
+        void ReadMovementInfo(WorldPacket& data, MovementInfo* mi, ExtraMovementStatusElement* extras = NULL);
+
         void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
         Unit* m_mover;
         WorldObject* m_seer;
-        void SetFallInformation(uint32 time, float z)
-        {
-            m_lastFallTime = time;
-            m_lastFallZ = z;
-        }
+
+        void SetFallInformation(uint32 time, float z);
         void HandleFall(MovementInfo const& movementInfo);
 
         bool IsKnowHowFlyIn(uint32 mapid, uint32 zone, uint32 spellId = 0) const;

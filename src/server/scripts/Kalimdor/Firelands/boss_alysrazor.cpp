@@ -346,7 +346,7 @@ class boss_alysrazor : public CreatureScript
             void EnterEvadeMode()
             {
                 me->CombatStop(true);
-                if (me->isMoving())
+                if (me->IsMoving())
                     me->StopMoving();
 
                 me->GetMotionMaster()->MovementExpired(false);

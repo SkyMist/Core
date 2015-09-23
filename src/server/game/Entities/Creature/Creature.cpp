@@ -24,6 +24,7 @@
 #include "GroupMgr.h"
 #include "SpellMgr.h"
 #include "Creature.h"
+#include "CreatureMovement.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "Player.h"
@@ -50,7 +51,6 @@
 #include "Group.h"
 #include "MoveSplineInit.h"
 #include "MoveSpline.h"
-// apply implementation of the singletons
 
 TrainerSpell const* TrainerSpellData::Find(uint32 spell_id) const
 {
@@ -456,6 +456,9 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
     }
 
+    // Replace below with UpdateMovementFlags();
+    // UpdateMovementFlags();
+
     //! Suspect it works this way:
     //! If creature can walk and fly (usually with pathing)
     //! Set MOVEMENTFLAG_CAN_FLY. Otherwise if it can only fly
@@ -487,7 +490,7 @@ void Creature::Update(uint32 diff)
     {
         m_LOSCheck_player = true;
         m_LOSCheck_creature = true;
-        m_LOSCheckTimer = DEFAULT_VISIBILITY_NOTIFY_PERIOD*2;
+        m_LOSCheckTimer = DEFAULT_VISIBILITY_NOTIFY_PERIOD * 2;
     }
     else
         m_LOSCheckTimer -= diff;
@@ -513,6 +516,9 @@ void Creature::Update(uint32 diff)
         if (m_vehicleKit)
             m_vehicleKit->Reset();
     }
+
+    // Put here UpdateMovementFlags().
+    // UpdateMovementFlags();
 
     switch (m_deathState)
     {
@@ -1752,6 +1758,9 @@ void Creature::setDeathState(DeathState s)
         CreatureTemplate const* cinfo = GetCreatureTemplate();
         SetWalk(true);
 
+        // Put here UpdateMovementFlags().
+        // UpdateMovementFlags();
+
         // Set the movement flags if the creature is in that mode. (Only fly if actually in air, only swim if in water, etc)
         float ground = GetPositionZ();
         GetMap()->GetWaterOrGroundLevel(GetPositionX(), GetPositionY(), GetPositionZ(), &ground);
@@ -2557,33 +2566,6 @@ time_t Creature::GetRespawnTimeEx() const
         return now;
 }
 
-void Creature::GetRespawnPosition(float &x, float &y, float &z, float* ori, float* dist) const
-{
-    if (m_DBTableGuid)
-    {
-        if (CreatureData const* data = sObjectMgr->GetCreatureData(GetDBTableGUIDLow()))
-        {
-            x = data->posX;
-            y = data->posY;
-            z = data->posZ;
-            if (ori)
-                *ori = data->orientation;
-            if (dist)
-                *dist = data->spawndist;
-
-            return;
-        }
-    }
-
-    x = GetPositionX();
-    y = GetPositionY();
-    z = GetPositionZ();
-    if (ori)
-        *ori = GetOrientation();
-    if (dist)
-        *dist = 0;
-}
-
 void Creature::AllLootRemovedFromCorpse()
 {
     if (!HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
@@ -2743,20 +2725,6 @@ void Creature::FarTeleportTo(Map* map, float X, float Y, float Z, float O)
     Relocate(X, Y, Z, O);
     SetMap(map);
     GetMap()->AddToMap(this);
-}
-
-void Creature::SetPosition(float x, float y, float z, float o)
-{
-    // prevent crash when a bad coord is sent by the client
-    if (!SkyMistCore::IsValidMapCoord(x, y, z, o))
-    {
-        sLog->outDebug(LOG_FILTER_UNITS, "Creature::SetPosition(%f, %f, %f) .. bad coordinates!", x, y, z);
-        return;
-    }
-
-    GetMap()->CreatureRelocation(ToCreature(), x, y, z, o);
-    if (IsVehicle())
-        GetVehicleKit();
 }
 
 bool Creature::IsDungeonBoss() const

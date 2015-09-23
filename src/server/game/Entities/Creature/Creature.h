@@ -19,6 +19,7 @@
 #ifndef CREATURE_H
 #define CREATURE_H
 
+#include "CreatureMovement.h"
 #include "Common.h"
 #include "Unit.h"
 #include "UpdateMask.h"

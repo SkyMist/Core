@@ -901,7 +901,7 @@ class npc_warmaster_blackhorn_twilight_assault_drake: public CreatureScript
                         case EVENT_TWILIGHT_BARRAGE:
                         {
                             bReady = true;
-                            if (!me->isMoving())
+                            if (!me->IsMoving())
                             {
                                 uint8 i = (uint8)urand(0, 24);
                                 me->CastSpell(damagePos[i].GetPositionX(), damagePos[i].GetPositionY(), damagePos[i].GetPositionZ(), SPELL_TWILIGHT_BARRAGE, false);

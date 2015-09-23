@@ -1400,7 +1400,7 @@ class spell_yanzhu_blackout_brew : public SpellScriptLoader
                     return;
 
                 // Remove a stack if the player is moving or jumping (Jumping checked by MOVEMENTFLAG_FALLING and PositionZ compared to boss one plus a small margin).
-                if (GetTarget()->isMoving() || GetTarget()->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) || GetTarget()->GetPositionZ() > GetCaster()->GetPositionZ() + 0.6f)
+                if (GetTarget()->IsMoving() || GetTarget()->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) || GetTarget()->GetPositionZ() > GetCaster()->GetPositionZ() + 0.6f)
                     if (AuraPtr blackoutBrew = GetTarget()->GetAura(SPELL_BLACKOUT_BREW)) // Get the aura.
                         if (blackoutBrew->GetStackAmount() > 1)
                             blackoutBrew->SetStackAmount(blackoutBrew->GetStackAmount() - 1); // Remove a stack till the base one is left.
@@ -1608,7 +1608,7 @@ class spell_yanzhu_sudsy : public SpellScriptLoader
                     jumpedHigh = true;
 			    }
 
-                if (!target->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && target->isMoving() && jumpedHigh)
+                if (!target->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && target->IsMoving() && jumpedHigh)
                     jumpedHigh = false;
             }
 
