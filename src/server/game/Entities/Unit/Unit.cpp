@@ -18627,9 +18627,11 @@ void Unit::StopMoving()
 
 void Unit::SendMovementFlagUpdate(bool self /* = false */)
 {
+    /*
     WorldPacket data;
     BuildHeartBeatMsg(&data);
     SendMessageToSet(&data, self);
+    */
 }
 
 bool Unit::IsSitState() const

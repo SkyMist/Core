@@ -85,10 +85,12 @@ namespace Movement
         ObjectGuid guid = unit->GetGUID();
         ObjectGuid transport = unit->GetTransGUID();
 
-        data << float(transport? unit->GetTransOffsetY() : 0.f); // Most likely transport Y
+        bool hasTransport = (unit->GetTransGUID() != 0) ? true : false;
+
+        data << float(hasTransport? unit->GetTransOffsetY() : 0.f); // Most likely transport Y
         data << uint32(splineId);
-        data << float(transport? unit->GetTransOffsetZ() : 0.f); // Most likely transport Z
-        data << float(transport? unit->GetTransOffsetX() : 0.f); // Most likely transport X
+        data << float(hasTransport? unit->GetTransOffsetZ() : 0.f); // Most likely transport Z
+        data << float(hasTransport? unit->GetTransOffsetX() : 0.f); // Most likely transport X
         data << float(pos.x);
         data << float(pos.y);
         data << float(pos.z);
@@ -115,7 +117,6 @@ namespace Movement
         data.WriteBit(guid[0]);
         
         uint8 transportBitsOrder[8] = {3, 6, 5, 0, 1, 2, 4, 7};
-        uint8 transportBytesOrder[8] = {7, 3, 2, 0, 6, 4, 5, 1};
         data.WriteBitInOrder(transport, transportBitsOrder);
 
         data.WriteBit(1);
@@ -132,7 +133,10 @@ namespace Movement
         data.FlushBits();
 
         data.WriteByteSeq(guid[3]);
+
+        uint8 transportBytesOrder[8] = {7, 3, 2, 0, 6, 4, 5, 1};
         data.WriteBytesSeq(transport, transportBytesOrder);
+
         data.WriteByteSeq(guid[7]);
         data.WriteByteSeq(guid[5]);
         data.WriteByteSeq(guid[1]);
@@ -263,8 +267,6 @@ namespace Movement
 
             uint8 bitOrder[8] = { 6, 7, 3, 0, 5, 1, 4, 2 };
             data.WriteBitInOrder(facingGuid, bitOrder);
-
-            data.FlushBits();
 
             uint8 byteOrder[8] = { 4, 2, 5, 6, 0, 7, 1, 3 };
             data.WriteBytesSeq(facingGuid, byteOrder);

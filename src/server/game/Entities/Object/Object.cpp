@@ -670,6 +670,8 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         *data << float(unit->GetSpeed(MOVE_RUN_BACK)); // 176
         *data << float(unit->GetSpeed(MOVE_SWIM_BACK)); //184
         data->WriteByteSeq(guid[5]);
+        *data << float(unit->GetSpeed(MOVE_TURN_RATE)); // 188
+        data->WriteByteSeq(guid[3]);
 
         if (unit->m_movementInfo.HaveSplineElevation)
             *data << float(unit->m_movementInfo.splineElevation);
@@ -677,8 +679,6 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
         // if (bitA8) // Movement counter.
         //     *data << uint32(IntA8); // Movement count.
 
-        *data << float(unit->GetSpeed(MOVE_TURN_RATE)); // 188
-        data->WriteByteSeq(guid[3]);
         *data << float(unit->GetSpeed(MOVE_RUN)); // 172
         data->WriteByteSeq(guid[7]);
         *data << float(unit->GetSpeed(MOVE_WALK)); //168
@@ -689,6 +689,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
 
         data->WriteByteSeq(guid[4]);
         data->WriteByteSeq(guid[0]);
+
         if (unit->HaveOrientation())
             *data << float(unit->GetOrientation());
     }
@@ -767,12 +768,12 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     // if (1044 UNK)
     //     *data << uint32(int410);
 
-    // if (flags & UPDATEFLAG_ANIMKITS)
-    // {
-    //     *data << uint16(1);                                                      // Missing AnimKit1
-    //     *data << uint16(1);                                                      // Missing AnimKit2
-    //     *data << uint16(1);                                                      // Missing AnimKit3
-    // }
+    if (flags & UPDATEFLAG_ANIMKITS)
+    {
+        *data << uint16(1);                                                      // Missing AnimKit1
+        *data << uint16(1);                                                      // Missing AnimKit2
+        *data << uint16(1);                                                      // Missing AnimKit3
+    }
 
     // if (1064 UNK)
     //     for (uint8 i = 0; i < bits418; ++i)

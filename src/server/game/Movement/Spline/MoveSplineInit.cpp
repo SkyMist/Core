@@ -107,22 +107,32 @@ namespace Movement
             return;
 
         MoveSpline& move_spline = *unit.movespline;
+        Location real_position;
 
-        Location real_position(unit.GetPositionX(), unit.GetPositionY(), unit.GetPositionZMinusOffset(), unit.GetOrientation());
-        // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes
-        if (unit.GetTransGUID())
-        {
-            real_position.x = unit.GetTransOffsetX();
-            real_position.y = unit.GetTransOffsetY();
-            real_position.z = unit.GetTransOffsetZ();
-            real_position.orientation = unit.GetTransOffsetO();
-        }
+        bool hasTransport = (unit.GetTransGUID() != 0) ? true : false;
 
         // there is a big chance that current position is unknown if current state is not finalized, need compute it
         // this also allows calculate spline position and update map position in much greater intervals
         // Don't compute for transport movement if the unit is in a motion between two transports
-        if (!move_spline.Finalized() && move_spline.Initialized() && move_spline.onTransport == (unit.GetTransGUID() != 0))
+        if (!move_spline.Finalized() && move_spline.Initialized() && move_spline.onTransport == hasTransport)
             real_position = move_spline.ComputePosition();
+        else
+        {
+            if (hasTransport)
+            {
+                real_position.x = unit.GetTransOffsetX();
+                real_position.y = unit.GetTransOffsetY();
+                real_position.z = unit.GetTransOffsetZ();
+                real_position.orientation = unit.GetTransOffsetO();
+            }
+            else
+            {
+                real_position.x = unit.GetPositionX();
+                real_position.y = unit.GetPositionY();
+                real_position.z = unit.GetPositionZ();
+                real_position.orientation = unit.GetOrientation();
+            }
+        }
 
         // should i do the things that user should do? - no.
         if (args.path.empty())
@@ -131,8 +141,7 @@ namespace Movement
         // correct first vertex
         args.path[0] = real_position;
         args.initialOrientation = real_position.orientation;
-        move_spline.onTransport = (unit.GetTransGUID() != 0);
-
+        move_spline.onTransport = hasTransport;
 
         uint32 moveFlags = unit.m_movementInfo.GetMovementFlags();
         moveFlags |= MOVEMENTFLAG_FORWARD;
@@ -152,6 +161,10 @@ namespace Movement
 
             args.velocity = unit.GetSpeed(SelectSpeedType(moveFlagsForSpeed));
         }
+
+        // if (!args.Validate())
+        //     return;
+
         unit.m_movementInfo.SetMovementFlags(moveFlags);
         move_spline.Initialize(args);
 
@@ -191,10 +204,32 @@ namespace Movement
                 break;
         }
 
-        data << float(0.0f);
-        data << uint32(getMSTime());
-        data << float(0.0f);
-        data << float(0.0f);
+        // ================ Calculate unit transport offsets for the target point. ==================== //
+        float splinePointTargetX = move_spline.spline.getPoint(move_spline.spline.first()).x;
+        float splinePointTargetY = move_spline.spline.getPoint(move_spline.spline.first()).y;
+        float splinePointTargetZ = move_spline.spline.getPoint(move_spline.spline.first()).z;
+        float transportPointTargetX = 0.0f;
+        float transportPointTargetY = 0.0f;
+        float transportPointTargetZ = 0.0f;
+
+        if (hasTransport && unit.GetTransport() && unit.GetTransport()->IsInWorld())
+        {
+            splinePointTargetZ -= unit.GetTransport()->GetPositionZ();
+            splinePointTargetY -= unit.GetTransport()->GetPositionY();
+            splinePointTargetX -= unit.GetTransport()->GetPositionX();
+
+            float inx = splinePointTargetX, iny = splinePointTargetY, ino = unit.GetTransport()->GetOrientation();
+
+            transportPointTargetZ = splinePointTargetZ;
+            transportPointTargetY = (iny - inx * tan(ino)) / (cos(ino) + std::sin(ino) * tan(ino));
+            transportPointTargetX = (inx + iny * tan(ino)) / (cos(ino) + std::sin(ino) * tan(ino));
+        }
+        // ================ Done, now we have all we need. ==================== //
+
+        data << float(transportPointTargetY);
+        data << uint32(move_spline.GetId());
+        data << float(transportPointTargetZ);
+        data << float(transportPointTargetX);
 
         data << float(move_spline.spline.getPoint(move_spline.spline.first()).x);
         data << float(move_spline.spline.getPoint(move_spline.spline.first()).y);
@@ -217,6 +252,7 @@ namespace Movement
             uint8 facingTargetBitsOrder[8] = {6, 7, 0, 5, 2, 3, 4, 1};
             data.WriteBitInOrder(facingTargetGUID, facingTargetBitsOrder);
         }
+
         data.WriteBit(!splineflags.parabolic);      // !hasParabolicTime
         data.WriteBit(moverGUID[4]);
         data.WriteBits(packedWPcount, 22);          // packed waypoint count
@@ -239,8 +275,10 @@ namespace Movement
             data.WriteBits(unkCounter, 22);
             data.WriteBits(0, 2);
         }
+
         data.WriteBit(unk4);                        // unk bit 38
         data.WriteBit(!move_spline.Duration());     // !has duration
+
         data.FlushBits();
 
         if (splineType == MonsterMoveFacingTarget)
@@ -259,6 +297,7 @@ namespace Movement
         data.WriteByteSeq(transportGUID[4]);
         data.WriteByteSeq(transportGUID[5]);
         data.WriteByteSeq(transportGUID[1]);
+
         // Write bytes
         if (hasUnk1)
         {
@@ -301,6 +340,7 @@ namespace Movement
         data.WriteByteSeq(moverGUID[5]);
         data.WriteByteSeq(moverGUID[1]);
         data.WriteByteSeq(moverGUID[2]);
+
         if (splineflags.animation)
             data << int32(move_spline.effect_start_time);
 
@@ -311,6 +351,7 @@ namespace Movement
             else
                 WriteCatmullRomPath(move_spline.spline, data);
         }
+
         data.WriteByteSeq(moverGUID[6]);
 
         if (move_spline.Duration())
