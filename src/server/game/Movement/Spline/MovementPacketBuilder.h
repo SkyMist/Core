@@ -29,6 +29,15 @@ class WorldPacket;
 
 namespace Movement
 {
+    enum MonsterMoveType
+    {
+        MonsterMoveNormal       = 0,
+        MonsterMoveStop         = 1,
+        MonsterMoveFacingPoint  = 2,
+        MonsterMoveFacingTarget = 3,
+        MonsterMoveFacingAngle  = 4
+    };
+
     class MoveSpline;
     class PacketBuilder
     {

@@ -20,18 +20,14 @@
 #include <sstream>
 #include "Log.h"
 
-namespace Movement{
-
-extern float computeFallTime(float path_length, bool isSafeFall);
-extern float computeFallElevation(float time_passed, bool isSafeFall, float start_velocy);
-extern float computeFallElevation(float time_passed);
+namespace Movement {
 
 Location MoveSpline::ComputePosition() const
 {
     ASSERT(Initialized());
 
     float u = 1.f;
-    int32 seg_time = spline.length(point_Idx,point_Idx+1);
+    int32 seg_time = spline.length(point_Idx, point_Idx + 1);
     if (seg_time > 0)
         u = (time_passed - spline.length(point_Idx)) / (float)seg_time;
     Location c;
@@ -83,7 +79,7 @@ void MoveSpline::computeParabolicElevation(float& el) const
 
 void MoveSpline::computeFallElevation(float& el) const
 {
-    float z_now = spline.getPoint(spline.first()).z - Movement::computeFallElevation(MSToSec(time_passed));
+    float z_now = spline.getPoint(spline.first()).z - Movement::computeFallElevation(MSToSec(time_passed), splineflags.fallingSlow);
     float final_z = FinalDestination().z;
     if (z_now < final_z)
         el = final_z;
@@ -98,23 +94,29 @@ inline uint32 computeDuration(float length, float velocity)
 
 struct FallInitializer
 {
-    FallInitializer(float _start_elevation) : start_elevation(_start_elevation) {}
+    FallInitializer(float _start_elevation, bool _fallingSlow) : start_elevation(_start_elevation), fallingSlow(_fallingSlow) { }
+
     float start_elevation;
+    bool fallingSlow;
+
     inline int32 operator()(Spline<int32>& s, int32 i)
     {
-        return Movement::computeFallTime(start_elevation - s.getPoint(i+1).z,false) * 1000.f;
+        return Movement::computeFallTime(start_elevation - s.getPoint(i + 1).z, fallingSlow) * 1000.f;
     }
 };
 
-enum{
+enum
+{
     minimal_duration = 1,
 };
 
 struct CommonInitializer
 {
-    CommonInitializer(float _velocity) : velocityInv(1000.f/_velocity), time(minimal_duration) {}
+    CommonInitializer(float _velocity) : velocityInv(1000.f / _velocity), time(minimal_duration) { }
+
     float velocityInv;
     int32 time;
+
     inline int32 operator()(Spline<int32>& s, int32 i)
     {
         time += (s.SegLength(i) * velocityInv);
@@ -124,7 +126,7 @@ struct CommonInitializer
 
 void MoveSpline::init_spline(const MoveSplineInitArgs& args)
 {
-    const SplineBase::EvaluationMode modes[2] = {SplineBase::ModeLinear,SplineBase::ModeCatmullrom};
+    const SplineBase::EvaluationMode modes[2] = {SplineBase::ModeLinear, SplineBase::ModeCatmullrom};
     if (args.flags.cyclic)
     {
         uint32 cyclic_point = 0;
@@ -141,7 +143,7 @@ void MoveSpline::init_spline(const MoveSplineInitArgs& args)
     // init spline timestamps
     if (splineflags.falling)
     {
-        FallInitializer init(spline.getPoint(spline.first()).z);
+        FallInitializer init(spline.getPoint(spline.first()).z, splineflags.fallingSlow);
         spline.initLengths(init);
     }
     else
@@ -167,7 +169,6 @@ void MoveSpline::Initialize(const MoveSplineInitArgs& args)
     point_Idx_offset = args.path_Idx_offset;
     initialOrientation = args.initialOrientation;
 
-    onTransport = false;
     time_passed = 0;
     vertical_acceleration = 0.f;
     effect_start_time = 0;
@@ -194,8 +195,7 @@ void MoveSpline::Initialize(const MoveSplineInitArgs& args)
     }
 }
 
-MoveSpline::MoveSpline() : m_Id(0), time_passed(0),
-    vertical_acceleration(0.f), initialOrientation(0.f), effect_start_time(0), point_Idx(0), point_Idx_offset(0)
+MoveSpline::MoveSpline() : m_Id(0), time_passed(0), vertical_acceleration(0.f), initialOrientation(0.f), effect_start_time(0), point_Idx(0), point_Idx_offset(0), onTransport(false)
 {
     splineflags.done = true;
 }
@@ -218,17 +218,19 @@ bool MoveSplineInitArgs::Validate() const
 #undef CHECK
 }
 
-// MONSTER_MOVE packet format limitation for not CatmullRom movement:
-// each vertex offset packed into 11 bytes
+// SMSG_MONSTER_MOVE packet format limitation for non-CatmullRom movement: each vertex offset is packed into 11 bytes.
 bool MoveSplineInitArgs::_checkPathBounds() const
 {
     if (!(flags & MoveSplineFlag::Catmullrom) && path.size() > 2)
     {
-        enum{
-            MAX_OFFSET = (1 << 11) / 2,
+        enum
+        {
+            MAX_OFFSET = (1 << 11) / 2
         };
-        Vector3 middle = (path.front()+path.back()) / 2;
+
+        Vector3 middle = (path.front() + path.back()) / 2;
         Vector3 offset;
+
         for (uint32 i = 1; i < path.size()-1; ++i)
         {
             offset = path[i] - middle;
@@ -239,6 +241,7 @@ bool MoveSplineInitArgs::_checkPathBounds() const
             }
         }
     }
+
     return true;
 }
 

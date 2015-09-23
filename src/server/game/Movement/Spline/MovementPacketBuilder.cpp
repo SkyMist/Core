@@ -34,15 +34,6 @@ namespace Movement
         b >> v.x >> v.y >> v.z;
     }
 
-    enum MonsterMoveType
-    {
-        MonsterMoveNormal       = 0,
-        MonsterMoveStop         = 1,
-        MonsterMoveFacingSpot   = 2,
-        MonsterMoveFacingTarget = 3,
-        MonsterMoveFacingAngle  = 4
-    };
-
     void PacketBuilder::WriteCommonMonsterMovePart(const MoveSpline& move_spline, WorldPacket& data)
     {
         MoveSplineFlag splineflags = move_spline.splineflags;
@@ -62,7 +53,7 @@ namespace Movement
                 data << move_spline.facing.angle;
                 break;
             case MoveSplineFlag::Final_Point:
-                data << uint8(MonsterMoveFacingSpot);
+                data << uint8(MonsterMoveFacingPoint);
                 data << move_spline.facing.f.x << move_spline.facing.f.y << move_spline.facing.f.z;
                 break;
             default:
@@ -211,7 +202,7 @@ namespace Movement
                     splineType = MonsterMoveFacingAngle;
                     break;
                 case MoveSplineFlag::Final_Point:
-                    splineType = MonsterMoveFacingSpot;
+                    splineType = MonsterMoveFacingPoint;
                     break;
                 default:
                     splineType = MonsterMoveNormal;

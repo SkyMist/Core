@@ -344,8 +344,8 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     _owner->GetNearPoint(_owner, x, y, z, _owner->GetObjectSize(), dist, _owner->GetAngle(srcX, srcY) + M_PI);
 
     // This should help for players falling under the map needs testing.
-    // do z += 1.0f
-    // while (!_owner->IsWithinLOS(x, y, z));
+    // while (!_owner->IsWithinLOS(x, y, z))
+    //     z += 1.0f;
 
     Movement::MoveSplineInit init(*_owner);
     init.MoveTo(x, y, z);
@@ -370,8 +370,8 @@ void MotionMaster::MoveJumpTo(float angle, float speedXY, float speedZ)
     _owner->GetClosePoint(x, y, z, _owner->GetObjectSize(), dist, angle);
 
     // This should help for players falling under the map needs testing.
-    // do z += 1.0f
-    // while (!_owner->IsWithinLOS(x, y, z));
+    // while (!_owner->IsWithinLOS(x, y, z))
+    //     z += 1.0f;
 
     MoveJump(x, y, z, speedXY, speedZ);
 }
@@ -381,15 +381,11 @@ void MotionMaster::MoveJump(float x, float y, float z, float speedXY, float spee
     sLog->outDebug(LOG_FILTER_GENERAL, "Unit (GUID: %u) is now jumping to point (X: %f Y: %f Z: %f).", _owner->GetGUIDLow(), x, y, z);
 
     float moveTimeHalf = speedZ / Movement::gravity;
-    float max_height = -Movement::computeFallElevation(moveTimeHalf,false,-speedZ);
-
-    // Hack fix for Heroic Leap - ToDo remove this!
-    if (id == 6544)
-        max_height += 1.0f;
+    float max_height = -Movement::computeFallElevation(moveTimeHalf, false, -speedZ);
 
     Movement::MoveSplineInit init(*_owner);
     init.MoveTo(x, y, z);
-    init.SetParabolic(max_height,0);
+    init.SetParabolic(max_height, 0);
     init.SetVelocity(speedXY);
     if (o < 6.82f)
         init.SetFacing(o);
@@ -404,7 +400,7 @@ void MotionMaster::CustomJump(float x, float y, float z, float speedXY, float sp
     speedZ *= 2.3f;
     speedXY *= 2.3f;
     float moveTimeHalf = speedZ / Movement::gravity;
-    float max_height = -Movement::computeFallElevation(moveTimeHalf,false,-speedZ);
+    float max_height = -Movement::computeFallElevation(moveTimeHalf, false, -speedZ);
     max_height /= 15.0f;
 
     Movement::MoveSplineInit init(*_owner);
