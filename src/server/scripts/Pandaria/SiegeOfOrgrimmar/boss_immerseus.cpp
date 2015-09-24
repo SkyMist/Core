@@ -1051,7 +1051,7 @@ class npc_swirl_target_immerseus : public CreatureScript
                         {
                             if (Creature* Immerseus = me->FindNearestCreature(BOSS_IMMERSEUS, 150.0f, true))
                             {
-                                Movement::MoveSplineInit init(*me);
+                                Movement::MoveSplineInit init(me);
                                 FillCirclePath(Immerseus->GetHomePosition(), me->GetDistance(Immerseus), me->GetPositionZ(), init.Path());
                                 init.SetWalk(true);
                                 init.SetCyclic();

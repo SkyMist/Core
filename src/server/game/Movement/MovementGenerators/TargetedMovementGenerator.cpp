@@ -148,7 +148,7 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T* owner)
 
     owner->UpdateAllowedPositionZ(x, y, z);
 
-    Movement::MoveSplineInit init(*owner);
+    Movement::MoveSplineInit init(owner);
     init.MoveTo(x, y, z);
     init.SetWalk(((D*)this)->EnableWalking());
     // Using the same condition for facing target as the one that is used for SetInFront on movement end - applies to ChaseMovementGenerator mostly.

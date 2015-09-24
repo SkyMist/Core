@@ -46,7 +46,7 @@ void HomeMovementGenerator<Creature>::_setTargetLocation(Creature* owner)
     float x, y, z, o;
     owner->GetHomePosition(x, y, z, o);
 
-    Movement::MoveSplineInit init(*owner);
+    Movement::MoveSplineInit init(owner);
     init.SetFacing(o);
     init.MoveTo(x, y, z);
     init.SetWalk(false);

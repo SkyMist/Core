@@ -1044,7 +1044,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
         // Used for moving the Wall of Suds.
         void SudsMove(Creature* sudsWall, float X, float Y, float Z)
         {
-            Movement::MoveSplineInit init(*sudsWall);
+            Movement::MoveSplineInit init(sudsWall);
             init.MoveTo(X, Y, Z);
             init.SetOrientationFixed(true);
             init.Launch();

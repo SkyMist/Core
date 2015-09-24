@@ -1796,7 +1796,7 @@ void Creature::setDeathState(DeathState s)
 
 void Creature::Respawn(bool force)
 {
-    Movement::MoveSplineInit(*this).Stop(true);
+    Movement::MoveSplineInit(this).Stop(true);
     DestroyForNearbyPlayers();
 
     if (force)
@@ -2124,14 +2124,19 @@ Player* Creature::SelectNearestPlayerNotGM(float distance) const
 
 void Creature::SendAIReaction(AiReaction reactionType)
 {
-    WorldPacket data(SMSG_AI_REACTION, 12);
     ObjectGuid npcGuid = GetGUID();
+
+    WorldPacket data(SMSG_AI_REACTION, 1 + 8 + 4);
 
     uint8 bitsOrder[8] = { 2, 1, 4, 3, 6, 5, 7, 0 };
     data.WriteBitInOrder(npcGuid, bitsOrder);
 
+    data.FlushBits();
+
     data.WriteByteSeq(npcGuid[1]);
+
     data << uint32(reactionType);
+
     data.WriteByteSeq(npcGuid[0]);
     data.WriteByteSeq(npcGuid[2]);
     data.WriteByteSeq(npcGuid[4]);

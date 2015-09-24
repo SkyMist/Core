@@ -1,8 +1,19 @@
-/*Copyright (C) 2014 SkyMist Project.
-*
-* This file is NOT free software. Third-party users can NOT redistribute it or modify it :). 
-* If you find it, you are either hacking something, or very lucky (presuming someone else managed to hack it).
-*/
+/*
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "Unit.h"
 #include "UnitMovement.h"
@@ -284,7 +295,7 @@ void Unit::StopMoving()
 
     // Update position using old spline
     UpdateSplinePosition();
-    Movement::MoveSplineInit(*this).Stop();
+    Movement::MoveSplineInit(this).Stop();
 }
 
 bool Unit::IsSplineEnabled() const
@@ -515,7 +526,7 @@ void Unit::WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extr
 
 void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed)
 {
-    Movement::MoveSplineInit init(*this);
+    Movement::MoveSplineInit init(this);
     init.MoveTo(x, y, z);
     init.SetVelocity(speed);
     init.Launch();
@@ -532,9 +543,9 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     // If the spline is Finalized disable it and update the mover's position.
     bool arrived = movespline->Finalized();
 
-    if (arrived && m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FORWARD))
-        m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
-
+    if (arrived)
+        DisableSpline();
+ 
     m_movesplineTimer.Update(t_diff);
     if (m_movesplineTimer.Passed() || arrived)
         UpdateSplinePosition();
@@ -1237,7 +1248,7 @@ void Unit::SetInFront(Unit const* target)
 
 void Unit::SetFacingTo(float ori)
 {
-    Movement::MoveSplineInit init(*this);
+    Movement::MoveSplineInit init(this);
     init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
     init.SetFacing(ori);
     init.Launch();
@@ -1249,7 +1260,7 @@ void Unit::SetFacingToObject(WorldObject* object)
     if (!IsStopped())
         return;
 
-    Movement::MoveSplineInit init(*this);
+    Movement::MoveSplineInit init(this);
     init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
     init.SetFacing(object->ToUnit());
     init.Launch();

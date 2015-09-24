@@ -590,7 +590,7 @@ class npc_warlord_zonozz_void_of_the_unmaking : public CreatureScript
                 angle = me->NormalizeOrientation(angle);
 
                 float cur_dist = 5.0f;
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 bool bPassed = false;
 
                 while (!bPassed)

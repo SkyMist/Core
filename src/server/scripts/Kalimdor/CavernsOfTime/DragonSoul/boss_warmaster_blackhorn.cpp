@@ -583,7 +583,7 @@ class npc_warmaster_blackhorn_goriona: public CreatureScript
                 {
                     me->SetSpeed(MOVE_RUN, 2.0f, true);
                     me->SetSpeed(MOVE_FLIGHT, 2.0f, true);
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     for (uint8 i = 1; i < 6; ++i)
                     {
                         G3D::Vector3 point;
@@ -608,7 +608,7 @@ class npc_warmaster_blackhorn_goriona: public CreatureScript
                     events.CancelEvent(EVENT_TWILIGHT_ONSLAUGHT);
                     events.CancelEvent(EVENT_BROADSIDE);
 
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     init.MoveTo(gorionaPos[6].GetPositionX(), gorionaPos[6].GetPositionY(), gorionaPos[6].GetPositionZ());
                     init.SetWalk(false);
                     init.Launch();
@@ -656,7 +656,7 @@ class npc_warmaster_blackhorn_goriona: public CreatureScript
                     me->SetCanFly(true);
                     me->SetDisableGravity(true);
 
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     init.MoveTo(gorionaPos[4].GetPositionX(), gorionaPos[4].GetPositionY(), gorionaPos[4].GetPositionZ());
                     init.SetWalk(false);
                     init.Launch();
@@ -792,7 +792,7 @@ class npc_warmaster_blackhorn_twilight_assault_drake: public CreatureScript
                 {
                     me->InterruptNonMeleeSpells(false);
                     me->RemoveAura(SPELL_HARPOON);
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     G3D::Vector3 point;
                     switch (wave)
                     {
@@ -828,7 +828,7 @@ class npc_warmaster_blackhorn_twilight_assault_drake: public CreatureScript
                 if (spellInfo->Id == SPELL_HARPOON)
                 {
                     me->InterruptNonMeleeSpells(false);
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     init.MoveTo(harpoonPos[side].GetPositionX(), harpoonPos[side].GetPositionY(), harpoonPos[side].GetPositionZ());
                     init.SetWalk(false);
                     init.Launch();
@@ -842,7 +842,7 @@ class npc_warmaster_blackhorn_twilight_assault_drake: public CreatureScript
                     wave = data;
                     me->SetSpeed(MOVE_RUN, 2.0f, true);
                     me->SetSpeed(MOVE_FLIGHT, 2.0f, true);
-                    Movement::MoveSplineInit init(*me);
+                    Movement::MoveSplineInit init(me);
                     for (uint8 i = 1; i < 8; ++i)
                     {
                         G3D::Vector3 point;
@@ -1130,7 +1130,7 @@ class npc_warmaster_blackhorn_twilight_infiltrator: public CreatureScript
             {
                 me->SetSpeed(MOVE_RUN, 2.0f, true);
                 me->SetSpeed(MOVE_FLIGHT, 2.0f, true);
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 for (uint8 i = 1; i < 12; ++i)
                 {
                     G3D::Vector3 point;

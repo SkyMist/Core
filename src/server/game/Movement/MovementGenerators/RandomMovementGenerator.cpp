@@ -129,7 +129,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* owner)
 
     owner->AddUnitState(UNIT_STATE_ROAMING_MOVE);
 
-    Movement::MoveSplineInit init(*owner);
+    Movement::MoveSplineInit init(owner);
     init.MoveTo(destX, destY, destZ);
     init.SetWalk(true);
     init.Launch();

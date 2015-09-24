@@ -44,8 +44,8 @@ void MotionMaster::Initialize()
     {
         MovementGenerator* current = top();
         pop();
-        if (current && !isStatic(current))
-            DirectDelete(current); // Skip finalizing on delete, it might launch new movement.       
+        if (current)
+            DirectDelete(current);   
     }
 
     InitDefault();
@@ -305,7 +305,7 @@ void MotionMaster::MoveLand(uint32 id, Position const& pos)
 
     sLog->outDebug(LOG_FILTER_GENERAL, "Creature (Entry: %u) is now landing at point (ID: %u X: %f Y: %f Z: %f)", _owner->GetEntry(), id, x, y, z);
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetAnimation(Movement::ToGround);
     init.Launch();
@@ -323,7 +323,7 @@ void MotionMaster::MoveTakeoff(uint32 id, float x, float y, float z)
 {
     sLog->outDebug(LOG_FILTER_GENERAL, "Creature (Entry: %u) is now taking off at point (ID: %u X: %f Y: %f Z: %f)", _owner->GetEntry(), id, x, y, z);
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetAnimation(Movement::ToFly);
     init.Launch();
@@ -347,7 +347,7 @@ void MotionMaster::MoveKnockbackFrom(float srcX, float srcY, float speedXY, floa
     // while (!_owner->IsWithinLOS(x, y, z))
     //     z += 1.0f;
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetParabolic(max_height,0);
     init.SetOrientationFixed(true);
@@ -383,7 +383,7 @@ void MotionMaster::MoveJump(float x, float y, float z, float speedXY, float spee
     float moveTimeHalf = speedZ / Movement::gravity;
     float max_height = -Movement::computeFallElevation(moveTimeHalf, false, -speedZ);
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(speedXY);
@@ -403,7 +403,7 @@ void MotionMaster::CustomJump(float x, float y, float z, float speedXY, float sp
     float max_height = -Movement::computeFallElevation(moveTimeHalf, false, -speedZ);
     max_height /= 15.0f;
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(speedXY);
@@ -431,7 +431,7 @@ void MotionMaster::MoveFall(uint32 id/*=0*/)
         _owner->m_movementInfo.SetFallTime(0);
     }
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(_owner->GetPositionX(), _owner->GetPositionY(), mapHeight);
     init.SetFall();
     init.Launch();
@@ -443,7 +443,7 @@ void MotionMaster::MoveBackward(uint32 id, float x, float y, float z, float spee
     if (_owner->GetTypeId() == TYPEID_PLAYER)
         _owner->AddUnitMovementFlag(MOVEMENTFLAG_BACKWARD);
 
-    Movement::MoveSplineInit init(*_owner);
+    Movement::MoveSplineInit init(_owner);
     init.MoveTo(x, y, z);
     init.SetOrientationInversed();
     init.Launch();

@@ -414,7 +414,7 @@ void Unit::Update(uint32 p_time)
     {
         if (m_SendTransportMoveTimer <= p_time)
         {
-            Movement::MoveSplineInit init(*this);
+            Movement::MoveSplineInit init(this);
             init.DisableTransportPathTransformations();
             init.MoveTo(m_movementInfo.t_pos.m_positionX, m_movementInfo.t_pos.m_positionY, m_movementInfo.t_pos.m_positionZ);
             init.SetFacing(0.0f);
@@ -2616,10 +2616,10 @@ float Unit::CalculateLevelPenalty(SpellInfo const* spellProto) const
 
 void Unit::SendMeleeAttackStart(Unit* victim)
 {
-    WorldPacket data(SMSG_ATTACK_START, 8 + 8);
-
     ObjectGuid attackerGuid = victim->GetGUID();
     ObjectGuid victimGuid = GetGUID();
+
+    WorldPacket data(SMSG_ATTACK_START, 8 + 8);
 
     data.WriteBit(victimGuid[4]);
     data.WriteBit(attackerGuid[4]);
@@ -2637,6 +2637,8 @@ void Unit::SendMeleeAttackStart(Unit* victim)
     data.WriteBit(attackerGuid[7]);
     data.WriteBit(victimGuid[7]);
     data.WriteBit(victimGuid[1]);
+
+    data.FlushBits();
 
     data.WriteByteSeq(attackerGuid[5]);
     data.WriteByteSeq(attackerGuid[7]);
@@ -18254,20 +18256,23 @@ void Unit::SendPetAIReaction(uint64 guid)
     if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_AI_REACTION, 12);
     ObjectGuid npcGuid = guid;
 
-    uint8 bitsOrder[8] = { 5, 2, 3, 6, 7, 1, 0, 4 };
+    WorldPacket data(SMSG_AI_REACTION, 1 + 8 + 4);
+
+    uint8 bitsOrder[8] = { 2, 1, 4, 3, 6, 5, 7, 0 };
     data.WriteBitInOrder(npcGuid, bitsOrder);
 
     data.WriteByteSeq(npcGuid[1]);
-    data.WriteByteSeq(npcGuid[3]);
+
     data << uint32(AI_REACTION_HOSTILE);
-    data.WriteByteSeq(npcGuid[7]);
+
     data.WriteByteSeq(npcGuid[0]);
-    data.WriteByteSeq(npcGuid[5]);
-    data.WriteByteSeq(npcGuid[4]);
     data.WriteByteSeq(npcGuid[2]);
+    data.WriteByteSeq(npcGuid[4]);
+    data.WriteByteSeq(npcGuid[6]);
+    data.WriteByteSeq(npcGuid[7]);
+    data.WriteByteSeq(npcGuid[3]);
     data.WriteByteSeq(npcGuid[5]);
 
     owner->ToPlayer()->GetSession()->SendPacket(&data);
@@ -21388,7 +21393,7 @@ void Unit::_ExitVehicle(Position const* exitPosition)
         SendMessageToSet(&data, false);
     }
 
-    Movement::MoveSplineInit init(*this);
+    Movement::MoveSplineInit init(this);
     init.MoveTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ());
     init.SetFacing(GetOrientation());
     init.SetTransportExit();
@@ -21542,7 +21547,7 @@ void Unit::SendThreatListUpdate()
         {
             ObjectGuid unitGuid = (*itr)->getUnitGuid();
 
-            uint8 bitsOrder[8] = { 6, 5, 3, 0, 4, 7, 2, 5 };
+            uint8 bitsOrder[8] = { 6, 5, 3, 0, 4, 7, 2, 1 };
             data.WriteBitInOrder(unitGuid, bitsOrder);
         }
 

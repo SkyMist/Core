@@ -37,12 +37,11 @@ namespace Movement
     class TransportPathTransform
     {
     public:
-        TransportPathTransform(Unit& owner, bool transformForTransport)
-            : _owner(owner), _transformForTransport(transformForTransport) { }
+        TransportPathTransform(Unit* owner, bool transformForTransport) : _owner(owner), _transformForTransport(transformForTransport) { }
         Vector3 operator()(Vector3 input);
 
     private:
-        Unit& _owner;
+        Unit* _owner;
         bool _transformForTransport;
     };
 
@@ -51,8 +50,7 @@ namespace Movement
     class MoveSplineInit
     {
     public:
-
-        explicit MoveSplineInit(Unit& m);
+        explicit MoveSplineInit(Unit* m);
 
         /*  Final pass of initialization that launches spline movement.
          */
@@ -79,7 +77,7 @@ namespace Movement
          */
         void SetFacing(float angle);
         void SetFacing(Vector3 const& point);
-        void SetFacing(const Unit * target);
+        void SetFacing(const Unit* target);
 
         /* Initializes movement by path
          * @param path - array of points, shouldn't be empty
@@ -87,7 +85,7 @@ namespace Movement
          */
         void MovebyPath(const PointsArray& path, int32 pointId = 0);
 
-        /* Initializes simple A to B mition, A is current unit's position, B is destination
+        /* Initializes simple A to B motion, A is current unit's position, B is destination
          */
         void MoveTo(const Vector3& destination);
         void MoveTo(float x, float y, float z);
@@ -101,34 +99,43 @@ namespace Movement
          * if not enabled linear spline mode will be choosen. Disabled by default
          */
         void SetSmooth();
+
         /* Waypoints in packets will be sent without compression
          */
         void SetUncompressed();
+
         /* Enables CatmullRom spline interpolation mode, enables flying animation. Disabled by default
          */
         void SetFly();
-        /* Enables walk mode. Disabled by default
-         */
-        void EnableTaxiFlight();
+
         /* Flags used in taxi
         */
+        void EnableTaxiFlight();
 
+        /* Enables walk mode. Disabled by default
+         */
         void SetWalk(bool enable);
+
         /* Makes movement cyclic. Disabled by default
          */
         void SetCyclic();
+
         /* Enables falling mode. Disabled by default
          */
         void SetFall();
+
         /* Enters transport. Disabled by default
          */
         void SetTransportEnter();
+
         /* Exits transport. Disabled by default
          */
         void SetTransportExit();
+
         /* Inverses unit model orientation. Disabled by default
          */
         void SetOrientationInversed();
+
         /* Fixes unit's model rotation. Disabled by default
          */
         void SetOrientationFixed(bool enable);
@@ -145,10 +152,10 @@ namespace Movement
         /* Disables transport coordinate transformations for cases where raw offsets are available
         */
         void DisableTransportPathTransformations();
-    protected:
 
+    protected:
         MoveSplineInitArgs args;
-        Unit&  unit;
+        Unit*  unit;
     };
 
     inline void MoveSplineInit::SetFly() { args.flags.EnableFlying(); }
@@ -171,8 +178,7 @@ namespace Movement
 
     inline void MoveSplineInit::MoveTo(float x, float y, float z)
     {
-        Vector3 v(x, y, z);
-        MoveTo(v);
+        MoveTo(G3D::Vector3(x, y, z));
     }
 
     inline void MoveSplineInit::SetParabolic(float amplitude, float time_shift)

@@ -54,83 +54,35 @@ namespace Movement
         return MOVE_RUN;
     }
 
-    inline void operator << (ByteBuffer& b, const Vector3& v)
-    {
-        b << v.x << v.y << v.z;
-    }
-
-    inline void operator >> (ByteBuffer& b, Vector3& v)
-    {
-        b >> v.x >> v.y >> v.z;
-    }
-
-    void WriteLinearPath(const Spline<int32>& spline, ByteBuffer& data)
-    {
-        uint32 last_idx = spline.getPointCount() - 3;
-        const Vector3 * real_path = &spline.getPoint(1);
-
-        if (last_idx > 0)
-        {
-            Vector3 middle = (real_path[0] + real_path[last_idx]) / 2.f;
-            Vector3 offset;
-            // first and last points already appended
-            for (uint32 i = 0; i < last_idx; ++i)
-            {
-                offset = middle - real_path[i];
-                data.appendPackXYZ(offset.x, offset.y, offset.z);
-            }
-        }
-    }
-
-    void WriteCatmullRomPath(const Spline<int32>& spline, ByteBuffer& data)
-    {
-        uint32 count = spline.getPointCount() - 2;
-
-        for (uint32 i = 0; i < count; i++)
-            data << spline.getPoint(i+2).x << spline.getPoint(i+2).y << spline.getPoint(i+2).z;
-
-        //data.append<Vector3>(&spline.getPoint(2), count);
-    }
-
-    void WriteCatmullRomCyclicPath(const Spline<int32>& spline, ByteBuffer& data)
-    {
-        uint32 count = spline.getPointCount() - 2;
-        data << spline.getPoint(1).x << spline.getPoint(1).y << spline.getPoint(1).z ; // fake point, client will erase it from the spline after first cycle done
-        for (uint32 i = 0; i < count; i++)
-            data << spline.getPoint(i+1).x << spline.getPoint(i+1).y << spline.getPoint(i+1).z;
-        //data.append<Vector3>(&spline.getPoint(1), count);
-    }
-
     void MoveSplineInit::Launch()
     {
-        if (&unit == nullptr)
+        if (!unit)
             return;
 
-        MoveSpline& move_spline = *unit.movespline;
+        MoveSpline& move_spline = *unit->movespline;
         Location real_position;
 
-        bool hasTransport = (unit.GetTransGUID() != 0) ? true : false;
+        bool hasTransport = (unit->GetTransGUID() != 0) ? true : false;
 
-        // there is a big chance that current position is unknown if current state is not finalized, need compute it
-        // this also allows calculate spline position and update map position in much greater intervals
-        // Don't compute for transport movement if the unit is in a motion between two transports
+        // Need to compute current position for unfinalized states.
+        // Don't compute for transport movement if the unit is in a motion between two transports.
         if (!move_spline.Finalized() && move_spline.Initialized() && move_spline.onTransport == hasTransport)
             real_position = move_spline.ComputePosition();
         else
         {
             if (hasTransport)
             {
-                real_position.x = unit.GetTransOffsetX();
-                real_position.y = unit.GetTransOffsetY();
-                real_position.z = unit.GetTransOffsetZ();
-                real_position.orientation = unit.GetTransOffsetO();
+                real_position.x = unit->GetTransOffsetX();
+                real_position.y = unit->GetTransOffsetY();
+                real_position.z = unit->GetTransOffsetZ();
+                real_position.orientation = unit->GetTransOffsetO();
             }
             else
             {
-                real_position.x = unit.GetPositionX();
-                real_position.y = unit.GetPositionY();
-                real_position.z = unit.GetPositionZ();
-                real_position.orientation = unit.GetOrientation();
+                real_position.x = unit->GetPositionX();
+                real_position.y = unit->GetPositionY();
+                real_position.z = unit->GetPositionZ();
+                real_position.orientation = unit->GetOrientation();
             }
         }
 
@@ -143,7 +95,7 @@ namespace Movement
         args.initialOrientation = real_position.orientation;
         move_spline.onTransport = hasTransport;
 
-        uint32 moveFlags = unit.m_movementInfo.GetMovementFlags();
+        uint32 moveFlags = unit->m_movementInfo.GetMovementFlags();
         moveFlags |= MOVEMENTFLAG_FORWARD;
 
         if (moveFlags & MOVEMENTFLAG_ROOT)
@@ -151,242 +103,40 @@ namespace Movement
 
         if (!args.HasVelocity)
         {
-            // If spline is initialized with SetWalk method it only means we need to select
-            // walk move speed for it but not add walk flag to unit
+            // If spline is initialized with SetWalk method it only means we need to select walk move speed for it but not add walk flag to unit.
             uint32 moveFlagsForSpeed = moveFlags;
             if (args.flags.walkmode)
                 moveFlagsForSpeed |= MOVEMENTFLAG_WALKING;
             else
                 moveFlagsForSpeed &= ~MOVEMENTFLAG_WALKING;
 
-            args.velocity = unit.GetSpeed(SelectSpeedType(moveFlagsForSpeed));
+            args.velocity = unit->GetSpeed(SelectSpeedType(moveFlagsForSpeed));
         }
 
         // if (!args.Validate())
         //     return;
 
-        unit.m_movementInfo.SetMovementFlags(moveFlags);
+        unit->m_movementInfo.SetMovementFlags(moveFlags);
         move_spline.Initialize(args);
 
+        // Actual packet. //
+
         WorldPacket data(SMSG_MONSTER_MOVE, 64);
-        ObjectGuid moverGUID = unit.GetGUID();
-        ObjectGuid transportGUID = unit.GetTransGUID();
-        MoveSplineFlag splineflags =  move_spline.splineflags;
-        splineflags.enter_cycle = move_spline.isCyclic();
-        uint32 sendSplineFlags = splineflags & ~MoveSplineFlag::Mask_No_Monster_Move;
-        int8 seat = unit.GetTransSeat();
-
-        bool hasUnk1 = false;
-        bool hasUnk2 = false;
-        bool hasUnk3 = false;
-        bool unk4 = false;
-        uint32 unkCounter = 0;
-        uint32 packedWPcount = splineflags & MoveSplineFlag::UncompressedPath ? 0 : move_spline.spline.getPointCount() - 3;
-        uint32 WPcount = move_spline.spline.getPointCount() - 2;
-        if (splineflags.cyclic)
-            WPcount += 1;
-
-        uint8 splineType = 0;
-
-        switch (splineflags & MoveSplineFlag::Mask_Final_Facing)
-        {
-            case MoveSplineFlag::Final_Target:
-                splineType = MonsterMoveFacingTarget;
-                break;
-            case MoveSplineFlag::Final_Angle:
-                splineType = MonsterMoveFacingAngle;
-                break;
-            case MoveSplineFlag::Final_Point:
-                splineType = MonsterMoveFacingPoint;
-                break;
-            default:
-                splineType = MonsterMoveNormal;
-                break;
-        }
-
-        // ================ Calculate unit transport offsets for the target point. ==================== //
-        float splinePointTargetX = move_spline.spline.getPoint(move_spline.spline.first()).x;
-        float splinePointTargetY = move_spline.spline.getPoint(move_spline.spline.first()).y;
-        float splinePointTargetZ = move_spline.spline.getPoint(move_spline.spline.first()).z;
-        float transportPointTargetX = 0.0f;
-        float transportPointTargetY = 0.0f;
-        float transportPointTargetZ = 0.0f;
-
-        if (hasTransport && unit.GetTransport() && unit.GetTransport()->IsInWorld())
-        {
-            splinePointTargetZ -= unit.GetTransport()->GetPositionZ();
-            splinePointTargetY -= unit.GetTransport()->GetPositionY();
-            splinePointTargetX -= unit.GetTransport()->GetPositionX();
-
-            float inx = splinePointTargetX, iny = splinePointTargetY, ino = unit.GetTransport()->GetOrientation();
-
-            transportPointTargetZ = splinePointTargetZ;
-            transportPointTargetY = (iny - inx * tan(ino)) / (cos(ino) + std::sin(ino) * tan(ino));
-            transportPointTargetX = (inx + iny * tan(ino)) / (cos(ino) + std::sin(ino) * tan(ino));
-        }
-        // ================ Done, now we have all we need. ==================== //
-
-        data << float(transportPointTargetY);
-        data << uint32(move_spline.GetId());
-        data << float(transportPointTargetZ);
-        data << float(transportPointTargetX);
-
-        data << float(move_spline.spline.getPoint(move_spline.spline.first()).x);
-        data << float(move_spline.spline.getPoint(move_spline.spline.first()).y);
-        data << float(move_spline.spline.getPoint(move_spline.spline.first()).z);
-
-        data.WriteBit(moverGUID[3]);
-        data.WriteBit(sendSplineFlags == 0);        // !hasFlags
-        data.WriteBit(moverGUID[6]);
-        data.WriteBit(!splineflags.animation);      // animation state
-        data.WriteBit(!hasUnk2);                    // !hasUnk2, unk byte
-        data.WriteBits(splineType, 3);              // splineType
-        data.WriteBit(seat == -1);                  // !has seat
-        data.WriteBit(moverGUID[2]);
-        data.WriteBit(moverGUID[7]);
-        data.WriteBit(moverGUID[5]);
-
-        if (splineType == MonsterMoveFacingTarget)
-        {
-            ObjectGuid facingTargetGUID = move_spline.facing.target;
-            uint8 facingTargetBitsOrder[8] = {6, 7, 0, 5, 2, 3, 4, 1};
-            data.WriteBitInOrder(facingTargetGUID, facingTargetBitsOrder);
-        }
-
-        data.WriteBit(!splineflags.parabolic);      // !hasParabolicTime
-        data.WriteBit(moverGUID[4]);
-        data.WriteBits(packedWPcount, 22);          // packed waypoint count
-        data.WriteBit(true);                        // !unk, send uint32
-        data.WriteBit(false);                       // fake bit
-        data.WriteBit(moverGUID[0]);
-
-        uint8 transportBitsOrder[8] = {3, 6, 5, 0, 1, 2, 4, 7};
-        data.WriteBitInOrder(transportGUID, transportBitsOrder);
-
-        data.WriteBit(!hasUnk3);                    // !hasUnk3
-        data.WriteBit(!splineflags.parabolic);      // !hasParabolicSpeed
-        data.WriteBit(!splineflags.animation);      // !hasAnimationTime
-        data.WriteBits(WPcount, 20);
-        data.WriteBit(moverGUID[1]);
-        data.WriteBit(hasUnk1);                     // unk, has counter + 2 bits & somes uint16/float
-
-        if (hasUnk1)
-        {
-            data.WriteBits(unkCounter, 22);
-            data.WriteBits(0, 2);
-        }
-
-        data.WriteBit(unk4);                        // unk bit 38
-        data.WriteBit(!move_spline.Duration());     // !has duration
-
-        data.FlushBits();
-
-        if (splineType == MonsterMoveFacingTarget)
-        {
-            ObjectGuid facingTargetGUID = move_spline.facing.target;
-            uint8 facingTargetBitsOrder[8] = {5, 3, 6, 1, 4, 2, 0, 7};
-            data.WriteBytesSeq(facingTargetGUID, facingTargetBitsOrder);
-        }
-
-        data.WriteByteSeq(moverGUID[3]);
-        data.WriteByteSeq(transportGUID[7]);
-        data.WriteByteSeq(transportGUID[3]);
-        data.WriteByteSeq(transportGUID[2]);
-        data.WriteByteSeq(transportGUID[0]);
-        data.WriteByteSeq(transportGUID[6]);
-        data.WriteByteSeq(transportGUID[4]);
-        data.WriteByteSeq(transportGUID[5]);
-        data.WriteByteSeq(transportGUID[1]);
-
-        // Write bytes
-        if (hasUnk1)
-        {
-            data << float(0.0f);
-
-            for (uint32 i = 0; i < unkCounter; i++)
-            {
-                data << uint16(0);
-                data << uint16(0);
-            }
-            data << float(0.0f);
-            data << uint16(0);
-            data << uint16(0);
-        }
-
-        if (hasUnk2)
-            data << uint8(0);                   // unk byte
-
-        if (splineType == MonsterMoveFacingAngle)
-            data << move_spline.facing.angle;
-
-        if (sendSplineFlags)
-            data << uint32(sendSplineFlags);
-
-        data.WriteByteSeq(moverGUID[7]);
-        if (seat != -1)
-            data << int8(seat);
-
-        if (false)
-            data << uint32(0);                  // unk uint32
-
-        if (splineflags.animation)
-            data << uint8(splineflags.getAnimationId());
-
-        if (packedWPcount)
-        {
-            WriteLinearPath(move_spline.spline, data);
-        }
-
-        data.WriteByteSeq(moverGUID[5]);
-        data.WriteByteSeq(moverGUID[1]);
-        data.WriteByteSeq(moverGUID[2]);
-
-        if (splineflags.animation)
-            data << int32(move_spline.effect_start_time);
-
-        if (WPcount > 0)
-        {
-            if (splineflags.cyclic)
-                WriteCatmullRomCyclicPath(move_spline.spline, data);
-            else
-                WriteCatmullRomPath(move_spline.spline, data);
-        }
-
-        data.WriteByteSeq(moverGUID[6]);
-
-        if (move_spline.Duration())
-            data << move_spline.Duration();
-
-        if (splineType == MonsterMoveFacingPoint)
-            data << move_spline.facing.f.x << move_spline.facing.f.y << move_spline.facing.f.z;
-
-        if (splineflags.parabolic)
-            data << move_spline.vertical_acceleration;
-
-        if (hasUnk3)
-            data << uint8(0);                   // unk byte
-
-        data.WriteByteSeq(moverGUID[0]);
-            
-        if (splineflags.parabolic)
-            data << move_spline.effect_start_time;
-
-        data.WriteByteSeq(moverGUID[4]);
-
-        unit.SendMessageToSet(&data, true);
+        PacketBuilder::WriteMonsterMove(move_spline, data, unit);
+        unit->SendMessageToSet(&data, true);
     }
 
     void MoveSplineInit::Stop(bool force)
     {
-        if (&unit == nullptr)
+        if (!unit)
             return;
 
-        MoveSpline& move_spline = *unit.movespline;
+        MoveSpline& move_spline = *unit->movespline;
 
         if (force)
         {
             args.flags = MoveSplineFlag::Done;
-            unit.m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
+            unit->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
             move_spline.Initialize(args);
             return;
         }
@@ -397,16 +147,15 @@ namespace Movement
 
         Location loc = move_spline.ComputePosition();
         args.flags = MoveSplineFlag::Done;
-        unit.m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
+        unit->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD);
         move_spline.Initialize(args);
 
         WorldPacket data(SMSG_MONSTER_MOVE, 64);
-
-        PacketBuilder::WriteStopMovement(loc, args.splineId, data, &unit);
-        unit.SendMessageToSet(&data, true);
+        PacketBuilder::WriteStopMovement(loc, args.splineId, data, unit);
+        unit->SendMessageToSet(&data, true);
     }
 
-    MoveSplineInit::MoveSplineInit(Unit& m) : unit(m)
+    MoveSplineInit::MoveSplineInit(Unit* m) : unit(m)
     {
         args.splineId = splineIdGen.NewId();
 
@@ -414,10 +163,10 @@ namespace Movement
             return;
 
         // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes
-        args.TransformForTransport = unit.GetTransGUID();
+        args.TransformForTransport = unit->GetTransGUID();
         // mix existing state into new
-        args.flags.walkmode = unit.m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);
-        args.flags.flying = unit.m_movementInfo.HasMovementFlag(MovementFlags(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_DISABLE_GRAVITY));
+        args.flags.walkmode = unit->m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);
+        args.flags.flying = unit->m_movementInfo.HasMovementFlag(MovementFlags(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_DISABLE_GRAVITY));
         args.flags.smoothGroundPath = true; // enabled by default, CatmullRom mode or client config "pathSmoothing" will disable this
     }
 
@@ -431,9 +180,9 @@ namespace Movement
     {
         if (args.TransformForTransport)
         {
-            if (Unit* vehicle = unit.GetVehicleBase())
+            if (Unit* vehicle = unit->GetVehicleBase())
                 angle -= vehicle->GetOrientation();
-            else if (Transport* transport = unit.GetTransport())
+            else if (Transport* transport = unit->GetTransport())
                 angle -= transport->GetOrientation();
         }
 
@@ -452,7 +201,7 @@ namespace Movement
     void MoveSplineInit::SetFall()
     {
         args.flags.EnableFalling();
-        args.flags.fallingSlow = unit.HasUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
+        args.flags.fallingSlow = unit->HasUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
     }
 
     Vector3 TransportPathTransform::operator()(Vector3 input)
@@ -460,7 +209,7 @@ namespace Movement
         if (_transformForTransport)
         {
             float unused = 0.0f;
-            if (TransportBase* transport = _owner.GetDirectTransport())
+            if (TransportBase* transport = _owner->GetDirectTransport())
                 transport->CalculatePassengerOffset(input.x, input.y, input.z, unused);
         }
 

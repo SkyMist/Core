@@ -687,7 +687,7 @@ public:
 
             if (id == 8)
             {
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 // Selecting the center 2.0f yds forward as center of the circle path
                 Position pos = GetTargetPoint(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), 2.0f);
                 // Creating the circle path from the center
@@ -821,7 +821,7 @@ class npc_storm_unleashed_tornado : public CreatureScript
 
                 me->SetSpeed(MOVE_WALK, 1.1f, true);
                 me->SetSpeed(MOVE_RUN, 1.1f, true);
-                Movement::MoveSplineInit init(*me);
+                Movement::MoveSplineInit init(me);
                 init.SetOrientationFixed(true);
                 init.Launch();
             }
