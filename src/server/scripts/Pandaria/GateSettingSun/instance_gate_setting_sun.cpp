@@ -1,11 +1,30 @@
 /*
-    Dungeon : Gate of the Setting Sun 90-90
-    Instance General Script
-*/
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Dungeon: Gate of the Setting Sun.
+ * Description: Instance Script.
+ */
 
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
-#include "ScriptedCreature.h"
+#include "Player.h"
+#include "Unit.h"
+#include "ObjectAccessor.h"
+#include "Group.h"
+
 #include "gate_setting_sun.h"
 
 DoorData const doorData[] =
@@ -18,51 +37,50 @@ DoorData const doorData[] =
     {GO_RIMAK_AFTER_DOOR,                   DATA_RIMOK,                 DOOR_TYPE_ROOM,         BOUNDARY_S   },
     {GO_RAIGONN_DOOR,                       DATA_RAIGONN,               DOOR_TYPE_ROOM,         BOUNDARY_NE  },
     {GO_RAIGONN_AFTER_DOOR,                 DATA_RAIGONN,               DOOR_TYPE_PASSAGE,      BOUNDARY_E   },
-    {0,                                     0,                          DOOR_TYPE_ROOM,         BOUNDARY_NONE},// END
+
+    {0,                                     0,                          DOOR_TYPE_ROOM,         BOUNDARY_NONE}, // END
 };
 
 class instance_gate_setting_sun : public InstanceMapScript
 {
-public:
-    instance_gate_setting_sun() : InstanceMapScript("instance_gate_setting_sun", 962) { }
+    public:
+        instance_gate_setting_sun() : InstanceMapScript("instance_gate_setting_sun", 962) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const
-    {
-        return new instance_gate_setting_sun_InstanceMapScript(map);
-    }
+        struct instance_gate_setting_sun_InstanceMapScript : public InstanceScript
+        {
+            instance_gate_setting_sun_InstanceMapScript(Map* map) : InstanceScript(map)
+            {
+                Initialize();
+            }
 
-    struct instance_gate_setting_sun_InstanceMapScript : public InstanceScript
-    {
-        uint64 kiptilakGuid;
-        uint64 gadokGuid;
-        uint64 rimokGuid;
-        uint64 raigonnGuid;
-        uint64 raigonWeakGuid;
+            // Bosses.
+            uint64 kiptilakGuid;
+            uint64 gadokGuid;
+            uint64 rimokGuid;
+            uint64 raigonnGuid;
 
-        uint64 firstDoorGuid;
-        uint64 fireSignalGuid;
+            uint64 raigonWeakGuid;
 
-        uint64 wallCGuid;
-        uint64 portalTempGadokGuid;
+            uint64 firstDoorGuid;
+            uint64 fireSignalGuid;
+            uint64 wallCGuid;
+            uint64 portalTempGadokGuid;
 
-        uint32 cinematicTimer;
-        uint8 cinematicEventProgress;
+            uint32 cinematicTimer;
+            uint8 cinematicEventProgress;
 
-        std::list<uint64> bombarderGuids;
-        std::list<uint64> bombStalkerGuids;
-        std::list<uint64> mantidBombsGUIDs;
-        std::list<uint64> rimokAddGenetarorsGUIDs;
-        std::list<uint64> artilleryGUIDs;
-        std::list<uint64> secondaryDoorGUIDs;
+            std::list<uint64> bombarderGuids;
+            std::list<uint64> bombStalkerGuids;
+            std::list<uint64> mantidBombsGUIDs;
+            std::list<uint64> rimokAddGeneratorsGUIDs;
+            std::list<uint64> artilleryGUIDs;
+            std::list<uint64> secondaryDoorGUIDs;
 
-        uint32 dataStorage[MAX_DATA];
-
-        instance_gate_setting_sun_InstanceMapScript(Map* map) : InstanceScript(map)
-        {}
+            uint32 dataStorage[MAX_DATA];
 
         void Initialize()
         {
-            SetBossNumber(EncounterCount);
+            SetBossNumber(MAX_ENCOUNTERS);
             LoadDoorData(doorData);
 
             kiptilakGuid            = 0;
@@ -84,7 +102,7 @@ public:
             bombarderGuids.clear();
             bombStalkerGuids.clear();
             mantidBombsGUIDs.clear();
-            rimokAddGenetarorsGUIDs.clear();
+            rimokAddGeneratorsGUIDs.clear();
             artilleryGUIDs.clear();
             secondaryDoorGUIDs.clear();
         }
@@ -118,7 +136,7 @@ public:
                 case NPC_RAIGONN:           raigonnGuid     = creature->GetGUID();                  return;
                 case NPC_KRITHUK_BOMBARDER: bombarderGuids.push_back(creature->GetGUID());          return;
                 case NPC_BOMB_STALKER:      bombStalkerGuids.push_back(creature->GetGUID());        return;
-                case NPC_ADD_GENERATOR:     rimokAddGenetarorsGUIDs.push_back(creature->GetGUID()); return;
+                case NPC_ADD_GENERATOR:     rimokAddGeneratorsGUIDs.push_back(creature->GetGUID()); return;
                 case NPC_ARTILLERY:         artilleryGUIDs.push_back(creature->GetGUID());          return;
                 default:                                                                            return;
             }
@@ -204,7 +222,7 @@ public:
                     for (auto itr: secondaryDoorGUIDs)
                         HandleGameObject(itr, state != DONE);
 
-                    for (auto itr: rimokAddGenetarorsGUIDs)
+                    for (auto itr: rimokAddGeneratorsGUIDs)
                     {
                         if (Creature* generator = instance->GetCreature(itr))
                         {
@@ -379,6 +397,10 @@ public:
         }
     };
 
+    InstanceScript* GetInstanceScript(InstanceMap* map) const
+    {
+        return new instance_gate_setting_sun_InstanceMapScript(map);
+    }
 };
 
 void AddSC_instance_gate_setting_sun()

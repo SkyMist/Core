@@ -915,14 +915,6 @@ void Unit::SendMovementHover(bool apply)
 {
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->SendMovementSetHover(HasUnitMovementFlag(MOVEMENTFLAG_HOVER));
-
-    if (apply)
-    {
-        /*WorldPacket data(MSG_MOVE_HOVER, 64);
-        data.append(GetPackGUID());
-        BuildMovementPacket(&data);
-        SendMessageToSet(&data, false);*/
-    }
 }
 
 void Unit::SetFeared(bool apply)

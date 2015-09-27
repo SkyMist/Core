@@ -155,7 +155,8 @@ void Player::ReadMovementInfo(WorldPacket& data, MovementInfo* mi, ExtraMovement
                 bitcounterLoop = data.ReadBits(22);
                 break;
             case MSEUnkUIntLoop:
-                data.read_skip(bitcounterLoop * sizeof(uint32));
+                for (int i = 0; i != bitcounterLoop; i++)
+                    data.read_skip<uint32>();
                 break;
             case MSEFlushBits:
                 data.FlushBits();

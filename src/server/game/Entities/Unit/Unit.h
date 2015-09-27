@@ -2271,8 +2271,6 @@ class Unit : public WorldObject
         void _ExitVehicle(Position const* exitPosition = NULL);
         void _EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* aurApp = NULL);
 
-        void BuildMovementPacket(ByteBuffer *data) const;
-
         void RewardRage(uint32 baseRage, bool attacker, bool useBonus = true);
 
         virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }

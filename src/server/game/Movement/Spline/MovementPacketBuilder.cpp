@@ -398,7 +398,6 @@ namespace Movement
     void PacketBuilder::WriteCreateData(MoveSpline const& moveSpline, ByteBuffer& data)
     {
         bool isSplineEnabled = moveSpline.Initialized() && !moveSpline.Finalized();
-        ASSERT(isSplineEnabled);
 
         if (isSplineEnabled)
         {
