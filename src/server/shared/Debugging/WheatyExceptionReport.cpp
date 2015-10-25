@@ -193,6 +193,14 @@ BOOL WheatyExceptionReport::_GetWindowsVersion(TCHAR* szVersion, DWORD cntMax)
     {
         // Windows NT product family.
         case VER_PLATFORM_WIN32_NT:
+        {
+	#if WINVER < 0x0500
+            BYTE suiteMask = osvi.wReserved[0];
+            BYTE productType = osvi.wReserved[1];
+        #else
+            WORD suiteMask = osvi.wSuiteMask;
+            BYTE productType = osvi.wProductType;
+        #endif
             // Test for the specific product family.
             if (osvi.dwMajorVersion == 6)
             {
@@ -343,6 +351,7 @@ BOOL WheatyExceptionReport::_GetWindowsVersion(TCHAR* szVersion, DWORD cntMax)
             _tcsncat(szVersion, wszTmp, cntMax);
         }
         break;
+        }
         default:
             _stprintf(wszTmp, _T("%s (Version %d.%d, Build %d)"),
                 osvi.szCSDVersion, osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber & 0xFFFF);
