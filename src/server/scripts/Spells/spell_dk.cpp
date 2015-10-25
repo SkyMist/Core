@@ -2212,6 +2212,44 @@ class spell_dk_conversion_heal_aura : public SpellScriptLoader
         }
 };
 
+// 47496 - Explode, Ghoul spell for Corpse Explosion
+class spell_dk_ghoul_explode : public SpellScriptLoader
+{
+    public:
+        spell_dk_ghoul_explode() : SpellScriptLoader("spell_dk_ghoul_explode") { }
+
+        class spell_dk_ghoul_explode_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_dk_ghoul_explode_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellEntry*/)
+            {
+                if (!sSpellMgr->GetSpellInfo(DK_SPELL_CORPSE_EXPLOSION_TRIGGERED))
+                    return false;
+                return true;
+            }
+
+            void Suicide(SpellEffIndex /*effIndex*/)
+            {
+                if (Unit* unitTarget = GetHitUnit())
+                {
+                    // Corpse Explosion (Suicide)
+                    unitTarget->CastSpell(unitTarget, DK_SPELL_CORPSE_EXPLOSION_TRIGGERED, true);
+                }
+            }
+
+            void Register()
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_dk_ghoul_explode_SpellScript::Suicide, EFFECT_1, SPELL_EFFECT_SCHOOL_DAMAGE);
+            }
+        };
+
+        SpellScript* GetSpellScript() const
+        {
+            return new spell_dk_ghoul_explode_SpellScript();
+        }
+};
+
 void AddSC_deathknight_spell_scripts()
 {
     new spell_dk_death_and_decay();
@@ -2260,4 +2298,5 @@ void AddSC_deathknight_spell_scripts()
     new spell_dk_glyph_of_the_geist();
     new spell_dk_presences();
     new spell_dk_conversion_heal_aura();
+    new spell_dk_ghoul_explode();
 }
