@@ -27,7 +27,7 @@ enum eSays
 {
 };
 
-class boss_general_nazgrim : public CreatureScript
+class boss_general_nazgrim : public CreatureScript //71515
 {
 	public:
 		boss_general_nazgrim() : CreatureScript("boss_general_nazgrim") { }
@@ -115,7 +115,7 @@ class boss_general_nazgrim : public CreatureScript
 		}
 };
 
-class mob_orgrimmar_faithful : public CreatureScript
+class mob_orgrimmar_faithful : public CreatureScript //71715
 {
     public:
         mob_orgrimmar_faithful() : CreatureScript("mob_orgrimmar_faithful") { }
@@ -148,7 +148,7 @@ class mob_orgrimmar_faithful : public CreatureScript
         }
 };
 
-class mob_korkron_ironblade : public CreatureScript
+class mob_korkron_ironblade : public CreatureScript //71516
 {
     public:
         mob_korkron_ironblade() : CreatureScript("mob_korkron_ironblade") { }
@@ -181,7 +181,7 @@ class mob_korkron_ironblade : public CreatureScript
         }
 };
 
-class mob_korkron_arcweaver : public CreatureScript
+class mob_korkron_arcweaver : public CreatureScript //71517
 {
     public:
         mob_korkron_arcweaver() : CreatureScript("mob_korkron_arcweaver") { }
@@ -214,7 +214,7 @@ class mob_korkron_arcweaver : public CreatureScript
         }
 };
 
-class mob_korkron_assassin : public CreatureScript
+class mob_korkron_assassin : public CreatureScript //71518
 {
     public:
         mob_korkron_assassin() : CreatureScript("mob_korkron_assassin") { }
@@ -247,7 +247,8 @@ class mob_korkron_assassin : public CreatureScript
         }
 };
 
-class mob_korkron_warshaman : public CreatureScript
+
+class mob_korkron_warshaman : public CreatureScript //71519
 {
     public:
         mob_korkron_warshaman() : CreatureScript("mob_korkron_warshaman") { }
@@ -282,7 +283,7 @@ class mob_korkron_warshaman : public CreatureScript
 
 void AddSC_general_nazgrim()
 {
-	new boss_general_nazgrim();
+    new boss_general_nazgrim();
     new mob_orgrimmar_faithful();
     new mob_korkron_ironblade();
     new mob_korkron_arcweaver();
