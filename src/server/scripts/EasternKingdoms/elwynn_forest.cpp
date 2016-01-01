@@ -236,9 +236,9 @@ public:
             if (!me->HasAura(SPELL_FORTITUDE) && !me->HasUnitState(UNIT_STATE_CASTING))
                 DoCast(me, SPELL_FORTITUDE);
 
-            if (me->HasUnitState(UNIT_STATE_CASTING) && me->isMoving())
+            if (me->HasUnitState(UNIT_STATE_CASTING) && me->IsMoving())
                 me->StopMoving();
-            else if (!me->HasUnitState(UNIT_STATE_CASTING) && !me->isMoving())
+            else if (!me->HasUnitState(UNIT_STATE_CASTING) && !me->IsMoving())
                 me->GetMotionMaster()->MovePath(951, true);
 
             if (!UpdateVictim())
@@ -607,12 +607,12 @@ public:
             {
                 if (EatTimer <= diff)
                 {
-                    if (me->isMoving()) me->StopMoving();
+                    if (me->IsMoving()) me->StopMoving();
                     DoCast(me, SPELL_EATING);
                     EatTimer = -1;
                 } else EatTimer -= diff;
 
-                if (!me->HasAura(SPELL_EATING) && !me->HasAura(SPELL_UPSET_STOMACH) && !MovedHome && !me->isMoving())
+                if (!me->HasAura(SPELL_EATING) && !me->HasAura(SPELL_UPSET_STOMACH) && !MovedHome && !me->IsMoving())
                 {
                     me->GetMotionMaster()->MovementExpired();
                     me->GetMotionMaster()->MoveChase(me->getVictim());

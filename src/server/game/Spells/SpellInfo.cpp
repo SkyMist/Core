@@ -2610,7 +2610,7 @@ uint32 SpellInfo::CalcCastTime(Unit* caster, Spell* spell) const
         caster->ModSpellCastTime(this, castTime, spell);
 
     // Kil'Jaeden's Cunning
-    if (caster && caster->HasAuraType(SPELL_AURA_KIL_JAEDENS_CUNNING) && caster->isMoving() && !caster->HasAura(119048))
+    if (caster && caster->HasAuraType(SPELL_AURA_KIL_JAEDENS_CUNNING) && caster->IsMoving() && !caster->HasAura(119048))
         castTime += CalculatePct(castTime, 50);
 
     // Fix Cultivation - with Herb Gathering

@@ -346,7 +346,7 @@ class boss_alysrazor : public CreatureScript
             void EnterEvadeMode()
             {
                 me->CombatStop(true);
-                if (me->isMoving())
+                if (me->IsMoving())
                     me->StopMoving();
 
                 me->GetMotionMaster()->MovementExpired(false);
@@ -949,7 +949,7 @@ class npc_alysrazor_fiery_tornado : public CreatureScript
                         case EVENT_MOVE_TORNADO:
                         {
                             me->SetSpeed(MOVE_RUN, 4.0f, true);
-                            Movement::MoveSplineInit init(*me);
+                            Movement::MoveSplineInit init(me);
                             FillCirclePath(centerPos, me->GetDistance2d(centerPos.GetPositionX(), centerPos.GetPositionY()), me->GetPositionZ(), init.Path(), bClock);
                             init.SetCyclic();
                             init.SetWalk(false);

@@ -760,7 +760,7 @@ class npc_bethtilac_cinderweb_spiderling : public CreatureScript
                                 }
                                 else
                                 {
-                                    if (!me->isMoving())
+                                    if (!me->IsMoving())
                                     {
                                         me->GetMotionMaster()->MovementExpired(false);
                                         me->GetMotionMaster()->MovePoint(0, addsPos[5]);

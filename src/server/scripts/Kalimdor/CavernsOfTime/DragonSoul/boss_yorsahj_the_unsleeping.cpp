@@ -612,7 +612,7 @@ class npc_yorsahj_the_unsleeping_globule: public CreatureScript
 
                 if (!bDespawn)
                 {
-                    if (me->isMoving())
+                    if (me->IsMoving())
                     {
                         float z = me->GetPositionZ();
                         me->UpdateAllowedPositionZ(me->GetPositionX(), me->GetPositionY(), z);

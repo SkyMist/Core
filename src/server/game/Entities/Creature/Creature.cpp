@@ -24,6 +24,7 @@
 #include "GroupMgr.h"
 #include "SpellMgr.h"
 #include "Creature.h"
+#include "CreatureMovement.h"
 #include "QuestDef.h"
 #include "GossipDef.h"
 #include "Player.h"
@@ -50,7 +51,6 @@
 #include "Group.h"
 #include "MoveSplineInit.h"
 #include "MoveSpline.h"
-// apply implementation of the singletons
 
 TrainerSpell const* TrainerSpellData::Find(uint32 spell_id) const
 {
@@ -456,6 +456,9 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData* data)
         ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
     }
 
+    // Replace below with UpdateMovementFlags();
+    // UpdateMovementFlags();
+
     //! Suspect it works this way:
     //! If creature can walk and fly (usually with pathing)
     //! Set MOVEMENTFLAG_CAN_FLY. Otherwise if it can only fly
@@ -487,7 +490,7 @@ void Creature::Update(uint32 diff)
     {
         m_LOSCheck_player = true;
         m_LOSCheck_creature = true;
-        m_LOSCheckTimer = DEFAULT_VISIBILITY_NOTIFY_PERIOD*2;
+        m_LOSCheckTimer = DEFAULT_VISIBILITY_NOTIFY_PERIOD * 2;
     }
     else
         m_LOSCheckTimer -= diff;
@@ -513,6 +516,9 @@ void Creature::Update(uint32 diff)
         if (m_vehicleKit)
             m_vehicleKit->Reset();
     }
+
+    // Put here UpdateMovementFlags().
+    // UpdateMovementFlags();
 
     switch (m_deathState)
     {
@@ -806,16 +812,16 @@ bool Creature::AIM_Initialize(CreatureAI* ai)
 void Creature::Motion_Initialize()
 {
     if (!m_formation)
-        i_motionMaster.Initialize();
+        i_motionMaster->Initialize();
     else if (m_formation->getLeader() == this)
     {
         m_formation->FormationReset(false);
-        i_motionMaster.Initialize();
+        i_motionMaster->Initialize();
     }
     else if (m_formation->isFormed())
-        i_motionMaster.MoveIdle(); //wait the order of leader
+        i_motionMaster->MoveIdle(); // Wait for the leader's order.
     else
-        i_motionMaster.Initialize();
+        i_motionMaster->Initialize();
 }
 
 bool Creature::Create(uint32 guidlow, Map* map, uint32 phaseMask, uint32 Entry, uint32 vehId, uint32 team, float x, float y, float z, float ang, const CreatureData* data)
@@ -1738,7 +1744,7 @@ void Creature::setDeathState(DeathState s)
             m_formation->FormationReset(true);
 
         if ((CanFly() || IsFlying()))
-            i_motionMaster.MoveFall();
+            i_motionMaster->MoveFall();
 
         Unit::setDeathState(CORPSE);
     }
@@ -1751,6 +1757,9 @@ void Creature::setDeathState(DeathState s)
         ResetPlayerDamageReq();
         CreatureTemplate const* cinfo = GetCreatureTemplate();
         SetWalk(true);
+
+        // Put here UpdateMovementFlags().
+        // UpdateMovementFlags();
 
         // Set the movement flags if the creature is in that mode. (Only fly if actually in air, only swim if in water, etc)
         float ground = GetPositionZ();
@@ -1787,7 +1796,7 @@ void Creature::setDeathState(DeathState s)
 
 void Creature::Respawn(bool force)
 {
-    Movement::MoveSplineInit(*this).Stop(true);
+    Movement::MoveSplineInit(this).Stop(true);
     DestroyForNearbyPlayers();
 
     if (force)
@@ -2115,14 +2124,19 @@ Player* Creature::SelectNearestPlayerNotGM(float distance) const
 
 void Creature::SendAIReaction(AiReaction reactionType)
 {
-    WorldPacket data(SMSG_AI_REACTION, 12);
     ObjectGuid npcGuid = GetGUID();
+
+    WorldPacket data(SMSG_AI_REACTION, 1 + 8 + 4);
 
     uint8 bitsOrder[8] = { 2, 1, 4, 3, 6, 5, 7, 0 };
     data.WriteBitInOrder(npcGuid, bitsOrder);
 
+    data.FlushBits();
+
     data.WriteByteSeq(npcGuid[1]);
+
     data << uint32(reactionType);
+
     data.WriteByteSeq(npcGuid[0]);
     data.WriteByteSeq(npcGuid[2]);
     data.WriteByteSeq(npcGuid[4]);
@@ -2557,33 +2571,6 @@ time_t Creature::GetRespawnTimeEx() const
         return now;
 }
 
-void Creature::GetRespawnPosition(float &x, float &y, float &z, float* ori, float* dist) const
-{
-    if (m_DBTableGuid)
-    {
-        if (CreatureData const* data = sObjectMgr->GetCreatureData(GetDBTableGUIDLow()))
-        {
-            x = data->posX;
-            y = data->posY;
-            z = data->posZ;
-            if (ori)
-                *ori = data->orientation;
-            if (dist)
-                *dist = data->spawndist;
-
-            return;
-        }
-    }
-
-    x = GetPositionX();
-    y = GetPositionY();
-    z = GetPositionZ();
-    if (ori)
-        *ori = GetOrientation();
-    if (dist)
-        *dist = 0;
-}
-
 void Creature::AllLootRemovedFromCorpse()
 {
     if (!HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
@@ -2743,20 +2730,6 @@ void Creature::FarTeleportTo(Map* map, float X, float Y, float Z, float O)
     Relocate(X, Y, Z, O);
     SetMap(map);
     GetMap()->AddToMap(this);
-}
-
-void Creature::SetPosition(float x, float y, float z, float o)
-{
-    // prevent crash when a bad coord is sent by the client
-    if (!SkyMistCore::IsValidMapCoord(x, y, z, o))
-    {
-        sLog->outDebug(LOG_FILTER_UNITS, "Creature::SetPosition(%f, %f, %f) .. bad coordinates!", x, y, z);
-        return;
-    }
-
-    GetMap()->CreatureRelocation(ToCreature(), x, y, z, o);
-    if (IsVehicle())
-        GetVehicleKit();
 }
 
 bool Creature::IsDungeonBoss() const

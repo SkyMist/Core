@@ -20,37 +20,74 @@
 #include "CreatureAI.h"
 #include "Creature.h"
 
+// ========== IdleMovementGenerator ============ //
+
 IdleMovementGenerator si_idleMovement;
 
-// StopMoving is needed to make unit stop if its last movement generator expires
-// But it should not be sent otherwise there are many redundent packets
-void IdleMovementGenerator::Initialize(Unit &owner)
+// StopMoving is needed to make a unit stop if its last movement generator expires but it should not be sent otherwise there are many redundant packets.
+void IdleMovementGenerator::Initialize(Unit* owner)
 {
+    if (!owner)
+        return;
+
     Reset(owner);
 }
 
-void IdleMovementGenerator::Reset(Unit& owner)
+void IdleMovementGenerator::Reset(Unit* owner)
 {
-    if (!owner.IsStopped())
-        owner.StopMoving();
+    if (!owner)
+        return;
+
+    if (!owner->IsStopped())
+        owner->StopMoving();
 }
 
-void RotateMovementGenerator::Initialize(Unit& owner)
+bool IdleMovementGenerator::Update(Unit* owner, uint32 diff)
 {
-    if (!owner.IsStopped())
-        owner.StopMoving();
-
-    if (owner.getVictim())
-        owner.SetInFront(owner.getVictim());
-
-    owner.AddUnitState(UNIT_STATE_ROTATING);
-
-    owner.AttackStop();
+    return true;
 }
 
-bool RotateMovementGenerator::Update(Unit& owner, const uint32& diff)
+void IdleMovementGenerator::Finalize(Unit* owner) { }
+
+// ========== RotateMovementGenerator ============ //
+
+void RotateMovementGenerator::Initialize(Unit* owner)
 {
-    float angle = owner.GetOrientation();
+    if (!owner)
+        return;
+
+    if (!owner->IsStopped())
+        owner->StopMoving();
+
+    if (!owner->isAlive())
+        return;
+
+    if (owner->getVictim())
+        owner->SetInFront(owner->getVictim());
+
+    owner->AddUnitState(UNIT_STATE_ROTATING);
+
+    owner->AttackStop();
+}
+
+void RotateMovementGenerator::Reset(Unit* owner)
+{
+    if (!owner)
+        return;
+
+    Initialize(owner);
+}
+
+bool RotateMovementGenerator::Update(Unit* owner, uint32 diff)
+{
+    if (!owner)
+        return false;
+
+    if (!owner->isAlive())
+        return false;
+
+    float angle = owner->GetOrientation();
+
     if (m_direction == ROTATE_DIRECTION_LEFT)
     {
         angle += (float)diff * static_cast<float>(M_PI * 2) / m_maxDuration;
@@ -61,8 +98,9 @@ bool RotateMovementGenerator::Update(Unit& owner, const uint32& diff)
         angle -= (float)diff * static_cast<float>(M_PI * 2) / m_maxDuration;
         while (angle < 0) angle += static_cast<float>(M_PI * 2);
     }
-    owner.SetOrientation(angle);
-    owner.SendMovementFlagUpdate(); // this is a hack. we do not have anything correct to send in the beginning
+
+    owner->SetOrientation(angle);   // UpdateSplinePosition does not set orientation with UNIT_STATE_ROTATING.
+    owner->SetFacingTo(angle);      // Send spline movement to clients.
 
     if (m_duration > diff)
         m_duration -= diff;
@@ -72,34 +110,61 @@ bool RotateMovementGenerator::Update(Unit& owner, const uint32& diff)
     return true;
 }
 
-void RotateMovementGenerator::Finalize(Unit &unit)
+void RotateMovementGenerator::Finalize(Unit* owner)
 {
-    unit.ClearUnitState(UNIT_STATE_ROTATING);
-    if (unit.GetTypeId() == TYPEID_UNIT)
-      unit.ToCreature()->AI()->MovementInform(ROTATE_MOTION_TYPE, 0);
+    if (!owner)
+        return;
+
+    owner->ClearUnitState(UNIT_STATE_ROTATING);
+    if (owner->GetTypeId() == TYPEID_UNIT)
+        owner->ToCreature()->AI()->MovementInform(ROTATE_MOTION_TYPE, 0);
 }
 
-void DistractMovementGenerator::Initialize(Unit& owner)
+// ========== DistractMovementGenerator ============ //
+
+void DistractMovementGenerator::Initialize(Unit* owner)
 {
-    owner.AddUnitState(UNIT_STATE_DISTRACTED);
+    if (!owner)
+        return;
+
+    if (!owner->isAlive())
+        return;
+
+    owner->AddUnitState(UNIT_STATE_DISTRACTED);
 }
 
-void DistractMovementGenerator::Finalize(Unit& owner)
+void DistractMovementGenerator::Reset(Unit* owner)
 {
-    owner.ClearUnitState(UNIT_STATE_DISTRACTED);
+    if (!owner)
+        return;
+
+    Initialize(owner);
 }
 
-bool DistractMovementGenerator::Update(Unit& /*owner*/, const uint32& time_diff)
+bool DistractMovementGenerator::Update(Unit* owner, uint32 diff)
 {
-    if (time_diff > m_timer)
+    if (diff > m_timer)
         return false;
 
-    m_timer -= time_diff;
+    m_timer -= diff;
     return true;
 }
 
-void AssistanceDistractMovementGenerator::Finalize(Unit &unit)
+void DistractMovementGenerator::Finalize(Unit* owner)
 {
-    unit.ClearUnitState(UNIT_STATE_DISTRACTED);
-    unit.ToCreature()->SetReactState(REACT_AGGRESSIVE);
+    if (!owner)
+        return;
+
+    owner->ClearUnitState(UNIT_STATE_DISTRACTED);
+}
+
+// ========== AssistanceDistractMovementGenerator ============ //
+
+void AssistanceDistractMovementGenerator::Finalize(Unit* owner)
+{
+    if (!owner)
+        return;
+
+    owner->ClearUnitState(UNIT_STATE_DISTRACTED);
+    owner->ToCreature()->SetReactState(REACT_AGGRESSIVE);
 }

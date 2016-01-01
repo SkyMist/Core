@@ -1147,7 +1147,7 @@ class npc_rohash_tornado : public CreatureScript
                     if (moveTimer <= diff)
                     {
                         me->SetSpeed(MOVE_RUN, 4.0f, true);
-                        Movement::MoveSplineInit init(*me);
+                        Movement::MoveSplineInit init(me);
                         FillCirclePath(rohashPos, frand(15.f, 20.f), me->GetPositionZ(), init.Path(), true);
                         init.SetCyclic();
                         init.SetWalk(false);

@@ -27,7 +27,7 @@ namespace Movement
 #if defined( __GNUC__ )
 #pragma pack(1)
 #else
-#pragma pack(push,1)
+#pragma pack(push, 1)
 #endif
 
     class MoveSplineFlag
@@ -74,7 +74,7 @@ namespace Movement
             // flags that shouldn't be appended into SMSG_MONSTER_MOVE packet, should be more probably
             Mask_No_Monster_Move = Mask_Final_Facing | Mask_Animations | Done,
             // Unused, not suported flags
-            Mask_Unused         = No_Spline|Enter_Cycle|Frozen|Unknown0|Unknown2|Unknown3|Unknown4|Unknown6|Unknown7|Unknown8|Unknown9,
+            Mask_Unused         = No_Spline | Enter_Cycle | Frozen | Unknown0 | Unknown2 | Unknown3 | Unknown4 | Unknown6 | Unknown7 | Unknown8 | Unknown9,
         };
 
         inline uint32& raw() { return (uint32&)*this; }
@@ -104,8 +104,9 @@ namespace Movement
 
         void EnableAnimation(uint8 anim) { raw() = (raw() & ~(Mask_Animations | Falling | Parabolic | FallingSlow)) | Animation | (anim & Mask_Animations); }
         void EnableParabolic() { raw() = (raw() & ~(Mask_Animations | Falling | Animation | FallingSlow)) | Parabolic; }
-        void EnableFalling() { raw() = (raw() & ~(Mask_Animations | Parabolic | Animation)) | Falling; }
-        void EnableCatmullRom() { raw() = (raw() & ~SmoothGroundPath) | Catmullrom | UncompressedPath; }
+        void EnableFlying() { raw() = (raw() & ~(Falling)) | Flying; }
+        void EnableFalling() { raw() = (raw() & ~(Mask_Animations | Parabolic | Animation | Flying)) | Falling; }
+        void EnableCatmullRom() { raw() = (raw() & ~SmoothGroundPath) | Catmullrom; }
         void EnableFacingPoint() { raw() = (raw() & ~Mask_Final_Facing) | Final_Point; }
         void EnableFacingAngle() { raw() = (raw() & ~Mask_Final_Facing) | Final_Angle; }
         void EnableFacingTarget() { raw() = (raw() & ~Mask_Final_Facing) | Final_Target; }

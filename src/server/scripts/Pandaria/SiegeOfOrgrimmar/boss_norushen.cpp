@@ -1756,7 +1756,7 @@ class npc_blind_hatred : public CreatureScript
                         {
                             if (Creature* amalgam = me->FindNearestCreature(BOSS_AMALGAM_OF_CORRUPTION, 150.0f, true))
                             {
-                                Movement::MoveSplineInit init(*me);
+                                Movement::MoveSplineInit init(me);
                                 FillCirclePath(quarMeasSpawnPos, me->GetDistance(amalgam), me->GetPositionZ(), init.Path());
                                 init.SetWalk(true);
                                 init.SetCyclic();

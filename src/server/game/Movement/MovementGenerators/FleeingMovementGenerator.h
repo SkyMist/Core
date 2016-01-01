@@ -25,24 +25,24 @@ template<class T>
 class FleeingMovementGenerator : public MovementGeneratorMedium< T, FleeingMovementGenerator<T> >
 {
     public:
-        FleeingMovementGenerator(uint64 fright) : i_frightGUID(fright), i_nextCheckTime(0) {}
+        FleeingMovementGenerator(uint64 fright) : i_frightGUID(fright), i_nextCheckTime(0) { }
 
-        void Initialize(T &);
-        void Finalize(T &);
-        void Reset(T &);
-        bool Update(T &, const uint32 &);
+        void DoInitialize(T* owner);
+        void DoFinalize(T* owner);
+        void DoReset(T* owner);
+        bool DoUpdate(T* owner, uint32 diff);
 
         MovementGeneratorType GetMovementGeneratorType() { return FLEEING_MOTION_TYPE; }
 
     private:
-        void _setTargetLocation(T &owner);
-        bool _getPoint(T &owner, float &x, float &y, float &z);
-        bool _setMoveData(T &owner);
-        void _Init(T &);
+        void _setTargetLocation(T* owner);
+        bool _getPoint(T* owner, float &x, float &y, float &z);
+        bool _setMoveData(T* owner);
+        void _Init(T* owner);
 
-        bool is_water_ok   :1;
-        bool is_land_ok    :1;
-        bool i_only_forward:1;
+        bool is_water_ok    :1;
+        bool is_land_ok     :1;
+        bool i_only_forward :1;
 
         float i_caster_x;
         float i_caster_y;
@@ -57,17 +57,17 @@ class FleeingMovementGenerator : public MovementGeneratorMedium< T, FleeingMovem
 class TimedFleeingMovementGenerator : public FleeingMovementGenerator<Creature>
 {
     public:
-        TimedFleeingMovementGenerator(uint64 fright, uint32 time) :
-            FleeingMovementGenerator<Creature>(fright),
-            i_totalFleeTime(time) {}
+        TimedFleeingMovementGenerator(uint64 fright, uint32 time) : FleeingMovementGenerator<Creature>(fright), i_totalFleeTime(time) { }
+
+        void DoInitialize(Unit* owner) { }
+        void DoFinalize(Unit* owner);
+        void DoReset(Unit* owner) { }
+        bool DoUpdate(Unit* owner, uint32 diff);
 
         MovementGeneratorType GetMovementGeneratorType() { return TIMED_FLEEING_MOTION_TYPE; }
-        bool Update(Unit &, const uint32&);
-        void Finalize(Unit &);
 
     private:
         TimeTracker i_totalFleeTime;
 };
 
 #endif
-

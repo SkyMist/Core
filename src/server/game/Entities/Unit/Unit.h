@@ -21,6 +21,8 @@
 
 #include "Common.h"
 #include "Object.h"
+#include "UnitMovement.h"
+#include "ObjectMovement.h"
 #include "Opcodes.h"
 #include "SpellAuraDefines.h"
 #include "UpdateFields.h"
@@ -539,24 +541,6 @@ enum UnitState
     UNIT_STATE_ALL_STATE       = 0xffffffff                      //(UNIT_STATE_STOPPED | UNIT_STATE_MOVING | UNIT_STATE_IN_COMBAT | UNIT_STATE_IN_FLIGHT)
 };
 
-enum UnitMoveType
-{
-    MOVE_WALK           = 0,
-    MOVE_RUN            = 1,
-    MOVE_RUN_BACK       = 2,
-    MOVE_SWIM           = 3,
-    MOVE_SWIM_BACK      = 4,
-    MOVE_TURN_RATE      = 5,
-    MOVE_FLIGHT         = 6,
-    MOVE_FLIGHT_BACK    = 7,
-    MOVE_PITCH_RATE     = 8
-};
-
-#define MAX_MOVE_TYPE     9
-
-extern float baseMoveSpeed[MAX_MOVE_TYPE];
-extern float playerBaseMoveSpeed[MAX_MOVE_TYPE];
-
 enum WeaponAttackType
 {
     BASE_ATTACK   = 0,
@@ -735,10 +719,6 @@ enum UnitTypeMask
     UNIT_MASK_CONTROLABLE_GUARDIAN  = 0x00000100,
     UNIT_MASK_ACCESSORY             = 0x00000200,
 };
-
-namespace Movement{
-    class MoveSpline;
-}
 
 enum DiminishingLevels
 {
@@ -1331,10 +1311,16 @@ class Unit : public WorldObject
         void AddUnitState(uint32 f) { m_state |= f; }
         bool HasUnitState(const uint32 f) const { return (m_state & f); }
         void ClearUnitState(uint32 f) { m_state &= ~f; }
+
         bool CanFreeMove() const
         {
             return !HasUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_FLEEING | UNIT_STATE_IN_FLIGHT |
                 UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DISTRACTED) && GetOwnerGUID() == 0;
+        }
+
+        bool IsInCC() const
+        {
+            return (HasUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_FLEEING) || HasAuraType(SPELL_AURA_MOD_FEAR) || HasAuraType(SPELL_AURA_MOD_FEAR_2)) ? true : false;
         }
 
         uint32 HasUnitTypeMask(uint32 mask) const { return mask & m_unitTypeMask; }
@@ -1648,7 +1634,7 @@ class Unit : public WorldObject
         void SendTeleportPacket(Position &oldPos);
         virtual bool UpdatePosition(float x, float y, float z, float ang, bool teleport = false);
         // returns true if unit's position really changed
-        bool UpdatePosition(const Position &pos, bool teleport = false) { return UpdatePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), teleport); }
+        bool UpdatePosition(const Position &pos, bool teleport = false);
         void UpdateOrientation(float orientation);
         void UpdateHeight(float newZ);
 
@@ -1656,6 +1642,7 @@ class Unit : public WorldObject
         void KnockbackFrom(float x, float y, float speedXY, float speedZ);
         void JumpTo(float speedXY, float speedZ, bool forward = true);
         void JumpTo(WorldObject* obj, float speedZ);
+        void SendSetPlayHoverAnim(bool enable);
 
         void MonsterMoveWithSpeed(float x, float y, float z, float speed);
         //void SetFacing(float ori, WorldObject* obj = NULL);
@@ -1674,11 +1661,24 @@ class Unit : public WorldObject
         void SendMovementCanFlyChange();
         void SendCanTurnWhileFalling(bool apply);
 
+        bool IsMoving() const     { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
+        bool IsTurning() const    { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
         bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);}
+        bool IsFlying() const     { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING); }
         bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING);}
-        virtual bool SetWalk(bool enable);
-        virtual bool SetDisableGravity(bool disable, bool packetOnly = false);
+
+        void RemoveMovingFlags(){ return m_movementInfo.StopMoving(); }
+        virtual bool CanFly() const = 0;
+
+        virtual bool SetWalk(bool enable);                                     // Remove virtual.
+        virtual bool SetDisableGravity(bool disable, bool packetOnly = false); // Remove virtual.
+        bool SetFall(bool enable);
+        bool SetSwim(bool enable);
+        bool SetWaterWalking(bool enable, bool packetOnly = false);
+        bool SetFeatherFall(bool enable, bool packetOnly = false);
+        //bool SetHover(bool enable, bool packetOnly = false);
         bool SetHover(bool enable);
+        void SetCanFly(bool enable);
 
         void SetInFront(Unit const* target);
         void SetFacingTo(float ori);
@@ -2134,10 +2134,8 @@ class Unit : public WorldObject
         bool IsSpellResisted(Unit* victim, SpellSchoolMask schoolMask, SpellInfo const* spellInfo);
 
         void  UpdateSpeed(UnitMoveType mtype, bool forced);
-        float GetSpeed(UnitMoveType mtype) const
-        {
-            return m_speed_rate[mtype] * (IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]);
-        }
+        float GetSpeed(UnitMoveType mtype) const;
+
         float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
         void SetSpeed(UnitMoveType mtype, float rate, bool forced = false);
         float m_TempSpeed;
@@ -2158,8 +2156,8 @@ class Unit : public WorldObject
         static Player* GetPlayer(WorldObject& object, uint64 guid);
         static Creature* GetCreature(WorldObject& object, uint64 guid);
 
-        MotionMaster* GetMotionMaster() { return &i_motionMaster; }
-        const MotionMaster* GetMotionMaster() const { return &i_motionMaster; }
+        MotionMaster* GetMotionMaster() { return i_motionMaster; }
+        const MotionMaster* GetMotionMaster() const { return i_motionMaster; }
 
         bool IsStopped() const { return !(HasUnitState(UNIT_STATE_MOVING)); }
         void StopMoving();
@@ -2186,17 +2184,8 @@ class Unit : public WorldObject
         void SetExtraUnitMovementFlags(uint16 f) { m_movementInfo.flags2 = f; }
         bool IsSplineEnabled() const;
 
-        void ReadMovementInfo(WorldPacket& data, MovementInfo* mi, ExtraMovementStatusElement* extras = NULL);
         void WriteMovementInfo(WorldPacket &data, ExtraMovementStatusElement* extras = NULL) const;
-
-        float GetPositionZMinusOffset() const
-        {
-            float offset = 0.0f;
-            if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-                offset = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
-
-            return GetPositionZ() - offset;
-        }
+        float GetPositionZMinusOffset() const;
 
         void SetControlled(bool apply, UnitState state);
         void SendLossOfControl(AuraApplication const* aurApp, Mechanics mechanic, SpellEffIndex index);
@@ -2281,15 +2270,6 @@ class Unit : public WorldObject
         // Should only be called by AuraEffect::HandleAuraControlVehicle(AuraApplication const* auraApp, uint8 mode, bool apply) const;
         void _ExitVehicle(Position const* exitPosition = NULL);
         void _EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* aurApp = NULL);
-
-        void BuildMovementPacket(ByteBuffer *data) const;
-
-        bool isMoving() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
-        void RemoveMovingFlags(){ return m_movementInfo.StopMoving(); }
-        bool isTurning() const  { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
-        virtual bool CanFly() const = 0;
-        bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
-        void SetCanFly(bool apply);
 
         void RewardRage(uint32 baseRage, bool attacker, bool useBonus = true);
 
@@ -2417,7 +2397,7 @@ class Unit : public WorldObject
 
         virtual SpellSchoolMask GetMeleeDamageSchoolMask() const;
 
-        MotionMaster i_motionMaster;
+        MotionMaster* i_motionMaster;
 
         uint32 m_reactiveTimer[MAX_REACTIVE];
         uint32 m_regenTimer;
@@ -2475,6 +2455,7 @@ class Unit : public WorldObject
         void SetFeared(bool apply);
         void SetConfused(bool apply);
         void SetStunned(bool apply);
+        // void SetRooted(bool apply, bool packetOnly = false);
         void SetRooted(bool apply);
 
     private:

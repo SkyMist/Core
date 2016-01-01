@@ -7181,7 +7181,7 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
                     if (!caster)
                         break;
 
-                    if ((caster->isMoving() && !caster->HasAura(119449)) || caster->HasAura(80325))
+                    if ((caster->IsMoving() && !caster->HasAura(119449)) || caster->HasAura(80325))
                         return;
 
                     if (caster->HasAura(119449) || (caster->GetOwner() && caster->GetOwner()->HasAura(119449)))

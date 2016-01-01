@@ -169,9 +169,7 @@ void CreatureAI::EnterEvadeMode()
     if (!_EnterEvadeMode())
         return;
 
-    me->RemoveAllAuras();
-    me->DeleteThreatList();
-    me->CombatStop(true);
+    sLog->outDebug(LOG_FILTER_UNITS, "Creature %u enters evade mode.", me->GetEntry());
 
     if (!me->GetVehicle()) // otherwise me will be in evade mode forever
     {

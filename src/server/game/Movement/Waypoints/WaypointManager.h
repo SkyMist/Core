@@ -38,16 +38,16 @@ typedef UNORDERED_MAP<uint32, WaypointPath> WaypointPathContainer;
 
 class WaypointMgr
 {
-        friend class ACE_Singleton<WaypointMgr, ACE_Null_Mutex>;
+    friend class ACE_Singleton<WaypointMgr, ACE_Null_Mutex>;
 
     public:
-        // Attempts to reload a single path from database
+        // Attempts to reload a single path from database.
         void ReloadPath(uint32 id);
 
-        // Loads all paths from database, should only run on startup
+        // Loads all paths from database, should only run on startup.
         void Load();
 
-        // Returns the path from a given id
+        // Returns the path from a given id.
         WaypointPath const* GetPath(uint32 id) const
         {
             WaypointPathContainer::const_iterator itr = _waypointStore.find(id);
@@ -58,7 +58,7 @@ class WaypointMgr
         }
 
     private:
-        // Only allow instantiation from ACE_Singleton
+        // Only allow instantiation from ACE_Singleton.
         WaypointMgr();
         ~WaypointMgr();
 
@@ -68,4 +68,3 @@ class WaypointMgr
 #define sWaypointMgr ACE_Singleton<WaypointMgr, ACE_Null_Mutex>::instance()
 
 #endif
-

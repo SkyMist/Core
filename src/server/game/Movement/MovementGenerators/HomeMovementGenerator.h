@@ -31,18 +31,18 @@ class HomeMovementGenerator<Creature> : public MovementGeneratorMedium< Creature
 {
     public:
 
-        HomeMovementGenerator() : arrived(false) {}
-        ~HomeMovementGenerator() {}
+        HomeMovementGenerator() : arrived(false) { }
+        ~HomeMovementGenerator() { }
 
-        void Initialize(Creature &);
-        void Finalize(Creature &);
-        void Reset(Creature &);
-        bool Update(Creature &, const uint32);
+        void DoInitialize(Creature* owner);
+        void DoFinalize(Creature* owner);
+        void DoReset(Creature* owner);
+        bool DoUpdate(Creature* owner, uint32 diff);
+
         MovementGeneratorType GetMovementGeneratorType() { return HOME_MOTION_TYPE; }
 
     private:
-        void _setTargetLocation(Creature &);
+        void _setTargetLocation(Creature* owner);
         bool arrived;
 };
 #endif
-
