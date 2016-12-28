@@ -23,6 +23,7 @@
 #include "WorldPacket.h"
 #include "GameObject.h"
 #include "ObjectMgr.h"
+#include "MapManager.h"
 #include "Vehicle.h"
 #include "Transport.h"
 

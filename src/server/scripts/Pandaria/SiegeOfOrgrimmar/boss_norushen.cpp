@@ -23,6 +23,7 @@
  *  to watch over and guard the continent's darkest and most dangerous secret."
  */
 
+#include "ScriptPCH.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"

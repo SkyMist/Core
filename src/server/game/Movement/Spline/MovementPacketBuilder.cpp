@@ -21,6 +21,8 @@
 #include "MoveSpline.h"
 #include "WorldPacket.h"
 #include "Object.h"
+#include "Unit.h"
+#include "Transport.h"
 
 namespace Movement
 {

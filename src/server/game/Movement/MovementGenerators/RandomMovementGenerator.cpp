@@ -35,22 +35,6 @@
 // ========== RandomMovementGenerator ============ //
 
 template<>
-void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
-{
-    if (!owner)
-        return;
-
-    if (!owner->isAlive())
-        return;
-
-    if (!wander_distance)
-        wander_distance = owner->GetRespawnRadius();
-
-    owner->AddUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
-    _setRandomLocation(owner);
-}
-
-template<>
 void RandomMovementGenerator<Creature>::DoReset(Creature* owner)
 {
     Initialize(owner);
@@ -137,6 +121,22 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* owner)
     // Call for creature group update.
     if (owner->GetFormation() && owner->GetFormation()->getLeader() == owner)
         owner->GetFormation()->LeaderMoveTo(destX, destY, destZ);
+}
+
+template<>
+void RandomMovementGenerator<Creature>::DoInitialize(Creature* owner)
+{
+    if (!owner)
+        return;
+
+    if (!owner->isAlive())
+        return;
+
+    if (!wander_distance)
+        wander_distance = owner->GetRespawnRadius();
+
+    owner->AddUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
+    _setRandomLocation(owner);
 }
 
 template<>

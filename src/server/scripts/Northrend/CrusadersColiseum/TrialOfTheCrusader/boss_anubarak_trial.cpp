@@ -21,6 +21,7 @@
 //          - tele after impale hit a permafrost doesn't work (the entire tele spell should be better)
 // Scarab   - Kill credit isn't crediting?
 
+#include "ScriptPCH.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "trial_of_the_crusader.h"

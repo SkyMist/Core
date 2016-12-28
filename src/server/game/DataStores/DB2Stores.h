@@ -21,6 +21,7 @@
 #include "Common.h"
 #include "DB2Store.h"
 #include "DB2Structure.h"
+#include "DBCStructure.h"
 
 #include <list>
 
