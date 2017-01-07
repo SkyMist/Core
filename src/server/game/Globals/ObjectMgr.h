@@ -1278,6 +1278,7 @@ class ObjectMgr
 
             return ret ? ret : time(NULL);
         }
+        void LoadMissingKeyChains();
 
         GuildChallengeRewardData const& GetGuildChallengeRewardData() const { return _challengeRewardData; }
 

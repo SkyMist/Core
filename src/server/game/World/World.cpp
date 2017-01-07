@@ -2143,6 +2143,10 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadHotfixData();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading missing KeyChains...");
+    sObjectMgr->LoadMissingKeyChains();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     sLog->outInfo(LOG_FILTER_GENERAL, "Loading Item extended costs...");
     sObjectMgr->LoadItemExtendedCost();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
