@@ -29,6 +29,7 @@ extern DB2Storage <ItemEntry> sItemStore;
 extern DB2Storage <ItemCurrencyCostEntry> sItemCurrencyCostStore;
 extern DB2Storage <ItemExtendedCostEntry> sItemExtendedCostStore;
 extern DB2Storage <ItemSparseEntry> sItemSparseStore;
+extern DB2Storage <KeyChainEntry> sKeyChainStore;
 extern DB2Storage <BattlePetSpeciesEntry> sBattlePetSpeciesStore;
 extern DB2Storage <SpellReagentsEntry> sSpellReagentsStore;
 extern DB2Storage <ItemUpgradeEntry> sItemUpgradeStore;

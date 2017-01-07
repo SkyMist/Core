@@ -194,6 +194,7 @@ enum DB2Types : uint32
     DB2_REPLY_BATTLE_PET_EFFECT_PROPERTIES    = 1672791226,           // hash of BattlePetEffectProperties.db2
     DB2_REPLY_BROADCAST_TEXT                  = 35137211,             // hash of BroadcastText.db2
     DB2_REPLY_ITEM_EXTENDED_COST              = 3146089301,           // hash of ItemExtendedCost.db2
+    DB2_REPLY_KEYCHAIN                        = 1837770388,           // hash of KeyChain.db2
 };
 
 //class to deal with packet processing
@@ -752,6 +753,7 @@ class WorldSession
         void HandleAutoEquipItemOpcode(WorldPacket& recvPacket);
         void SendItemDb2Reply(uint32 entry);
         void SendItemSparseDb2Reply(uint32 entry);
+        void SendKeyChainDb2Reply(uint32 entry);
         void SendBroadcastTextDb2Reply(uint32 entry);
         void HandleSellItemOpcode(WorldPacket& recvPacket);
         void HandleBuyItemInSlotOpcode(WorldPacket& recvPacket);

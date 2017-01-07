@@ -1101,9 +1101,9 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
         pCurrChar->SetGuildLevel(0);
     }
 
-    data.Initialize(SMSG_LEARNED_DANCE_MOVES, 4+4);
+    /*data.Initialize(SMSG_LEARNED_DANCE_MOVES, 4+4);
     data << uint64(0);
-    SendPacket(&data);
+    SendPacket(&data);*/
 
     HotfixData const& hotfix = sObjectMgr->GetHotfixData();
     data.Initialize(SMSG_HOTFIX_INFO, 3 + hotfix.size()*12);
