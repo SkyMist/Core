@@ -1254,7 +1254,12 @@ void Unit::SetFacingToObject(WorldObject* object)
 
     Movement::MoveSplineInit init(this);
     init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
-    init.SetFacing(object->ToUnit());
+
+    if (Unit* unit = object->ToUnit())
+        init.SetFacing(unit);
+    else
+        init.SetFacing(GetAngle(object));
+
     init.Launch();
 }
 
