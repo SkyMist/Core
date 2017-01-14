@@ -8866,6 +8866,9 @@ void AuraEffect::HandlePlayScene(AuraApplication const* aurApp, uint8 mode, bool
     if (!(mode & AURA_EFFECT_HANDLE_REAL))
         return;
 
+    if (!aurApp->GetTarget())
+        return;
+
     Player* player = aurApp->GetTarget()->ToPlayer();
     if (!player)
         return;
@@ -8874,9 +8877,6 @@ void AuraEffect::HandlePlayScene(AuraApplication const* aurApp, uint8 mode, bool
 
     if (apply)
         player->GetSceneMgr().PlayScene(sceneId);
-    else
-    {
-        SceneTemplate const* sceneTemplate = sObjectMgr->GetSceneTemplate(sceneId);
+    else if (SceneTemplate const* sceneTemplate = sObjectMgr->GetSceneTemplate(sceneId))
         player->GetSceneMgr().CancelSceneByPackageId(sceneTemplate->ScenePackageId);
-    }
 }
