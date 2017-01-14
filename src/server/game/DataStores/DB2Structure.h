@@ -194,6 +194,21 @@ struct BattlePetSpeciesEntry
     uint32 CreatureEntry;
 };
 
+struct SceneScriptEntry
+{
+    uint32 ID;
+    char const* Name;
+    char const* Script;
+    uint16 PrevScriptId;
+    uint16 NextScriptId;
+};
+
+struct SceneScriptPackageEntry
+{
+    uint32 ID;
+    char const* Name;
+};
+
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform
 #if defined(__GNUC__)
 #pragma pack()

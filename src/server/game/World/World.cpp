@@ -2000,6 +2000,10 @@ void World::SetInitialWorldSettings()
     sCalendarMgr->LoadFromDB();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Scenes Templates...");
+    sObjectMgr->LoadSceneTemplates();
+    sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
     ///- Initialize game time and timers
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Initializing game time and timers...");
     m_gameTime = time(NULL);

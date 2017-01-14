@@ -734,7 +734,7 @@ bool PetLoginQueryHolder::Initialize()
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_reputationMgr(this), phaseMgr(this), m_battlePetMgr(this), m_archaeologyMgr(this)
+Player::Player(WorldSession* session): Unit(true), m_achievementMgr(this), m_reputationMgr(this), phaseMgr(this), m_battlePetMgr(this), m_archaeologyMgr(this), m_sceneMgr(this)
 {
 #ifdef _MSC_VER
 #pragma warning(default:4355)
