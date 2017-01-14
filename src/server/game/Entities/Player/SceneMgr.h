@@ -18,6 +18,7 @@
 #ifndef SceneMgr_h__
 #define SceneMgr_h__
 
+#include "DBCEnums.h"
 #include "Common.h"
 
 class Player;
