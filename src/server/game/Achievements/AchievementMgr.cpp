@@ -881,49 +881,6 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
         while (achievementAccountResult->NextRow());
     }
 
-    if (criteriaResult)
-    {
-        time_t now = time(NULL);
-        do
-        {
-            Field* fields = criteriaResult->Fetch();
-            uint32 id      = fields[0].GetUInt16();
-            uint32 counter = fields[1].GetUInt32();
-            time_t date    = time_t(fields[2].GetUInt32());
-
-            AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(id);
-            if (!criteria)
-            {
-                // We will remove not existed criteria for all characters
-                sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
-
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
-                stmt->setUInt16(0, uint16(id));
-                CharacterDatabase.Execute(stmt);
-
-                continue;
-            }
-
-            if (criteria->timeLimit && time_t(date + criteria->timeLimit) < now)
-                continue;
-
-            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
-            if (achievement && (achievement->flags & ACHIEVEMENT_FLAG_GUILD))
-                continue;
-
-            CriteriaProgressMap* progressMap = GetCriteriaProgressMap();
-
-            if (!progressMap)
-                continue;
-
-            CriteriaProgress& progress = (*progressMap)[id];
-            progress.counter = counter;
-            progress.date    = date;
-            progress.changed = false;
-        }
-        while (criteriaResult->NextRow());
-    }
-
     if (achievementResult)
     {
         do
@@ -982,19 +939,163 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
             if (!progressMap)
                 continue;
 
-            // Achievement in both account & characters achievement_progress, problem
-            if (progressMap->find(id) != progressMap->end())
-            {
-                //sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Achievement '%u' in both account & characters achievement_progress", id);
-                continue;
-            }
-
             CriteriaProgress& progress = (*progressMap)[id];
             progress.counter = counter;
             progress.date    = date;
             progress.changed = false;
         }
         while (criteriaAccountResult->NextRow());
+    }
+
+    if (criteriaResult)
+    {
+        time_t now = time(NULL);
+        do
+        {
+            Field* fields = criteriaResult->Fetch();
+            uint32 id = fields[0].GetUInt16();
+            uint32 counter = fields[1].GetUInt32();
+            time_t date = time_t(fields[2].GetUInt32());
+
+            AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(id);
+            if (!criteria)
+            {
+                // We will remove not existed criteria for all characters
+                sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
+
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                stmt->setUInt16(0, uint16(id));
+                CharacterDatabase.Execute(stmt);
+
+                continue;
+            }
+
+            if (criteria->timeLimit && time_t(date + criteria->timeLimit) < now)
+                continue;
+
+            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
+            if (achievement && (achievement->flags & ACHIEVEMENT_FLAG_GUILD))
+                continue;
+
+            CriteriaProgressMap* progressMap = GetCriteriaProgressMap();
+
+            if (!progressMap)
+                continue;
+
+            // this could be true if this is the first time logging in after switching from Cataclysm to Mists of Pandaria
+            // in this case convert the data to work with MOP (should work for most cases....)
+            if (achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT)
+            {
+                uint32 accountId = GetOwner()->GetSession()->GetAccountId();
+                uint32 characterId = GetOwner()->GetGUIDLow();
+                SQLTransaction trans = CharacterDatabase.BeginTransaction();
+
+                // DELETE FROM character_achievement_progress WHERE criteria = ? AND guid = ?
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_ACHIEV_PROGRESS);
+                stmt->setUInt16(0, uint16(id));
+                stmt->setUInt32(1, characterId);
+                trans->Append(stmt);
+
+                if (progressMap->find(id) != progressMap->end())
+                {
+                    ProgressType pt = PROGRESS_ACCUMULATE;
+                    switch (criteria->type)
+                    {
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_BID:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_SOLD:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_DEALT:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_RECEIVED:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEAL_CASTED:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEALING_RECEIVED:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED:
+                    case ACHIEVEMENT_CRITERIA_TYPE_REACH_BG_RATING:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_TEAM_RATING:
+                    case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_PERSONAL_RATING:
+                        pt = PROGRESS_HIGHEST;
+                        break;
+                    case ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL:
+                    case ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL:
+                    case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL:
+                    case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT:
+                    case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_DAILY_QUEST_DAILY:
+                    case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE:
+                    case ACHIEVEMENT_CRITERIA_TYPE_FALL_WITHOUT_DYING:
+                    case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL:
+                    case ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA:
+                    case ACHIEVEMENT_CRITERIA_TYPE_VISIT_BARBER_SHOP:
+                    case ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM:
+                    case ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM:
+                    case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_ACHIEVEMENT:
+                    case ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT:
+                    case ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION:
+                    case ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION:
+                    case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILLLINE_SPELLS:
+                    case ACHIEVEMENT_CRITERIA_TYPE_GAIN_REVERED_REPUTATION:
+                    case ACHIEVEMENT_CRITERIA_TYPE_GAIN_HONORED_REPUTATION:
+                    case ACHIEVEMENT_CRITERIA_TYPE_KNOWN_FACTIONS:
+                    case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LINE:
+                    case ACHIEVEMENT_CRITERIA_TYPE_EARN_ACHIEVEMENT_POINTS:
+                    case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
+                    case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_RAID:
+                    case ACHIEVEMENT_CRITERIA_TYPE_PLAY_ARENA:
+                    case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
+                    case ACHIEVEMENT_CRITERIA_TYPE_EARNED_PVP_TITLE:
+                    case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE:
+                        pt = PROGRESS_SET;
+                        break;
+                    }
+
+                    CriteriaProgress& progress = (*progressMap)[id];
+
+                    switch (pt)
+                    {
+                    case PROGRESS_SET:
+                    case PROGRESS_HIGHEST:
+                        if (counter > progress.counter)
+                            progress.counter = counter;
+                        break;
+                    case PROGRESS_ACCUMULATE:
+                    {
+                        uint32 max_value = std::numeric_limits<uint32>::max();
+                        progress.counter = max_value - progress.counter > counter ? progress.counter + counter : max_value;
+                        break;
+                    }
+                    }
+
+                    if (date > progress.date)
+                        progress.date = date;
+
+                    // UPDATE account_achievement_progress SET counter = ?, date = ? WHERE account = ? AND criteria = ?
+                    stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ACHIEV_PROGRESS);
+                    stmt->setUInt32(0, progress.counter);
+                    stmt->setUInt32(1, progress.date);
+                    stmt->setUInt32(2, accountId);
+                    stmt->setUInt16(3, uint16(id));
+                    trans->Append(stmt);
+
+                    CharacterDatabase.CommitTransaction(trans);
+
+                    continue;
+                }
+                else
+                {
+                    // INSERT INTO account_achievement_progress (account, criteria, counter, date) VALUES (?, ?, ?, ?)
+                    stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_ACHIEV_PROGRESS);
+                    stmt->setUInt32(0, accountId);
+                    stmt->setUInt16(1, uint16(id));
+                    stmt->setUInt32(2, counter);
+                    stmt->setUInt32(3, date);
+                    trans->Append(stmt);
+
+                    CharacterDatabase.CommitTransaction(trans);
+                }
+            }
+
+            CriteriaProgress& progress = (*progressMap)[id];
+            progress.counter = counter;
+            progress.date = date;
+            progress.changed = false;
+        } while (criteriaResult->NextRow());
     }
 }
 
@@ -2087,7 +2188,7 @@ void AchievementMgr<T>::SetCriteriaProgress(AchievementCriteriaEntry const* entr
     }
     else
     {
-        uint64 newValue = 0;
+        uint32 newValue = 0;
         switch (ptype)
         {
             case PROGRESS_SET:
@@ -2096,7 +2197,7 @@ void AchievementMgr<T>::SetCriteriaProgress(AchievementCriteriaEntry const* entr
             case PROGRESS_ACCUMULATE:
             {
                 // Avoid overflow
-                uint64 max_value = std::numeric_limits<uint64>::max();
+                uint32 max_value = std::numeric_limits<uint32>::max();
                 newValue = max_value - progress->counter > changeValue ? progress->counter + changeValue : max_value;
                 break;
             }
@@ -2213,8 +2314,8 @@ template<class T>
 void AchievementMgr<T>::CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer)
 {
     // Disable for gamemasters with GM-mode enabled
-    if (GetOwner()->isGameMaster())
-        return;
+    //if (GetOwner()->isGameMaster())
+    //    return;
 
     if (achievement->flags & ACHIEVEMENT_FLAG_COUNTER || HasAchieved(achievement->ID))
         return;

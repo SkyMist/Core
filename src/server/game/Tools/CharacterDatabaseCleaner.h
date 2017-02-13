@@ -27,7 +27,8 @@ namespace CharacterDatabaseCleaner
         CLEANING_FLAG_SKILLS                = 0x2,
         CLEANING_FLAG_SPELLS                = 0x4,
         CLEANING_FLAG_TALENTS               = 0x8,
-        CLEANING_FLAG_QUESTSTATUS           = 0x10
+        CLEANING_FLAG_QUESTSTATUS           = 0x10,
+        CLEANING_FLAG_CLASS_SPELLS          = 0x20
     };
 
     void CleanDatabase();

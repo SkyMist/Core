@@ -56,6 +56,80 @@ void CharacterDatabaseCleaner::CleanDatabase()
     if (flags & CLEANING_FLAG_QUESTSTATUS)
         CleanCharacterQuestStatus();
 
+    if (flags & CLEANING_FLAG_CLASS_SPELLS)
+    {
+        QueryResult result = CharacterDatabase.PQuery("SELECT DISTINCT spell FROM character_spell");
+        if (result)
+        {
+            bool found = false;
+            std::ostringstream ss;
+            do
+            {
+                Field* fields = result->Fetch();
+
+                uint32 spell_id = fields[0].GetUInt32();
+
+                const SpellInfo* info = sSpellMgr->GetSpellInfo(spell_id);
+                if (!info)
+                {
+                    if (!found)
+                    {
+                        ss << "DELETE FROM character_spell WHERE spell IN(";
+                        found = true;
+                    }
+                    else
+                        ss << ',';
+
+                    ss << spell_id;
+
+                    continue;
+                }
+
+                switch (info->SpellFamilyName)
+                {
+                case SPELLFAMILY_MAGE:
+                case SPELLFAMILY_WARRIOR:
+                case SPELLFAMILY_WARLOCK:
+                case SPELLFAMILY_PRIEST:
+                case SPELLFAMILY_DRUID:
+                case SPELLFAMILY_ROGUE:
+                case SPELLFAMILY_HUNTER:
+                case SPELLFAMILY_PALADIN:
+                case SPELLFAMILY_SHAMAN:
+                case SPELLFAMILY_DEATHKNIGHT:
+                case SPELLFAMILY_PET:
+                case SPELLFAMILY_MONK:
+                {
+                    if (!found)
+                    {
+                        ss << "DELETE FROM character_spell WHERE spell IN(";
+                        found = true;
+                    }
+                    else
+                        ss << ',';
+
+                    ss << spell_id;
+
+                    continue;
+                }
+                break;
+                default:
+                    break;
+                }
+            } while (result->NextRow());
+
+            if (found)
+            {
+                ss << ')';
+                CharacterDatabase.Execute(ss.str().c_str());
+            }
+        }
+        else
+        {
+            sLog->outInfo(LOG_FILTER_GENERAL, "Table character_spell is empty.");
+        }
+    }
+
     // NOTE: In order to have persistentFlags be set in worldstates for the next cleanup,
     // you need to define them at least once in worldstates.
     flags &= sWorld->getIntConfig(CONFIG_PERSISTENT_CHARACTER_CLEAN_FLAGS);
