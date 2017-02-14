@@ -447,9 +447,9 @@ bool Guild::BankTab::LoadFromDB(Field* fields)
 
 bool Guild::BankTab::LoadItemFromDB(Field* fields)
 {
-    uint8 slotId = fields[13].GetUInt8();
-    uint32 itemGuid = fields[14].GetUInt32();
-    uint32 itemEntry = fields[15].GetUInt32();
+    uint8 slotId = fields[16].GetUInt8();
+    uint32 itemGuid = fields[17].GetUInt32();
+    uint32 itemEntry = fields[18].GetUInt32();
 
     if (slotId >= GUILD_BANK_MAX_SLOTS)
     {
