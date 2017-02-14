@@ -984,7 +984,7 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
 
             // this could be true if this is the first time logging in after switching from Cataclysm to Mists of Pandaria
             // in this case convert the data to work with MOP (should work for most cases....)
-            if (achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT)
+            if (achievement && achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT)
             {
                 uint32 accountId = GetOwner()->GetSession()->GetAccountId();
                 uint32 characterId = GetOwner()->GetGUIDLow();
