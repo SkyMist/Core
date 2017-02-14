@@ -23,6 +23,9 @@
 #include "SpellMgr.h"
 #include "DBCStores.h"
 
+#define SKILL_MOUNT     777
+#define SKILL_MINIPET   778
+
 void CharacterDatabaseCleaner::CleanDatabase()
 {
     // config to disable
@@ -115,6 +118,66 @@ void CharacterDatabaseCleaner::CleanDatabase()
                 break;
                 default:
                     break;
+                }
+            } while (result->NextRow());
+
+            if (found)
+            {
+                ss << ')';
+                CharacterDatabase.Execute(ss.str().c_str());
+            }
+        }
+        else
+        {
+            sLog->outInfo(LOG_FILTER_GENERAL, "Table character_spell is empty.");
+        }
+    }
+
+    if (flags & CLEANING_FLAG_ACCOUNT_SPELLS)
+    {
+        QueryResult result = CharacterDatabase.PQuery("SELECT DISTINCT spell FROM character_spell");
+        if (result)
+        {
+            bool found = false;
+            std::ostringstream ss;
+            do
+            {
+                Field* fields = result->Fetch();
+
+                uint32 spell_id = fields[0].GetUInt32();
+
+                const SpellInfo* info = sSpellMgr->GetSpellInfo(spell_id);
+                if (info && ((info->IsAbilityOfSkillType(SKILL_MOUNT) && !(info->AttributesEx10 & SPELL_ATTR10_MOUNT_CHARACTER)) || info->IsAbilityOfSkillType(SKILL_MINIPET)))
+                {
+                    if (!found)
+                    {
+                        ss << "DELETE FROM character_spell WHERE spell IN(";
+                        found = true;
+                    }
+                    else
+                        ss << ',';
+
+                    ss << spell_id;
+
+                    QueryResult accountsWithSpellResult = CharacterDatabase.PQuery(
+                        "SELECT DISTINCT account FROM character_spell cs INNER JOIN characters ch ON cs.guid = ch.guid WHERE spell = %d AND active = 1 AND disabled = 0", spell_id);
+                    if (accountsWithSpellResult)
+                    {
+                        std::ostringstream accountSpellInserts;
+                        accountSpellInserts << "REPLACE INTO account_spell (accountId, spell, active, disabled) VALUES ";
+                        Field* accountFields = accountsWithSpellResult->Fetch();
+                        uint32 account = accountFields[0].GetUInt32();
+                        accountSpellInserts << "(" << account << "," << spell_id << ", 1, 0)";
+
+                        while (accountsWithSpellResult->NextRow())
+                        {
+                            accountFields = accountsWithSpellResult->Fetch();
+                            account = accountFields[0].GetUInt32();
+                            accountSpellInserts << ",(" << account << "," << spell_id << ", 1, 0)";
+                        }
+
+                        LoginDatabase.PQuery(accountSpellInserts.str().c_str());
+                    }
                 }
             } while (result->NextRow());
 
