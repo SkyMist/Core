@@ -22,6 +22,7 @@
 #include "Database/DatabaseEnv.h"
 #include "SpellMgr.h"
 #include "DBCStores.h"
+#include "AchievementMgr.h"
 
 #define SKILL_MOUNT     777
 #define SKILL_MINIPET   778
@@ -190,6 +191,133 @@ void CharacterDatabaseCleaner::CleanDatabase()
         else
         {
             sLog->outInfo(LOG_FILTER_GENERAL, "Table character_spell is empty.");
+        }
+    }
+
+    if (flags & CLEANING_FLAG_ACCOUNT_ACHI_PROGRESS)
+    {
+        QueryResult criteriaResults = CharacterDatabase.PQuery("SELECT DISTINCT criteria FROM character_achievement_progress");
+        if (criteriaResults)
+        {
+            bool found = false;
+            std::ostringstream ss;
+            do
+            {
+                Field* fields = criteriaResults->Fetch();
+                uint32 critId = fields[0].GetUInt32();
+
+                AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(critId);
+                if (!criteria)
+                    continue;
+
+                AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
+                if (!achievement || (achievement->flags & ACHIEVEMENT_FLAG_GUILD) || (achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT))
+                {
+                    if (!found)
+                    {
+                        ss << "DELETE FROM character_achievement_progress WHERE criteria IN(";
+                        found = true;
+                    }
+                    else
+                        ss << ',';
+
+                    ss << critId;
+
+                    // move data to account achievement progress table
+                    if (achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT)
+                    {
+                        switch (criteria->type)
+                        {
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_BID:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_SOLD:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_DEALT:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_RECEIVED:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEAL_CASTED:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEALING_RECEIVED:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED:
+                        case ACHIEVEMENT_CRITERIA_TYPE_REACH_BG_RATING:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_TEAM_RATING:
+                        case ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_PERSONAL_RATING:
+                        case ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL:
+                        case ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL:
+                        case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL:
+                        case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT:
+                        case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_DAILY_QUEST_DAILY:
+                        case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE:
+                        case ACHIEVEMENT_CRITERIA_TYPE_FALL_WITHOUT_DYING:
+                        case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL:
+                        case ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA:
+                        case ACHIEVEMENT_CRITERIA_TYPE_VISIT_BARBER_SHOP:
+                        case ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM:
+                        case ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM:
+                        case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_ACHIEVEMENT:
+                        case ACHIEVEMENT_CRITERIA_TYPE_BUY_BANK_SLOT:
+                        case ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION:
+                        case ACHIEVEMENT_CRITERIA_TYPE_GAIN_EXALTED_REPUTATION:
+                        case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILLLINE_SPELLS:
+                        case ACHIEVEMENT_CRITERIA_TYPE_GAIN_REVERED_REPUTATION:
+                        case ACHIEVEMENT_CRITERIA_TYPE_GAIN_HONORED_REPUTATION:
+                        case ACHIEVEMENT_CRITERIA_TYPE_KNOWN_FACTIONS:
+                        case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LINE:
+                        case ACHIEVEMENT_CRITERIA_TYPE_EARN_ACHIEVEMENT_POINTS:
+                        case ACHIEVEMENT_CRITERIA_TYPE_REACH_GUILD_LEVEL:
+                        case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_RAID:
+                        case ACHIEVEMENT_CRITERIA_TYPE_PLAY_ARENA:
+                        case ACHIEVEMENT_CRITERIA_TYPE_OWN_RANK:
+                        case ACHIEVEMENT_CRITERIA_TYPE_EARNED_PVP_TITLE:
+                        case ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE:
+                            // these achievement types do not have accumulating values
+                            break;
+                        default:
+                        {
+                            CharacterDatabase.PQuery("REPLACE INTO account_achievement_progress"
+                                "SELECT account, criteria, SUM(counter) AS counter, MAX(date) AS date FROM"
+                                "("
+                                "("
+                                "SELECT account, criteria, SUM(counter) AS counter, MAX(date) AS date"
+                                "FROM character_achievement_progress cap INNER JOIN characters ch ON cap.guid = ch.guid"
+                                "WHERE criteria = %d"
+                                "GROUP BY account, criteria"
+                                ")"
+                                "UNION ALL"
+                                "("
+                                "SELECT * FROM account_achievement_progress WHERE criteria = %d"
+                                ")"
+                                ") alldata"
+                                "GROUP BY account, criteria", critId, critId);
+                        }
+                        }
+
+                        // also take the max considering the accumulating types to "elegantly" handle integer overflows
+                        CharacterDatabase.PQuery("REPLACE INTO account_achievement_progress"
+                            "SELECT account, criteria, MAX(counter) AS counter, MAX(date) AS date FROM"
+                            "("
+                            "("
+                            "SELECT account, criteria, MAX(counter) AS counter, MAX(date) AS date"
+                            "FROM character_achievement_progress cap INNER JOIN characters ch ON cap.guid = ch.guid"
+                            "WHERE criteria = %d"
+                            "GROUP BY account, criteria"
+                            ")"
+                            "UNION ALL"
+                            "("
+                            "SELECT * FROM account_achievement_progress WHERE criteria = %d"
+                            ")"
+                            ") alldata"
+                            "GROUP BY account, criteria", critId, critId);
+
+                    }
+                }
+            } while (result->NextRow());
+
+            if (found)
+            {
+                ss << ')';
+                CharacterDatabase.Execute(ss.str().c_str());
+            }
+        }
+        else
+        {
+            sLog->outInfo(LOG_FILTER_GENERAL, "Table character_achievement_progress is empty.");
         }
     }
 

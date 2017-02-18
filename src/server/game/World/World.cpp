@@ -1767,8 +1767,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadPetNames();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
 
-    CharacterDatabaseCleaner::CleanDatabase();
-
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading the max pet number...");
     sObjectMgr->LoadPetNumber();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
@@ -1825,6 +1823,8 @@ void World::SetInitialWorldSettings()
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Loading Completed Achievements...");
     sAchievementMgr->LoadCompletedAchievements();
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "");
+
+    CharacterDatabaseCleaner::CleanDatabase();
 
     // Delete expired auctions before loading
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, "Deleting expired auctions...");
