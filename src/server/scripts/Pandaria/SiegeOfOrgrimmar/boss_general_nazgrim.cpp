@@ -43,15 +43,6 @@ enum eSays
     SAY_DEATH   = 3
 };
 
-enum eAdds
-{
-	mob_orgrimmar_faithful = 71715,
-	mob_korkron_ironblade  = 71516,
-	mob_korkron_arcweaver  = 71517,
-	mob_korkron_assassin   = 71518,
-	mob_korkron_warshaman  = 71519
-}
-
 class boss_general_nazgrim : public CreatureScript //71515
 {
 	public:
