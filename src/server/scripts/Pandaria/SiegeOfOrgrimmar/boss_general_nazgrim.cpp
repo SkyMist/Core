@@ -21,13 +21,38 @@ enum eSpells
 
 enum eEvents
 {
+	EVENT_BERSERK                   = 1,
+	EVENT_BERSERKER_STANCE          = 2,
+	EVENT_BONECRACKER               = 3,
+	EVENT_COOLING_OFF               = 4,
+	EVENT_DEFENSIVE_STANCE          = 5,
+	EVENT_EXECUTE                   = 6,
+	EVENT_HEROIC_SHOCKWAVE          = 7,
+	EVENT_RAVAGER                   = 8,
+	EVENT_WAR_SONG                  = 9,
+	EVENT_AFRTERSHOCK               = 10,
+	EVENT_KORKRON_BANNER            = 11,
+	EVENT_SUNDERING_BLOW            = 12,
+	EVENT_BATTLE_STANCE             = 13
 };
 
 enum eSays
 {
+    SAY_AGGRO   = 1,
+    SAY_KILL    = 2,
+    SAY_DEATH   = 3
 };
 
-class boss_general_nazgrim : public CreatureScript
+enum eAdds
+{
+	mob_orgrimmar_faithful = 71715,
+	mob_korkron_ironblade  = 71516,
+	mob_korkron_arcweaver  = 71517,
+	mob_korkron_assassin   = 71518,
+	mob_korkron_warshaman  = 71519
+}
+
+class boss_general_nazgrim : public CreatureScript //71515
 {
 	public:
 		boss_general_nazgrim() : CreatureScript("boss_general_nazgrim") { }
@@ -64,19 +89,26 @@ class boss_general_nazgrim : public CreatureScript
 			
 			void EnterCombat(Unit* attacker)
             {
-				// @TODO: Set in combat for other protectors
                 if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                     pInstance->SetBossState(DATA_GENERAL_NAZGRIM, IN_PROGRESS);
                 }
+                Talk(SAY_AGGRO);
+
+                events.ScheduleEvent(EVENT_SUNDERING_BLOW, urand(5000, 6000));
+                events.ScheduleEvent(EVENT_BONECRACKER, urand(16000, 16000));
+                events.ScheduleEvent(EVENT_BERSERK, urand(600000, 600000));
+                events.ScheduleEvent(EVENT_BATTLE_STANCE, urand(0, 0));
+                events.ScheduleEvent(EVENT_BERSERKER_STANCE, urand(120000, 120000));
+                events.ScheduleEvent(EVENT_DEFENSIVE_STANCE, urand(180000, 180000));
             }
 			
 			void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
             }
-
+            
             void SummonedCreatureDespawn(Creature* summon)
             {
                 summons.Despawn(summon);
@@ -115,7 +147,7 @@ class boss_general_nazgrim : public CreatureScript
 		}
 };
 
-class mob_orgrimmar_faithful : public CreatureScript
+class mob_orgrimmar_faithful : public CreatureScript //71715
 {
     public:
         mob_orgrimmar_faithful() : CreatureScript("mob_orgrimmar_faithful") { }
@@ -148,7 +180,7 @@ class mob_orgrimmar_faithful : public CreatureScript
         }
 };
 
-class mob_korkron_ironblade : public CreatureScript
+class mob_korkron_ironblade : public CreatureScript //71516
 {
     public:
         mob_korkron_ironblade() : CreatureScript("mob_korkron_ironblade") { }
@@ -181,7 +213,7 @@ class mob_korkron_ironblade : public CreatureScript
         }
 };
 
-class mob_korkron_arcweaver : public CreatureScript
+class mob_korkron_arcweaver : public CreatureScript //71517
 {
     public:
         mob_korkron_arcweaver() : CreatureScript("mob_korkron_arcweaver") { }
@@ -214,7 +246,7 @@ class mob_korkron_arcweaver : public CreatureScript
         }
 };
 
-class mob_korkron_assassin : public CreatureScript
+class mob_korkron_assassin : public CreatureScript //71518
 {
     public:
         mob_korkron_assassin() : CreatureScript("mob_korkron_assassin") { }
@@ -247,7 +279,8 @@ class mob_korkron_assassin : public CreatureScript
         }
 };
 
-class mob_korkron_warshaman : public CreatureScript
+
+class mob_korkron_warshaman : public CreatureScript //71519
 {
     public:
         mob_korkron_warshaman() : CreatureScript("mob_korkron_warshaman") { }
@@ -282,7 +315,7 @@ class mob_korkron_warshaman : public CreatureScript
 
 void AddSC_general_nazgrim()
 {
-	new boss_general_nazgrim();
+    new boss_general_nazgrim();
     new mob_orgrimmar_faithful();
     new mob_korkron_ironblade();
     new mob_korkron_arcweaver();
