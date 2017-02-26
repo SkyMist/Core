@@ -654,6 +654,15 @@ struct ResearchLootEntry
     uint8 race;
 };
 
+struct SceneTemplate
+{
+    uint32 SceneId;
+    uint32 PlaybackFlags;
+    uint32 ScenePackageId;
+};
+
+typedef std::unordered_map<uint32, SceneTemplate> SceneTemplateContainer;
+
 typedef std::vector<HotfixInfo> HotfixData;
 typedef std::vector<GuildChallengeReward> GuildChallengeRewardData;
 typedef std::map<uint32, bool> UpdateSkipData;
@@ -1007,6 +1016,17 @@ class ObjectMgr
         void LoadResearchSiteZones();
         void LoadResearchSiteLoot();
 
+        void LoadSceneTemplates();
+
+        SceneTemplate const* GetSceneTemplate(uint32 sceneId) const
+        {
+            auto itr = _sceneTemplateStore.find(sceneId);
+            if (itr != _sceneTemplateStore.end())
+                return &itr->second;
+
+            return NULL;
+        }
+
         ResearchZoneMap const& GetResearchZoneMap() const { return _researchZoneMap; }
         ResearchLootVector const& GetResearchLoot() const { return _researchLoot; }
 
@@ -1278,6 +1298,7 @@ class ObjectMgr
 
             return ret ? ret : time(NULL);
         }
+        void LoadMissingKeyChains();
 
         GuildChallengeRewardData const& GetGuildChallengeRewardData() const { return _challengeRewardData; }
 
@@ -1461,6 +1482,8 @@ class ObjectMgr
         std::set<uint32> _hasDifficultyEntries[MAX_TEMPLATE_DIFFICULTY - 1]; // already loaded creatures with difficulty 1 values, used in CheckCreatureTemplate
 
         std::set<uint32> _overwriteExtendedCosts;
+
+        SceneTemplateContainer _sceneTemplateStore;
 
         enum CreatureLinkedRespawnType
         {

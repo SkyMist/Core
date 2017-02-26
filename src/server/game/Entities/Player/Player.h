@@ -43,6 +43,7 @@
 #include "PhaseMgr.h"
 #include "CUFProfiles.h"
 #include "SpellChargesTracker.h"
+#include "SceneMgr.h"
 
 // for template
 #include "SpellMgr.h"
@@ -1303,6 +1304,8 @@ class Player : public Unit, public GridObject<Player>
     public:
         explicit Player (WorldSession* session);
         ~Player();
+
+        SceneMgr& GetSceneMgr() { return m_sceneMgr; }
 
         //AnticheatData anticheatData;
 
@@ -3358,6 +3361,8 @@ class Player : public Unit, public GridObject<Player>
         float  m_summon_x;
         float  m_summon_y;
         float  m_summon_z;
+
+        SceneMgr m_sceneMgr;
 
         DeclinedName *m_declinedname;
         Runes m_runes;

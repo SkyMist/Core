@@ -54,7 +54,6 @@ class SplineBase
             // Could be modified, affects segment length evaluation precision. Lower value saves more performance in cost of lover precision. Minimal value is 1. Client's value is 20, blizz uses 2-3 steps to compute length.
             STEPS_PER_SEGMENT = 3,
         };
-        static_assert(STEPS_PER_SEGMENT > 0, "shouldn't be lesser than 1");
 
     protected:
         void EvaluateLinear(index_type, float, Vector3&) const;

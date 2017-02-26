@@ -15,6 +15,8 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
+
 #include "TOTP.h"
 
 int base32_decode(const char* encoded, char* result, int bufSize)

@@ -487,7 +487,7 @@ enum AuraType
     SPELL_AURA_427                                          = 427,  // 5.4.0 unk aura (NYI) Spell 91318
     SPELL_AURA_428                                          = 428,  // 5.4.0 unk aura (NYI) used for cart in silvershard mines ?
     SPELL_AURA_MOD_PET_DAMAGE_DONE                          = 429,  // 5.4.0 unk aura (NYI) see 144364
-    SPELL_AURA_430                                          = 430,  // 5.4.0 unk aura (NYI) related to triggering some cinematics / cameras? check 158406, 159260.
+    SPELL_AURA_PLAY_SCENE                                   = 430,  // 5.4.0 triggers a scene script check 158406, 159260.
     SPELL_AURA_431                                          = 431,  // 5.4.0 unk aura (NYI) Contested Territory 142869
     SPELL_AURA_432                                          = 432,  // 5.4.0 unk aura (NYI) see 91318
     SPELL_AURA_433                                          = 433,  // 5.4.0 unused

@@ -881,49 +881,6 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
         while (achievementAccountResult->NextRow());
     }
 
-    if (criteriaResult)
-    {
-        time_t now = time(NULL);
-        do
-        {
-            Field* fields = criteriaResult->Fetch();
-            uint32 id      = fields[0].GetUInt16();
-            uint32 counter = fields[1].GetUInt32();
-            time_t date    = time_t(fields[2].GetUInt32());
-
-            AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(id);
-            if (!criteria)
-            {
-                // We will remove not existed criteria for all characters
-                sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
-
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
-                stmt->setUInt16(0, uint16(id));
-                CharacterDatabase.Execute(stmt);
-
-                continue;
-            }
-
-            if (criteria->timeLimit && time_t(date + criteria->timeLimit) < now)
-                continue;
-
-            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
-            if (achievement && (achievement->flags & ACHIEVEMENT_FLAG_GUILD))
-                continue;
-
-            CriteriaProgressMap* progressMap = GetCriteriaProgressMap();
-
-            if (!progressMap)
-                continue;
-
-            CriteriaProgress& progress = (*progressMap)[id];
-            progress.counter = counter;
-            progress.date    = date;
-            progress.changed = false;
-        }
-        while (criteriaResult->NextRow());
-    }
-
     if (achievementResult)
     {
         do
@@ -977,17 +934,14 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
             if (criteria->timeLimit && time_t(date + criteria->timeLimit) < now)
                 continue;
 
+            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
+            if (achievement && !(achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT))
+                continue;
+
             CriteriaProgressMap* progressMap = GetCriteriaProgressMap();
 
             if (!progressMap)
                 continue;
-
-            // Achievement in both account & characters achievement_progress, problem
-            if (progressMap->find(id) != progressMap->end())
-            {
-                //sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Achievement '%u' in both account & characters achievement_progress", id);
-                continue;
-            }
 
             CriteriaProgress& progress = (*progressMap)[id];
             progress.counter = counter;
@@ -995,6 +949,48 @@ void AchievementMgr<Player>::LoadFromDB(PreparedQueryResult achievementResult, P
             progress.changed = false;
         }
         while (criteriaAccountResult->NextRow());
+    }
+
+    if (criteriaResult)
+    {
+        time_t now = time(NULL);
+        do
+        {
+            Field* fields = criteriaResult->Fetch();
+            uint32 id = fields[0].GetUInt16();
+            uint32 counter = fields[1].GetUInt32();
+            time_t date = time_t(fields[2].GetUInt32());
+
+            AchievementCriteriaEntry const* criteria = sAchievementMgr->GetAchievementCriteria(id);
+            if (!criteria)
+            {
+                // We will remove not existed criteria for all characters
+                sLog->outError(LOG_FILTER_ACHIEVEMENTSYS, "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
+
+                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                stmt->setUInt16(0, uint16(id));
+                CharacterDatabase.Execute(stmt);
+
+                continue;
+            }
+
+            if (criteria->timeLimit && time_t(date + criteria->timeLimit) < now)
+                continue;
+
+            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(criteria->achievement);
+            if (achievement && (achievement->flags & ACHIEVEMENT_FLAG_GUILD || achievement->flags & ACHIEVEMENT_FLAG_ACCOUNT))
+                continue;
+
+            CriteriaProgressMap* progressMap = GetCriteriaProgressMap();
+
+            if (!progressMap)
+                continue;
+
+            CriteriaProgress& progress = (*progressMap)[id];
+            progress.counter = counter;
+            progress.date = date;
+            progress.changed = false;
+        } while (criteriaResult->NextRow());
     }
 }
 
@@ -2087,7 +2083,7 @@ void AchievementMgr<T>::SetCriteriaProgress(AchievementCriteriaEntry const* entr
     }
     else
     {
-        uint64 newValue = 0;
+        uint32 newValue = 0;
         switch (ptype)
         {
             case PROGRESS_SET:
@@ -2096,7 +2092,7 @@ void AchievementMgr<T>::SetCriteriaProgress(AchievementCriteriaEntry const* entr
             case PROGRESS_ACCUMULATE:
             {
                 // Avoid overflow
-                uint64 max_value = std::numeric_limits<uint64>::max();
+                uint32 max_value = std::numeric_limits<uint32>::max();
                 newValue = max_value - progress->counter > changeValue ? progress->counter + changeValue : max_value;
                 break;
             }
@@ -2213,8 +2209,8 @@ template<class T>
 void AchievementMgr<T>::CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer)
 {
     // Disable for gamemasters with GM-mode enabled
-    if (GetOwner()->isGameMaster())
-        return;
+    //if (GetOwner()->isGameMaster())
+    //    return;
 
     if (achievement->flags & ACHIEVEMENT_FLAG_COUNTER || HasAchieved(achievement->ID))
         return;
