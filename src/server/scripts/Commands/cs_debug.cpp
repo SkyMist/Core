@@ -47,6 +47,8 @@ class debug_commandscript : public CommandScript
                 { "cinematic",      SEC_MODERATOR,      false, &HandleDebugPlayCinematicCommand,   "", NULL },
                 { "movie",          SEC_MODERATOR,      false, &HandleDebugPlayMovieCommand,       "", NULL },
                 { "sound",          SEC_MODERATOR,      false, &HandleDebugPlaySoundCommand,       "", NULL },
+                { "scene",          SEC_MODERATOR,      false, &HandleDebugPlaySceneCommand,       "", NULL },
+                { "scenepackage",   SEC_MODERATOR,      false, &HandleDebugPlayScenePackageCommand, "", NULL },
                 { NULL,             SEC_PLAYER,         false, NULL,                               "", NULL }
             };
             static ChatCommand debugSendCommandTable[] =
@@ -510,6 +512,46 @@ class debug_commandscript : public CommandScript
                 unit->PlayDirectSound(soundId, handler->GetSession()->GetPlayer());
 
             handler->PSendSysMessage(LANG_YOU_HEAR_SOUND, soundId);
+            return true;
+        }
+
+        static bool HandleDebugPlaySceneCommand(ChatHandler* handler, char const* args)
+        {
+            if (!*args)
+                return false;
+
+            char const* sceneIdStr = strtok((char*)args, " ");
+
+            if (!sceneIdStr)
+                return false;
+
+            uint32 sceneId = atoi(sceneIdStr);
+
+            if (!sObjectMgr->GetSceneTemplate(sceneId))
+                return false;
+
+            handler->GetSession()->GetPlayer()->GetSceneMgr().PlayScene(sceneId);
+            return true;
+        }
+
+        static bool HandleDebugPlayScenePackageCommand(ChatHandler* handler, char const* args)
+        {
+            if (!*args)
+                return false;
+
+            char const* scenePackageIdStr = strtok((char*)args, " ");
+            char const* flagsStr = strtok(NULL, "");
+
+            if (!scenePackageIdStr)
+                return false;
+
+            uint32 scenePackageId = atoi(scenePackageIdStr);
+            uint32 flags = flagsStr ? atoi(flagsStr) : SCENEFLAG_UNK16;
+
+            if (!sSceneScriptPackageStore.LookupEntry(scenePackageId))
+                return false;
+
+            handler->GetSession()->GetPlayer()->GetSceneMgr().PlaySceneByPackageId(scenePackageId, flags);
             return true;
         }
 

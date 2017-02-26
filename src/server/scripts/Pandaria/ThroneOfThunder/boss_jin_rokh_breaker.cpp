@@ -27,6 +27,7 @@
  *  He has since undergone a transformation after being enchanted with powers over storm by the Thunder King."
  */
 
+#include "ScriptPCH.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"

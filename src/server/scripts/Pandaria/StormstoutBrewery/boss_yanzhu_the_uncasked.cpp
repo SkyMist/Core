@@ -18,6 +18,7 @@
  * Boss: Yan-Zhu the Uncasked.
  */
 
+#include "ScriptPCH.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
@@ -771,6 +772,7 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
             boss_yan_zhu_the_uncasked_AI(Creature* creature) : BossAI(creature, DATA_YANZHU_THE_UNCASKED_EVENT), summons(me)
             {
                 instance = creature->GetInstanceScript();
+                uncleGao = NULL;
             }
 
             InstanceScript* instance;
@@ -867,7 +869,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
 
-                uncleGao->AI()->DoAction(ACTION_EVADE);
+                if (uncleGao)
+                    uncleGao->AI()->DoAction(ACTION_EVADE);
             }
 
             void JustDied(Unit* /*killer*/)
@@ -890,7 +893,8 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
                 }
 
-                uncleGao->AI()->DoAction(ACTION_START_OUTRO);
+                if (uncleGao)
+                    uncleGao->AI()->DoAction(ACTION_START_OUTRO);
 
                 _JustDied();
             }

@@ -37,6 +37,10 @@ if( APPLE )
     set (CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++ -g3 -Wall -O0")
 endif()
 
+if( UNIX )
+    set (CMAKE_CXX_FLAGS "-std=c++0x")
+endif()
+
 include(CheckCXXSourceRuns)
 include(CheckIncludeFiles)
 

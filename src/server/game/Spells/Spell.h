@@ -434,6 +434,7 @@ class Spell
         void EffectCreateAreatrigger(SpellEffIndex effIndex);
         int32 CalculateMonkMeleeAttacks(Unit* caster, float coeff, int32 APmultiplier);
         void EffectResurrectWithAura(SpellEffIndex effIndex);
+        void EffectStartScene(SpellEffIndex effIndex);
 
         typedef std::set<AuraPtr> UsedSpellMods;
 

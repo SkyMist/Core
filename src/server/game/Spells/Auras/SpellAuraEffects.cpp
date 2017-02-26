@@ -486,7 +486,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //427 SPELL_AURA_427
     &AuraEffect::HandleNULL,                                      //428 SPELL_AURA_428
     &AuraEffect::HandleNULL,                                      //429 SPELL_AURA_429
-    &AuraEffect::HandleNULL,                                      //430 SPELL_AURA_430
+    &AuraEffect::HandlePlayScene,                                 //430 SPELL_AURA_PLAY_SCENE
     &AuraEffect::HandleNULL,                                      //431 SPELL_AURA_431
     &AuraEffect::HandleNULL,                                      //432 SPELL_AURA_432
     &AuraEffect::HandleNULL,                                      //433 SPELL_AURA_433
@@ -8859,4 +8859,24 @@ void AuraEffect::HandleChangeSpellVisualEffect(AuraApplication const* aurApp, ui
 
     player->SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 0, spellToReplace);
     player->SetDynamicUInt32Value(PLAYER_DYNAMIC_RESEARCH_SITES, 1, replacer);
+}
+
+void AuraEffect::HandlePlayScene(AuraApplication const* aurApp, uint8 mode, bool apply) const
+{
+    if (!(mode & AURA_EFFECT_HANDLE_REAL))
+        return;
+
+    if (!aurApp->GetTarget())
+        return;
+
+    Player* player = aurApp->GetTarget()->ToPlayer();
+    if (!player)
+        return;
+
+    uint32 sceneId = GetMiscValue();
+
+    if (apply)
+        player->GetSceneMgr().PlayScene(sceneId);
+    else if (SceneTemplate const* sceneTemplate = sObjectMgr->GetSceneTemplate(sceneId))
+        player->GetSceneMgr().CancelSceneByPackageId(sceneTemplate->ScenePackageId);
 }

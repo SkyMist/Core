@@ -134,6 +134,7 @@ public:
             { "reserved_name",                SEC_ADMINISTRATOR, true,  &HandleReloadReservedNameCommand,               "", NULL },
             { "reputation_reward_rate",       SEC_ADMINISTRATOR, true,  &HandleReloadReputationRewardRateCommand,       "", NULL },
             { "reputation_spillover_template", SEC_ADMINISTRATOR, true,  &HandleReloadReputationRewardRateCommand,       "", NULL },
+            { "scene_template",               SEC_ADMINISTRATOR, true,  &HandleReloadSceneTemplateCommand,              "", NULL },
             { "script_waypoint",              SEC_ADMINISTRATOR, true,  &HandleReloadScriptWaypointCommand,             "", NULL },
             { "skill_discovery_template",     SEC_ADMINISTRATOR, true,  &HandleReloadSkillDiscoveryTemplateCommand,     "", NULL },
             { "skill_extra_item_template",    SEC_ADMINISTRATOR, true,  &HandleReloadSkillExtraItemTemplateCommand,     "", NULL },
@@ -1280,6 +1281,14 @@ public:
         sLog->outInfo(LOG_FILTER_GENERAL, "Reloading vehicle_template_accessory table...");
         sObjectMgr->LoadVehicleTemplateAccessories();
         handler->SendGlobalGMSysMessage("Vehicle template accessories reloaded.");
+        return true;
+    }
+
+    static bool HandleReloadSceneTemplateCommand(ChatHandler* handler, const char* /*args*/)
+    {
+        sLog->outInfo(LOG_FILTER_GENERAL, "Reloading scene_template table...");
+        sObjectMgr->LoadSceneTemplates();
+        handler->SendGlobalGMSysMessage("scene_template table reloaded.");
         return true;
     }
 

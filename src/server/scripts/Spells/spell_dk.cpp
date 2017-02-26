@@ -2224,7 +2224,7 @@ class spell_dk_ghoul_explode : public SpellScriptLoader
 
             bool Validate(SpellInfo const* /*spellEntry*/)
             {
-                if (!sSpellMgr->GetSpellInfo(DK_SPELL_CORPSE_EXPLOSION_TRIGGERED))
+                if (!sSpellMgr->GetSpellInfo(43999))
                     return false;
                 return true;
             }
@@ -2234,7 +2234,7 @@ class spell_dk_ghoul_explode : public SpellScriptLoader
                 if (Unit* unitTarget = GetHitUnit())
                 {
                     // Corpse Explosion (Suicide)
-                    unitTarget->CastSpell(unitTarget, DK_SPELL_CORPSE_EXPLOSION_TRIGGERED, true);
+                    unitTarget->CastSpell(unitTarget, 43999, true);
                 }
             }
 

@@ -132,6 +132,13 @@ struct ItemSparseEntry
     int32      CurrencySubstitutionCount;                    // 133
 };
 
+#define KEYCHAIN_SIZE   32
+struct KeyChainEntry
+{
+    uint32  Id;
+    uint8   Key[KEYCHAIN_SIZE];
+};
+
 struct ItemUpgradeEntry
 {
     uint32 Id;
@@ -185,6 +192,21 @@ struct BattlePetSpeciesEntry
 {
     uint32 ID;
     uint32 CreatureEntry;
+};
+
+struct SceneScriptEntry
+{
+    uint32 ID;
+    char const* Name;
+    char const* Script;
+    uint32 PrevScriptId;
+    uint32 NextScriptId;
+};
+
+struct SceneScriptPackageEntry
+{
+    uint32 ID;
+    char const* Name;
 };
 
 // GCC has alternative #pragma pack(N) syntax and old gcc version does not support pack(push, N), also any gcc version does not support it at some platform

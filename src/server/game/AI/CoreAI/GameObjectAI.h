@@ -24,6 +24,7 @@
 #include "Object.h"
 #include "GameObject.h"
 #include "CreatureAI.h"
+#include "QuestDef.h"
 
 class GameObjectAI
 {

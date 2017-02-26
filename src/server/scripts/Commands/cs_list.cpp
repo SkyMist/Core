@@ -43,6 +43,7 @@ public:
             { "object",         SEC_ADMINISTRATOR,  true,  &HandleListObjectCommand,            "", NULL },
             { "auras",          SEC_ADMINISTRATOR,  false, &HandleListAurasCommand,             "", NULL },
             { "mail",           SEC_ADMINISTRATOR,  true,  &HandleListMailCommand,              "", NULL },
+            { "scenes",         SEC_ADMINISTRATOR,  true,  &HandleListScenesCommand,            "", NULL },
             { NULL,             0,                  false, NULL,                                "", NULL }
         };
         static ChatCommand commandTable[] =
@@ -570,6 +571,30 @@ public:
         }
         else
             handler->PSendSysMessage(LANG_LIST_MAIL_NOT_FOUND);
+        return true;
+    }
+
+    static bool HandleListScenesCommand(ChatHandler* handler, char const* /*args*/)
+    {
+        Player* target = handler->getSelectedPlayer();
+
+        if (!target)
+            target = handler->GetSession()->GetPlayer();
+
+        if (!target)
+        {
+            handler->SendSysMessage(LANG_PLAYER_NOT_FOUND);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        SceneTemplateByInstance const& instanceByPackageMap = target->GetSceneMgr().GetSceneTemplateByInstanceMap();
+
+        handler->PSendSysMessage("Active scenes: %d", target->GetSceneMgr().GetActiveSceneCount());
+
+        for (auto instanceByPackage : instanceByPackageMap)
+            handler->PSendSysMessage("sceneScriptPackageId: %d, sceneInstanceID: %d", instanceByPackage.second->ScenePackageId, instanceByPackage.first);
+
         return true;
     }
 };
